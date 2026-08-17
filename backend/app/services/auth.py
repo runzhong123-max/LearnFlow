@@ -124,7 +124,11 @@ async def current_learner_from_request(
             raise HTTPException(401, "登录已失效")
         return None
     session, account, learner, profile = row
-    session.last_seen_at = now
+    # Authentication is a read dependency. Mutating last_seen_at here causes
+    # SQLAlchemy to autoflush before the endpoint's next query and can hold a
+    # SQLite write lock during long external workflow calls. Session validity
+    # is determined by expires_at/revoked_at, so keep request authentication
+    # read-only and leave last_seen_at as the session creation/login timestamp.
     return CurrentLearner(
         account=account, learner=learner, profile=profile,
         is_dev_login=bool(session.is_dev_login),

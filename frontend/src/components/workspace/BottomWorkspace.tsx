@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import {
   askQuestion, listNotes, createNote, updateNote, deleteNote,
 } from '../../services/api'
+import { shouldSendMessageOnEnter } from '../../utils/keyboard'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -100,8 +101,8 @@ export default function BottomWorkspace({ checkpointId, selectedText, sectionInd
     setLoading(false)
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (shouldSendMessageOnEnter(e)) {
       e.preventDefault()
       send()
     }

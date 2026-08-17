@@ -21,6 +21,7 @@ from app.api.review import router as review_router
 from app.api.architecture import router as architecture_router
 from app.api.workspace import router as workspace_router
 from app.api.local_agent import router as local_agent_router
+from app.api.learning_task_conversion import router as learning_task_conversion_router
 
 
 @asynccontextmanager
@@ -75,3 +76,4 @@ app.include_router(review_router, prefix="/api")
 app.include_router(architecture_router, prefix="/api")
 app.include_router(workspace_router, prefix="/api")
 app.include_router(local_agent_router, prefix="/api")
+app.include_router(learning_task_conversion_router, prefix="/api")

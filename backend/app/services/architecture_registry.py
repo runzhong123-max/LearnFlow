@@ -14,7 +14,7 @@ from typing import Any
 from app.services.action_board import ACTION_BOARD
 
 
-REGISTRY_VERSION = "2026-08-16.1"
+REGISTRY_VERSION = "2026-08-16.2"
 EVENT_SCHEMA_VERSION = "learnflow.evidence.v1"
 KERNEL_NAMES = ("structure", "knowledge", "human", "value", "practice")
 
@@ -195,6 +195,15 @@ TOOLS = {
         ToolContract("workflow_gateway", "Mock / Xingchen Workflow Gateway", "learning_design_agent", "companion", "optional_adapter",
                      KERNEL_NAMES, (), "validated artifact or EvidenceEvent only"),
         ToolContract("workflow_validator", "Workflow Builder + Validator", "learning_design_agent", "companion", "maintenance"),
+        ToolContract(
+            "learning_task_conversion_gateway",
+            "岗位典型工作任务转化 Gateway",
+            "learning_design_agent",
+            "companion",
+            "validated_artifact",
+            (), (),
+            "validated HTML/PDF/JSON artifact or zero-kernel operational event only",
+        ),
         ToolContract("seeded_demo", "Seeded Competition Demo", "tutor_agent", "fused", "demo"),
         ToolContract("task_runtime", "Idempotent Background Task Runtime", "tutor_agent", "learnflow", "execution"),
         ToolContract("workspace_file_service", "Desktop Workspace File Service", "tutor_agent", "learnflow", "filesystem",
@@ -238,6 +247,15 @@ SKILLS = {
         SkillContract("external_workflow_rendering", "星辰/Mock 教学内容适配", "learning_design_agent",
                       ("workflow_gateway", "workflow_validator"),
                       "validated content artifact; no direct kernel mutation", "LearnFlow contract", "companion"),
+        SkillContract(
+            "learning_work_task_conversion",
+            "岗位典型工作任务转化与复核",
+            "learning_design_agent",
+            ("learning_task_conversion_gateway", "evidence_ledger"),
+            "versioned task page + PDF + knowledge-scoped personalized-learning JSON + relation feedback",
+            "task identity, evidence and relation gates",
+            "companion",
+        ),
         SkillContract("workspace_file_management", "受控本地项目文件管理", "tutor_agent",
                       ("workspace_file_service", "evidence_ledger"),
                       "hash-bound diff proposal + explicit confirmation + operational event",
@@ -257,7 +275,7 @@ SKILLS = {
 WORKBENCHES = {
     item.id: item for item in (
         WorkbenchContract("global_tutor", "Global Tutor", "/agent", "tutor_agent",
-                          ("search_projects", "draft_learning_project", "create_project")),
+                          ("search_projects", "draft_learning_project", "create_project", "generate_learning_work_task")),
         WorkbenchContract("project_tutor", "Project Tutor", "/projects/:projectId", "tutor_agent",
                           ("add_source", "plan_learning_path", "apply_learning_path", "navigate_checkpoint")),
         WorkbenchContract("lecture", "Checkpoint Tutor · Lecture", "/projects/:projectId/checkpoints/:checkpointId", "tutor_agent",
@@ -278,6 +296,25 @@ WORKBENCHES = {
                           ("link_project_workspace", "inspect_workspace_files", "propose_workspace_change", "apply_workspace_change", "open_managed_learning_artifact", "edit_managed_lecture", "annotate_learning_artifact", "delegate_local_agent_task", "inspect_local_agent_run", "cancel_local_agent_run", "apply_local_agent_result")),
         WorkbenchContract("xingchen_studio", "Xingchen Workflow Studio", "external", "learning_design_agent",
                           ("generate_lecture", "request_remediation_explanation"), "companion"),
+        WorkbenchContract(
+            "learning_work_task_review",
+            "学习型工作任务网页与关系复核",
+            "/wf03/tasks/:taskCardId",
+            "learning_design_agent",
+            (
+                "generate_learning_work_task", "review_learning_work_task",
+                "open_personalized_learning",
+            ),
+            "companion",
+        ),
+        WorkbenchContract(
+            "personalized_learning_entry",
+            "知识点个性化学习交接入口",
+            "/personalized-learning/tasks/:taskCardId/knowledge/:knowledgeId",
+            "learning_design_agent",
+            ("open_personalized_learning",),
+            "companion",
+        ),
     )
 }
 
@@ -296,6 +333,15 @@ CAPABILITY_OWNERS = {
     "navigate_checkpoint": ("tutor_agent", "action_board", "project_tutor"),
     "generate_lecture": ("learning_design_agent", "content_generation", "lecture"),
     "generate_assessment": ("learning_design_agent", "content_generation", "assessment"),
+    "generate_learning_work_task": (
+        "learning_design_agent", "learning_task_conversion_gateway", "global_tutor",
+    ),
+    "review_learning_work_task": (
+        "learning_design_agent", "learning_task_conversion_gateway", "learning_work_task_review",
+    ),
+    "open_personalized_learning": (
+        "learning_design_agent", "learning_task_conversion_gateway", "personalized_learning_entry",
+    ),
     "evaluate_attempt": ("practice_agent", "deterministic_assessment", "assessment"),
     "explain_selection": ("learning_design_agent", "content_generation", "lecture"),
     "advance_checkpoint": ("tutor_agent", "action_board", "assessment"),
@@ -348,6 +394,10 @@ EVENTS = {
         _event("lecture_generated", "generate_lecture", ("knowledge",), "exposure"),
         _event("lecture_viewed", "generate_lecture", ("knowledge",), "exposure"),
         _event("assessment_generated", "generate_assessment", (), "artifact"),
+        _event("learning_work_task_generated", "generate_learning_work_task", (), "artifact", origin="companion"),
+        _event("learning_work_task_generation_follow_up", "generate_learning_work_task", (), "operational", origin="companion"),
+        _event("learning_work_task_review_submitted", "review_learning_work_task", (), "operational", origin="companion"),
+        _event("personalized_learning_handoff_opened", "open_personalized_learning", (), "navigation", origin="companion"),
         _event("explanation_requested", "explain_selection", ("knowledge", "human"), "assistance"),
         _event("code_review_requested", "explain_selection", ("practice", "human"), "assistance", workbench="assessment"),
         _event("concept_attempt_evaluated", "evaluate_attempt", ("knowledge", "practice"), "graded_attempt"),

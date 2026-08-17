@@ -7,6 +7,7 @@ class AgentSessionCreate(BaseModel):
     session_type: Literal["global", "project", "checkpoint"] = "global"
     project_id: Optional[int] = None
     checkpoint_id: Optional[int] = None
+    force_new: bool = False
 
 
 class TutorTurnRequest(BaseModel):

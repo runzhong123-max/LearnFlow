@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Check, ExternalLink, Plus, RefreshCw } from 'lucide-react'
+import { Check, ExternalLink, FilePenLine, MessageSquarePlus, Plus, RefreshCw } from 'lucide-react'
 import {
   createTutorSession, sendTutorTurn, confirmTutorAction, cancelTutorAction,
   getTutorAction, acceptProjectProposal, dismissProjectProposal,
   getProjectProposal, refreshProjectProposalSources, updateProjectProposal,
+  generateLearningTaskConversion,
 } from '../../services/api'
-import type { ProjectProposal, ProjectProposalSource } from '../../services/api'
+import type { ProjectProposal, ProjectProposalSource, WF03GenerationResult } from '../../services/api'
+import { shouldSendMessageOnEnter } from '../../utils/keyboard'
 import ProjectProposalDock from './ProjectProposalDock'
 import LocalAgentRunCard from './LocalAgentRunCard'
 
@@ -37,6 +39,8 @@ interface Props {
   addingCandidateUrl?: string | null
   onRefreshCandidateSources?: () => void | Promise<void>
   onAddCandidateSource?: (candidate: ProjectProposalSource) => void | Promise<void>
+  learningTaskGenerationEnabled?: boolean
+  onLearningTaskGenerated?: (result: WF03GenerationResult) => void
 }
 
 const terminal = new Set(['completed', 'failed', 'canceled'])
@@ -167,8 +171,11 @@ function normalizeTutorContent(content: unknown): string {
   const original = content.trim()
   // Older sessions may contain the verbose pre-configuration fallback. Keep
   // the history intact, but present the same explicit status as new turns.
-  if (original === '我可以继续帮你整理学习问题；要进行 AI 讲解，请先在设置页配置 LLM API Key。') {
-    return '未接入模型。'
+  if (
+    original === '未接入模型。'
+    || original === '我可以继续帮你整理学习问题；要进行 AI 讲解，请先在设置页配置 LLM API Key。'
+  ) {
+    return '主 Agent 对话模型尚未配置；项目、复习、讲义、练习与文件功能仍可正常使用。'
   }
   let text = original
   if (text.startsWith('```')) {
@@ -203,6 +210,7 @@ export default function TutorPanel({
   onProposalAccepted, proposalDragEnabled = false, projectProposal,
   projectSources = [], candidateSourcesRefreshing = false, addingCandidateUrl,
   onRefreshCandidateSources, onAddCandidateSource,
+  learningTaskGenerationEnabled = false, onLearningTaskGenerated,
 }: Props) {
   const [sessionId, setSessionId] = useState<number | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -213,6 +221,8 @@ export default function TutorPanel({
   const [proposals, setProposals] = useState<ProjectProposal[]>([])
   const [proposalBusy, setProposalBusy] = useState(false)
   const [milestoneNotice, setMilestoneNotice] = useState<any>(null)
+  const [learningTaskMode, setLearningTaskMode] = useState(false)
+  const [startingConversation, setStartingConversation] = useState(false)
   const messagesRef = useRef<HTMLDivElement>(null)
   const pollRef = useRef<number | null>(null)
 
@@ -395,7 +405,36 @@ export default function TutorPanel({
     }
   }
 
-  const send = async (selectedActionId?: number, presetText?: string) => {
+  const startNewConversation = async () => {
+    if (loading || startingConversation) return
+    setStartingConversation(true)
+    try {
+      const data = await createTutorSession({
+        session_type: checkpointId ? 'checkpoint' : projectId ? 'project' : 'global',
+        project_id: projectId,
+        checkpoint_id: checkpointId,
+        force_new: true,
+      })
+      setSessionId(data.id)
+      setMessages((data.messages || [])
+        .filter((message: any) => message.role === 'user' || message.role === 'assistant')
+        .map((message: any) => ({ ...message, content: normalizeTutorContent(message.content) })))
+      setAction(data.action_card || null)
+      setSummary(data.state_summary || null)
+      setProposals(data.project_proposals || [])
+      setInput('')
+      setLearningTaskMode(false)
+    } catch (error: any) {
+      setMessages(previous => [...previous, {
+        role: 'assistant',
+        content: error?.response?.data?.detail || '新对话创建失败，请稍后重试。',
+      }])
+    } finally {
+      setStartingConversation(false)
+    }
+  }
+
+  const send = async (selectedActionId?: number, presetText?: string, forceTutor = false) => {
     if (!sessionId || loading) return
     const text = (presetText ?? input).trim()
     if (!text && !selectedActionId) return
@@ -405,6 +444,33 @@ export default function TutorPanel({
     }
     setLoading(true)
     try {
+      if (learningTaskGenerationEnabled && learningTaskMode && text && !selectedActionId && !forceTutor) {
+        const clientTurnId = globalThis.crypto?.randomUUID?.() || `learning-task-${Date.now()}-${Math.random()}`
+        const generated = await generateLearningTaskConversion(text, sessionId, clientTurnId)
+        if (generated.status !== 'success') {
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: generated.message,
+            meta_data: {
+              message_kind: generated.status === 'needs_clarification'
+                ? 'learning_task_clarification'
+                : 'learning_task_revision',
+            },
+          }])
+          return
+        }
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: generated.message,
+          meta_data: {
+            message_kind: 'learning_task_generated',
+            task_card_id: generated.task_card_id,
+          },
+        }])
+        onLearningTaskGenerated?.(generated)
+        setLearningTaskMode(false)
+        return
+      }
       const data = await sendTutorTurn(sessionId, {
         message: text || '确认',
         project_id: projectId,
@@ -419,8 +485,13 @@ export default function TutorPanel({
         role: 'assistant',
         content: e?.response?.data?.detail || '这次没有执行成功，请稍后再试。',
       }])
+    } finally {
+      // The generation branches return as soon as they have handed the task
+      // page to the workspace. Keep loading cleanup in finally so navigation,
+      // clarification and revision responses cannot leave the global Agent
+      // composer permanently disabled.
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const confirm = async () => {
@@ -461,11 +532,23 @@ export default function TutorPanel({
               : '学习方向、目标澄清、简要答疑与学习状态支持')}
           </p>
         </div>
-        {projectId && summary?.progress?.total > 0 && (
-          <span className="shrink-0 text-xs tabular-nums text-gray-500">
-            {summary.progress.completed}/{summary.progress.total} 已验证
-          </span>
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          {projectId && summary?.progress?.total > 0 && (
+            <span className="text-xs tabular-nums text-gray-500">
+              {summary.progress.completed}/{summary.progress.total} 已验证
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={startNewConversation}
+            disabled={loading || startingConversation || !sessionId}
+            title="新建对话"
+            aria-label="新建对话"
+            className="flex h-8 items-center gap-1 rounded-md border border-gray-200 bg-white px-2 text-[11px] font-medium text-gray-600 hover:border-gray-300 hover:bg-gray-50 disabled:cursor-wait disabled:opacity-50"
+          >
+            <MessageSquarePlus size={13} /> {startingConversation ? '新建中' : '新建对话'}
+          </button>
+        </div>
       </header>
 
       <ProjectProposalDock
@@ -587,7 +670,11 @@ export default function TutorPanel({
 
         {loading && (
           <div className="flex justify-start">
-            <div className="border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-400 rounded-lg">正在思考...</div>
+            <div className="border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500 rounded-lg">
+              {learningTaskMode
+                ? '正在调用岗位任务转化工作流，检索、核验并生成任务网页…'
+                : '正在思考...'}
+            </div>
           </div>
         )}
       </div>
@@ -599,7 +686,7 @@ export default function TutorPanel({
               <button
                 key={prompt}
                 type="button"
-                onClick={() => send(undefined, prompt)}
+                onClick={() => send(undefined, prompt, true)}
                 disabled={loading || !sessionId}
                 className="rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[10px] text-gray-600 hover:border-gray-300 hover:bg-gray-50 disabled:opacity-50"
               >
@@ -608,18 +695,41 @@ export default function TutorPanel({
             ))}
           </div>
         )}
+        {learningTaskGenerationEnabled && (
+          <div className="mb-2 flex min-w-0 items-center gap-2" aria-label="Agent 扩展工具">
+            <span className="shrink-0 text-[10px] font-semibold text-slate-500">扩展工具</span>
+            <button
+              type="button"
+              onClick={() => setLearningTaskMode(value => !value)}
+              disabled={loading}
+              aria-pressed={learningTaskMode}
+              title={learningTaskMode ? '退出岗位任务转化，返回主 Agent' : '调用岗位任务转化工作流'}
+              className={`flex h-7 min-w-0 items-center gap-1.5 rounded-full border px-2.5 text-[10px] font-medium transition-colors ${
+                learningTaskMode
+                  ? 'border-emerald-700 bg-emerald-700 text-white'
+                  : 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:border-emerald-500'
+              }`}
+            >
+              <FilePenLine size={12} className="shrink-0" />
+              <span className="truncate">{learningTaskMode ? '岗位任务转化已启用' : '岗位任务转化'}</span>
+            </button>
+            {learningTaskMode && (
+              <span className="min-w-0 truncate text-[10px] text-slate-500">再次点击可返回主 Agent</span>
+            )}
+          </div>
+        )}
         <div className="flex items-end gap-2">
           <textarea
             value={input}
             onChange={event => setInput(event.target.value)}
             onKeyDown={event => {
-              if (event.key === 'Enter' && !event.shiftKey) {
+              if (shouldSendMessageOnEnter(event)) {
                 event.preventDefault()
                 send()
               }
             }}
             rows={2}
-            placeholder="问一个问题，或直接告诉我下一步要做什么"
+            placeholder={learningTaskMode ? '输入一个岗位或企业真实工作任务，生成学习型任务网页…' : '问一个问题，或直接告诉我下一步要做什么'}
             className="min-w-0 flex-1 resize-none border border-gray-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 rounded-lg"
           />
           <button

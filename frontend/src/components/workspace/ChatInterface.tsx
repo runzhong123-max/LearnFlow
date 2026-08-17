@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { shouldSendMessageOnEnter } from '../../utils/keyboard'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -63,8 +64,8 @@ export default function ChatInterface({ projectId, onRoadmapUpdate }: Props) {
     setLoading(false)
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (shouldSendMessageOnEnter(e)) {
       e.preventDefault()
       send()
     }

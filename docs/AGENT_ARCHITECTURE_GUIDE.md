@@ -542,6 +542,8 @@ Tutor 将用户带入第一关。Lecture Agent 生成来源约束讲义；Concep
 
 ## 20. 常见反模式
 
+学习型工作任务网页可以通过 `open_personalized_learning` 把单个知识点、来源步骤、强关联技能和回传契约交给个性化学习功能。该动作只是上下文交接，不是掌握证据；后续内容生成仍属学习设计 Agent，练习和验证仍属实践与验证 Agent。
+
 后续智能体修改代码时，应主动检查以下问题：
 
 1. **主 Agent 被项目污染**：全局 Tutor 开始自称最近项目负责人。
@@ -598,6 +600,7 @@ Tutor 将用户带入第一关。Lecture Agent 生成来源约束讲义；Concep
 | 本地 Agent Broker、Profile、隔离与双确认 | `backend/app/services/local_agent_broker.py`、`backend/app/api/local_agent.py` |
 | 代码解释与审阅 | `backend/app/services/code_agent.py` |
 | 动画与静态图决策 | `backend/app/services/animation_agent.py` |
+| 学习型工作任务与个性化学习交接 | `backend/app/api/learning_task_conversion.py`、`frontend/src/pages/PersonalizedLearningEntryPage.tsx` |
 | 后台任务编排 | `backend/app/services/task_runners.py` |
 | 记忆图谱写入与查询 | `backend/app/services/memory_graph.py` |
 | 记忆异步合成 | `backend/app/services/memory_worker.py` |

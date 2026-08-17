@@ -53,6 +53,22 @@ def test_background_task_events_are_registered_with_their_actual_authority():
     assert failure["kernel_targets"] == ["structure"]
 
 
+def test_learning_work_task_events_are_zero_kernel_adapter_events():
+    expected = {
+        "learning_work_task_generated",
+        "learning_work_task_generation_follow_up",
+        "learning_work_task_review_submitted",
+        "personalized_learning_handoff_opened",
+    }
+    assert expected <= set(EVENTS)
+    for event_type in expected:
+        provenance = normalize_event_provenance(
+            event_type, "learning_task_conversion", {"provider": "xunfei-xingchen"},
+        )
+        assert provenance["kernel_targets"] == []
+        assert provenance["tool"] == "learning_task_conversion_gateway"
+
+
 def test_review_workbench_is_registered_without_new_kernel_writer():
     assert "review" in WORKBENCHES
     assert "spaced_review" in SKILLS

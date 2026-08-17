@@ -15,6 +15,8 @@ import RegisterPage from './pages/RegisterPage'
 import SettingsPage from './pages/SettingsPage'
 import DemoEntryPage from './pages/DemoEntryPage'
 import WorkspaceFilePage from './pages/WorkspaceFilePage'
+import WF03TaskPage from './pages/WF03TaskPage'
+import PersonalizedLearningEntryPage from './pages/PersonalizedLearningEntryPage'
 import { getDesktopRuntime } from './services/desktopRuntime'
 
 function DevSettingsRoute() {
@@ -41,6 +43,8 @@ export default function App() {
           <Route path="/projects/:projectId/checkpoints/:checkpointId" element={<CheckpointPage />} />
           <Route path="/projects/:projectId/checkpoints/:checkpointId/exercises" element={<ExercisePage />} />
           <Route path="/projects/:projectId/workspace" element={<WorkspaceFilePage />} />
+          <Route path="/wf03/tasks/:taskCardId" element={<WF03TaskPage />} />
+          <Route path="/personalized-learning/tasks/:taskCardId/knowledge/:knowledgeId" element={<PersonalizedLearningEntryPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/agent" replace />} />

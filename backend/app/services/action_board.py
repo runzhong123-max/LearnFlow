@@ -81,6 +81,21 @@ ACTION_BOARD = {
             ("evaluate_attempt",),
         ),
         ActionDefinition(
+            "generate_learning_work_task", "岗位典型工作任务转化", "artifact", "explicit",
+            {},
+            ("review_learning_work_task",),
+        ),
+        ActionDefinition(
+            "review_learning_work_task", "复核学习型工作任务", "write", "explicit_or_click",
+            {},
+            ("generate_learning_work_task",),
+        ),
+        ActionDefinition(
+            "open_personalized_learning", "从知识点进入个性化学习", "context", "click",
+            {},
+            ("create_project", "generate_lecture", "generate_assessment"),
+        ),
+        ActionDefinition(
             "evaluate_attempt", "评估本次尝试", "evidence", "explicit",
             {"knowledge": "graded_attempt", "practice": "verified_artifact"},
             ("request_remediation_explanation", "advance_checkpoint"),

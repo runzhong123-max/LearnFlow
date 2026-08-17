@@ -102,7 +102,10 @@ function WorkspaceFrame() {
   const navigate = useNavigate()
   const { openPath } = useWorkspace()
   const [explorerVisible, setExplorerVisible] = useState(() => window.innerWidth >= 1024)
-  const [agentRailExpanded, setAgentRailExpanded] = useState(() => window.innerWidth >= 1280)
+  // Keep the conversation visible on ordinary laptop/desktop workspaces. The
+  // rail already becomes an overlay below 2xl, so hiding it at 1280px made the
+  // task-to-personalized-learning path look as if the chat had disappeared.
+  const [agentRailExpanded, setAgentRailExpanded] = useState(() => window.innerWidth >= 1100)
 
   useEffect(() => {
     const openAgentConversation = () => {

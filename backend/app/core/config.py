@@ -56,6 +56,12 @@ class Settings(BaseSettings):
     github_resource_search_enabled: bool = True
     dev_test_login_enabled: bool = True
     competition_demo_mode: bool = False
+    # Optional external adapter for the岗位典型工作任务转化 service.  LearnFlow
+    # never forwards a caller supplied host, so this cannot become an open
+    # proxy.  The external workflow only returns validated learning artifacts
+    # and never writes five-kernel learner state directly.
+    learning_task_conversion_base_url: str = "http://82.156.199.145"
+    learning_task_conversion_timeout_seconds: float = 30.0
     # Desktop sidecar mode. Keep disabled in browser/server deployments.
     desktop_mode: bool = False
     desktop_token: str = ""

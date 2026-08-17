@@ -1,11 +1,16 @@
 # Python
 backend/venv/
+backend/.venv/
+backend/.venv-*/
 backend/__pycache__/
 backend/**/__pycache__/
 *.pyc
 backend/data/
 backend/*.db
 backend/.env
+# Feature-scoped credentials for the 岗位典型工作任务转化 integration.
+# Keep these out of the global backend settings and out of Git history.
+backend/.private/
 
 # Node
 frontend/node_modules/
@@ -21,6 +26,7 @@ frontend/dist/
 # Logs
 *.log
 data/
+.playwright-cli/
 
 # Project-mode runtime (venv + workspaces)
 backend/runtime/

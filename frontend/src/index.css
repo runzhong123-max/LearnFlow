@@ -87,6 +87,18 @@ body {
   border-radius: 3px;
 }
 
+/* Keep the workspace tabs horizontally scrollable without reserving a
+   permanent scrollbar row below the navigation strip in Safari. */
+.workspace-tabs-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.workspace-tabs-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 .memory-graph-minimap { display: none; }
 @media (min-width: 640px) {
   .memory-graph-minimap { display: block; }

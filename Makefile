@@ -1,4 +1,4 @@
-.PHONY: start stop restart demo setup
+.PHONY: start stop restart demo setup setup-learning-task-conversion verify-learning-task-conversion
 
 # ── 启动 ──
 
@@ -26,6 +26,14 @@ setup:
 	@echo ""
 	@echo "✅ 全部就绪！运行 make start"
 	@echo "⚠  别忘了编辑 backend/.env 填入 API Key"
+
+# ── 岗位典型工作任务转化（功能私有配置，不进入全局 .env） ──
+
+setup-learning-task-conversion:
+	@bash scripts/setup_learning_task_conversion.sh
+
+verify-learning-task-conversion:
+	@bash scripts/verify_learning_task_conversion.sh
 
 # ── 开发帮助 ──
 

@@ -88,6 +88,230 @@ export const restoreProfileMemory = (memoryId: string) =>
   api.post(`/profile/memories/${encodeURIComponent(memoryId)}/restore`).then(r => r.data)
 export const getLearningJourney = () => api.get('/profile/journey').then(r => r.data)
 
+// ── 岗位典型工作任务转化（外部星辰工作流适配器） ──
+export interface LearningTaskStepHandoff {
+  step: number
+  step_id: string
+  name: string
+  action: string
+  instruction?: string
+  deliverable: string
+  check: string
+  knowledge_point_ids: string[]
+  skill_point_ids: string[]
+}
+
+export interface LearningTaskKnowledgePoint {
+  knowledge_id: string
+  display_code?: string
+  name: string
+  scope?: string
+  description?: string
+  concept?: string
+  operation?: string
+  verification?: string
+  learning_resources?: LearningTaskResource[]
+  personalized_learning_entry?: Record<string, any>
+}
+
+export interface LearningTaskResource {
+  resource_id?: string
+  platform?: string
+  resource_name: string
+  resource_type?: string
+  resource_url: string
+  usage?: string
+  link_kind?: string
+  link_verified?: boolean
+  content_verified?: boolean
+  review_status?: string
+}
+
+export interface LearningTaskSkillPoint {
+  skill_id: string
+  display_code?: string
+  name: string
+  observable_action?: string
+  expected_artifact?: string
+  description?: string
+}
+
+export interface LearningTaskConversionBundle {
+  schema_version: 'learning-task-conversion-integration-bundle-v1'
+  task_card_id: string
+  status: string
+  verification_status: string
+  task: {
+    schema_version: 'learning-task-to-personalized-learning-v1'
+    work_task: {
+      work_task_id: string
+      enterprise_task_name: string
+      enterprise_task_description?: string
+      teaching_task_name: string
+      teaching_task_description?: string
+      work_situation?: string | Record<string, any>
+      task_scenario?: string | Record<string, any>
+      safety_points?: Array<string | Record<string, any>>
+      expected_artifacts?: Array<string | Record<string, any>>
+      acceptance_tests?: Array<string | Record<string, any>>
+      task_steps: LearningTaskStepHandoff[]
+      knowledge_points: LearningTaskKnowledgePoint[]
+      skill_points: LearningTaskSkillPoint[]
+      tools?: string[]
+    }
+    knowledge_entry_contract?: Record<string, any>
+  }
+  strong_relationships: Array<Record<string, any>>
+  traceability?: Record<string, any>
+  upstream_feedback?: Record<string, any>
+  downstream_feedback?: Record<string, any>
+  artifacts: {
+    interactive_html_url: string
+    pdf_url: string
+    personalized_learning_json_url: string
+    feedback_json_url?: string
+  }
+}
+
+export interface WF03GenerationResult {
+  schema_version: 'learnflow-learning-task-generation-v2'
+  execute_id: string
+  status: 'success' | 'needs_clarification' | 'needs_revision'
+  task_card_id: string
+  message: string
+  bundle: LearningTaskConversionBundle | null
+  replayed?: boolean
+}
+
+export type WF03FeedbackCode =
+  | 'weak_relation'
+  | 'incorrect_knowledge_scope'
+  | 'incorrect_skill_scope'
+  | 'step_mapping_mismatch'
+  | 'missing_prerequisite'
+  | 'unsupported_task_fact'
+  | 'other'
+
+export interface WF03FeedbackIssue {
+  issue_id: string
+  feedback_code: WF03FeedbackCode
+  severity: 'info' | 'warning' | 'error'
+  relation_id?: string
+  step_id?: string
+  knowledge_id?: string
+  skill_id?: string
+  message: string
+  suggested_correction: string
+}
+
+export interface PersonalizedLearningKnowledgeEntry {
+  schema_version: 'learning-task-knowledge-to-personalized-learning-v1'
+  entry_id: string
+  status: 'ready'
+  source: {
+    source_system: string
+    task_card_id: string
+    verification_status: string
+    full_handoff_json_url: string
+  }
+  task_context: {
+    work_task_id: string
+    enterprise_task_name: string
+    enterprise_task_description: string
+    teaching_task_name: string
+    teaching_task_description: string
+    work_situation?: string | Record<string, any>
+  }
+  focus: {
+    knowledge_point: LearningTaskKnowledgePoint
+    source_steps: LearningTaskStepHandoff[]
+    strongly_related_skills: LearningTaskSkillPoint[]
+    relationships: Array<Record<string, any>>
+  }
+  generation_contract: {
+    purpose: string
+    immutable_fields: string[]
+    downstream_may_generate: string[]
+    must_preserve_relation_traceability: boolean
+  }
+  feedback_contract: {
+    schema_version: 'personalized-learning-to-task-conversion-feedback-v1'
+    method: 'POST'
+    url: string
+    supported_issue_targets: string[]
+  }
+  navigation: {
+    route_key: 'personalized_learning.generate_from_knowledge'
+    entry_path: string
+    handoff_json_path: string
+    return_path: string
+  }
+}
+
+export const getLearningTaskConversionCapabilities = () =>
+  api.get('/learning-task-conversion/capabilities').then(r => r.data)
+
+export interface LearningTaskConversionWorkflowRun {
+  schema_version: 'learning-task-conversion-xfyun-run-v1'
+  provider: 'xunfei-xingchen'
+  app_id: string
+  flow_id: string
+  run_id?: string
+  content: string
+  usage: Record<string, any>
+}
+
+export const runLearningTaskConversionWorkflow = (userInput: string) =>
+  api.post('/learning-task-conversion/workflow-runs', { user_input: userInput }, {
+    timeout: 240000,
+  }).then(r => r.data as LearningTaskConversionWorkflowRun)
+
+export const generateLearningTaskConversion = (
+  query: string,
+  sessionId?: number,
+  clientTurnId?: string,
+) =>
+  api.post('/learning-task-conversion/generate', {
+    query,
+    session_id: sessionId,
+    client_turn_id: clientTurnId,
+  }, { timeout: 300000 })
+    .then(r => r.data as WF03GenerationResult)
+
+export const submitCompetencyGraphHandoff = (handoff: Record<string, any>) =>
+  api.post('/learning-task-conversion/upstream-handoffs', handoff).then(r => r.data)
+
+export const getLearningTaskConversionBundle = (taskCardId: string) =>
+  api.get(`/learning-task-conversion/tasks/${encodeURIComponent(taskCardId)}/bundle`)
+    .then(r => r.data as LearningTaskConversionBundle)
+
+export const getPersonalizedLearningHandoff = (taskCardId: string) =>
+  api.get(`/learning-task-conversion/tasks/${encodeURIComponent(taskCardId)}/personalized-learning`)
+    .then(r => r.data)
+
+const personalizedLearningKnowledgeEntryPath = (
+  taskCardId: string,
+  knowledgeId: string,
+) => (
+  `/learning-task-conversion/tasks/${encodeURIComponent(taskCardId)}`
+  + `/knowledge/${encodeURIComponent(knowledgeId)}/personalized-learning-entry`
+)
+
+export const getPersonalizedLearningKnowledgeEntry = (
+  taskCardId: string,
+  knowledgeId: string,
+) => api.get(personalizedLearningKnowledgeEntryPath(taskCardId, knowledgeId))
+  .then(r => r.data as PersonalizedLearningKnowledgeEntry)
+
+export const openPersonalizedLearningKnowledgeEntry = (
+  taskCardId: string,
+  knowledgeId: string,
+) => api.post(personalizedLearningKnowledgeEntryPath(taskCardId, knowledgeId))
+  .then(r => r.data as PersonalizedLearningKnowledgeEntry)
+
+export const submitPersonalizedLearningFeedback = (feedback: Record<string, any>) =>
+  api.post('/learning-task-conversion/downstream-feedback', feedback).then(r => r.data)
+
 export type MemoryKernel = 'structure' | 'knowledge' | 'human' | 'value' | 'practice'
 export type MemoryNodeType = 'fact' | 'module' | 'claim'
 
@@ -336,7 +560,7 @@ export const getRoadmapHistory = (projectId: number) =>
   api.get(`/projects/${projectId}/roadmap/history`).then(r => r.data)
 
 // ── Main Tutor ──
-export const createTutorSession = (data: { session_type?: 'global' | 'project' | 'checkpoint'; project_id?: number; checkpoint_id?: number }) =>
+export const createTutorSession = (data: { session_type?: 'global' | 'project' | 'checkpoint'; project_id?: number; checkpoint_id?: number; force_new?: boolean }) =>
   api.post('/agent/sessions', data).then(r => r.data)
 
 export const getTutorSession = (sessionId: number) =>
