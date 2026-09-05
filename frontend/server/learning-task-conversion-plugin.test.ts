@@ -360,6 +360,61 @@ test('confirmed intake prompt maps directly to the hash-bound draft without anot
   )
 })
 
+test('confirmed intake uses the request project scope when project context is not yet available', async () => {
+  const loaded = await registry()
+  const prompt = learningTaskDraftConfirmationPrompt({
+    originalInput: '新能源汽车电池的安装',
+    intakeId: 'lti_e1dd07c6',
+    intakeRootHash: 'a'.repeat(64),
+    taskContract: {
+      title: '新能源汽车电池的安装',
+      description: '完成电池定位、固定、电气连接及安全检查。',
+      action: '安装',
+      workObject: '新能源汽车电池',
+      source: 'user_explicit',
+      sourceRef: '',
+    },
+  })
+  let providerCalls = 0
+  const executed: Array<{ name: string; args: Record<string, unknown> }> = []
+  const result = await runTutorAgentTurn({
+    baseUrl: 'https://example.com/v1/chat/completions',
+    model: 'test-model',
+    mode: 'free',
+    messages: [{ role: 'user', content: prompt }],
+    toolChoice: 'auto',
+    pluginRegistry: loaded,
+    activePluginIds: ['learning_task_conversion'],
+    formalProjectId: 7,
+    formalSessionId: 41,
+    generate: async () => {
+      throw new Error('semantic preflight must not run for a confirmed intake')
+    },
+    executeTool: async (name, args, _options, meta) => {
+      executed.push({ name, args })
+      return {
+        run: {
+          id: 'draft-run', kind: 'plugin', status: 'completed', title: '生成学习型任务候选',
+          detail: '已生成候选', durationMs: 1, toolName: name, toolCallId: meta?.callId,
+        },
+        observation: { authority: 'learnflow_plugin_tool', summary: '已生成候选' },
+      }
+    },
+    invokeProvider: async () => {
+      providerCalls += 1
+      throw new Error('ordinary provider must not run for a confirmed intake')
+    },
+  })
+
+  assert.equal(providerCalls, 0)
+  assert.equal(executed.length, 1)
+  assert.equal(executed[0].name, 'learning_task_conversion__draft_learning_task')
+  assert.equal(executed[0].args.intakeId, 'lti_e1dd07c6')
+  assert.equal(result.trace.modelRounds, 0)
+  assert.equal(result.toolRuns[0].status, 'completed')
+  assert.match(result.reply, /尚未提交的候选/)
+})
+
 test('learning-task conversion contributes intake, candidate, confirmation and four read-only follow-up tools', async () => {
   const loaded = await registry()
   const tools = loaded.toolDefinitions(activation).filter(tool => tool.name.startsWith('learning_task_conversion__'))

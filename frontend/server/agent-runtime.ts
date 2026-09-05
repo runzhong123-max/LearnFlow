@@ -212,6 +212,9 @@ export type TutorAgentRuntimeInput = {
   formalDomainKnowledgeContext?: unknown
   formalReviewContext?: unknown
   formalProjectContext?: AgentProjectContext
+  /** Authoritative scope from the current request; project context loading is best-effort. */
+  formalProjectId?: number
+  formalCheckpointId?: number
   conversationId?: string
   sheetId?: string
   formalSessionId?: number
@@ -276,8 +279,8 @@ function pluginActivation(input: TutorAgentRuntimeInput): PluginActivationContex
       input.activePluginIds,
       lockedConversationPluginIds({ messages: input.messages }),
     ),
-    projectId: input.formalProjectContext?.project?.id,
-    checkpointId: input.formalProjectContext?.checkpoint_id || undefined,
+    projectId: input.formalProjectId || input.formalProjectContext?.project?.id,
+    checkpointId: input.formalCheckpointId || input.formalProjectContext?.checkpoint_id || undefined,
   }
 }
 
