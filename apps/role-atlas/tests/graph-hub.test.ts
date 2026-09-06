@@ -104,11 +104,11 @@ test("官方图只允许官方维护主体提交并直接进入公共检索", as
 test("无岗位包的图谱提交后自动归类，分类浏览保持审核可见性", async () => {
   const { root, hub } = await setup();
   await submitGraphToHub({
-    hubRoot: hub, graphFile: await graphFile(root, "nursing", "护理岗位图谱", "护理技能"),
+    hubRoot: hub, graphFile: await graphFile(root, "cloud", "云计算岗位图谱", "容器部署"),
     ownerSubjectId: "official:learnflow", maintainerName: "LearnFlow", kind: "official",
   });
-  const results = await searchGraphHubFile({ catalogFile: join(hub, "catalog.json"), query: "", category: "医疗与健康" });
+  const results = await searchGraphHubFile({ catalogFile: join(hub, "catalog.json"), query: "", category: "云计算" });
   assert.equal(results.length, 1);
-  assert.deepEqual(results[0].entry.categories, ["医疗与健康"]);
-  assert.equal((await searchGraphHubFile({ catalogFile: join(hub, "catalog.json"), query: "", category: "金融与财务" })).length, 0);
+  assert.deepEqual(results[0].entry.categories, ["云计算"]);
+  assert.equal((await searchGraphHubFile({ catalogFile: join(hub, "catalog.json"), query: "", category: "网络安全" })).length, 0);
 });

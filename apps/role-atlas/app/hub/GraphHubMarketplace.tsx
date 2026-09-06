@@ -32,8 +32,8 @@ export default function GraphHubMarketplace({ initialPackages, initialQuery = ""
       <div className="hub-hero-copy">
         <span className="hub-eyebrow"><Sparkles size={13} /> OPEN GRAPH REPOSITORIES</span>
         <h1>发现、托管与共建<br /><em>岗位知识图谱</em></h1>
-        <p>先按领域探索岗位图谱，再检索岗位名称、别名和能力。分类目录持续开放，新发布的图谱自动归类；暂未收录的领域欢迎共建。</p>
-        <label className="hub-search"><Search size={19} /><input aria-label="搜索图谱仓库" value={query} onChange={(event) => { setQuery(event.target.value); setOffset(0); }} placeholder="搜索岗位、别名、能力、行业或 package ID" /></label>
+        <p>面向计算机专业群，按技术岗位方向探索图谱，检索岗位名称、别名和能力。新发布的图谱自动归类，暂未收录的方向欢迎共建。</p>
+        <label className="hub-search"><Search size={19} /><input aria-label="搜索图谱仓库" value={query} onChange={(event) => { setQuery(event.target.value); setOffset(0); }} placeholder="搜索计算机相关岗位、别名或技能" /></label>
         <div className="hub-trust"><span><ShieldCheck size={14} /> 内容哈希校验</span><span><GitBranch size={14} /> 不可变版本历史</span><span><BadgeCheck size={14} /> 来源与证据可追溯</span></div>
       </div>
       <aside className="hub-hero-panel">
@@ -43,8 +43,8 @@ export default function GraphHubMarketplace({ initialPackages, initialQuery = ""
     </section>
 
     <section className="hub-market" id="repositories">
-      <div className="hub-section-title"><div><span>CURATED & COMMUNITY</span><h2>图谱仓库</h2><p>像浏览开源项目一样，找到可以信任和复用的岗位知识基础。</p></div><a href={roleAtlasHref(roleAtlasBaseUrl, "/projects/new")}>创建你的岗位图谱 <ArrowRight size={14} /></a></div>
-      <div className="hub-filter-row">{industries.map((industry) => <button type="button" aria-pressed={filter === industry} className={filter === industry ? "active" : ""} key={industry} onClick={() => { setFilter(industry); setOffset(0); }}>{industry || "全部"}（{industry ? result.categoryCounts[industry] || 0 : initialPackages.length}）</button>)}</div>
+      <div className="hub-section-title"><div><span>CURATED & COMMUNITY</span><h2>图谱仓库</h2><p>围绕软件、网络、云计算、数据与人工智能等方向，发现可复用的岗位图谱。</p></div><a href={roleAtlasHref(roleAtlasBaseUrl, "/projects/new")}>创建你的岗位图谱 <ArrowRight size={14} /></a></div>
+      <div className="hub-filter-row hub-category-filters" aria-label="计算机专业群岗位方向">{industries.map((industry) => <button type="button" aria-pressed={filter === industry} className={filter === industry ? "active" : ""} key={industry} onClick={() => { setFilter(industry); setOffset(0); }}>{industry || "全部"}（{industry ? result.categoryCounts[industry] || 0 : initialPackages.length}）</button>)}</div>
       <p role="status">{result.total} 个匹配仓库{query.trim() ? " · 按相关性排序" : ""}</p>
       {packages.length ? <div className="hub-repo-grid">{packages.map(({ entry: item, reasons }) => {
         const recommended = item.release;

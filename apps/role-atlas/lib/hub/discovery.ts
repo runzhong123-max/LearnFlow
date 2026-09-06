@@ -7,6 +7,7 @@ export type HubEntry = {
   summary: string;
   aliases: string[];
   categories: string[];
+  sourceCategories?: string[];
   audiences: string[];
   maintainerName: string;
   maintenanceKind: string;
@@ -42,7 +43,7 @@ export function searchHub(entries: HubEntry[], input: { query?: string; category
   const normalized = normalizeHubQuery(query);
   const words = terms(query);
   const classified = entries.map(entry => ({ ...entry, categories: classifyHubEntry(entry) }));
-  const categories = [...new Set([...HUB_TAXONOMY.map(category => category.label), ...classified.flatMap(entry => entry.categories)])].sort((a, b) => a.localeCompare(b, "zh"));
+  const categories = HUB_TAXONOMY.map(category => category.label);
   const ranked = classified.flatMap(entry => {
     if (input.category && !entry.categories.includes(input.category)) return [];
     const title = Math.max(textScore(normalized, words, entry.title), textScore(normalized, words, entry.packageId));
@@ -51,13 +52,14 @@ export function searchHub(entries: HubEntry[], input: { query?: string; category
       score: Math.max(...[node.label, ...node.aliases].map(label => textScore(normalized, words, label))),
     })).filter(node => node.score > 0).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id)).slice(0, 6);
     const category = entry.categories.some(value => textScore(normalized, words, value) > 0);
+    const sourceCategory = (entry.sourceCategories || []).some(value => textScore(normalized, words, value) > 0);
     const summary = textScore(normalized, words, entry.summary);
     const score = title * 10 + Math.max(0, ...aliases.map(alias => textScore(normalized, words, alias))) * 8
-      + (matchedNodes[0]?.score || 0) * 3 + (category ? 5 : 0) + summary;
+      + (matchedNodes[0]?.score || 0) * 3 + (category || sourceCategory ? 5 : 0) + summary;
     if (normalized && score === 0) return [];
     const reasons = [title > 0 ? "匹配岗位名称或包 ID" : "", aliases.length ? `匹配别名：${aliases.slice(0, 2).join("、")}` : "",
       matchedNodes.length ? `匹配节点：${matchedNodes.slice(0, 3).map(node => node.label).join("、")}` : "",
-      category ? "匹配分类" : "", !title && !aliases.length && !matchedNodes.length && summary ? "匹配岗位简介" : ""].filter(Boolean);
+      category ? "匹配分类" : "", sourceCategory ? "匹配来源行业标签" : "", !title && !aliases.length && !matchedNodes.length && summary ? "匹配岗位简介" : ""].filter(Boolean);
     return [{ entry, score, reasons, matchedNodes }];
   }).sort((a, b) => b.score - a.score || a.entry.title.localeCompare(b.entry.title, "zh") || a.entry.id.localeCompare(b.entry.id));
   const limit = Math.min(100, Math.max(1, Math.trunc(Number(input.limit) || 20)));

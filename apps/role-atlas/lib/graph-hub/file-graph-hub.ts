@@ -90,7 +90,7 @@ async function entryFor(root: string, submission: GraphHubSubmission, audienceSu
   if (!publicEntry && !ownerEntry) return undefined;
   const document = validateDocument(JSON.parse(await readFile(join(root, submission.objectPath), "utf8")));
   return {
-    categories: classifyHubEntry({ title: submission.title, summary: submission.summary, aliases: submission.keywords }),
+    categories: classifyHubEntry({ title: submission.title, summary: submission.summary }),
     graphId: submission.graphId,
     graphVersion: submission.graphVersion,
     graphType: submission.graphType,
@@ -267,7 +267,7 @@ export function searchGraphHubCatalog(catalog: GraphHubCatalog, input: { query: 
 
   return catalog.entries.flatMap((entry) => {
     if (entry.access === "owner" && entry.ownerSubjectId !== input.actorSubjectId) return [];
-    const categories = entry.categories || classifyHubEntry({ title: entry.title, summary: entry.summary, aliases: entry.keywords });
+    const categories = classifyHubEntry({ title: entry.title, summary: entry.summary, categories: entry.categories });
     if (input.category && !categories.includes(input.category)) return [];
     const metadataScore = textScore(queryTerms, [entry.title, entry.summary, ...entry.keywords, ...categories].join(" "));
     const matchedNodes = entry.nodeIndex.map((node) => ({

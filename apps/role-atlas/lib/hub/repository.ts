@@ -92,7 +92,7 @@ export async function listPublicHubEntries(): Promise<HubEntry[]> {
           ? [{ id: node.id, label: node.label, type: String(node.type || "object"), aliases: hubStrings(node.aliases) }] : []),
       } satisfies HubEntry;
     }));
-    for (const entry of batch) if (entry) entries.push({ ...entry, categories: classifyHubEntry(entry) });
+    for (const entry of batch) if (entry) entries.push({ ...entry, sourceCategories: entry.categories, categories: classifyHubEntry(entry) });
   }
   return entries;
 }
