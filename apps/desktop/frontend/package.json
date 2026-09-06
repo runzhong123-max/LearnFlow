@@ -18,7 +18,7 @@
     "test:profile": "node --experimental-strip-types --test server/five-kernel-profile.test.ts server/profile-presentation.test.ts server/profile-overview.test.ts server/memory-context-upgrade.test.ts server/teaching-guidance.test.ts",
     "test:path": "node --experimental-strip-types --test server/learning-path-graph.test.ts server/learning-path-production-eval.test.ts",
     "test:formal": "node --experimental-strip-types --test server/formal-runtime.test.ts server/project-sidebar.test.ts server/review-runtime.test.ts",
-    "test:auth": "node --experimental-strip-types --test server/auth-runtime.test.ts server/account-model-credential.test.ts server/password-policy.test.ts server/runtime-surface.test.ts",
+    "test:auth": "node --experimental-strip-types --test server/auth-runtime.test.ts server/account-model-credential.test.ts server/password-policy.test.ts server/runtime-surface.test.ts server/cloud-runtime.test.ts",
     "test:plugins": "node --experimental-strip-types --test server/plugin-api.test.ts server/role-capability-plugin.test.ts server/role-package-file-import.test.ts server/role-package-hub-import.test.ts server/tool-capability-catalog.test.ts server/learning-task-conversion-plugin.test.ts server/learning-task-conversion-intake.test.ts",
     "role:import-file": "node --experimental-strip-types scripts/import-role-package-file.mjs",
     "role:import-hub": "node --experimental-strip-types scripts/import-role-package-hub.mjs",

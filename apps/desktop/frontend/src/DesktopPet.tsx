@@ -18,7 +18,7 @@ import {
   type FormalTutorMessage,
   type FormalTutorSession,
 } from './formal-runtime.ts'
-import { readDesktopPetSession, runtimeFetch } from './runtime-client.ts'
+import { readDesktopPetSession, runtimeFetch, isCloudDesktopRuntime } from './runtime-client.ts'
 import PetAvatar, { type PetAvatarState } from './PetAvatar.tsx'
 import styles from './DesktopPet.module.css'
 
@@ -303,6 +303,7 @@ export default function DesktopPet() {
         return
       }
       if (!capture.imageBase64) throw new Error('前台窗口抓取结果为空。')
+      if (isCloudDesktopRuntime()) throw new Error('未能直接读取文字，请复制到输入框；云端桌宠暂不上传截图。')
       setStatus('正在识别当前窗口中的选中文字…')
       const file = base64File(capture.imageBase64, capture.mimeType || 'image/png', 'desktop-selection.png')
       const result = await transcribeFormalDesktopPetSelection(file)
@@ -738,6 +739,10 @@ export default function DesktopPet() {
     if (!content && !pastedImageStore.current) return
     let imageContext: FormalDesktopPetContext | undefined
     let selectionContext: FormalDesktopPetContext | undefined
+    if (!retry && pastedImageStore.current && isCloudDesktopRuntime()) {
+      setStatus('请在主窗口上传图片；云端桌宠当前支持文字提问。')
+      return
+    }
     if (!retry && pastedImageStore.current) {
       setBusyKey('context:image')
       setPending(true)
@@ -758,7 +763,7 @@ export default function DesktopPet() {
         setPending(false)
       }
     }
-    if (!retry && selectionTextStore.current.trim()) {
+    if (!retry && selectionTextStore.current.trim() && !isCloudDesktopRuntime()) {
       setBusyKey('context:selection')
       setPending(true)
       setStatus('正在准备选中文字…')
@@ -782,7 +787,9 @@ export default function DesktopPet() {
       ...(imageContext ? [imageContext.id] : []),
       ...contexts.filter(item => item.status === 'confirmed').map(item => item.id),
     ].filter((item, index, all) => all.indexOf(item) === index).slice(0, 3)
-    const message = content || '请分析我附上的图片。'
+    const message = isCloudDesktopRuntime() && !retry && selectionTextStore.current.trim()
+      ? `${content}\n\n我选择并发送的参考文字：\n${selectionTextStore.current.slice(0, 12000)}`
+      : content || '请分析我附上的图片。'
     const turn = retry || {
       sessionId: session.id,
       clientTurnId: newTurnId(),
@@ -919,7 +926,7 @@ export default function DesktopPet() {
         return <article key={task.id} className={styles.taskCard}>
           <span>{task.status === 'active' ? '进行中' : task.status === 'paused' ? '已暂停' : '待开始'}</span>
           <button type="button" className={styles.taskTitle} disabled={busyKey === 'navigation:/tasks'} onClick={() => void openFormalTasks()}>{task.title}</button>
-          {action && <button type="button" disabled={busyKey === `task:${task.id}`} onClick={() => void runTaskAction(task)}>{taskActionLabel(action)}</button>}
+          {action && !isCloudDesktopRuntime() && <button type="button" disabled={busyKey === `task:${task.id}`} onClick={() => void runTaskAction(task)}>{taskActionLabel(action)}</button>}
         </article>
       })}
       {activeSkill && <article className={styles.taskCard}>
@@ -969,7 +976,7 @@ export default function DesktopPet() {
       <input ref={subtitleInput} className={styles.documentInput} type="file" accept=".srt,.vtt,.txt" onChange={event => void importVideoTranscript(event)} />
       <input ref={imageInput} className={styles.documentInput} type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" onChange={selectImage} />
       <footer className={styles.composerFooter}>
-        <details className={styles.attachmentMenu}>
+        {!isCloudDesktopRuntime() && <details className={styles.attachmentMenu}>
           <summary aria-label="添加图片或参考" title="添加图片或参考">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8.5 12.7 5.8-5.8a3.2 3.2 0 1 1 4.5 4.5l-7.7 7.7a5 5 0 0 1-7-7l7-7a3.2 3.2 0 0 1 4.5 4.5l-7 7a1.4 1.4 0 0 1-2-2l6.1-6.1" /></svg>
           </summary>
@@ -979,7 +986,7 @@ export default function DesktopPet() {
             <button type="button" disabled={!session || pending || busyKey === 'context:subtitle'} onClick={() => subtitleInput.current?.click()}>选择字幕</button>
             <button type="button" disabled={!draft.trim() || !session || pending || busyKey === 'context:create'} onClick={() => void createContext()}>将文字作为参考</button>
           </div>
-        </details>
+        </details>}
         <button className={styles.sendButton} type="submit" disabled={!(draft.trim() || pastedImage || outbox.current) || !session || pending} aria-label="发送消息" title="发送消息">
           {pending ? '…' : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m0 0L6.5 10.5M12 5l5.5 5.5" /></svg>}
         </button>

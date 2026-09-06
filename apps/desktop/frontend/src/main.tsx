@@ -6,6 +6,8 @@ import {
   isolateLegacyWorkspaceCache,
   isDesktopPetWindow,
   isDesktopRuntime,
+  isLocalLearningRuntime,
+  isCloudDesktopRuntime,
   learnerWorkspaceStorageKey,
   syncDesktopPetSession,
 } from './runtime-client.ts'
@@ -2027,7 +2029,7 @@ function App({ auth }: { auth: AuthGateSession }) {
         const firstStudentMessage = !hasVisibleStudentMessage(item.messages)
         const userMessage: Message = {
           id: userMessageId, role: 'user', content, createdAt: now, tutorMode: mode,
-          persistedByTutor: isDesktopRuntime(),
+          persistedByTutor: isLocalLearningRuntime(),
           hiddenFromTranscript: Boolean(options.hideUserMessage),
           directUserText: directUserText || undefined,
           learningSkillId: learningProjection?.skillId,
@@ -2271,7 +2273,7 @@ function App({ auth }: { auth: AuthGateSession }) {
 
     // Complete the authoritative immediate-state write before the Tutor reads
     // context. Replay reuses the persisted message ID, so it cannot add evidence.
-    if (!isDesktopRuntime() && !preparedSkillTurn && formalConnection.status === 'connected' && directUserText) {
+    if (!isLocalLearningRuntime() && !preparedSkillTurn && formalConnection.status === 'connected' && directUserText) {
       try {
         if (!formalSessionId) {
           const session = await createFormalTutorSession(true, {
@@ -2405,7 +2407,7 @@ function App({ auth }: { auth: AuthGateSession }) {
       })
       const finishedMessage = finishTurn(conversationId, sheetId, mode, {
         role: 'assistant', content: reply.reply, reasoningContent: reply.reasoningContent, toolRuns: reply.toolRuns, agentTrace: reply.trace,
-        persistedByTutor: isDesktopRuntime(),
+        persistedByTutor: isLocalLearningRuntime(),
         learningSkillId: learningProjection?.skillId,
         learningSubstateId: turnStep?.substateId,
         learningSubstateLabel: turnStep?.substateLabel,
@@ -3030,13 +3032,17 @@ function App({ auth }: { auth: AuthGateSession }) {
             <h1>设置</h1>
             <p>账号、模型凭据和浏览器缓存都以当前 learner 为边界；五核、学习路径与任务队列继续使用正式后端事件链。</p>
           </div>
-          <AccountModelSettings
+          {isCloudDesktopRuntime() ? <section className="settings-card">
+            <h2>云端账号：{auth.account.display_name || auth.account.username}</h2>
+            <p>与网页共用账号和学习记录。模型与检索服务由 LearnFlow 服务器统一配置，无需在本机填写供应商密钥。</p>
+            <button type="button" onClick={() => void auth.signOut()}>退出登录</button>
+          </section> : <AccountModelSettings
             account={auth.account}
             baseUrl={workspace.settings.baseUrl}
             model={workspace.settings.model}
             onConnectionChange={updateSettings}
             onSignOut={auth.signOut}
-          />
+          />}
           <section className="settings-card profile-settings-card" aria-labelledby="formal-profile-title">
             <div className="settings-card-heading">
               <span>{auth.account.role === 'admin' ? '04' : '03'}</span>
@@ -3747,7 +3753,7 @@ function App({ auth }: { auth: AuthGateSession }) {
             <span className="brand-mark">✦</span><span><strong>LearnFlow</strong><small>学习空间</small></span>
           </button>
           <nav className="sidebar-primary-nav" aria-label="学习工作台">
-            {isDesktopRuntime() && <button type="button" onClick={() => { void openPlatformWorkspace().catch(error => setFormalError(error instanceof Error ? error.message : '在线学习空间打开失败')) }}><span>☁</span>在线学习空间</button>}
+            {isDesktopRuntime() && !isCloudDesktopRuntime() && <button type="button" onClick={() => { void openPlatformWorkspace().catch(error => setFormalError(error instanceof Error ? error.message : '在线学习空间打开失败')) }}><span>☁</span>在线学习空间</button>}
             <button type="button" onClick={() => openTab(LEARNING_FILES_TAB)}><span>▤</span>讲义与练习</button>
             <button type="button" onClick={() => openTab(REVIEW_TAB)}><span>↺</span>复习与错题</button>
             <button type="button" onClick={() => openTab(TASKS_TAB)}><span>☷</span>学习任务</button>

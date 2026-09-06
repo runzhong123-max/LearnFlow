@@ -1,6 +1,6 @@
 [package]
 name = "learnflow-desktop"
-version = "0.1.0"
+version = "0.2.0"
 description = "LearnFlow trusted local desktop workspace"
 authors = ["LearnFlow contributors"]
 edition = "2021"

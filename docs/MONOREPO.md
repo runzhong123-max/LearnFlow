@@ -2,6 +2,8 @@
 
 2026-09-06：网页与桌面源码已整合为单仓。共享 API、在线学习入口与首发部署见 [平台整合](implementation/LEARNING_PLATFORM_INTEGRATION.md) 和 [上线计划](LAUNCH_PLAN.md)。
 
+桌面 0.2.0 已进一步改为主窗口默认云账号，通过受保护的本机转发层访问同一 LearnFlow API；本机文件和实验按云账号及项目隔离。旧本地身份保留为显式兼容模式，详情见[桌面连接契约](../apps/desktop/docs/implementation/DESKTOP_CLOUD_CONNECTION.md)。此变更不自动迁移旧数据库或同步文件。
+
 ## 正式目录
 
 ```text
@@ -9,7 +11,7 @@ LearnFlow/                         唯一 Git 根目录 / Codex 产品开发项�
   backend/                         Web / 云端 FastAPI 宿主
   frontend/                        Web 前端与 Node Tutor
   apps/desktop/                    桌面应用（无嵌套 Git）
-    backend/                       本地身份、实验、项目、桌宠 API
+    backend/                       云端连接、本机文件/实验、旧本地兼容 API
     frontend/                      桌面 UI
     desktop/                       Tauri shell 与打包
     docs/                          桌面规格与历史验收

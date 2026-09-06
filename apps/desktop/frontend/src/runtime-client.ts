@@ -13,6 +13,8 @@ export type RuntimeClientState = {
   apiBaseUrl?: string
   desktopToken?: string
   startupError?: string
+  cloudOrigin?: string
+  cloud?: boolean
 }
 
 let runtime: RuntimeClientState = { kind: 'web', ready: true }
@@ -49,13 +51,22 @@ export function isDesktopRuntime() {
   return runtime.kind === 'desktop'
 }
 
+export function isCloudDesktopRuntime() { return runtime.kind === 'desktop' && runtime.cloud === true }
+export function isLocalLearningRuntime() { return isDesktopRuntime() && !isCloudDesktopRuntime() }
+export function switchDesktopWorkspace(cloud: boolean) {
+  clearRuntimeAuth()
+  sessionStorage.setItem('learnflow.desktop.workspace-mode', cloud ? 'cloud' : 'local')
+  window.location.reload()
+}
+
 export function isDesktopPetWindow() {
   return runtime.kind === 'desktop' && desktopWindowLabel === 'pet'
 }
 
 export function learnerWorkspaceStorageKey(learnerId: number) {
   if (!Number.isInteger(learnerId) || learnerId <= 0) throw new Error('learner_id 必须是正整数')
-  return `${UNSCOPED_WORKSPACE_STORAGE_KEY}.learner.${learnerId}`
+  const scope = isCloudDesktopRuntime() ? `.cloud.${encodeURIComponent(runtime.cloudOrigin || '')}` : ''
+  return `${UNSCOPED_WORKSPACE_STORAGE_KEY}${scope}.learner.${learnerId}`
 }
 
 export function isolateLegacyWorkspaceCache(storage: WorkspaceStorage) {
@@ -78,10 +89,11 @@ export function isolateLegacyWorkspaceCache(storage: WorkspaceStorage) {
 }
 
 export function resolveRuntimeUrl(input: RequestInfo | URL) {
-  if (runtime.kind !== 'desktop' || !runtime.apiBaseUrl || typeof input !== 'string' || !input.startsWith('/api')) {
+  if (runtime.kind !== 'desktop' || !runtime.apiBaseUrl || typeof input !== 'string' || !(input === '/api' || input.startsWith('/api/'))) {
     return input
   }
-  return `${runtime.apiBaseUrl.replace(/\/$/, '')}${input.slice('/api'.length)}`
+  const base = runtime.cloud ? runtime.apiBaseUrl.replace(/\/api\/?$/, '/cloud/api') : runtime.apiBaseUrl
+  return `${base.replace(/\/$/, '')}${input.slice('/api'.length)}`
 }
 
 export async function refreshDesktopPetAuthToken(): Promise<void> {
@@ -90,6 +102,7 @@ export async function refreshDesktopPetAuthToken(): Promise<void> {
     const { invoke } = await import('@tauri-apps/api/core')
     const token = await invoke<string>('desktop_pet_auth_token')
     if (typeof token === 'string' && token) {
+      runtime.cloud = token.startsWith('lfpet_cloud_')
       try { sessionStorage.setItem(DESKTOP_AUTH_STORAGE_KEY, token) } catch { /* no persistent fallback */ }
     }
   } catch { /* the pet window may close while a refresh is in flight */ }
@@ -235,6 +248,9 @@ async function browserCsrfToken() {
 }
 
 export async function runtimeFetch(input: RequestInfo | URL, init: RequestInit = {}) {
+  if (runtime.kind === 'desktop' && (typeof input !== 'string' || !(input === '/api' || input.startsWith('/api/')))) {
+    return new Response(JSON.stringify({ detail: '桌面认证请求只能访问 LearnFlow API' }), { status: 400, headers: { 'Content-Type': 'application/json' } })
+  }
   const method = String(init.method || (typeof Request !== 'undefined' && input instanceof Request ? input.method : 'GET')).toUpperCase()
   const headers = new Headers(init.headers)
   if (runtime.kind === 'desktop' && runtime.desktopToken) {
@@ -292,12 +308,14 @@ export function initializeRuntimeClient(): Promise<RuntimeClientState> {
         import('@tauri-apps/api/core'),
         import('@tauri-apps/api/webviewWindow'),
       ])
-      const config = await invoke<{ apiBaseUrl: string; desktopToken: string }>('desktop_runtime_config')
+      const config = await invoke<{ apiBaseUrl: string; desktopToken: string; cloudOrigin?: string }>('desktop_runtime_config')
       await waitForSidecar(config.apiBaseUrl)
       desktopWindowLabel = getCurrentWebviewWindow().label
       runtime = {
         kind: 'desktop', ready: true,
         apiBaseUrl: config.apiBaseUrl, desktopToken: config.desktopToken,
+        cloudOrigin: config.cloudOrigin,
+        cloud: Boolean(config.cloudOrigin) && sessionStorage.getItem('learnflow.desktop.workspace-mode') !== 'local',
       }
       if (desktopWindowLabel === 'pet') {
         await refreshDesktopPetAuthToken()

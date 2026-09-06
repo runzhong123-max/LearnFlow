@@ -10,7 +10,7 @@ import {
 } from './planning.ts'
 import type { LearnerPathState } from './learning-path-graph.ts'
 import type { AgentFormalScope, AgentKnowledgeDomain, AgentTaskQueueItem, AgentTurnResponse, AgentTurnStreamEvent, AgentTurnTrace } from './agent-contracts.ts'
-import { isDesktopRuntime, runtimeFetch } from './runtime-client.ts'
+import { isLocalLearningRuntime as isDesktopRuntime, runtimeFetch } from './runtime-client.ts'
 import {
   executeLearningVisual,
   resolveExplicitVisualIntent,

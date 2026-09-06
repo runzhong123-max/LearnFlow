@@ -44,10 +44,18 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-06.7-desktop"
+REGISTRY_VERSION = "2026-09-06.8-desktop"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 DATA_CONTRACTS = {
+    "desktop_cloud_connection_v1": {
+        "schema_version": "learnflow-desktop-cloud/v1", "owner": "tutor_agent",
+        "origin": "builtin", "mode": "authenticated_cloud_with_scoped_device_operations", "lifecycle": "implemented",
+        "authority_path": "docs/implementation/DESKTOP_CLOUD_CONNECTION.md",
+        "binding_ids": ["py:cloud.connection", "py:cloud.device", "frontend:cloud.identity"],
+        "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "default cloud identity; explicit legacy local workspace retained; device journals are not learning evidence; cloud-origin/learner/project keyed bindings; no local database migration",
+    },
     "learning_platform_v1": {
         "schema_version": "learnflow-platform/v1", "owner": "tutor_agent",
         "origin": "builtin", "mode": "read_only_runtime_discovery", "lifecycle": "implemented",
@@ -1215,6 +1223,8 @@ _REPOSITORY_ROOT = Path(sys._MEIPASS) if getattr(sys, "frozen", False) else Path
 
 
 _PYTHON_BINDING_TARGETS = {
+    "py:cloud.connection": ("app.services.cloud_connection", "cloud_api"),
+    "py:cloud.device": ("app.services.cloud_device", "device_request"),
     "py:action_board.execute": ("app.services.tutor_service", "execute_action"),
     "py:tutor.process_turn": ("app.services.tutor_service", "process_turn"),
     "py:tutor.context": ("app.services.tutor_service", "get_session_state_summary"),
@@ -1387,6 +1397,7 @@ _API_BINDING_TARGETS = {
 
 _FRONTEND_HANDLER_TARGETS = {
     "frontend:platform.open": ("frontend/src/runtime-client.ts", "openPlatformWorkspace", ""),
+    "frontend:cloud.identity": ("frontend/src/runtime-client.ts", "isCloudDesktopRuntime", ""),
     "frontend:agent_runtime.run": ("frontend/server/agent-runtime.ts", "runTutorAgentTurn", ""),
     "frontend:plugin.registry": ("frontend/src/plugin-api.ts", "LearnFlowPluginRegistry", ""),
     "frontend:plugin.loader": ("frontend/server/plugin-loader.ts", "loadLearnFlowPluginRegistry", ""),
@@ -1571,8 +1582,8 @@ _TOOL_BINDING_IDS = {
     "context_packet_assembler": ("py:five_kernel.context",),
     "seeded_demo": ("py:demo.seed", "py:demo.grade_seeded_code", "api:demo.status"),
     "task_runtime": ("py:task.manager",),
-    "workspace_file_service": ("py:workspace.scan",),
-    "desktop_experiment_runner": ("py:experiment.profiles", "py:experiment.preview", "py:experiment.confirm", "py:experiment.read"),
+    "workspace_file_service": ("py:workspace.scan", "py:cloud.device"),
+    "desktop_experiment_runner": ("py:experiment.profiles", "py:experiment.preview", "py:experiment.confirm", "py:experiment.read", "py:cloud.device"),
     "project_workflow_runtime": ("py:project_workflow.read", "py:project_workflow.initialize", "py:project_workflow.save", "py:project_workflow.deliver", "py:project_workflow.reading", "py:project_workflow.hint"),
     "local_work_case_catalog": ("py:work_case.catalog", "py:work_case.validate"),
     "managed_artifact_service": ("api:phase2.put_lecture",),

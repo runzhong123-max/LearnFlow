@@ -50,6 +50,7 @@ fn default_pet_shortcut() -> &'static str {
 struct DesktopRuntimeConfig {
     api_base_url: String,
     desktop_token: String,
+    cloud_origin: String,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -1248,6 +1249,7 @@ pub fn run() {
                 .args(["--host", "127.0.0.1", "--port", port_argument.as_str()])
                 .env("DESKTOP_MODE", "true")
                 .env("DESKTOP_TOKEN", &token)
+                .env("CLOUD_PLATFORM_URL", option_env!("LEARNFLOW_PLATFORM_URL").unwrap_or("https://learn.learnflow.club"))
                 .env("DATABASE_URL", database_url)
                 .env("SOURCE_CACHE_DIR", source_cache_dir.to_string_lossy().as_ref())
                 .env("REPO_FILES_DIR", source_cache_dir.to_string_lossy().as_ref())
@@ -1267,6 +1269,7 @@ pub fn run() {
                 config: DesktopRuntimeConfig {
                     api_base_url: format!("http://127.0.0.1:{port}/api"),
                     desktop_token: token,
+                    cloud_origin: option_env!("LEARNFLOW_PLATFORM_URL").unwrap_or("https://learn.learnflow.club").to_string(),
                 },
                 sidecar: Mutex::new(Some(child)),
                 pet_capability_token: Mutex::new(None),

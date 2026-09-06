@@ -9,6 +9,7 @@ import {
   type ArtifactReference, type PracticeCaseSummary, type ProjectPaper, type ProjectWorkflow, type WorkbenchState, type WorkflowMilestone,
 } from './project-workbench-api'
 import './project-workbench.css'
+import { isCloudDesktopRuntime } from './runtime-client'
 import { validateLocalWorkCaseCandidate } from '../plugins/learning_task_conversion/work-case'
 
 const SourceFilePage = lazy(() => import('./SourceFilePage'))
@@ -54,7 +55,7 @@ function SubmissionForm({ milestone, artifactRefs, onRemoveArtifact, onSubmit, b
   </form>
 }
 
-export default function ProjectWorkspacePage(props: Props) {
+function LocalProjectWorkspacePage(props: Props) {
   const { projectId, onOpenTutor, onOpenCheckpoint, onOpenFree, onOpenFile, onGenerateFiles, onPrepareTutor, renderTutor, onAskSelection, onOpenReview, onWorkspaceChange, onDirtyChange } = props
   const [workspace, setWorkspace] = useState<FormalProjectWorkspace>()
   const [workflow, setWorkflow] = useState<ProjectWorkflow>()
@@ -196,4 +197,47 @@ export default function ProjectWorkspacePage(props: Props) {
     </div>
     {resourcesOpen && <div className="pw-resources-overlay"><button className="pw-overlay-backdrop" aria-label="收起资料面板" onClick={() => setResourcesOpen(false)} /><ProjectContextPanel projectId={projectId} onClose={() => setResourcesOpen(false)} onOpenCheckpoint={(_, checkpoint) => { changeWorkbench({ active_checkpoint_id: checkpoint.id, active_tab: 'overview' }); setResourcesOpen(false) }} onOpenFree={onOpenFree} onOpenFile={openLearningFile} onGenerateFiles={onGenerateFiles} onWorkspaceChange={next => { setWorkspace(next); onWorkspaceChange?.(next) }} /></div>}
   </section>
+}
+
+function CloudProjectWorkspacePage(props: Props) {
+  const [workspace, setWorkspace] = useState<FormalProjectWorkspace>()
+  const [error, setError] = useState('')
+  const [tab, setTab] = useState<'learning' | 'files'>('learning')
+  const [openFiles, setOpenFiles] = useState<string[]>([])
+  const [activeFile, setActiveFile] = useState<string>()
+  useEffect(() => {
+    let live = true
+    setWorkspace(undefined)
+    setError('')
+    void loadFormalProject(props.projectId).then(value => {
+      if (live) setWorkspace(value)
+    }).catch(failure => { if (live) setError(failure instanceof Error ? failure.message : '云项目读取失败') })
+    return () => { live = false }
+  }, [props.projectId])
+  useEffect(() => { if (workspace) props.onPrepareTutor?.(workspace) }, [workspace, props.onPrepareTutor])
+  if (!workspace) return <section className="project-workspace-page"><p role="status">{error || '正在读取云端项目…'}</p></section>
+  return <section className="project-workspace-page">
+    <header><h1>{workspace.project.name}</h1><p>{workspace.project.objective}</p>
+      <p>项目与学习记录保存在云端。绑定目录、源文件与运行快照保留在这台 Mac。</p>
+      <button onClick={() => setTab('learning')}>学习与导师</button>
+      <button onClick={() => setTab('files')}>本机文件与实验</button>
+    </header>
+    <div hidden={tab !== 'learning'}>
+      {workspace.roadmap.checkpoints.map(checkpoint => <button key={checkpoint.id} onClick={() => props.onOpenCheckpoint(workspace, checkpoint)}>{checkpoint.title} · {checkpoint.learning_status}</button>)}
+      <button onClick={() => props.onOpenTutor(workspace)}>进入项目 Tutor</button>
+      {props.renderTutor?.(workspace)}
+    </div>
+    <div hidden={tab !== 'files'}>
+      <ProjectFileWorkbench projectId={props.projectId} openPaths={openFiles} activePath={activeFile}
+        onLayout={(paths, active) => { setOpenFiles(paths); setActiveFile(active) }}
+        onDirtyChange={props.onDirtyChange}
+        onAsk={selection => { props.onAskSelection?.({ ...selection, workspace }); setTab('learning') }}
+        onArtifact={() => setError('运行记录仍在本机。请用“请导师解释”明确发送内容；本机运行不会自动记作云端掌握证据。')} />
+    </div>
+    {error && <p role="alert">{error}</p>}
+  </section>
+}
+
+export default function ProjectWorkspacePage(props: Props) {
+  return isCloudDesktopRuntime() ? <CloudProjectWorkspacePage key={props.projectId} {...props} /> : <LocalProjectWorkspacePage {...props} />
 }

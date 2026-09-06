@@ -34,6 +34,7 @@ from app.api.learning_task_integrations import router as learning_task_integrati
 from app.api.experiments import router as experiments_router
 from app.api.project_workflows import router as project_workflows_router
 from app.services.auth import enforce_browser_request_security
+from app.services.cloud_connection import router as cloud_router, connection as cloud_connection
 
 
 @asynccontextmanager
@@ -51,6 +52,7 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
+        await cloud_connection().close()
         stop_memory_worker.set()
         try:
             if memory_task is not None:
@@ -92,6 +94,7 @@ async def browser_request_security(request: Request, call_next):
     return response
 
 app.include_router(health_router)
+app.include_router(cloud_router)
 app.include_router(projects_router, prefix="/api")
 app.include_router(phase1_router, prefix="/api")
 app.include_router(phase2_router, prefix="/api")

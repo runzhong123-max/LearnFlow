@@ -403,6 +403,7 @@ export type FormalDemoStatus = {
 }
 
 export type FormalRegistrationInput = {
+  invite_code?: string
   username: string
   password: string
   display_name: string

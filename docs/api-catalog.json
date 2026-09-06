@@ -810,6 +810,66 @@
     "kind": "HTTP"
   },
   {
+    "method": "DELETE",
+    "path": "/cloud/api/{path}",
+    "module": "app.services.cloud_connection",
+    "handler": "cloud_api",
+    "source": "apps/desktop/backend/app/services/cloud_connection.py",
+    "line": 195,
+    "host": "Desktop FastAPI",
+    "kind": "HTTP"
+  },
+  {
+    "method": "GET",
+    "path": "/cloud/api/{path}",
+    "module": "app.services.cloud_connection",
+    "handler": "cloud_api",
+    "source": "apps/desktop/backend/app/services/cloud_connection.py",
+    "line": 195,
+    "host": "Desktop FastAPI",
+    "kind": "HTTP"
+  },
+  {
+    "method": "HEAD",
+    "path": "/cloud/api/{path}",
+    "module": "app.services.cloud_connection",
+    "handler": "cloud_api",
+    "source": "apps/desktop/backend/app/services/cloud_connection.py",
+    "line": 195,
+    "host": "Desktop FastAPI",
+    "kind": "HTTP"
+  },
+  {
+    "method": "PATCH",
+    "path": "/cloud/api/{path}",
+    "module": "app.services.cloud_connection",
+    "handler": "cloud_api",
+    "source": "apps/desktop/backend/app/services/cloud_connection.py",
+    "line": 195,
+    "host": "Desktop FastAPI",
+    "kind": "HTTP"
+  },
+  {
+    "method": "POST",
+    "path": "/cloud/api/{path}",
+    "module": "app.services.cloud_connection",
+    "handler": "cloud_api",
+    "source": "apps/desktop/backend/app/services/cloud_connection.py",
+    "line": 195,
+    "host": "Desktop FastAPI",
+    "kind": "HTTP"
+  },
+  {
+    "method": "PUT",
+    "path": "/cloud/api/{path}",
+    "module": "app.services.cloud_connection",
+    "handler": "cloud_api",
+    "source": "apps/desktop/backend/app/services/cloud_connection.py",
+    "line": 195,
+    "host": "Desktop FastAPI",
+    "kind": "HTTP"
+  },
+  {
     "method": "GET",
     "path": "/api/architecture/registry",
     "module": "learnflow_core.api.architecture",
@@ -2587,7 +2647,7 @@
     "module": "native bridge",
     "handler": "capture_desktop_pet_ocr",
     "source": "apps/desktop/desktop/src-tauri/src/lib.rs",
-    "line": 492
+    "line": 493
   },
   {
     "host": "Desktop Tauri IPC",
@@ -2597,7 +2657,7 @@
     "module": "native bridge",
     "handler": "capture_desktop_pet_selection",
     "source": "apps/desktop/desktop/src-tauri/src/lib.rs",
-    "line": 540
+    "line": 541
   },
   {
     "host": "Desktop Tauri IPC",
@@ -2607,7 +2667,7 @@
     "module": "native bridge",
     "handler": "clear_desktop_auth_token",
     "source": "apps/desktop/desktop/src-tauri/src/lib.rs",
-    "line": 1088
+    "line": 1089
   },
   {
     "host": "Desktop Tauri IPC",
@@ -2617,7 +2677,7 @@
     "module": "native bridge",
     "handler": "close_desktop_pet",
     "source": "apps/desktop/desktop/src-tauri/src/lib.rs",
-    "line": 721
+    "line": 722
   },
   {
     "host": "Desktop Tauri IPC",
@@ -2627,7 +2687,7 @@
     "module": "native bridge",
     "handler": "desktop_pet_active_session",
     "source": "apps/desktop/desktop/src-tauri/src/lib.rs",
-    "line": 1073
+    "line": 1074
   },
   {
     "host": "Desktop Tauri IPC",
@@ -2637,7 +2697,7 @@
     "module": "native bridge",
     "handler": "desktop_pet_auth_token",
     "source": "apps/desktop/desktop/src-tauri/src/lib.rs",
-    "line": 1114
+    "line": 1115
   },
   {
     "host": "Desktop Tauri IPC",
@@ -2647,7 +2707,7 @@
     "module": "native bridge",
     "handler": "desktop_pet_preferences",
     "source": "apps/desktop/desktop/src-tauri/src/lib.rs",
-    "line": 583
+    "line": 584
   },
   {
     "host": "Desktop Tauri IPC",
@@ -2657,7 +2717,7 @@
     "module": "native bridge",
     "handler": "desktop_runtime_config",
     "source": "apps/desktop/desktop/src-tauri/src/lib.rs",
-    "line": 159
+    "line": 160
   },
   {
     "host": "Desktop Tauri IPC",
@@ -2667,7 +2727,7 @@
     "module": "native bridge",
     "handler": "open_desktop_main_path",
     "source": "apps/desktop/desktop/src-tauri/src/lib.rs",
-    "line": 948
+    "line": 949
   },
   {
     "host": "Desktop Tauri IPC",
@@ -2677,7 +2737,7 @@
     "module": "native bridge",
     "handler": "open_external_url",
     "source": "apps/desktop/desktop/src-tauri/src/lib.rs",
-    "line": 1016
+    "line": 1017
   },
   {
     "host": "Desktop Tauri IPC",
@@ -2687,7 +2747,7 @@
     "module": "native bridge",
     "handler": "open_platform_workspace",
     "source": "apps/desktop/desktop/src-tauri/src/lib.rs",
-    "line": 1008
+    "line": 1009
   },
   {
     "host": "Desktop Tauri IPC",
@@ -2697,7 +2757,7 @@
     "module": "native bridge",
     "handler": "reset_desktop_pet_geometry",
     "source": "apps/desktop/desktop/src-tauri/src/lib.rs",
-    "line": 692
+    "line": 693
   },
   {
     "host": "Desktop Tauri IPC",
@@ -2707,7 +2767,7 @@
     "module": "native bridge",
     "handler": "restore_desktop_pet_geometry",
     "source": "apps/desktop/desktop/src-tauri/src/lib.rs",
-    "line": 661
+    "line": 662
   },
   {
     "host": "Desktop Tauri IPC",
@@ -2717,7 +2777,7 @@
     "module": "native bridge",
     "handler": "store_desktop_pet_capability",
     "source": "apps/desktop/desktop/src-tauri/src/lib.rs",
-    "line": 1027
+    "line": 1028
   },
   {
     "host": "Desktop Tauri IPC",
@@ -2727,7 +2787,7 @@
     "module": "native bridge",
     "handler": "sync_desktop_pet_session",
     "source": "apps/desktop/desktop/src-tauri/src/lib.rs",
-    "line": 1049
+    "line": 1050
   },
   {
     "host": "Desktop Tauri IPC",
@@ -2737,7 +2797,7 @@
     "module": "native bridge",
     "handler": "update_desktop_pet_preferences",
     "source": "apps/desktop/desktop/src-tauri/src/lib.rs",
-    "line": 598
+    "line": 599
   },
   {
     "host": "Role Atlas / Graph Hub",

@@ -8,7 +8,7 @@
 
 | 宿主 | 方法与路径条目数 |
 |---|---:|
-| Desktop FastAPI | 255 |
+| Desktop FastAPI | 261 |
 | Desktop Node Tutor (dev/preview) | 3 |
 | Desktop Tauri IPC | 16 |
 | Role Atlas / Graph Hub | 46 |
@@ -127,6 +127,17 @@
 | POST | `/api/vnext-projects/{project_id}/sessions` | [create_project_free_session](../apps/desktop/backend/app/api/vnext_projects.py#L671) |
 | DELETE | `/api/vnext-projects/{project_id}/sources/{source_id}` | [remove_project_source](../apps/desktop/backend/app/api/vnext_projects.py#L697) |
 | POST | `/api/vnext-projects/{project_id}/sources/{source_id}/health` | [update_project_source_health](../apps/desktop/backend/app/api/vnext_projects.py#L1054) |
+
+### app.services.cloud_connection
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| DELETE | `/cloud/api/{path}` | [cloud_api](../apps/desktop/backend/app/services/cloud_connection.py#L195) |
+| GET | `/cloud/api/{path}` | [cloud_api](../apps/desktop/backend/app/services/cloud_connection.py#L195) |
+| HEAD | `/cloud/api/{path}` | [cloud_api](../apps/desktop/backend/app/services/cloud_connection.py#L195) |
+| PATCH | `/cloud/api/{path}` | [cloud_api](../apps/desktop/backend/app/services/cloud_connection.py#L195) |
+| POST | `/cloud/api/{path}` | [cloud_api](../apps/desktop/backend/app/services/cloud_connection.py#L195) |
+| PUT | `/cloud/api/{path}` | [cloud_api](../apps/desktop/backend/app/services/cloud_connection.py#L195) |
 
 ### learnflow_core.api.architecture
 
@@ -430,22 +441,22 @@
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
-| invoke | `capture_desktop_pet_ocr` | [capture_desktop_pet_ocr](../apps/desktop/desktop/src-tauri/src/lib.rs#L492) |
-| invoke | `capture_desktop_pet_selection` | [capture_desktop_pet_selection](../apps/desktop/desktop/src-tauri/src/lib.rs#L540) |
-| invoke | `clear_desktop_auth_token` | [clear_desktop_auth_token](../apps/desktop/desktop/src-tauri/src/lib.rs#L1088) |
-| invoke | `close_desktop_pet` | [close_desktop_pet](../apps/desktop/desktop/src-tauri/src/lib.rs#L721) |
-| invoke | `desktop_pet_active_session` | [desktop_pet_active_session](../apps/desktop/desktop/src-tauri/src/lib.rs#L1073) |
-| invoke | `desktop_pet_auth_token` | [desktop_pet_auth_token](../apps/desktop/desktop/src-tauri/src/lib.rs#L1114) |
-| invoke | `desktop_pet_preferences` | [desktop_pet_preferences](../apps/desktop/desktop/src-tauri/src/lib.rs#L583) |
-| invoke | `desktop_runtime_config` | [desktop_runtime_config](../apps/desktop/desktop/src-tauri/src/lib.rs#L159) |
-| invoke | `open_desktop_main_path` | [open_desktop_main_path](../apps/desktop/desktop/src-tauri/src/lib.rs#L948) |
-| invoke | `open_external_url` | [open_external_url](../apps/desktop/desktop/src-tauri/src/lib.rs#L1016) |
-| invoke | `open_platform_workspace` | [open_platform_workspace](../apps/desktop/desktop/src-tauri/src/lib.rs#L1008) |
-| invoke | `reset_desktop_pet_geometry` | [reset_desktop_pet_geometry](../apps/desktop/desktop/src-tauri/src/lib.rs#L692) |
-| invoke | `restore_desktop_pet_geometry` | [restore_desktop_pet_geometry](../apps/desktop/desktop/src-tauri/src/lib.rs#L661) |
-| invoke | `store_desktop_pet_capability` | [store_desktop_pet_capability](../apps/desktop/desktop/src-tauri/src/lib.rs#L1027) |
-| invoke | `sync_desktop_pet_session` | [sync_desktop_pet_session](../apps/desktop/desktop/src-tauri/src/lib.rs#L1049) |
-| invoke | `update_desktop_pet_preferences` | [update_desktop_pet_preferences](../apps/desktop/desktop/src-tauri/src/lib.rs#L598) |
+| invoke | `capture_desktop_pet_ocr` | [capture_desktop_pet_ocr](../apps/desktop/desktop/src-tauri/src/lib.rs#L493) |
+| invoke | `capture_desktop_pet_selection` | [capture_desktop_pet_selection](../apps/desktop/desktop/src-tauri/src/lib.rs#L541) |
+| invoke | `clear_desktop_auth_token` | [clear_desktop_auth_token](../apps/desktop/desktop/src-tauri/src/lib.rs#L1089) |
+| invoke | `close_desktop_pet` | [close_desktop_pet](../apps/desktop/desktop/src-tauri/src/lib.rs#L722) |
+| invoke | `desktop_pet_active_session` | [desktop_pet_active_session](../apps/desktop/desktop/src-tauri/src/lib.rs#L1074) |
+| invoke | `desktop_pet_auth_token` | [desktop_pet_auth_token](../apps/desktop/desktop/src-tauri/src/lib.rs#L1115) |
+| invoke | `desktop_pet_preferences` | [desktop_pet_preferences](../apps/desktop/desktop/src-tauri/src/lib.rs#L584) |
+| invoke | `desktop_runtime_config` | [desktop_runtime_config](../apps/desktop/desktop/src-tauri/src/lib.rs#L160) |
+| invoke | `open_desktop_main_path` | [open_desktop_main_path](../apps/desktop/desktop/src-tauri/src/lib.rs#L949) |
+| invoke | `open_external_url` | [open_external_url](../apps/desktop/desktop/src-tauri/src/lib.rs#L1017) |
+| invoke | `open_platform_workspace` | [open_platform_workspace](../apps/desktop/desktop/src-tauri/src/lib.rs#L1009) |
+| invoke | `reset_desktop_pet_geometry` | [reset_desktop_pet_geometry](../apps/desktop/desktop/src-tauri/src/lib.rs#L693) |
+| invoke | `restore_desktop_pet_geometry` | [restore_desktop_pet_geometry](../apps/desktop/desktop/src-tauri/src/lib.rs#L662) |
+| invoke | `store_desktop_pet_capability` | [store_desktop_pet_capability](../apps/desktop/desktop/src-tauri/src/lib.rs#L1028) |
+| invoke | `sync_desktop_pet_session` | [sync_desktop_pet_session](../apps/desktop/desktop/src-tauri/src/lib.rs#L1050) |
+| invoke | `update_desktop_pet_preferences` | [update_desktop_pet_preferences](../apps/desktop/desktop/src-tauri/src/lib.rs#L599) |
 
 
 ## Role Atlas / Graph Hub

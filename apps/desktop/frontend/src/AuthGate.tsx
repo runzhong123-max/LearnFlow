@@ -18,6 +18,7 @@ import {
   type FormalRegistrationInput,
 } from './formal-runtime.ts'
 import styles from './AuthGate.module.css'
+import { isCloudDesktopRuntime, isDesktopRuntime, switchDesktopWorkspace, getRuntimeClientState } from './runtime-client'
 import { PASSWORD_MIN_LENGTH, PASSWORD_POLICY_MESSAGE, passwordPolicyError } from './password-policy.ts'
 
 export type AuthGateSession = {
@@ -169,6 +170,7 @@ export default function AuthGate({ children }: AuthGateProps) {
       return
     }
     const input: FormalRegistrationInput = {
+      ...(isCloudDesktopRuntime() ? { invite_code: field(data, 'invite_code') } : {}),
       username: field(data, 'username'),
       password,
       display_name: field(data, 'display_name'),
@@ -244,14 +246,16 @@ export default function AuthGate({ children }: AuthGateProps) {
 
         {mode === 'login' ? (
           <form className={styles.form} onSubmit={submitLogin}>
-            <header><p className={styles.eyebrow}>WELCOME BACK</p><h2 id="auth-title">继续你的学习</h2><span>输入账号与密码。LearnFlow 不再自动选择开发学习者。</span></header>
+            <header><p className={styles.eyebrow}>{isCloudDesktopRuntime() ? 'LEARNFLOW CLOUD' : 'WELCOME BACK'}</p><h2 id="auth-title">{isCloudDesktopRuntime() ? '登录你的 LearnFlow 账号' : '继续本地学习'}</h2><span>{isCloudDesktopRuntime() ? `使用网页端同一账号与密码，项目和学习记录保存在 ${getRuntimeClientState().cloudOrigin}。` : '此处使用本机旧账号，与云端账号独立。'}</span></header>
             <label><span>用户名</span><input name="username" autoComplete="username" required maxLength={32} autoFocus /></label>
             <label><span>密码</span><input name="password" type="password" autoComplete="current-password" required maxLength={128} /></label>
             {error ? <p className={styles.error} role="alert">{error}</p> : null}
             <button className={styles.primary} type="submit" disabled={busy}>{busy ? '正在登录…' : '登录 LearnFlow'}</button>
+            {isDesktopRuntime() && <button type="button" disabled={busy} onClick={() => switchDesktopWorkspace(!isCloudDesktopRuntime())}>{isCloudDesktopRuntime() ? '打开旧本地工作区（保留原数据）' : '返回云端账号登录'}</button>}
           </form>
         ) : (
           <form className={styles.form} onSubmit={submitRegistration}>
+            {isCloudDesktopRuntime() && <label><span>邀请码</span><input name="invite_code" autoComplete="off" required maxLength={256} /></label>}
             <header><p className={styles.eyebrow}>创建账号</p><h2 id="auth-title">建立独立学习档案</h2><span>填写基本信息，创建你的专属学习空间。</span></header>
             <div className={styles.grid}>
               <label><span>用户名</span><input name="username" autoComplete="username" required minLength={3} maxLength={32} pattern={"[A-Za-z0-9_\\-]+"} title="仅支持字母、数字、下划线和连字符" /></label>
