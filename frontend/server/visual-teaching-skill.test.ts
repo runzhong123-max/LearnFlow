@@ -7,6 +7,7 @@ import {
   parseVisualTeachingBrief,
   validateVisualTeachingExplanation,
   visualTeachingReply,
+  visualTeachingBriefPrompt,
 } from './visual-teaching-skill.ts'
 import { executeTutorAgentTool } from './tool-runtime.ts'
 
@@ -55,6 +56,18 @@ test('independent explanation is valid before any brief exists', () => {
   assert.equal(bundle.visualBrief, undefined)
   assert.equal(bundle.explanation, explanation)
   assert.equal(bundle.terminalState, 'explanation_only')
+})
+
+test('committed teaching code and math keep their newlines through planning and visual failure', () => {
+  const explanation = `${JSON.parse(validAnimation).explanation}\n\n观察初始状态到结果的变化：\n\n$$\nx_{t+1}=x_t+1\n$$\n\n\`\`\`python\nfor x in range(3):\n    print(x + 1)\n\`\`\`\n\n代码中的缩进表示循环体，公式表示同一个更新关系。`
+  assert.equal(validateVisualTeachingExplanation(explanation), explanation)
+  assert.ok(visualTeachingBriefPrompt('animation', '演示变化', explanation).includes(explanation))
+  const brief = parseVisualTeachingBrief(validAnimation, 'animation', '演示分区', explanation)
+  const bundle = completeVisualTeachingBundle(brief, undefined, new Error('timeout'))
+  assert.equal(bundle.explanation, explanation)
+  assert.ok(visualTeachingReply(bundle).startsWith(explanation))
+  assert.throws(() => validateVisualTeachingExplanation(explanation + '长'.repeat(5000)), /explanation_too_long/)
+  assert.throws(() => visualTeachingBriefPrompt('animation', '演示变化', explanation + '长'.repeat(5000)), /explanation_too_long/)
 })
 
 test('visual failure has a legal explanation-only terminal with unchanged prose', () => {

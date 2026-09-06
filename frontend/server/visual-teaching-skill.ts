@@ -66,8 +66,10 @@ export function visualTeachingExplanationPrompt(modality: VisualTeachingModality
 }
 
 export function validateVisualTeachingExplanation(raw: string) {
-  const explanation = compact(raw, 5000)
+  // This is committed Markdown, not a label: whitespace is significant in code/math.
+  const explanation = String(raw || '').trim()
   const errors: string[] = []
+  if (explanation.length > 5000) errors.push('explanation_too_long')
   if ([...explanation].length < 100) errors.push('explanation_too_short')
   if (explanation.split(/[。！？.!?]+/).filter(Boolean).length < 3) errors.push('explanation_sentences_insufficient')
   const substance = explanation.match(/(?:对象|关系|初始|状态|过程|变化|更新|移动|比较|交换|传递|聚合|递归|结果|边界|条件|阶段|before|after|state|change|result)/gi)?.length || 0
@@ -82,6 +84,7 @@ export function visualTeachingBriefPrompt(
   explanation: string,
   repair = false,
 ) {
+  if (explanation.length > 5000) throw new Error('visual_teaching_explanation_invalid:explanation_too_long')
   const modalityRule = modality === 'animation'
     ? 'storyboard.frames 必须包含至少两个真实状态变化；对象在步骤间保持稳定 id。'
     : 'relations 必须表达至少一个真实关系；initial 与最终状态要概括图解所呈现的同一稳定结构。'
@@ -98,7 +101,7 @@ export function visualTeachingBriefPrompt(
     '对象 id 只能使用小写 ASCII 字母、数字和下划线；所有引用必须存在。对象和关系全集先声明，初态用 visibleIds 控制；后续创建和连线只改变可见性。无法确认的值、关系或步骤不要编造。禁止坐标、SVG、CSS、动画时长和主题专用模板名。',
     repair ? '上一版未通过结构门。请补齐真实对象、关系、状态与变化，但不要改变学习者主题。' : '',
     `学习者原始请求：${compact(request, 2200)}`,
-    `已提交讲解：${compact(explanation, 5000)}`,
+    `已提交讲解：${explanation}`,
   ].filter(Boolean).join('\n')
 }
 
@@ -112,7 +115,7 @@ export function parseVisualTeachingBrief(
   committedExplanation?: string,
 ): VisualTeachingBrief {
   const payload = jsonPayload(raw)
-  const explanation = compact(committedExplanation || payload.explanation, 5000)
+  const explanation = String(committedExplanation ?? payload.explanation ?? '').trim()
   const topic = compact(payload.topic, 240)
   const learningGoal = compact(payload.learning_goal, 360)
   const modalityRationale = compact(payload.modality_rationale, 360)
@@ -156,6 +159,7 @@ export function parseVisualTeachingBrief(
     : []
 
   const errors: string[] = []
+  if (explanation.length > 5000) errors.push('explanation_too_long')
   if ([...explanation].length < 100 || explanation.split(/[。！？.!?]+/).filter(Boolean).length < 3) errors.push('explanation_insufficient')
   if (!topic || !learningGoal || !modalityRationale || !claimBoundary) errors.push('brief_identity_missing')
   if (!storyboardContext && objects.length < 2) errors.push('brief_objects_insufficient')

@@ -49,6 +49,9 @@ test('role capability plugin is discovered declaratively with explanation-only r
   assert.match(loaded.skillInstructions(activation), /matchStatus=not_found/)
   assert.match(loaded.skillInstructions(activation), /不得调用 explore_role/)
   assert.match(loaded.skillInstructions(activation), /先调用 search_graph_hub/)
+  assert.match(loaded.skillInstructions(activation), /正文使用对象名称/)
+  assert.match(loaded.skillInstructions(activation), /关系方向和类型的语义必须严格服从/)
+  assert.doesNotMatch(loaded.skillInstructions(activation), /应就近保留对象 ID|引用对象 ID，并区分/)
 })
 
 function canonicalValue(value: unknown): unknown {

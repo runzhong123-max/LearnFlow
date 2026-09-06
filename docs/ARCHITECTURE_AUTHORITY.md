@@ -1,5 +1,7 @@
 # LearnFlow 架构权威与维护边界
 
+Contract impact（`2026-09-06.4`）：登记 `teaching_response_v1` 只读表达数据契约，统一浏览器与正式 Tutor 的回答写法：直接回答、机制与贯穿例子、局部追问、代码和公式的教学衔接。权威文案位于 `backend/app/contracts/teaching-response.v1.json`，前端消费确定性导出并检查漂移。它不是新增 Product Skill 或教学策略机；原 `reply`/Markdown、三类 Agent、SkillRun、视觉意图门、EvidenceEvent 和五核语义不变，无数据库迁移。岗位插件将原始标识保留在工具结果与详情，正文使用准确名称与自然关系；视觉讲解保留 Markdown 换行，过长输入明确拒绝而不截断代码/公式。详见 [教学表达实现](implementation/TEACHING_RESPONSE_PRESENTATION.md)。
+
 Contract impact（`2026-09-06.2`）：迁移五核记忆证据与即时教学升级，保留当前学习路径 v2、岗位插件与任务交接合同。新增 semantic_observation_proposed 与 vnext_teaching_input_received 注册事件；模型观察仅为短期候选，教学指导由确定性 reducer 生成有 scope 的控制投影。Module policy 升至 memory-module-version-v2，完善撤回、独立事件门槛、检索过滤与偏好更新。旧事件与数据库结构保留；新旧客户端增量兼容，前后端应共同发布。详见 [迁移记录](MEMORY_UPGRADE_MIGRATION.md)。
 
 Contract impact（`2026-09-06.1`）：新增学习路径 v2 源数据契约、岗位语义挂载及图谱特殊节点新增批次的确定性校验器，登记于 `DATA_CONTRACTS` 并纳入 registry digest 与实现漂移检查。节点按课程／技能领域／知识／技能区分，包含关系与先修关系分别校验；包、图谱和节点版本显式固定，source provenance 与 LearnFlow 语义 ownership 分离。108 个官方节点全部提供具体简介，保留 v1 ID、187 条边和个人覆盖层，Role Atlas 同步 v1/v2 只读制品。此次没有新增 ACI 工具、Action Board 写能力或 EvidenceEvent；特殊节点持久化与岗位匹配器切换尚未实现。源图生成不写学习者状态。详见 [契约](product/LEARNING_PATH_CONTRACT_V2.md) 与 [后续工作流设计](implementation/2026-09-06-learning-path-contract-and-graph-workflow.md)。

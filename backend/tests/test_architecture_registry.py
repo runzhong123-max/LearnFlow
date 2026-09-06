@@ -45,7 +45,7 @@ def test_registry_has_three_agents_five_kernels_and_no_drift():
     assert set(ACTION_BOARD) == set(CAPABILITY_OWNERS)
     assert validate_registry() == []
     manifest = registry_manifest()
-    assert REGISTRY_VERSION == "2026-09-06.3"
+    assert REGISTRY_VERSION == "2026-09-06.4"
     assert manifest["schema_valid"] is True
     assert manifest["valid"] is (
         manifest["schema_valid"] and manifest["implementation_valid"]
@@ -101,7 +101,7 @@ def test_learning_path_data_contracts_are_bound_but_never_learner_writers():
     assert {row["id"] for row in manifest["data_contracts"]} == set(DATA_CONTRACTS)
     root = Path(__file__).resolve().parents[2]
     for contract_id, contract in DATA_CONTRACTS.items():
-        assert contract["owner"] == ("tutor_agent" if contract_id == "ecosystem_gateway_v1" else "learning_design_agent")
+        assert contract["owner"] == ("tutor_agent" if contract_id in {"ecosystem_gateway_v1", "teaching_response_v1"} else "learning_design_agent")
         assert contract["kernel_reads"] == []
         assert contract["kernel_write_path"] == "none"
         assert contract["schema_version"] in (root / contract["authority_path"]).read_text()

@@ -865,6 +865,14 @@ Reducer 仍负责单事件的确定性归约。某条事件当时未形成某核
 
 ## 12. 上下文装配与 Handoff
 
+Tutor 的稳定表达前缀统一消费注册表 `teaching_response_v1`，权威内容为
+`backend/app/contracts/teaching-response.v1.json`；浏览器构建使用确定性导出，正式后端读取同源内容。
+它只约束既有 `reply` 的教学表达：直接回答、按需解释机制、贯穿例子和必要的公式/代码/视觉观察提示。
+普通解释不默认追加自检题；正式 SkillRun 的当前动作和答案隔离规则优先。局部追问只补局部，
+不以表达规范替代教学策略、阶段推进或掌握判定。代码与公式使用已有 Markdown renderer，
+视觉仍需显式请求和已校验产物；不得虚构交互组件或引用。动态学习者上下文不写入这份稳定前缀。
+详见 [教学表达实现](implementation/TEACHING_RESPONSE_PRESENTATION.md)。
+
 Tutor 的上下文不是简单拼接全部历史，而是分层装配：
 
 - 当前 session 最近消息。

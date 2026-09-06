@@ -31,6 +31,7 @@ from app.services.project_proposals import (
     proposal_view, start_resource_search,
 )
 from app.services.checkpoint_context import build_checkpoint_tutor_context
+from app.services.teaching_response import teaching_response_prompt
 from app.services.five_kernel_context import (
     build_five_kernel_context,
     compact_projection_from_packet,
@@ -2150,6 +2151,8 @@ async def _generate_tutor_reply(
     rendered_context = _render_prompt_context(context)
     system = (
         TUTOR_SYSTEM_PROMPT
+        + "\n\n"
+        + teaching_response_prompt()
         + "\n\n"
         + scope_prompt
         + "\n\n"

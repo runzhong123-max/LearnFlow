@@ -17,7 +17,7 @@ from typing import Any
 from app.services.action_board import ACTION_BOARD
 
 
-REGISTRY_VERSION = "2026-09-06.3"
+REGISTRY_VERSION = "2026-09-06.4"
 EVENT_SCHEMA_VERSION = "learnflow.evidence.v1"
 SKILL_SPEC_VERSION = "learnflow.skill.v3"
 # The learner-facing SkillSpec changed in this registry release.
@@ -28,6 +28,17 @@ LIFECYCLE_STATES = ("implemented", "optional_unimplemented", "deprecated")
 # Pure source-data validators/exporters, not Agent-callable tools or learner writers.
 # The referenced TypeScript module owns field semantics; this registry owns discovery.
 DATA_CONTRACTS = {
+    "teaching_response_v1": {
+        "schema_version": "learnflow-teaching-response/v1",
+        "owner": "tutor_agent",
+        "origin": "builtin",
+        "mode": "response_presentation",
+        "lifecycle": "implemented",
+        "authority_path": "backend/app/contracts/teaching-response.v1.json",
+        "binding_ids": ["py:tutor.teaching_response", "frontend:tutor.teaching_response"],
+        "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "shared prompt only; existing reply/Markdown and visual tools unchanged; no new SkillRun, API, event or learner state",
+    },
     "ecosystem_gateway_v1": {
         "schema_version": "learnflow-ecosystem/v1", "owner": "tutor_agent",
         "origin": "builtin", "mode": "scoped_external_adapter", "lifecycle": "implemented",
@@ -1488,6 +1499,7 @@ _REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 
 
 _PYTHON_BINDING_TARGETS = {
+    "py:tutor.teaching_response": ("app.services.teaching_response", "teaching_response_prompt"),
     "py:ecosystem.dispatch": ("app.services.ecosystem_gateway", "dispatch"),
     "py:curriculum.read": ("app.services.curriculum_catalog", "read_graph"),
     "py:curriculum.resolve": ("app.services.curriculum_catalog", "resolve"),
@@ -1646,6 +1658,7 @@ _API_BINDING_TARGETS = {
 
 
 _FRONTEND_HANDLER_TARGETS = {
+    "frontend:tutor.teaching_response": ("frontend/src/teaching-response.ts", "teachingResponsePrompt", ""),
     "frontend:agent_runtime.run": ("frontend/server/agent-runtime.ts", "runTutorAgentTurn", ""),
     "frontend:plugin.registry": ("frontend/src/plugin-api.ts", "LearnFlowPluginRegistry", ""),
     "frontend:plugin.loader": ("frontend/server/plugin-loader.ts", "loadLearnFlowPluginRegistry", ""),

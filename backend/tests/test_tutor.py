@@ -2117,7 +2117,9 @@ def test_explanation_mode_uses_latency_safe_plain_reply(
             raise AssertionError("简单讲解不应先等待结构化输出")
 
         async def ainvoke(self, messages):
+            from app.services.teaching_response import teaching_response_prompt
             assert "本轮使用纯文本兼容输出" in messages[0].content
+            assert teaching_response_prompt() in messages[0].content
             return type("PlainResult", (), {
                 "content": "核方法用核函数隐式比较高维空间中的样本关系。",
             })()
@@ -2133,6 +2135,29 @@ def test_explanation_mode_uses_latency_safe_plain_reply(
     assert response.status_code == 200, response.text
     assert response.json()["chat_mode"]["id"] == "explain"
     assert response.json()["message"] == "核方法用核函数隐式比较高维空间中的样本关系。"
+
+
+def test_native_teaching_reply_preserves_formula_and_code_blocks(client: TestClient, monkeypatch):
+    from app.services.teaching_response import teaching_response_prompt
+    reply = "参数更新按下面的关系计算：\n\n$$\nw_{t+1}=w_t-0.1g_t\n$$\n\n```python\nfor x in range(3):\n    print(x + 1)\n```\n\n缩进表示循环体。"
+
+    class Model:
+        def __init__(self, **_kwargs):
+            pass
+
+        async def ainvoke(self, messages):
+            assert teaching_response_prompt() in messages[0].content
+            return type("Reply", (), {"content": reply})()
+
+    monkeypatch.setattr("app.services.tutor_service.ChatOpenAI", Model)
+    monkeypatch.setattr("app.services.tutor_service.settings.llm_api_key", "test-key")
+    session_id = new_session(client)
+    response = client.post(f"/api/agent/sessions/{session_id}/turns", json={
+        "message": "请解释一下参数更新，给公式和 Python 代码",
+        "client_turn_id": f"teaching-format-{uuid.uuid4().hex}",
+    })
+    assert response.status_code == 200, response.text
+    assert response.json()["message"] == reply
 
 
 def test_structured_timeout_preserves_budget_for_plain_fallback(
