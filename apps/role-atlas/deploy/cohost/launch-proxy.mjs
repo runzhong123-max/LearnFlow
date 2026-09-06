@@ -1,5 +1,6 @@
 import { createHmac, randomUUID } from "node:crypto";
 import http from "node:http";
+import https from "node:https";
 
 const port = Number(process.env.PORT || 3010);
 const roleAtlasUrl = process.env.ROLE_ATLAS_INTERNAL_URL || "http://role-atlas:3000";
@@ -22,11 +23,22 @@ async function readBody(req) {
   return JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
 }
 async function upstream(url, options = {}) {
-  const response = await fetch(url, { redirect: "manual", ...options });
-  const text = await response.text();
+  // Node fetch does not honor a custom Host header. The internal Atlas Vite
+  // server expects localhost, just like the existing Caddy upstream route.
+  const { status, text } = await new Promise((resolve, reject) => {
+    const transport = new URL(url).protocol === "https:" ? https : http;
+    const request = transport.get(url, options, (response) => {
+      const chunks = [];
+      response.on("data", (chunk) => chunks.push(chunk));
+      response.on("error", reject);
+      response.on("end", () => resolve({ status: response.statusCode || 502, text: Buffer.concat(chunks).toString("utf8") }));
+    });
+    request.setTimeout(10_000, () => request.destroy(new Error("UPSTREAM_TIMEOUT")));
+    request.on("error", reject);
+  });
   let data = null;
   try { data = JSON.parse(text); } catch { /* handled as upstream failure */ }
-  return { response, data };
+  return { response: { status, ok: status >= 200 && status < 300 }, data };
 }
 function sign(payload) {
   const body = b64(JSON.stringify(payload));
