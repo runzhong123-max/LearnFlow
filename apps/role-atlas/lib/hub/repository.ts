@@ -1,3 +1,4 @@
+import { classifyHubEntry } from "./taxonomy";
 import { getPackageArtifact } from "@/lib/packages/artifact-store";
 import { getRegistryPackage, listRegistryPackages } from "@/lib/registry/repository";
 import { hubStrings, type HubEntry } from "./discovery";
@@ -91,7 +92,7 @@ export async function listPublicHubEntries(): Promise<HubEntry[]> {
           ? [{ id: node.id, label: node.label, type: String(node.type || "object"), aliases: hubStrings(node.aliases) }] : []),
       } satisfies HubEntry;
     }));
-    for (const entry of batch) if (entry) entries.push(entry);
+    for (const entry of batch) if (entry) entries.push({ ...entry, categories: classifyHubEntry(entry) });
   }
   return entries;
 }

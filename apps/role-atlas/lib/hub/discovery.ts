@@ -1,3 +1,4 @@
+import { classifyHubEntry, HUB_TAXONOMY } from "./taxonomy";
 /** Public discovery projection. No private project, draft release or source content is exported. */
 export type HubEntry = {
   id: string;
@@ -40,8 +41,9 @@ export function searchHub(entries: HubEntry[], input: { query?: string; category
   const query = String(input.query || "").trim().slice(0, 500);
   const normalized = normalizeHubQuery(query);
   const words = terms(query);
-  const categories = [...new Set(entries.flatMap(entry => entry.categories))].sort((a, b) => a.localeCompare(b, "zh"));
-  const ranked = entries.flatMap(entry => {
+  const classified = entries.map(entry => ({ ...entry, categories: classifyHubEntry(entry) }));
+  const categories = [...new Set([...HUB_TAXONOMY.map(category => category.label), ...classified.flatMap(entry => entry.categories)])].sort((a, b) => a.localeCompare(b, "zh"));
+  const ranked = classified.flatMap(entry => {
     if (input.category && !entry.categories.includes(input.category)) return [];
     const title = Math.max(textScore(normalized, words, entry.title), textScore(normalized, words, entry.packageId));
     const aliases = entry.aliases.filter(alias => textScore(normalized, words, alias) > 0);
@@ -60,6 +62,7 @@ export function searchHub(entries: HubEntry[], input: { query?: string; category
   }).sort((a, b) => b.score - a.score || a.entry.title.localeCompare(b.entry.title, "zh") || a.entry.id.localeCompare(b.entry.id));
   const limit = Math.min(100, Math.max(1, Math.trunc(Number(input.limit) || 20)));
   const offset = Math.max(0, Math.trunc(Number(input.offset) || 0));
-  return { query, categories, total: ranked.length, offset, limit, items: ranked.slice(offset, offset + limit),
+  const categoryCounts = Object.fromEntries(categories.map(category => [category, classified.filter(entry => entry.categories.includes(category)).length]));
+  return { query, categories, categoryCounts, total: ranked.length, offset, limit, items: ranked.slice(offset, offset + limit),
     nextOffset: offset + limit < ranked.length ? offset + limit : null };
 }

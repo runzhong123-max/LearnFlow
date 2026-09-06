@@ -32,7 +32,7 @@ export default function GraphHubMarketplace({ initialPackages, initialQuery = ""
       <div className="hub-hero-copy">
         <span className="hub-eyebrow"><Sparkles size={13} /> OPEN GRAPH REPOSITORIES</span>
         <h1>发现、托管与共建<br /><em>岗位知识图谱</em></h1>
-        <p>每个岗位包都是一个可验证、可版本化、可复用的图谱仓库。浏览语义图谱、事理森林与证据来源，然后直接用于 Role Atlas 或 LearnFlow。</p>
+        <p>先按领域探索岗位图谱，再检索岗位名称、别名和能力。分类目录持续开放，新发布的图谱自动归类；暂未收录的领域欢迎共建。</p>
         <label className="hub-search"><Search size={19} /><input aria-label="搜索图谱仓库" value={query} onChange={(event) => { setQuery(event.target.value); setOffset(0); }} placeholder="搜索岗位、别名、能力、行业或 package ID" /></label>
         <div className="hub-trust"><span><ShieldCheck size={14} /> 内容哈希校验</span><span><GitBranch size={14} /> 不可变版本历史</span><span><BadgeCheck size={14} /> 来源与证据可追溯</span></div>
       </div>
@@ -44,21 +44,20 @@ export default function GraphHubMarketplace({ initialPackages, initialQuery = ""
 
     <section className="hub-market" id="repositories">
       <div className="hub-section-title"><div><span>CURATED & COMMUNITY</span><h2>图谱仓库</h2><p>像浏览开源项目一样，找到可以信任和复用的岗位知识基础。</p></div><a href={roleAtlasHref(roleAtlasBaseUrl, "/projects/new")}>创建你的岗位图谱 <ArrowRight size={14} /></a></div>
-      <div className="hub-filter-row">{industries.map((industry) => <button type="button" aria-pressed={filter === industry} className={filter === industry ? "active" : ""} key={industry} onClick={() => { setFilter(industry); setOffset(0); }}>{industry || "全部"}</button>)}</div>
+      <div className="hub-filter-row">{industries.map((industry) => <button type="button" aria-pressed={filter === industry} className={filter === industry ? "active" : ""} key={industry} onClick={() => { setFilter(industry); setOffset(0); }}>{industry || "全部"}（{industry ? result.categoryCounts[industry] || 0 : initialPackages.length}）</button>)}</div>
       <p role="status">{result.total} 个匹配仓库{query.trim() ? " · 按相关性排序" : ""}</p>
       {packages.length ? <div className="hub-repo-grid">{packages.map(({ entry: item, reasons }) => {
         const recommended = item.release;
-        const industry = item.categories[0] || "尚未分类";
         return <article className="hub-repo-card" key={item.id}>
           <div className="hub-repo-card-top"><span className="hub-repo-icon"><PackageOpen size={21} /></span><span className="hub-verified"><BadgeCheck size={14} /> {item.maintainerName || "社区维护"}</span></div>
           <Link href={`/hub/${encodeURIComponent(item.id)}`}><h3>{item.title}</h3></Link>
           <code>{item.packageId}</code>
           <p>{item.summary || "一个由 Role Atlas 托管的版本化岗位图谱仓库。"}</p>
           {reasons.length > 0 && <small>{reasons.join(" · ")}</small>}
-          <div className="hub-topic-list"><span>{industry}</span><span>{item.evidencePolicy === "metadata" ? "证据元数据" : item.evidencePolicy}</span><span>协议 {item.protocolRange}</span></div>
+          <div className="hub-topic-list">{item.categories.map(category => <span key={category}>{category}</span>)}<span>{item.evidencePolicy === "metadata" ? "证据元数据" : item.evidencePolicy}</span><span>协议 {item.protocolRange}</span></div>
           <footer><span><GitBranch size={13} /> 推荐版本</span><span><Box size={13} /> v{recommended.packageVersion}</span><Link href={`/hub/${encodeURIComponent(item.id)}`}>查看仓库 <ArrowRight size={13} /></Link></footer>
         </article>;
-      })}</div> : <div className="hub-empty"><Search size={26} /><b>没有匹配的图谱仓库</b><span>换一个关键词或行业筛选试试。</span></div>}
+      })}</div> : <div className="hub-empty"><Search size={26} /><b>没有匹配的图谱仓库</b><span>{filter && !result.categoryCounts[filter] ? "该分类已开放，暂未收录公开岗位包。发布后会自动归类。" : "换一个关键词或分类筛选试试。"}</span><a href={roleAtlasHref(roleAtlasBaseUrl, "/projects/new")}>共建岗位图谱 <ArrowRight size={14} /></a></div>}
       {result.total > result.limit && <div className="hub-filter-row"><button type="button" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - result.limit))}>上一页</button><span>{Math.floor(offset / result.limit) + 1} / {Math.ceil(result.total / result.limit)}</span><button type="button" disabled={result.nextOffset === null} onClick={() => setOffset(result.nextOffset || 0)}>下一页</button></div>}
     </section>
 

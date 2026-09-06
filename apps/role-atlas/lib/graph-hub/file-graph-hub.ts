@@ -1,3 +1,4 @@
+import { classifyHubEntry } from "../hub/taxonomy";
 import { constants } from "node:fs";
 import { access, mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
@@ -89,6 +90,7 @@ async function entryFor(root: string, submission: GraphHubSubmission, audienceSu
   if (!publicEntry && !ownerEntry) return undefined;
   const document = validateDocument(JSON.parse(await readFile(join(root, submission.objectPath), "utf8")));
   return {
+    categories: classifyHubEntry({ title: submission.title, summary: submission.summary, aliases: submission.keywords }),
     graphId: submission.graphId,
     graphVersion: submission.graphVersion,
     graphType: submission.graphType,
@@ -259,25 +261,27 @@ function textScore(queryTerms: string[], text: string) {
   return queryTerms.reduce((sum, term) => sum + (target === term ? 12 : target.includes(term) ? Math.min(8, 2 + term.length) : 0), 0);
 }
 
-export function searchGraphHubCatalog(catalog: GraphHubCatalog, input: { query: string; actorSubjectId?: string; limit?: number }): GraphHubSearchResult[] {
+export function searchGraphHubCatalog(catalog: GraphHubCatalog, input: { query: string; actorSubjectId?: string; limit?: number; category?: string }): GraphHubSearchResult[] {
   if (catalog.audienceSubjectId && catalog.audienceSubjectId !== input.actorSubjectId) throw new Error("GRAPH_HUB_AUDIENCE_MISMATCH");
   const queryTerms = terms(input.query).slice(0, 40);
-  if (!queryTerms.length) return [];
+
   return catalog.entries.flatMap((entry) => {
     if (entry.access === "owner" && entry.ownerSubjectId !== input.actorSubjectId) return [];
-    const metadataScore = textScore(queryTerms, [entry.title, entry.summary, ...entry.keywords].join(" "));
+    const categories = entry.categories || classifyHubEntry({ title: entry.title, summary: entry.summary, aliases: entry.keywords });
+    if (input.category && !categories.includes(input.category)) return [];
+    const metadataScore = textScore(queryTerms, [entry.title, entry.summary, ...entry.keywords, ...categories].join(" "));
     const matchedNodes = entry.nodeIndex.map((node) => ({
       ...node,
       score: textScore(queryTerms, [node.label, node.summary || "", ...(node.aliases || []), ...(node.tags || [])].join(" ")),
     })).filter((node) => node.score > 0).sort((left, right) => right.score - left.score || left.id.localeCompare(right.id)).slice(0, 6);
     const score = metadataScore * 2 + matchedNodes.reduce((sum, node) => sum + node.score, 0);
-    if (score <= 0) return [];
-    const searchable = normalize([entry.title, entry.summary, ...entry.keywords, ...matchedNodes.map((node) => node.label)].join(" "));
-    return [{ entry, score, matchedTerms: queryTerms.filter((term) => searchable.includes(term)).slice(0, 12), matchedNodes }];
+    if (queryTerms.length && score <= 0) return [];
+    const searchable = normalize([entry.title, entry.summary, ...entry.keywords, ...categories, ...matchedNodes.map((node) => node.label)].join(" "));
+    return [{ entry: { ...entry, categories }, score, matchedTerms: queryTerms.filter((term) => searchable.includes(term)).slice(0, 12), matchedNodes }];
   }).sort((left, right) => right.score - left.score || left.entry.graphId.localeCompare(right.entry.graphId)).slice(0, Math.min(20, Math.max(1, input.limit || 8)));
 }
 
-export async function searchGraphHubFile(input: { catalogFile: string; query: string; actorSubjectId?: string; limit?: number }) {
+export async function searchGraphHubFile(input: { catalogFile: string; query: string; actorSubjectId?: string; limit?: number; category?: string }) {
   const catalog = JSON.parse(await readFile(resolve(input.catalogFile), "utf8")) as GraphHubCatalog;
   if (catalog.protocol !== "graph-hub-catalog.v1") throw new Error("GRAPH_HUB_CATALOG_UNSUPPORTED");
   const { rootHash, ...core } = catalog;

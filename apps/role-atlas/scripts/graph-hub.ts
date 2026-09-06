@@ -59,10 +59,12 @@ if (command === "init") {
 } else if (command === "search") {
   const query = argument("--query");
   const catalogFile = argument("--catalog") || resolve(hubRoot, "catalog.json");
-  if (!query) throw new Error("search 需要 --query");
+  const category = argument("--category");
+  if (!query && !category) throw new Error("search 需要 --query 或 --category");
   result = await searchGraphHubFile({
     catalogFile: resolve(catalogFile),
-    query,
+    query: query || "",
+    category,
     actorSubjectId: argument("--actor"),
     limit: Number(argument("--limit") || 8),
   });

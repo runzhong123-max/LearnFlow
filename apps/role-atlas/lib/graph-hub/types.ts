@@ -64,6 +64,7 @@ export type GraphHubSubmission = {
 };
 
 export type GraphHubCatalogEntry = {
+  categories?: string[];
   graphId: string;
   graphVersion: string;
   graphType: GraphHubGraphType;
