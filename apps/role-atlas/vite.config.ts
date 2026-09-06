@@ -35,6 +35,8 @@ export default defineConfig(async ({ mode }) => {
     "LEARNFLOW_BASE_URL",
     "LEARNFLOW_PUBLIC_URL",
     "ROLE_PACKAGE_LAUNCH_SECRET",
+    "ROLE_ATLAS_GATEWAY_SECRET",
+    "ROLE_ATLAS_GATEWAY_ONLY",
     "ROLE_ATLAS_PUBLIC_URL",
     "GRAPH_HUB_PUBLIC_URL",
   ] as const;

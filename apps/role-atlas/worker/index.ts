@@ -1,9 +1,11 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
+import { gatewayOnlyReject } from "../lib/ecosystem/ingress";
 import handler from "vinext/server/app-router-entry";
 
 interface Env {
   ASSETS: Fetcher;
+  ROLE_ATLAS_GATEWAY_ONLY?: string;
   DB: D1Database;
   IMAGES: {
     input(stream: ReadableStream): {
@@ -27,6 +29,8 @@ interface ExecutionContext {
 
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const blocked = gatewayOnlyReject(request, env.ROLE_ATLAS_GATEWAY_ONLY);
+    if (blocked) return blocked;
     const url = new URL(request.url);
 
     if (url.pathname === "/_vinext/image") {

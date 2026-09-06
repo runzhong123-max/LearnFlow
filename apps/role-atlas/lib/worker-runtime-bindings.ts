@@ -5,6 +5,7 @@ import type { ServerRuntimeBindings } from "./server-runtime-config";
 export function workerRuntimeBindings() {
   const bindings = env as unknown as Record<string, unknown>;
   return {
+    ROLE_ATLAS_GATEWAY_SECRET: bindings.ROLE_ATLAS_GATEWAY_SECRET,
     MIMO_API_KEY: bindings.MIMO_API_KEY,
     DEEPSEEK_API_KEY: bindings.DEEPSEEK_API_KEY,
     TAVILY_API_KEY: bindings.TAVILY_API_KEY,

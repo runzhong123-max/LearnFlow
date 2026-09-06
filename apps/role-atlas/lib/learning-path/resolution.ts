@@ -1,0 +1,143 @@
+import type { ColdStartBuildResult, SemanticNode } from "@/lib/build/types";
+import { canonicalStringify, sha256Hex } from "@/lib/versioning/canonical";
+import {
+  GRAPH_EXTENSION_PROPOSAL_V2, ROLE_LEARNING_ALIGNMENT_V2, pathNodeKey,
+  validateGraphExtensionProposalV2, validateLearningPathGraphV2, validateRoleLearningAlignmentV2,
+  type GraphExtensionProposalV2, type LearningPathGraphV2, type PathNodeV2,
+  type RoleAlignmentSource, type RoleLearningAlignmentV2, type RolePackageRef,
+} from "./contract";
+
+export type RoleLearningResolution = {
+  protocol: "role-learning-resolution/v2";
+  packageRef: RolePackageRef;
+  graphRef: { graphId: string; revision: string };
+  namespace: string;
+  alignment: RoleLearningAlignmentV2;
+  pendingBindings: RoleLearningAlignmentV2["bindings"];
+  extensionProposal?: GraphExtensionProposalV2;
+  unresolved: Array<{ roleNodeId: string; reason: "needs_decomposition" | "needs_definition" | "needs_evidence" | "ambiguous_definition" | "needs_anchor"; candidates: Array<{ namespace: string; id: string; revision: number; title: string; kind: string }> }>;
+};
+
+const normalize = (s: string) => s.normalize("NFKC").trim().replace(/\s+/gu, " ").toLocaleLowerCase();
+const key = (n: PathNodeV2) => ({ namespace: n.namespace, id: n.id, revision: n.revision });
+const nodeRef = (n: PathNodeV2) => ({ ...key(n), title: n.title, kind: n.kind });
+const lexical = (s: string) => normalize(s).replace(/[\s\p{P}]+/gu, "");
+function overlap(a: string, b: string) {
+  a = lexical(a); b = lexical(b);
+  if (!a || !b) return 0;
+  if (a.includes(b) && b.length >= 3) return 1;
+  const grams = (s: string) => new Set(Array.from({ length: Math.max(0, s.length - 1) }, (_, i) => s.slice(i, i + 2)));
+  const left = grams(a), right = grams(b);
+  return [...right].filter(g => left.has(g)).length / Math.max(1, right.size);
+}
+function signature(node: Pick<SemanticNode, "summary" | "learningDefinition">) {
+  // Preserve mathematical punctuation: x>=0 and x>0 are different definitions.
+  return canonicalStringify({ summary: normalize(node.summary), scopeNote: normalize(node.learningDefinition!.scopeNote),
+    assessmentCriteria: node.learningDefinition!.assessmentCriteria.map(normalize).sort() });
+}
+
+/** The caller must first verify bundle hashes and actor visibility. IDs come only from that bundle. */
+export function packageLearningSource(result: ColdStartBuildResult, packageRef: RolePackageRef): RoleAlignmentSource {
+  const sources = new Set(result.sources.assets.map(s => s.id));
+  const segments = new Map(result.sources.segments.map(s => [s.id, s.sourceId]));
+  return {
+    packageRef,
+    nodes: result.semantic.nodes.flatMap(n => n.type === "knowledge_skill" && (n.learningKind === "knowledge" || n.learningKind === "skill")
+      ? [{ id: n.id, kind: n.learningKind }] : []),
+    evidenceIds: result.sources.evidenceBindings.filter(b => sources.has(b.sourceId) && segments.get(b.segmentId) === b.sourceId
+      && b.supportRole !== "contradicts" && b.assertionType !== "disputed").map(b => b.id),
+  };
+}
+
+export async function resolveRoleLearningPoints(input: {
+  result: ColdStartBuildResult; packageRef: RolePackageRef; graph: LearningPathGraphV2;
+  namespace: string; targetIds?: string[];
+}): Promise<RoleLearningResolution> {
+  const checked = validateLearningPathGraphV2(input.graph);
+  if (!checked.valid) throw new Error(`PATH_CONTRACT_INVALID:${JSON.stringify(checked.issues)}`);
+  if (!/^learnflow:extension:[a-z0-9][a-z0-9._-]*$/u.test(input.namespace)) throw new Error("PATH_NAMESPACE_INVALID");
+  const graph = checked.value, source = packageLearningSource(input.result, input.packageRef);
+  const selected = new Set(input.targetIds || []);
+  if ([...selected].some(id => !input.result.semantic.nodes.some(n => n.id === id))) throw new Error("ROLE_NODE_NOT_FOUND");
+  // Follow the declared role -> task -> capability -> unit -> knowledge chain,
+  // never similarity, prerequisite or arbitrary adjacency as a requirement.
+  let frontier = [...selected];
+  for (let depth = 0; depth < 4 && frontier.length; depth++) {
+    const parents = new Set(frontier); frontier = [];
+    for (const edge of input.result.semantic.edges) if (parents.has(edge.source) && edge.lifecycle !== "rejected"
+      && ["performs", "requires_capability", "has_unit", "requires_skill", "requires_knowledge"].includes(edge.type) && !selected.has(edge.target)) {
+      selected.add(edge.target); frontier.push(edge.target);
+    }
+  }
+  const points = input.result.semantic.nodes.filter(n => n.type === "knowledge_skill" && (!input.targetIds?.length || selected.has(n.id)));
+  if (points.length > 160) throw new Error("SELECT_FEWER_ROLE_POINTS");
+  const resolution: RoleLearningResolution = {
+    protocol: "role-learning-resolution/v2", packageRef: input.packageRef,
+    graphRef: { graphId: graph.graphId, revision: graph.revision }, namespace: input.namespace,
+    alignment: { protocolVersion: ROLE_LEARNING_ALIGNMENT_V2, packageRef: input.packageRef,
+      graphRef: { graphId: graph.graphId, revision: graph.revision }, bindings: [] }, pendingBindings: [], unresolved: [],
+  };
+  if (!points.length) resolution.unresolved.push(...(input.targetIds || []).map(roleNodeId => ({ roleNodeId, reason: "needs_decomposition" as const, candidates: [] })));
+  const newNodes: PathNodeV2[] = [], newEdges: GraphExtensionProposalV2["edges"] = [];
+  const packageSourceId = `role-evidence:${input.packageRef.rootHash}`;
+  const evidenceIds = new Set(source.evidenceIds);
+  for (const point of points) {
+    const anchors = graph.nodes.filter(n => n.kind === "course" || n.kind === "skill_domain")
+      .map(n => ({ n, score: Math.max(...[n.title, ...n.aliases].map(name => Math.max(overlap(point.label, name), overlap(input.result.brief.roleTitle, name) * 0.9))) }))
+      .filter(row => row.score >= 0.35).sort((a, b) => b.score - a.score || pathNodeKey(a.n).localeCompare(pathNodeKey(b.n)));
+    const candidates = anchors.slice(0, 4).map(row => nodeRef(row.n));
+    const fail = (reason: RoleLearningResolution["unresolved"][number]["reason"], list = candidates) => resolution.unresolved.push({ roleNodeId: point.id, reason, candidates: list });
+    if (point.learningKind !== "knowledge" && point.learningKind !== "skill") { fail("needs_decomposition"); continue; }
+    if (!point.learningDefinition?.scopeNote.trim() || !point.learningDefinition.assessmentCriteria.length
+      || point.learningDefinition.assessmentCriteria.some(s => !s.trim())) { fail("needs_definition"); continue; }
+    const evidence = input.result.sources.evidenceBindings.filter(b => b.targetId === point.id && point.evidenceBindingIds.includes(b.id) && evidenceIds.has(b.id)).map(b => b.id);
+    if (!evidence.length) { fail("needs_evidence"); continue; }
+    const compatible = [...graph.nodes, ...newNodes].filter(n => n.kind === point.learningKind && n.atomic);
+    const sameName = compatible.filter(n => [n.title, ...n.aliases].some(name => lexical(name) === lexical(point.label)));
+    const equivalents = sameName.filter(n => signature({ summary: n.summary, learningDefinition: n.atomic }) === signature(point));
+    if (equivalents.length > 1 || sameName.length && !equivalents.length) { fail("ambiguous_definition", sameName.slice(0, 4).map(nodeRef)); continue; }
+    let canonical = equivalents[0];
+    let pending = canonical ? newNodes.includes(canonical) : false;
+    if (!canonical) {
+      const best = anchors[0];
+      if (!best || best.score < 0.65 || anchors[1] && best.score - anchors[1].score < 0.12) { fail("needs_anchor"); continue; }
+      const id = `point:${(await sha256Hex(`${point.learningKind}:${lexical(point.label)}:${signature(point)}`)).slice(0, 24)}`;
+      if (graph.nodes.some(n => n.namespace === input.namespace && n.id === id)) { fail("ambiguous_definition"); continue; }
+      const provenance = { method: "role_package_proposal" as const, sourceRefs: [packageSourceId], packageRef: input.packageRef, evidenceRefs: evidence };
+      canonical = {
+        id, namespace: input.namespace, revision: 1, title: point.label.trim(), summary: point.summary.trim(), aliases: [...new Set(point.aliases.map(s => s.trim()).filter(Boolean))],
+        kind: point.learningKind, atomic: { scopeNote: point.learningDefinition.scopeNote.trim(), assessmentCriteria: [...new Set(point.learningDefinition.assessmentCriteria.map(s => s.trim()))] },
+        domains: [...best.n.domains], audiences: [...best.n.audiences], stage: best.n.stage, order: best.n.order,
+        ownership: { system: "learnflow", catalog: "graph_extension" }, provenance,
+      };
+      newNodes.push(canonical); pending = true;
+      newEdges.push({ id: `contains:${input.namespace}:${id}`, from: { namespace: best.n.namespace, id: best.n.id },
+        to: { namespace: input.namespace, id }, kind: "contains", rationale: `岗位知识技能属于“${best.n.title}”的具体学习内容；此关系不表示先修或掌握。`, provenance });
+    }
+    const binding: RoleLearningAlignmentV2["bindings"][number] = {
+      id: `alignment:${(await sha256Hex(`${point.id}:${pathNodeKey(canonical)}`)).slice(0, 24)}`, roleNodeId: point.id, roleNodeKind: point.learningKind,
+      target: key(canonical), relation: "equivalent", requiredLevel: point.learningKind === "skill" ? "apply" : "understand",
+      context: point.applicability?.trim() || input.result.brief.roleTitle,
+      rationale: pending ? "将该岗位点的显式定义与考核边界提议为规范节点，入库后才生效。" : "名称、节点类型、定义、范围和考核条件逐项一致。",
+      evidenceRefs: evidence,
+    };
+    (pending ? resolution.pendingBindings : resolution.alignment.bindings).push(binding);
+  }
+  if (newNodes.length) {
+    const proposal: GraphExtensionProposalV2 = {
+      protocolVersion: GRAPH_EXTENSION_PROPOSAL_V2, idempotencyKey: `extend:${(await sha256Hex(canonicalStringify({ package: input.packageRef, graph: resolution.graphRef, namespace: input.namespace, nodes: newNodes.map(n => n.id) }))).slice(0, 40)}`,
+      baseGraphRef: resolution.graphRef, packageRef: input.packageRef, namespace: input.namespace,
+      sources: graph.sources.some(s => s.id === packageSourceId) ? [] : [{ id: packageSourceId, title: `${input.result.brief.roleTitle}岗位包证据索引`, kind: "package_evidence", packageRef: input.packageRef, evidenceRefs: source.evidenceIds }],
+      nodes: newNodes, edges: newEdges,
+    };
+    const valid = validateGraphExtensionProposalV2(proposal, graph, source);
+    if (!valid.valid) throw new Error(`PATH_PROPOSAL_INVALID:${JSON.stringify(valid.issues)}`);
+    resolution.extensionProposal = valid.value;
+  }
+  const valid = validateRoleLearningAlignmentV2(resolution.alignment, graph, source);
+  if (!valid.valid) throw new Error(`PATH_ALIGNMENT_INVALID:${JSON.stringify(valid.issues)}`);
+  const merged = resolution.extensionProposal ? { ...graph, nodes: [...graph.nodes, ...newNodes], edges: [...graph.edges, ...newEdges], sources: [...graph.sources, ...resolution.extensionProposal.sources] } : graph;
+  const pending = validateRoleLearningAlignmentV2({ ...resolution.alignment, bindings: [...resolution.alignment.bindings, ...resolution.pendingBindings] }, merged, source);
+  if (!pending.valid) throw new Error(`PATH_PENDING_ALIGNMENT_INVALID:${JSON.stringify(pending.issues)}`);
+  return resolution;
+}

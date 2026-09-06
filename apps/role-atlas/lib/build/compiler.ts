@@ -372,6 +372,7 @@ export function compileSemanticDraft(input: {
       evidenceBindingIds: nodeBindings.map((binding) => binding.id),
       ring: ringByType[preferred.type],
       learningKind: preferred.type === "knowledge_skill" ? preferred.learningKind || "hybrid" : undefined,
+      learningDefinition: preferred.type === "knowledge_skill" && (preferred.learningKind === "knowledge" || preferred.learningKind === "skill") ? preferred.learningDefinition : undefined,
       cultivation: preferred.type === "capability_unit" ? preferred.cultivation : undefined,
     });
   }

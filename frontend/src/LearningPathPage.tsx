@@ -1,3 +1,4 @@
+import PathSourceExtensions from './PathSourceExtensions'
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 
 import {
@@ -294,6 +295,8 @@ export default function LearningPathPage({ state, onStatusChange, onAddPersonalN
               {selected.origin === 'personal' && <button type="button" className="path-remove-node" onClick={() => { if (globalThis.confirm(`删除个人节点“${selected.title}”？`)) onRemovePersonalNode(selected.id) }}>删除个人节点</button>}
             </>
           )}
+
+          <PathSourceExtensions officialId={selected?.origin === 'official' ? selected.id : undefined} officialTitle={selected?.origin === 'official' ? selected.title : undefined} />
 
           <details className="personal-node-disclosure">
             <summary>＋ 添加图中没有的学习目标</summary>

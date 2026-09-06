@@ -96,6 +96,10 @@ export const knowledgeDerivationSchema = z.object({
     practiceArtifact: z.string().max(500).default(""),
     assessment: z.string().max(500).default(""),
     learningKind: z.enum(["knowledge", "skill", "hybrid"]).default("hybrid"),
+    learningDefinition: z.object({
+      scopeNote: z.string().trim().min(1).max(700),
+      assessmentCriteria: z.array(z.string().trim().min(1).max(500)).min(1).max(8),
+    }).optional(),
     taskTempIds: z.array(z.string().max(120)).max(8).default([]),
     mentionIds: z.array(z.string().max(160)).max(40).default([]),
     confidence: z.number().min(0).max(1).default(0.58),
@@ -428,6 +432,7 @@ export function knowledgeToSemanticDraft(input: {
       evidenceSpans: evidence.evidenceSpans,
       mentionIds: evidence.mentionIds,
       learningKind: skill.learningKind,
+      learningDefinition: skill.learningDefinition,
       confidence: evidence.mentionIds.length ? skill.confidence : Math.min(skill.confidence, 0.65),
     });
     for (const taskTempId of taskTempIds) edges.push({
@@ -613,14 +618,14 @@ export function knowledgeDerivationPrompt(input: {
   return {
     system: kernel
       ? `你是岗位内核的知识技能领域归纳器。只返回紧凑 JSON。输入任务 ID 已固定。目标是用 6—8 个中等粒度、可课程化或项目化的知识技能领域覆盖任务骨架，而不是枚举框架、库、命令或细碎概念。同义领域必须合并；每个领域应能成为后续前置知识图谱的稳定展开入口，并明确服务哪些任务。summary、learningOutcome、practiceArtifact、assessment 各写一条不超过 60 个汉字的短句。只能引用给定任务 ID、mention ID 和 segment ID，证据不足就少返回。`
-      : `你是任务导向的知识技能规范化器。只返回 JSON。输入中的任务 ID 已固定。知识技能必须可学习、可实践或可测评，并明确服务哪些任务；不要把宽泛能力、完整任务、招聘口号或每个库名都建成知识技能。合并同义项，保留课程化和项目化价值。只能引用给定任务 ID、mention ID 和 segment ID。每个任务优先保留 2—4 个高价值知识技能，任务组总数不超过 12。`,
+      : `你是任务导向的知识技能规范化器。只返回 JSON。输入中的任务 ID 已固定。知识点使用概念、原理或规则的名称（如“等价类划分原则”），learningKind=knowledge；技能点使用动词和工作对象（如“使用边界值分析设计测试用例”），learningKind=skill。知识与技能混合的条目应拆分，不输出 hybrid，不把完整任务或课程当成原子点。每个点必须提供 learningDefinition.scopeNote（适用范围与排除边界）和 assessmentCriteria（可检查的解释、操作或产物条件）。这些是评价规格，不能宣称学习者已掌握。合并定义相同的同义项，保留学校及职场常用名称；同名不同义不能合并。只能引用给定任务 ID、mention ID 和 segment ID，证据不足保留缺口。最多 18 项是输出预算，不是应达到的数量。`,
     user: JSON.stringify({
       roleTitle: input.roleTitle,
       tasks: input.group.tasks.map((task) => ({ id: task.tempId, label: task.label, summary: task.summary })),
       knowledgeMentions: input.mentions.filter((mention) => mention.kind === "knowledge_skill").sort((left, right) => right.confidence - left.confidence).slice(0, 28).map((mention) => ({ id: mention.id, label: mention.surfaceForm, definition: mention.definitionHint.slice(0, 280), sourceSegmentId: mention.sourceSegmentId, quote: mention.evidenceSpan?.quote.slice(0, 280) })),
       evidenceSegments: input.segments,
       output: {
-        skills: [{ tempId: "skill-1", label: "string", summary: "string", learningKind: "knowledge|skill|hybrid", learningOutcome: "string", practiceArtifact: "string", assessment: "string", taskTempIds: ["给定任务 ID"], mentionIds: ["给定 mention ID"], confidence: 0.7 }],
+        skills: [{ tempId: "skill-1", label: "string", summary: "string", learningKind: kernel ? "hybrid" : "knowledge|skill", ...(kernel ? {} : { learningDefinition: { scopeNote: "适用范围与排除边界", assessmentCriteria: ["可观察的合格条件"] } }), learningOutcome: "string", practiceArtifact: "string", assessment: "string", taskTempIds: ["给定任务 ID"], mentionIds: ["给定 mention ID"], confidence: 0.7 }],
       },
     }),
   };

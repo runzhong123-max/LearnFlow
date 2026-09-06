@@ -28,3 +28,7 @@ for (const [filename, contract] of [
   await writeFile(output, `${JSON.stringify(contract, null, 2)}\n`, "utf8");
   process.stdout.write(`${output}\n`);
 }
+// Backend deployments package the same source catalog; no frontend checkout required at runtime.
+const backendOutput = resolve(learnFlowRoot, "backend/app/contracts/official-learning-path.v2.json");
+await mkdir(dirname(backendOutput), { recursive: true });
+await writeFile(backendOutput, `${JSON.stringify(v2, null, 2)}\n`, "utf8");

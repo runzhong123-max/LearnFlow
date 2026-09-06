@@ -84,3 +84,7 @@ if (!checked.valid) throw new Error(JSON.stringify(checked.issues))
 两份数据均来自 LearnFlow 源码。同步前先构造并校验 v2，再写制品；契约测试检查两份制品与权威导出的逐字一致。当前没有通用 v2→v1 降级器，防止特殊节点和包含关系被静默丢弃或伪装成 personal 节点。尚未切换的 Role Atlas v1 matcher 仍是旧的词法定位，其结果不能按 v2 等价绑定解释。
 
 源图改动不创建学习者兴趣、计划或掌握状态。个人路线选择继续由 Tutor 协调；教学设计交给 Learning Design Agent；实际练习和评分由 Practice Agent 负责。任何学习状态变化仍只能经过 `EvidenceEvent → reducer → KernelMutation`。
+
+## 已实现的运行接入
+
+`/api/ecosystem/learning-path/*` 现已提供主体作用域源图读取、v2 解析、原子追加与幂等回执；Role Atlas 导入本文件引用的同一 TS 校验器。旧 v1 matcher 保持兼容，不能用于自动 equivalent。后端打包副本 `backend/app/contracts/official-learning-path.v2.json` 由同步脚本同时生成。运行权限、基线固定策略及桌面中央身份限制见 [ECOSYSTEM_GATEWAY_V1](ECOSYSTEM_GATEWAY_V1.md)。

@@ -30,6 +30,8 @@ from app.api.learning_files import router as learning_files_router
 from app.api.vnext_projects import router as vnext_projects_router
 from app.api.assessment_design import router as assessment_design_router
 from app.api.learning_task_integrations import router as learning_task_integrations_router
+from app.api.ecosystem import router as ecosystem_router, envelope as ecosystem_envelope
+from app.services.ecosystem_gateway import GatewayError
 from app.services.auth import enforce_browser_request_security
 
 
@@ -73,6 +75,9 @@ async def browser_request_security(request: Request, call_next):
     try:
         await enforce_browser_request_security(request)
     except HTTPException as exc:
+        if request.url.path.startswith("/api/ecosystem/"):
+            from uuid import uuid4
+            return ecosystem_envelope(str(uuid4()), error=GatewayError("request_denied", "请求未通过会话安全校验。", exc.status_code))
         return JSONResponse(
             status_code=exc.status_code,
             content={"detail": exc.detail},
@@ -110,3 +115,5 @@ app.include_router(learning_files_router, prefix="/api")
 app.include_router(vnext_projects_router, prefix="/api")
 app.include_router(assessment_design_router, prefix="/api")
 app.include_router(learning_task_integrations_router, prefix="/api")
+
+app.include_router(ecosystem_router, prefix="/api")

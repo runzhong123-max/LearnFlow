@@ -1120,3 +1120,7 @@ Tutor 将用户带入第一关。Lecture Agent 生成来源约束讲义；Concep
 7. 任何数据都不能跨 Learner 泄漏。
 
 这七条比“让某一次模型回复更聪明”更重要。
+
+### 岗位图谱跨产品接入
+
+`/ecosystem` 提供固定版本岗位包读取、岗位助手、知识技能挂载预览与源图提交。Tutor 所有的 `ecosystem_gateway` 通过签名委托访问 Role Atlas/Graph Hub；`learning_design_agent` 所有的 `curriculum_source_runtime` 保存源图扩展与挂载。只读岗位助手不是第四类主 Agent。`learning_path_extension_committed` 是零 target 内容审计，不表示学习行为或掌握。桌面本地身份不得作为中央身份委托。详细边界见 [岗位图谱服务契约](product/ECOSYSTEM_GATEWAY_V1.md)。

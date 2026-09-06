@@ -1549,7 +1549,7 @@ async def init_db():
     _backup_before_memory_module_versioning_migration()
     _backup_before_auth_phase_a_migration()
     async with engine.begin() as conn:
-        from app.models import project, learning  # noqa: F401
+        from app.models import project, learning, ecosystem  # noqa: F401
         await conn.run_sync(Base.metadata.create_all)
     await _ensure_columns()
     await _backfill_five_kernel()

@@ -1,0 +1,7879 @@
+{
+  "protocolVersion": "learnflow-learning-path/v2",
+  "graphId": "learnflow:computing",
+  "revision": "2026-09-06.1",
+  "sources": [
+    {
+      "id": "acm-cs2023",
+      "title": "Computer Science Curricula 2023",
+      "institution": "ACM / IEEE-CS / AAAI",
+      "url": "https://csed.acm.org/",
+      "kind": "framework"
+    },
+    {
+      "id": "mit-6-3",
+      "title": "Computer Science and Engineering (6-3)",
+      "institution": "MIT EECS",
+      "url": "https://catalog.mit.edu/degree-charts/computer-science-engineering-course-6-3/",
+      "kind": "university"
+    },
+    {
+      "id": "cornell-cs",
+      "title": "B.S. in Computer Science",
+      "institution": "Cornell Bowers",
+      "url": "https://www.cs.cornell.edu/bachelor-science-computer-science",
+      "kind": "university"
+    },
+    {
+      "id": "cmu-ai",
+      "title": "B.S. in Artificial Intelligence Curriculum",
+      "institution": "Carnegie Mellon SCS",
+      "url": "https://www.cs.cmu.edu/bs-in-artificial-intelligence/curriculum",
+      "kind": "university"
+    },
+    {
+      "id": "cmu-mscs",
+      "title": "M.S. in Computer Science Curriculum",
+      "institution": "Carnegie Mellon CSD",
+      "url": "https://www.csd.cs.cmu.edu/ms-in-computer-science-curriculum",
+      "kind": "university"
+    },
+    {
+      "id": "stanford-ms",
+      "title": "M.S. Computer Science Specializations",
+      "institution": "Stanford Computer Science",
+      "url": "https://www.cs.stanford.edu/masters-specializations",
+      "kind": "university"
+    },
+    {
+      "id": "tsinghua-2023",
+      "title": "计算机科学与技术专业本科培养方案 2023级",
+      "institution": "清华大学计算机系",
+      "url": "https://www.cs.tsinghua.edu.cn/info/1043/5969.htm",
+      "kind": "university"
+    },
+    {
+      "id": "zju-cs",
+      "title": "Bachelor of Engineering in Computer Science and Technology",
+      "institution": "浙江大学计算机学院",
+      "url": "https://www.en.cs.zju.edu.cn/22145/list.htm",
+      "kind": "university"
+    },
+    {
+      "id": "hust-2024",
+      "title": "计算机科学与技术学院2024级本科生培养方案",
+      "institution": "华中科技大学",
+      "url": "https://cs.hust.edu.cn/info/1076/4512.htm",
+      "kind": "university"
+    },
+    {
+      "id": "whu-computing",
+      "title": "计算机大类课程设置与关联关系",
+      "institution": "武汉大学计算机学院",
+      "url": "https://uc.whu.edu.cn/info/1310/9846.htm",
+      "kind": "university"
+    },
+    {
+      "id": "moe-vocational-2025",
+      "title": "职业教育专业教学标准 2025",
+      "institution": "中华人民共和国教育部",
+      "url": "https://www.moe.gov.cn/s78/A07/zcs_ztzl/2017_zt06/17zt06_bznr/bznr_zyjyzyjxbz/",
+      "kind": "vocational"
+    },
+    {
+      "id": "moe-computer-app-510201",
+      "title": "计算机应用技术专业教学标准（高职专科）",
+      "institution": "中华人民共和国教育部",
+      "url": "https://www.moe.gov.cn/s78/A07/zcs_ztzl/2017_zt06/17zt06_bznr/bznr_zyjyzyjxbz/gdzyjy_zk/zk_dzyxxdl/dzxxdl_jsjl/202502/P020250207533801162064.pdf",
+      "kind": "vocational"
+    },
+    {
+      "id": "moe-software-510203",
+      "title": "软件技术专业教学标准（高职专科）",
+      "institution": "中华人民共和国教育部",
+      "url": "https://www.moe.gov.cn/s78/A07/zcs_ztzl/2017_zt06/17zt06_bznr/bznr_zyjyzyjxbz/gdzyjy_zk/zk_dzyxxdl/dzxxdl_jsjl/202502/P020250207533323690137.pdf",
+      "kind": "vocational"
+    },
+    {
+      "id": "moe-bigdata-510205",
+      "title": "大数据技术专业教学标准（高职专科）",
+      "institution": "中华人民共和国教育部",
+      "url": "https://www.moe.gov.cn/s78/A07/zcs_ztzl/2017_zt06/17zt06_bznr/bznr_zyjyzyjxbz/gdzyjy_zk/zk_dzyxxdl/dzxxdl_jsjl/202502/P020250207532993683513.pdf",
+      "kind": "vocational"
+    },
+    {
+      "id": "moe-cloud-510206",
+      "title": "云计算技术应用专业教学标准（高职专科）",
+      "institution": "中华人民共和国教育部",
+      "url": "https://www.moe.gov.cn/s78/A07/zcs_ztzl/2017_zt06/17zt06_bznr/bznr_zyjyzyjxbz/gdzyjy_zk/zk_dzyxxdl/dzxxdl_jsjl/202502/P020250207532853321417.pdf",
+      "kind": "vocational"
+    },
+    {
+      "id": "moe-ai-510209",
+      "title": "人工智能技术应用专业教学标准（高职专科）",
+      "institution": "中华人民共和国教育部",
+      "url": "https://www.moe.gov.cn/s78/A07/zcs_ztzl/2017_zt06/17zt06_bznr/bznr_zyjyzyjxbz/gdzyjy_zk/zk_dzyxxdl/dzxxdl_jsjl/202502/P020250207532415004946.pdf",
+      "kind": "vocational"
+    },
+    {
+      "id": "moe-network-510202",
+      "title": "计算机网络技术专业教学标准（高职专科）",
+      "institution": "中华人民共和国教育部",
+      "url": "https://hudong.moe.gov.cn/s78/A07/zcs_ztzl/2017_zt06/17zt06_bznr/bznr_zyjyzyjxbz/gdzyjy_zk/zk_dzyxxdl/dzxxdl_jsjl/202502/P020250207533459609558.pdf",
+      "kind": "vocational"
+    },
+    {
+      "id": "moe-security-510207",
+      "title": "信息安全技术应用专业教学标准（高职专科）",
+      "institution": "中华人民共和国教育部",
+      "url": "https://www.moe.gov.cn/s78/A07/zcs_ztzl/2017_zt06/17zt06_bznr/bznr_zyjyzyjxbz/gdzyjy_zk/zk_dzyxxdl/dzxxdl_jsjl/202502/P020250207532704599869.pdf",
+      "kind": "vocational"
+    },
+    {
+      "id": "moe-mobile-510213",
+      "title": "移动应用开发专业教学标准（高职专科）",
+      "institution": "中华人民共和国教育部",
+      "url": "https://www.moe.gov.cn/s78/A07/zcs_ztzl/2017_zt06/17zt06_bznr/bznr_zyjyzyjxbz/gdzyjy_zk/zk_dzyxxdl/dzxxdl_jsjl/202502/P020250207531781244062.pdf",
+      "kind": "vocational"
+    },
+    {
+      "id": "nyu-agents",
+      "title": "Foundations of AI Agents",
+      "institution": "NYU Stern",
+      "url": "https://aiagents.stern.nyu.edu/",
+      "kind": "emerging"
+    },
+    {
+      "id": "swebok-v4",
+      "title": "Guide to the Software Engineering Body of Knowledge v4",
+      "institution": "IEEE Computer Society",
+      "url": "https://www.computer.org/education/bodies-of-knowledge/software-engineering",
+      "kind": "framework"
+    },
+    {
+      "id": "google-sre",
+      "title": "Site Reliability Engineering",
+      "institution": "Google",
+      "url": "https://sre.google/sre-book/table-of-contents/",
+      "kind": "emerging"
+    },
+    {
+      "id": "nist-ssdf",
+      "title": "Secure Software Development Framework",
+      "institution": "NIST",
+      "url": "https://csrc.nist.gov/pubs/sp/800/218/final",
+      "kind": "framework"
+    },
+    {
+      "id": "nist-ai-evaluation",
+      "title": "Assessing Risks and Impacts of AI",
+      "institution": "NIST",
+      "url": "https://ai-challenges.nist.gov/aria",
+      "kind": "framework"
+    },
+    {
+      "id": "cncf-platform-engineering",
+      "title": "Cloud Native Platform Engineering",
+      "institution": "Cloud Native Computing Foundation",
+      "url": "https://www.cncf.io/training/certification/cnpa/",
+      "kind": "emerging"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "digital-literacy",
+      "title": "信息技术与数字素养",
+      "summary": "认识数字设备、常用办公工具与网络信息环境，学习文件管理、信息检索、数据表达和安全使用习惯。通过整理资料与制作数字作品，为后续专业学习建立基本操作能力。",
+      "aliases": [
+        "计算机基础",
+        "信息技术基础"
+      ],
+      "domains": [
+        "通识",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 0,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "skill_domain",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-vocational-2025"
+        ]
+      }
+    },
+    {
+      "id": "computer-introduction",
+      "title": "计算机科学导论",
+      "summary": "从信息表示、算法、计算机系统和软件应用认识计算机科学的主要问题与分支。通过小型计算案例，理解程序、数据和硬件如何协作，并辨认不同专业方向的学习内容。",
+      "aliases": [
+        "计算概论",
+        "CS导论"
+      ],
+      "domains": [
+        "通识",
+        "计算机"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 0,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "cmu-ai"
+        ]
+      }
+    },
+    {
+      "id": "computing-ethics",
+      "title": "计算伦理与职业责任",
+      "summary": "讨论软件和数据应用中的隐私、知识产权、公平性、可访问性与职业责任。能够分析案例中的利益相关者、风险和责任，说明技术方案的社会影响与取舍。",
+      "aliases": [
+        "AI伦理基础",
+        "职业伦理"
+      ],
+      "domains": [
+        "通识",
+        "伦理"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 0,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "cmu-ai"
+        ]
+      }
+    },
+    {
+      "id": "programming-foundations",
+      "title": "程序设计基础",
+      "summary": "学习变量与数据类型、条件与循环、函数和基本输入输出，把简单问题转化为可执行程序。通过阅读、编写和调试小程序，练习分解问题、验证结果和解释代码行为。",
+      "aliases": [
+        "编程入门",
+        "程序设计"
+      ],
+      "domains": [
+        "编程",
+        "软件"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 1,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "moe-vocational-2025"
+        ]
+      }
+    },
+    {
+      "id": "python-programming",
+      "title": "Python 程序设计",
+      "summary": "使用 Python 的序列、字典、函数、模块和文件处理组织程序，理解异常处理与常用库的基本用法。能够编写数据处理或日常自动化脚本，并为关键逻辑准备可重复的验证样例。",
+      "aliases": [
+        "Python",
+        "Python开发"
+      ],
+      "domains": [
+        "编程",
+        "AI",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 1,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "moe-ai-510209"
+        ]
+      }
+    },
+    {
+      "id": "c-programming",
+      "title": "C 语言与底层程序设计",
+      "summary": "学习 C 语言的数据表示、指针、数组、结构体、内存管理与编译链接过程。通过编写和调试程序理解内存布局与底层执行，识别越界访问、资源泄漏等常见问题。",
+      "aliases": [
+        "C语言",
+        "C和汇编"
+      ],
+      "domains": [
+        "编程",
+        "系统"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 1,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023"
+        ]
+      }
+    },
+    {
+      "id": "calculus",
+      "title": "微积分",
+      "summary": "学习极限、导数、积分及多元函数的基本分析方法，理解变化率、累积量与局部近似。能够用微积分描述简单连续模型，为优化、概率和科学计算中的数学推导做准备。",
+      "aliases": [
+        "高等数学",
+        "Calculus"
+      ],
+      "domains": [
+        "数学",
+        "AI"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 1,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "cmu-ai"
+        ]
+      }
+    },
+    {
+      "id": "linear-algebra",
+      "title": "线性代数",
+      "summary": "学习向量、矩阵、线性方程组、线性变换、特征值与正交分解。能够用矩阵描述数据与变换，解释线性模型的几何意义，为图形计算、机器学习和数值方法建立基础。",
+      "aliases": [
+        "矩阵论基础",
+        "Linear Algebra"
+      ],
+      "domains": [
+        "数学",
+        "AI"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 1,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cmu-ai",
+          "tsinghua-2023"
+        ]
+      }
+    },
+    {
+      "id": "discrete-mathematics",
+      "title": "离散数学",
+      "summary": "学习逻辑、集合、关系、组合计数、图与递归结构，练习归纳证明和离散建模。能够用形式化语言描述问题，分析简单算法与网络结构中的性质。",
+      "aliases": [
+        "计算机数学",
+        "离散结构"
+      ],
+      "domains": [
+        "数学",
+        "理论"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 1,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "tsinghua-2023",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "probability-statistics",
+      "title": "概率论与数理统计",
+      "summary": "学习随机变量、常见分布、期望、方差、参数估计与假设检验。能够用样本描述不确定性，解释统计结论的适用条件，避免把相关关系或单次观测当成确定结论。",
+      "aliases": [
+        "概率统计",
+        "Probability"
+      ],
+      "domains": [
+        "数学",
+        "AI",
+        "数据"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 1,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cmu-ai",
+          "tsinghua-2023"
+        ]
+      }
+    },
+    {
+      "id": "linux-fundamentals",
+      "title": "Linux 基础",
+      "summary": "熟悉 Linux 文件系统、命令行、权限、进程与基础软件安装，学习管道和简单 Shell 脚本。能够在终端中完成文件操作、运行程序和查看系统状态，为系统管理与开发环境使用做准备。",
+      "aliases": [
+        "Linux入门",
+        "命令行"
+      ],
+      "domains": [
+        "系统",
+        "运维",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 1,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-ai-510209",
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "web-foundations",
+      "title": "Web 与互联网基础",
+      "summary": "理解浏览器、服务器、URL 与 HTTP 的基本协作方式，学习 HTML 结构、CSS 样式和 JavaScript 交互。能够制作简单网页并检查页面、网络请求和脚本运行结果。",
+      "aliases": [
+        "网页设计",
+        "HTML CSS JavaScript"
+      ],
+      "domains": [
+        "软件",
+        "Web",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 1,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-vocational-2025"
+        ]
+      }
+    },
+    {
+      "id": "computer-maintenance",
+      "title": "计算机组成与维护",
+      "summary": "识别计算机部件，完成整机装配、系统安装、故障诊断与日常维护。",
+      "aliases": [
+        "计算机组装与维护",
+        "微机维护"
+      ],
+      "domains": [
+        "硬件",
+        "运维",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 2,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-computer-app-510201"
+        ]
+      }
+    },
+    {
+      "id": "windows-server-administration",
+      "title": "Windows Server 管理",
+      "summary": "配置服务器角色、目录与权限、网络服务，并完成基础运行维护。",
+      "aliases": [
+        "网络操作系统",
+        "Windows服务器管理"
+      ],
+      "domains": [
+        "系统",
+        "网络",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 2,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-computer-app-510201",
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "network-cabling",
+      "title": "网络综合布线",
+      "summary": "完成铜缆与光纤布线设计、端接、测试、验收和工程文档。",
+      "aliases": [
+        "信息网络布线",
+        "综合布线"
+      ],
+      "domains": [
+        "网络",
+        "硬件",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 2,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "object-oriented-programming",
+      "title": "面向对象程序设计",
+      "summary": "学习类与对象、封装、接口、继承、多态及组合，理解对象职责和协作关系。能够把需求组织成可维护的模块，使用测试检查对象行为，并说明设计选择的影响。",
+      "aliases": [
+        "OOP",
+        "面向对象"
+      ],
+      "domains": [
+        "编程",
+        "软件"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 2,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cornell-cs",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "data-structures",
+      "title": "数据结构",
+      "summary": "学习数组、链表、栈、队列、树、堆、散列表和图的表示与操作。能够依据访问方式、更新频率和复杂度选择数据结构，实现并验证典型操作。",
+      "aliases": [
+        "Data Structures",
+        "高级数据结构基础"
+      ],
+      "domains": [
+        "算法",
+        "编程"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "core",
+      "order": 2,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cornell-cs",
+          "tsinghua-2023",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "digital-logic",
+      "title": "数字逻辑",
+      "summary": "学习布尔代数、逻辑门、组合电路、时序电路和有限状态机。能够从逻辑需求设计简单数字电路，分析状态变化、时序约束及电路输出。",
+      "aliases": [
+        "数字电路",
+        "逻辑设计"
+      ],
+      "domains": [
+        "系统",
+        "硬件"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 2,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "zju-cs",
+          "tsinghua-2023"
+        ]
+      }
+    },
+    {
+      "id": "computer-organization",
+      "title": "计算机组成原理",
+      "summary": "理解指令系统、处理器、存储层次、输入输出与总线如何共同执行程序。能够跟踪简单指令的执行过程，并用数据通路与存储访问解释基本性能差异。",
+      "aliases": [
+        "计算机组成",
+        "Computation Structures"
+      ],
+      "domains": [
+        "系统",
+        "硬件"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "core",
+      "order": 2,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "database-foundations",
+      "title": "数据库技术基础",
+      "summary": "学习关系表、主外键、基本 SQL 查询与数据增删改，认识约束和事务的作用。能够为小型业务建立数据库、维护数据并完成常见查询，重点是数据库的正确使用。",
+      "aliases": [
+        "SQL基础",
+        "数据库应用"
+      ],
+      "domains": [
+        "数据",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 2,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-ai-510209",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "networking-foundations",
+      "title": "计算机网络基础",
+      "summary": "认识网络设备、分层模型、IP 地址、子网、常用协议和基本网络服务。能够配置小型网络并使用诊断命令检查连通性，建立后续网络原理与工程实施的操作基础。",
+      "aliases": [
+        "网络技术基础",
+        "TCP/IP基础"
+      ],
+      "domains": [
+        "网络",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 2,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "software-development-foundations",
+      "title": "软件开发基础",
+      "summary": "学习开发环境、版本控制、依赖管理、模块划分和基础测试，理解从源码到可运行程序的过程。能够维护一个小型代码仓库，记录变更并通过测试验证基本功能。",
+      "aliases": [
+        "Git与测试基础",
+        "软件构造"
+      ],
+      "domains": [
+        "软件",
+        "工程"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 2,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "skill_domain",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "moe-vocational-2025"
+        ]
+      }
+    },
+    {
+      "id": "data-processing",
+      "title": "数据采集与处理",
+      "summary": "围绕简单数据任务学习采集、清洗、标注、格式转换与质量检查，认识数据使用的来源和权限边界。能够整理可用于分析或模型训练的数据集，并记录处理规则与异常。",
+      "aliases": [
+        "数据清洗",
+        "数据标注"
+      ],
+      "domains": [
+        "数据",
+        "AI",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 2,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-ai-510209"
+        ]
+      }
+    },
+    {
+      "id": "hci-foundations",
+      "title": "人机交互基础",
+      "summary": "学习用户研究、交互原型、信息组织、可用性和可访问性，理解界面设计与用户任务的关系。能够设计一个交互流程，通过观察和测试发现使用障碍并提出改进。",
+      "aliases": [
+        "交互设计",
+        "用户体验"
+      ],
+      "domains": [
+        "HCI",
+        "软件"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "foundation",
+      "order": 2,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023"
+        ]
+      }
+    },
+    {
+      "id": "frontend-design-development",
+      "title": "前端设计与开发",
+      "summary": "从页面结构、样式和交互出发，完成响应式前端与组件化界面开发。",
+      "aliases": [
+        "Web前端开发",
+        "响应式页面开发"
+      ],
+      "domains": [
+        "软件",
+        "Web",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-computer-app-510201",
+          "moe-software-510203"
+        ]
+      }
+    },
+    {
+      "id": "software-modeling-design",
+      "title": "软件建模与设计",
+      "summary": "从需求、用例和领域对象出发，使用 UML 与设计模式形成可实现的软件设计。",
+      "aliases": [
+        "UML建模",
+        "面向对象建模"
+      ],
+      "domains": [
+        "软件",
+        "工程",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-software-510203",
+          "moe-mobile-510213"
+        ]
+      }
+    },
+    {
+      "id": "system-deployment-operations",
+      "title": "系统部署与运维",
+      "summary": "部署应用、数据库与基础网络服务，实施监控、备份、升级和故障处理。",
+      "aliases": [
+        "信息系统运维",
+        "应用部署"
+      ],
+      "domains": [
+        "系统",
+        "运维",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "skill_domain",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-computer-app-510201"
+        ]
+      }
+    },
+    {
+      "id": "enterprise-application-development",
+      "title": "企业级项目开发",
+      "summary": "用服务端框架、持久化和会话机制实现可部署的企业级业务应用。",
+      "aliases": [
+        "企业应用开发",
+        "服务端框架开发"
+      ],
+      "domains": [
+        "软件",
+        "Web",
+        "工程",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "skill_domain",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-software-510203",
+          "moe-mobile-510213"
+        ]
+      }
+    },
+    {
+      "id": "software-testing",
+      "title": "软件测试",
+      "summary": "设计测试计划与用例，执行功能、性能和自动化测试并形成缺陷报告。",
+      "aliases": [
+        "功能测试",
+        "自动化测试",
+        "软件质量保证"
+      ],
+      "domains": [
+        "软件",
+        "工程",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-software-510203",
+          "moe-mobile-510213"
+        ]
+      }
+    },
+    {
+      "id": "mobile-cross-platform",
+      "title": "移动端跨平台开发",
+      "summary": "使用组件、路由、状态管理和跨平台构建能力交付移动应用。",
+      "aliases": [
+        "跨平台开发",
+        "uni-app"
+      ],
+      "domains": [
+        "软件",
+        "移动",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-mobile-510213"
+        ]
+      }
+    },
+    {
+      "id": "mini-program-development",
+      "title": "小程序开发",
+      "summary": "完成小程序页面、数据交互、云端能力接入、测试和发布。",
+      "aliases": [
+        "微信小程序",
+        "小程序云开发"
+      ],
+      "domains": [
+        "软件",
+        "移动",
+        "Web",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-mobile-510213"
+        ]
+      }
+    },
+    {
+      "id": "data-acquisition-technology",
+      "title": "数据采集技术",
+      "summary": "针对数据库、日志和互联网数据设计并实施在线或离线采集任务。",
+      "aliases": [
+        "在线离线数据采集",
+        "日志采集"
+      ],
+      "domains": [
+        "数据",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-bigdata-510205"
+        ]
+      }
+    },
+    {
+      "id": "data-preprocessing-etl",
+      "title": "数据预处理与 ETL",
+      "summary": "识别缺失、重复和不一致数据，完成多源数据抽取、清洗、转换和装载。",
+      "aliases": [
+        "数据清洗",
+        "数据抽取转换加载"
+      ],
+      "domains": [
+        "数据",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-bigdata-510205"
+        ]
+      }
+    },
+    {
+      "id": "data-analysis-applications",
+      "title": "大数据分析技术应用",
+      "summary": "围绕业务指标完成统计分析、批量与实时计算，并撰写分析报告。",
+      "aliases": [
+        "批流数据分析",
+        "业务数据分析"
+      ],
+      "domains": [
+        "数据",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-bigdata-510205"
+        ]
+      }
+    },
+    {
+      "id": "data-visualization-applications",
+      "title": "数据可视化技术与应用",
+      "summary": "选择合适图表与交互方式，构建可解释的数据展示并输出分析结论。",
+      "aliases": [
+        "可视化大屏",
+        "数据图表设计"
+      ],
+      "domains": [
+        "数据",
+        "HCI",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-bigdata-510205",
+          "moe-computer-app-510201"
+        ]
+      }
+    },
+    {
+      "id": "big-data-platform-operations",
+      "title": "大数据平台部署与运维",
+      "summary": "部署和维护分布式存储与计算组件，监测平台运行并处理常见故障。",
+      "aliases": [
+        "Hadoop平台运维",
+        "大数据平台管理"
+      ],
+      "domains": [
+        "数据",
+        "系统",
+        "运维",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-bigdata-510205"
+        ]
+      }
+    },
+    {
+      "id": "algorithms",
+      "title": "算法设计与分析",
+      "summary": "学习复杂度分析以及分治、贪心、动态规划和图算法等设计方法。能够根据问题约束选择算法、说明正确性，并比较时间与空间开销，而不只复现实现步骤。",
+      "aliases": [
+        "算法",
+        "Algorithm Analysis"
+      ],
+      "domains": [
+        "算法",
+        "理论"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "core",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cornell-cs",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "operating-systems",
+      "title": "操作系统",
+      "summary": "学习进程与线程、调度、同步、虚拟内存、文件系统和设备管理。能够解释操作系统如何分配资源与隔离程序，通过实验分析并发、存储和系统调用行为。",
+      "aliases": [
+        "OS",
+        "操作系统原理"
+      ],
+      "domains": [
+        "系统"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "core",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "database-systems",
+      "title": "数据库系统",
+      "summary": "研究数据建模、关系理论、索引、查询执行、事务并发控制和故障恢复。能够分析数据库内部机制，依据一致性与性能需求设计模式、事务和查询方案。",
+      "aliases": [
+        "DBMS",
+        "数据库原理"
+      ],
+      "domains": [
+        "数据",
+        "系统"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "core",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "computer-networks",
+      "title": "计算机网络",
+      "summary": "系统学习分层通信、链路、路由、传输控制与应用协议，分析可靠传输、拥塞和网络性能。能够借助报文与实验解释端到端通信过程，并定位跨层问题。",
+      "aliases": [
+        "网络原理",
+        "Computer Networks"
+      ],
+      "domains": [
+        "网络",
+        "系统"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "core",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "tsinghua-2023",
+          "zju-cs",
+          "whu-computing"
+        ]
+      }
+    },
+    {
+      "id": "software-engineering",
+      "title": "软件工程",
+      "summary": "学习需求分析、设计、实现、测试、配置管理和软件维护的协作过程。能够围绕真实需求组织迭代交付，形成设计与质量证据，并处理范围、成本与变更之间的取舍。",
+      "aliases": [
+        "软件工程方法",
+        "Software Engineering"
+      ],
+      "domains": [
+        "软件",
+        "工程"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "core",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "tsinghua-2023",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "theory-of-computation",
+      "title": "计算理论",
+      "summary": "学习自动机、形式语言、可计算性和复杂性，区分可表达、可求解与高效可求解的问题。通过构造模型和证明理解计算能力的边界，为语言处理与算法研究建立理论基础。",
+      "aliases": [
+        "可计算性与复杂性",
+        "形式语言"
+      ],
+      "domains": [
+        "理论",
+        "算法"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "core",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "programming-languages",
+      "title": "程序设计语言原理",
+      "summary": "比较程序语言的语法、语义、类型系统、作用域与求值方式，理解不同编程范式。能够分析语言特性如何影响程序行为，并通过小型解释器或语言实验验证理解。",
+      "aliases": [
+        "PL",
+        "编程语言基础"
+      ],
+      "domains": [
+        "编程",
+        "理论"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "core",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "computer-security",
+      "title": "信息安全基础",
+      "summary": "学习机密性、完整性、可用性、身份认证、访问控制与基础威胁建模。能够识别常见攻击面，说明防护措施的作用和局限，为安全开发与运维建立共同概念。",
+      "aliases": [
+        "网络空间安全导论",
+        "计算机安全"
+      ],
+      "domains": [
+        "安全",
+        "网络"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "core",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "zju-cs",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "web-development",
+      "title": "Web 应用开发",
+      "summary": "围绕完整 Web 应用学习客户端与服务端协作、路由、数据持久化、认证和部署。能够实现可使用的业务流程，验证接口与页面行为，并处理基本安全和运行问题。",
+      "aliases": [
+        "前后端开发",
+        "Web开发"
+      ],
+      "domains": [
+        "软件",
+        "Web",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-security-510207",
+          "moe-vocational-2025"
+        ]
+      }
+    },
+    {
+      "id": "mobile-development",
+      "title": "移动应用开发",
+      "summary": "学习移动应用的界面、生命周期、数据存储、网络访问和设备能力，理解移动端资源与交互约束。能够完成一个应用功能，检查不同运行状态下的行为并准备发布构建。",
+      "aliases": [
+        "Android开发",
+        "移动开发"
+      ],
+      "domains": [
+        "软件",
+        "移动",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-vocational-2025"
+        ]
+      }
+    },
+    {
+      "id": "network-routing-switching",
+      "title": "路由交换技术",
+      "summary": "学习交换、VLAN、路由协议与网络冗余的配置和工作机制。能够按拓扑需求配置交换机与路由器，验证转发路径、隔离策略和故障恢复效果。",
+      "aliases": [
+        "路由器交换机配置",
+        "网络设备配置"
+      ],
+      "domains": [
+        "网络",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "linux-administration",
+      "title": "Linux 系统管理",
+      "summary": "在命令行基础上学习用户与权限、服务管理、存储、网络配置、日志和备份。能够部署与维护 Linux 服务，定位运行故障，并用脚本完成重复管理任务。",
+      "aliases": [
+        "Linux运维",
+        "服务器管理"
+      ],
+      "domains": [
+        "系统",
+        "运维",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "wireless-networking",
+      "title": "无线网络技术应用",
+      "summary": "完成无线局域网勘测、规划、组网、安全配置、管理与优化。",
+      "aliases": [
+        "WLAN规划",
+        "无线组网"
+      ],
+      "domains": [
+        "网络",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "network-automation",
+      "title": "网络自动化运维",
+      "summary": "使用脚本、接口和配置管理工具批量实施网络配置、巡检和变更。",
+      "aliases": [
+        "自动化网络运维",
+        "Python网络运维"
+      ],
+      "domains": [
+        "网络",
+        "运维",
+        "编程",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "network-virtualization",
+      "title": "网络虚拟化技术应用",
+      "summary": "理解虚拟交换、网络隔离、隧道和软件定义网络，并完成基础部署。",
+      "aliases": [
+        "SDN基础",
+        "虚拟网络"
+      ],
+      "domains": [
+        "网络",
+        "云",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202",
+          "moe-cloud-510206"
+        ]
+      }
+    },
+    {
+      "id": "network-systems-integration",
+      "title": "网络系统集成",
+      "summary": "完成需求分析、拓扑与布线设计、设备选型、实施、测试和工程验收。",
+      "aliases": [
+        "网络规划与系统集成",
+        "网络工程实施"
+      ],
+      "domains": [
+        "网络",
+        "工程",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "computer-graphics",
+      "title": "计算机图形学",
+      "summary": "学习几何表示、坐标变换、投影、光照、纹理与渲染流程。能够实现或使用基本图形算法生成二维、三维画面，并分析画面质量与计算开销。",
+      "aliases": [
+        "图形学基础",
+        "Graphics"
+      ],
+      "domains": [
+        "图形",
+        "视觉"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "tsinghua-2023"
+        ]
+      }
+    },
+    {
+      "id": "embedded-systems",
+      "title": "嵌入式系统",
+      "summary": "学习嵌入式处理器、外设接口、中断、定时和实时任务组织，理解软硬件协同。能够完成传感器读取或设备控制程序，并检查时序、资源和可靠性约束。",
+      "aliases": [
+        "嵌入式开发",
+        "MCU"
+      ],
+      "domains": [
+        "系统",
+        "硬件",
+        "物联网"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "moe-vocational-2025"
+        ]
+      }
+    },
+    {
+      "id": "artificial-intelligence",
+      "title": "人工智能导论",
+      "summary": "认识搜索、知识表示、推理、规划与机器学习等人工智能方法。能够为简单问题选择建模与求解方式，比较规则和数据方法的适用条件，并讨论系统局限。",
+      "aliases": [
+        "AI基础",
+        "人工智能"
+      ],
+      "domains": [
+        "AI"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "zju-cs",
+          "acm-cs2023"
+        ]
+      }
+    },
+    {
+      "id": "machine-learning",
+      "title": "机器学习",
+      "summary": "学习监督与无监督学习、特征、损失函数、训练验证划分和泛化评估。能够建立分类、回归或聚类基线，识别过拟合与数据泄漏，并用合适指标比较模型。",
+      "aliases": [
+        "ML",
+        "机器学习基础算法"
+      ],
+      "domains": [
+        "AI",
+        "数据"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "stanford-ms",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "data-mining",
+      "title": "数据挖掘",
+      "summary": "围绕从数据发现模式学习关联分析、聚类、分类与异常检测等方法。能够将业务问题转为分析任务，评估模式的有效性，解释发现结果及其适用范围。",
+      "aliases": [
+        "知识发现",
+        "Data Mining"
+      ],
+      "domains": [
+        "数据",
+        "AI"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "tsinghua-2023",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "distributed-systems",
+      "title": "分布式系统",
+      "summary": "研究多节点通信、复制、一致性、故障、共识与分布式存储。能够分析网络延迟和部分失败下的系统行为，设计简单分布式服务并解释可用性与一致性的取舍。",
+      "aliases": [
+        "Distributed Systems",
+        "分布式计算"
+      ],
+      "domains": [
+        "系统",
+        "云"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-mscs",
+          "acm-cs2023"
+        ]
+      }
+    },
+    {
+      "id": "cloud-computing",
+      "title": "云计算",
+      "summary": "学习云服务模型、资源虚拟化、弹性、存储、网络与服务管理。能够为应用选择云资源和部署方式，比较容量、成本、可用性与运维责任。",
+      "aliases": [
+        "云平台",
+        "云计算技术应用"
+      ],
+      "domains": [
+        "云",
+        "系统",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-vocational-2025",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "virtualization-technology",
+      "title": "虚拟化技术基础",
+      "summary": "理解计算、存储与网络虚拟化，创建和管理虚拟机、镜像与资源池。",
+      "aliases": [
+        "计算虚拟化",
+        "存储虚拟化"
+      ],
+      "domains": [
+        "云",
+        "系统",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-cloud-510206"
+        ]
+      }
+    },
+    {
+      "id": "cloud-platform-operations",
+      "title": "云平台架构与运维",
+      "summary": "规划并运维私有云和公有云中的计算、网络、存储、数据库与监控服务。",
+      "aliases": [
+        "私有云运维",
+        "公有云运维"
+      ],
+      "domains": [
+        "云",
+        "系统",
+        "运维",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-cloud-510206"
+        ]
+      }
+    },
+    {
+      "id": "container-cloud-operations",
+      "title": "容器云架构与运维",
+      "summary": "管理镜像、容器网络、存储、编排、监控和应用发布。",
+      "aliases": [
+        "容器编排",
+        "Kubernetes运维"
+      ],
+      "domains": [
+        "云",
+        "系统",
+        "运维",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-cloud-510206"
+        ]
+      }
+    },
+    {
+      "id": "cloud-security-applications",
+      "title": "云安全技术应用",
+      "summary": "配置身份认证、云扫描、防护、监控与安全运营能力，保护云平台和云服务。",
+      "aliases": [
+        "云安全运维",
+        "云平台安全"
+      ],
+      "domains": [
+        "云",
+        "安全",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-cloud-510206"
+        ]
+      }
+    },
+    {
+      "id": "devops",
+      "title": "DevOps 与持续交付",
+      "summary": "学习版本协作、自动构建与测试、制品管理、环境配置和持续交付。能够建立可重复的交付流水线，验证发布结果，并设计回退与运行反馈机制。",
+      "aliases": [
+        "CI/CD",
+        "持续集成"
+      ],
+      "domains": [
+        "软件",
+        "运维"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "skill_domain",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "compilers",
+      "title": "编译原理",
+      "summary": "学习词法和语法分析、语义检查、中间表示、代码生成与基本优化。能够实现简单语言的编译流程，解释源程序到目标代码的转换及错误定位。",
+      "aliases": [
+        "编译器",
+        "Compiler Design"
+      ],
+      "domains": [
+        "编程",
+        "系统",
+        "理论"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "zju-cs",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "parallel-computing",
+      "title": "并行计算",
+      "summary": "学习任务与数据并行、共享内存与消息传递、同步及负载均衡。能够分解计算任务、实现并行程序，并通过加速比、开销和资源使用评估效果。",
+      "aliases": [
+        "并行程序设计",
+        "PDC"
+      ],
+      "domains": [
+        "系统",
+        "计算"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "cybersecurity-engineering",
+      "title": "网络安全工程",
+      "summary": "把威胁分析、防护部署、访问控制、监测和验证组织为网络安全工程方案。能够依据网络与业务边界实施安全措施，记录配置、验证结果与剩余风险。",
+      "aliases": [
+        "安全工程与实践",
+        "安全产品配置"
+      ],
+      "domains": [
+        "安全",
+        "网络"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "zju-cs",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "web-security",
+      "title": "Web 应用安全",
+      "summary": "分析 Web 应用中的认证、授权、输入处理、会话和浏览器安全边界。能够在授权测试环境中识别典型漏洞、修复成因并通过回归测试验证防护效果。",
+      "aliases": [
+        "Web安全与防护",
+        "代码审计"
+      ],
+      "domains": [
+        "安全",
+        "Web"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "operating-system-security",
+      "title": "操作系统安全",
+      "summary": "检查账户、权限、文件系统和服务配置，实施主流操作系统安全加固。",
+      "aliases": [
+        "系统安全加固",
+        "主机安全"
+      ],
+      "domains": [
+        "安全",
+        "系统",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "security-product-configuration",
+      "title": "信息安全产品配置与应用",
+      "summary": "部署和管理防火墙、入侵检测、漏洞扫描、安全审计等防护产品。",
+      "aliases": [
+        "防火墙配置",
+        "安全审计产品"
+      ],
+      "domains": [
+        "安全",
+        "网络",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "storage-disaster-recovery",
+      "title": "数据存储与容灾",
+      "summary": "设计存储、备份与 RAID 方案，实施数据恢复和信息系统容灾。",
+      "aliases": [
+        "备份恢复",
+        "RAID与容灾"
+      ],
+      "domains": [
+        "安全",
+        "数据",
+        "系统",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "digital-forensics",
+      "title": "电子数据取证技术应用",
+      "summary": "依法获取、固定、恢复和分析电子数据，形成可检查的取证过程与结果。",
+      "aliases": [
+        "计算机取证",
+        "数据恢复取证"
+      ],
+      "domains": [
+        "安全",
+        "实践",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "security-risk-assessment",
+      "title": "信息安全风险评估",
+      "summary": "识别资产、威胁与脆弱性，完成主机、网络、应用和数据安全评估报告。",
+      "aliases": [
+        "安全测评",
+        "风险分析"
+      ],
+      "domains": [
+        "安全",
+        "工程",
+        "高职"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "applied-cryptography",
+      "title": "现代密码学",
+      "summary": "学习对称加密、公钥密码、摘要、消息认证、数字签名与密钥管理的目标和基本机制。能够解释密码协议提供的保证，正确选择成熟组件并识别误用风险。",
+      "aliases": [
+        "应用密码学",
+        "Cryptography"
+      ],
+      "domains": [
+        "安全",
+        "数学"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "tsinghua-2023",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "data-engineering",
+      "title": "数据工程",
+      "summary": "学习数据管道、存储模型、批处理与流处理、调度、质量检查和血缘管理。能够设计可重复的数据流，处理失败、重复与模式变化，为分析和应用提供可靠数据。",
+      "aliases": [
+        "数据管道",
+        "Data Engineering"
+      ],
+      "domains": [
+        "数据",
+        "系统"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "software-architecture",
+      "title": "软件架构与大型系统设计",
+      "summary": "学习模块与服务划分、接口、数据流和常见架构风格，围绕可用性、性能、安全与可维护性分析质量需求。能够表达系统结构、记录架构决策并验证关键取舍。",
+      "aliases": [
+        "系统设计",
+        "软件架构"
+      ],
+      "domains": [
+        "软件",
+        "工程"
+      ],
+      "audiences": [
+        "undergraduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "optimization",
+      "title": "优化方法",
+      "summary": "学习目标函数、约束、梯度方法和凸优化的基本概念，理解最优条件与收敛行为。能够建立简单优化模型，选择求解方法并分析解的质量与数值稳定性。",
+      "aliases": [
+        "最优化",
+        "Optimization"
+      ],
+      "domains": [
+        "数学",
+        "AI"
+      ],
+      "audiences": [
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "statistical-learning",
+      "title": "统计学习理论",
+      "summary": "研究经验风险、模型复杂度、泛化误差、正则化和学习问题的统计假设。能够解释训练效果与泛化能力之间的关系，并分析理论结论的条件与限制。",
+      "aliases": [
+        "学习理论",
+        "Statistical Learning"
+      ],
+      "domains": [
+        "AI",
+        "数学",
+        "研究"
+      ],
+      "audiences": [
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "stanford-ms",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "deep-learning",
+      "title": "深度学习",
+      "summary": "学习神经网络、反向传播、优化、正则化及常用网络结构。能够实现训练与验证流程，诊断收敛和过拟合问题，并依据任务与资源选择模型。",
+      "aliases": [
+        "神经网络",
+        "DL"
+      ],
+      "domains": [
+        "AI"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "moe-ai-510209",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "computer-vision",
+      "title": "计算机视觉",
+      "summary": "学习图像表示、特征与视觉模型，处理分类、检测、分割等典型任务。能够准备视觉数据、训练或调用模型，并分析光照、视角与数据分布变化对结果的影响。",
+      "aliases": [
+        "CV",
+        "视觉感知"
+      ],
+      "domains": [
+        "AI",
+        "视觉"
+      ],
+      "audiences": [
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "stanford-ms",
+          "moe-ai-510209"
+        ]
+      }
+    },
+    {
+      "id": "natural-language-processing",
+      "title": "自然语言处理",
+      "summary": "学习文本表示、语言建模及分类、序列标注、理解和生成任务。能够构建语言处理流程，选择数据与评价方法，并分析歧义、偏差与生成错误。",
+      "aliases": [
+        "NLP",
+        "语言技术"
+      ],
+      "domains": [
+        "AI",
+        "语言"
+      ],
+      "audiences": [
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "stanford-ms",
+          "moe-ai-510209"
+        ]
+      }
+    },
+    {
+      "id": "reinforcement-learning",
+      "title": "强化学习",
+      "summary": "学习状态、动作、奖励、策略、价值函数及探索与利用，理解序贯决策的建模方式。能够在受控环境中训练和评估策略，分析奖励设计、样本效率和训练稳定性。",
+      "aliases": [
+        "RL",
+        "序贯决策"
+      ],
+      "domains": [
+        "AI",
+        "决策"
+      ],
+      "audiences": [
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "robotics",
+      "title": "机器人学",
+      "summary": "学习机器人坐标与运动学、感知、定位、路径规划和反馈控制。能够把传感、决策与执行组织成基本闭环，通过仿真或实验验证运动任务与安全约束。",
+      "aliases": [
+        "Robotics",
+        "智能机器人"
+      ],
+      "domains": [
+        "AI",
+        "机器人"
+      ],
+      "audiences": [
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "mlops",
+      "title": "MLOps 与模型部署",
+      "summary": "学习模型与数据版本、训练流水线、部署、在线监测和再训练管理。能够把模型转为可运行服务，检查性能、数据漂移与服务质量，并形成可追溯的发布和回退过程。",
+      "aliases": [
+        "模型部署",
+        "AI系统运维"
+      ],
+      "domains": [
+        "AI",
+        "工程",
+        "运维"
+      ],
+      "audiences": [
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "skill_domain",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-ai-510209",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "llm-foundations",
+      "title": "大语言模型基础",
+      "summary": "学习分词、嵌入、注意力、Transformer、预训练与后训练的基本机制，理解上下文与推理过程。能够分析大语言模型的能力、资源约束和常见失效，为检索增强与智能体应用建立基础。",
+      "aliases": [
+        "LLM",
+        "Transformer大模型"
+      ],
+      "domains": [
+        "AI",
+        "语言"
+      ],
+      "audiences": [
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 6,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "stanford-ms",
+          "nyu-agents"
+        ]
+      }
+    },
+    {
+      "id": "ai-safety-ethics",
+      "title": "AI 安全、伦理与治理",
+      "summary": "分析 AI 系统的可靠性、隐私、公平性、滥用与治理问题，区分模型、应用和组织层面的责任。能够为具体场景提出风险评估、验证和持续监测方案，并说明其局限。",
+      "aliases": [
+        "AI安全",
+        "负责任AI"
+      ],
+      "domains": [
+        "AI",
+        "安全",
+        "伦理"
+      ],
+      "audiences": [
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 6,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "cmu-ai",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "advanced-algorithms",
+      "title": "高等算法",
+      "summary": "在基础算法上研究随机化、近似、复杂性与更深入的图和组合算法。能够阅读算法论证、构造正确性与复杂度证明，并比较不同计算假设下的求解方案。",
+      "aliases": [
+        "研究生算法",
+        "Graduate Algorithms"
+      ],
+      "domains": [
+        "算法",
+        "研究"
+      ],
+      "audiences": [
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 6,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-mscs",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "advanced-systems",
+      "title": "高阶系统专题",
+      "summary": "围绕现代操作系统、分布式存储与大规模计算研读系统论文和实现。能够复现或设计系统实验，分析一致性、隔离、调度与性能决策，并解释实验结论的边界。",
+      "aliases": [
+        "高级操作系统",
+        "高级分布式系统"
+      ],
+      "domains": [
+        "系统",
+        "研究"
+      ],
+      "audiences": [
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 6,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "skill_domain",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "formal-methods",
+      "title": "形式化方法与程序验证",
+      "summary": "学习规格描述、不变式、模型检测与程序验证，把系统性质转化为可检查的形式化要求。能够对小型程序或协议建立模型，解释证明、反例及建模假设。",
+      "aliases": [
+        "模型检测",
+        "程序验证"
+      ],
+      "domains": [
+        "理论",
+        "软件",
+        "安全"
+      ],
+      "audiences": [
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 6,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-mscs",
+          "acm-cs2023"
+        ]
+      }
+    },
+    {
+      "id": "security-operations",
+      "title": "安全运营与应急响应",
+      "summary": "学习安全告警分析、事件分级、遏制、恢复与复盘，组织日志和取证信息形成事件时间线。能够在授权演练中处理安全事件、记录决策与证据，并提出后续防护改进。",
+      "aliases": [
+        "风险评估",
+        "数字取证"
+      ],
+      "domains": [
+        "安全",
+        "实践"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 6,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "engineering-debugging-observability",
+      "title": "工程调试与可观测性",
+      "summary": "系统学习复现、假设、定位和验证故障，并使用日志、指标、追踪与剖析建立可解释的运行证据，最终能够完成一次有依据的故障归因。",
+      "aliases": [
+        "调试方法",
+        "日志指标链路",
+        "Observability"
+      ],
+      "domains": [
+        "软件",
+        "系统",
+        "运维",
+        "实践"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "skill_domain",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "swebok-v4",
+          "google-sre"
+        ]
+      }
+    },
+    {
+      "id": "api-design-evolution",
+      "title": "API 设计与演进",
+      "summary": "围绕接口契约、错误模型、兼容性、版本、幂等与弃用策略设计可长期演进的服务边界，并通过契约测试验证调用方和服务方的共同预期。",
+      "aliases": [
+        "接口设计",
+        "API版本治理",
+        "契约测试"
+      ],
+      "domains": [
+        "软件",
+        "工程",
+        "Web"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "skill_domain",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "swebok-v4"
+        ]
+      }
+    },
+    {
+      "id": "software-maintenance-evolution",
+      "title": "软件维护与演化",
+      "summary": "阅读既有系统，安全重构与迁移，管理依赖和技术债，并用回归证据控制长期变更风险，能够为一次真实演化说明边界、迁移步骤和回退策略。",
+      "aliases": [
+        "遗留系统维护",
+        "重构",
+        "技术债"
+      ],
+      "domains": [
+        "软件",
+        "工程"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 4,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "skill_domain",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "swebok-v4"
+        ]
+      }
+    },
+    {
+      "id": "open-source-collaboration",
+      "title": "开源协作与工程沟通",
+      "summary": "通过问题描述、提交、代码评审、文档、许可证和社区协作完成可被他人检查与接续的工程贡献，并理解维护者、贡献者与用户之间的责任边界。",
+      "aliases": [
+        "开源贡献",
+        "代码评审",
+        "技术写作"
+      ],
+      "domains": [
+        "软件",
+        "工程",
+        "实践"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "domain",
+      "order": 3,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "skill_domain",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "swebok-v4"
+        ]
+      }
+    },
+    {
+      "id": "performance-engineering",
+      "title": "性能工程",
+      "summary": "从工作负载与服务目标出发测量延迟、吞吐和资源成本，使用剖析、基准和容量模型定位瓶颈，并验证优化是否改善真实负载而非单一样例。",
+      "aliases": [
+        "性能分析",
+        "基准测试",
+        "容量规划"
+      ],
+      "domains": [
+        "系统",
+        "软件",
+        "工程"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "skill_domain",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "swebok-v4",
+          "google-sre"
+        ]
+      }
+    },
+    {
+      "id": "reliability-incident-response",
+      "title": "可靠性工程与生产事件响应",
+      "summary": "定义服务目标和错误预算，设计降级与恢复机制，并通过值守、事件指挥和无责复盘改善真实生产系统。",
+      "aliases": [
+        "SRE",
+        "故障响应",
+        "复盘"
+      ],
+      "domains": [
+        "系统",
+        "运维",
+        "工程",
+        "实践"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "skill_domain",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "google-sre"
+        ]
+      }
+    },
+    {
+      "id": "secure-software-supply-chain",
+      "title": "安全软件开发与软件供应链",
+      "summary": "把威胁建模、安全编码、依赖与构建来源、制品签名、漏洞响应嵌入软件全生命周期，并以可追溯清单和验证流程降低交付风险。",
+      "aliases": [
+        "安全开发生命周期",
+        "依赖安全",
+        "软件供应链安全"
+      ],
+      "domains": [
+        "安全",
+        "软件",
+        "工程"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "skill_domain",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "nist-ssdf",
+          "swebok-v4"
+        ]
+      }
+    },
+    {
+      "id": "information-retrieval",
+      "title": "信息检索",
+      "summary": "学习索引、召回与排序、相关性判断、离线评测和交互反馈，理解从关键词检索到语义检索的共同骨架。",
+      "aliases": [
+        "搜索引擎原理",
+        "检索模型",
+        "Information Retrieval"
+      ],
+      "domains": [
+        "数据",
+        "AI",
+        "语言"
+      ],
+      "audiences": [
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "data-governance-privacy",
+      "title": "数据治理与隐私工程",
+      "summary": "管理数据质量、目录、血缘、访问、保留与删除，并把隐私风险和合规约束转化为可验证的工程控制。",
+      "aliases": [
+        "数据质量治理",
+        "隐私工程",
+        "数据血缘"
+      ],
+      "domains": [
+        "数据",
+        "安全",
+        "伦理",
+        "工程"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "skill_domain",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "nist-ssdf"
+        ]
+      }
+    },
+    {
+      "id": "ai-system-evaluation",
+      "title": "AI 系统评测",
+      "summary": "从任务定义、数据切分、指标、基线和不确定性出发评估模型与智能体，并检查鲁棒性、安全性和真实使用效果。",
+      "aliases": [
+        "模型评测",
+        "Agent评测",
+        "红队测试"
+      ],
+      "domains": [
+        "AI",
+        "工程",
+        "研究"
+      ],
+      "audiences": [
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "research",
+      "order": 7,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "skill_domain",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "nist-ai-evaluation",
+          "cmu-ai"
+        ]
+      }
+    },
+    {
+      "id": "platform-engineering",
+      "title": "平台工程",
+      "summary": "把基础设施、交付、可观测性和安全能力组织成自助式开发者平台，以产品思维降低团队认知负担，并用内部用户反馈和交付指标持续验证平台价值。",
+      "aliases": [
+        "开发者平台",
+        "内部开发平台",
+        "Platform Engineering"
+      ],
+      "domains": [
+        "系统",
+        "云",
+        "运维",
+        "工程"
+      ],
+      "audiences": [
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 6,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "skill_domain",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cncf-platform-engineering",
+          "google-sre"
+        ]
+      }
+    },
+    {
+      "id": "numerical-scientific-computing",
+      "title": "数值与科学计算",
+      "summary": "研究浮点误差、数值稳定性、线性方程与迭代方法，并用向量化、误差分析和对照实验验证计算结果是否可靠、可复现。",
+      "aliases": [
+        "数值分析",
+        "科学计算",
+        "Numerical Computing"
+      ],
+      "domains": [
+        "数学",
+        "计算",
+        "研究"
+      ],
+      "audiences": [
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 5,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "research-methods",
+      "title": "计算机研究方法",
+      "summary": "学习研究问题界定、文献检索与评述、假设、实验设计、结果分析和学术表达。能够制定可验证的研究计划，维护可复现记录，并区分已有结论、推测与自身贡献。",
+      "aliases": [
+        "论文阅读",
+        "实验设计",
+        "科研方法"
+      ],
+      "domains": [
+        "研究",
+        "通识"
+      ],
+      "audiences": [
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "research",
+      "order": 6,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-mscs",
+          "tsinghua-2023",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "retrieval-augmented-generation",
+      "title": "检索增强生成（RAG）",
+      "summary": "学习文档处理、分块与索引、召回与重排、上下文组织和有依据的生成。能够构建检索增强问答流程，分别评估检索与回答质量，定位遗漏证据、错误引用和知识过期问题。",
+      "aliases": [
+        "RAG",
+        "向量检索"
+      ],
+      "domains": [
+        "AI",
+        "数据",
+        "工程"
+      ],
+      "audiences": [
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 7,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "nyu-agents"
+        ]
+      }
+    },
+    {
+      "id": "agent-engineering",
+      "title": "智能体工程",
+      "summary": "围绕模型调用、工具、上下文、状态与记忆、工作流编排和评测构建 AI 智能体。能够交付一个有明确权限、失败恢复与停止条件的应用，并用真实任务检查工具执行和用户体验。",
+      "aliases": [
+        "Agent开发",
+        "AI Agent",
+        "工具调用",
+        "agent development"
+      ],
+      "domains": [
+        "AI",
+        "工程",
+        "智能体"
+      ],
+      "audiences": [
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 8,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "skill_domain",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "nyu-agents"
+        ]
+      }
+    },
+    {
+      "id": "multi-agent-systems",
+      "title": "多智能体系统",
+      "summary": "研究多个智能体之间的角色分工、通信、协调、共享状态与冲突处理。能够设计并评估协作流程，比较其与单智能体方案的效果、成本及错误传播，明确交接和停止条件。",
+      "aliases": [
+        "Multi-Agent",
+        "MAS",
+        "多Agent"
+      ],
+      "domains": [
+        "AI",
+        "智能体",
+        "研究"
+      ],
+      "audiences": [
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "advanced",
+      "order": 9,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "nyu-agents",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "capstone-project",
+      "title": "综合工程项目",
+      "summary": "围绕真实需求综合运用分析、设计、实现、测试和交付方法，完成可演示、可验收的工程作品。通过需求记录、版本历史、测试和复盘说明个人贡献与方案取舍。",
+      "aliases": [
+        "毕业设计",
+        "Capstone",
+        "作品集项目"
+      ],
+      "domains": [
+        "实践",
+        "工程"
+      ],
+      "audiences": [
+        "vocational",
+        "undergraduate",
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "research",
+      "order": 10,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cornell-cs",
+          "tsinghua-2023",
+          "moe-vocational-2025"
+        ]
+      }
+    },
+    {
+      "id": "thesis-research",
+      "title": "研究课题与学位论文",
+      "summary": "围绕明确研究问题组织文献、方法、实验和论证，形成符合学术规范的研究成果。能够说明贡献、有效性威胁与局限，提交可检查的论文及必要的复现材料。",
+      "aliases": [
+        "论文研究",
+        "Thesis"
+      ],
+      "domains": [
+        "研究"
+      ],
+      "audiences": [
+        "graduate",
+        "self_directed"
+      ],
+      "stage": "research",
+      "order": 10,
+      "namespace": "learnflow:official",
+      "revision": 1,
+      "kind": "course",
+      "ownership": {
+        "system": "learnflow",
+        "catalog": "official"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-mscs",
+          "stanford-ms",
+          "tsinghua-2023"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "digital-literacy--programming-foundations",
+      "kind": "soft_prerequisite",
+      "rationale": "先建立基本数字工具与信息素养",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "digital-literacy"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "programming-foundations"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-vocational-2025",
+          "mit-6-3",
+          "tsinghua-2023"
+        ]
+      }
+    },
+    {
+      "id": "computer-introduction--programming-foundations",
+      "kind": "co_learning",
+      "rationale": "导论帮助理解程序设计在学科中的位置",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "computer-introduction"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "programming-foundations"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "cmu-ai",
+          "mit-6-3",
+          "tsinghua-2023",
+          "moe-vocational-2025"
+        ]
+      }
+    },
+    {
+      "id": "programming-foundations--python-programming",
+      "kind": "hard_prerequisite",
+      "rationale": "需要基本变量、控制流与函数概念",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "programming-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "python-programming"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "moe-vocational-2025",
+          "moe-ai-510209"
+        ]
+      }
+    },
+    {
+      "id": "programming-foundations--c-programming",
+      "kind": "hard_prerequisite",
+      "rationale": "需要基本程序设计能力",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "programming-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "c-programming"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "moe-vocational-2025"
+        ]
+      }
+    },
+    {
+      "id": "programming-foundations--object-oriented-programming",
+      "kind": "hard_prerequisite",
+      "rationale": "面向对象建立在基础编程之上",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "programming-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "object-oriented-programming"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "moe-vocational-2025",
+          "cornell-cs",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "programming-foundations--data-structures",
+      "kind": "hard_prerequisite",
+      "rationale": "数据结构需要可实现的程序设计基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "programming-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "data-structures"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "moe-vocational-2025",
+          "cornell-cs",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "discrete-mathematics--data-structures",
+      "kind": "soft_prerequisite",
+      "rationale": "集合、关系与递归支撑结构化推理",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "discrete-mathematics"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "data-structures"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "tsinghua-2023",
+          "zju-cs",
+          "cornell-cs"
+        ]
+      }
+    },
+    {
+      "id": "c-programming--computer-organization",
+      "kind": "soft_prerequisite",
+      "rationale": "底层语言帮助连接机器表示",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "c-programming"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "computer-organization"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "digital-logic--computer-organization",
+      "kind": "hard_prerequisite",
+      "rationale": "组成原理依赖逻辑电路与数据表示",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "digital-logic"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "computer-organization"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "zju-cs",
+          "tsinghua-2023",
+          "mit-6-3"
+        ]
+      }
+    },
+    {
+      "id": "web-foundations--web-development",
+      "kind": "hard_prerequisite",
+      "rationale": "Web 应用开发依赖协议与前端基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "web-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "web-development"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-vocational-2025",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "database-foundations--database-systems",
+      "kind": "hard_prerequisite",
+      "rationale": "先具备数据模型与 SQL 操作经验",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "database-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "database-systems"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-ai-510209",
+          "moe-security-510207",
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "networking-foundations--computer-networks",
+      "kind": "hard_prerequisite",
+      "rationale": "先建立协议、寻址与网络设备概念",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "networking-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "computer-networks"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202",
+          "moe-security-510207",
+          "tsinghua-2023",
+          "zju-cs",
+          "whu-computing"
+        ]
+      }
+    },
+    {
+      "id": "networking-foundations--network-routing-switching",
+      "kind": "hard_prerequisite",
+      "rationale": "设备配置依赖基础网络概念",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "networking-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "network-routing-switching"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "linux-fundamentals--linux-administration",
+      "kind": "hard_prerequisite",
+      "rationale": "系统管理依赖命令行与文件权限基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "linux-fundamentals"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "linux-administration"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-ai-510209",
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "software-development-foundations--software-engineering",
+      "kind": "hard_prerequisite",
+      "rationale": "工程过程建立在版本、测试与协作基础上",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "software-development-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "software-engineering"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "moe-vocational-2025",
+          "acm-cs2023",
+          "tsinghua-2023",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "object-oriented-programming--software-engineering",
+      "kind": "soft_prerequisite",
+      "rationale": "常见工程设计使用对象与抽象",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "object-oriented-programming"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "software-engineering"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cornell-cs",
+          "zju-cs",
+          "acm-cs2023",
+          "tsinghua-2023"
+        ]
+      }
+    },
+    {
+      "id": "data-structures--algorithms",
+      "kind": "hard_prerequisite",
+      "rationale": "算法设计需要结构与复杂度分析对象",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "data-structures"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "algorithms"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cornell-cs",
+          "tsinghua-2023",
+          "zju-cs",
+          "mit-6-3"
+        ]
+      }
+    },
+    {
+      "id": "discrete-mathematics--algorithms",
+      "kind": "hard_prerequisite",
+      "rationale": "证明、图与组合方法是算法基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "discrete-mathematics"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "algorithms"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "tsinghua-2023",
+          "zju-cs",
+          "mit-6-3",
+          "cornell-cs"
+        ]
+      }
+    },
+    {
+      "id": "discrete-mathematics--theory-of-computation",
+      "kind": "hard_prerequisite",
+      "rationale": "形式语言与可计算性依赖离散结构",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "discrete-mathematics"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "theory-of-computation"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "tsinghua-2023",
+          "zju-cs",
+          "mit-6-3"
+        ]
+      }
+    },
+    {
+      "id": "computer-organization--operating-systems",
+      "kind": "hard_prerequisite",
+      "rationale": "操作系统依赖处理器、存储与中断模型",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "computer-organization"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "operating-systems"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "data-structures--database-systems",
+      "kind": "soft_prerequisite",
+      "rationale": "索引与执行结构需要数据结构",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "data-structures"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "database-systems"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cornell-cs",
+          "tsinghua-2023",
+          "zju-cs",
+          "mit-6-3"
+        ]
+      }
+    },
+    {
+      "id": "data-structures--programming-languages",
+      "kind": "soft_prerequisite",
+      "rationale": "抽象数据类型帮助理解语言设计",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "data-structures"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "programming-languages"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cornell-cs",
+          "tsinghua-2023",
+          "zju-cs",
+          "acm-cs2023",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "programming-foundations--computer-security",
+      "kind": "hard_prerequisite",
+      "rationale": "安全实践至少需要读写程序",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "programming-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "computer-security"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "moe-vocational-2025",
+          "acm-cs2023",
+          "zju-cs",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "networking-foundations--computer-security",
+      "kind": "co_learning",
+      "rationale": "网络边界是安全问题的重要载体",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "networking-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "computer-security"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202",
+          "moe-security-510207",
+          "acm-cs2023",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "programming-foundations--mobile-development",
+      "kind": "hard_prerequisite",
+      "rationale": "移动开发依赖通用编程能力",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "programming-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "mobile-development"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "moe-vocational-2025"
+        ]
+      }
+    },
+    {
+      "id": "computer-organization--embedded-systems",
+      "kind": "hard_prerequisite",
+      "rationale": "嵌入式系统需要硬件与机器接口基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "computer-organization"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "embedded-systems"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs",
+          "acm-cs2023",
+          "moe-vocational-2025"
+        ]
+      }
+    },
+    {
+      "id": "linear-algebra--computer-graphics",
+      "kind": "hard_prerequisite",
+      "rationale": "图形变换依赖向量与矩阵",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "linear-algebra"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "computer-graphics"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cmu-ai",
+          "tsinghua-2023",
+          "acm-cs2023"
+        ]
+      }
+    },
+    {
+      "id": "data-structures--computer-graphics",
+      "kind": "soft_prerequisite",
+      "rationale": "几何与场景表示需要数据结构",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "data-structures"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "computer-graphics"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cornell-cs",
+          "tsinghua-2023",
+          "zju-cs",
+          "acm-cs2023"
+        ]
+      }
+    },
+    {
+      "id": "operating-systems--distributed-systems",
+      "kind": "hard_prerequisite",
+      "rationale": "分布式系统依赖并发、进程与资源管理",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "operating-systems"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "distributed-systems"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs",
+          "cmu-mscs",
+          "acm-cs2023"
+        ]
+      }
+    },
+    {
+      "id": "computer-networks--distributed-systems",
+      "kind": "hard_prerequisite",
+      "rationale": "分布式通信依赖网络协议",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "computer-networks"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "distributed-systems"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "tsinghua-2023",
+          "zju-cs",
+          "whu-computing",
+          "cmu-mscs",
+          "acm-cs2023"
+        ]
+      }
+    },
+    {
+      "id": "operating-systems--cloud-computing",
+      "kind": "soft_prerequisite",
+      "rationale": "云平台建立在虚拟化与资源管理之上",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "operating-systems"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "cloud-computing"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs",
+          "moe-vocational-2025",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "computer-networks--cloud-computing",
+      "kind": "soft_prerequisite",
+      "rationale": "云服务依赖网络与服务通信",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "computer-networks"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "cloud-computing"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "tsinghua-2023",
+          "zju-cs",
+          "whu-computing",
+          "moe-vocational-2025",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "software-engineering--devops",
+      "kind": "hard_prerequisite",
+      "rationale": "持续交付扩展软件工程过程",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "software-engineering"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "devops"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "tsinghua-2023",
+          "zju-cs",
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "linux-administration--devops",
+      "kind": "soft_prerequisite",
+      "rationale": "部署与自动化通常依赖 Linux 环境",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "linux-administration"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "devops"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202",
+          "acm-cs2023"
+        ]
+      }
+    },
+    {
+      "id": "theory-of-computation--compilers",
+      "kind": "soft_prerequisite",
+      "rationale": "形式语言支撑词法语法分析",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "theory-of-computation"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "compilers"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "zju-cs",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "programming-languages--compilers",
+      "kind": "hard_prerequisite",
+      "rationale": "编译器实现依赖语言语义与运行时",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "programming-languages"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "compilers"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "cmu-mscs",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "algorithms--parallel-computing",
+      "kind": "soft_prerequisite",
+      "rationale": "并行算法需要复杂度与分解能力",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "algorithms"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "parallel-computing"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cornell-cs",
+          "zju-cs",
+          "acm-cs2023",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "operating-systems--parallel-computing",
+      "kind": "soft_prerequisite",
+      "rationale": "线程、同步和内存模型是实践基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "operating-systems"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "parallel-computing"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs",
+          "acm-cs2023",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "computer-security--cybersecurity-engineering",
+      "kind": "hard_prerequisite",
+      "rationale": "安全工程建立在威胁与控制基础上",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "computer-security"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "cybersecurity-engineering"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "zju-cs",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "computer-networks--cybersecurity-engineering",
+      "kind": "hard_prerequisite",
+      "rationale": "网络防护需要协议与拓扑知识",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "computer-networks"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "cybersecurity-engineering"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "tsinghua-2023",
+          "zju-cs",
+          "whu-computing",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "web-development--web-security",
+      "kind": "hard_prerequisite",
+      "rationale": "理解 Web 应用结构才能分析漏洞",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "web-development"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "web-security"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-security-510207",
+          "moe-vocational-2025"
+        ]
+      }
+    },
+    {
+      "id": "computer-security--web-security",
+      "kind": "hard_prerequisite",
+      "rationale": "需要基本威胁模型与防护原则",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "computer-security"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "web-security"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "zju-cs",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "discrete-mathematics--applied-cryptography",
+      "kind": "soft_prerequisite",
+      "rationale": "密码学使用离散结构与证明",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "discrete-mathematics"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "applied-cryptography"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "tsinghua-2023",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "probability-statistics--applied-cryptography",
+      "kind": "soft_prerequisite",
+      "rationale": "随机性与安全参数需要概率基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "probability-statistics"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "applied-cryptography"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cmu-ai",
+          "tsinghua-2023",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "database-systems--data-engineering",
+      "kind": "hard_prerequisite",
+      "rationale": "数据工程依赖存储、查询与事务基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "database-systems"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "data-engineering"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs",
+          "acm-cs2023",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "software-engineering--software-architecture",
+      "kind": "hard_prerequisite",
+      "rationale": "大型设计建立在工程过程与模块化之上",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "software-engineering"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "software-architecture"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "tsinghua-2023",
+          "zju-cs",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "algorithms--artificial-intelligence",
+      "kind": "soft_prerequisite",
+      "rationale": "搜索与推理需要算法基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "algorithms"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "artificial-intelligence"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cornell-cs",
+          "zju-cs",
+          "cmu-ai",
+          "acm-cs2023"
+        ]
+      }
+    },
+    {
+      "id": "discrete-mathematics--artificial-intelligence",
+      "kind": "soft_prerequisite",
+      "rationale": "逻辑与关系支撑符号推理",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "discrete-mathematics"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "artificial-intelligence"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "tsinghua-2023",
+          "zju-cs",
+          "cmu-ai"
+        ]
+      }
+    },
+    {
+      "id": "python-programming--machine-learning",
+      "kind": "hard_prerequisite",
+      "rationale": "需要可实现数据处理与模型实验",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "python-programming"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "machine-learning"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "moe-ai-510209",
+          "cmu-ai",
+          "stanford-ms",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "linear-algebra--machine-learning",
+      "kind": "hard_prerequisite",
+      "rationale": "模型表示与计算依赖矩阵方法",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "linear-algebra"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "machine-learning"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cmu-ai",
+          "tsinghua-2023",
+          "stanford-ms",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "probability-statistics--machine-learning",
+      "kind": "hard_prerequisite",
+      "rationale": "学习与评估依赖概率统计",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "probability-statistics"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "machine-learning"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cmu-ai",
+          "tsinghua-2023",
+          "stanford-ms",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "calculus--machine-learning",
+      "kind": "soft_prerequisite",
+      "rationale": "优化与连续模型需要微积分",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "calculus"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "machine-learning"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "cmu-ai",
+          "stanford-ms",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "algorithms--machine-learning",
+      "kind": "soft_prerequisite",
+      "rationale": "复杂度与实现需要算法基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "algorithms"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "machine-learning"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cornell-cs",
+          "zju-cs",
+          "cmu-ai",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "data-processing--machine-learning",
+      "kind": "co_learning",
+      "rationale": "真实建模需同步学习数据质量与特征处理",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "data-processing"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "machine-learning"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-ai-510209",
+          "cmu-ai",
+          "stanford-ms",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "database-systems--data-mining",
+      "kind": "soft_prerequisite",
+      "rationale": "数据挖掘经常依赖数据组织与查询",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "database-systems"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "data-mining"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "probability-statistics--data-mining",
+      "kind": "hard_prerequisite",
+      "rationale": "模式发现与评估需要统计基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "probability-statistics"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "data-mining"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cmu-ai",
+          "tsinghua-2023",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "calculus--optimization",
+      "kind": "hard_prerequisite",
+      "rationale": "连续优化依赖导数与梯度",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "calculus"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "optimization"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "cmu-ai",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "linear-algebra--optimization",
+      "kind": "hard_prerequisite",
+      "rationale": "数值优化依赖向量空间与矩阵",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "linear-algebra"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "optimization"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cmu-ai",
+          "tsinghua-2023",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "machine-learning--statistical-learning",
+      "kind": "hard_prerequisite",
+      "rationale": "理论课程建立在基础模型与泛化问题之上",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "machine-learning"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "statistical-learning"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "stanford-ms",
+          "zju-cs",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "probability-statistics--statistical-learning",
+      "kind": "hard_prerequisite",
+      "rationale": "泛化界与估计依赖统计基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "probability-statistics"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "statistical-learning"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cmu-ai",
+          "tsinghua-2023",
+          "stanford-ms",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "machine-learning--deep-learning",
+      "kind": "hard_prerequisite",
+      "rationale": "先理解训练、泛化与评估",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "machine-learning"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "deep-learning"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "stanford-ms",
+          "zju-cs",
+          "moe-ai-510209"
+        ]
+      }
+    },
+    {
+      "id": "optimization--deep-learning",
+      "kind": "soft_prerequisite",
+      "rationale": "深度模型训练依赖优化方法",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "optimization"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "deep-learning"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "stanford-ms",
+          "moe-ai-510209"
+        ]
+      }
+    },
+    {
+      "id": "linear-algebra--deep-learning",
+      "kind": "hard_prerequisite",
+      "rationale": "神经网络主要计算以张量和矩阵为基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "linear-algebra"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "deep-learning"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cmu-ai",
+          "tsinghua-2023",
+          "moe-ai-510209",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "deep-learning--computer-vision",
+      "kind": "hard_prerequisite",
+      "rationale": "现代视觉课程通常使用深度模型",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "deep-learning"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "computer-vision"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "moe-ai-510209",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "computer-graphics--computer-vision",
+      "kind": "co_learning",
+      "rationale": "图形生成与视觉理解可互相补充",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "computer-graphics"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "computer-vision"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "tsinghua-2023",
+          "cmu-ai",
+          "stanford-ms",
+          "moe-ai-510209"
+        ]
+      }
+    },
+    {
+      "id": "deep-learning--natural-language-processing",
+      "kind": "hard_prerequisite",
+      "rationale": "现代 NLP 依赖表示学习与 Transformer",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "deep-learning"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "natural-language-processing"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "moe-ai-510209",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "machine-learning--reinforcement-learning",
+      "kind": "hard_prerequisite",
+      "rationale": "RL 需要基本学习与函数逼近概念",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "machine-learning"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "reinforcement-learning"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "stanford-ms",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "probability-statistics--reinforcement-learning",
+      "kind": "hard_prerequisite",
+      "rationale": "序贯决策依赖随机过程与期望",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "probability-statistics"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "reinforcement-learning"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cmu-ai",
+          "tsinghua-2023",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "optimization--reinforcement-learning",
+      "kind": "soft_prerequisite",
+      "rationale": "策略优化需要最优化基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "optimization"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "reinforcement-learning"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "artificial-intelligence--robotics",
+      "kind": "soft_prerequisite",
+      "rationale": "规划、搜索与决策是机器人智能基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "artificial-intelligence"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "robotics"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "zju-cs",
+          "acm-cs2023",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "linear-algebra--robotics",
+      "kind": "hard_prerequisite",
+      "rationale": "运动学与坐标变换依赖线性代数",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "linear-algebra"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "robotics"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cmu-ai",
+          "tsinghua-2023",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "machine-learning--mlops",
+      "kind": "hard_prerequisite",
+      "rationale": "需要理解训练、评估和模型工件",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "machine-learning"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "mlops"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "stanford-ms",
+          "zju-cs",
+          "moe-ai-510209",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "devops--mlops",
+      "kind": "hard_prerequisite",
+      "rationale": "模型交付扩展持续集成、部署与监控",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "devops"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "mlops"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "moe-network-510202",
+          "moe-ai-510209",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "deep-learning--llm-foundations",
+      "kind": "hard_prerequisite",
+      "rationale": "LLM 建立在深度学习与 Transformer 之上",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "deep-learning"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "llm-foundations"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "moe-ai-510209",
+          "stanford-ms",
+          "nyu-agents"
+        ]
+      }
+    },
+    {
+      "id": "natural-language-processing--llm-foundations",
+      "kind": "soft_prerequisite",
+      "rationale": "NLP 提供语言任务、表示与评估背景",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "natural-language-processing"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "llm-foundations"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "stanford-ms",
+          "moe-ai-510209",
+          "nyu-agents"
+        ]
+      }
+    },
+    {
+      "id": "computing-ethics--ai-safety-ethics",
+      "kind": "hard_prerequisite",
+      "rationale": "先建立计算技术责任边界",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "computing-ethics"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "ai-safety-ethics"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "cmu-ai",
+          "zju-cs"
+        ]
+      }
+    },
+    {
+      "id": "artificial-intelligence--ai-safety-ethics",
+      "kind": "soft_prerequisite",
+      "rationale": "理解 AI 能力与失效模式后再分析治理",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "artificial-intelligence"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "ai-safety-ethics"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "zju-cs",
+          "acm-cs2023"
+        ]
+      }
+    },
+    {
+      "id": "algorithms--advanced-algorithms",
+      "kind": "hard_prerequisite",
+      "rationale": "研究生算法以本科算法为基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "algorithms"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "advanced-algorithms"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cornell-cs",
+          "zju-cs",
+          "cmu-mscs",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "distributed-systems--advanced-systems",
+      "kind": "hard_prerequisite",
+      "rationale": "高阶系统专题需要系统与分布式基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "distributed-systems"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "advanced-systems"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-mscs",
+          "acm-cs2023"
+        ]
+      }
+    },
+    {
+      "id": "theory-of-computation--formal-methods",
+      "kind": "hard_prerequisite",
+      "rationale": "形式验证依赖逻辑与形式语义",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "theory-of-computation"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "formal-methods"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "zju-cs",
+          "cmu-mscs",
+          "acm-cs2023"
+        ]
+      }
+    },
+    {
+      "id": "programming-languages--formal-methods",
+      "kind": "soft_prerequisite",
+      "rationale": "程序语义帮助定义验证对象",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "programming-languages"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "formal-methods"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "cybersecurity-engineering--security-operations",
+      "kind": "hard_prerequisite",
+      "rationale": "运营与响应需要安全控制实践",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "cybersecurity-engineering"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "security-operations"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "zju-cs",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "computer-organization--computer-maintenance",
+      "kind": "co_learning",
+      "rationale": "组成原理与部件装配、故障定位可以相互验证",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "computer-organization"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "computer-maintenance"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs",
+          "moe-computer-app-510201"
+        ]
+      }
+    },
+    {
+      "id": "digital-literacy--computer-maintenance",
+      "kind": "soft_prerequisite",
+      "rationale": "先具备基本设备与操作系统使用能力",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "digital-literacy"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "computer-maintenance"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-vocational-2025",
+          "moe-computer-app-510201"
+        ]
+      }
+    },
+    {
+      "id": "networking-foundations--windows-server-administration",
+      "kind": "soft_prerequisite",
+      "rationale": "服务器角色配置需要基本网络服务概念",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "networking-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "windows-server-administration"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202",
+          "moe-security-510207",
+          "moe-computer-app-510201"
+        ]
+      }
+    },
+    {
+      "id": "digital-literacy--windows-server-administration",
+      "kind": "soft_prerequisite",
+      "rationale": "服务器管理建立在系统操作与信息素养之上",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "digital-literacy"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "windows-server-administration"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-vocational-2025",
+          "moe-computer-app-510201",
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "networking-foundations--network-cabling",
+      "kind": "hard_prerequisite",
+      "rationale": "综合布线需要理解介质、拓扑和网络接口",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "networking-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "network-cabling"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "web-foundations--frontend-design-development",
+      "kind": "hard_prerequisite",
+      "rationale": "前端设计与开发需要 HTML、CSS 和浏览器基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "web-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "frontend-design-development"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-vocational-2025",
+          "moe-computer-app-510201",
+          "moe-software-510203"
+        ]
+      }
+    },
+    {
+      "id": "frontend-design-development--web-development",
+      "kind": "co_learning",
+      "rationale": "前端交互与后端应用能力应在完整 Web 场景中协同",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "frontend-design-development"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "web-development"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-computer-app-510201",
+          "moe-software-510203",
+          "moe-security-510207",
+          "moe-vocational-2025"
+        ]
+      }
+    },
+    {
+      "id": "software-development-foundations--software-modeling-design",
+      "kind": "hard_prerequisite",
+      "rationale": "建模设计需要基本版本、需求和软件构造经验",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "software-development-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "software-modeling-design"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "moe-vocational-2025",
+          "moe-software-510203",
+          "moe-mobile-510213"
+        ]
+      }
+    },
+    {
+      "id": "object-oriented-programming--software-modeling-design",
+      "kind": "hard_prerequisite",
+      "rationale": "对象、职责与关系是 UML 建模和设计模式的基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "object-oriented-programming"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "software-modeling-design"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cornell-cs",
+          "zju-cs",
+          "moe-software-510203",
+          "moe-mobile-510213"
+        ]
+      }
+    },
+    {
+      "id": "software-modeling-design--enterprise-application-development",
+      "kind": "hard_prerequisite",
+      "rationale": "企业级项目需要先形成需求模型和模块设计",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "software-modeling-design"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "enterprise-application-development"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-software-510203",
+          "moe-mobile-510213"
+        ]
+      }
+    },
+    {
+      "id": "web-development--enterprise-application-development",
+      "kind": "soft_prerequisite",
+      "rationale": "企业应用常建立在 Web 请求、会话与 API 机制上",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "web-development"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "enterprise-application-development"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-security-510207",
+          "moe-vocational-2025",
+          "moe-software-510203",
+          "moe-mobile-510213"
+        ]
+      }
+    },
+    {
+      "id": "database-systems--enterprise-application-development",
+      "kind": "soft_prerequisite",
+      "rationale": "业务应用需要数据库设计、事务与持久化能力",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "database-systems"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "enterprise-application-development"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs",
+          "moe-software-510203",
+          "moe-mobile-510213"
+        ]
+      }
+    },
+    {
+      "id": "software-development-foundations--software-testing",
+      "kind": "hard_prerequisite",
+      "rationale": "测试需要理解版本、构建、缺陷与工程过程",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "software-development-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "software-testing"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "moe-vocational-2025",
+          "moe-software-510203",
+          "moe-mobile-510213"
+        ]
+      }
+    },
+    {
+      "id": "enterprise-application-development--software-testing",
+      "kind": "co_learning",
+      "rationale": "在真实企业项目中设计测试才能形成完整质量证据",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "enterprise-application-development"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "software-testing"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-software-510203",
+          "moe-mobile-510213"
+        ]
+      }
+    },
+    {
+      "id": "mobile-development--mobile-cross-platform",
+      "kind": "hard_prerequisite",
+      "rationale": "跨平台开发需要移动界面、数据和发布基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "mobile-development"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "mobile-cross-platform"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-vocational-2025",
+          "moe-mobile-510213"
+        ]
+      }
+    },
+    {
+      "id": "web-foundations--mini-program-development",
+      "kind": "hard_prerequisite",
+      "rationale": "小程序页面与交互建立在 Web 基础之上",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "web-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "mini-program-development"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-vocational-2025",
+          "moe-mobile-510213"
+        ]
+      }
+    },
+    {
+      "id": "mobile-development--mini-program-development",
+      "kind": "soft_prerequisite",
+      "rationale": "移动应用生命周期与接口经验可迁移到小程序",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "mobile-development"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "mini-program-development"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-vocational-2025",
+          "moe-mobile-510213"
+        ]
+      }
+    },
+    {
+      "id": "python-programming--data-acquisition-technology",
+      "kind": "hard_prerequisite",
+      "rationale": "数据采集任务需要脚本、接口和解析能力",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "python-programming"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "data-acquisition-technology"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "moe-ai-510209",
+          "moe-bigdata-510205"
+        ]
+      }
+    },
+    {
+      "id": "database-foundations--data-acquisition-technology",
+      "kind": "soft_prerequisite",
+      "rationale": "采集数据库数据需要基本 SQL 与数据模型经验",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "database-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "data-acquisition-technology"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-ai-510209",
+          "moe-security-510207",
+          "moe-bigdata-510205"
+        ]
+      }
+    },
+    {
+      "id": "data-acquisition-technology--data-preprocessing-etl",
+      "kind": "hard_prerequisite",
+      "rationale": "预处理与 ETL 以可获得的多源数据为输入",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "data-acquisition-technology"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "data-preprocessing-etl"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-bigdata-510205"
+        ]
+      }
+    },
+    {
+      "id": "database-foundations--data-preprocessing-etl",
+      "kind": "soft_prerequisite",
+      "rationale": "抽取、转换和装载需要理解表、类型与约束",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "database-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "data-preprocessing-etl"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-ai-510209",
+          "moe-security-510207",
+          "moe-bigdata-510205"
+        ]
+      }
+    },
+    {
+      "id": "data-preprocessing-etl--data-analysis-applications",
+      "kind": "hard_prerequisite",
+      "rationale": "可靠分析需要经过清洗和一致化的数据",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "data-preprocessing-etl"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "data-analysis-applications"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-bigdata-510205"
+        ]
+      }
+    },
+    {
+      "id": "probability-statistics--data-analysis-applications",
+      "kind": "soft_prerequisite",
+      "rationale": "描述统计和指标解释需要概率统计基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "probability-statistics"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "data-analysis-applications"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cmu-ai",
+          "tsinghua-2023",
+          "moe-bigdata-510205"
+        ]
+      }
+    },
+    {
+      "id": "data-analysis-applications--data-visualization-applications",
+      "kind": "co_learning",
+      "rationale": "分析与可视化应围绕同一业务问题迭代",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "data-analysis-applications"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "data-visualization-applications"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-bigdata-510205",
+          "moe-computer-app-510201"
+        ]
+      }
+    },
+    {
+      "id": "hci-foundations--data-visualization-applications",
+      "kind": "soft_prerequisite",
+      "rationale": "可视化交互与信息呈现需要基本用户体验原则",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "hci-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "data-visualization-applications"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "moe-bigdata-510205",
+          "moe-computer-app-510201"
+        ]
+      }
+    },
+    {
+      "id": "database-systems--big-data-platform-operations",
+      "kind": "soft_prerequisite",
+      "rationale": "大数据平台仍需要存储、查询和数据管理基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "database-systems"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "big-data-platform-operations"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs",
+          "moe-bigdata-510205"
+        ]
+      }
+    },
+    {
+      "id": "linux-administration--big-data-platform-operations",
+      "kind": "hard_prerequisite",
+      "rationale": "分布式平台部署运维依赖 Linux 系统管理",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "linux-administration"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "big-data-platform-operations"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202",
+          "moe-bigdata-510205"
+        ]
+      }
+    },
+    {
+      "id": "data-engineering--big-data-platform-operations",
+      "kind": "hard_prerequisite",
+      "rationale": "平台运维需要理解数据管道与分布式处理任务",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "data-engineering"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "big-data-platform-operations"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "cmu-mscs",
+          "moe-bigdata-510205"
+        ]
+      }
+    },
+    {
+      "id": "networking-foundations--wireless-networking",
+      "kind": "hard_prerequisite",
+      "rationale": "无线组网需要寻址、协议和局域网基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "networking-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "wireless-networking"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "network-routing-switching--wireless-networking",
+      "kind": "soft_prerequisite",
+      "rationale": "无线接入最终需要进入可路由交换的网络",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "network-routing-switching"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "wireless-networking"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "python-programming--network-automation",
+      "kind": "hard_prerequisite",
+      "rationale": "网络自动化需要脚本、数据结构与接口调用能力",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "python-programming"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "network-automation"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "moe-ai-510209",
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "network-routing-switching--network-automation",
+      "kind": "hard_prerequisite",
+      "rationale": "自动化配置前必须理解设备命令和网络行为",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "network-routing-switching"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "network-automation"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "network-routing-switching--network-virtualization",
+      "kind": "hard_prerequisite",
+      "rationale": "虚拟网络建立在二三层转发和隔离概念上",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "network-routing-switching"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "network-virtualization"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202",
+          "moe-cloud-510206"
+        ]
+      }
+    },
+    {
+      "id": "network-cabling--network-systems-integration",
+      "kind": "soft_prerequisite",
+      "rationale": "网络工程实施包含布线、测试与验收",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "network-cabling"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "network-systems-integration"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "network-routing-switching--network-systems-integration",
+      "kind": "hard_prerequisite",
+      "rationale": "系统集成需要设备选型、地址规划和路由交换能力",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "network-routing-switching"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "network-systems-integration"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "wireless-networking--network-systems-integration",
+      "kind": "soft_prerequisite",
+      "rationale": "现代园区网络通常包含无线接入与优化",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "wireless-networking"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "network-systems-integration"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "network-automation--network-systems-integration",
+      "kind": "co_learning",
+      "rationale": "自动化巡检与配置可提升集成项目的交付质量",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "network-automation"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "network-systems-integration"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "operating-systems--virtualization-technology",
+      "kind": "hard_prerequisite",
+      "rationale": "虚拟化建立在处理器、内存与操作系统资源管理之上",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "operating-systems"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "virtualization-technology"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs",
+          "moe-cloud-510206"
+        ]
+      }
+    },
+    {
+      "id": "networking-foundations--virtualization-technology",
+      "kind": "soft_prerequisite",
+      "rationale": "虚拟机和虚拟网络需要基本网络配置能力",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "networking-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "virtualization-technology"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202",
+          "moe-security-510207",
+          "moe-cloud-510206"
+        ]
+      }
+    },
+    {
+      "id": "virtualization-technology--cloud-platform-operations",
+      "kind": "hard_prerequisite",
+      "rationale": "云平台运维需要先掌握虚拟资源与镜像管理",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "virtualization-technology"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "cloud-platform-operations"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-cloud-510206"
+        ]
+      }
+    },
+    {
+      "id": "cloud-computing--cloud-platform-operations",
+      "kind": "co_learning",
+      "rationale": "云计算概念与实际平台服务应同步建立",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "cloud-computing"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "cloud-platform-operations"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-vocational-2025",
+          "cmu-mscs",
+          "moe-cloud-510206"
+        ]
+      }
+    },
+    {
+      "id": "linux-administration--cloud-platform-operations",
+      "kind": "soft_prerequisite",
+      "rationale": "多数云平台节点和服务依赖 Linux 管理能力",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "linux-administration"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "cloud-platform-operations"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202",
+          "moe-cloud-510206"
+        ]
+      }
+    },
+    {
+      "id": "cloud-platform-operations--container-cloud-operations",
+      "kind": "hard_prerequisite",
+      "rationale": "容器云运维需要云平台资源、网络、存储和监控基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "cloud-platform-operations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "container-cloud-operations"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-cloud-510206"
+        ]
+      }
+    },
+    {
+      "id": "linux-administration--container-cloud-operations",
+      "kind": "hard_prerequisite",
+      "rationale": "容器运行、镜像和编排依赖 Linux 系统能力",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "linux-administration"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "container-cloud-operations"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202",
+          "moe-cloud-510206"
+        ]
+      }
+    },
+    {
+      "id": "computer-security--cloud-security-applications",
+      "kind": "hard_prerequisite",
+      "rationale": "云安全需要基本威胁、身份和控制原则",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "computer-security"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "cloud-security-applications"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "zju-cs",
+          "moe-security-510207",
+          "moe-cloud-510206"
+        ]
+      }
+    },
+    {
+      "id": "cloud-platform-operations--cloud-security-applications",
+      "kind": "hard_prerequisite",
+      "rationale": "先理解云资源与服务边界才能实施安全运维",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "cloud-platform-operations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "cloud-security-applications"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-cloud-510206"
+        ]
+      }
+    },
+    {
+      "id": "windows-server-administration--system-deployment-operations",
+      "kind": "soft_prerequisite",
+      "rationale": "系统部署需要服务器角色、权限和服务管理经验",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "windows-server-administration"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "system-deployment-operations"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-computer-app-510201",
+          "moe-network-510202"
+        ]
+      }
+    },
+    {
+      "id": "linux-administration--system-deployment-operations",
+      "kind": "hard_prerequisite",
+      "rationale": "部署运维需要命令行、权限、服务和日志管理能力",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "linux-administration"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "system-deployment-operations"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202",
+          "moe-computer-app-510201"
+        ]
+      }
+    },
+    {
+      "id": "database-foundations--system-deployment-operations",
+      "kind": "soft_prerequisite",
+      "rationale": "业务系统部署通常包含数据库服务与备份",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "database-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "system-deployment-operations"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-ai-510209",
+          "moe-security-510207",
+          "moe-computer-app-510201"
+        ]
+      }
+    },
+    {
+      "id": "linux-administration--operating-system-security",
+      "kind": "hard_prerequisite",
+      "rationale": "主机安全加固需要账户、权限、服务与日志管理基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "linux-administration"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "operating-system-security"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "computer-security--operating-system-security",
+      "kind": "hard_prerequisite",
+      "rationale": "系统加固需要基本威胁与安全控制原则",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "computer-security"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "operating-system-security"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "zju-cs",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "network-routing-switching--security-product-configuration",
+      "kind": "hard_prerequisite",
+      "rationale": "安全产品部署需要网络地址、路由和交换配置能力",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "network-routing-switching"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "security-product-configuration"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "computer-security--security-product-configuration",
+      "kind": "hard_prerequisite",
+      "rationale": "产品策略配置需要理解安全边界和控制目标",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "computer-security"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "security-product-configuration"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "zju-cs",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "database-foundations--storage-disaster-recovery",
+      "kind": "soft_prerequisite",
+      "rationale": "数据备份恢复需要理解数据组织、权限和一致性",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "database-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "storage-disaster-recovery"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-ai-510209",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "operating-systems--storage-disaster-recovery",
+      "kind": "soft_prerequisite",
+      "rationale": "存储、文件系统和 RAID 与操作系统资源管理相关",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "operating-systems"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "storage-disaster-recovery"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "storage-disaster-recovery--digital-forensics",
+      "kind": "soft_prerequisite",
+      "rationale": "取证中的介质恢复和数据提取需要存储基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "storage-disaster-recovery"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "digital-forensics"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "computer-security--digital-forensics",
+      "kind": "hard_prerequisite",
+      "rationale": "电子取证需要安全事件、证据边界和攻击痕迹基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "computer-security"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "digital-forensics"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "zju-cs",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "operating-system-security--security-risk-assessment",
+      "kind": "soft_prerequisite",
+      "rationale": "风险评估需要能够检查主机安全控制",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "operating-system-security"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "security-risk-assessment"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "security-product-configuration--security-risk-assessment",
+      "kind": "soft_prerequisite",
+      "rationale": "理解防护产品有助于评估网络与边界控制",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "security-product-configuration"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "security-risk-assessment"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "cybersecurity-engineering--security-risk-assessment",
+      "kind": "hard_prerequisite",
+      "rationale": "系统化风险评估建立在安全工程与控制实施之上",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "cybersecurity-engineering"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "security-risk-assessment"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "zju-cs",
+          "moe-security-510207"
+        ]
+      }
+    },
+    {
+      "id": "software-development-foundations--open-source-collaboration",
+      "kind": "hard_prerequisite",
+      "rationale": "参与协作前需要版本控制、测试和基本软件构造能力",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "software-development-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "open-source-collaboration"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "moe-vocational-2025",
+          "swebok-v4"
+        ]
+      }
+    },
+    {
+      "id": "software-engineering--engineering-debugging-observability",
+      "kind": "hard_prerequisite",
+      "rationale": "系统调试需要可测试的软件边界和工程过程",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "software-engineering"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "engineering-debugging-observability"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "tsinghua-2023",
+          "zju-cs",
+          "swebok-v4",
+          "google-sre"
+        ]
+      }
+    },
+    {
+      "id": "linux-administration--engineering-debugging-observability",
+      "kind": "soft_prerequisite",
+      "rationale": "系统日志、进程和资源观察通常依赖操作系统管理能力",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "linux-administration"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "engineering-debugging-observability"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-network-510202",
+          "swebok-v4",
+          "google-sre"
+        ]
+      }
+    },
+    {
+      "id": "software-engineering--api-design-evolution",
+      "kind": "hard_prerequisite",
+      "rationale": "接口契约与演进建立在模块、测试和变更管理基础上",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "software-engineering"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "api-design-evolution"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "tsinghua-2023",
+          "zju-cs",
+          "swebok-v4"
+        ]
+      }
+    },
+    {
+      "id": "web-development--api-design-evolution",
+      "kind": "soft_prerequisite",
+      "rationale": "Web 请求、状态和服务边界为 API 设计提供真实语境",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "web-development"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "api-design-evolution"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-security-510207",
+          "moe-vocational-2025",
+          "swebok-v4"
+        ]
+      }
+    },
+    {
+      "id": "software-engineering--software-maintenance-evolution",
+      "kind": "hard_prerequisite",
+      "rationale": "维护与演化需要需求、架构、测试和配置管理基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "software-engineering"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "software-maintenance-evolution"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "tsinghua-2023",
+          "zju-cs",
+          "swebok-v4"
+        ]
+      }
+    },
+    {
+      "id": "open-source-collaboration--software-maintenance-evolution",
+      "kind": "co_learning",
+      "rationale": "真实维护往往通过问题、评审、文档和增量提交完成",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "open-source-collaboration"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "software-maintenance-evolution"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "swebok-v4"
+        ]
+      }
+    },
+    {
+      "id": "engineering-debugging-observability--performance-engineering",
+      "kind": "hard_prerequisite",
+      "rationale": "性能优化必须先建立可复现、可观测和可验证的测量方法",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "engineering-debugging-observability"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "performance-engineering"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "swebok-v4",
+          "google-sre"
+        ]
+      }
+    },
+    {
+      "id": "computer-organization--performance-engineering",
+      "kind": "soft_prerequisite",
+      "rationale": "缓存、内存和处理器模型帮助解释底层性能现象",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "computer-organization"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "performance-engineering"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs",
+          "swebok-v4",
+          "google-sre"
+        ]
+      }
+    },
+    {
+      "id": "engineering-debugging-observability--reliability-incident-response",
+      "kind": "hard_prerequisite",
+      "rationale": "生产响应依赖日志、指标、追踪和系统化故障定位",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "engineering-debugging-observability"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "reliability-incident-response"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "swebok-v4",
+          "google-sre"
+        ]
+      }
+    },
+    {
+      "id": "devops--reliability-incident-response",
+      "kind": "hard_prerequisite",
+      "rationale": "可靠性实践建立在自动化交付、部署与变更控制之上",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "devops"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "reliability-incident-response"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "moe-network-510202",
+          "google-sre"
+        ]
+      }
+    },
+    {
+      "id": "distributed-systems--reliability-incident-response",
+      "kind": "soft_prerequisite",
+      "rationale": "分布式故障模型帮助设计降级、恢复与演练",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "distributed-systems"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "reliability-incident-response"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-mscs",
+          "acm-cs2023",
+          "google-sre"
+        ]
+      }
+    },
+    {
+      "id": "software-development-foundations--secure-software-supply-chain",
+      "kind": "hard_prerequisite",
+      "rationale": "安全供应链需要版本、构建、依赖和测试基础",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "software-development-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "secure-software-supply-chain"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "moe-vocational-2025",
+          "nist-ssdf",
+          "swebok-v4"
+        ]
+      }
+    },
+    {
+      "id": "computer-security--secure-software-supply-chain",
+      "kind": "hard_prerequisite",
+      "rationale": "安全开发必须建立在威胁、身份和控制原则上",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "computer-security"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "secure-software-supply-chain"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "zju-cs",
+          "moe-security-510207",
+          "nist-ssdf",
+          "swebok-v4"
+        ]
+      }
+    },
+    {
+      "id": "devops--secure-software-supply-chain",
+      "kind": "soft_prerequisite",
+      "rationale": "构建和交付流水线是供应链控制的主要执行位置",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "devops"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "secure-software-supply-chain"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "moe-network-510202",
+          "nist-ssdf",
+          "swebok-v4"
+        ]
+      }
+    },
+    {
+      "id": "data-structures--information-retrieval",
+      "kind": "hard_prerequisite",
+      "rationale": "倒排索引、向量索引和排序结构依赖数据结构",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "data-structures"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "information-retrieval"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cornell-cs",
+          "tsinghua-2023",
+          "zju-cs",
+          "acm-cs2023",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "probability-statistics--information-retrieval",
+      "kind": "soft_prerequisite",
+      "rationale": "相关性评估和排序实验需要统计判断",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "probability-statistics"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "information-retrieval"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cmu-ai",
+          "tsinghua-2023",
+          "acm-cs2023",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "machine-learning--information-retrieval",
+      "kind": "soft_prerequisite",
+      "rationale": "学习排序与语义检索会使用机器学习方法",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "machine-learning"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "information-retrieval"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "stanford-ms",
+          "zju-cs",
+          "acm-cs2023"
+        ]
+      }
+    },
+    {
+      "id": "database-systems--data-governance-privacy",
+      "kind": "hard_prerequisite",
+      "rationale": "治理数据之前需要理解模型、查询、事务和权限",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "database-systems"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "data-governance-privacy"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs",
+          "acm-cs2023",
+          "nist-ssdf"
+        ]
+      }
+    },
+    {
+      "id": "data-engineering--data-governance-privacy",
+      "kind": "hard_prerequisite",
+      "rationale": "目录、血缘和质量控制依附于真实数据管道",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "data-engineering"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "data-governance-privacy"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "cmu-mscs",
+          "nist-ssdf"
+        ]
+      }
+    },
+    {
+      "id": "computing-ethics--data-governance-privacy",
+      "kind": "soft_prerequisite",
+      "rationale": "隐私工程需要责任、用途和影响边界",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "computing-ethics"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "data-governance-privacy"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "cmu-ai",
+          "nist-ssdf"
+        ]
+      }
+    },
+    {
+      "id": "machine-learning--ai-system-evaluation",
+      "kind": "hard_prerequisite",
+      "rationale": "评测 AI 系统需要理解训练、推断、泛化和基线",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "machine-learning"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "ai-system-evaluation"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-ai",
+          "stanford-ms",
+          "zju-cs",
+          "nist-ai-evaluation"
+        ]
+      }
+    },
+    {
+      "id": "research-methods--ai-system-evaluation",
+      "kind": "hard_prerequisite",
+      "rationale": "可靠评测需要实验设计、证据质量和不确定性表达",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "research-methods"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "ai-system-evaluation"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-mscs",
+          "tsinghua-2023",
+          "zju-cs",
+          "nist-ai-evaluation",
+          "cmu-ai"
+        ]
+      }
+    },
+    {
+      "id": "ai-safety-ethics--ai-system-evaluation",
+      "kind": "co_learning",
+      "rationale": "能力评测应与风险、失效和真实影响评测同步",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "ai-safety-ethics"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "ai-system-evaluation"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "cmu-ai",
+          "zju-cs",
+          "nist-ai-evaluation"
+        ]
+      }
+    },
+    {
+      "id": "cloud-platform-operations--platform-engineering",
+      "kind": "hard_prerequisite",
+      "rationale": "平台工程建立在可运行的计算、网络、存储和权限能力上",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "cloud-platform-operations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "platform-engineering"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "moe-cloud-510206",
+          "cncf-platform-engineering",
+          "google-sre"
+        ]
+      }
+    },
+    {
+      "id": "devops--platform-engineering",
+      "kind": "hard_prerequisite",
+      "rationale": "内部平台需要承载构建、交付和开发工作流",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "devops"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "platform-engineering"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "moe-network-510202",
+          "cncf-platform-engineering",
+          "google-sre"
+        ]
+      }
+    },
+    {
+      "id": "reliability-incident-response--platform-engineering",
+      "kind": "soft_prerequisite",
+      "rationale": "平台能力必须用可靠性目标和生产反馈持续改进",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "reliability-incident-response"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "platform-engineering"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "google-sre",
+          "cncf-platform-engineering"
+        ]
+      }
+    },
+    {
+      "id": "calculus--numerical-scientific-computing",
+      "kind": "hard_prerequisite",
+      "rationale": "数值方法以连续问题、导数与积分为主要对象",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "calculus"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "numerical-scientific-computing"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "cmu-ai",
+          "acm-cs2023",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "linear-algebra--numerical-scientific-computing",
+      "kind": "hard_prerequisite",
+      "rationale": "科学计算广泛依赖矩阵分解与线性方程求解",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "linear-algebra"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "numerical-scientific-computing"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "cmu-ai",
+          "tsinghua-2023",
+          "acm-cs2023",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "parallel-computing--numerical-scientific-computing",
+      "kind": "co_learning",
+      "rationale": "大规模科学计算常需并行实现与性能验证",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "parallel-computing"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "numerical-scientific-computing"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "cmu-mscs"
+        ]
+      }
+    },
+    {
+      "id": "research-methods--thesis-research",
+      "kind": "hard_prerequisite",
+      "rationale": "课题研究需要问题、证据和实验设计",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "research-methods"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "thesis-research"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-mscs",
+          "tsinghua-2023",
+          "zju-cs",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "llm-foundations--retrieval-augmented-generation",
+      "kind": "hard_prerequisite",
+      "rationale": "RAG 需要理解生成模型的输入输出边界",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "llm-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "retrieval-augmented-generation"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "stanford-ms",
+          "nyu-agents"
+        ]
+      }
+    },
+    {
+      "id": "database-systems--retrieval-augmented-generation",
+      "kind": "soft_prerequisite",
+      "rationale": "检索增强涉及索引、查询与数据治理",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "database-systems"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "retrieval-augmented-generation"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "mit-6-3",
+          "tsinghua-2023",
+          "zju-cs",
+          "nyu-agents"
+        ]
+      }
+    },
+    {
+      "id": "software-architecture--agent-engineering",
+      "kind": "hard_prerequisite",
+      "rationale": "智能体工程需要状态、边界和系统组合能力",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "software-architecture"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "agent-engineering"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "cmu-mscs",
+          "nyu-agents"
+        ]
+      }
+    },
+    {
+      "id": "llm-foundations--agent-engineering",
+      "kind": "hard_prerequisite",
+      "rationale": "需要理解模型调用、上下文和不确定性",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "llm-foundations"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "agent-engineering"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "stanford-ms",
+          "nyu-agents"
+        ]
+      }
+    },
+    {
+      "id": "retrieval-augmented-generation--agent-engineering",
+      "kind": "soft_prerequisite",
+      "rationale": "知识型智能体常需要受控检索",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "retrieval-augmented-generation"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "agent-engineering"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "nyu-agents"
+        ]
+      }
+    },
+    {
+      "id": "information-retrieval--retrieval-augmented-generation",
+      "kind": "hard_prerequisite",
+      "rationale": "RAG 的检索部分依赖索引、召回、排序与离线评测",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "information-retrieval"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "retrieval-augmented-generation"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "stanford-ms",
+          "nyu-agents"
+        ]
+      }
+    },
+    {
+      "id": "ai-system-evaluation--agent-engineering",
+      "kind": "co_learning",
+      "rationale": "智能体交付需要同步建立任务成功、轨迹、安全和用户效果评测",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "ai-system-evaluation"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "agent-engineering"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "nist-ai-evaluation",
+          "cmu-ai",
+          "nyu-agents"
+        ]
+      }
+    },
+    {
+      "id": "computing-ethics--agent-engineering",
+      "kind": "co_learning",
+      "rationale": "工具行动与用户影响需要责任边界",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "computing-ethics"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "agent-engineering"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "cmu-ai",
+          "nyu-agents"
+        ]
+      }
+    },
+    {
+      "id": "agent-engineering--multi-agent-systems",
+      "kind": "hard_prerequisite",
+      "rationale": "多智能体建立在单智能体状态与工具编排之上",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "agent-engineering"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "multi-agent-systems"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "nyu-agents",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "distributed-systems--multi-agent-systems",
+      "kind": "soft_prerequisite",
+      "rationale": "并发通信与故障模型可帮助理解多体协作",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "distributed-systems"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "multi-agent-systems"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-mscs",
+          "acm-cs2023",
+          "nyu-agents",
+          "stanford-ms"
+        ]
+      }
+    },
+    {
+      "id": "software-engineering--capstone-project",
+      "kind": "soft_prerequisite",
+      "rationale": "综合产物需要版本、测试与协作过程",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "software-engineering"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "capstone-project"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "acm-cs2023",
+          "tsinghua-2023",
+          "zju-cs",
+          "cornell-cs",
+          "moe-vocational-2025"
+        ]
+      }
+    },
+    {
+      "id": "research-methods--capstone-project",
+      "kind": "co_learning",
+      "rationale": "项目应保留问题定义、证据和反思",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "research-methods"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "capstone-project"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-mscs",
+          "tsinghua-2023",
+          "zju-cs",
+          "cornell-cs",
+          "moe-vocational-2025"
+        ]
+      }
+    },
+    {
+      "id": "advanced-algorithms--thesis-research",
+      "kind": "soft_prerequisite",
+      "rationale": "理论方向研究常需高阶算法能力",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "advanced-algorithms"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "thesis-research"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-mscs",
+          "stanford-ms",
+          "tsinghua-2023"
+        ]
+      }
+    },
+    {
+      "id": "advanced-systems--thesis-research",
+      "kind": "soft_prerequisite",
+      "rationale": "系统方向研究常需高阶系统背景",
+      "from": {
+        "namespace": "learnflow:official",
+        "id": "advanced-systems"
+      },
+      "to": {
+        "namespace": "learnflow:official",
+        "id": "thesis-research"
+      },
+      "provenance": {
+        "method": "editorial_synthesis",
+        "sourceRefs": [
+          "cmu-mscs",
+          "stanford-ms",
+          "tsinghua-2023"
+        ]
+      }
+    }
+  ]
+}

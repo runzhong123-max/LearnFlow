@@ -244,7 +244,7 @@ type Conversation = {
 
 type WorkspaceTab = {
   id: string
-  kind: 'chat' | 'settings' | 'projects' | 'project' | 'learning-path' | 'profile' | 'tasks' | 'review' | 'learning-files' | 'lecture-file' | 'practice-file'
+  kind: 'chat' | 'settings' | 'projects' | 'project' | 'learning-path' | 'ecosystem' | 'profile' | 'tasks' | 'review' | 'learning-files' | 'lecture-file' | 'practice-file'
   title: string
   conversationId?: string
   originConversationId?: string
@@ -270,12 +270,14 @@ type PersistedState = {
 const SETTINGS_TAB: WorkspaceTab = { id: 'settings', kind: 'settings', title: '设置' }
 const PROJECTS_TAB: WorkspaceTab = { id: 'projects', kind: 'projects', title: '学习项目' }
 const LEARNING_PATH_TAB: WorkspaceTab = { id: 'learning-path', kind: 'learning-path', title: '学习路径' }
+const ECOSYSTEM_TAB: WorkspaceTab = { id: 'ecosystem', kind: 'ecosystem', title: '岗位图谱' }
 const PROFILE_TAB: WorkspaceTab = { id: 'profile', kind: 'profile', title: '我的画像' }
 const TASKS_TAB: WorkspaceTab = { id: 'tasks', kind: 'tasks', title: '学习任务' }
 const REVIEW_TAB: WorkspaceTab = { id: 'review', kind: 'review', title: '复习' }
 const LEARNING_FILES_TAB: WorkspaceTab = { id: 'learning-files', kind: 'learning-files', title: '讲义与练习' }
 const MarkdownContent = lazy(() => import('./MarkdownContent'))
 const LearningFileMessagePreview = lazy(() => import('./LearningFileMessagePreview'))
+const EcosystemPage = lazy(() => import('./EcosystemPage'))
 const LearningPathPage = lazy(() => import('./LearningPathPage'))
 const LearnerProfilePage = lazy(() => import('./LearnerProfilePage'))
 const LearningTasksPage = lazy(() => import('./LearningTasksPage'))
@@ -463,6 +465,7 @@ function tabFromCurrentPath(conversations: Conversation[]): WorkspaceTab | undef
     const projectId = Number(path.slice('/projects/'.length))
     if (Number.isInteger(projectId) && projectId > 0) return { id: `project:${projectId}`, kind: 'project', title: `项目 #${projectId}`, projectId }
   }
+  if (path === '/ecosystem') return ECOSYSTEM_TAB
   if (path === '/learning-path') return LEARNING_PATH_TAB
   if (path === '/learner-profile') return PROFILE_TAB
   if (path === '/tasks') return TASKS_TAB
@@ -534,7 +537,7 @@ function restoreState(learnerId: number): PersistedState {
     })
     const conversationIds = new Set(conversations.map(item => item.id))
     const tabs = Array.isArray(value.tabs)
-      ? value.tabs.filter(tab => ['settings', 'projects', 'project', 'learning-path', 'profile', 'tasks', 'review', 'learning-files', 'lecture-file', 'practice-file'].includes(tab?.kind) || (tab?.kind === 'chat' && tab?.conversationId && conversationIds.has(tab.conversationId)))
+      ? value.tabs.filter(tab => ['settings', 'projects', 'project', 'learning-path', 'ecosystem', 'profile', 'tasks', 'review', 'learning-files', 'lecture-file', 'practice-file'].includes(tab?.kind) || (tab?.kind === 'chat' && tab?.conversationId && conversationIds.has(tab.conversationId)))
       : []
     let safeTabs = tabs.length > 0 ? tabs.slice(-12) : [chatTab(conversations[0])]
     const routeTab = tabFromCurrentPath(conversations)
@@ -566,6 +569,7 @@ function pathForTab(tab: WorkspaceTab) {
   if (tab.kind === 'settings') return '/settings'
   if (tab.kind === 'projects') return '/projects'
   if (tab.kind === 'project') return `/projects/${tab.projectId}`
+  if (tab.kind === 'ecosystem') return '/ecosystem'
   if (tab.kind === 'learning-path') return '/learning-path'
   if (tab.kind === 'profile') return '/learner-profile'
   if (tab.kind === 'tasks') return '/tasks'
@@ -2767,6 +2771,7 @@ function App({ auth }: { auth: AuthGateSession }) {
         </Suspense>
       )
     }
+    if (tab.kind === 'ecosystem') return <Suspense fallback={<div className="page-loading">正在载入岗位图谱…</div>}><EcosystemPage /></Suspense>
     if (tab.kind === 'learning-path') {
       return (
         <Suspense fallback={<div className="page-loading">正在载入学习路径…</div>}>
@@ -3558,6 +3563,7 @@ function App({ auth }: { auth: AuthGateSession }) {
             <button type="button" onClick={() => openTab(REVIEW_TAB)}><span>↺</span>复习与错题</button>
             <button type="button" onClick={() => openTab(TASKS_TAB)}><span>☷</span>学习任务</button>
             <button type="button" onClick={() => openTab(LEARNING_PATH_TAB)}><span>⌁</span>学习路径</button>
+            <button type="button" onClick={() => openTab(ECOSYSTEM_TAB)}><span>◇</span>岗位图谱</button>
           </nav>
           <div className="sidebar-scroll-area">
             <section className="sidebar-section sidebar-projects">

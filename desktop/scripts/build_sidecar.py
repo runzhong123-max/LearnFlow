@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import os
 import platform
 import shutil
 import subprocess
@@ -81,6 +82,8 @@ def main() -> None:
         # source processor; keep them in the desktop sidecar bundle.
         "--hidden-import=pypdf",
         "--hidden-import=docx",
+        "--add-data",
+        f"{BACKEND_ROOT / 'app' / 'contracts'}{os.pathsep}app/contracts",
         str(BACKEND_ROOT / "desktop_entry.py"),
     ], check=True, cwd=REPO_ROOT)
     BINARIES_ROOT.mkdir(parents=True, exist_ok=True)

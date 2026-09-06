@@ -645,3 +645,5 @@ frontend 当前没有该 route，所以 `learner_growth` lifecycle 为 `optional
 - `local_agent_started`、`local_agent_completed`、`local_agent_canceled`、`local_agent_result_applied` 是零 kernel target 的操作事件。执行、测试成功或文件写回都不是掌握证据。
 
 桌面令牌、路径规范化、符号链接和恢复规则见 `docs/DESKTOP_WORKSPACE_SECURITY.md`。任何放宽 WebView 文件权限、允许访问 `.learnflow`、或把草稿/运行当作学习证据的改动，均视为架构契约变更。
+
+岗位跨产品网关新增 `ecosystem_gateway_v1` 数据契约，以及 `ecosystem_gateway` / `curriculum_source_runtime` 两个服务端能力。源图变更是主体作用域内容操作，通过 CAS、幂等回执和零 target 事件审计，不归约学习掌握状态。权威字段沿用 LearnFlow v2 TS 校验器。接口、中央身份与桌面边界见 [ECOSYSTEM_GATEWAY_V1](product/ECOSYSTEM_GATEWAY_V1.md)。

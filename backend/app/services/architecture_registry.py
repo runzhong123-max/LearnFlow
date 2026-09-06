@@ -17,7 +17,7 @@ from typing import Any
 from app.services.action_board import ACTION_BOARD
 
 
-REGISTRY_VERSION = "2026-09-06.2"
+REGISTRY_VERSION = "2026-09-06.3"
 EVENT_SCHEMA_VERSION = "learnflow.evidence.v1"
 SKILL_SPEC_VERSION = "learnflow.skill.v3"
 # The learner-facing SkillSpec changed in this registry release.
@@ -28,6 +28,14 @@ LIFECYCLE_STATES = ("implemented", "optional_unimplemented", "deprecated")
 # Pure source-data validators/exporters, not Agent-callable tools or learner writers.
 # The referenced TypeScript module owns field semantics; this registry owns discovery.
 DATA_CONTRACTS = {
+    "ecosystem_gateway_v1": {
+        "schema_version": "learnflow-ecosystem/v1", "owner": "tutor_agent",
+        "origin": "builtin", "mode": "scoped_external_adapter", "lifecycle": "implemented",
+        "authority_path": "docs/product/ECOSYSTEM_GATEWAY_V1.md",
+        "binding_ids": ["py:ecosystem.dispatch", "api:ecosystem.dispatch"],
+        "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "additive API; central authentication required; desktop local identity is not delegated",
+    },
     "learning_path_source_v2": {
         "schema_version": "learnflow-learning-path/v2",
         "owner": "learning_design_agent",
@@ -48,7 +56,7 @@ DATA_CONTRACTS = {
         "authority_path": "frontend/src/learning-path-contract-v2.ts",
         "binding_ids": ["frontend:path.validate_alignment_v2"],
         "kernel_reads": [], "kernel_write_path": "none",
-        "compatibility": "new opt-in contract; live Role Atlas matcher still uses v1",
+        "compatibility": "opt-in v2 ecosystem gateway; legacy v1 matcher remains compatible",
     },
     "graph_extension_proposal_v2": {
         "schema_version": "learnflow-graph-extension-proposal/v2",
@@ -59,7 +67,7 @@ DATA_CONTRACTS = {
         "authority_path": "frontend/src/learning-path-contract-v2.ts",
         "binding_ids": ["frontend:path.validate_extension_v2"],
         "kernel_reads": [], "kernel_write_path": "none",
-        "compatibility": "additive proposal only; shared catalog persistence is not implemented",
+        "compatibility": "additive owner-scoped source persistence with CAS and immutable receipts; no learner state",
     },
 }
 
@@ -453,6 +461,10 @@ TOOLS = {
                      KERNEL_NAMES, (), "learner/session/project/checkpoint-scoped LearningTask queue + answer-free LearningAttempt/RemediationCase/ReviewSchedule projection + project source knowledge domains -> bounded read-only observation"),
         ToolContract("domain_knowledge_reader", "Learner Domain Knowledge Library Reader", "tutor_agent", "vnext", "read",
                      (), (), "learner-owned processed Source/Chunk library -> relevance-ranked, provenance-bearing, bounded untrusted context; never learner knowledge evidence"),
+        ToolContract("ecosystem_gateway", "Role Atlas and Graph Hub Gateway", "tutor_agent", "learnflow", "orchestration",
+                     (), (), "central authenticated actor -> signed fixed-origin read-only package/graph/Agent operations; scoped durable run records, no learner-state write"),
+        ToolContract("curriculum_source_runtime", "Role-linked Learning Path Source Runtime", "learning_design_agent", "learnflow", "artifact",
+                     (), (), "verified package -> typed resolution -> explicit source commit with CAS and idempotent receipt; zero-target audit; no mastery or personal plan write"),
         ToolContract("graph_hub_reader", "Scoped Graph Hub Search and Recommender", "tutor_agent", "vnext", "read",
                      (), (), "authenticated LearnFlow learner scope + content-addressed Graph Hub catalog -> official, approved-personal, and owner-only pending-personal graph recommendations with bounded node matches; zero learner-state write"),
         ToolContract("learning_file_service", "Managed Lecture and Practice File Service", "tutor_agent", "vnext", "artifact",
@@ -608,6 +620,8 @@ TOOL_INTERFACE_ROLES = {
     "teaching_contract_gate": "policy",
     "source_integrity_monitor": "policy",
     "vnext_chat_session_store": "adapter",
+    "ecosystem_gateway": "adapter",
+    "curriculum_source_runtime": "harness",
     "workflow_gateway": "adapter",
     "workflow_validator": "adapter",
 }
@@ -1144,6 +1158,8 @@ SKILL_KINDS = {
 
 WORKBENCHES = {
     item.id: item for item in (
+        WorkbenchContract("ecosystem", "岗位图谱工作台", "/ecosystem", "tutor_agent",
+                          ("query_role_ecosystem", "resolve_role_learning_points", "commit_role_learning_points")),
         WorkbenchContract("global_tutor", "Chat Tutor + Lightweight Workbench", "/agent/:sessionId", "tutor_agent",
                           ("coordinate_chat_mode", "use_learning_skill", "start_learning_skill_run", "advance_learning_skill_run",
                            "start_skill_verification", "start_micro_learning", "search_projects",
@@ -1215,6 +1231,9 @@ WORKBENCHES = {
 
 
 CAPABILITY_OWNERS = {
+    "query_role_ecosystem": ("tutor_agent", "ecosystem_gateway", "ecosystem"),
+    "resolve_role_learning_points": ("learning_design_agent", "curriculum_source_runtime", "ecosystem"),
+    "commit_role_learning_points": ("learning_design_agent", "curriculum_source_runtime", "ecosystem"),
     "coordinate_chat_mode": ("tutor_agent", "chat_mode_runtime", "global_tutor"),
     "coordinate_vnext_agent_turn": ("tutor_agent", "vnext_agent_turn_runtime", "vnext_chat"),
     "search_computer_knowledge": ("learning_design_agent", "computer_knowledge_search", "vnext_chat"),
@@ -1319,6 +1338,7 @@ def _event(event_id: str, capability: str, targets: tuple[str, ...], role: str,
 
 EVENTS = {
     item.id: item for item in (
+        _event("learning_path_extension_committed", "commit_role_learning_points", (), "source_catalog_operation"),
         _event("vnext_teaching_input_received", "coordinate_vnext_agent_turn", KERNEL_NAMES,
                "explicit_immediate_teaching_context", origin="vnext"),
         _event("semantic_observation_proposed", "coordinate_vnext_agent_turn", KERNEL_NAMES, "inferred_candidate"),
@@ -1468,6 +1488,10 @@ _REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 
 
 _PYTHON_BINDING_TARGETS = {
+    "py:ecosystem.dispatch": ("app.services.ecosystem_gateway", "dispatch"),
+    "py:curriculum.read": ("app.services.curriculum_catalog", "read_graph"),
+    "py:curriculum.resolve": ("app.services.curriculum_catalog", "resolve"),
+    "py:curriculum.commit": ("app.services.curriculum_catalog", "commit"),
     "py:action_board.execute": ("app.services.tutor_service", "execute_action"),
     "py:tutor.process_turn": ("app.services.tutor_service", "process_turn"),
     "py:tutor.context": ("app.services.tutor_service", "get_session_state_summary"),
@@ -1550,6 +1574,9 @@ _API_BINDING_TARGETS = {
     "api:learner_state.context": ("app.api.learner_state", "/learner-state/context", "GET", "get_learner_context"),
     "api:learner_state.concept_graph": ("app.api.learner_state", "/learner-state/concept-graph", "GET", "get_personal_concept_graph"),
     "api:learner_state.concept_statement": ("app.api.learner_state", "/learner-state/concept-graph/statements", "POST", "record_concept_statement"),
+    "api:ecosystem.dispatch": ("app.api.ecosystem", "/ecosystem/dispatch", "POST", "dispatch"),
+    "api:ecosystem.resolve": ("app.api.ecosystem", "/ecosystem/learning-path/resolve", "POST", "resolve"),
+    "api:ecosystem.commit": ("app.api.ecosystem", "/ecosystem/learning-path/commit", "POST", "commit"),
     "api:learner_state.path_status": ("app.api.learner_state", "/learner-state/learning-path/status", "POST", "set_learning_path_status"),
     "api:learner_state.personal_node": ("app.api.learner_state", "/learner-state/learning-path/personal-nodes", "POST", "add_personal_learning_path_node"),
     "api:learner_state.path_plan": ("app.api.learner_state", "/learner-state/learning-path/plans", "POST", "commit_learning_path_plan"),
@@ -1663,6 +1690,8 @@ _FRONTEND_HANDLER_TARGETS = {
 
 
 _FRONTEND_COMPONENT_TARGETS = {
+    "frontend:path.extensions": ("frontend/src/PathSourceExtensions.tsx", "PathSourceExtensions", "/learning-path"),
+    "workbench:ecosystem": ("frontend/src/EcosystemPage.tsx", "EcosystemPage", "/ecosystem"),
     "workbench:vnext_chat": ("frontend/src/main.tsx", "App", "/chat/"),
     "frontend:plugin.renderer": ("frontend/src/PluginToolResultView.tsx", "PluginToolResultView", "/chat/"),
     "frontend:plugin.picker": ("frontend/src/PluginCapabilityPicker.tsx", "PluginCapabilityPicker", "/chat/"),
@@ -1725,6 +1754,8 @@ IMPLEMENTATION_BINDINGS = {
 
 
 _TOOL_BINDING_IDS = {
+    "ecosystem_gateway": ("py:ecosystem.dispatch", "api:ecosystem.dispatch"),
+    "curriculum_source_runtime": ("py:curriculum.read", "py:curriculum.resolve", "py:curriculum.commit", "api:ecosystem.resolve", "api:ecosystem.commit", "frontend:path.extensions"),
     "action_board": ("py:action_board.execute",),
     "tutor_context": ("py:tutor.context",),
     "chat_mode_runtime": ("py:chat_modes.classify",),
@@ -2444,7 +2475,7 @@ def registry_manifest() -> dict[str, Any]:
             "vnext_learning_graph_alignment": "official course graph + personal course overlay + personal concept graph + source knowledge domains + confirmed path plan are joined only by explicit non-mastery alignment records",
             "vnext_learning_plan_projection": "planning intent -> proposal -> explicit learner decision; accepted Value changes enter the formal EvidenceEvent reducer",
             "vnext_learning_path_projection": "versioned official course DAG + formal learner overlay events -> Structure/Value reference projection; Knowledge only records self-reported exposure and never mastery",
-            "learning_path_source_contract": "LearnFlow-owned v2 typed source catalog + immutable role bindings + additive graph-extension proposals; validation and static export only, no catalog writer or learner evidence; v1 runtime remains compatible",
+            "learning_path_source_contract": "LearnFlow-owned v2 typed source catalog + immutable role bindings + additive graph-extension proposals; scoped additive source commit through ecosystem gateway with zero-target audit; no learner mastery write; v1 runtime remains compatible",
             "vnext_learning_path_retrieval": "exact id/title/alias lookup -> conditional deterministic fuzzy rank fusion -> ambiguity clarification or structured-evidence personal-node proposal; model-supplied URLs are rejected and proposal remains zero-target until learner confirmation",
             "vnext_agent_turn_runtime": "typed ContextEnvelope -> bounded model/tool loop -> deterministic final-state verifier -> structured AgentTurnTrace; model receives only registered read/artifact ACI tools",
             "vnext_chat_session_authority": "learner-owned AgentSession + idempotent AgentMessage are the cross-browser ordinary-chat authority; localStorage keeps drafts, tabs and paper layout only; persistence never implies learning evidence",

@@ -1,0 +1,27 @@
+.ecosystem-page { overflow: auto; }
+.ecosystem-status, .ecosystem-search { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin:20px 0; }
+.ecosystem-status small { width:100%; overflow-wrap:anywhere; }
+.ecosystem-search input { flex:1; min-width:160px; }
+.ecosystem-page input, .ecosystem-page textarea { padding:12px; border:1px solid #d8d7d2; border-radius:8px; background:transparent; color:inherit; }
+.ecosystem-page button { padding:10px 14px; border:1px solid #d8d7d2; border-radius:8px; background:transparent; color:inherit; cursor:pointer; }
+.ecosystem-page button:disabled { opacity:.5; cursor:default; }
+.ecosystem-catalog { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; }
+.ecosystem-package { text-align:left; }
+.ecosystem-package strong { font-size:17px; }
+.ecosystem-page p { line-height:1.7; }
+.ecosystem-package-heading { margin:30px 0 20px; overflow-wrap:anywhere; }
+.ecosystem-grid { display:grid; grid-template-columns:minmax(180px,260px) minmax(0,1fr); gap:24px; }
+.ecosystem-nodes { max-height:720px; overflow:auto; display:flex; flex-direction:column; gap:8px; }
+.ecosystem-nodes button { text-align:left; }
+.ecosystem-nodes small, .ecosystem-nodes strong { display:block; }
+.ecosystem-nodes small { opacity:.65; margin-bottom:5px; }
+.ecosystem-nodes button[aria-pressed=true] { background:#eaf0e7; border-color:#6c8265; color:#20351f; }
+.ecosystem-detail, .ecosystem-preview { border:1px solid #deded6; border-radius:12px; padding:24px; }
+.ecosystem-detail h2 { margin-top:0; }
+.ecosystem-detail form { display:grid; gap:12px; margin-top:24px; }
+.ecosystem-detail textarea { min-height:90px; resize:vertical; }
+.ecosystem-detail hr { border:0; border-top:1px solid #ddd; margin:24px 0; }
+.ecosystem-answer { white-space:pre-wrap; }
+.ecosystem-preview { margin-top:24px; }
+.ecosystem-evidence blockquote { margin:12px 0; padding-left:14px; border-left:2px solid #aaa; }
+@media(max-width:720px) { .ecosystem-grid { grid-template-columns:1fr; } .ecosystem-nodes { max-height:260px; } .ecosystem-detail, .ecosystem-preview { padding:16px; } }

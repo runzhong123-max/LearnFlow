@@ -352,6 +352,8 @@ export type SemanticNode = {
   ring: number;
   /** Required only for knowledge_skill nodes in curated packages. */
   learningKind?: "knowledge" | "skill" | "hybrid";
+  /** Explicit atomic semantics. Missing/legacy hybrid definitions stay unresolved in v2. */
+  learningDefinition?: { scopeNote: string; assessmentCriteria: string[] };
   /** Daily cultivation contract. Required for newly generated capability units. */
   cultivation?: CapabilityUnitCultivation;
   applicability?: string;

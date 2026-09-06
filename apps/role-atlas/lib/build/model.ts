@@ -21,6 +21,10 @@ export const semanticDraftSchema = z.object({
     evidenceSpans: z.array(evidenceSpanSchema).max(12).optional(),
     mentionIds: z.array(z.string().max(160)).max(40).optional(),
     learningKind: z.enum(["knowledge", "skill", "hybrid"]).optional(),
+    learningDefinition: z.object({
+      scopeNote: z.string().trim().min(1).max(700),
+      assessmentCriteria: z.array(z.string().trim().min(1).max(500)).min(1).max(8),
+    }).optional(),
     cultivation: z.object({
       observableBehavior: z.string().min(1).max(500),
       practiceSituation: z.string().min(1).max(500),

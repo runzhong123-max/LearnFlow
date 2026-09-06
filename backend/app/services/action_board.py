@@ -13,6 +13,9 @@ class ActionDefinition:
 
 ACTION_BOARD = {
     item.capability: item for item in (
+        ActionDefinition("query_role_ecosystem", "查询岗位图谱与岗位助手", "artifact", "explicit_or_auto", {}, ("resolve_role_learning_points",)),
+        ActionDefinition("resolve_role_learning_points", "预览岗位知识技能挂载", "artifact", "explicit_or_auto", {}, ("commit_role_learning_points",)),
+        ActionDefinition("commit_role_learning_points", "确认岗位知识技能源图扩展", "artifact", "explicit", {}, ("resolve_role_learning_points",)),
         ActionDefinition(
             "search_projects", "匹配已有学习项目", "none", "none",
             {"structure": "project_match"},

@@ -1,0 +1,16 @@
+.path-source-extensions { border-top:1px solid #d9ddd5; padding-top:16px; margin:22px 0; }
+.path-source-extensions header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.path-source-extensions h3 { margin:0; }
+.path-source-extensions button { font:inherit; padding:7px 9px; border:1px solid #d7dcd3; border-radius:6px; background:transparent; color:inherit; cursor:pointer; }
+.path-source-extensions button[aria-pressed=true] { background:#eaf0e7; border-color:#72856a; color:#263b24; }
+.path-source-filter { display:flex; gap:6px; margin:12px 0; }
+.path-source-parent { padding:8px; border-left:2px solid #8aa17c; }
+.path-source-list { margin:10px 0; padding:0 0 0 12px; list-style:none; border-left:1px solid #b7c3af; max-height:270px; overflow:auto; }
+.path-source-list li { margin:6px 0; }
+.path-source-list button { display:block; width:100%; text-align:left; }
+.path-source-list span { font-size:11px; margin-right:8px; opacity:.65; }
+.path-source-detail { padding:12px; border:1px solid #dde3d7; border-radius:8px; }
+.path-source-detail h4 { margin:0; }
+.path-source-detail details, .path-source-revision { overflow-wrap:anywhere; }
+.path-source-detail ul { padding-left:18px; font-size:12px; line-height:1.7; }
+.path-source-revision { display:block; margin-top:10px; opacity:.65; font-size:10px; }

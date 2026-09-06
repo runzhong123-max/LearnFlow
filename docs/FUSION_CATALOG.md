@@ -65,3 +65,7 @@ Role Atlas 子应用通过 LearnFlow 权威导出同步 v1/v2 学习路径制品
 ## 用户指定的 LearnFlow app 五核升级迁移（2026-09-06）
 
 此次按用户明确迁移请求，选取本人 fork 中 Ryan 提交的 `ed680826` 与 `3e71c833` 两组五核增量，按当前主线逐项适配；未建立持续同步或合并外部历史。新增候选观察与即时教学输入继续经注册事件、确定性 reducer 和有 scope 的 ContextPacket。未迁移桌宠、实验工作台、发布流水线或真实数据库。来源、兼容性与实测结果见 [迁移记录](MEMORY_UPGRADE_MIGRATION.md)。
+
+### 岗位图谱网关与 v2 挂载
+
+新增 `/ecosystem` 工作台、`/api/ecosystem/*` 中央网关、Role Atlas 签名接入端点、主体作用域 source graph CAS/回执。Graph Hub 复用已有 registry；岗位包保留不可变四元身份，知识技能定义穿过生成与制品编译；新增节点只形成 contains 源图关系。桌面和网页共享接口及客户端，桌面中央认证尚未接入。见 [ECOSYSTEM_GATEWAY_V1](product/ECOSYSTEM_GATEWAY_V1.md)。

@@ -45,7 +45,7 @@ def test_registry_has_three_agents_five_kernels_and_no_drift():
     assert set(ACTION_BOARD) == set(CAPABILITY_OWNERS)
     assert validate_registry() == []
     manifest = registry_manifest()
-    assert REGISTRY_VERSION == "2026-09-06.2"
+    assert REGISTRY_VERSION == "2026-09-06.3"
     assert manifest["schema_valid"] is True
     assert manifest["valid"] is (
         manifest["schema_valid"] and manifest["implementation_valid"]
@@ -100,8 +100,8 @@ def test_learning_path_data_contracts_are_bound_but_never_learner_writers():
     manifest = registry_manifest()
     assert {row["id"] for row in manifest["data_contracts"]} == set(DATA_CONTRACTS)
     root = Path(__file__).resolve().parents[2]
-    for contract in DATA_CONTRACTS.values():
-        assert contract["owner"] == "learning_design_agent"
+    for contract_id, contract in DATA_CONTRACTS.items():
+        assert contract["owner"] == ("tutor_agent" if contract_id == "ecosystem_gateway_v1" else "learning_design_agent")
         assert contract["kernel_reads"] == []
         assert contract["kernel_write_path"] == "none"
         assert contract["schema_version"] in (root / contract["authority_path"]).read_text()
@@ -675,3 +675,17 @@ def test_learner_growth_is_an_additive_read_only_workbench():
     assert {
         tool.id for tool in TOOLS.values() if tool.writes_kernels
     } == {"five_kernel_reducer"}
+
+
+def test_ecosystem_source_commit_remains_zero_target_and_service_owned():
+    event = EVENTS["learning_path_extension_committed"]
+    assert event.kernel_targets == ()
+    assert event.reducer_binding is None
+    assert ACTION_BOARD["commit_role_learning_points"].evidence_target == {}
+    assert CAPABILITY_OWNERS["commit_role_learning_points"][0] == "learning_design_agent"
+    assert PUBLICATIONS["tools"]["ecosystem_gateway"].lifecycle == "implemented"
+
+
+def test_backend_official_path_asset_matches_role_atlas_export():
+    root = Path(__file__).resolve().parents[2]
+    assert (root / "backend/app/contracts/official-learning-path.v2.json").read_bytes() == (root / "apps/role-atlas/public/data/learnflow-learning-path.v2.json").read_bytes()

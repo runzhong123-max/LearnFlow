@@ -68,6 +68,11 @@ class Settings(BaseSettings):
     learning_task_plan_model_budget_seconds: float = 120.0
     micro_learning_artifact_model_budget_seconds: float = 180.0
 
+    # Central server only. Never distribute this shared secret in a desktop bundle.
+    role_atlas_gateway_base_url: str = ""
+    role_atlas_gateway_secret: str = ""
+    role_atlas_gateway_timeout_seconds: float = 30.0
+
     # Server-only Xingchen integration for candidate learning-task artifacts.
     # Provider credentials are loaded from an ignored feature-private file and
     # are never returned to the browser or plugin package.
