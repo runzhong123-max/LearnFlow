@@ -1,3 +1,5 @@
+import { OFFICIAL_PATH_CONTENT } from './official-learning-path-content.ts'
+import { upgradeOfficialPathGraph, type LearningPathGraphV2 } from './learning-path-contract-v2.ts'
 import {
   extractLearningPathTopic,
   lookupExactLearningPath,
@@ -383,8 +385,11 @@ const n = (
   aliases: string[], sources: string[], audiences: PathAudience[] = stage === 'advanced' || stage === 'research'
     ? ['undergraduate', 'graduate', 'self_directed']
     : ['undergraduate', 'self_directed'],
-  summary = `${title}的核心概念、方法与基本实践。`,
-): LearningPathNode => ({ id, title, summary, aliases, domains, audiences, stage, order, origin: 'official', sourceRefs: sources })
+): LearningPathNode => {
+  const content = OFFICIAL_PATH_CONTENT[id]
+  if (!content) throw new Error(`Missing official learning-path content: ${id}`)
+  return { id, title, summary: content.summary, aliases, domains, audiences, stage, order, origin: 'official', sourceRefs: sources }
+}
 
 export const OFFICIAL_PATH_NODES: LearningPathNode[] = [
   n('digital-literacy', '信息技术与数字素养', 0, 'foundation', ['通识', '高职'], ['计算机基础', '信息技术基础'], ['moe-vocational-2025'], ['vocational', 'undergraduate', 'self_directed']),
@@ -399,9 +404,9 @@ export const OFFICIAL_PATH_NODES: LearningPathNode[] = [
   n('probability-statistics', '概率论与数理统计', 1, 'foundation', ['数学', 'AI', '数据'], ['概率统计', 'Probability'], ['mit-6-3', 'cmu-ai', 'tsinghua-2023']),
   n('linux-fundamentals', 'Linux 基础', 1, 'foundation', ['系统', '运维', '高职'], ['Linux入门', '命令行'], ['moe-ai-510209', 'moe-network-510202'], ['vocational', 'undergraduate', 'self_directed']),
   n('web-foundations', 'Web 与互联网基础', 1, 'foundation', ['软件', 'Web', '高职'], ['网页设计', 'HTML CSS JavaScript'], ['moe-vocational-2025'], ['vocational', 'undergraduate', 'self_directed']),
-  n('computer-maintenance', '计算机组成与维护', 2, 'foundation', ['硬件', '运维', '高职'], ['计算机组装与维护', '微机维护'], ['moe-computer-app-510201'], ['vocational', 'self_directed'], '识别计算机部件，完成整机装配、系统安装、故障诊断与日常维护。'),
-  n('windows-server-administration', 'Windows Server 管理', 2, 'foundation', ['系统', '网络', '高职'], ['网络操作系统', 'Windows服务器管理'], ['moe-computer-app-510201', 'moe-network-510202'], ['vocational', 'self_directed'], '配置服务器角色、目录与权限、网络服务，并完成基础运行维护。'),
-  n('network-cabling', '网络综合布线', 2, 'foundation', ['网络', '硬件', '高职'], ['信息网络布线', '综合布线'], ['moe-network-510202'], ['vocational', 'self_directed'], '完成铜缆与光纤布线设计、端接、测试、验收和工程文档。'),
+  n('computer-maintenance', '计算机组成与维护', 2, 'foundation', ['硬件', '运维', '高职'], ['计算机组装与维护', '微机维护'], ['moe-computer-app-510201'], ['vocational', 'self_directed']),
+  n('windows-server-administration', 'Windows Server 管理', 2, 'foundation', ['系统', '网络', '高职'], ['网络操作系统', 'Windows服务器管理'], ['moe-computer-app-510201', 'moe-network-510202'], ['vocational', 'self_directed']),
+  n('network-cabling', '网络综合布线', 2, 'foundation', ['网络', '硬件', '高职'], ['信息网络布线', '综合布线'], ['moe-network-510202'], ['vocational', 'self_directed']),
   n('object-oriented-programming', '面向对象程序设计', 2, 'foundation', ['编程', '软件'], ['OOP', '面向对象'], ['cornell-cs', 'zju-cs']),
   n('data-structures', '数据结构', 2, 'core', ['算法', '编程'], ['Data Structures', '高级数据结构基础'], ['cornell-cs', 'tsinghua-2023', 'zju-cs']),
   n('digital-logic', '数字逻辑', 2, 'foundation', ['系统', '硬件'], ['数字电路', '逻辑设计'], ['zju-cs', 'tsinghua-2023']),
@@ -411,18 +416,18 @@ export const OFFICIAL_PATH_NODES: LearningPathNode[] = [
   n('software-development-foundations', '软件开发基础', 2, 'foundation', ['软件', '工程'], ['Git与测试基础', '软件构造'], ['mit-6-3', 'moe-vocational-2025']),
   n('data-processing', '数据采集与处理', 2, 'foundation', ['数据', 'AI', '高职'], ['数据清洗', '数据标注'], ['moe-ai-510209'], ['vocational', 'undergraduate', 'self_directed']),
   n('hci-foundations', '人机交互基础', 2, 'foundation', ['HCI', '软件'], ['交互设计', '用户体验'], ['acm-cs2023']),
-  n('frontend-design-development', '前端设计与开发', 3, 'domain', ['软件', 'Web', '高职'], ['Web前端开发', '响应式页面开发'], ['moe-computer-app-510201', 'moe-software-510203'], ['vocational', 'undergraduate', 'self_directed'], '从页面结构、样式和交互出发，完成响应式前端与组件化界面开发。'),
-  n('software-modeling-design', '软件建模与设计', 3, 'domain', ['软件', '工程', '高职'], ['UML建模', '面向对象建模'], ['moe-software-510203', 'moe-mobile-510213'], ['vocational', 'undergraduate', 'self_directed'], '从需求、用例和领域对象出发，使用 UML 与设计模式形成可实现的软件设计。'),
-  n('system-deployment-operations', '系统部署与运维', 4, 'domain', ['系统', '运维', '高职'], ['信息系统运维', '应用部署'], ['moe-computer-app-510201'], ['vocational', 'undergraduate', 'self_directed'], '部署应用、数据库与基础网络服务，实施监控、备份、升级和故障处理。'),
-  n('enterprise-application-development', '企业级项目开发', 4, 'domain', ['软件', 'Web', '工程', '高职'], ['企业应用开发', '服务端框架开发'], ['moe-software-510203', 'moe-mobile-510213'], ['vocational', 'undergraduate', 'self_directed'], '用服务端框架、持久化和会话机制实现可部署的企业级业务应用。'),
-  n('software-testing', '软件测试', 4, 'domain', ['软件', '工程', '高职'], ['功能测试', '自动化测试', '软件质量保证'], ['moe-software-510203', 'moe-mobile-510213'], ['vocational', 'undergraduate', 'self_directed'], '设计测试计划与用例，执行功能、性能和自动化测试并形成缺陷报告。'),
-  n('mobile-cross-platform', '移动端跨平台开发', 4, 'domain', ['软件', '移动', '高职'], ['跨平台开发', 'uni-app'], ['moe-mobile-510213'], ['vocational', 'self_directed'], '使用组件、路由、状态管理和跨平台构建能力交付移动应用。'),
-  n('mini-program-development', '小程序开发', 4, 'domain', ['软件', '移动', 'Web', '高职'], ['微信小程序', '小程序云开发'], ['moe-mobile-510213'], ['vocational', 'self_directed'], '完成小程序页面、数据交互、云端能力接入、测试和发布。'),
-  n('data-acquisition-technology', '数据采集技术', 3, 'domain', ['数据', '高职'], ['在线离线数据采集', '日志采集'], ['moe-bigdata-510205'], ['vocational', 'undergraduate', 'self_directed'], '针对数据库、日志和互联网数据设计并实施在线或离线采集任务。'),
-  n('data-preprocessing-etl', '数据预处理与 ETL', 3, 'domain', ['数据', '高职'], ['数据清洗', '数据抽取转换加载'], ['moe-bigdata-510205'], ['vocational', 'undergraduate', 'self_directed'], '识别缺失、重复和不一致数据，完成多源数据抽取、清洗、转换和装载。'),
-  n('data-analysis-applications', '大数据分析技术应用', 4, 'domain', ['数据', '高职'], ['批流数据分析', '业务数据分析'], ['moe-bigdata-510205'], ['vocational', 'undergraduate', 'self_directed'], '围绕业务指标完成统计分析、批量与实时计算，并撰写分析报告。'),
-  n('data-visualization-applications', '数据可视化技术与应用', 4, 'domain', ['数据', 'HCI', '高职'], ['可视化大屏', '数据图表设计'], ['moe-bigdata-510205', 'moe-computer-app-510201'], ['vocational', 'undergraduate', 'self_directed'], '选择合适图表与交互方式，构建可解释的数据展示并输出分析结论。'),
-  n('big-data-platform-operations', '大数据平台部署与运维', 5, 'advanced', ['数据', '系统', '运维', '高职'], ['Hadoop平台运维', '大数据平台管理'], ['moe-bigdata-510205'], ['vocational', 'undergraduate', 'self_directed'], '部署和维护分布式存储与计算组件，监测平台运行并处理常见故障。'),
+  n('frontend-design-development', '前端设计与开发', 3, 'domain', ['软件', 'Web', '高职'], ['Web前端开发', '响应式页面开发'], ['moe-computer-app-510201', 'moe-software-510203'], ['vocational', 'undergraduate', 'self_directed']),
+  n('software-modeling-design', '软件建模与设计', 3, 'domain', ['软件', '工程', '高职'], ['UML建模', '面向对象建模'], ['moe-software-510203', 'moe-mobile-510213'], ['vocational', 'undergraduate', 'self_directed']),
+  n('system-deployment-operations', '系统部署与运维', 4, 'domain', ['系统', '运维', '高职'], ['信息系统运维', '应用部署'], ['moe-computer-app-510201'], ['vocational', 'undergraduate', 'self_directed']),
+  n('enterprise-application-development', '企业级项目开发', 4, 'domain', ['软件', 'Web', '工程', '高职'], ['企业应用开发', '服务端框架开发'], ['moe-software-510203', 'moe-mobile-510213'], ['vocational', 'undergraduate', 'self_directed']),
+  n('software-testing', '软件测试', 4, 'domain', ['软件', '工程', '高职'], ['功能测试', '自动化测试', '软件质量保证'], ['moe-software-510203', 'moe-mobile-510213'], ['vocational', 'undergraduate', 'self_directed']),
+  n('mobile-cross-platform', '移动端跨平台开发', 4, 'domain', ['软件', '移动', '高职'], ['跨平台开发', 'uni-app'], ['moe-mobile-510213'], ['vocational', 'self_directed']),
+  n('mini-program-development', '小程序开发', 4, 'domain', ['软件', '移动', 'Web', '高职'], ['微信小程序', '小程序云开发'], ['moe-mobile-510213'], ['vocational', 'self_directed']),
+  n('data-acquisition-technology', '数据采集技术', 3, 'domain', ['数据', '高职'], ['在线离线数据采集', '日志采集'], ['moe-bigdata-510205'], ['vocational', 'undergraduate', 'self_directed']),
+  n('data-preprocessing-etl', '数据预处理与 ETL', 3, 'domain', ['数据', '高职'], ['数据清洗', '数据抽取转换加载'], ['moe-bigdata-510205'], ['vocational', 'undergraduate', 'self_directed']),
+  n('data-analysis-applications', '大数据分析技术应用', 4, 'domain', ['数据', '高职'], ['批流数据分析', '业务数据分析'], ['moe-bigdata-510205'], ['vocational', 'undergraduate', 'self_directed']),
+  n('data-visualization-applications', '数据可视化技术与应用', 4, 'domain', ['数据', 'HCI', '高职'], ['可视化大屏', '数据图表设计'], ['moe-bigdata-510205', 'moe-computer-app-510201'], ['vocational', 'undergraduate', 'self_directed']),
+  n('big-data-platform-operations', '大数据平台部署与运维', 5, 'advanced', ['数据', '系统', '运维', '高职'], ['Hadoop平台运维', '大数据平台管理'], ['moe-bigdata-510205'], ['vocational', 'undergraduate', 'self_directed']),
   n('algorithms', '算法设计与分析', 3, 'core', ['算法', '理论'], ['算法', 'Algorithm Analysis'], ['mit-6-3', 'cornell-cs', 'zju-cs']),
   n('operating-systems', '操作系统', 3, 'core', ['系统'], ['OS', '操作系统原理'], ['mit-6-3', 'tsinghua-2023', 'zju-cs']),
   n('database-systems', '数据库系统', 3, 'core', ['数据', '系统'], ['DBMS', '数据库原理'], ['mit-6-3', 'tsinghua-2023', 'zju-cs']),
@@ -435,10 +440,10 @@ export const OFFICIAL_PATH_NODES: LearningPathNode[] = [
   n('mobile-development', '移动应用开发', 3, 'domain', ['软件', '移动', '高职'], ['Android开发', '移动开发'], ['moe-vocational-2025'], ['vocational', 'undergraduate', 'self_directed']),
   n('network-routing-switching', '路由交换技术', 3, 'domain', ['网络', '高职'], ['路由器交换机配置', '网络设备配置'], ['moe-network-510202'], ['vocational', 'undergraduate', 'self_directed']),
   n('linux-administration', 'Linux 系统管理', 3, 'domain', ['系统', '运维', '高职'], ['Linux运维', '服务器管理'], ['moe-network-510202'], ['vocational', 'undergraduate', 'self_directed']),
-  n('wireless-networking', '无线网络技术应用', 4, 'domain', ['网络', '高职'], ['WLAN规划', '无线组网'], ['moe-network-510202'], ['vocational', 'undergraduate', 'self_directed'], '完成无线局域网勘测、规划、组网、安全配置、管理与优化。'),
-  n('network-automation', '网络自动化运维', 4, 'domain', ['网络', '运维', '编程', '高职'], ['自动化网络运维', 'Python网络运维'], ['moe-network-510202'], ['vocational', 'undergraduate', 'self_directed'], '使用脚本、接口和配置管理工具批量实施网络配置、巡检和变更。'),
-  n('network-virtualization', '网络虚拟化技术应用', 4, 'domain', ['网络', '云', '高职'], ['SDN基础', '虚拟网络'], ['moe-network-510202', 'moe-cloud-510206'], ['vocational', 'undergraduate', 'self_directed'], '理解虚拟交换、网络隔离、隧道和软件定义网络，并完成基础部署。'),
-  n('network-systems-integration', '网络系统集成', 5, 'advanced', ['网络', '工程', '高职'], ['网络规划与系统集成', '网络工程实施'], ['moe-network-510202'], ['vocational', 'undergraduate', 'self_directed'], '完成需求分析、拓扑与布线设计、设备选型、实施、测试和工程验收。'),
+  n('wireless-networking', '无线网络技术应用', 4, 'domain', ['网络', '高职'], ['WLAN规划', '无线组网'], ['moe-network-510202'], ['vocational', 'undergraduate', 'self_directed']),
+  n('network-automation', '网络自动化运维', 4, 'domain', ['网络', '运维', '编程', '高职'], ['自动化网络运维', 'Python网络运维'], ['moe-network-510202'], ['vocational', 'undergraduate', 'self_directed']),
+  n('network-virtualization', '网络虚拟化技术应用', 4, 'domain', ['网络', '云', '高职'], ['SDN基础', '虚拟网络'], ['moe-network-510202', 'moe-cloud-510206'], ['vocational', 'undergraduate', 'self_directed']),
+  n('network-systems-integration', '网络系统集成', 5, 'advanced', ['网络', '工程', '高职'], ['网络规划与系统集成', '网络工程实施'], ['moe-network-510202'], ['vocational', 'undergraduate', 'self_directed']),
   n('computer-graphics', '计算机图形学', 3, 'domain', ['图形', '视觉'], ['图形学基础', 'Graphics'], ['acm-cs2023', 'tsinghua-2023']),
   n('embedded-systems', '嵌入式系统', 3, 'domain', ['系统', '硬件', '物联网'], ['嵌入式开发', 'MCU'], ['acm-cs2023', 'moe-vocational-2025']),
   n('artificial-intelligence', '人工智能导论', 4, 'domain', ['AI'], ['AI基础', '人工智能'], ['cmu-ai', 'zju-cs', 'acm-cs2023']),
@@ -446,20 +451,20 @@ export const OFFICIAL_PATH_NODES: LearningPathNode[] = [
   n('data-mining', '数据挖掘', 4, 'domain', ['数据', 'AI'], ['知识发现', 'Data Mining'], ['tsinghua-2023', 'stanford-ms']),
   n('distributed-systems', '分布式系统', 4, 'domain', ['系统', '云'], ['Distributed Systems', '分布式计算'], ['cmu-mscs', 'acm-cs2023']),
   n('cloud-computing', '云计算', 4, 'domain', ['云', '系统', '高职'], ['云平台', '云计算技术应用'], ['moe-vocational-2025', 'cmu-mscs'], ['vocational', 'undergraduate', 'graduate', 'self_directed']),
-  n('virtualization-technology', '虚拟化技术基础', 3, 'domain', ['云', '系统', '高职'], ['计算虚拟化', '存储虚拟化'], ['moe-cloud-510206'], ['vocational', 'undergraduate', 'self_directed'], '理解计算、存储与网络虚拟化，创建和管理虚拟机、镜像与资源池。'),
-  n('cloud-platform-operations', '云平台架构与运维', 4, 'domain', ['云', '系统', '运维', '高职'], ['私有云运维', '公有云运维'], ['moe-cloud-510206'], ['vocational', 'undergraduate', 'self_directed'], '规划并运维私有云和公有云中的计算、网络、存储、数据库与监控服务。'),
-  n('container-cloud-operations', '容器云架构与运维', 5, 'advanced', ['云', '系统', '运维', '高职'], ['容器编排', 'Kubernetes运维'], ['moe-cloud-510206'], ['vocational', 'undergraduate', 'self_directed'], '管理镜像、容器网络、存储、编排、监控和应用发布。'),
-  n('cloud-security-applications', '云安全技术应用', 5, 'advanced', ['云', '安全', '高职'], ['云安全运维', '云平台安全'], ['moe-cloud-510206'], ['vocational', 'undergraduate', 'self_directed'], '配置身份认证、云扫描、防护、监控与安全运营能力，保护云平台和云服务。'),
+  n('virtualization-technology', '虚拟化技术基础', 3, 'domain', ['云', '系统', '高职'], ['计算虚拟化', '存储虚拟化'], ['moe-cloud-510206'], ['vocational', 'undergraduate', 'self_directed']),
+  n('cloud-platform-operations', '云平台架构与运维', 4, 'domain', ['云', '系统', '运维', '高职'], ['私有云运维', '公有云运维'], ['moe-cloud-510206'], ['vocational', 'undergraduate', 'self_directed']),
+  n('container-cloud-operations', '容器云架构与运维', 5, 'advanced', ['云', '系统', '运维', '高职'], ['容器编排', 'Kubernetes运维'], ['moe-cloud-510206'], ['vocational', 'undergraduate', 'self_directed']),
+  n('cloud-security-applications', '云安全技术应用', 5, 'advanced', ['云', '安全', '高职'], ['云安全运维', '云平台安全'], ['moe-cloud-510206'], ['vocational', 'undergraduate', 'self_directed']),
   n('devops', 'DevOps 与持续交付', 4, 'domain', ['软件', '运维'], ['CI/CD', '持续集成'], ['acm-cs2023', 'moe-network-510202']),
   n('compilers', '编译原理', 4, 'domain', ['编程', '系统', '理论'], ['编译器', 'Compiler Design'], ['zju-cs', 'cmu-mscs']),
   n('parallel-computing', '并行计算', 4, 'domain', ['系统', '计算'], ['并行程序设计', 'PDC'], ['acm-cs2023', 'cmu-mscs']),
   n('cybersecurity-engineering', '网络安全工程', 4, 'domain', ['安全', '网络'], ['安全工程与实践', '安全产品配置'], ['zju-cs', 'moe-security-510207']),
   n('web-security', 'Web 应用安全', 4, 'domain', ['安全', 'Web'], ['Web安全与防护', '代码审计'], ['moe-security-510207']),
-  n('operating-system-security', '操作系统安全', 4, 'domain', ['安全', '系统', '高职'], ['系统安全加固', '主机安全'], ['moe-security-510207'], ['vocational', 'undergraduate', 'self_directed'], '检查账户、权限、文件系统和服务配置，实施主流操作系统安全加固。'),
-  n('security-product-configuration', '信息安全产品配置与应用', 4, 'domain', ['安全', '网络', '高职'], ['防火墙配置', '安全审计产品'], ['moe-security-510207'], ['vocational', 'undergraduate', 'self_directed'], '部署和管理防火墙、入侵检测、漏洞扫描、安全审计等防护产品。'),
-  n('storage-disaster-recovery', '数据存储与容灾', 4, 'domain', ['安全', '数据', '系统', '高职'], ['备份恢复', 'RAID与容灾'], ['moe-security-510207'], ['vocational', 'undergraduate', 'self_directed'], '设计存储、备份与 RAID 方案，实施数据恢复和信息系统容灾。'),
-  n('digital-forensics', '电子数据取证技术应用', 5, 'advanced', ['安全', '实践', '高职'], ['计算机取证', '数据恢复取证'], ['moe-security-510207'], ['vocational', 'undergraduate', 'self_directed'], '依法获取、固定、恢复和分析电子数据，形成可检查的取证过程与结果。'),
-  n('security-risk-assessment', '信息安全风险评估', 5, 'advanced', ['安全', '工程', '高职'], ['安全测评', '风险分析'], ['moe-security-510207'], ['vocational', 'undergraduate', 'self_directed'], '识别资产、威胁与脆弱性，完成主机、网络、应用和数据安全评估报告。'),
+  n('operating-system-security', '操作系统安全', 4, 'domain', ['安全', '系统', '高职'], ['系统安全加固', '主机安全'], ['moe-security-510207'], ['vocational', 'undergraduate', 'self_directed']),
+  n('security-product-configuration', '信息安全产品配置与应用', 4, 'domain', ['安全', '网络', '高职'], ['防火墙配置', '安全审计产品'], ['moe-security-510207'], ['vocational', 'undergraduate', 'self_directed']),
+  n('storage-disaster-recovery', '数据存储与容灾', 4, 'domain', ['安全', '数据', '系统', '高职'], ['备份恢复', 'RAID与容灾'], ['moe-security-510207'], ['vocational', 'undergraduate', 'self_directed']),
+  n('digital-forensics', '电子数据取证技术应用', 5, 'advanced', ['安全', '实践', '高职'], ['计算机取证', '数据恢复取证'], ['moe-security-510207'], ['vocational', 'undergraduate', 'self_directed']),
+  n('security-risk-assessment', '信息安全风险评估', 5, 'advanced', ['安全', '工程', '高职'], ['安全测评', '风险分析'], ['moe-security-510207'], ['vocational', 'undergraduate', 'self_directed']),
   n('applied-cryptography', '现代密码学', 4, 'domain', ['安全', '数学'], ['应用密码学', 'Cryptography'], ['tsinghua-2023', 'zju-cs']),
   n('data-engineering', '数据工程', 4, 'domain', ['数据', '系统'], ['数据管道', 'Data Engineering'], ['acm-cs2023', 'cmu-mscs']),
   n('software-architecture', '软件架构与大型系统设计', 4, 'domain', ['软件', '工程'], ['系统设计', '软件架构'], ['acm-cs2023', 'cmu-mscs']),
@@ -477,21 +482,21 @@ export const OFFICIAL_PATH_NODES: LearningPathNode[] = [
   n('advanced-systems', '高阶系统专题', 6, 'advanced', ['系统', '研究'], ['高级操作系统', '高级分布式系统'], ['cmu-mscs'], ['graduate', 'self_directed']),
   n('formal-methods', '形式化方法与程序验证', 6, 'advanced', ['理论', '软件', '安全'], ['模型检测', '程序验证'], ['cmu-mscs', 'acm-cs2023'], ['graduate', 'self_directed']),
   n('security-operations', '安全运营与应急响应', 6, 'advanced', ['安全', '实践'], ['风险评估', '数字取证'], ['moe-security-510207'], ['vocational', 'undergraduate', 'graduate', 'self_directed']),
-  n('engineering-debugging-observability', '工程调试与可观测性', 4, 'domain', ['软件', '系统', '运维', '实践'], ['调试方法', '日志指标链路', 'Observability'], ['swebok-v4', 'google-sre'], ['vocational', 'undergraduate', 'graduate', 'self_directed'], '系统学习复现、假设、定位和验证故障，并使用日志、指标、追踪与剖析建立可解释的运行证据，最终能够完成一次有依据的故障归因。'),
-  n('api-design-evolution', 'API 设计与演进', 4, 'domain', ['软件', '工程', 'Web'], ['接口设计', 'API版本治理', '契约测试'], ['swebok-v4'], ['vocational', 'undergraduate', 'graduate', 'self_directed'], '围绕接口契约、错误模型、兼容性、版本、幂等与弃用策略设计可长期演进的服务边界，并通过契约测试验证调用方和服务方的共同预期。'),
-  n('software-maintenance-evolution', '软件维护与演化', 4, 'domain', ['软件', '工程'], ['遗留系统维护', '重构', '技术债'], ['swebok-v4'], ['vocational', 'undergraduate', 'graduate', 'self_directed'], '阅读既有系统，安全重构与迁移，管理依赖和技术债，并用回归证据控制长期变更风险，能够为一次真实演化说明边界、迁移步骤和回退策略。'),
-  n('open-source-collaboration', '开源协作与工程沟通', 3, 'domain', ['软件', '工程', '实践'], ['开源贡献', '代码评审', '技术写作'], ['swebok-v4'], ['vocational', 'undergraduate', 'graduate', 'self_directed'], '通过问题描述、提交、代码评审、文档、许可证和社区协作完成可被他人检查与接续的工程贡献，并理解维护者、贡献者与用户之间的责任边界。'),
-  n('performance-engineering', '性能工程', 5, 'advanced', ['系统', '软件', '工程'], ['性能分析', '基准测试', '容量规划'], ['swebok-v4', 'google-sre'], ['vocational', 'undergraduate', 'graduate', 'self_directed'], '从工作负载与服务目标出发测量延迟、吞吐和资源成本，使用剖析、基准和容量模型定位瓶颈，并验证优化是否改善真实负载而非单一样例。'),
-  n('reliability-incident-response', '可靠性工程与生产事件响应', 5, 'advanced', ['系统', '运维', '工程', '实践'], ['SRE', '故障响应', '复盘'], ['google-sre'], ['vocational', 'undergraduate', 'graduate', 'self_directed'], '定义服务目标和错误预算，设计降级与恢复机制，并通过值守、事件指挥和无责复盘改善真实生产系统。'),
-  n('secure-software-supply-chain', '安全软件开发与软件供应链', 5, 'advanced', ['安全', '软件', '工程'], ['安全开发生命周期', '依赖安全', '软件供应链安全'], ['nist-ssdf', 'swebok-v4'], ['vocational', 'undergraduate', 'graduate', 'self_directed'], '把威胁建模、安全编码、依赖与构建来源、制品签名、漏洞响应嵌入软件全生命周期，并以可追溯清单和验证流程降低交付风险。'),
-  n('information-retrieval', '信息检索', 5, 'advanced', ['数据', 'AI', '语言'], ['搜索引擎原理', '检索模型', 'Information Retrieval'], ['acm-cs2023', 'stanford-ms'], ['undergraduate', 'graduate', 'self_directed'], '学习索引、召回与排序、相关性判断、离线评测和交互反馈，理解从关键词检索到语义检索的共同骨架。'),
-  n('data-governance-privacy', '数据治理与隐私工程', 5, 'advanced', ['数据', '安全', '伦理', '工程'], ['数据质量治理', '隐私工程', '数据血缘'], ['acm-cs2023', 'nist-ssdf'], ['vocational', 'undergraduate', 'graduate', 'self_directed'], '管理数据质量、目录、血缘、访问、保留与删除，并把隐私风险和合规约束转化为可验证的工程控制。'),
-  n('ai-system-evaluation', 'AI 系统评测', 7, 'research', ['AI', '工程', '研究'], ['模型评测', 'Agent评测', '红队测试'], ['nist-ai-evaluation', 'cmu-ai'], ['undergraduate', 'graduate', 'self_directed'], '从任务定义、数据切分、指标、基线和不确定性出发评估模型与智能体，并检查鲁棒性、安全性和真实使用效果。'),
-  n('platform-engineering', '平台工程', 6, 'advanced', ['系统', '云', '运维', '工程'], ['开发者平台', '内部开发平台', 'Platform Engineering'], ['cncf-platform-engineering', 'google-sre'], ['undergraduate', 'graduate', 'self_directed'], '把基础设施、交付、可观测性和安全能力组织成自助式开发者平台，以产品思维降低团队认知负担，并用内部用户反馈和交付指标持续验证平台价值。'),
-  n('numerical-scientific-computing', '数值与科学计算', 5, 'advanced', ['数学', '计算', '研究'], ['数值分析', '科学计算', 'Numerical Computing'], ['acm-cs2023', 'cmu-mscs'], ['undergraduate', 'graduate', 'self_directed'], '研究浮点误差、数值稳定性、线性方程与迭代方法，并用向量化、误差分析和对照实验验证计算结果是否可靠、可复现。'),
+  n('engineering-debugging-observability', '工程调试与可观测性', 4, 'domain', ['软件', '系统', '运维', '实践'], ['调试方法', '日志指标链路', 'Observability'], ['swebok-v4', 'google-sre'], ['vocational', 'undergraduate', 'graduate', 'self_directed']),
+  n('api-design-evolution', 'API 设计与演进', 4, 'domain', ['软件', '工程', 'Web'], ['接口设计', 'API版本治理', '契约测试'], ['swebok-v4'], ['vocational', 'undergraduate', 'graduate', 'self_directed']),
+  n('software-maintenance-evolution', '软件维护与演化', 4, 'domain', ['软件', '工程'], ['遗留系统维护', '重构', '技术债'], ['swebok-v4'], ['vocational', 'undergraduate', 'graduate', 'self_directed']),
+  n('open-source-collaboration', '开源协作与工程沟通', 3, 'domain', ['软件', '工程', '实践'], ['开源贡献', '代码评审', '技术写作'], ['swebok-v4'], ['vocational', 'undergraduate', 'graduate', 'self_directed']),
+  n('performance-engineering', '性能工程', 5, 'advanced', ['系统', '软件', '工程'], ['性能分析', '基准测试', '容量规划'], ['swebok-v4', 'google-sre'], ['vocational', 'undergraduate', 'graduate', 'self_directed']),
+  n('reliability-incident-response', '可靠性工程与生产事件响应', 5, 'advanced', ['系统', '运维', '工程', '实践'], ['SRE', '故障响应', '复盘'], ['google-sre'], ['vocational', 'undergraduate', 'graduate', 'self_directed']),
+  n('secure-software-supply-chain', '安全软件开发与软件供应链', 5, 'advanced', ['安全', '软件', '工程'], ['安全开发生命周期', '依赖安全', '软件供应链安全'], ['nist-ssdf', 'swebok-v4'], ['vocational', 'undergraduate', 'graduate', 'self_directed']),
+  n('information-retrieval', '信息检索', 5, 'advanced', ['数据', 'AI', '语言'], ['搜索引擎原理', '检索模型', 'Information Retrieval'], ['acm-cs2023', 'stanford-ms'], ['undergraduate', 'graduate', 'self_directed']),
+  n('data-governance-privacy', '数据治理与隐私工程', 5, 'advanced', ['数据', '安全', '伦理', '工程'], ['数据质量治理', '隐私工程', '数据血缘'], ['acm-cs2023', 'nist-ssdf'], ['vocational', 'undergraduate', 'graduate', 'self_directed']),
+  n('ai-system-evaluation', 'AI 系统评测', 7, 'research', ['AI', '工程', '研究'], ['模型评测', 'Agent评测', '红队测试'], ['nist-ai-evaluation', 'cmu-ai'], ['undergraduate', 'graduate', 'self_directed']),
+  n('platform-engineering', '平台工程', 6, 'advanced', ['系统', '云', '运维', '工程'], ['开发者平台', '内部开发平台', 'Platform Engineering'], ['cncf-platform-engineering', 'google-sre'], ['undergraduate', 'graduate', 'self_directed']),
+  n('numerical-scientific-computing', '数值与科学计算', 5, 'advanced', ['数学', '计算', '研究'], ['数值分析', '科学计算', 'Numerical Computing'], ['acm-cs2023', 'cmu-mscs'], ['undergraduate', 'graduate', 'self_directed']),
   n('research-methods', '计算机研究方法', 6, 'research', ['研究', '通识'], ['论文阅读', '实验设计', '科研方法'], ['cmu-mscs', 'tsinghua-2023', 'zju-cs'], ['undergraduate', 'graduate', 'self_directed']),
   n('retrieval-augmented-generation', '检索增强生成（RAG）', 7, 'advanced', ['AI', '数据', '工程'], ['RAG', '向量检索'], ['nyu-agents'], ['undergraduate', 'graduate', 'self_directed']),
-  n('agent-engineering', '智能体工程', 8, 'advanced', ['AI', '工程', '智能体'], ['Agent开发', 'AI Agent', '工具调用', 'agent development'], ['nyu-agents'], ['undergraduate', 'graduate', 'self_directed'], '围绕工具调用、状态、记忆、编排、评测和真实用户交付构建 AI 智能体。'),
+  n('agent-engineering', '智能体工程', 8, 'advanced', ['AI', '工程', '智能体'], ['Agent开发', 'AI Agent', '工具调用', 'agent development'], ['nyu-agents'], ['undergraduate', 'graduate', 'self_directed']),
   n('multi-agent-systems', '多智能体系统', 9, 'advanced', ['AI', '智能体', '研究'], ['Multi-Agent', 'MAS', '多Agent'], ['nyu-agents', 'stanford-ms'], ['graduate', 'self_directed']),
   n('capstone-project', '综合工程项目', 10, 'research', ['实践', '工程'], ['毕业设计', 'Capstone', '作品集项目'], ['cornell-cs', 'tsinghua-2023', 'moe-vocational-2025'], ['vocational', 'undergraduate', 'graduate', 'self_directed']),
   n('thesis-research', '研究课题与学位论文', 10, 'research', ['研究'], ['论文研究', 'Thesis'], ['cmu-mscs', 'stanford-ms', 'tsinghua-2023'], ['graduate', 'self_directed']),
@@ -691,7 +696,17 @@ export const OFFICIAL_PATH_EDGES: LearningPathEdge[] = [
   e('advanced-systems', 'thesis-research', 'soft_prerequisite', '系统方向研究常需高阶系统背景'),
 ]
 
-/** Stable, learner-state-free graph payload for read-only external consumers. */
+/** Immutable source release; bump when official content/relationships change. */
+export const OFFICIAL_PATH_GRAPH_REF = { graphId: 'learnflow:computing', revision: '2026-09-06.1' } as const
+
+export function exportOfficialLearningPathContractV2(): LearningPathGraphV2 {
+  return upgradeOfficialPathGraph(
+    exportOfficialLearningPathContract(), LEARNING_PATH_SOURCES, OFFICIAL_PATH_GRAPH_REF,
+    OFFICIAL_PATH_CONTENT,
+  )
+}
+
+/** Stable, learner-state-free v1 payload for existing read-only consumers. */
 export function exportOfficialLearningPathContract(): LearningPathGraphContract {
   return {
     protocolVersion: LEARNING_PATH_PROTOCOL_VERSION,

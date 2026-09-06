@@ -57,3 +57,7 @@ artifact 或 Event 输入；供应商名称、YAML 或清单字符串本身不�
 ## 暂不复制的部分
 
 参考仓库的原生 HTML 页面、单文件 Python HTTP 服务和第二套 SQLite 学生模型不进入主运行时。它们已经对应到 React workbench、FastAPI 服务和五核 Memory Graph；并行保留会造成身份、事件和画像冲突。星辰 YAML 若未来作为部署资产接入，必须先实现并验证 adapter；在此之前它不是 available 能力，也永远不得成为 LearnFlow 的本地业务真相。
+
+## 同仓产品契约登记（2026-09-06）
+
+Role Atlas 子应用通过 LearnFlow 权威导出同步 v1/v2 学习路径制品；规范语义由 LearnFlow 维护，岗位情境与证据由 Role Atlas 维护。源图、岗位挂载、特殊节点提案校验器已登记为只读数据契约，未新增模型工具或学习者写入口。Graph Hub 继续负责版本化发现与分发。特殊节点接收、图上局部迭代和 Agent／工作流分发见 [后续设计](implementation/2026-09-06-learning-path-contract-and-graph-workflow.md)，不列作本次已实现能力。

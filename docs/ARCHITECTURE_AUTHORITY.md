@@ -1,5 +1,7 @@
 # LearnFlow 架构权威与维护边界
 
+Contract impact（`2026-09-06.1`）：新增学习路径 v2 源数据契约、岗位语义挂载及图谱特殊节点新增批次的确定性校验器，登记于 `DATA_CONTRACTS` 并纳入 registry digest 与实现漂移检查。节点按课程／技能领域／知识／技能区分，包含关系与先修关系分别校验；包、图谱和节点版本显式固定，source provenance 与 LearnFlow 语义 ownership 分离。108 个官方节点全部提供具体简介，保留 v1 ID、187 条边和个人覆盖层，Role Atlas 同步 v1/v2 只读制品。此次没有新增 ACI 工具、Action Board 写能力或 EvidenceEvent；特殊节点持久化与岗位匹配器切换尚未实现。源图生成不写学习者状态。详见 [契约](product/LEARNING_PATH_CONTRACT_V2.md) 与 [后续工作流设计](implementation/2026-09-06-learning-path-contract-and-graph-workflow.md)。
+
 Contract impact（`2026-09-02.7`）：正式学习型任务的“进入个性化学习 / 回到学习现场”统一成为确定性运行交接：宿主先启动或恢复原 `LearningTask`，再按候选保存的 Conversation/Session/Project/Checkpoint 锚点打开原对话、切换到 `guided_learning`，并建立只镜像该正式任务的 `LearningTaskBinding`。启动 `LearningSkillRun` 时必须携带正式 `learning_task_id`；后端校验 learner 与完整 scope 后认领同一任务，禁止另建重复原子任务。该桥接不改变四阶段完成门、Practice 判定、EvidenceEvent 或五核语义，任务进入学习现场本身仍为零掌握证据。
 
 Contract impact（`2026-09-02.6`）：通用 Plugin Object 引用除学习者可见文本外，会把当前 ToolRun 中已校验的对象信封作为本轮结构化输入交给 Tutor。学习型任务转化只从对象的 `task` 类别提取原始 label、摘要和不可变 `plugin-object://` 来源引用，URI 不得进入任务标题，宿主也不按插件 ID 或具体岗位分支。候选在正式确认时保存当前 `sessionId + conversationId + sheetId` 和插件对象来源；正式 `LearningTask.origin_navigation` 优先返回原 `/chat/:conversationId`，任务队列对旧任务使用同项目、已参与转化插件的最近对话作兼容恢复。候选 request ID 的本地指纹覆盖后端幂等合同的全部生成参数；隐藏控制消息不参与上下文、标题、预览、计数或中断恢复。该变更不新增插件扩展点、主 Agent、核心对象或 Kernel writer；任务仍需项目范围与两次显式确认，生成和导航均不构成掌握证据。

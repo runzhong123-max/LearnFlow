@@ -16,7 +16,7 @@
     "test:learning": "node --experimental-strip-types --test server/learning-task.test.ts server/learning-file-message.test.ts server/human-adaptation.test.ts server/paper-workbench.test.ts server/learning-visual-spec.test.ts server/visual-storyboard-tool.test.ts server/visual-teaching-skill.test.ts server/agent-runtime.test.ts server/generation-deadline.test.ts server/provider-stream.test.ts server/turn-recovery.test.ts",
     "test:planning": "node --experimental-strip-types --test server/planning.test.ts",
     "test:profile": "node --experimental-strip-types --test server/five-kernel-profile.test.ts server/profile-presentation.test.ts",
-    "test:path": "node --experimental-strip-types --test server/learning-path-graph.test.ts server/learning-path-production-eval.test.ts",
+    "test:path": "node --experimental-strip-types --test server/learning-path-graph.test.ts server/learning-path-production-eval.test.ts server/learning-path-contract-v2.test.ts",
     "test:formal": "node --experimental-strip-types --test server/formal-runtime.test.ts server/project-sidebar.test.ts server/review-runtime.test.ts",
     "test:auth": "node --experimental-strip-types --test server/auth-runtime.test.ts server/account-model-credential.test.ts server/password-policy.test.ts",
     "test:plugins": "node --experimental-strip-types --test server/plugin-api.test.ts server/role-capability-plugin.test.ts server/hub-discovery-client.test.ts server/plugin-object-drop.test.ts server/role-package-file-import.test.ts server/role-package-hub-import.test.ts server/tool-capability-catalog.test.ts server/learning-task-conversion-plugin.test.ts server/learning-task-conversion-intake.test.ts",

@@ -1,9 +1,10 @@
 /**
  * LearnFlow-owned, product-neutral learning-path protocol.
  *
- * Role systems may read this contract, resolve role knowledge/skills against
- * it, and emit PersonalPathNodeProposal-compatible candidates. Learner state,
- * confirmation and persistence remain exclusively owned by LearnFlow.
+ * Compatibility v1 course graph and personal learner overlay. Typed source
+ * graph, semantic bindings and shared graph extensions use the adjacent v2
+ * contract; role package gaps must not be silently converted to personal nodes.
+ * Learner state, confirmation and persistence remain owned by LearnFlow.
  */
 export const LEARNING_PATH_PROTOCOL_VERSION = 'learnflow-learning-path/v1' as const
 

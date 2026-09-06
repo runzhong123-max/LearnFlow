@@ -17,13 +17,51 @@ from typing import Any
 from app.services.action_board import ACTION_BOARD
 
 
-REGISTRY_VERSION = "2026-09-02.5"
+REGISTRY_VERSION = "2026-09-06.1"
 EVENT_SCHEMA_VERSION = "learnflow.evidence.v1"
 SKILL_SPEC_VERSION = "learnflow.skill.v3"
 # The learner-facing SkillSpec changed in this registry release.
 FRONTEND_SKILL_MANIFEST_REGISTRY_VERSION = "2026-08-29.1"
 KERNEL_NAMES = ("structure", "knowledge", "human", "value", "practice")
 LIFECYCLE_STATES = ("implemented", "optional_unimplemented", "deprecated")
+
+# Pure source-data validators/exporters, not Agent-callable tools or learner writers.
+# The referenced TypeScript module owns field semantics; this registry owns discovery.
+DATA_CONTRACTS = {
+    "learning_path_source_v2": {
+        "schema_version": "learnflow-learning-path/v2",
+        "owner": "learning_design_agent",
+        "origin": "builtin",
+        "mode": "read_only_source_export",
+        "lifecycle": "implemented",
+        "authority_path": "frontend/src/learning-path-contract-v2.ts",
+        "binding_ids": ["frontend:path.validate_v2", "frontend:path.export_v2"],
+        "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "v1 reader and personal overlay unchanged; dual static exports",
+    },
+    "role_learning_alignment_v2": {
+        "schema_version": "learnflow-role-learning-alignment/v2",
+        "owner": "learning_design_agent",
+        "origin": "builtin",
+        "mode": "source_contract_validation",
+        "lifecycle": "implemented",
+        "authority_path": "frontend/src/learning-path-contract-v2.ts",
+        "binding_ids": ["frontend:path.validate_alignment_v2"],
+        "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "new opt-in contract; live Role Atlas matcher still uses v1",
+    },
+    "graph_extension_proposal_v2": {
+        "schema_version": "learnflow-graph-extension-proposal/v2",
+        "owner": "learning_design_agent",
+        "origin": "builtin",
+        "mode": "source_proposal_validation",
+        "lifecycle": "implemented",
+        "authority_path": "frontend/src/learning-path-contract-v2.ts",
+        "binding_ids": ["frontend:path.validate_extension_v2"],
+        "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "additive proposal only; shared catalog persistence is not implemented",
+    },
+}
 
 # This is the canonical allow-list used by Tutor semantic observations. The
 # runtime imports it instead of maintaining a second copy.
@@ -1592,6 +1630,10 @@ _FRONTEND_HANDLER_TARGETS = {
     "frontend:learning.create": ("frontend/src/learning.ts", "createLearningTask", ""),
     "frontend:planning.create": ("frontend/src/planning.ts", "createLearningPlan", ""),
     "frontend:path.read": ("frontend/src/learning-path-graph.ts", "readLearningPathGraph", ""),
+    "frontend:path.export_v2": ("frontend/src/learning-path-graph.ts", "exportOfficialLearningPathContractV2", ""),
+    "frontend:path.validate_v2": ("frontend/src/learning-path-contract-v2.ts", "validateLearningPathGraphV2", ""),
+    "frontend:path.validate_alignment_v2": ("frontend/src/learning-path-contract-v2.ts", "validateRoleLearningAlignmentV2", ""),
+    "frontend:path.validate_extension_v2": ("frontend/src/learning-path-contract-v2.ts", "validateGraphExtensionProposalV2", ""),
     "frontend:path.lookup": ("frontend/src/learning-path-graph.ts", "lookupLearningPathGraph", ""),
     "frontend:path.search": ("frontend/src/learning-path-graph.ts", "searchLearningPathGraph", ""),
     "frontend:path.propose_node": ("frontend/src/learning-path-graph.ts", "buildPersonalNodeProposal", ""),
@@ -2135,6 +2177,13 @@ def detect_learning_skill(message: str) -> SkillContract | None:
 
 def validate_registry() -> list[str]:
     errors: list[str] = []
+    for contract_id, contract in DATA_CONTRACTS.items():
+        if contract["owner"] not in AGENTS or contract["lifecycle"] not in LIFECYCLE_STATES:
+            errors.append(f"invalid data contract owner/lifecycle: {contract_id}")
+        if contract["kernel_reads"] or contract["kernel_write_path"] != "none":
+            errors.append(f"source data contract cannot read/write learner state: {contract_id}")
+        if not contract["binding_ids"] or any(key not in IMPLEMENTATION_BINDINGS for key in contract["binding_ids"]):
+            errors.append(f"data contract lacks a valid implementation binding: {contract_id}")
     if tuple(PLUGIN_EXTENSION_POINTS) != ("tool", "skill", "object", "tool_renderer"):
         errors.append("plugin extension API must expose exactly tool, skill, object and tool_renderer")
     for extension in PLUGIN_EXTENSION_POINTS.values():
@@ -2392,6 +2441,7 @@ def registry_manifest() -> dict[str, Any]:
             "vnext_learning_graph_alignment": "official course graph + personal course overlay + personal concept graph + source knowledge domains + confirmed path plan are joined only by explicit non-mastery alignment records",
             "vnext_learning_plan_projection": "planning intent -> proposal -> explicit learner decision; accepted Value changes enter the formal EvidenceEvent reducer",
             "vnext_learning_path_projection": "versioned official course DAG + formal learner overlay events -> Structure/Value reference projection; Knowledge only records self-reported exposure and never mastery",
+            "learning_path_source_contract": "LearnFlow-owned v2 typed source catalog + immutable role bindings + additive graph-extension proposals; validation and static export only, no catalog writer or learner evidence; v1 runtime remains compatible",
             "vnext_learning_path_retrieval": "exact id/title/alias lookup -> conditional deterministic fuzzy rank fusion -> ambiguity clarification or structured-evidence personal-node proposal; model-supplied URLs are rejected and proposal remains zero-target until learner confirmation",
             "vnext_agent_turn_runtime": "typed ContextEnvelope -> bounded model/tool loop -> deterministic final-state verifier -> structured AgentTurnTrace; model receives only registered read/artifact ACI tools",
             "vnext_chat_session_authority": "learner-owned AgentSession + idempotent AgentMessage are the cross-browser ordinary-chat authority; localStorage keeps drafts, tabs and paper layout only; persistence never implies learning evidence",
@@ -2404,6 +2454,7 @@ def registry_manifest() -> dict[str, Any]:
             "assessment_design_authority": "AssessmentBlueprint + Rubric are versioned learner-scoped proposals; generation is zero-target and deterministic grading remains Practice Agent authority",
         },
         "agents": [asdict(item) for item in AGENTS.values()],
+        "data_contracts": [{"id": key, **value} for key, value in DATA_CONTRACTS.items()],
         "chat_modes": [asdict(item) for item in CHAT_MODES.values()],
         "kernels": [asdict(item) for item in KERNELS.values()],
         "capabilities": capabilities,

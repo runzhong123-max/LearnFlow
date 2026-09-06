@@ -9,6 +9,7 @@ from app.services.action_board import ACTION_BOARD
 from app.services.architecture_registry import (
     AGENTS,
     CHAT_MODES,
+    DATA_CONTRACTS,
     CAPABILITY_OWNERS,
     EVENT_SCHEMA_VERSION,
     EVENTS,
@@ -44,7 +45,7 @@ def test_registry_has_three_agents_five_kernels_and_no_drift():
     assert set(ACTION_BOARD) == set(CAPABILITY_OWNERS)
     assert validate_registry() == []
     manifest = registry_manifest()
-    assert REGISTRY_VERSION == "2026-09-02.5"
+    assert REGISTRY_VERSION == "2026-09-06.1"
     assert manifest["schema_valid"] is True
     assert manifest["valid"] is (
         manifest["schema_valid"] and manifest["implementation_valid"]
@@ -93,6 +94,20 @@ def test_registry_has_three_agents_five_kernels_and_no_drift():
     assert KERNELS["human"].claim_mode == "directive_claims"
     assert KERNELS["value"].claim_mode == "consent_claims"
     assert KERNELS["practice"].claim_mode == "performance_claims"
+
+
+def test_learning_path_data_contracts_are_bound_but_never_learner_writers():
+    manifest = registry_manifest()
+    assert {row["id"] for row in manifest["data_contracts"]} == set(DATA_CONTRACTS)
+    root = Path(__file__).resolve().parents[2]
+    for contract in DATA_CONTRACTS.values():
+        assert contract["owner"] == "learning_design_agent"
+        assert contract["kernel_reads"] == []
+        assert contract["kernel_write_path"] == "none"
+        assert contract["schema_version"] in (root / contract["authority_path"]).read_text()
+        for binding_id in contract["binding_ids"]:
+            assert binding_id in IMPLEMENTATION_BINDINGS
+    assert "v1 runtime remains compatible" in manifest["authority"]["learning_path_source_contract"]
 
 
 def test_publications_have_lifecycle_bindings_and_optional_rows_are_unavailable():
