@@ -5,7 +5,9 @@ import { bootstrapBundledRegistryPackage } from "@/lib/registry/bootstrap";
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   try {
-    await bootstrapBundledRegistryPackage();
+    // Match the Hub page: a bundled example conflict must not hide published entries.
+    // Directory failures still propagate to the unavailable response below.
+    await bootstrapBundledRegistryPackage().catch(() => null);
     const entries = await listPublicHubEntries();
     const result = searchHub(entries, { query: params.get("q") || "", category: params.get("category") || undefined,
       limit: Number(params.get("limit") || 20), offset: Number(params.get("offset") || 0) });
