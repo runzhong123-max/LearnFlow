@@ -1566,7 +1566,21 @@ export async function executeTutorAgentTool(
       if (!options.visualTeachingBrief || options.visualTeachingBrief.modality !== requestedKind) {
         throw new Error('visual_skill_brief_required:视觉工具只能消费 visual_teaching_composition 已校验的 VisualBrief')
       }
-      const execution = await executeLearningVisual(requestedKind, query, options.recentMessages || [], options.generate, options.onVisualStage, options.visualTeachingBrief)
+      const execution = await executeLearningVisual(requestedKind, query, options.recentMessages || [], options.generate, options.onVisualStage, options.visualTeachingBrief, async (action, payload) => {
+        if (!options.backendBase) throw new Error('visual_host_required')
+        const csrfResponse = await fetch(`${options.backendBase}/api/auth/csrf`, {
+          headers: options.requestCookie ? { Cookie: options.requestCookie } : {}, signal: AbortSignal.timeout(10_000),
+        })
+        const csrf = await csrfResponse.json()
+        if (!csrfResponse.ok || typeof csrf.csrf_token !== 'string') throw new Error('visual_auth_required')
+        const response = await fetch(`${options.backendBase}/api/visuals/${action}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf.csrf_token, ...(options.requestCookie ? { Cookie: options.requestCookie } : {}) },
+          body: JSON.stringify(payload), signal: AbortSignal.timeout(30_000),
+        })
+        const result = await response.json()
+        if (!response.ok) throw new Error(result.detail || 'visual_host_failed')
+        return result
+      })
       const visual = execution.generated
       const effectiveKind = visual.artifact.kind === 'animation' ? 'animation' : 'diagram'
       if (effectiveKind !== requestedKind) {
@@ -1589,7 +1603,7 @@ export async function executeTutorAgentTool(
           kind: effectiveKind === 'diagram' ? 'image' : 'animation',
           status: 'completed',
           title: requestedKind === 'diagram' ? '生成知识图解' : '生成过程动画',
-          detail: `${effectiveKind === 'diagram' ? 'ASCII 图解' : `${visual.artifact.steps.length} 帧 ASCII 动画`}已通过主题对齐、语义重放、对象覆盖、文本尺寸与控制字符安全门；结构质量分 ${visual.quality.score}${degradedLabel}${contextLabel}。`,
+          detail: visual.artifact.visualize ? '交互图已生成；状态由注册模型计算，验证范围可在图中查看。' : `兼容视觉产物已生成${degradedLabel}${contextLabel}。`,
           observationSummary: visual.artifact.title,
           durationMs: Date.now() - startedAt,
           artifact: visual.artifact,

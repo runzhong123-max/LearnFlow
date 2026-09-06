@@ -366,7 +366,7 @@ async function executeDesktopVisualTool(options: {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         instructions: visualTeachingBriefPrompt(options.kind, options.query, options.teachingExplanation),
-        input: `以下讲解已经由正式 Tutor 独立提交。保持它的事实边界，并据此填写语义可执行 storyboard；不要在 JSON 中复制讲解：\n${options.teachingExplanation}`,
+        input: `以下讲解已经由正式 Tutor 独立提交。保持它的事实边界，并据此填写 VisualSpec 0.1.0 visual_spec；不要在 JSON 中复制讲解：\n${options.teachingExplanation}`,
         timeout_ms: 180_000,
         max_tokens: 12_000,
         response_format: 'json_object',
@@ -397,7 +397,12 @@ async function executeDesktopVisualTool(options: {
       if (!response.ok) throw new Error(typeof payload?.detail === 'string' ? payload.detail : `视觉规划返回 HTTP ${response.status}`)
       if (typeof payload?.text !== 'string' || !payload.text.trim()) throw new Error('视觉规划没有返回可验证的 JSON')
       return payload.text
-    }, undefined, visualBrief)
+    }, undefined, visualBrief, async (action, payload) => {
+      const response = await runtimeFetch(`/api/visuals/${action}`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload), signal: options.signal})
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.detail || 'visual_host_failed')
+      return result
+    })
     const visual = execution.generated
     const effectiveKind = visual.artifact.kind === 'animation' ? 'animation' : 'diagram'
     if (effectiveKind !== options.kind) {
@@ -410,7 +415,7 @@ async function executeDesktopVisualTool(options: {
       kind: effectiveKind === 'animation' ? 'animation' : 'image',
       status: 'completed',
       title,
-      detail: `${effectiveKind === 'animation' ? `${visual.artifact.steps.length} 帧 ASCII 动画` : 'ASCII 图解'}已通过语义重放、对象覆盖、文本尺寸与控制字符安全门；质量分 ${visual.quality.score}${visual.degraded ? '；使用了通用文本布局' : ''}${execution.request.contextEnriched ? '；已结合最近对话主题' : ''}。`,
+      detail: visual.artifact.visualize ? '交互图已生成；可调参、回放并追问当前状态。' : '兼容视觉产物已生成。',
       durationMs: Date.now() - startedAt,
       startedAt,
       inputSummary: request.effectiveRequest.slice(0, 240),

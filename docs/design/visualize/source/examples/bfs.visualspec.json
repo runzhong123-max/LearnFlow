@@ -1,0 +1,157 @@
+{
+  "spec_version": "0.1.0",
+  "id": "bfs_queue",
+  "title": "BFS 队列与距离",
+  "domains": [
+    "algorithms"
+  ],
+  "teaching": {
+    "goal": "预测 BFS 每步的队列变化并解释节点为何只发现一次。",
+    "misconceptions": [
+      "state_sequence",
+      "invariant_constraint"
+    ],
+    "assumptions": [
+      "有限无向无权图。",
+      "邻居按 ID 字典序；入队即标记 discovered。",
+      "每步展开一个节点，含其所有未发现邻居。"
+    ],
+    "checkpoints": []
+  },
+  "parameters": [],
+  "data": {
+    "graph": {
+      "nodes": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "edges": [
+        [
+          "a",
+          "b"
+        ],
+        [
+          "a",
+          "c"
+        ],
+        [
+          "b",
+          "d"
+        ],
+        [
+          "c",
+          "d"
+        ]
+      ]
+    },
+    "start": "a"
+  },
+  "model": {
+    "id": "algorithms.bfs",
+    "version": "1.0.0",
+    "inputs": {
+      "graph": {
+        "source": "/data/graph"
+      },
+      "start": {
+        "source": "/data/start"
+      }
+    },
+    "seed": 42,
+    "max_steps": 12
+  },
+  "layout": {
+    "kind": "stack",
+    "view_order": [
+      "graph_view",
+      "queue_view"
+    ]
+  },
+  "views": [
+    {
+      "id": "graph_view",
+      "renderer": "svg",
+      "title": "图与当前节点",
+      "elements": [
+        {
+          "id": "network",
+          "kind": "graph",
+          "label": "无权图",
+          "inputs": {
+            "graph": {
+              "source": "/data/graph"
+            },
+            "active": {
+              "source": "/state/current"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "queue_view",
+      "renderer": "svg",
+      "title": "队列与已发现节点",
+      "elements": [
+        {
+          "id": "queue",
+          "kind": "array",
+          "label": "待展开队列",
+          "inputs": {
+            "items": {
+              "source": "/state/queue"
+            }
+          }
+        },
+        {
+          "id": "visited",
+          "kind": "array",
+          "label": "已发现",
+          "inputs": {
+            "items": {
+              "source": "/state/discovered"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "playback": {
+    "initial_step": 0,
+    "autoplay": false,
+    "transition": {
+      "kind": "cut",
+      "duration_ms": 0,
+      "easing": "linear"
+    },
+    "reduced_motion": "cut"
+  },
+  "interactions": [
+    {
+      "id": "steps",
+      "kind": "stepper",
+      "target": "trace",
+      "allow_back": true
+    }
+  ],
+  "annotations": [],
+  "validation": {
+    "requested_checks": [
+      {
+        "id": "algorithms.bfs_invariants",
+        "version": "1.0.0"
+      }
+    ]
+  },
+  "accessibility": {
+    "summary": "预测 BFS 每步的队列变化并解释节点为何只发现一次。",
+    "keyboard": true,
+    "text_alternative": true
+  },
+  "fallback": {
+    "kind": "static_sequence",
+    "text": "队列：[a] → [b,c] → [c,d] → [d] → []。d 在展开 b 时已发现，不应再次入队。"
+  }
+}

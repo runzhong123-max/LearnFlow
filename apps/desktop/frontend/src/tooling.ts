@@ -51,6 +51,7 @@ export type VisualStep = {
 }
 
 export type VisualArtifact = {
+  visualize?: import('./visualize.ts').VisualBundle
   kind: 'image' | 'animation'
   title: string
   subtitle: string

@@ -1,0 +1,191 @@
+{
+  "spec_version": "0.1.0",
+  "id": "gd_step_size",
+  "title": "步长、过冲与发散",
+  "domains": [
+    "optimization",
+    "machine_learning"
+  ],
+  "teaching": {
+    "goal": "能够区分同侧收敛、交替收敛、等幅振荡和发散。",
+    "misconceptions": [
+      "local_vs_global"
+    ],
+    "assumptions": [
+      "目标函数 f(x)=(x-2)^2，实数域。",
+      "固定步长梯度下降；x0=-4；共计算 12 次更新。",
+      "二次型示例的阈值不能推广到任意损失函数。"
+    ],
+    "checkpoints": [
+      {
+        "id": "predict_overshoot",
+        "at_step": 0,
+        "prompt": "在当前 α 下，下一步会跨过 x=2 吗？距最优点更近还是更远？",
+        "rubric_ref": "gd.next_step.v1"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "id": "alpha",
+      "label": "学习率 α",
+      "type": "number",
+      "min": 0.05,
+      "max": 1.1,
+      "step": 0.05,
+      "default": 0.75,
+      "unit": "dimensionless",
+      "on_change": "reset_run"
+    }
+  ],
+  "data": {
+    "x0": -4,
+    "center": 2
+  },
+  "model": {
+    "id": "optimization.quadratic_gd",
+    "version": "1.0.0",
+    "inputs": {
+      "alpha": {
+        "source": "/params/alpha"
+      },
+      "x0": {
+        "source": "/data/x0"
+      },
+      "center": {
+        "source": "/data/center"
+      }
+    },
+    "seed": 42,
+    "max_steps": 12
+  },
+  "layout": {
+    "kind": "stack",
+    "view_order": [
+      "landscape",
+      "status"
+    ]
+  },
+  "views": [
+    {
+      "id": "landscape",
+      "renderer": "plot",
+      "title": "目标函数与当前参数",
+      "elements": [
+        {
+          "id": "axes",
+          "kind": "axis",
+          "label": "x 与 f(x)",
+          "inputs": {
+            "axes": {
+              "source": "/derived/axes"
+            }
+          }
+        },
+        {
+          "id": "objective",
+          "kind": "curve",
+          "label": "目标函数",
+          "inputs": {
+            "points": {
+              "source": "/derived/objective"
+            }
+          }
+        },
+        {
+          "id": "path",
+          "kind": "curve",
+          "label": "迭代路径",
+          "inputs": {
+            "points": {
+              "source": "/derived/path"
+            }
+          }
+        },
+        {
+          "id": "current",
+          "kind": "point",
+          "label": "当前参数",
+          "inputs": {
+            "point": {
+              "source": "/derived/current_point"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "status",
+      "renderer": "svg",
+      "title": "当前数值",
+      "elements": [
+        {
+          "id": "x_value",
+          "kind": "metric",
+          "label": "x",
+          "inputs": {
+            "value": {
+              "source": "/state/x"
+            }
+          }
+        },
+        {
+          "id": "loss",
+          "kind": "metric",
+          "label": "f(x)",
+          "inputs": {
+            "value": {
+              "source": "/state/loss"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "playback": {
+    "initial_step": 0,
+    "autoplay": false,
+    "transition": {
+      "kind": "cut",
+      "duration_ms": 0,
+      "easing": "linear"
+    },
+    "reduced_motion": "cut"
+  },
+  "interactions": [
+    {
+      "id": "alpha_control",
+      "kind": "slider",
+      "parameter_id": "alpha"
+    },
+    {
+      "id": "steps",
+      "kind": "stepper",
+      "target": "trace",
+      "allow_back": true
+    },
+    {
+      "id": "prediction",
+      "kind": "prediction",
+      "checkpoint_id": "predict_overshoot"
+    }
+  ],
+  "annotations": [],
+  "validation": {
+    "requested_checks": [
+      {
+        "id": "optimization.quadratic_recurrence",
+        "version": "1.0.0"
+      }
+    ]
+  },
+  "accessibility": {
+    "summary": "能够区分同侧收敛、交替收敛、等幅振荡和发散。",
+    "keyboard": true,
+    "text_alternative": true
+  },
+  "fallback": {
+    "kind": "static_sequence",
+    "text": "默认 α=0.75：x=-4 → 5 → 0.5，误差 -6 → 3 → -1.5。虽跨过最优点，距离仍减半。"
+  }
+}

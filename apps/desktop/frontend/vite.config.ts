@@ -657,7 +657,8 @@ function backendApiProxy(backendBase: string): Plugin {
 export default defineConfig(({ mode }) => {
   const backendBase = loadBackendBase(mode)
   return {
-  plugins: [react(), tutorProxy(mode, backendBase), backendApiProxy(backendBase)],
+  resolve: { dedupe: ['react', 'react-dom'] },
+    plugins: [react(), tutorProxy(mode, backendBase), backendApiProxy(backendBase)],
   server: {
     host: '127.0.0.1',
     port: 4175,

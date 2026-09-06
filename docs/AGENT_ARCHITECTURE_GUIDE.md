@@ -1,5 +1,9 @@
 # LearnFlow 智能体架构与协作指南
 
+> 2026-09-06 视觉重构：新生成以 VisualSpec 0.1.0、共享宿主模拟/独立验证、PresentationPlan/SVG 与状态快照回流为主。下文 ASCII 主路径记录保留为历史，旧产物兼容。三类 Agent 不变，独立讲解先提交；视觉探索不是掌握证据。
+> Contract impact：registry 2026-09-06.8，新增零 target `visual_exploration_recorded`，复用 Practice 的 evaluate_visual_prediction 责任，经 record_event 幂等审计；无 schema 破坏或数据库迁移。实现范围与接口见 [视觉重构](design/visualize/README.md)。
+
+
 Contract impact（2026-09-06.7）：共享 API / 平台发现 / 独立记忆 Worker 与桌面在线入口已按 `learnflow-platform/v1` 登记；旧事件与身份边界保持兼容。详见 implementation/LEARNING_PLATFORM_INTEGRATION.md。
 
 Contract impact（2026-09-06 单仓共享核心 0.1.0）：五核、记忆、上下文、教学指导、观察与纠错实现迁入根仓 `packages/learning-core/src/learnflow_core/`，旧 `app.services.*` 保持模块身份兼容；三类 Agent/Kernel/schema 声明迁入 registry_core.py。两个宿主组合各自 registry，并公开 shared_core_version。无事件 schema、评分策略、数据库或身份迁移。共同事件契约由根跨端检查验证；不同宿主各自运行与测试。目录迁移详见根仓 docs/MONOREPO.md。
@@ -634,7 +638,7 @@ LearningTask 的 `origin_navigation` 返回原 Chat/关卡、以原 `session_id`
 start_micro_learning
   -> learning_card（接触证据）
   -> analyze_teach_back（诊断证据，mastery 不变）
-  -> evaluate_attempt
+  -> evaluate_visual_prediction
        -> wrong: remediation_loop
   -> ReviewSchedule
 ```

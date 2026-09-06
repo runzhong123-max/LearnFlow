@@ -40,6 +40,7 @@ export type VisualTeachingBrief = {
   misconceptions: string[]
   claimBoundary: string
   /** Preferred v2 path: semantic-executable input consumed directly by the Tool. */
+  visualSpec?: import('./visualize.ts').VisualSpec
   storyboardContext?: import('./visual-storyboard.ts').VisualStoryboardContext
 }
 

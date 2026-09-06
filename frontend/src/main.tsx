@@ -3820,7 +3820,7 @@ function ToolRunCard({ run, sourceMessageId, conversationId, compactPluginResult
           ))}
         </div>
       )}
-      {run.artifact && <VisualArtifact artifact={run.artifact} />}
+      {run.artifact && <VisualArtifact artifact={run.artifact} onAsk={onPluginPrompt} storageScope={conversationId} />}
       {run.plugin && (compactPluginResult
         ? <button type="button" className="button-secondary" onClick={() => onOpenPluginResult(run, sourceMessageId)}>
             在独立页面查看完整学习型任务 →

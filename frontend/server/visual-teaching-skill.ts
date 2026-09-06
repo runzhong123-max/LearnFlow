@@ -1,3 +1,4 @@
+import { visualSpecPrompt } from './visualize-authoring.ts'
 import {
   VISUAL_TEACHING_BRIEF_VERSION,
   VISUAL_TEACHING_SKILL_ID,
@@ -84,25 +85,7 @@ export function visualTeachingBriefPrompt(
   explanation: string,
   repair = false,
 ) {
-  if (explanation.length > 5000) throw new Error('visual_teaching_explanation_invalid:explanation_too_long')
-  const modalityRule = modality === 'animation'
-    ? 'storyboard.frames 必须包含至少两个真实状态变化；对象在步骤间保持稳定 id。'
-    : 'relations 必须表达至少一个真实关系；initial 与最终状态要概括图解所呈现的同一稳定结构。'
-  return [
-    '你是 LearnFlow 的视觉教学语义建模 Skill。只输出一个 JSON 对象，不调用工具，不输出 ASCII 画布、SVG、Markdown 代码围栏、HTML、CSS 或坐标。',
-    '教学讲解已经独立提交。现在只建模最基本的对象身份、关系、集合和状态变化；后续独立 ASCII Designer 会依据 Tool 重放后的状态自由排版。不得改写、复制、扩张或撤销讲解。',
-    'JSON 根字段：topic、learning_goal、modality_rationale、claim_boundary、misconceptions、storyboard。不要输出 explanation。',
-    `storyboard.version 必须是 ${VISUAL_STORYBOARD_VERSION}。storyboard 还要包含 id、title、learningGoal、entities、relations、groups、initial、frames、invariants、misconceptions、claimBoundary、presentation、provenance。`,
-    'entities: [{id,label,kind:item|actor|state|value|operator|result,detail?}]；relations: [{id,from,to,label?,kind:flow|link|membership|comparison|message}]；groups: [{id,label,layout:row|column|cluster}]。',
-    'initial: {visibleIds,groupMembers,orders?,properties?,focusIds?}。frames 每项含 id、title、narration、operations、assertions。',
-    'operations 只允许 create_entity/remove_entity(targetId)、connect/disconnect(relationId)、set_property(targetId,key,value)、set_group_members(groupId,memberIds)、reorder(groupId,itemIds)、focus(targetIds)。',
-    'assertions 只允许 visible(targetId,equals)、property(targetId,key,equals)、group_members(groupId,equals)、order(groupId,equals)。presentation 固定含 preferredDirection:auto、pacing:step、preserveIdentity:true、showGroupSummary:true、asciiWidth:160、asciiHeight:40；provenance.source=visual_teaching_skill。',
-    `请求视觉形式：${modality}。${modalityRule}`,
-    '对象 id 只能使用小写 ASCII 字母、数字和下划线；所有引用必须存在。对象和关系全集先声明，初态用 visibleIds 控制；后续创建和连线只改变可见性。无法确认的值、关系或步骤不要编造。禁止坐标、SVG、CSS、动画时长和主题专用模板名。',
-    repair ? '上一版未通过结构门。请补齐真实对象、关系、状态与变化，但不要改变学习者主题。' : '',
-    `学习者原始请求：${compact(request, 2200)}`,
-    `已提交讲解：${explanation}`,
-  ].filter(Boolean).join('\n')
+  return visualSpecPrompt(modality, request, explanation, repair)
 }
 
 /** Compatibility name for callers that compile a brief from an existing explanation. */
@@ -116,6 +99,9 @@ export function parseVisualTeachingBrief(
 ): VisualTeachingBrief {
   const payload = jsonPayload(raw)
   const explanation = String(committedExplanation ?? payload.explanation ?? '').trim()
+  if (payload.unsupported) throw new Error('visual_unsupported:' + compact(payload.unsupported, 200))
+  const visualSpec = payload.visual_spec as import('../src/visualize.ts').VisualSpec | undefined
+  if (visualSpec && visualSpec.spec_version !== '0.1.0') throw new Error('visual_spec_version_invalid')
   const topic = compact(payload.topic, 240)
   const learningGoal = compact(payload.learning_goal, 360)
   const modalityRationale = compact(payload.modality_rationale, 360)
@@ -162,10 +148,10 @@ export function parseVisualTeachingBrief(
   if (explanation.length > 5000) errors.push('explanation_too_long')
   if ([...explanation].length < 100 || explanation.split(/[。！？.!?]+/).filter(Boolean).length < 3) errors.push('explanation_insufficient')
   if (!topic || !learningGoal || !modalityRationale || !claimBoundary) errors.push('brief_identity_missing')
-  if (!storyboardContext && objects.length < 2) errors.push('brief_objects_insufficient')
-  if (!storyboardContext && (!initialState || !finalState)) errors.push('brief_state_missing')
-  if (modality === 'animation' && !storyboardContext && steps.length < 2) errors.push('animation_changes_insufficient')
-  if (modality === 'diagram' && !storyboardContext && relations.length < 1) errors.push('diagram_relations_insufficient')
+  if (!visualSpec && !storyboardContext && objects.length < 2) errors.push('brief_objects_insufficient')
+  if (!visualSpec && !storyboardContext && (!initialState || !finalState)) errors.push('brief_state_missing')
+  if (modality === 'animation' && !visualSpec && !storyboardContext && steps.length < 2) errors.push('animation_changes_insufficient')
+  if (modality === 'diagram' && !visualSpec && !storyboardContext && relations.length < 1) errors.push('diagram_relations_insufficient')
   if (!compact(request, 2200)) errors.push('request_missing')
   if (errors.length) throw new Error(`visual_teaching_brief_invalid:${errors.join(',')}`)
 
@@ -185,6 +171,7 @@ export function parseVisualTeachingBrief(
     misconceptions: stringList(payload.misconceptions),
     claimBoundary,
     storyboardContext,
+    visualSpec,
   }
 }
 
@@ -214,7 +201,7 @@ export function completeVisualTeachingBundle(
 ): VisualTeachingBundle {
   const modalityMatches = !run?.visualMeta || run.visualMeta.effectiveKind === brief.modality
   const rendered = run?.status === 'completed' && Boolean(run.artifact) && modalityMatches
-  const degraded = false
+  const degraded = rendered && run?.artifact?.fallbackUsed === true
   return {
     skillId: VISUAL_TEACHING_SKILL_ID,
     briefVersion: VISUAL_TEACHING_BRIEF_VERSION,

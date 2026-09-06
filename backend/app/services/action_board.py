@@ -13,6 +13,7 @@ class ActionDefinition:
 
 ACTION_BOARD = {
     item.capability: item for item in (
+        ActionDefinition("evaluate_visual_prediction", "校验视觉探索预测", "evidence", "explicit", {}, ()),
         ActionDefinition("query_role_ecosystem", "查询岗位图谱与岗位助手", "artifact", "explicit_or_auto", {}, ("resolve_role_learning_points",)),
         ActionDefinition("resolve_role_learning_points", "预览岗位知识技能挂载", "artifact", "explicit_or_auto", {}, ("commit_role_learning_points",)),
         ActionDefinition("commit_role_learning_points", "确认岗位知识技能源图扩展", "artifact", "explicit", {}, ("resolve_role_learning_points",)),

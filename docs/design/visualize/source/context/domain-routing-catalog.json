@@ -1,0 +1,519 @@
+{
+  "catalog_version": "0.1.0",
+  "status": "design_only",
+  "routing_rule": "Hints only. Use question + evidence + learner context, then filter by installed production capabilities. No keyword-only dispatch.",
+  "domains": [
+    {
+      "id": "programming_languages",
+      "label_zh": "程序设计与编程语言",
+      "design_section": "8.01",
+      "maturity": "planned",
+      "candidate_misconception": "representation_mapping",
+      "candidate_pattern": "trace",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "code",
+        "memory",
+        "pointer"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "algorithms",
+      "label_zh": "数据结构与算法",
+      "design_section": "8.02",
+      "maturity": "planned",
+      "candidate_misconception": "state_sequence",
+      "candidate_pattern": "trace",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "graph",
+        "array",
+        "matrix"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "discrete_logic",
+      "label_zh": "离散数学与逻辑",
+      "design_section": "8.03",
+      "maturity": "planned",
+      "candidate_misconception": "invariant_constraint",
+      "candidate_pattern": "counterexample",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "table",
+        "graph",
+        "region"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "architecture",
+      "label_zh": "计算机组成与体系结构",
+      "design_section": "8.04",
+      "maturity": "planned",
+      "candidate_misconception": "abstraction_boundary",
+      "candidate_pattern": "trace",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "timeline",
+        "register",
+        "memory"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "operating_systems",
+      "label_zh": "操作系统",
+      "design_section": "8.05",
+      "maturity": "planned",
+      "candidate_misconception": "state_sequence",
+      "candidate_pattern": "trace",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "timeline",
+        "queue",
+        "table"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "networking",
+      "label_zh": "计算机网络",
+      "design_section": "8.06",
+      "maturity": "planned",
+      "candidate_misconception": "abstraction_boundary",
+      "candidate_pattern": "linked_views",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "graph",
+        "timeline",
+        "packet"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "databases",
+      "label_zh": "数据库",
+      "design_section": "8.07",
+      "maturity": "planned",
+      "candidate_misconception": "representation_mapping",
+      "candidate_pattern": "linked_views",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "table",
+        "graph",
+        "timeline"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "compilers",
+      "label_zh": "编译原理",
+      "design_section": "8.08",
+      "maturity": "planned",
+      "candidate_misconception": "representation_mapping",
+      "candidate_pattern": "trace",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "code",
+        "tree",
+        "graph"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "software_engineering",
+      "label_zh": "软件工程",
+      "design_section": "8.09",
+      "maturity": "planned",
+      "candidate_misconception": "structure_relation",
+      "candidate_pattern": "decomposition",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "graph",
+        "table",
+        "timeline"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "distributed_cloud",
+      "label_zh": "分布式系统与云计算",
+      "design_section": "8.10",
+      "maturity": "planned",
+      "candidate_misconception": "concurrency_order",
+      "candidate_pattern": "counterexample",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "graph",
+        "timeline",
+        "message"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "concurrency",
+      "label_zh": "并行与并发",
+      "design_section": "8.11",
+      "maturity": "planned",
+      "candidate_misconception": "concurrency_order",
+      "candidate_pattern": "counterexample",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "timeline",
+        "code",
+        "memory"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "security",
+      "label_zh": "网络安全与系统安全",
+      "design_section": "8.12",
+      "maturity": "planned",
+      "candidate_misconception": "abstraction_boundary",
+      "candidate_pattern": "decomposition",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "graph",
+        "region",
+        "table"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "cryptography",
+      "label_zh": "密码学",
+      "design_section": "8.13",
+      "maturity": "planned",
+      "candidate_misconception": "abstraction_boundary",
+      "candidate_pattern": "linked_views",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "timeline",
+        "array",
+        "table"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "data_science",
+      "label_zh": "数据科学",
+      "design_section": "8.14",
+      "maturity": "planned",
+      "candidate_misconception": "generalization_evidence",
+      "candidate_pattern": "comparison",
+      "renderer_preference": "plot",
+      "primitive_requirements": [
+        "table",
+        "curve",
+        "matrix"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "data_engineering",
+      "label_zh": "数据工程",
+      "design_section": "8.15",
+      "maturity": "planned",
+      "candidate_misconception": "state_sequence",
+      "candidate_pattern": "trace",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "graph",
+        "timeline",
+        "table"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "symbolic_ai_agents",
+      "label_zh": "广义人工智能：搜索、表示、规划与 Agent",
+      "design_section": "8.16",
+      "maturity": "planned",
+      "candidate_misconception": "state_sequence",
+      "candidate_pattern": "trace",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "graph",
+        "queue",
+        "table"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "machine_learning",
+      "label_zh": "机器学习",
+      "design_section": "8.17",
+      "maturity": "planned",
+      "candidate_misconception": "generalization_evidence",
+      "candidate_pattern": "parameter_sweep",
+      "renderer_preference": "plot",
+      "primitive_requirements": [
+        "point",
+        "curve",
+        "region"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "deep_learning",
+      "label_zh": "深度学习",
+      "design_section": "8.18",
+      "maturity": "planned",
+      "candidate_misconception": "representation_mapping",
+      "candidate_pattern": "linked_views",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "graph",
+        "matrix",
+        "metric"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "reinforcement_learning",
+      "label_zh": "强化学习",
+      "design_section": "8.19",
+      "maturity": "planned",
+      "candidate_misconception": "rate_vs_amount",
+      "candidate_pattern": "trace",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "matrix",
+        "graph",
+        "curve"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "computer_vision",
+      "label_zh": "计算机视觉",
+      "design_section": "8.20",
+      "maturity": "planned",
+      "candidate_misconception": "geometry_transform",
+      "candidate_pattern": "linked_views",
+      "renderer_preference": "canvas",
+      "primitive_requirements": [
+        "image-grid",
+        "matrix",
+        "bbox"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "nlp_llm",
+      "label_zh": "NLP、LLM 与生成式 AI",
+      "design_section": "8.21",
+      "maturity": "planned",
+      "candidate_misconception": "abstraction_boundary",
+      "candidate_pattern": "linked_views",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "matrix",
+        "timeline",
+        "distribution"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "calculus",
+      "label_zh": "高等数学与微积分",
+      "design_section": "8.22",
+      "maturity": "planned",
+      "candidate_misconception": "rate_vs_amount",
+      "candidate_pattern": "parameter_sweep",
+      "renderer_preference": "plot",
+      "primitive_requirements": [
+        "curve",
+        "region",
+        "point"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "linear_algebra",
+      "label_zh": "线性代数",
+      "design_section": "8.23",
+      "maturity": "planned",
+      "candidate_misconception": "geometry_transform",
+      "candidate_pattern": "transformation",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "matrix",
+        "vector",
+        "axis"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "probability_statistics",
+      "label_zh": "概率论与数理统计",
+      "design_section": "8.24",
+      "maturity": "planned",
+      "candidate_misconception": "probability_measure",
+      "candidate_pattern": "repeated_sampling",
+      "renderer_preference": "plot",
+      "primitive_requirements": [
+        "curve",
+        "region",
+        "table"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "optimization",
+      "label_zh": "优化",
+      "design_section": "8.25",
+      "maturity": "planned",
+      "candidate_misconception": "local_vs_global",
+      "candidate_pattern": "parameter_sweep",
+      "renderer_preference": "plot",
+      "primitive_requirements": [
+        "curve",
+        "point",
+        "metric"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "numerical_methods",
+      "label_zh": "数值计算",
+      "design_section": "8.26",
+      "maturity": "planned",
+      "candidate_misconception": "scale_units",
+      "candidate_pattern": "parameter_sweep",
+      "renderer_preference": "plot",
+      "primitive_requirements": [
+        "curve",
+        "table",
+        "metric"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "graphics_geometry",
+      "label_zh": "计算机图形学与几何处理",
+      "design_section": "8.27",
+      "maturity": "planned",
+      "candidate_misconception": "geometry_transform",
+      "candidate_pattern": "transformation",
+      "renderer_preference": "webgl",
+      "primitive_requirements": [
+        "mesh",
+        "matrix",
+        "vector"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "hci_accessibility",
+      "label_zh": "人机交互与可访问性",
+      "design_section": "8.28",
+      "maturity": "planned",
+      "candidate_misconception": "structure_relation",
+      "candidate_pattern": "trace",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "state-machine",
+        "timeline",
+        "table"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "embedded_realtime",
+      "label_zh": "嵌入式、物联网与实时系统",
+      "design_section": "8.29",
+      "maturity": "planned",
+      "candidate_misconception": "state_sequence",
+      "candidate_pattern": "trace",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "timeline",
+        "curve",
+        "state-machine"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "formal_theory",
+      "label_zh": "形式化方法与计算理论",
+      "design_section": "8.30",
+      "maturity": "planned",
+      "candidate_misconception": "invariant_constraint",
+      "candidate_pattern": "counterexample",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "state-machine",
+        "graph",
+        "array"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "web_platform",
+      "label_zh": "Web、移动与平台应用开发",
+      "design_section": "8.31",
+      "maturity": "planned",
+      "candidate_misconception": "concurrency_order",
+      "candidate_pattern": "trace",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "timeline",
+        "queue",
+        "state-machine"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    },
+    {
+      "id": "retrieval_recommendation",
+      "label_zh": "信息检索与推荐系统",
+      "design_section": "8.32",
+      "maturity": "planned",
+      "candidate_misconception": "generalization_evidence",
+      "candidate_pattern": "comparison",
+      "renderer_preference": "svg",
+      "primitive_requirements": [
+        "array",
+        "graph",
+        "metric"
+      ],
+      "simulator_refs": [],
+      "fallback": "validated_text_or_table"
+    }
+  ]
+}

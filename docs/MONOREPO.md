@@ -84,3 +84,7 @@ Web 基线 3738ea2d8ba21f0997c6d612f3a595775f7586ff；桌面基线 cd88a355e72db
 原 `/Users/a1-6/LearnFlow app/edagent` 完整保留为迁移前恢复点。未自动合并它的全部 Git 历史到根提交图，来源提交与原仓历史仍可追溯；没有声明第三方源码为新的开放许可。
 
 回退使用本地迁移提交的反向提交；恢复源码不会删除或降级用户数据库。不要通过 reset --hard 或删除原仓回退。此次仅本地重构，不推送、不部署、不迁移真实数据。
+
+## 视觉共享运行时
+
+VisualSpec计算与API统一位于learning-core的visuals及api/visuals.py；表现、作者上下文与交互组件统一位于learning-client/src/visuals。两端src/visualize和server/visualize-*只作重导出，认证transport保留端侧边界。详见[设计与验收](design/visualize/README.md)。

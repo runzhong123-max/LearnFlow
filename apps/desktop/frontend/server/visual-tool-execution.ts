@@ -1,3 +1,5 @@
+import { generateVisualize } from './visualize-artifact.ts'
+import type { VisualTransport } from '../src/visualize.ts'
 import type { TutorContextMessage } from '../src/tutor.ts'
 import type { TutorToolChoice } from '../src/tooling.ts'
 import {
@@ -115,8 +117,13 @@ export async function executeLearningVisual(
   generate: GenerateText,
   onStage?: (stage: VisualGenerationStage) => void,
   teachingBrief?: VisualTeachingBrief,
-): Promise<{ generated: GeneratedLearningVisual; request: ResolvedVisualRequest }> {
+  transport?: VisualTransport,
+): Promise<{ generated: GeneratedLearningVisual | Awaited<ReturnType<typeof generateVisualize>>; request: ResolvedVisualRequest }> {
   const request = resolveVisualRequest(query, messages)
+  if (teachingBrief?.visualSpec) {
+    if (!transport) throw new Error('visual_host_required')
+    return {generated: await generateVisualize(teachingBrief.visualSpec, kind, teachingBrief.explanation, transport), request}
+  }
   if (teachingBrief?.storyboardContext) {
     try {
       const designed = await designAsciiStoryboard(teachingBrief.storyboardContext, generate)

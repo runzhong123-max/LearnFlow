@@ -1,3 +1,5 @@
+import VisualizeArtifact from '../../../../packages/learning-client/src/visuals/VisualizeArtifact'
+import { runtimeFetch } from './runtime-client'
 import { useEffect, useId, useMemo, useReducer, useState, type KeyboardEvent } from 'react'
 import type { VisualArtifact as VisualArtifactData } from './tooling'
 import { answerForGate, gateResolved, initialVisualPlaybackState, reduceVisualPlayback } from './visual-playback'
@@ -88,7 +90,7 @@ function useReducedMotion() {
   return reducedMotion
 }
 
-export default function VisualArtifact({ artifact }: { artifact: VisualArtifactData }) {
+function LegacyVisualArtifact({ artifact }: { artifact: VisualArtifactData }) {
   const accessibleArtifact = artifact as AccessibleVisualArtifact
   const [playback, dispatchPlayback] = useReducer(reduceVisualPlayback, undefined, initialVisualPlaybackState)
   const reducedMotion = useReducedMotion()
@@ -237,4 +239,14 @@ export default function VisualArtifact({ artifact }: { artifact: VisualArtifactD
       )}
     </figure>
   )
+}
+
+export default function VisualArtifact({artifact,onAsk,storageScope='preview'}: {artifact:VisualArtifactData;onAsk?:(prompt:string)=>void;storageScope?:string}) {
+  if(artifact.visualize) return <VisualizeArtifact key={artifact.visualize.spec_revision} mode={artifact.kind==='animation'?'animation':'diagram'} initial={artifact.visualize} storageScope={storageScope} onAsk={onAsk} transport={async(action,payload)=>{
+    const response=await runtimeFetch(`/api/visuals/${action}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    const result=await response.json()
+    if(!response.ok)throw new Error(typeof result.detail==='string'?result.detail:'视觉状态服务不可用')
+    return result
+  }}/>
+  return <LegacyVisualArtifact artifact={artifact}/>
 }

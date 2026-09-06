@@ -69,6 +69,19 @@ def check(web_python: str, desktop_python: str) -> None:
             relative = os.path.relpath(ROOT/'packages/learning-client/src'/f'{name}.ts', app/'src').replace(os.sep, '/')
             if source != f"export * from '{relative}'":
                 raise RuntimeError(f'duplicated client implementation: {app.name}/{name}')
+    for host in ('frontend', 'apps/desktop/frontend'):
+        app = ROOT / host
+        for local, shared in (
+            ('src/visualize.ts', 'types.ts'),
+            ('src/visualize-presentation.ts', 'presentation.ts'),
+            ('server/visualize-artifact.ts', 'artifact.ts'),
+            ('server/visualize-authoring.ts', 'authoring.ts'),
+        ):
+            path = app / local
+            target = ROOT / 'packages/learning-client/src/visuals' / shared
+            relative = os.path.relpath(target, path.parent).replace(os.sep, '/')
+            if path.read_text().strip() != f"export * from '{relative}'":
+                raise RuntimeError(f'duplicated visual implementation: {path}')
     if (ROOT/'apps/desktop/.git').exists():
         raise RuntimeError('nested desktop Git repository is not allowed')
     print(f'Shared core {web["version"]}: both hosts use the same 6 Python modules, 22 API modules, 4 TS sources, three agents, five kernels and {len(common_events)} common event contracts.')

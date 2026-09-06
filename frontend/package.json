@@ -14,7 +14,7 @@
     "eval:search:live": "node --experimental-strip-types server/search-live-evaluation.ts",
     "eval:visual-storyboard": "node --experimental-strip-types server/visual-storyboard-evaluation.ts",
     "eval:visual-storyboard:live": "node --experimental-strip-types server/visual-storyboard-evaluation.ts --live-mimo",
-    "test:learning": "node --experimental-strip-types --test server/learning-task.test.ts server/learning-file-message.test.ts server/human-adaptation.test.ts server/paper-workbench.test.ts server/learning-visual-spec.test.ts server/visual-storyboard-tool.test.ts server/visual-teaching-skill.test.ts server/agent-runtime.test.ts server/generation-deadline.test.ts server/provider-stream.test.ts server/turn-recovery.test.ts",
+    "test:learning": "node --experimental-strip-types --test server/learning-task.test.ts server/learning-file-message.test.ts server/human-adaptation.test.ts server/paper-workbench.test.ts server/learning-visual-spec.test.ts server/visual-storyboard-tool.test.ts server/visual-teaching-skill.test.ts server/agent-runtime.test.ts server/generation-deadline.test.ts server/provider-stream.test.ts server/turn-recovery.test.ts server/visualize-runtime.test.ts",
     "test:planning": "node --experimental-strip-types --test server/planning.test.ts",
     "test:profile": "node --experimental-strip-types --test server/five-kernel-profile.test.ts server/profile-presentation.test.ts server/profile-overview.test.ts server/memory-context-upgrade.test.ts server/teaching-guidance.test.ts",
     "test:path": "node --experimental-strip-types --test server/learning-path-graph.test.ts server/learning-path-production-eval.test.ts server/learning-path-contract-v2.test.ts server/path-source-extensions.test.ts",
