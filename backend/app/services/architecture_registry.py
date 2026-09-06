@@ -17,7 +17,7 @@ from typing import Any
 from app.services.action_board import ACTION_BOARD
 
 
-REGISTRY_VERSION = "2026-09-06.4"
+REGISTRY_VERSION = "2026-09-06.5"
 EVENT_SCHEMA_VERSION = "learnflow.evidence.v1"
 SKILL_SPEC_VERSION = "learnflow.skill.v3"
 # The learner-facing SkillSpec changed in this registry release.
@@ -28,6 +28,14 @@ LIFECYCLE_STATES = ("implemented", "optional_unimplemented", "deprecated")
 # Pure source-data validators/exporters, not Agent-callable tools or learner writers.
 # The referenced TypeScript module owns field semantics; this registry owns discovery.
 DATA_CONTRACTS = {
+    "golden_role_workspace_v1": {
+        "schema_version": "golden-role-workspace/v1", "owner": "tutor_agent",
+        "origin": "builtin", "mode": "offline_research_artifact", "lifecycle": "implemented",
+        "authority_path": "labs/golden-role/README.md",
+        "binding_ids": ["py:golden_role.workspace"],
+        "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "independent local research workspace; local journal is not EvidenceEvent; no runtime Agent or published role-package authority",
+    },
     "teaching_response_v1": {
         "schema_version": "learnflow-teaching-response/v1",
         "owner": "tutor_agent",
@@ -472,6 +480,8 @@ TOOLS = {
                      KERNEL_NAMES, (), "learner/session/project/checkpoint-scoped LearningTask queue + answer-free LearningAttempt/RemediationCase/ReviewSchedule projection + project source knowledge domains -> bounded read-only observation"),
         ToolContract("domain_knowledge_reader", "Learner Domain Knowledge Library Reader", "tutor_agent", "vnext", "read",
                      (), (), "learner-owned processed Source/Chunk library -> relevance-ranked, provenance-bearing, bounded untrusted context; never learner knowledge evidence"),
+        ToolContract("golden_role_workspace", "Golden Role Offline Collaboration Harness", "tutor_agent", "learnflow", "artifact",
+                     (), (), "host Codex collaboration -> scoped local research SQLite + immutable graph/profile blobs + human-reviewed revisions and paired-case reports; no subprocess/model/network/learner-state access; formal desktop execution remains behind local_agent_broker"),
         ToolContract("ecosystem_gateway", "Role Atlas and Graph Hub Gateway", "tutor_agent", "learnflow", "orchestration",
                      (), (), "central authenticated actor -> signed fixed-origin read-only package/graph/Agent operations; scoped durable run records, no learner-state write"),
         ToolContract("curriculum_source_runtime", "Role-linked Learning Path Source Runtime", "learning_design_agent", "learnflow", "artifact",
@@ -631,6 +641,7 @@ TOOL_INTERFACE_ROLES = {
     "teaching_contract_gate": "policy",
     "source_integrity_monitor": "policy",
     "vnext_chat_session_store": "adapter",
+    "golden_role_workspace": "adapter",
     "ecosystem_gateway": "adapter",
     "curriculum_source_runtime": "harness",
     "workflow_gateway": "adapter",
@@ -1499,6 +1510,7 @@ _REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 
 
 _PYTHON_BINDING_TARGETS = {
+    "py:golden_role.workspace": ("app.services.golden_role_workspace", "GoldenWorkspace"),
     "py:tutor.teaching_response": ("app.services.teaching_response", "teaching_response_prompt"),
     "py:ecosystem.dispatch": ("app.services.ecosystem_gateway", "dispatch"),
     "py:curriculum.read": ("app.services.curriculum_catalog", "read_graph"),
@@ -1767,6 +1779,7 @@ IMPLEMENTATION_BINDINGS = {
 
 
 _TOOL_BINDING_IDS = {
+    "golden_role_workspace": ("py:golden_role.workspace",),
     "ecosystem_gateway": ("py:ecosystem.dispatch", "api:ecosystem.dispatch"),
     "curriculum_source_runtime": ("py:curriculum.read", "py:curriculum.resolve", "py:curriculum.commit", "api:ecosystem.resolve", "api:ecosystem.commit", "frontend:path.extensions"),
     "action_board": ("py:action_board.execute",),

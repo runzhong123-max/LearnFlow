@@ -46,3 +46,6 @@ desktop/.sidecar-build/
 desktop/src-tauri/gen/
 desktop/src-tauri/target/
 desktop/src-tauri/binaries/learnflow-backend-*
+
+# Local golden-role research inputs, drafts, database and rendered reports
+labs/golden-role/workspaces/

@@ -69,3 +69,7 @@ Role Atlas 子应用通过 LearnFlow 权威导出同步 v1/v2 学习路径制品
 ### 岗位图谱网关与 v2 挂载
 
 新增 `/ecosystem` 工作台、`/api/ecosystem/*` 中央网关、Role Atlas 签名接入端点、主体作用域 source graph CAS/回执。Graph Hub 复用已有 registry；岗位包保留不可变四元身份，知识技能定义穿过生成与制品编译；新增节点只形成 contains 源图关系。桌面和网页共享接口及客户端，桌面中央认证尚未接入。见 [ECOSYSTEM_GATEWAY_V1](product/ECOSYSTEM_GATEWAY_V1.md)。
+
+### 黄金岗位研究工作区
+
+新增 `labs/golden-role`：Codex 协作操作指令、标准库 CLI、独立本地研究数据库、版本化候选、案例对照、反馈与产品发现。研究成果分别指导 Role Atlas 编辑、Graph Hub 版本引用和 LearnFlow 语义挂载；不直接发布或写入这些产品。`golden_role_workspace_v1` 与实现 adapter 已登记，零学习状态访问。

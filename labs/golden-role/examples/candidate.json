@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "golden-role-graph/v1",
+  "nodes": [
+    {
+      "id": "task:coupon-validation", "kind": "task", "title": "验证优惠券领取与使用规则",
+      "summary": "依据优惠券需求设计和执行用例，记录结果并报告缺陷。",
+      "aliases": [], "scope": "给定优惠券业务规则与可操作测试环境。",
+      "criteria": ["用例包含输入与预期结果，执行记录能够追溯缺陷。"],
+      "deliverables": ["测试用例", "执行记录", "缺陷报告"],
+      "evidence": [{"sourceId": "REPLACE_WITH_SOURCE_ID", "quote": "根据优惠券领取和使用规则设计测试用例，执行后记录实际结果，并提交缺陷报告。"}]
+    },
+    {
+      "id": "skill:boundary-cases", "kind": "skill", "title": "使用边界值分析设计测试用例",
+      "summary": "从输入条件提取边界，设计边界附近测试数据并说明预期结果。",
+      "aliases": [], "scope": "面向有明确数值输入范围的业务规则。",
+      "criteria": ["针对满100元条件选取99、100、101元，并逐项给出预期结果。"],
+      "deliverables": ["包含边界输入与预期结果的测试用例"],
+      "evidence": [{"sourceId": "REPLACE_WITH_SOURCE_ID", "quote": "根据金额限制选择99、100、101元测试数据，逐一记录预期结果。"}]
+    }
+  ],
+  "edges": [{"id": "requires:coupon-boundary", "kind": "requires_skill", "from": "task:coupon-validation", "to": "skill:boundary-cases", "rationale": "满额优惠条件需要检查临界金额的行为。"}]
+}

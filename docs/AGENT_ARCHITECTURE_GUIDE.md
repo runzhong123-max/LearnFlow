@@ -1132,3 +1132,7 @@ Tutor 将用户带入第一关。Lecture Agent 生成来源约束讲义；Concep
 ### 岗位图谱跨产品接入
 
 `/ecosystem` 提供固定版本岗位包读取、岗位助手、知识技能挂载预览与源图提交。Tutor 所有的 `ecosystem_gateway` 通过签名委托访问 Role Atlas/Graph Hub；`learning_design_agent` 所有的 `curriculum_source_runtime` 保存源图扩展与挂载。只读岗位助手不是第四类主 Agent。`learning_path_extension_committed` 是零 target 内容审计，不表示学习行为或掌握。桌面本地身份不得作为中央身份委托。详细边界见 [岗位图谱服务契约](product/ECOSYSTEM_GATEWAY_V1.md)。
+
+### 黄金岗位本地协作研究
+
+`labs/golden-role` 是供宿主 Codex 使用的离线 artifact 工作区，由 Tutor 所有的 adapter 登记，不是新的 LearnFlow 对话主 Agent。固定图谱与指令版本，源材料逐字引用、完整候选差异、幂等事务、过期基线拒绝、配对案例报告和人工晋升构成协作闭环。研究操作日志不能进入五核；导出物保持未发布研究材料。工具只管理本地研究内容，不启动代码 Agent；未来启动代码执行仍复用 broker。详见 [README](../labs/golden-role/README.md)。
