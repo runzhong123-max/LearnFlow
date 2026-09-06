@@ -1,5 +1,8 @@
 # LearnFlow 个人维护与 Codex 工作准则
 
+> 2026-09-06 单仓重构：正式桌面应用位于 `apps/desktop/`，共享学习实现位于 `packages/learning-core/`，共享客户端逻辑位于 `packages/learning-client/`。端侧 `app.services.*` 保留兼容导入，架构注册表消费共享声明并登记各自可运行能力。目录、来源和维护规则以根仓 `docs/MONOREPO.md` 为准；下文历史“独立双仓”说明不再适用于已迁入的桌面应用。
+
+
 本文是 LearnFlow 仓库级 Codex 指令。仓库采用个人维护、完成即提交并直接推送的方式，不再把 Issue、功能分支、PR 或多人评审作为日常开发门禁。适用于仓库根目录及所有尚未提供更具体 `AGENTS.md` 或 `AGENTS.override.md` 的子目录。
 
 目标不是限制实现创新，而是在快速迭代和双仓并行参考时仍维护同一套架构权威、接口契约、证据语义和验收标准。
@@ -29,9 +32,9 @@ Codex 必须先完成以下检查，再提出方案或修改文件：
 
 LearnFlow 的架构事实按以下顺序核对：
 
-1. `backend/app/services/architecture_registry.py`：机器可读的 Agent、五核、工具、产品技能、工作台、能力和重要事件清单。
+1. `packages/learning-core/src/learnflow_core/registry_core.py`：两端共享的三类 Agent、五核和基础 schema 声明；根后端与 `apps/desktop/backend` 的 `architecture_registry.py` 组合端侧能力与实现绑定。
 2. `docs/AGENT_ARCHITECTURE_GUIDE.md`：角色、上下文、证据和产品空间的规范语义。
-3. `backend/app/services/learning_runtime.py` 与 `backend/app/services/memory_graph.py`：事件归约、五核投影和记忆图谱的运行实现。
+3. `packages/learning-core/src/learnflow_core/`：事件归约、五核投影、记忆图谱与纠错的唯一运行实现；两端旧服务路径只作兼容导入。
 4. 自动化测试：验证实现是否遵守上述契约。
 5. 领域文档与页面文档：只能细化，不得另建第二套权威。
 
@@ -279,3 +282,13 @@ Codex 审查 PR 时优先寻找会造成真实后果的问题。格式、lint �
 - 适用测试、构建和 demo 已实际执行并如实报告。
 - diff 不包含秘密、本地数据或无关改动。
 - 最终报告记录提交、推送目标、测试证据、风险和必要的复现方式。
+
+## 12. 单仓跨端开发
+
+- 同步功能在一个任务、一个提交中包含两个消费者及相关测试；不能只修改共享包就声称两端已验收。
+- `frontend/` 与 `backend/` 是 Web/云端；`apps/desktop/` 是桌面宿主；`apps/role-atlas/` 是岗位产品。子应用不建立嵌套 `.git` 或独立推送目标。
+- 修改 `packages/learning-core/`、`packages/learning-client/` 或共同 schema 时执行 `python3 scripts/check_shared_contracts.py`、两个后端回归和两个前端相关检查。
+- 端侧 registry 是宿主能力组合清单；共同 Agent/Kernel 声明禁止重新复制，共同事件契约必须通过跨端一致性检查。
+- 同 checkout 同时只允许一个写入任务。跨端任务声明涉及的模块；独立并行写入采用明确安排的 worktree，并统一集成。
+- 单仓不等于中央账号、云同步、数据库或隐私授权已经合并；保留端侧身份、凭据、桌宠最小权限及本地执行边界。
+- 这次用户要求先在本地重构：本轮不推送、不部署，不迁移日常数据库或安装替换用户应用。后续发布按用户当时的指令处理。

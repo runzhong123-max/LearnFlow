@@ -1,0 +1,14 @@
+.git
+**/.env
+**/.env.local
+**/node_modules
+**/dist
+**/__pycache__
+**/.pytest_cache
+backend/venv
+backend/learnflow.db*
+backend/backups
+backend/runtime
+backend/data
+data
+output

@@ -1,5 +1,8 @@
 # LearnFlow
 
+本仓已包含 LearnFlow 网页、桌面与 Role Atlas。网页入口仍为 `frontend/` + `backend/`；桌面入口为 `apps/desktop/`；共用源码在 `packages/`。开发前先读 [单仓目录与跨端开发](docs/MONOREPO.md)。
+
+
 LearnFlow 是面向计算机学习的 Tutor 工作空间。产品以连续对话为主界面，在同一学习现场连接原子学习任务、项目关卡、讲义与练习、复习、学习路径和五核学习者状态。
 
 LearnFlow 学习端只有一套正式前端：`frontend/`，不再维护旧学习前端。岗位建图产品 Role Atlas 与共享发现入口 Graph Hub 位于 `apps/role-atlas/`，独立运行、独立存储，通过岗位包协议交接。

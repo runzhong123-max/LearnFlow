@@ -49,3 +49,22 @@ desktop/src-tauri/binaries/learnflow-backend-*
 
 # Local golden-role research inputs, drafts, database and rendered reports
 labs/golden-role/workspaces/
+
+# Monorepo local environments and generated files
+**/node_modules/
+**/__pycache__/
+**/.pytest_cache/
+**/*.egg-info/
+**/venv/
+**/.venv/
+**/.env
+**/.env.local
+**/.env.*.local
+**/dist/
+**/*.tsbuildinfo
+apps/desktop/desktop/release-assets/
+.monorepo-local/
+
+# Imported immutable role package fixtures are versioned application assets.
+!/apps/desktop/frontend/plugins/role_capability_graph/data/
+!/apps/desktop/frontend/plugins/role_capability_graph/data/**

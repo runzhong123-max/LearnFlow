@@ -1,0 +1,10 @@
+{
+  "version": "independent",
+  "packages": [
+    "frontend",
+    "apps/desktop/frontend",
+    "apps/desktop/desktop",
+    "apps/role-atlas",
+    "packages/learning-client"
+  ]
+}

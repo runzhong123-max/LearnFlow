@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <linearGradient id="bg4" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F7FAFF"/><stop offset=".55" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F2F7FF"/></linearGradient>
+    <linearGradient id="navy4" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0B2F70"/><stop offset="1" stop-color="#165FC7"/></linearGradient>
+    <pattern id="grid4" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#D8E4F6" stroke-width="1" opacity=".34"/></pattern>
+    <filter id="shadow4" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="6" stdDeviation="9" flood-color="#173B70" flood-opacity=".12"/></filter>
+    <marker id="b4" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1E5BBB"/></marker>
+    <marker id="o4" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#E28717"/></marker>
+    <marker id="t4" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#108A8B"/></marker>
+    <style>
+      text{font-family:"PingFang SC","Microsoft YaHei",sans-serif}.title{font-size:50px;font-weight:800;fill:#092B68}.subtitle{font-size:23px;font-weight:600;fill:#2B5598}.h2{font-size:27px;font-weight:780}.h3{font-size:22px;font-weight:760}.body{font-size:17px;fill:#314A69}.small{font-size:14px;fill:#61748D}.tiny{font-size:12px;fill:#6B7F96}.pill{font-size:15px;font-weight:700}.num{font-size:21px;font-weight:850;fill:#FFF}.white{fill:#FFF}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+    </style>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#bg4)"/><rect width="1920" height="1080" fill="url(#grid4)"/>
+  <text x="72" y="76" class="title">04｜一道错题如何串起五核、纠错与复习</text>
+  <text x="74" y="112" class="subtitle">案例：safe_average([]) 触发除零错误｜从失败证据到变式迁移，再到间隔稳定</text>
+  <rect x="1722" y="44" width="126" height="48" rx="24" fill="#EAF1FF" stroke="#9DB9EB"/><text x="1785" y="75" text-anchor="middle" class="pill" fill="#1D4E9B">CASE 04</text>
+
+  <!-- stage 1 -->
+  <g filter="url(#shadow4)"><rect x="70" y="150" width="500" height="384" rx="23" fill="#FFFFFF" stroke="#9DB8E2" stroke-width="1.5"/></g>
+  <circle cx="112" cy="194" r="25" fill="#1E5BBB"/><text x="112" y="202" text-anchor="middle" class="num">1</text><text x="151" y="202" class="h2" fill="#173F7D">学生提交原题</text>
+  <rect x="96" y="228" width="448" height="145" rx="15" fill="#0D1830"/>
+  <text x="120" y="258" class="mono small" fill="#91A7CC">def safe_average(values):</text>
+  <text x="120" y="292" class="mono body" fill="#FFFFFF">    return sum(values) / len(values)</text>
+  <text x="120" y="336" class="mono small" fill="#68D1C5">input: []</text><text x="312" y="336" class="mono small" fill="#FF9B9B">→ ZeroDivisionError</text>
+  <rect x="96" y="391" width="448" height="58" rx="13" fill="#FFF2F2" stroke="#E6A1A7"/><text x="120" y="417" class="pill" fill="#B33F4D">测试期望：0.0</text><text x="120" y="440" class="small">程序行为与确定性测试不一致</text>
+  <rect x="96" y="468" width="214" height="40" rx="11" fill="#EEF4FF"/><text x="203" y="493" text-anchor="middle" class="small">LearningAttempt：失败</text>
+  <rect x="324" y="468" width="220" height="40" rx="11" fill="#FFF8E9"/><text x="434" y="493" text-anchor="middle" class="small">辅助等级：独立 / none</text>
+
+  <path d="M570 342H626" stroke="#E28717" stroke-width="4" marker-end="url(#o4)"/>
+
+  <!-- stage 2 event -->
+  <g filter="url(#shadow4)"><rect x="628" y="150" width="430" height="384" rx="23" fill="#FFF9EF" stroke="#E0AA53" stroke-width="1.5"/></g>
+  <circle cx="670" cy="194" r="25" fill="#E28717"/><text x="670" y="202" text-anchor="middle" class="num">2</text><text x="709" y="202" class="h2" fill="#925B0C">记录并归约证据</text>
+  <rect x="654" y="230" width="378" height="88" rx="15" fill="#FFFFFF" stroke="#E7C17E"/>
+  <text x="680" y="259" class="pill" fill="#925B0C">EvidenceEvent</text><text x="680" y="285" class="small">exercise_attempt_evaluated</text><text x="680" y="307" class="tiny">题目 / learner / project / checkpoint / submission_id</text>
+  <path d="M843 318V348" stroke="#E28717" stroke-width="3" marker-end="url(#o4)"/>
+  <rect x="654" y="350" width="378" height="68" rx="15" fill="#FFFFFF" stroke="#E7C17E"/>
+  <text x="843" y="379" text-anchor="middle" class="pill" fill="#925B0C">five_kernel_reducer</text><text x="843" y="402" text-anchor="middle" class="small">逐核裁决 → KernelMutation → State</text>
+  <rect x="654" y="438" width="378" height="70" rx="14" fill="#FFF0DF"/>
+  <text x="680" y="466" class="small">MemoryFact：空列表输入时独立失败</text><text x="680" y="491" class="small">错误类型：边界条件判断缺失</text>
+
+  <path d="M1058 342H1114" stroke="#E28717" stroke-width="4" marker-end="url(#o4)"/>
+
+  <!-- stage 3 kernels -->
+  <g filter="url(#shadow4)"><rect x="1116" y="150" width="734" height="384" rx="23" fill="#FFFFFF" stroke="#9DB8E2" stroke-width="1.5"/></g>
+  <circle cx="1158" cy="194" r="25" fill="#7652C7"/><text x="1158" y="202" text-anchor="middle" class="num">3</text><text x="1197" y="202" class="h2" fill="#59419A">五核分别得到什么</text>
+  <g class="small">
+    <rect x="1142" y="230" width="682" height="47" rx="12" fill="#EEF4FF"/><text x="1162" y="259" class="pill" fill="#2157A6">Structure</text><text x="1308" y="259">若关卡被阻塞：记录当前位置与返回锚点</text>
+    <rect x="1142" y="287" width="682" height="47" rx="12" fill="#EAF9F4"/><text x="1162" y="316" class="pill" fill="#147159">Knowledge</text><text x="1308" y="316">记录“空集合边界条件”知识缺口</text>
+    <rect x="1142" y="344" width="682" height="47" rx="12" fill="#FFF0F1"/><text x="1162" y="373" class="pill" fill="#A34250">Human</text><text x="1308" y="373">不因一次答错推断焦虑、人格或固定风格</text>
+    <rect x="1142" y="401" width="682" height="47" rx="12" fill="#FFF6E5"/><text x="1162" y="430" class="pill" fill="#94600E">Value</text><text x="1308" y="430">不因一次失败改写学习目标或动机</text>
+    <rect x="1142" y="458" width="682" height="47" rx="12" fill="#F4EEFF"/><text x="1162" y="487" class="pill" fill="#6548AE">Practice</text><text x="1308" y="487">记录独立失败、进入纠错、等待重做</text>
+  </g>
+
+  <!-- remediation section -->
+  <text x="72" y="585" class="h2" fill="#12366E">确定性纠错闭环</text>
+  <rect x="70" y="606" width="1780" height="194" rx="23" fill="#FFFFFF" stroke="#9FB7DE" stroke-width="1.5"/>
+  <g text-anchor="middle">
+    <circle cx="166" cy="676" r="36" fill="#D95361"/><text x="166" y="670" class="pill white">答错</text><text x="166" y="692" class="tiny white">failure</text>
+    <path d="M202 676H314" stroke="#1E5BBB" stroke-width="4" marker-end="url(#b4)"/>
+    <circle cx="356" cy="676" r="36" fill="#E28717"/><text x="356" y="670" class="pill white">讲解</text><text x="356" y="692" class="tiny white">assistance</text>
+    <path d="M392 676H504" stroke="#1E5BBB" stroke-width="4" marker-end="url(#b4)"/>
+    <circle cx="546" cy="676" r="36" fill="#3776C8"/><text x="546" y="670" class="pill white">重做</text><text x="546" y="692" class="tiny white">original</text>
+    <path d="M582 676H694" stroke="#1E5BBB" stroke-width="4" marker-end="url(#b4)"/>
+    <circle cx="736" cy="676" r="36" fill="#7652C7"/><text x="736" y="670" class="pill white">变式</text><text x="736" y="692" class="tiny white">transfer</text>
+    <path d="M772 676H884" stroke="#1E5BBB" stroke-width="4" marker-end="url(#b4)"/>
+    <circle cx="926" cy="676" r="36" fill="#108A8B"/><text x="926" y="670" class="pill white">次日</text><text x="926" y="692" class="tiny white">1 day</text>
+    <path d="M962 676H1074" stroke="#1E5BBB" stroke-width="4" marker-end="url(#b4)"/>
+    <circle cx="1116" cy="676" r="36" fill="#108A8B"/><text x="1116" y="670" class="pill white">间隔</text><text x="1116" y="692" class="tiny white">3 / 7</text>
+    <path d="M1152 676H1264" stroke="#1E5BBB" stroke-width="4" marker-end="url(#b4)"/>
+    <circle cx="1306" cy="676" r="36" fill="#108A8B"/><text x="1306" y="670" class="pill white">保持</text><text x="1306" y="692" class="tiny white">14 / 30 / 60</text>
+    <path d="M1342 676H1454" stroke="#1E5BBB" stroke-width="4" marker-end="url(#b4)"/>
+    <circle cx="1496" cy="676" r="36" fill="#279565"/><text x="1496" y="670" class="pill white">稳定</text><text x="1496" y="692" class="tiny white">stable</text>
+  </g>
+  <g text-anchor="middle" class="small">
+    <text x="166" y="744">阶梯重置 0</text><text x="356" y="744">记录辅助方式</text><text x="546" y="744">原题检索成功</text><text x="736" y="744">校验迁移能力</text><text x="926" y="744">进入复查队列</text><text x="1116" y="744">独立复习成功</text><text x="1306" y="744">继续检索练习</text><text x="1496" y="744">仍可被新失败证伪</text>
+  </g>
+  <rect x="1572" y="632" width="246" height="135" rx="16" fill="#F3F7FF" stroke="#9AB6E2"/>
+  <text x="1695" y="661" text-anchor="middle" class="pill" fill="#1B50A0">Review Policy v1</text>
+  <text x="1695" y="692" text-anchor="middle" class="body">1 / 3 / 7 / 14</text><text x="1695" y="719" text-anchor="middle" class="body">30 / 60 天</text><text x="1695" y="749" text-anchor="middle" class="tiny">失败 / Hard / Good / Easy</text>
+
+  <!-- evidence and claim -->
+  <g filter="url(#shadow4)"><rect x="70" y="822" width="1150" height="146" rx="22" fill="#FFFFFF" stroke="#80A0D0" stroke-width="1.5"/></g>
+  <text x="96" y="856" class="h3" fill="#173F7D">历史不会被覆盖：证据持续累积</text>
+  <g class="small" text-anchor="middle">
+    <rect x="96" y="878" width="194" height="55" rx="12" fill="#FFF1F2"/><text x="193" y="902">Fact 1｜独立失败</text><text x="193" y="923">空列表除零</text>
+    <path d="M290 906H328" stroke="#1E5BBB" stroke-width="2.5" marker-end="url(#b4)"/>
+    <rect x="330" y="878" width="194" height="55" rx="12" fill="#FFF7E9"/><text x="427" y="902">Fact 2｜使用讲解</text><text x="427" y="923">辅助等级上升</text>
+    <path d="M524 906H562" stroke="#1E5BBB" stroke-width="2.5" marker-end="url(#b4)"/>
+    <rect x="564" y="878" width="194" height="55" rx="12" fill="#EDF4FF"/><text x="661" y="902">Fact 3｜原题成功</text><text x="661" y="923">不是迁移证据</text>
+    <path d="M758 906H796" stroke="#1E5BBB" stroke-width="2.5" marker-end="url(#b4)"/>
+    <rect x="798" y="878" width="194" height="55" rx="12" fill="#F4EEFF"/><text x="895" y="902">Fact 4｜变式成功</text><text x="895" y="923">transfer evidence</text>
+    <path d="M992 906H1030" stroke="#1E5BBB" stroke-width="2.5" marker-end="url(#b4)"/>
+    <rect x="1032" y="878" width="162" height="55" rx="12" fill="#EAF9F4"/><text x="1113" y="902">Fact 5+</text><text x="1113" y="923">间隔复习</text>
+  </g>
+
+  <g filter="url(#shadow4)"><rect x="1246" y="822" width="604" height="146" rx="22" fill="#F4F0FF" stroke="#9578D5" stroke-width="1.5"/></g>
+  <text x="1274" y="856" class="h3" fill="#5E43A2">MemoryClaim 生成门槛</text>
+  <text x="1274" y="892" class="body">“学生能独立处理空集合边界条件”</text>
+  <text x="1274" y="923" class="small">至少 2 次相隔 ≥72h 的独立复习成功</text><text x="1274" y="948" class="small">且至少 1 次来自已校验变式；之后答错则重新调度并标记风险</text>
+
+  <path d="M1548 822V786H926V715" fill="none" stroke="#108A8B" stroke-width="3" stroke-dasharray="9 7" marker-end="url(#t4)"/>
+  <text x="1190" y="805" class="tiny" fill="#0C7476">复习时 Retriever 恢复历史 Attempt、纠错方式与证据，不泄漏答案</text>
+
+  <rect x="70" y="993" width="1780" height="57" rx="16" fill="url(#navy4)"/>
+  <text x="960" y="1028" text-anchor="middle" class="body white">错题不是一条可删除记录，而是一条持续生长、可纠正、可复查的证据链</text>
+</svg>

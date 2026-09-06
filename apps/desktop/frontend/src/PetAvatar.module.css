@@ -1,0 +1,25 @@
+.avatar { position: relative; display: grid; width: 58px; height: 58px; place-items: center; border: 0; border-radius: 50%; background: transparent; padding: 0; cursor: pointer; isolation: isolate; }
+.avatar[data-compact] { width: 132px; height: 132px; }
+.avatar svg { position: relative; z-index: 1; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 8px 10px rgba(68, 64, 151, .23)); transition: transform .22s ease; }
+.avatar:hover svg { transform: translateY(-3px) scale(1.03); }
+.glow { position: absolute; z-index: 0; width: 74%; height: 74%; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.95), rgba(203,218,255,.35) 56%, transparent 72%); animation: breathe 3s ease-in-out infinite; }
+.body { fill: #7c66f2; stroke: #5342b6; stroke-width: 2.2; }
+.tail { fill: none; stroke: #6753d8; stroke-linecap: round; stroke-width: 8; }
+.earLeft, .earRight { fill: #927df8; stroke: #5342b6; stroke-linejoin: round; stroke-width: 2.2; }
+.face { fill: #fbfdff; }
+.eye { fill: #30345f; transform-origin: center; animation: blink 5s infinite; }
+.mouth { fill: none; stroke: #5b5a86; stroke-linecap: round; stroke-width: 2.4; }
+.cheek { fill: #f3a7c9; opacity: .72; }
+.stateDot { position: absolute; z-index: 2; right: 8%; bottom: 10%; width: 10px; height: 10px; border: 2px solid #fff; border-radius: 50%; background: #76b7f6; box-shadow: 0 1px 4px rgba(42, 51, 106, .32); }
+.avatar[data-state="thinking"] .glow { animation-duration: .85s; background: radial-gradient(circle, rgba(255,255,255,.95), rgba(255,215,133,.7) 56%, transparent 72%); }
+.avatar[data-state="thinking"] .body { fill: #8269ec; }
+.avatar[data-state="thinking"] .stateDot { background: #e6b94d; animation: pulse .8s ease-in-out infinite; }
+.avatar[data-state="review_due"] .body { fill: #ef8b7e; }
+.avatar[data-state="review_due"] .stateDot { background: #f27d5f; }
+.avatar[data-state="task_active"] .body { fill: #58ae96; }
+.avatar[data-state="task_active"] .stateDot { background: #49b580; }
+.avatar[data-state="error"] .body { fill: #9b7894; }
+.avatar[data-state="error"] .stateDot { background: #df6b67; }
+@keyframes breathe { 0%, 100% { transform: scale(.92); opacity: .72; } 50% { transform: scale(1.12); opacity: 1; } }
+@keyframes pulse { 50% { transform: scale(1.35); } }
+@keyframes blink { 0%, 44%, 48%, 100% { transform: scaleY(1); } 46% { transform: scaleY(.1); } }

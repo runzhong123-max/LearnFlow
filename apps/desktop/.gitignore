@@ -1,0 +1,46 @@
+# Python
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+*.pyc
+backend/data/
+backend/*.db
+backend/.env
+backend/.private/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env.*.local
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+.playwright-cli/
+frontend/output/visual-storyboard/
+output/playwright/
+
+# Logs
+*.log
+data/
+!frontend/plugins/role_capability_graph/data/
+!frontend/plugins/role_capability_graph/data/**
+
+# Project-mode runtime (venv + workspaces)
+backend/runtime/
+# Build artifacts & backups
+frontend/*.tsbuildinfo
+backend/*.db.bak*
+backend/backups/
+backend/*.pth
+
+# Tauri desktop build output and generated sidecars
+desktop/node_modules/
+desktop/.sidecar-build/
+desktop/src-tauri/gen/
+desktop/src-tauri/target/
+desktop/src-tauri/binaries/learnflow-backend-*

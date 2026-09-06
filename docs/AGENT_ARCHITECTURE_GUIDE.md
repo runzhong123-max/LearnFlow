@@ -1,5 +1,8 @@
 # LearnFlow 智能体架构与协作指南
 
+Contract impact（2026-09-06 单仓共享核心 0.1.0）：五核、记忆、上下文、教学指导、观察与纠错实现迁入根仓 `packages/learning-core/src/learnflow_core/`，旧 `app.services.*` 保持模块身份兼容；三类 Agent/Kernel/schema 声明迁入 registry_core.py。两个宿主组合各自 registry，并公开 shared_core_version。无事件 schema、评分策略、数据库或身份迁移。共同事件契约由根跨端检查验证；不同宿主各自运行与测试。目录迁移详见根仓 docs/MONOREPO.md。
+
+
 Contract impact（`2026-09-06.2`）：迁移五核记忆证据与即时教学升级，保留当前学习路径 v2、岗位插件与任务交接合同。新增 semantic_observation_proposed 与 vnext_teaching_input_received 注册事件；模型观察仅为短期候选，教学指导由确定性 reducer 生成有 scope 的控制投影。Module policy 升至 memory-module-version-v2，完善撤回、独立事件门槛、检索过滤与偏好更新。旧事件与数据库结构保留；新旧客户端增量兼容，前后端应共同发布。详见 [迁移记录](MEMORY_UPGRADE_MIGRATION.md)。
 
 Contract impact（`2026-09-06.1`）：学习路径规范语义归 Learning Design Agent 所有；新增的 `learning_path_source_v2 / role_learning_alignment_v2 / graph_extension_proposal_v2` 是只读／提案校验的数据契约，字段权威为 `frontend/src/learning-path-contract-v2.ts`，不作为模型工具暴露。Role Atlas 维护岗位情境、任务与挂载依据；LearnFlow 维护规范课程和知识技能语义；Graph Hub 发现并分发固定版本。图谱特殊节点进入共享源图的运行时接收尚待实现，不能借个人节点网关代写，也不能把生成内容升级为学习证据。v1 读图、规划、个人覆盖层和三类主 Agent 保持兼容。详见 [v2 契约](product/LEARNING_PATH_CONTRACT_V2.md)。

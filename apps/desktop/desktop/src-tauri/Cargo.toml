@@ -1,0 +1,34 @@
+[package]
+name = "learnflow-desktop"
+version = "0.1.0"
+description = "LearnFlow trusted local desktop workspace"
+authors = ["LearnFlow contributors"]
+edition = "2021"
+
+[lib]
+name = "learnflow_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-http = "2"
+tauri-plugin-notification = "2.3.3"
+tauri-plugin-shell = "2"
+uuid = { version = "1", features = ["v4"] }
+base64 = "0.22"
+open = "5.4.1"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_System_Threading",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_UI_WindowsAndMessaging",
+] }

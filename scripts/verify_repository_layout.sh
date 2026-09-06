@@ -11,7 +11,11 @@ required_paths=(
   "frontend/server/agent-runtime.ts"
   "backend/app/main.py"
   "backend/app/services/architecture_registry.py"
-  "desktop/src-tauri/tauri.conf.json"
+  "apps/desktop/desktop/src-tauri/tauri.conf.json"
+  "apps/desktop/frontend/package.json"
+  "apps/desktop/backend/app/main.py"
+  "packages/learning-core/src/learnflow_core/learning_runtime.py"
+  "packages/learning-client/src/password-policy.ts"
   "start.sh"
   "apps/role-atlas/package.json"
   "apps/role-atlas/app/hub/page.tsx"
@@ -32,11 +36,11 @@ if [ -n "$legacy_tracked" ]; then
   exit 1
 fi
 
-legacy_runtime_refs="$(git grep -n -E '(localhost|127\.0\.0\.1):5173|(^|[^[:alnum:]_])vnext/' -- ':!docs/**' ':!README.md' ':!AGENTS.md' ':!scripts/verify_repository_layout.sh' ':!*.lock' || true)"
+legacy_runtime_refs="$(git grep -n -E '(localhost|127\.0\.0\.1):5173|(^|[^[:alnum:]_])vnext/' -- ':!docs/**' ':!apps/desktop/docs/**' ':!apps/desktop/README.md' ':!apps/desktop/AGENTS.md' ':!README.md' ':!AGENTS.md' ':!scripts/verify_repository_layout.sh' ':!*.lock' || true)"
 if [ -n "$legacy_runtime_refs" ]; then
   echo "检测到旧前端运行入口或路径：" >&2
   echo "$legacy_runtime_refs" >&2
   exit 1
 fi
 
-echo "目录权威有效：frontend/ 是唯一 LearnFlow 学习前端；apps/role-atlas/ 是独立岗位建图应用。"
+echo "目录权威有效：Web、Desktop 与 Role Atlas 同仓，共享学习实现位于 packages/。"

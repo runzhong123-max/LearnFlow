@@ -62,19 +62,18 @@ git fetch origin
 - 删除文件、破坏兼容性或进行不可逆迁移前，必须验证精确范围和恢复方案。
 - `main` 和长期工作分支都应保持可运行、可测试；CI 失败必须如实报告并修复。
 
-## 4. 两个仓库并行，而不是融合
+## 4. 单仓与历史参考边界
 
-LearnFlow 与参考仓库 [killoppen/-](https://github.com/killoppen/-) 独立演进：
+用户在 2026-09-06 明确选择将网页与桌面合并为单仓并开始抽取共享代码。
 
-- 两个仓库拥有独立的 Git 历史、发布节奏、架构权威、数据库和 Agent 上下文。
-- 参考仓库默认只读，用于观察学习流程、IDE 交互、前端操作和新的产品创意。
-- LearnFlow 只吸收经过筛选的思想，并按自身三类主 Agent、五核、确定性纠错和证据边界重新实现。
-- 不把参考仓库添加为需要持续合并的上游，不建立 submodule，不自动同步文件或运行数据。
-- 禁止为了跟随参考仓库而自动 merge、rebase、cherry-pick 或批量复制代码。
-- 如需复制具体代码、设计资源或文案，先确认许可证、作者归属和兼容性；一般优先独立实现并在提交说明中记录灵感来源。
-- 参考实现与 LearnFlow 契约冲突时，以 `AGENTS.md`、`architecture_registry.py` 和架构权威文档为准。
-
-这意味着“两仓并行参考”只共享灵感，不共享状态权威，也不要求功能逐项一致。
+- 根仓 LearnFlow 是 Web、Desktop 与 Role Atlas 的唯一日常代码维护仓。桌面应用位于 `apps/desktop/`，不存在嵌套 Git 仓库。
+- 共享实现放在 `packages/`，两端直接引用；同一同步功能以一个任务覆盖两端实现、测试和一个原子提交。
+- 根后端和桌面后端的 registry 消费同一基础声明，保留各自能力绑定。一个宿主不宣称另一个宿主独有能力已经可用。
+- 桌面导入基线为 `runzhong123-max/edagent` 的 `cd88a355e72dbf10073ae4f2c3242d40b5af47d3`；文件 SHA-256 在 `docs/monorepo-desktop-source.json`。原仓完整保留，不自动同步后续变化。
+- 本次为用户明确授权的源代码整合，不声明第三方代码已获得开放许可；保留来源、原提交及作者证据。
+- 外部参考仓与旧 `CEG C/role-agent` 不成为另一处写入源；需要吸收更新时明确来源、范围与兼容性。
+- 单仓不合并数据库、身份、原始资料或运行数据，也不自动开通云同步。
+- 具体目录、测试入口和回退边界见 `docs/MONOREPO.md`。
 
 ## 5. 架构热点的直接推送要求
 
@@ -143,8 +142,8 @@ bash start.sh demo
 docs/GITHUB_COLLABORATION.md，并执行 git status -sb。已有改动视为用户所有。
 本仓库日常任务不建 Issue、不强制建分支、不建 PR；用户要求修改或实现时，完成适用测试后
 直接 commit 并 push 当前分支。禁止 rebase、force push、reset --hard、提交秘密或覆盖任务外改动。
-LearnFlow 与 https://github.com/killoppen/- 独立演进，只读参考灵感，不自动合并、同步或
-cherry-pick。涉及三类主 Agent、五核、EvidenceEvent、Action Board 或 RemediationStrategy 时，
+LearnFlow Web、Desktop 与 Role Atlas 已同仓；先读 docs/MONOREPO.md。旧外部仓只读，
+共享源码直接引用 packages/，共同改动必须验证两端。涉及三类主 Agent、五核、EvidenceEvent、Action Board 或 RemediationStrategy 时，
 遵守架构权威，并同步更新注册表、实现、测试和文档。最终报告提交、推送和真实测试结果。
 ```
 

@@ -1,0 +1,78 @@
+[
+  {
+    "id": "guided-complete",
+    "skill_id": "guided_explanation",
+    "goal": "理解条件概率",
+    "entry_mode": "direct",
+    "turns": [
+      {"message": "观察到 B 以后，我们只在 B 发生的范围里重新看 A", "signal": "attempt", "state": "checking_minimal_example", "turn_count": 1, "support_count": 0},
+      {"message": "例子里 B 把样本空间缩小了，所以 A 的比例会重算", "signal": "attempt", "state": "repairing_explanation", "turn_count": 2, "support_count": 0},
+      {"message": "条件改变了参考范围，机制是重新归一化，结果是概率随之变化", "signal": "attempt", "state": "verification_ready", "turn_count": 3, "support_count": 0}
+    ]
+  },
+  {
+    "id": "guided-support-does-not-pass",
+    "skill_id": "guided_explanation",
+    "goal": "理解闭包",
+    "entry_mode": "direct",
+    "turns": [
+      {"message": "好的", "signal": "acknowledgement", "state": "presenting_core_model", "turn_count": 0, "support_count": 1},
+      {"message": "先直接解释一下", "signal": "direct_explanation_requested", "state": "presenting_core_model", "turn_count": 0, "support_count": 2},
+      {"message": "函数离开后，内部函数仍引用词法作用域里的变量", "signal": "attempt", "state": "checking_minimal_example", "turn_count": 1, "support_count": 2}
+    ]
+  },
+  {
+    "id": "socratic-grounded-entry",
+    "skill_id": "socratic_dialogue",
+    "goal": "理解递归终止",
+    "entry_mode": "grounded",
+    "turns": [
+      {"message": "B 先看例子", "signal": "orientation_example_choice", "state": "eliciting_prior_model", "turn_count": 0, "support_count": 1},
+      {"message": "每次调用都让参数更接近基线条件", "signal": "attempt", "state": "testing_assumption", "turn_count": 1, "support_count": 1},
+      {"message": "如果参数不单调接近基线，就可能一直调用", "signal": "attempt", "state": "building_explanation", "turn_count": 2, "support_count": 1},
+      {"message": "因为存在可达基线且度量持续减小，所以递归会停止", "signal": "attempt", "state": "verification_ready", "turn_count": 3, "support_count": 1}
+    ]
+  },
+  {
+    "id": "socratic-no-prior-stays",
+    "skill_id": "socratic_dialogue",
+    "goal": "理解循环不变量",
+    "entry_mode": "direct",
+    "turns": [
+      {"message": "我不知道", "signal": "no_prior_knowledge", "state": "eliciting_prior_model", "turn_count": 0, "support_count": 1},
+      {"message": "不变量是在每轮前后都保持成立的条件", "signal": "attempt", "state": "testing_assumption", "turn_count": 1, "support_count": 1}
+    ]
+  },
+  {
+    "id": "feynman-repair-loop",
+    "skill_id": "feynman_dialogue",
+    "goal": "理解事务隔离",
+    "entry_mode": "direct",
+    "calibration": {
+      "audience_level": "vocational",
+      "cognitive_demand": "mechanism",
+      "scaffold_level": "guided",
+      "representation_mode": "code"
+    },
+    "turns": [
+      {"message": "我不会讲", "signal": "no_prior_knowledge", "state": "awaiting_teach_back", "turn_count": 0, "support_count": 1},
+      {"message": "隔离让并发事务看起来像按某种顺序执行", "signal": "attempt", "state": "locating_gap", "turn_count": 1, "support_count": 1},
+      {"message": "这里的某种顺序取决于隔离级别允许哪些可见性", "signal": "attempt", "state": "revising_explanation", "turn_count": 2, "support_count": 1},
+      {"message": "它会控制同一事务再次读取时看到的结果", "signal": "attempt", "state": "revising_explanation", "turn_count": 3, "support_count": 1},
+      {"message": "它仍然控制再次读取的结果", "signal": "attempt", "state": "revising_explanation", "turn_count": 4, "support_count": 1},
+      {"message": "因为隔离级别限制了其他事务修改何时可见，所以再次读取的结果会受约束", "signal": "attempt", "state": "verification_ready", "turn_count": 5, "support_count": 1}
+    ]
+  },
+  {
+    "id": "worked-example-skip-stays",
+    "skill_id": "worked_example_fading",
+    "goal": "实现二分查找",
+    "entry_mode": "direct",
+    "turns": [
+      {"message": "跳过", "signal": "skip", "state": "studying_worked_example", "turn_count": 0, "support_count": 1},
+      {"message": "先比较中点，再根据大小关系收缩一半区间", "signal": "attempt", "state": "completing_last_step", "turn_count": 1, "support_count": 1},
+      {"message": "最后一步返回找到的下标，否则区间为空时返回 -1", "signal": "attempt", "state": "solving_faded_example", "turn_count": 2, "support_count": 1},
+      {"message": "新数组中我继续维护左右闭区间并据中点比较更新边界", "signal": "attempt", "state": "verification_ready", "turn_count": 3, "support_count": 1}
+    ]
+  }
+]

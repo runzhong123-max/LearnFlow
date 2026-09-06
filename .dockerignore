@@ -15,3 +15,11 @@ output
 
 # Role Atlas has its own Docker build context and ignore file.
 apps/role-atlas
+
+apps/desktop
+.monorepo-local
+**/venv
+**/.venv
+**/.private
+**/*.db
+**/*.sqlite3

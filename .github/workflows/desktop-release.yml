@@ -1,0 +1,133 @@
+name: Desktop release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing v* tag to package and publish
+        required: true
+        type: string
+
+env:
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+
+jobs:
+  build:
+    name: ${{ matrix.name }} release package
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS
+            os: macos-14
+          - name: Windows
+            os: windows-2022
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - name: Validate release tag
+        shell: bash
+        run: |
+          case "$RELEASE_TAG" in
+            v*) ;;
+            *) echo "Release tag must start with v: $RELEASE_TAG"; exit 1 ;;
+          esac
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            apps/desktop/backend/requirements.txt
+            apps/desktop/desktop/requirements-build.txt
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            apps/desktop/frontend/package-lock.json
+            apps/desktop/desktop/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install build dependencies
+        run: python -m pip install -r apps/desktop/backend/requirements.txt -r apps/desktop/desktop/requirements-build.txt
+
+      - name: Install frontend and desktop dependencies
+        shell: bash
+        run: |
+          npm --prefix apps/desktop/frontend ci
+          npm --prefix apps/desktop/desktop ci
+
+      - name: Build frontend
+        run: npm --prefix apps/desktop/frontend run build
+
+      - name: Build FastAPI sidecar
+        run: npm --prefix apps/desktop/desktop run build:sidecar
+
+      - name: Build Tauri package
+        run: npm --prefix apps/desktop/desktop run build
+
+      - name: Collect release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle_dir="apps/desktop/desktop/src-tauri/target/release/bundle"
+          asset_dir="apps/desktop/desktop/release-assets"
+          mkdir -p "$asset_dir"
+
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            find "$bundle_dir" -type f \( -iname '*.exe' -o -iname '*.msi' \) -exec cp {} "$asset_dir"/ \;
+          else
+            find "$bundle_dir" -type f -iname '*.dmg' -exec cp {} "$asset_dir"/ \;
+            app_path=""
+            for candidate in "$bundle_dir"/macos/*.app; do
+              [ -d "$candidate" ] || continue
+              app_path="$candidate"
+              break
+            done
+            if [ -n "$app_path" ]; then
+              app_name="$(basename "$app_path")"
+              ditto -c -k --sequesterRsrc --keepParent "$app_path" "$asset_dir/${app_name}.zip"
+            fi
+          fi
+
+          test -n "$(find "$asset_dir" -type f -print -quit)"
+          find "$asset_dir" -type f -print
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: learnflow-${{ matrix.name }}-release
+          path: apps/desktop/desktop/release-assets/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download package artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: learnflow-*-release
+          path: release-assets
+          merge-multiple: true
+
+      - name: List release assets
+        run: find release-assets -maxdepth 1 -type f -print
+
+      - name: Create or update GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: LearnFlow ${{ env.RELEASE_TAG }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: release-assets/*

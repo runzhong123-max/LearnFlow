@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "learnflow-core"
+version = "0.1.0"
+description = "Shared LearnFlow evidence, memory and deterministic teaching implementation"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]

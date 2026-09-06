@@ -1,0 +1,808 @@
+{
+  "schema_version": "learnflow.skill.v3",
+  "registry_version": "2026-08-29.1",
+  "generated_from": "backend/app/services/architecture_registry.py",
+  "skills": {
+    "guided_explanation": {
+      "id": "guided_explanation",
+      "name": "清晰讲解",
+      "description": "先讲清核心，再用一个例子确认理解。",
+      "best_for": [
+        "陌生概念",
+        "认知负荷较高",
+        "需要先建立最小心智模型"
+      ],
+      "avoid_when": [
+        "学习者明确要求自己推导",
+        "目标主要是程序性步骤练习"
+      ],
+      "atomic_task_capable": true,
+      "spec_version": "learnflow.skill.v3",
+      "runtime": {
+        "version": "atomic-learning-skill-runtime-v6",
+        "bound_chat_modes": [
+          "learn"
+        ],
+        "initial_state": "presenting_core_model",
+        "states": [
+          {
+            "id": "presenting_core_model",
+            "title": "建立核心模型",
+            "short_title": "模型",
+            "substate_id": "guidance",
+            "substate_label": "引导态",
+            "instructional_objective": "建立一个可回答、可检查的最小心智模型。",
+            "tutor_instruction": "直接说明目标解决的问题、关键对象、核心关系与一个边界；不能用空泛追问代替知识起点。",
+            "next_action": "看最小例子",
+            "accepted_signals": [
+              "attempt"
+            ],
+            "can_loop": true,
+            "requires_learner_reply": true,
+            "loop_instruction": "只换表征、类比或反例，不增加新的知识层次。"
+          },
+          {
+            "id": "checking_minimal_example",
+            "title": "检查最小例子",
+            "short_title": "例子",
+            "substate_id": "demonstration",
+            "substate_label": "示范态",
+            "instructional_objective": "把核心关系映射到一个表面不同的最小例子。",
+            "tutor_instruction": "给一个可逐项映射到核心模型的例子，只要求学生判断一个关键变化。",
+            "next_action": "用自己的话解释",
+            "accepted_signals": [
+              "attempt"
+            ],
+            "can_loop": true,
+            "requires_learner_reply": true,
+            "loop_instruction": "保持同一知识关系，缩小例子与待判断范围。"
+          },
+          {
+            "id": "repairing_explanation",
+            "title": "修补并重新表达",
+            "short_title": "修补",
+            "substate_id": "teachback",
+            "substate_label": "复述态",
+            "instructional_objective": "根据回应修补一处理解，再由学生重组核心关系。",
+            "tutor_instruction": "只修正一个关键偏差，请学生用条件—机制—结果重新表达；复述不算掌握。",
+            "next_action": "进入独立验证",
+            "accepted_signals": [
+              "attempt"
+            ],
+            "can_loop": true,
+            "requires_learner_reply": true,
+            "loop_instruction": "把重述目标缩成一句因果关系，再让学生修订同一处。"
+          },
+          {
+            "id": "verification_ready",
+            "title": "准备独立验证",
+            "short_title": "验证",
+            "substate_id": "independent",
+            "substate_label": "验证态",
+            "instructional_objective": "停止继续讲解，将任务交给无提示验证。",
+            "tutor_instruction": "明确引导和重述不是掌握证据，提供独立题或正式练习入口。",
+            "next_action": "开始独立验证",
+            "accepted_signals": [],
+            "can_loop": false,
+            "requires_learner_reply": false,
+            "loop_instruction": "缩小当前动作并补一层支架；不得把提示后的回应当作独立完成。"
+          }
+        ],
+        "turn_budget": 3,
+        "verification_required": true,
+        "required_context": [
+          "scoped_learning_task",
+          "learner_reply_signal",
+          "answer_free_context_packet"
+        ],
+        "input_objects": [
+          "LearningTask",
+          "LearningSkillRun",
+          "ContextPacket",
+          "AgentMessage"
+        ],
+        "output_objects": [
+          "LearningSkillRunTransition",
+          "VerificationHandoff"
+        ],
+        "allowed_event_types": [
+          "learning_skill_run_started",
+          "learning_skill_run_advanced",
+          "learning_skill_run_paused",
+          "learning_skill_run_resumed",
+          "learning_skill_verification_started",
+          "learning_skill_run_completed"
+        ],
+        "evidence_policy": "coaching turns and self-report are zero-target; only existing independently graded attempts, remediation and review may support capability evidence",
+        "failure_policy": "missing, acknowledgement, skip, no-prior-knowledge and direct-explanation requests stay on the current state with bounded support; never auto-pass",
+        "eval_suite": "learning-skill-dialogue-v2",
+        "knowledge_requirements": {
+          "required_slots": [
+            "definition",
+            "mechanism",
+            "example",
+            "boundary",
+            "misconception",
+            "assessment_basis"
+          ],
+          "minimum_authority_tiers": [
+            "official",
+            "curated",
+            "academic",
+            "learner_owned"
+          ],
+          "freshness": "task_dependent",
+          "minimum_coverage": 1.0,
+          "formal_publish_requires_packet": true,
+          "missing_behavior": "preserve_skill_progress_and_block_artifact_publication"
+        },
+        "calibration_axes": [],
+        "maturity": "production_candidate"
+      }
+    },
+    "socratic_dialogue": {
+      "id": "socratic_dialogue",
+      "name": "苏格拉底追问",
+      "description": "用连续的小问题，引导你自己推到答案。",
+      "best_for": [
+        "因果推理",
+        "证明与不变量",
+        "已有部分直觉但需要暴露假设"
+      ],
+      "avoid_when": [
+        "完全陌生且没有可调用的先备知识",
+        "学习者明确要求直接解释"
+      ],
+      "atomic_task_capable": true,
+      "spec_version": "learnflow.skill.v3",
+      "runtime": {
+        "version": "atomic-learning-skill-runtime-v6",
+        "bound_chat_modes": [
+          "learn"
+        ],
+        "initial_state": "eliciting_prior_model",
+        "states": [
+          {
+            "id": "eliciting_prior_model",
+            "title": "建立可回答起点",
+            "short_title": "起点",
+            "substate_id": "guidance",
+            "substate_label": "引导态",
+            "instructional_objective": "用最小支架暴露学习者当前直觉，而非要求凭空猜测。",
+            "tutor_instruction": "给必要事实与具体情境，每轮只问一个无需猜术语即可回答的问题。",
+            "next_action": "检验一个判断",
+            "accepted_signals": [
+              "attempt"
+            ],
+            "can_loop": true,
+            "requires_learner_reply": true,
+            "loop_instruction": "补一个事实或二选一情境，继续停留在同一判断附近。"
+          },
+          {
+            "id": "testing_assumption",
+            "title": "检验关键假设",
+            "short_title": "假设",
+            "substate_id": "inquiry",
+            "substate_label": "探究态",
+            "instructional_objective": "用反例、边界或单变量变化检验当前判断。",
+            "tutor_instruction": "先回应已有推理，再只问一个能检验关键条件或因果方向的问题。",
+            "next_action": "连接理由与结论",
+            "accepted_signals": [
+              "attempt"
+            ],
+            "can_loop": true,
+            "requires_learner_reply": true,
+            "loop_instruction": "固定其余条件，把问题缩成一个可观察的变化。"
+          },
+          {
+            "id": "building_explanation",
+            "title": "连接理由与边界",
+            "short_title": "收束",
+            "substate_id": "synthesis",
+            "substate_label": "收束态",
+            "instructional_objective": "让学习者把条件、机制与结论组成可检查解释。",
+            "tutor_instruction": "只要求用因为—所以—只有当收束推理，反馈一个关键连接。",
+            "next_action": "进入独立验证",
+            "accepted_signals": [
+              "attempt"
+            ],
+            "can_loop": true,
+            "requires_learner_reply": true,
+            "loop_instruction": "给三段式句架，只补缺失的一段后再完整表达。"
+          },
+          {
+            "id": "verification_ready",
+            "title": "准备独立验证",
+            "short_title": "验证",
+            "substate_id": "independent",
+            "substate_label": "验证态",
+            "instructional_objective": "停止追问，将形成的推理交给新情境验证。",
+            "tutor_instruction": "明确普通对话不是掌握证明，提供不照搬当前表述的独立题入口。",
+            "next_action": "开始独立验证",
+            "accepted_signals": [],
+            "can_loop": false,
+            "requires_learner_reply": false,
+            "loop_instruction": "缩小当前动作并补一层支架；不得把提示后的回应当作独立完成。"
+          }
+        ],
+        "turn_budget": 3,
+        "verification_required": true,
+        "required_context": [
+          "scoped_learning_task",
+          "learner_reply_signal",
+          "answer_free_context_packet"
+        ],
+        "input_objects": [
+          "LearningTask",
+          "LearningSkillRun",
+          "ContextPacket",
+          "AgentMessage"
+        ],
+        "output_objects": [
+          "LearningSkillRunTransition",
+          "VerificationHandoff"
+        ],
+        "allowed_event_types": [
+          "learning_skill_run_started",
+          "learning_skill_run_advanced",
+          "learning_skill_run_paused",
+          "learning_skill_run_resumed",
+          "learning_skill_verification_started",
+          "learning_skill_run_completed"
+        ],
+        "evidence_policy": "coaching turns and self-report are zero-target; only existing independently graded attempts, remediation and review may support capability evidence",
+        "failure_policy": "missing, acknowledgement, skip, no-prior-knowledge and direct-explanation requests stay on the current state with bounded support; never auto-pass",
+        "eval_suite": "learning-skill-dialogue-v2",
+        "knowledge_requirements": {
+          "required_slots": [
+            "definition",
+            "mechanism",
+            "example",
+            "boundary",
+            "misconception",
+            "assessment_basis"
+          ],
+          "minimum_authority_tiers": [
+            "official",
+            "curated",
+            "academic",
+            "learner_owned"
+          ],
+          "freshness": "task_dependent",
+          "minimum_coverage": 1.0,
+          "formal_publish_requires_packet": true,
+          "missing_behavior": "preserve_skill_progress_and_block_artifact_publication"
+        },
+        "calibration_axes": [],
+        "maturity": "production_candidate"
+      }
+    },
+    "feynman_dialogue": {
+      "id": "feynman_dialogue",
+      "name": "费曼复述",
+      "description": "请你用自己的话讲一遍，再一起找出模糊处。",
+      "best_for": [
+        "查漏补缺",
+        "组织概念关系",
+        "已有接触后检验能否说清"
+      ],
+      "avoid_when": [
+        "尚未接触主题",
+        "程序性任务只需要先看步骤示范"
+      ],
+      "atomic_task_capable": true,
+      "spec_version": "learnflow.skill.v3",
+      "runtime": {
+        "version": "atomic-learning-skill-runtime-v6",
+        "bound_chat_modes": [
+          "learn"
+        ],
+        "initial_state": "awaiting_teach_back",
+        "states": [
+          {
+            "id": "awaiting_teach_back",
+            "title": "第一次自己的话复述",
+            "short_title": "初讲",
+            "substate_id": "teachback",
+            "substate_label": "复述态",
+            "instructional_objective": "在有知识起点后取得第一版自己的话解释。",
+            "tutor_instruction": "若主题陌生先补三点以内的最小解释；随后只邀请一句自己的话复述。",
+            "next_action": "定位一个跳步",
+            "accepted_signals": [
+              "attempt"
+            ],
+            "can_loop": true,
+            "requires_learner_reply": true,
+            "loop_instruction": "缩小到一个关系并提供句架，不要求从空白完整复述。"
+          },
+          {
+            "id": "locating_gap",
+            "title": "定位一个关键跳步",
+            "short_title": "诊断",
+            "substate_id": "diagnosis",
+            "substate_label": "诊断态",
+            "instructional_objective": "只定位一个含糊词、遗漏前提或因果跳步。",
+            "tutor_instruction": "先指出讲清楚的一点，再问一个能暴露最关键连接的问题。",
+            "next_action": "修订复述",
+            "accepted_signals": [
+              "attempt"
+            ],
+            "can_loop": true,
+            "requires_learner_reply": true,
+            "loop_instruction": "把跳步拆成更小前提；仍不会时直接补足前提。"
+          },
+          {
+            "id": "revising_explanation",
+            "title": "带着修正再讲",
+            "short_title": "修订",
+            "substate_id": "revision",
+            "substate_label": "修订态",
+            "instructional_objective": "修订同一个关键跳步，并加入例子与边界。",
+            "tutor_instruction": "请学生不用术语重讲，加入一个例子和一个不适用边界；不做掌握判断。",
+            "next_action": "进入独立验证",
+            "accepted_signals": [
+              "attempt"
+            ],
+            "can_loop": true,
+            "requires_learner_reply": true,
+            "loop_instruction": "继续围绕同一跳步缩小范围，必要时给半成品改错。"
+          },
+          {
+            "id": "verification_ready",
+            "title": "准备独立验证",
+            "short_title": "验证",
+            "substate_id": "independent",
+            "substate_label": "验证态",
+            "instructional_objective": "把复述诊断交给独立变式验证。",
+            "tutor_instruction": "说明复述只是诊断，提供一道不复用当前例子的独立验证。",
+            "next_action": "开始独立验证",
+            "accepted_signals": [],
+            "can_loop": false,
+            "requires_learner_reply": false,
+            "loop_instruction": "缩小当前动作并补一层支架；不得把提示后的回应当作独立完成。"
+          }
+        ],
+        "turn_budget": 5,
+        "verification_required": true,
+        "required_context": [
+          "scoped_learning_task",
+          "learner_reply_signal",
+          "answer_free_context_packet"
+        ],
+        "input_objects": [
+          "LearningTask",
+          "LearningSkillRun",
+          "ContextPacket",
+          "AgentMessage"
+        ],
+        "output_objects": [
+          "LearningSkillRunTransition",
+          "TeachBackDiagnostic",
+          "VerificationHandoff"
+        ],
+        "allowed_event_types": [
+          "learning_skill_run_started",
+          "learning_skill_run_advanced",
+          "learning_skill_run_paused",
+          "learning_skill_run_resumed",
+          "learning_skill_verification_started",
+          "learning_skill_run_completed",
+          "learning_skill_calibration_updated",
+          "learning_skill_teach_back_diagnostic_updated"
+        ],
+        "evidence_policy": "coaching turns and self-report are zero-target; only existing independently graded attempts, remediation and review may support capability evidence",
+        "failure_policy": "missing, acknowledgement, skip, no-prior-knowledge and direct-explanation requests stay on the current state with bounded support; never auto-pass",
+        "eval_suite": "learning-skill-dialogue-v2",
+        "knowledge_requirements": {
+          "required_slots": [
+            "definition",
+            "mechanism",
+            "example",
+            "boundary",
+            "misconception",
+            "assessment_basis"
+          ],
+          "minimum_authority_tiers": [
+            "official",
+            "curated",
+            "academic",
+            "learner_owned"
+          ],
+          "freshness": "task_dependent",
+          "minimum_coverage": 1.0,
+          "formal_publish_requires_packet": true,
+          "missing_behavior": "preserve_skill_progress_and_block_artifact_publication"
+        },
+        "calibration_axes": [
+          {
+            "id": "audience_level",
+            "title": "讲给谁听",
+            "description": "控制语言与先备知识假设。",
+            "options": [
+              [
+                "beginner",
+                "零基础"
+              ],
+              [
+                "high_school",
+                "高中"
+              ],
+              [
+                "vocational",
+                "高职"
+              ],
+              [
+                "undergraduate",
+                "本科"
+              ],
+              [
+                "graduate",
+                "研究生"
+              ],
+              [
+                "professional",
+                "从业者"
+              ]
+            ],
+            "default": "undergraduate"
+          },
+          {
+            "id": "cognitive_demand",
+            "title": "说到多深",
+            "description": "控制本轮复述需要覆盖的认知动作。",
+            "options": [
+              [
+                "define",
+                "定义"
+              ],
+              [
+                "mechanism",
+                "机制"
+              ],
+              [
+                "boundary",
+                "边界"
+              ],
+              [
+                "transfer",
+                "迁移"
+              ]
+            ],
+            "default": "mechanism"
+          },
+          {
+            "id": "scaffold_level",
+            "title": "给多少支架",
+            "description": "控制 Tutor 提供的帮助强度。",
+            "options": [
+              [
+                "model",
+                "完整示范"
+              ],
+              [
+                "guided",
+                "引导"
+              ],
+              [
+                "minimal",
+                "少量提示"
+              ],
+              [
+                "none",
+                "无提示"
+              ]
+            ],
+            "default": "guided"
+          },
+          {
+            "id": "representation_mode",
+            "title": "怎么表达",
+            "description": "选择更适合当前知识的表征。",
+            "options": [
+              [
+                "auto",
+                "自动"
+              ],
+              [
+                "code",
+                "代码"
+              ],
+              [
+                "visual",
+                "可视化"
+              ],
+              [
+                "analogy",
+                "类比"
+              ],
+              [
+                "formal",
+                "公式/形式化"
+              ]
+            ],
+            "default": "auto"
+          }
+        ],
+        "maturity": "production_candidate"
+      }
+    },
+    "worked_example_fading": {
+      "id": "worked_example_fading",
+      "name": "示例渐隐",
+      "description": "先拆解一个完整示例，再逐步撤掉步骤让你独立完成。",
+      "best_for": [
+        "代码与算法步骤",
+        "配置和工具流程",
+        "新手程序性问题求解"
+      ],
+      "avoid_when": [
+        "只需事实解释",
+        "已经能独立完成且只需迁移验证"
+      ],
+      "atomic_task_capable": true,
+      "spec_version": "learnflow.skill.v3",
+      "runtime": {
+        "version": "atomic-learning-skill-runtime-v6",
+        "bound_chat_modes": [
+          "learn"
+        ],
+        "initial_state": "studying_worked_example",
+        "states": [
+          {
+            "id": "studying_worked_example",
+            "title": "拆解完整示例",
+            "short_title": "示范",
+            "substate_id": "demonstration",
+            "substate_label": "示范态",
+            "instructional_objective": "用子目标标注的小示例建立程序性步骤模型。",
+            "tutor_instruction": "给一个小而完整、按子目标分段的示例，解释每一步为什么服务于目标。",
+            "next_action": "补全最后一步",
+            "accepted_signals": [
+              "attempt"
+            ],
+            "can_loop": true,
+            "requires_learner_reply": true,
+            "loop_instruction": "恢复完整过程并缩小输入，不撤掉更多支架。"
+          },
+          {
+            "id": "completing_last_step",
+            "title": "补全最后一步",
+            "short_title": "末步",
+            "substate_id": "practice",
+            "substate_label": "练习态",
+            "instructional_objective": "只撤去最后一个可检查动作，让学生完成并说明用途。",
+            "tutor_instruction": "保留前面步骤，只隐藏最后一步；一次只要求一个可检查产物。",
+            "next_action": "撤去更多支架",
+            "accepted_signals": [
+              "attempt"
+            ],
+            "can_loop": true,
+            "requires_learner_reply": true,
+            "loop_instruction": "给局部输入、输出形状或规则提示，仍由学生完成该步。"
+          },
+          {
+            "id": "solving_faded_example",
+            "title": "完成渐隐变式",
+            "short_title": "渐隐",
+            "substate_id": "transfer",
+            "substate_label": "迁移态",
+            "instructional_objective": "在同结构新情境中只保留目标与起始条件。",
+            "tutor_instruction": "提供同结构新情境，只保留子目标标签和起始条件；提示必须显式记录。",
+            "next_action": "进入独立验证",
+            "accepted_signals": [
+              "attempt"
+            ],
+            "can_loop": true,
+            "requires_learner_reply": true,
+            "loop_instruction": "恢复一个相邻步骤，降低一次需保持的信息量。"
+          },
+          {
+            "id": "verification_ready",
+            "title": "准备独立验证",
+            "short_title": "验证",
+            "substate_id": "independent",
+            "substate_label": "验证态",
+            "instructional_objective": "撤去示例与子目标标签，进入无提示变式验证。",
+            "tutor_instruction": "总结已独立完成的动作，明确训练不等于掌握，提供无提示变式入口。",
+            "next_action": "开始独立验证",
+            "accepted_signals": [],
+            "can_loop": false,
+            "requires_learner_reply": false,
+            "loop_instruction": "缩小当前动作并补一层支架；不得把提示后的回应当作独立完成。"
+          }
+        ],
+        "turn_budget": 3,
+        "verification_required": true,
+        "required_context": [
+          "scoped_learning_task",
+          "learner_reply_signal",
+          "answer_free_context_packet"
+        ],
+        "input_objects": [
+          "LearningTask",
+          "LearningSkillRun",
+          "ContextPacket",
+          "AgentMessage"
+        ],
+        "output_objects": [
+          "LearningSkillRunTransition",
+          "VerificationHandoff"
+        ],
+        "allowed_event_types": [
+          "learning_skill_run_started",
+          "learning_skill_run_advanced",
+          "learning_skill_run_paused",
+          "learning_skill_run_resumed",
+          "learning_skill_verification_started",
+          "learning_skill_run_completed"
+        ],
+        "evidence_policy": "coaching turns and self-report are zero-target; only existing independently graded attempts, remediation and review may support capability evidence",
+        "failure_policy": "missing, acknowledgement, skip, no-prior-knowledge and direct-explanation requests stay on the current state with bounded support; never auto-pass",
+        "eval_suite": "learning-skill-dialogue-v2",
+        "knowledge_requirements": {
+          "required_slots": [
+            "definition",
+            "mechanism",
+            "example",
+            "boundary",
+            "misconception",
+            "assessment_basis"
+          ],
+          "minimum_authority_tiers": [
+            "official",
+            "curated",
+            "academic",
+            "learner_owned"
+          ],
+          "freshness": "task_dependent",
+          "minimum_coverage": 1.0,
+          "formal_publish_requires_packet": true,
+          "missing_behavior": "preserve_skill_progress_and_block_artifact_publication"
+        },
+        "calibration_axes": [],
+        "maturity": "production_candidate"
+      }
+    },
+    "learning_file_study": {
+      "id": "learning_file_study",
+      "name": "讲义与练习共学",
+      "description": "让讲义负责承载内容、练习负责正式作答，对话负责带路和反馈。",
+      "best_for": [
+        "已有讲义或练习文件",
+        "需要留下可复用学习材料",
+        "希望阅读和正式作答连成闭环"
+      ],
+      "avoid_when": [
+        "只需一句事实解释",
+        "没有明确原子目标",
+        "当前任务无法形成可验证练习"
+      ],
+      "atomic_task_capable": true,
+      "spec_version": "learnflow.skill.v3",
+      "runtime": {
+        "version": "atomic-learning-skill-runtime-v6",
+        "bound_chat_modes": [
+          "learn"
+        ],
+        "initial_state": "selecting_learning_artifact",
+        "states": [
+          {
+            "id": "selecting_learning_artifact",
+            "title": "选择学习文件",
+            "short_title": "选文件",
+            "substate_id": "guidance",
+            "substate_label": "引导态",
+            "instructional_objective": "用极短直接介绍建立起点，然后把主体学习交给已有或待确认生成的完整讲义与练习。",
+            "tutor_instruction": "先用不超过三句话直接回答学习者当下问题，再读取工作区文件引用；优先复用已有文件，缺少时由 Harness 给出一次讲义+练习生成确认卡。聊天不展开完整课程、不列资源菜单；除非学习者明确要求外部资源，不搜索网页或视频。",
+            "next_action": "打开讲义",
+            "accepted_signals": [
+              "attempt"
+            ],
+            "can_loop": true,
+            "requires_learner_reply": true,
+            "loop_instruction": "缩小目标并只保留一个最相关文件；不为推进流程重复生成。"
+          },
+          {
+            "id": "reading_with_anchor",
+            "title": "带锚点阅读讲义",
+            "short_title": "读讲义",
+            "substate_id": "demonstration",
+            "substate_label": "阅读态",
+            "instructional_objective": "在讲义或资料纸张中完成一个有明确位置和问题的阅读动作。",
+            "tutor_instruction": "精确读取当前文件，只指出一处阅读位置、一个核心关系和一个阅读后问题；正文留在纸张里。",
+            "next_action": "进入文件练习",
+            "accepted_signals": [
+              "attempt"
+            ],
+            "can_loop": true,
+            "requires_learner_reply": true,
+            "loop_instruction": "换一个段落锚点、图解或最小例子，不把整篇讲义搬进对话。"
+          },
+          {
+            "id": "practicing_in_file",
+            "title": "在练习纸张中作答",
+            "short_title": "做练习",
+            "substate_id": "practice",
+            "substate_label": "练习态",
+            "instructional_objective": "把讲义中的关键关系交给答案隔离的正式练习。",
+            "tutor_instruction": "打开或生成一份与目标对齐的练习文件；对话只提供最小支架，学生必须在练习纸张中正式提交。",
+            "next_action": "复盘本次证据",
+            "accepted_signals": [
+              "attempt"
+            ],
+            "can_loop": true,
+            "requires_learner_reply": true,
+            "loop_instruction": "只针对当前卡点给一层提示或同构小题，答案继续隔离。"
+          },
+          {
+            "id": "verification_ready",
+            "title": "复盘并准备验证",
+            "short_title": "复盘",
+            "substate_id": "independent",
+            "substate_label": "验证态",
+            "instructional_objective": "区分阅读、提示练习与独立证据，并将下一步交给正式验证或复习。",
+            "tutor_instruction": "引用已存在的作答结果和具体卡点做短复盘；没有 Attempt 时明确暂无证据，不得宣布掌握。",
+            "next_action": "开始独立验证",
+            "accepted_signals": [],
+            "can_loop": false,
+            "requires_learner_reply": false,
+            "loop_instruction": "缩小当前动作并补一层支架；不得把提示后的回应当作独立完成。"
+          }
+        ],
+        "turn_budget": 3,
+        "verification_required": true,
+        "required_context": [
+          "scoped_learning_task",
+          "learner_reply_signal",
+          "answer_free_context_packet",
+          "managed_learning_file_refs",
+          "active_paper_artifact"
+        ],
+        "input_objects": [
+          "LearningTask",
+          "LearningSkillRun",
+          "ContextPacket",
+          "AgentMessage"
+        ],
+        "output_objects": [
+          "LearningSkillRunTransition",
+          "PaperArtifactHandoff",
+          "VerificationHandoff"
+        ],
+        "allowed_event_types": [
+          "learning_skill_run_started",
+          "learning_skill_run_advanced",
+          "learning_skill_run_paused",
+          "learning_skill_run_resumed",
+          "learning_skill_verification_started",
+          "learning_skill_run_completed"
+        ],
+        "evidence_policy": "coaching turns and self-report are zero-target; only existing independently graded attempts, remediation and review may support capability evidence",
+        "failure_policy": "missing, acknowledgement, skip, no-prior-knowledge and direct-explanation requests stay on the current state with bounded support; never auto-pass",
+        "eval_suite": "learning-skill-dialogue-v2",
+        "knowledge_requirements": {
+          "required_slots": [
+            "definition",
+            "mechanism",
+            "example",
+            "boundary",
+            "misconception",
+            "assessment_basis"
+          ],
+          "minimum_authority_tiers": [
+            "official",
+            "curated",
+            "academic",
+            "learner_owned"
+          ],
+          "freshness": "task_dependent",
+          "minimum_coverage": 1.0,
+          "formal_publish_requires_packet": true,
+          "missing_behavior": "preserve_skill_progress_and_block_artifact_publication"
+        },
+        "calibration_axes": [],
+        "maturity": "production_candidate"
+      }
+    }
+  }
+}

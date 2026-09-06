@@ -4,6 +4,7 @@ WORKDIR /app/backend
 COPY backend/requirements.txt ./requirements.txt
 ARG PIP_INDEX_URL=https://pypi.org/simple
 RUN pip install --no-cache-dir --index-url "$PIP_INDEX_URL" -r requirements.txt
+COPY packages/learning-core /app/packages/learning-core
 COPY backend ./
 
 EXPOSE 8010

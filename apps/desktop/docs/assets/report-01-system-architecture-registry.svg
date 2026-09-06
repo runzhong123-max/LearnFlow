@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F6F9FF"/><stop offset="0.55" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F1F6FF"/>
+    </linearGradient>
+    <linearGradient id="navy" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0B2F6F"/><stop offset="1" stop-color="#155EC5"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#D8E4F6" stroke-width="1" opacity=".34"/>
+    </pattern>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="6" stdDeviation="9" flood-color="#173B70" flood-opacity=".12"/>
+    </filter>
+    <marker id="blueArrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1E5BBB"/></marker>
+    <marker id="orangeArrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#E28717"/></marker>
+    <marker id="tealArrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#108A8B"/></marker>
+    <style>
+      text{font-family:"PingFang SC","Microsoft YaHei",sans-serif}.title{font-size:50px;font-weight:800;fill:#092B68}.subtitle{font-size:23px;font-weight:600;fill:#2B5598}.h2{font-size:27px;font-weight:760;fill:#12366E}.h3{font-size:22px;font-weight:740}.body{font-size:17px;fill:#314A69}.small{font-size:14px;fill:#61748D}.tiny{font-size:12px;fill:#6B7F96}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.white{fill:#FFF}.count{font-size:34px;font-weight:820}.pill{font-size:15px;font-weight:700}
+    </style>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#bg)"/><rect width="1920" height="1080" fill="url(#grid)"/>
+
+  <text x="72" y="76" class="title">01｜LearnFlow 总体架构设计与注册快照</text>
+  <text x="74" y="112" class="subtitle">控制平面 × 能力平面 × 事实平面｜三类主 Agent 共享一套五核证据权威</text>
+  <rect x="1722" y="44" width="126" height="48" rx="24" fill="#EAF1FF" stroke="#9DB9EB"/><text x="1785" y="75" text-anchor="middle" class="pill" fill="#1D4E9B">ARCH 01</text>
+
+  <!-- architecture canvas -->
+  <g filter="url(#shadow)"><rect x="70" y="145" width="1290" height="825" rx="24" fill="#FFFFFF" stroke="#AFC4E7" stroke-width="1.5"/></g>
+  <text x="100" y="184" class="h2">系统编排主干</text>
+
+  <!-- workbenches -->
+  <rect x="96" y="205" width="1238" height="92" rx="17" fill="#F2F7FF" stroke="#83A9E5"/>
+  <text x="122" y="235" class="h3" fill="#1B4F9C">学习者与工作台入口</text>
+  <g class="pill" text-anchor="middle" fill="#294D7D">
+    <rect x="122" y="250" width="180" height="31" rx="15" fill="#FFF" stroke="#AFC5E7"/><text x="212" y="271">Global Tutor</text>
+    <rect x="316" y="250" width="180" height="31" rx="15" fill="#FFF" stroke="#AFC5E7"/><text x="406" y="271">Project Tutor</text>
+    <rect x="510" y="250" width="196" height="31" rx="15" fill="#FFF" stroke="#AFC5E7"/><text x="608" y="271">Checkpoint Tutor</text>
+    <rect x="720" y="250" width="168" height="31" rx="15" fill="#FFF" stroke="#AFC5E7"/><text x="804" y="271">Review</text>
+    <rect x="902" y="250" width="190" height="31" rx="15" fill="#FFF" stroke="#AFC5E7"/><text x="997" y="271">Memory / Profile</text>
+    <rect x="1106" y="250" width="202" height="31" rx="15" fill="#FFF" stroke="#AFC5E7"/><text x="1207" y="271">Desktop Workspace</text>
+  </g>
+
+  <path d="M715 298V328" stroke="#1E5BBB" stroke-width="3" marker-end="url(#blueArrow)"/>
+
+  <!-- tutor control -->
+  <rect x="208" y="330" width="1010" height="112" rx="18" fill="#EDF4FF" stroke="#5F8FD8" stroke-width="1.5"/>
+  <circle cx="257" cy="386" r="29" fill="#245BB2"/><path d="M244 386h26M257 373v26" stroke="#FFF" stroke-width="4" stroke-linecap="round"/>
+  <text x="302" y="371" class="h2">Tutor 控制 Agent</text>
+  <text x="302" y="402" class="body">意图理解 · 导航路由 · 上下文装配 · Handoff · Action Board</text>
+  <g class="small" text-anchor="middle">
+    <rect x="867" y="351" width="158" height="34" rx="10" fill="#FFF" stroke="#9AB7E5"/><text x="946" y="374">ContextPolicy</text>
+    <rect x="1038" y="351" width="154" height="34" rx="10" fill="#FFF" stroke="#9AB7E5"/><text x="1115" y="374">Action Board</text>
+    <rect x="867" y="394" width="325" height="31" rx="10" fill="#DDEAFF"/><text x="1029" y="415">Global / Project / Checkpoint</text>
+  </g>
+
+  <path d="M713 442V479" stroke="#1E5BBB" stroke-width="3" marker-end="url(#blueArrow)"/>
+  <!-- agents -->
+  <text x="102" y="480" class="h3" fill="#173F7D">三类主责任接口</text>
+  <g filter="url(#shadow)">
+    <rect x="96" y="495" width="378" height="154" rx="18" fill="#EEF4FF" stroke="#6D97DB"/>
+    <rect x="489" y="495" width="430" height="154" rx="18" fill="#ECFAF6" stroke="#67B79B"/>
+    <rect x="934" y="495" width="400" height="154" rx="18" fill="#F5F0FF" stroke="#9D80DE"/>
+  </g>
+  <text x="285" y="535" text-anchor="middle" class="h3" fill="#1E55A5">Tutor Agent</text>
+  <text x="285" y="568" text-anchor="middle" class="body">协调 · 路由 · 工作台连续性</text><text x="285" y="599" text-anchor="middle" class="small">不直接写库｜不宣布掌握</text><text x="285" y="625" text-anchor="middle" class="mono small">tutor_agent</text>
+  <text x="704" y="535" text-anchor="middle" class="h3" fill="#12715B">Learning Design Agent</text>
+  <text x="704" y="568" text-anchor="middle" class="body">路线 · 讲义 · 题目规格 · 视觉产物</text><text x="704" y="599" text-anchor="middle" class="small">生成内容不是掌握证据</text><text x="704" y="625" text-anchor="middle" class="mono small">learning_design_agent</text>
+  <text x="1134" y="535" text-anchor="middle" class="h3" fill="#6849B5">Practice Agent</text>
+  <text x="1134" y="568" text-anchor="middle" class="body">判题 · 反馈 · 纠错 · 复习</text><text x="1134" y="599" text-anchor="middle" class="small">策略与评分由确定性规则控制</text><text x="1134" y="625" text-anchor="middle" class="mono small">practice_agent</text>
+
+  <!-- capability plane -->
+  <path d="M285 650V682M704 650V682M1134 650V682" stroke="#1E5BBB" stroke-width="2.5" marker-end="url(#blueArrow)"/>
+  <rect x="96" y="684" width="1238" height="98" rx="17" fill="#FBFCFF" stroke="#A5B9DA"/>
+  <text x="122" y="716" class="h3" fill="#35567E">Skill / Tool 能力平面</text>
+  <text x="122" y="747" class="body">路线规划 · 证据教学 · 实践验证 · 纠错闭环 · 间隔复习 · 五核记忆 · 文件工作区 · 本地 Agent 委派</text>
+  <rect x="1036" y="706" width="270" height="49" rx="12" fill="#FFF7E8" stroke="#DFAB52"/><text x="1171" y="728" text-anchor="middle" class="pill" fill="#95600F">外部 Workflow 仅作适配器</text><text x="1171" y="747" text-anchor="middle" class="tiny">不能决定评分、策略或五核</text>
+
+  <!-- evidence plane -->
+  <path d="M715 782V810" stroke="#E28717" stroke-width="3" marker-end="url(#orangeArrow)"/>
+  <rect x="96" y="812" width="1238" height="132" rx="18" fill="url(#navy)"/>
+  <text x="122" y="846" class="h3 white">事实平面｜唯一权威写入链</text>
+  <text x="122" y="881" class="body white" style="font-size:16px">行为 → EvidenceEvent → five_kernel_reducer → KernelMutation → KernelState → MemoryFact → MemoryModule → MemoryClaim</text>
+  <rect x="122" y="902" width="646" height="27" rx="13" fill="#FFFFFF" opacity=".14"/><text x="445" y="921" text-anchor="middle" class="small white">Reducer only · learner/project/checkpoint/session scope · idempotency</text>
+  <path d="M1050 901C1218 897 1260 842 1260 735" fill="none" stroke="#62D0C7" stroke-width="3" stroke-dasharray="9 7" marker-end="url(#tealArrow)"/>
+  <text x="1300" y="922" text-anchor="end" class="tiny white">KernelHead → Retriever → ContextPacket</text>
+
+  <!-- registry sidebar -->
+  <g filter="url(#shadow)"><rect x="1390" y="145" width="460" height="825" rx="24" fill="#FFFFFF" stroke="#9FB9E4" stroke-width="1.5"/></g>
+  <rect x="1390" y="145" width="460" height="94" rx="24" fill="url(#navy)"/><rect x="1390" y="214" width="460" height="25" fill="url(#navy)"/>
+  <text x="1420" y="185" class="h2 white">Architecture Registry</text>
+  <text x="1420" y="216" class="small white">机器可读架构快照 · validate_registry ✓</text>
+  <text x="1420" y="275" class="small">registry version</text><text x="1818" y="275" text-anchor="end" class="mono pill" fill="#174D9B">2026-08-17.1</text>
+  <text x="1420" y="305" class="small">digest</text><text x="1818" y="305" text-anchor="end" class="mono pill" fill="#174D9B">81d3d0bad945…</text>
+  <line x1="1420" y1="326" x2="1818" y2="326" stroke="#D7E2F3"/>
+  <g text-anchor="middle">
+    <rect x="1420" y="348" width="118" height="88" rx="14" fill="#EDF4FF"/><text x="1479" y="386" class="count" fill="#2059AA">3</text><text x="1479" y="416" class="small">Agents</text>
+    <rect x="1550" y="348" width="118" height="88" rx="14" fill="#EAF9F5"/><text x="1609" y="386" class="count" fill="#14735C">5</text><text x="1609" y="416" class="small">Kernels</text>
+    <rect x="1680" y="348" width="138" height="88" rx="14" fill="#F5F0FF"/><text x="1749" y="386" class="count" fill="#694CB2">34</text><text x="1749" y="416" class="small">Capabilities</text>
+    <rect x="1420" y="449" width="118" height="88" rx="14" fill="#FFF7E9"/><text x="1479" y="487" class="count" fill="#A2670D">25</text><text x="1479" y="517" class="small">Tools</text>
+    <rect x="1550" y="449" width="118" height="88" rx="14" fill="#F1F7FF"/><text x="1609" y="487" class="count" fill="#2059AA">12</text><text x="1609" y="517" class="small">Skills</text>
+    <rect x="1680" y="449" width="138" height="88" rx="14" fill="#EEF9F8"/><text x="1749" y="487" class="count" fill="#0F7D82">11</text><text x="1749" y="517" class="small">Workbenches</text>
+  </g>
+  <rect x="1420" y="552" width="398" height="67" rx="14" fill="#FFF2F2" stroke="#E8A1A7"/><text x="1460" y="582" class="count" fill="#C94A59">43</text><text x="1532" y="580" class="body">重要事件契约</text><text x="1532" y="603" class="small">important_events</text>
+
+  <text x="1420" y="657" class="h3" fill="#173F7D">关键登记原则</text>
+  <g class="body">
+    <circle cx="1431" cy="692" r="6" fill="#1E5BBB"/><text x="1450" y="698">只有 3 类主 Agent</text>
+    <circle cx="1431" cy="732" r="6" fill="#108A8B"/><text x="1450" y="738">五核是状态维度，不是 Agent</text>
+    <circle cx="1431" cy="772" r="6" fill="#E28717"/><text x="1450" y="778">唯一直接写入者：Reducer</text>
+    <circle cx="1431" cy="812" r="6" fill="#7652C7"/><text x="1450" y="818">Skill 组合 Tool，不私建权威</text>
+  </g>
+  <rect x="1420" y="846" width="398" height="84" rx="14" fill="#EEF7FF" stroke="#9AB8E7"/>
+  <text x="1438" y="874" class="pill" fill="#1C4F99">读路径</text><text x="1438" y="899" class="small">ContextPolicy → KernelHead + Memory Graph</text><text x="1438" y="919" class="small">→ Retriever → ContextPacket</text>
+
+  <rect x="70" y="997" width="1780" height="52" rx="15" fill="#0C3478"/>
+  <text x="960" y="1030" text-anchor="middle" class="body white">控制平面负责“协调”｜能力平面负责“产出与验证”｜事实平面负责“什么可以被相信”</text>
+</svg>

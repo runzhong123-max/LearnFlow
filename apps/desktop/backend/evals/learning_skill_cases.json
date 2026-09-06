@@ -1,0 +1,37 @@
+[
+  {"id": "guided-01", "message": "请解释什么是机会成本", "expected_skill": "guided_explanation"},
+  {"id": "guided-02", "message": "我没听懂牛顿第二定律，先简单讲清楚", "expected_skill": "guided_explanation"},
+  {"id": "guided-03", "message": "直接告诉我 SQL 索引为什么能加速查询", "expected_skill": "guided_explanation"},
+  {"id": "guided-04", "message": "举例讲清楚什么是条件概率", "expected_skill": "guided_explanation"},
+  {"id": "guided-05", "message": "这段关于闭包的定义我看不懂", "expected_skill": "guided_explanation"},
+  {"id": "guided-06", "message": "用一个生活例子解释复利", "expected_skill": "guided_explanation"},
+  {"id": "guided-07", "message": "先给我讲清梯度下降是什么", "expected_skill": "guided_explanation"},
+  {"id": "guided-08", "message": "HTTP 状态码是什么，举例说明", "expected_skill": "guided_explanation"},
+
+  {"id": "socratic-01", "message": "不要直接告诉我答案，引导我理解递归为什么会终止", "expected_skill": "socratic_dialogue"},
+  {"id": "socratic-02", "message": "为什么边际成本会随产量变化", "expected_skill": "socratic_dialogue"},
+  {"id": "socratic-03", "message": "我想自己推导贝叶斯公式", "expected_skill": "socratic_dialogue"},
+  {"id": "socratic-04", "message": "这个归纳证明应该怎么想", "expected_skill": "socratic_dialogue"},
+  {"id": "socratic-05", "message": "引导我找到二分查找不变量", "expected_skill": "socratic_dialogue"},
+  {"id": "socratic-06", "message": "不要直接告诉我，帮我想清缓存失效条件", "expected_skill": "socratic_dialogue"},
+  {"id": "socratic-07", "message": "证明中心极限定理时关键条件是什么", "expected_skill": "socratic_dialogue"},
+  {"id": "socratic-08", "message": "我卡在这个算法题的思路，请用问题引导我", "expected_skill": "socratic_dialogue"},
+
+  {"id": "feynman-01", "message": "我想用自己的话复述条件概率", "expected_skill": "feynman_dialogue"},
+  {"id": "feynman-02", "message": "让我把自然选择讲给别人听", "expected_skill": "feynman_dialogue"},
+  {"id": "feynman-03", "message": "检验我到底懂不懂事务隔离", "expected_skill": "feynman_dialogue"},
+  {"id": "feynman-04", "message": "我来用自己的话讲事件循环，你帮我找漏洞", "expected_skill": "feynman_dialogue"},
+  {"id": "feynman-05", "message": "通过复述帮我查漏 REST 幂等性", "expected_skill": "feynman_dialogue"},
+  {"id": "feynman-06", "message": "我先回忆光合作用的过程，再请你检查", "expected_skill": "feynman_dialogue"},
+  {"id": "feynman-07", "message": "我讲给一个新手听什么是置信区间", "expected_skill": "feynman_dialogue"},
+  {"id": "feynman-08", "message": "想确认我到底懂不懂梯度下降，让我先复述", "expected_skill": "feynman_dialogue"},
+
+  {"id": "worked-01", "message": "带我做一遍用 Python 写二分查找", "expected_skill": "worked_example_fading"},
+  {"id": "worked-02", "message": "先示范再让我做一个 SQL 窗口函数查询", "expected_skill": "worked_example_fading"},
+  {"id": "worked-03", "message": "用示例渐隐学习动态规划状态转移", "expected_skill": "worked_example_fading"},
+  {"id": "worked-04", "message": "给我一个完整例题，再逐步拿掉提示", "expected_skill": "worked_example_fading"},
+  {"id": "worked-05", "message": "先给样例代码再让我补全 React 状态更新", "expected_skill": "worked_example_fading"},
+  {"id": "worked-06", "message": "用渐隐示例教我配置 Docker 多阶段构建", "expected_skill": "worked_example_fading"},
+  {"id": "worked-07", "message": "给一个完整示例，然后让我完成缺失步骤", "expected_skill": "worked_example_fading"},
+  {"id": "worked-08", "message": "我想先照着例子理解归并排序，再自己写", "expected_skill": "worked_example_fading"}
+]

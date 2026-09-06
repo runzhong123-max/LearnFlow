@@ -1,0 +1,564 @@
+.composer-tools-capability {
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  container: composer-tools / inline-size;
+}
+
+.composer-capability-picker {
+  display: flex;
+  min-width: 190px;
+  flex: 0 1 280px;
+  align-items: stretch;
+  gap: 5px;
+}
+
+.composer-capability-picker__field {
+  position: relative;
+  min-width: 0;
+}
+
+.composer-capability-picker__field--method {
+  width: 158px;
+  flex: 1.35 1 158px;
+}
+
+.composer-capability-picker__field--tool {
+  width: 112px;
+  flex: 1 1 112px;
+}
+
+.composer-capability-picker__trigger {
+  display: grid;
+  min-height: 36px;
+  width: 100%;
+  grid-template-columns: 24px minmax(0, 1fr) 12px;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #d6e0da;
+  border-radius: 10px;
+  background: #fbfcfb;
+  padding: 4px 5px;
+  color: #40554a;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .14s ease, background .14s ease, box-shadow .14s ease;
+}
+
+.composer-capability-picker__trigger--method {
+  border-color: #d9dfeb;
+  background: linear-gradient(135deg, #fbfcff, #f7f9fd);
+  color: #435d82;
+}
+
+.composer-capability-picker__trigger:hover:not(:disabled) {
+  border-color: #97b7a6;
+  background: #f6faf7;
+}
+
+.composer-capability-picker__trigger--method:hover:not(:disabled) {
+  border-color: #9eacc7;
+  background: #f5f7fc;
+}
+
+.composer-capability-picker__trigger:focus-visible {
+  border-color: #5b9b7b;
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(47, 132, 91, .12);
+}
+
+.composer-capability-picker__trigger--method:focus-visible {
+  border-color: #7189b3;
+  box-shadow: 0 0 0 3px rgba(83, 107, 153, .12);
+}
+
+.composer-capability-picker__trigger[aria-expanded="true"] {
+  border-color: #70a98c;
+  background: #f1f8f4;
+  box-shadow: 0 3px 10px rgba(32, 73, 51, .08);
+}
+
+.composer-capability-picker__trigger--method[aria-expanded="true"] {
+  border-color: #8799ba;
+  background: #f2f5fb;
+}
+
+.composer-capability-picker__trigger:disabled {
+  cursor: not-allowed;
+  opacity: .54;
+}
+
+.composer-capability-picker__trigger-icon {
+  display: grid;
+  height: 24px;
+  width: 24px;
+  place-items: center;
+  border-radius: 7px;
+  background: #e8eef8;
+  color: #536d9a;
+  font-size: 8px;
+  font-weight: 850;
+}
+
+.composer-capability-picker__trigger-icon--tool {
+  background: #e8f3ed;
+  color: #21724f;
+  font-size: 10px;
+}
+
+.composer-capability-picker__trigger-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.composer-capability-picker__eyebrow {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+  color: #89958e;
+  font-size: 7.5px;
+  font-weight: 780;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.composer-capability-picker__eyebrow i {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #357151;
+  font-style: normal;
+}
+
+.composer-capability-picker__eyebrow i::before {
+  height: 4px;
+  width: 4px;
+  border-radius: 50%;
+  background: #2d9365;
+  box-shadow: 0 0 0 2px rgba(45, 147, 101, .12);
+  content: '';
+}
+
+.composer-capability-picker__selection {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 5px;
+  line-height: 1.15;
+}
+
+.composer-capability-picker__selection strong {
+  overflow: hidden;
+  min-width: 0;
+  flex: none;
+  max-width: 100%;
+  color: inherit;
+  font-size: 9.5px;
+  font-weight: 790;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-capability-picker__selection small {
+  overflow: hidden;
+  min-width: 0;
+  color: #8b9790;
+  font-size: 7.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-capability-picker__chevron {
+  display: grid;
+  height: 12px;
+  width: 12px;
+  place-items: center;
+  color: #87948d;
+  transition: transform .14s ease;
+}
+
+.composer-capability-picker__chevron svg {
+  height: 12px;
+  width: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.composer-capability-picker__trigger[aria-expanded="true"] .composer-capability-picker__chevron {
+  transform: rotate(180deg);
+}
+
+.composer-capability-picker__popover {
+  position: absolute;
+  z-index: 70;
+  bottom: calc(100% + 8px);
+  overflow: hidden;
+  width: min(340px, calc(100vw - 40px), 100cqw);
+  border: 1px solid #ccd8d1;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .985);
+  box-shadow: 0 18px 48px rgba(22, 46, 33, .2), 0 2px 8px rgba(22, 46, 33, .08);
+  animation: composer-capability-picker-in .13s ease-out;
+}
+
+.composer-capability-picker__popover--method {
+  left: 0;
+  border-color: #cdd5e3;
+}
+
+.composer-capability-picker__popover--tool {
+  display: grid;
+  right: 0;
+  max-height: min(560px, calc(100vh - 150px));
+  width: min(440px, calc(100vw - 40px), 100cqw);
+  grid-template-rows: auto minmax(200px, 1fr) auto minmax(120px, 160px);
+}
+
+.composer-capability-picker__popover--tool .composer-capability-picker__catalog,
+.composer-capability-picker__popover--tool .composer-capability-picker__options {
+  min-height: 0;
+  max-height: none;
+}
+
+.composer-capability-picker__popover-header {
+  display: grid;
+  gap: 2px;
+  border-bottom: 1px solid #edf0ee;
+  background: linear-gradient(135deg, #fafcfb, #f4f8f6);
+  padding: 10px 11px 9px;
+}
+
+.composer-capability-picker__popover--method .composer-capability-picker__popover-header {
+  background: linear-gradient(135deg, #fbfcff, #f3f6fb);
+}
+
+.composer-capability-picker__popover-header > span {
+  color: #73847b;
+  font-size: 7.5px;
+  font-weight: 820;
+  letter-spacing: .12em;
+}
+
+.composer-capability-picker__popover-header strong {
+  color: #274137;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.composer-capability-picker__popover--method .composer-capability-picker__popover-header strong {
+  color: #3d557d;
+}
+
+.composer-capability-picker__popover-header p {
+  margin: 2px 0 0;
+  color: #7d8c84;
+  font-size: 8.5px;
+  line-height: 1.45;
+}
+
+.composer-capability-picker__options {
+  display: grid;
+  max-height: min(300px, 48vh);
+  gap: 2px;
+  overflow-y: auto;
+  padding: 5px;
+  scrollbar-width: thin;
+}
+
+.composer-capability-picker__catalog {
+  display: grid;
+  max-height: min(330px, 48vh);
+  gap: 5px;
+  overflow-y: auto;
+  border-bottom: 1px solid #edf0ee;
+  padding: 7px;
+  scrollbar-width: thin;
+}
+
+.composer-capability-picker__section-heading,
+.composer-capability-picker__preference-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 1px 3px;
+}
+
+.composer-capability-picker__section-heading strong,
+.composer-capability-picker__preference-heading strong {
+  color: #40584c;
+  font-size: 8.5px;
+  font-weight: 820;
+}
+
+.composer-capability-picker__section-heading span,
+.composer-capability-picker__preference-heading span {
+  color: #8a968f;
+  font-size: 7.5px;
+  text-align: right;
+}
+
+.composer-capability-picker__section-heading--plugin {
+  margin-top: 3px;
+  border-top: 1px dashed #e1e8e4;
+  padding-top: 7px;
+}
+
+.composer-capability-picker__capabilities {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.composer-capability-picker__capability {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 25px minmax(0, 1fr);
+  gap: 6px;
+  border: 1px solid #e2e9e5;
+  border-radius: 9px;
+  background: #fafcfb;
+  padding: 6px;
+}
+
+.composer-capability-picker__capability--plugin {
+  border-color: #d9e3f1;
+  background: #f8faff;
+}
+
+.composer-capability-picker__capability-icon {
+  display: grid;
+  height: 25px;
+  width: 25px;
+  place-items: center;
+  border-radius: 7px;
+  background: #e9f3ed;
+  color: #24714f;
+  font-size: 9px;
+  font-weight: 820;
+}
+
+.composer-capability-picker__capability--plugin .composer-capability-picker__capability-icon {
+  background: #eaf0fa;
+  color: #526d9b;
+}
+
+.composer-capability-picker__capability-copy {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 2px;
+}
+
+.composer-capability-picker__capability-copy strong {
+  color: #31483d;
+  font-size: 9px;
+  font-weight: 790;
+  line-height: 1.25;
+}
+
+.composer-capability-picker__capability-copy small {
+  color: #7c8982;
+  font-size: 7.5px;
+  line-height: 1.35;
+}
+
+.composer-capability-picker__capability b {
+  grid-column: 2;
+  color: #559071;
+  font-size: 7px;
+  font-weight: 760;
+}
+
+.composer-capability-picker__capability--plugin b {
+  color: #607aa6;
+}
+
+.composer-capability-picker__plugin-empty {
+  margin: 0;
+  border-radius: 8px;
+  background: #f6f8f7;
+  padding: 7px 8px;
+  color: #7e8b84;
+  font-size: 7.5px;
+  line-height: 1.45;
+}
+
+.composer-capability-picker__preference-heading {
+  padding: 7px 8px 0;
+}
+
+.composer-capability-picker__option {
+  display: grid;
+  min-height: 43px;
+  width: 100%;
+  grid-template-columns: 27px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  padding: 6px 7px;
+  color: #3c5247;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.composer-capability-picker__option:hover:not(:disabled),
+.composer-capability-picker__option:focus-visible {
+  border-color: #d7e3dc;
+  outline: 0;
+  background: #f5f9f7;
+}
+
+.composer-capability-picker__popover--method .composer-capability-picker__option:hover:not(:disabled),
+.composer-capability-picker__popover--method .composer-capability-picker__option:focus-visible {
+  border-color: #d9dfeb;
+  background: #f6f8fc;
+}
+
+.composer-capability-picker__option--selected {
+  border-color: #bcd7c9;
+  background: #edf7f1;
+}
+
+.composer-capability-picker__popover--method .composer-capability-picker__option--selected {
+  border-color: #c8d1e3;
+  background: #eef2f9;
+}
+
+.composer-capability-picker__option:disabled {
+  cursor: not-allowed;
+  opacity: .48;
+}
+
+.composer-capability-picker__option-icon {
+  display: grid;
+  height: 27px;
+  width: 27px;
+  place-items: center;
+  border-radius: 8px;
+  background: #e9f3ed;
+  color: #24714f;
+  font-size: 10px;
+  font-weight: 820;
+}
+
+.composer-capability-picker__option-icon--method {
+  background: #edf0f7;
+  color: #5e7196;
+  font-size: 7px;
+  letter-spacing: -.02em;
+}
+
+.composer-capability-picker__option-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.composer-capability-picker__option-copy strong {
+  overflow: hidden;
+  color: #2f483c;
+  font-size: 10px;
+  font-weight: 780;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-capability-picker__popover--method .composer-capability-picker__option-copy strong {
+  color: #405778;
+}
+
+.composer-capability-picker__option-copy small {
+  overflow: hidden;
+  color: #7d8b83;
+  font-size: 8.5px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-capability-picker__option-status {
+  min-width: 26px;
+  border-radius: 99px;
+  color: #839087;
+  font-size: 7.5px;
+  font-weight: 760;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.composer-capability-picker__option--selected .composer-capability-picker__option-status {
+  color: #2c7653;
+}
+
+.composer-capability-picker__popover--method .composer-capability-picker__option--selected .composer-capability-picker__option-status {
+  color: #526b99;
+}
+
+.composer-shortcut-hint {
+  flex: 0 1 auto;
+}
+
+@container composer-tools (max-width: 620px) {
+  .composer-tools-capability > .mode-options {
+    min-width: 0;
+    flex: 1 1 220px;
+    justify-content: space-between;
+  }
+
+  .composer-tools-capability > .mode-options button {
+    min-width: 0;
+    flex: 1 1 auto;
+    padding-inline: 4px;
+    white-space: nowrap;
+  }
+
+  .composer-capability-picker {
+    width: 100%;
+    flex: 1 0 100%;
+    order: 3;
+  }
+
+  .composer-shortcut-hint {
+    display: none;
+  }
+}
+
+@container composer-tools (max-width: 390px) {
+  .composer-capability-picker__selection small {
+    display: none;
+  }
+
+  .composer-capability-picker__field--method {
+    flex-grow: 1.15;
+  }
+
+  .composer-capability-picker__capabilities {
+    grid-template-columns: 1fr;
+  }
+}
+
+@keyframes composer-capability-picker-in {
+  from {
+    transform: translateY(3px) scale(.99);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .composer-capability-picker__trigger,
+  .composer-capability-picker__chevron,
+  .composer-capability-picker__popover {
+    animation: none;
+    transition: none;
+  }
+}

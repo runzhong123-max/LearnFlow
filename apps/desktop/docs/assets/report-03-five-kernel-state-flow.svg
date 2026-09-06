@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <linearGradient id="bg3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F7FAFF"/><stop offset=".55" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F2F7FF"/></linearGradient>
+    <linearGradient id="navy3" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0B2F70"/><stop offset="1" stop-color="#165FC7"/></linearGradient>
+    <pattern id="grid3" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#D8E4F6" stroke-width="1" opacity=".34"/></pattern>
+    <filter id="shadow3" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="6" stdDeviation="9" flood-color="#173B70" flood-opacity=".12"/></filter>
+    <marker id="orange3" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#E28717"/></marker>
+    <marker id="teal3" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#108A8B"/></marker>
+    <marker id="blue3" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1E5BBB"/></marker>
+    <style>
+      text{font-family:"PingFang SC","Microsoft YaHei",sans-serif}.title{font-size:50px;font-weight:800;fill:#092B68}.subtitle{font-size:23px;font-weight:600;fill:#2B5598}.h2{font-size:27px;font-weight:780}.h3{font-size:22px;font-weight:760}.body{font-size:16px;fill:#314A69}.small{font-size:13px;fill:#61748D}.tiny{font-size:11px;fill:#6B7F96}.pill{font-size:14px;font-weight:700}.num{font-size:24px;font-weight:850;fill:#FFF}.white{fill:#FFF}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+    </style>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#bg3)"/><rect width="1920" height="1080" fill="url(#grid3)"/>
+  <text x="72" y="76" class="title">03｜五核状态流转八步：证据沉淀与上下文装配</text>
+  <text x="74" y="112" class="subtitle">一条学习行为经过分核归约、主题聚合与定向检索，最终成为 Agent 当前回合的完整上下文</text>
+  <rect x="1722" y="44" width="126" height="48" rx="24" fill="#EAF1FF" stroke="#9DB9EB"/><text x="1785" y="75" text-anchor="middle" class="pill" fill="#1D4E9B">FLOW 03</text>
+
+  <!-- stage legend -->
+  <g filter="url(#shadow3)"><rect x="70" y="145" width="1780" height="76" rx="19" fill="#FFFFFF" stroke="#B0C4E4"/></g>
+  <rect x="96" y="164" width="486" height="38" rx="19" fill="#FFF5E5"/><circle cx="122" cy="183" r="9" fill="#E28717"/><text x="144" y="189" class="pill" fill="#955C0C">阶段 A｜1–4 证据归约：行为 → 当前状态与原子事实</text>
+  <rect x="602" y="164" width="486" height="38" rx="19" fill="#EEF9F8"/><circle cx="628" cy="183" r="9" fill="#108A8B"/><text x="650" y="189" class="pill" fill="#0C7476">阶段 B｜5–6 记忆巩固：版本聚合 → 当前声明</text>
+  <rect x="1108" y="164" width="716" height="38" rx="19" fill="#EEF4FF"/><circle cx="1134" cy="183" r="9" fill="#1E5BBB"/><text x="1156" y="189" class="pill" fill="#1B50A0">阶段 C｜7–8 上下文装配：热点检索 → 多源 AgentContext</text>
+
+  <!-- top row -->
+  <text x="72" y="260" class="h2" fill="#A1620D">A｜行为证据进入相关核心</text>
+
+  <!-- step 1 -->
+  <g filter="url(#shadow3)"><rect x="70" y="282" width="395" height="264" rx="22" fill="#FFF9EF" stroke="#E5AE58" stroke-width="1.5"/></g>
+  <circle cx="113" cy="326" r="26" fill="#E28717"/><text x="113" y="335" text-anchor="middle" class="num">1</text>
+  <text x="153" y="334" class="h3" fill="#985C0B">行为形成证据事件</text>
+  <text x="96" y="377" class="body">对话 · 导航 · 答题 · 代码提交</text>
+  <path d="M112 410H421" stroke="#E28717" stroke-width="2.5" marker-end="url(#orange3)"/>
+  <rect x="96" y="427" width="343" height="64" rx="13" fill="#FFFFFF" stroke="#E7C27F"/>
+  <text x="268" y="454" text-anchor="middle" class="pill" fill="#985C0B">EvidenceEvent</text><text x="268" y="478" text-anchor="middle" class="small">事件类型 · scope · provenance · 幂等键</text>
+  <text x="96" y="520" class="small">输出：标准化、可回放的学习证据</text>
+
+  <path d="M465 414H504" stroke="#E28717" stroke-width="4" marker-end="url(#orange3)"/>
+
+  <!-- step 2 -->
+  <g filter="url(#shadow3)"><rect x="506" y="282" width="395" height="264" rx="22" fill="#FFF9EF" stroke="#E5AE58" stroke-width="1.5"/></g>
+  <circle cx="549" cy="326" r="26" fill="#E28717"/><text x="549" y="335" text-anchor="middle" class="num">2</text>
+  <text x="589" y="334" class="h3" fill="#985C0B">Reducer 逐核归约</text>
+  <text x="532" y="377" class="body">事件契约确定相关核心</text>
+  <g class="tiny" text-anchor="middle">
+    <rect x="532" y="401" width="98" height="31" rx="9" fill="#EAF1FF"/><text x="581" y="422">Structure</text>
+    <rect x="642" y="401" width="108" height="31" rx="9" fill="#EAF8F3"/><text x="696" y="422">Knowledge</text>
+    <rect x="762" y="401" width="112" height="31" rx="9" fill="#FFF0F1"/><text x="818" y="422">Human</text>
+    <rect x="588" y="443" width="108" height="31" rx="9" fill="#FFF5E2"/><text x="642" y="464">Value</text>
+    <rect x="708" y="443" width="108" height="31" rx="9" fill="#F3EDFF"/><text x="762" y="464">Practice</text>
+  </g>
+  <rect x="532" y="490" width="343" height="36" rx="10" fill="#FFF0DF"/><text x="704" y="513" text-anchor="middle" class="pill" fill="#985C0B">输出：每个相关核一份 KernelMutation</text>
+
+  <path d="M901 414H940" stroke="#E28717" stroke-width="4" marker-end="url(#orange3)"/>
+
+  <!-- step 3 -->
+  <g filter="url(#shadow3)"><rect x="942" y="282" width="395" height="264" rx="22" fill="#FFF9EF" stroke="#E5AE58" stroke-width="1.5"/></g>
+  <circle cx="985" cy="326" r="26" fill="#E28717"/><text x="985" y="335" text-anchor="middle" class="num">3</text>
+  <text x="1025" y="334" class="h3" fill="#985C0B">KernelState 更新</text>
+  <text x="968" y="377" class="body">相关核心同步当前状态</text>
+  <rect x="968" y="402" width="343" height="89" rx="14" fill="#FFFFFF" stroke="#E7C27F"/>
+  <text x="992" y="431" class="small">Structure：当前位置与路径</text><text x="992" y="455" class="small">Knowledge：理解、缺口与保持</text><text x="992" y="479" class="small">Human / Value / Practice：各自状态对象</text>
+  <text x="968" y="520" class="small">输出：五核当前状态投影</text>
+
+  <path d="M1337 414H1376" stroke="#E28717" stroke-width="4" marker-end="url(#orange3)"/>
+
+  <!-- step 4 -->
+  <g filter="url(#shadow3)"><rect x="1378" y="282" width="472" height="264" rx="22" fill="#FFF9EF" stroke="#E5AE58" stroke-width="1.5"/></g>
+  <circle cx="1421" cy="326" r="26" fill="#E28717"/><text x="1421" y="335" text-anchor="middle" class="num">4</text>
+  <text x="1461" y="334" class="h3" fill="#985C0B">MemoryFact 保存原子事实</text>
+  <text x="1404" y="377" class="body">每份 Mutation 形成对应核心的事实</text>
+  <rect x="1404" y="401" width="420" height="92" rx="14" fill="#FFFFFF" stroke="#E7C27F"/>
+  <text x="1428" y="429" class="small">kernel + subject + scope</text><text x="1428" y="454" class="small">evidence grade + assistance level</text><text x="1428" y="479" class="small">source EvidenceEvent + occurred_at</text>
+  <text x="1404" y="520" class="small">输出：分核、可追溯的原子学习事实</text>
+
+  <!-- bridge -->
+  <path d="M1614 546V579H260" fill="none" stroke="#108A8B" stroke-width="4" stroke-dasharray="10 8" marker-end="url(#teal3)"/>
+  <text x="72" y="616" class="h2" fill="#0C7476">B / C｜记忆巩固并装配下一轮上下文</text>
+
+  <!-- step 5 -->
+  <g filter="url(#shadow3)"><rect x="70" y="638" width="395" height="274" rx="22" fill="#EEF9F8" stroke="#5FB0AA" stroke-width="1.5"/></g>
+  <circle cx="113" cy="682" r="26" fill="#108A8B"/><text x="113" y="691" text-anchor="middle" class="num">5</text>
+  <text x="153" y="690" class="h3" fill="#0C7476">MemoryModule Vn 版本聚合</text>
+  <text x="96" y="733" class="body">同一 learner + kernel + subject</text>
+  <rect x="96" y="758" width="343" height="91" rx="14" fill="#FFFFFF" stroke="#9BCFCB"/>
+  <text x="120" y="786" class="small">当前版本证据闭包 + 新增 Fact</text><text x="120" y="811" class="small">REFINES / SUPERSEDES 连接父版本</text><text x="120" y="836" class="small">保留版本、增量与完整来源引用</text>
+  <text x="96" y="883" class="small">输出：唯一 active 的当前 Module 版本</text>
+
+  <path d="M465 775H504" stroke="#108A8B" stroke-width="4" marker-end="url(#teal3)"/>
+
+  <!-- step 6 -->
+  <g filter="url(#shadow3)"><rect x="506" y="638" width="395" height="274" rx="22" fill="#EEF9F8" stroke="#5FB0AA" stroke-width="1.5"/></g>
+  <circle cx="549" cy="682" r="26" fill="#108A8B"/><text x="549" y="691" text-anchor="middle" class="num">6</text>
+  <text x="589" y="690" class="h3" fill="#0C7476">MemoryClaim 长期声明</text>
+  <text x="532" y="733" class="body">证据集合支持当前长期结论</text>
+  <rect x="532" y="758" width="343" height="91" rx="14" fill="#FFFFFF" stroke="#9BCFCB"/>
+  <text x="556" y="786" class="small">SUPPORTS · CONTRADICTS</text><text x="556" y="811" class="small">REFINES · SUPERSEDES</text><text x="556" y="836" class="small">BLOCKS · ENABLES · SAME_SUBJECT</text>
+  <text x="532" y="883" class="small">输出：有来源、可持续校正的 Claim</text>
+
+  <path d="M901 775H940" stroke="#1E5BBB" stroke-width="4" marker-end="url(#blue3)"/>
+
+  <!-- step 7 -->
+  <g filter="url(#shadow3)"><rect x="942" y="638" width="395" height="274" rx="22" fill="#EEF4FF" stroke="#6D96D7" stroke-width="1.5"/></g>
+  <circle cx="985" cy="682" r="26" fill="#1E5BBB"/><text x="985" y="691" text-anchor="middle" class="num">7</text>
+  <text x="1025" y="690" class="h3" fill="#1B50A0">KernelHead + Retriever</text>
+  <text x="968" y="733" class="body">每核热点与完整记忆图协同检索</text>
+  <g text-anchor="middle" class="tiny">
+    <rect x="968" y="757" width="76" height="31" rx="9" fill="#FFF"/><text x="1006" y="778">focus 3</text>
+    <rect x="1054" y="757" width="80" height="31" rx="9" fill="#FFF"/><text x="1094" y="778">alerts 5</text>
+    <rect x="1144" y="757" width="84" height="31" rx="9" fill="#FFF"/><text x="1186" y="778">working 8</text>
+    <rect x="1238" y="757" width="74" height="31" rx="9" fill="#FFF"/><text x="1275" y="778">stable 5</text>
+  </g>
+  <rect x="968" y="805" width="343" height="48" rx="12" fill="#FFFFFF" stroke="#B1C6E8"/><text x="1140" y="826" text-anchor="middle" class="small">scope → subject → relevance + salience</text><text x="1140" y="846" text-anchor="middle" class="tiny">ContextPolicy 按 capability 选择策略</text>
+  <text x="968" y="883" class="small">输出：当前任务相关的五核记忆集合</text>
+
+  <path d="M1337 775H1376" stroke="#1E5BBB" stroke-width="4" marker-end="url(#blue3)"/>
+
+  <!-- step 8 -->
+  <g filter="url(#shadow3)"><rect x="1378" y="638" width="472" height="274" rx="22" fill="#EEF4FF" stroke="#6D96D7" stroke-width="1.5"/></g>
+  <circle cx="1421" cy="682" r="26" fill="#1E5BBB"/><text x="1421" y="691" text-anchor="middle" class="num">8</text>
+  <text x="1461" y="690" class="h3" fill="#1B50A0">多源上下文装配</text>
+  <rect x="1404" y="722" width="420" height="105" rx="14" fill="#FFFFFF" stroke="#B1C6E8"/>
+  <text x="1428" y="749" class="small">FiveKernelContextPacket</text><text x="1428" y="772" class="small">＋ Domain RAG ＋ Project Files</text><text x="1428" y="795" class="small">＋ Question / Attempt / Review</text><text x="1428" y="818" class="small">→ AgentContext → Agent / Workbench</text>
+  <text x="1404" y="855" class="tiny">Packet：heads · items · paths · conflicts · manifest</text>
+  <text x="1404" y="883" class="small">输出：当前回合的完整教学上下文</text>
+
+  <!-- next loop -->
+  <path d="M1614 912V948H48V562H82" fill="none" stroke="#1E5BBB" stroke-width="3" stroke-dasharray="10 8" marker-end="url(#blue3)"/>
+  <text x="690" y="972" class="small" fill="#1B50A0">Agent 产生讲解、引导或 Action → 学习者形成下一次行为 → 新一轮证据闭环</text>
+
+  <rect x="70" y="995" width="1780" height="55" rx="16" fill="url(#navy3)"/>
+  <text x="960" y="1029" text-anchor="middle" class="body white">1–2 证据标准化与分核｜3–4 当前状态与原子事实｜5–6 主题记忆与长期声明｜7–8 定向检索与多源装配</text>
+</svg>

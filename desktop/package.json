@@ -1,13 +1,10 @@
 {
-  "name": "learnflow-desktop",
+  "name": "learnflow-desktop-entry",
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "tauri dev",
-    "build": "tauri build",
-    "build:sidecar": "python scripts/build_sidecar.py"
-  },
-  "devDependencies": {
-    "@tauri-apps/cli": "^2.8.5"
+    "dev": "npm --prefix ../apps/desktop/desktop run dev",
+    "build": "npm --prefix ../apps/desktop/desktop run build",
+    "build:sidecar": "npm --prefix ../apps/desktop/desktop run build:sidecar"
   }
 }

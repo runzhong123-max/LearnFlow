@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "learnflow.xingchen-workflow-contract-snapshot.v1",
+  "capturedAt": "2026-09-02",
+  "source": {
+    "kind": "manual_platform_export",
+    "exportFileName": "岗位典型工作任务转化智能体-6.yml",
+    "exportSha256": "8ba6839ce2c63e6760474858cd874015d883976b01c9b8c1cfddab51f4bb62ee",
+    "credentialsIncluded": false,
+    "promptBodiesIncluded": false
+  },
+  "identity": {
+    "platform": "xunfei-xingchen",
+    "workflowName": "岗位典型工作任务转化智能体",
+    "editorWorkflowId": "660757",
+    "dslVersion": "1",
+    "editorStatusObserved": "editing",
+    "configuredApiFlowId": "7489976439921045504",
+    "editorIdToApiFlowIdMapping": "unconfirmed_from_local_evidence",
+    "publishedRevisionMatchesExport": "unknown"
+  },
+  "startContract": {
+    "inputs": [
+      {
+        "name": "AGENT_USER_INPUT",
+        "type": "string",
+        "required": true,
+        "wireFormat": "serialized compact JSON",
+        "maxCharactersEnforcedByLearnFlow": 500
+      }
+    ]
+  },
+  "endContract": {
+    "outputs": [
+      { "name": "interactive_url", "type": "string", "requiredForSuccess": true },
+      { "name": "pdf_url", "type": "string", "requiredForSuccess": false },
+      { "name": "handoff_url", "type": "string", "requiredForSuccess": false },
+      { "name": "feedback_url", "type": "string", "requiredForSuccess": false },
+      { "name": "failure_report", "type": "string", "requiredForSuccess": false }
+    ],
+    "adapterBehavior": "LearnFlow accepts JSON or exported Markdown labels, strips URL query and fragment data, treats meaningful failure_report as a structured provider failure, and fetches the versioned task bundle from interactive_url."
+  },
+  "observedGraph": {
+    "nodeCount": 19,
+    "modelFamily": "Spark Pro-128K",
+    "branches": [
+      "contract_ready",
+      "commit_ready",
+      "repair",
+      "second_review",
+      "failure"
+    ],
+    "knowledgeSources": [
+      "task_database",
+      "official_web",
+      "knowledge_base_pro_configured_but_observed_unavailable"
+    ]
+  },
+  "authorityBoundary": {
+    "workflowOutput": "untrusted_candidate",
+    "formalLearningTaskAuthority": "learnflow",
+    "assessmentAuthority": "practice_agent_deterministic_rules",
+    "kernelWritesAllowed": false
+  }
+}

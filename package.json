@@ -1,0 +1,15 @@
+{
+  "name": "learnflow-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev:web": "npm --prefix frontend run dev",
+    "dev:desktop": "npm --prefix apps/desktop/desktop run dev",
+    "build:web": "npm --prefix frontend run build",
+    "build:desktop-ui": "npm --prefix apps/desktop/frontend run build",
+    "build:desktop-sidecar": "npm --prefix apps/desktop/desktop run build:sidecar",
+    "build:desktop": "npm --prefix apps/desktop/desktop run build",
+    "check:layout": "bash scripts/verify_repository_layout.sh",
+    "test:shared": "python3 scripts/check_shared_contracts.py"
+  }
+}

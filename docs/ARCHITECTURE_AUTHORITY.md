@@ -1,5 +1,8 @@
 # LearnFlow 架构权威与维护边界
 
+Contract impact（2026-09-06 单仓共享核心 0.1.0）：五核、记忆、上下文、教学指导、观察与纠错实现迁入根仓 `packages/learning-core/src/learnflow_core/`，旧 `app.services.*` 保持模块身份兼容；三类 Agent/Kernel/schema 声明迁入 registry_core.py。两个宿主组合各自 registry，并公开 shared_core_version。无事件 schema、评分策略、数据库或身份迁移。共同事件契约由根跨端检查验证；不同宿主各自运行与测试。目录迁移详见根仓 docs/MONOREPO.md。
+
+
 Contract impact（`2026-09-06.4`）：登记 `teaching_response_v1` 只读表达数据契约，统一浏览器与正式 Tutor 的回答写法：直接回答、机制与贯穿例子、局部追问、代码和公式的教学衔接。权威文案位于 `backend/app/contracts/teaching-response.v1.json`，前端消费确定性导出并检查漂移。它不是新增 Product Skill 或教学策略机；原 `reply`/Markdown、三类 Agent、SkillRun、视觉意图门、EvidenceEvent 和五核语义不变，无数据库迁移。岗位插件将原始标识保留在工具结果与详情，正文使用准确名称与自然关系；视觉讲解保留 Markdown 换行，过长输入明确拒绝而不截断代码/公式。详见 [教学表达实现](implementation/TEACHING_RESPONSE_PRESENTATION.md)。
 
 Contract impact（`2026-09-06.2`）：迁移五核记忆证据与即时教学升级，保留当前学习路径 v2、岗位插件与任务交接合同。新增 semantic_observation_proposed 与 vnext_teaching_input_received 注册事件；模型观察仅为短期候选，教学指导由确定性 reducer 生成有 scope 的控制投影。Module policy 升至 memory-module-version-v2，完善撤回、独立事件门槛、检索过滤与偏好更新。旧事件与数据库结构保留；新旧客户端增量兼容，前后端应共同发布。详见 [迁移记录](MEMORY_UPGRADE_MIGRATION.md)。

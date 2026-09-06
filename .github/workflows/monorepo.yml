@@ -1,0 +1,37 @@
+name: LearnFlow cross-client contracts
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'codex/**']
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'apps/desktop/**'
+      - 'packages/**'
+      - 'scripts/check_shared_contracts.py'
+      - 'scripts/verify_repository_layout.sh'
+      - '.github/workflows/monorepo.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python -m pip install -r backend/requirements.txt -r apps/desktop/backend/requirements.txt
+      - run: python scripts/check_shared_contracts.py --python-web "$(command -v python)"
+      - run: bash scripts/verify_repository_layout.sh
+      - run: python -m pytest -q
+        working-directory: backend
+      - run: python -m pytest -q
+        working-directory: apps/desktop/backend
+      - run: npm ci && npm test && npm run build
+        working-directory: frontend
+      - run: npm ci && npm test && npm run build
+        working-directory: apps/desktop/frontend

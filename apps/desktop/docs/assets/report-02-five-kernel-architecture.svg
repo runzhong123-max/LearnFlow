@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F7FAFF"/><stop offset=".55" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F2F7FF"/></linearGradient>
+    <linearGradient id="navy2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0B2F70"/><stop offset="1" stop-color="#165FC7"/></linearGradient>
+    <pattern id="grid2" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#D8E4F6" stroke-width="1" opacity=".34"/></pattern>
+    <filter id="shadow2" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="6" stdDeviation="9" flood-color="#173B70" flood-opacity=".12"/></filter>
+    <marker id="blue2" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#1E5BBB"/></marker>
+    <marker id="orange2" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#E28717"/></marker>
+    <marker id="teal2" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#108A8B"/></marker>
+    <style>
+      text{font-family:"PingFang SC","Microsoft YaHei",sans-serif}.title{font-size:50px;font-weight:800;fill:#092B68}.subtitle{font-size:23px;font-weight:600;fill:#2B5598}.h2{font-size:27px;font-weight:780}.h3{font-size:21px;font-weight:760}.question{font-size:25px;font-weight:820}.body{font-size:16px;fill:#314A69}.small{font-size:13px;fill:#61748D}.tiny{font-size:11px;fill:#6B7F96}.pill{font-size:14px;font-weight:700}.white{fill:#FFF}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+    </style>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#bg2)"/><rect width="1920" height="1080" fill="url(#grid2)"/>
+  <text x="72" y="76" class="title">02｜五核架构：五个状态维度协同教学决策</text>
+  <text x="74" y="112" class="subtitle">行为证据按契约进入相关核心；每核形成 Fact → Module Vn → Claim，并通过 Head 支持当轮上下文</text>
+  <rect x="1722" y="44" width="126" height="48" rx="24" fill="#EAF1FF" stroke="#9DB9EB"/><text x="1785" y="75" text-anchor="middle" class="pill" fill="#1D4E9B">CORE 02</text>
+
+  <!-- agent context assembly -->
+  <g filter="url(#shadow2)"><rect x="70" y="145" width="1780" height="142" rx="22" fill="#FFFFFF" stroke="#93B0DF" stroke-width="1.5"/></g>
+  <text x="96" y="178" class="h2" fill="#12366E">多源 AgentContext 装配</text>
+  <g text-anchor="middle">
+    <rect x="96" y="195" width="300" height="64" rx="14" fill="#EDF4FF" stroke="#729BDD"/><text x="246" y="220" class="h3" fill="#1E55A5">五核状态上下文</text><text x="246" y="244" class="small">FiveKernelContextPacket</text>
+    <text x="416" y="236" class="h2" fill="#8BA0BD">＋</text>
+    <rect x="446" y="195" width="230" height="64" rx="14" fill="#EAF9F4" stroke="#61AF93"/><text x="561" y="220" class="h3" fill="#147159">领域知识</text><text x="561" y="244" class="small">Domain RAG</text>
+    <text x="696" y="236" class="h2" fill="#8BA0BD">＋</text>
+    <rect x="726" y="195" width="230" height="64" rx="14" fill="#FFF7E8" stroke="#DDAA52"/><text x="841" y="220" class="h3" fill="#96600F">项目文件</text><text x="841" y="244" class="small">File Tree / On-demand Read</text>
+    <text x="976" y="236" class="h2" fill="#8BA0BD">＋</text>
+    <rect x="1006" y="195" width="270" height="64" rx="14" fill="#F5F0FF" stroke="#987CDA"/><text x="1141" y="220" class="h3" fill="#6849B5">任务运行状态</text><text x="1141" y="244" class="small">Question / Attempt / Review</text>
+    <path d="M1276 227H1342" stroke="#1E5BBB" stroke-width="3" marker-end="url(#blue2)"/>
+    <rect x="1344" y="195" width="236" height="64" rx="14" fill="#EEF7FF" stroke="#6F9ADC"/><text x="1462" y="220" class="h3" fill="#1B50A0">AgentContext</text><text x="1462" y="244" class="small">当前任务完整上下文</text>
+    <path d="M1580 227H1630" stroke="#1E5BBB" stroke-width="3" marker-end="url(#blue2)"/>
+    <rect x="1632" y="195" width="192" height="64" rx="14" fill="url(#navy2)"/><text x="1728" y="220" class="h3 white">Agent</text><text x="1728" y="244" class="small white">Tutor / Design / Practice</text>
+  </g>
+
+  <!-- five heads retrieval bus -->
+  <path d="M246 287V317H960" fill="none" stroke="#108A8B" stroke-width="3" stroke-dasharray="9 7" marker-end="url(#teal2)"/>
+  <text x="72" y="334" class="h2" fill="#12366E">五个核心｜各核独立组织状态、证据与长期记忆</text>
+
+  <!-- cards -->
+  <g filter="url(#shadow2)">
+    <rect x="70" y="354" width="336" height="388" rx="22" fill="#EEF4FF" stroke="#5F8FD9" stroke-width="1.6"/>
+    <rect x="431" y="354" width="336" height="388" rx="22" fill="#ECFAF6" stroke="#57AD8D" stroke-width="1.6"/>
+    <rect x="792" y="354" width="336" height="388" rx="22" fill="#FFF4F4" stroke="#D2737D" stroke-width="1.6"/>
+    <rect x="1153" y="354" width="336" height="388" rx="22" fill="#FFF8E8" stroke="#D5A148" stroke-width="1.6"/>
+    <rect x="1514" y="354" width="336" height="388" rx="22" fill="#F5F0FF" stroke="#8E70D1" stroke-width="1.6"/>
+  </g>
+
+  <!-- structure -->
+  <rect x="70" y="354" width="336" height="59" rx="22" fill="#DCE9FF"/><rect x="70" y="393" width="336" height="20" fill="#DCE9FF"/>
+  <text x="238" y="390" text-anchor="middle" class="h2" fill="#2157A6">Structure</text>
+  <text x="238" y="449" text-anchor="middle" class="question" fill="#173F7C">走哪儿？</text>
+  <text x="94" y="483" class="pill" fill="#2157A6">状态主题</text><text x="94" y="508" class="body">路径 · 项目 · 关卡 · 依赖</text>
+  <text x="94" y="545" class="pill" fill="#2157A6">长期形成</text><text x="94" y="570" class="body">稳定路径模式与确认结构</text>
+  <text x="94" y="610" class="small">同核同主题记忆链</text>
+  <g text-anchor="middle" class="tiny"><rect x="94" y="624" width="76" height="32" rx="9" fill="#FFF"/><text x="132" y="645">Fact</text><path d="M170 640H186" stroke="#4E7FC8" stroke-width="2" marker-end="url(#blue2)"/><rect x="188" y="624" width="86" height="32" rx="9" fill="#FFF"/><text x="231" y="645">Module Vn</text><path d="M274 640H290" stroke="#4E7FC8" stroke-width="2" marker-end="url(#blue2)"/><rect x="292" y="624" width="88" height="32" rx="9" fill="#FFF"/><text x="336" y="645">Claim</text></g>
+  <rect x="94" y="678" width="286" height="40" rx="11" fill="#FFFFFF" opacity=".8"/><text x="238" y="703" text-anchor="middle" class="small">Head：位置 · 阻塞 · 返回锚点</text>
+
+  <!-- knowledge -->
+  <rect x="431" y="354" width="336" height="59" rx="22" fill="#DDF5EC"/><rect x="431" y="393" width="336" height="20" fill="#DDF5EC"/>
+  <text x="599" y="390" text-anchor="middle" class="h2" fill="#147159">Knowledge</text>
+  <text x="599" y="449" text-anchor="middle" class="question" fill="#105F4C">学什么？</text>
+  <text x="455" y="483" class="pill" fill="#147159">状态主题</text><text x="455" y="508" class="body">概念 · 问题 · 缺口 · 理解</text>
+  <text x="455" y="545" class="pill" fill="#147159">长期形成</text><text x="455" y="570" class="body">评分与迁移支持的理解声明</text>
+  <text x="455" y="610" class="small">同核同主题记忆链</text>
+  <g text-anchor="middle" class="tiny"><rect x="455" y="624" width="76" height="32" rx="9" fill="#FFF"/><text x="493" y="645">Fact</text><path d="M531 640H547" stroke="#3B9676" stroke-width="2" marker-end="url(#blue2)"/><rect x="549" y="624" width="86" height="32" rx="9" fill="#FFF"/><text x="592" y="645">Module Vn</text><path d="M635 640H651" stroke="#3B9676" stroke-width="2" marker-end="url(#blue2)"/><rect x="653" y="624" width="88" height="32" rx="9" fill="#FFF"/><text x="697" y="645">Claim</text></g>
+  <rect x="455" y="678" width="286" height="40" rx="11" fill="#FFFFFF" opacity=".8"/><text x="599" y="703" text-anchor="middle" class="small">Head：焦点 · 缺口 · 保持状态</text>
+
+  <!-- human -->
+  <rect x="792" y="354" width="336" height="59" rx="22" fill="#FFE2E4"/><rect x="792" y="393" width="336" height="20" fill="#FFE2E4"/>
+  <text x="960" y="390" text-anchor="middle" class="h2" fill="#A34250">Human</text>
+  <text x="960" y="449" text-anchor="middle" class="question" fill="#913844">怎么教？</text>
+  <text x="816" y="483" class="pill" fill="#A34250">状态主题</text><text x="816" y="508" class="body">负荷 · 注意 · 反馈 · 支持</text>
+  <text x="816" y="545" class="pill" fill="#A34250">长期形成</text><text x="816" y="570" class="body">确认偏好与跨会话支持模式</text>
+  <text x="816" y="610" class="small">同核同主题记忆链</text>
+  <g text-anchor="middle" class="tiny"><rect x="816" y="624" width="76" height="32" rx="9" fill="#FFF"/><text x="854" y="645">Fact</text><path d="M892 640H908" stroke="#C45B68" stroke-width="2" marker-end="url(#blue2)"/><rect x="910" y="624" width="86" height="32" rx="9" fill="#FFF"/><text x="953" y="645">Module Vn</text><path d="M996 640H1012" stroke="#C45B68" stroke-width="2" marker-end="url(#blue2)"/><rect x="1014" y="624" width="88" height="32" rx="9" fill="#FFF"/><text x="1058" y="645">Claim</text></g>
+  <rect x="816" y="678" width="286" height="40" rx="11" fill="#FFFFFF" opacity=".8"/><text x="960" y="703" text-anchor="middle" class="small">Head：负荷 · 偏好 · 支持需求</text>
+
+  <!-- value -->
+  <rect x="1153" y="354" width="336" height="59" rx="22" fill="#FFEBC5"/><rect x="1153" y="393" width="336" height="20" fill="#FFEBC5"/>
+  <text x="1321" y="390" text-anchor="middle" class="h2" fill="#94600E">Value</text>
+  <text x="1321" y="449" text-anchor="middle" class="question" fill="#80500A">为什么现在学？</text>
+  <text x="1177" y="483" class="pill" fill="#94600E">状态主题</text><text x="1177" y="508" class="body">目标 · 优先级 · 动机 · 相关性</text>
+  <text x="1177" y="545" class="pill" fill="#94600E">长期形成</text><text x="1177" y="570" class="body">用户确认的目标与价值排序</text>
+  <text x="1177" y="610" class="small">同核同主题记忆链</text>
+  <g text-anchor="middle" class="tiny"><rect x="1177" y="624" width="76" height="32" rx="9" fill="#FFF"/><text x="1215" y="645">Fact</text><path d="M1253 640H1269" stroke="#B57B18" stroke-width="2" marker-end="url(#blue2)"/><rect x="1271" y="624" width="86" height="32" rx="9" fill="#FFF"/><text x="1314" y="645">Module Vn</text><path d="M1357 640H1373" stroke="#B57B18" stroke-width="2" marker-end="url(#blue2)"/><rect x="1375" y="624" width="88" height="32" rx="9" fill="#FFF"/><text x="1419" y="645">Claim</text></g>
+  <rect x="1177" y="678" width="286" height="40" rx="11" fill="#FFFFFF" opacity=".8"/><text x="1321" y="703" text-anchor="middle" class="small">Head：目标 · 优先级 · 相关性</text>
+
+  <!-- practice -->
+  <rect x="1514" y="354" width="336" height="59" rx="22" fill="#E7DDFF"/><rect x="1514" y="393" width="336" height="20" fill="#E7DDFF"/>
+  <text x="1682" y="390" text-anchor="middle" class="h2" fill="#6548AE">Practice</text>
+  <text x="1682" y="449" text-anchor="middle" class="question" fill="#593B9D">怎么验证？</text>
+  <text x="1538" y="483" class="pill" fill="#6548AE">状态主题</text><text x="1538" y="508" class="body">尝试 · 辅助 · 反馈 · 迁移</text>
+  <text x="1538" y="545" class="pill" fill="#6548AE">长期形成</text><text x="1538" y="570" class="body">独立完成与变式迁移能力</text>
+  <text x="1538" y="610" class="small">同核同主题记忆链</text>
+  <g text-anchor="middle" class="tiny"><rect x="1538" y="624" width="76" height="32" rx="9" fill="#FFF"/><text x="1576" y="645">Fact</text><path d="M1614 640H1630" stroke="#795ABB" stroke-width="2" marker-end="url(#blue2)"/><rect x="1632" y="624" width="86" height="32" rx="9" fill="#FFF"/><text x="1675" y="645">Module Vn</text><path d="M1718 640H1734" stroke="#795ABB" stroke-width="2" marker-end="url(#blue2)"/><rect x="1736" y="624" width="88" height="32" rx="9" fill="#FFF"/><text x="1780" y="645">Claim</text></g>
+  <rect x="1538" y="678" width="286" height="40" rx="11" fill="#FFFFFF" opacity=".8"/><text x="1682" y="703" text-anchor="middle" class="small">Head：尝试 · 纠错 · 迁移准备</text>
+
+  <!-- evidence chain -->
+  <path d="M960 778V760" stroke="#E28717" stroke-width="3"/>
+  <path d="M238 760H1682" stroke="#E28717" stroke-width="2.5"/>
+  <path d="M238 760V744M599 760V744M960 760V744M1321 760V744M1682 760V744" stroke="#E28717" stroke-width="2.5" marker-end="url(#orange2)"/>
+  <g filter="url(#shadow2)"><rect x="70" y="778" width="1780" height="194" rx="22" fill="#FFFFFF" stroke="#D8A351" stroke-width="1.5"/></g>
+  <text x="96" y="813" class="h2" fill="#9A5E0D">行为证据按契约流入相关核心</text>
+  <g text-anchor="middle">
+    <rect x="96" y="842" width="220" height="72" rx="14" fill="#FFF8E9" stroke="#E2B264"/><text x="206" y="871" class="h3" fill="#94600E">学习行为</text><text x="206" y="897" class="small">对话 · 导航 · 答题 · 提交</text>
+    <path d="M316 878H364" stroke="#E28717" stroke-width="3" marker-end="url(#orange2)"/>
+    <rect x="366" y="842" width="250" height="72" rx="14" fill="#FFF8E9" stroke="#E2B264"/><text x="491" y="871" class="h3" fill="#94600E">EvidenceEvent</text><text x="491" y="897" class="small">事件类型 · scope · provenance</text>
+    <path d="M616 878H664" stroke="#E28717" stroke-width="3" marker-end="url(#orange2)"/>
+    <rect x="666" y="842" width="250" height="72" rx="14" fill="#FFF8E9" stroke="#E2B264"/><text x="791" y="871" class="h3" fill="#94600E">Reducer</text><text x="791" y="897" class="small">确定性逐核裁决</text>
+    <path d="M916 878H964" stroke="#E28717" stroke-width="3" marker-end="url(#orange2)"/>
+    <rect x="966" y="842" width="250" height="72" rx="14" fill="#FFF8E9" stroke="#E2B264"/><text x="1091" y="871" class="h3" fill="#94600E">KernelMutation</text><text x="1091" y="897" class="small">每个相关核一份变化</text>
+    <path d="M1216 878H1264" stroke="#E28717" stroke-width="3" marker-end="url(#orange2)"/>
+    <rect x="1266" y="842" width="270" height="72" rx="14" fill="#FFF8E9" stroke="#E2B264"/><text x="1401" y="871" class="h3" fill="#94600E">KernelState</text><text x="1401" y="897" class="small">相关核心更新当前状态</text>
+    <path d="M1536 878H1584" stroke="#E28717" stroke-width="3" marker-end="url(#orange2)"/>
+    <rect x="1586" y="842" width="238" height="72" rx="14" fill="#EEF9F8" stroke="#65B5AE"/><text x="1705" y="871" class="h3" fill="#0C7476">MemoryFact</text><text x="1705" y="897" class="small">进入对应核的主题记忆链</text>
+  </g>
+  <rect x="96" y="928" width="1728" height="27" rx="13" fill="#FFF3DE"/><text x="960" y="947" text-anchor="middle" class="small" fill="#8F5A10">同一事件可更新多个相关核心；每个核心依据自身状态对象与证据规则形成独立记忆链</text>
+
+  <rect x="70" y="995" width="1780" height="55" rx="16" fill="url(#navy2)"/>
+  <text x="960" y="1029" text-anchor="middle" class="body white">掌握更新统一经过证据链｜教学上下文统一经过 Head、Retriever 与多源 AgentContext 装配</text>
+</svg>

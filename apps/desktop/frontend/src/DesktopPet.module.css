@@ -1,0 +1,98 @@
+.pet { box-sizing: border-box; display: flex; height: 100vh; min-height: 0; flex-direction: column; overflow: hidden; border: 1px solid rgba(133, 104, 255, .42); border-radius: 24px; background: radial-gradient(circle at 20% 8%, #f5efff, #e8f7ff 45%, #edf5ff); color: #27305a; font-family: Inter, "Microsoft YaHei", sans-serif; }
+.pet[data-appearance="warm"] { border-color: rgba(219, 140, 69, .42); background: radial-gradient(circle at 18% 8%, #fff5e7, #fff0df 45%, #f5f2ff); color: #5b3c2b; }
+.pet[data-appearance="dusk"] { border-color: rgba(132, 143, 255, .55); background: radial-gradient(circle at 20% 8%, #292b57, #1d2445 48%, #151b35); color: #eef1ff; }
+.header { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; padding: 12px 15px; cursor: grab; user-select: none; }
+.header:active { cursor: grabbing; }
+.header strong { font-size: 14px; letter-spacing: .02em; }
+.header button { border: 0; background: transparent; color: #7c86a7; font-size: 22px; cursor: pointer; }
+.headerActions { display: flex; align-items: center; gap: 4px; }
+.header .settingsButton { font-size: 14px; }
+.preferences { display: grid; flex: 0 0 auto; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; gap: 6px; margin: 0 12px 8px; border: 1px solid rgba(133, 149, 205, .24); border-radius: 11px; background: rgba(255,255,255,.62); padding: 7px; }
+.preferences label { display: grid; gap: 3px; color: #7180a6; font-size: 10px; }
+.preferences select, .preferences button { min-width: 0; border: 1px solid #d7def4; border-radius: 7px; background: rgba(255,255,255,.92); padding: 5px; color: #3d4772; font: inherit; font-size: 10px; }
+.preferences button { cursor: pointer; }
+.reminderPreference span { display: flex; align-items: center; gap: 4px; color: #59658b; white-space: nowrap; }
+.reminderPreference input { margin: 0; }
+.pet[data-appearance="dusk"] .header button { color: #c5ccf4; }
+.compactPet { min-width: 0; min-height: 0; align-items: center; justify-content: center; border-radius: 34px; padding: 7px 8px 12px; }
+.compactHeader { position: absolute; top: 0; right: 0; left: 0; display: flex; align-items: center; justify-content: space-between; padding: 7px 11px; cursor: grab; user-select: none; }
+.compactHeader:active { cursor: grabbing; }
+.compactHeader strong { color: #69769a; font-size: 10px; letter-spacing: .08em; }
+.compactHeader button { border: 0; background: transparent; color: #7c86a7; font-size: 17px; cursor: pointer; }
+.compactAvatar { display: grid; place-items: center; margin-top: 16px; }
+.compactCue { max-width: 158px; overflow: hidden; border: 0; border-radius: 999px; background: rgba(255,255,255,.76); padding: 5px 10px; color: #59658b; font: inherit; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; box-shadow: 0 3px 9px rgba(76, 93, 157, .1); }
+.pet[data-appearance="dusk"].compactPet .compactCue { background: rgba(49, 60, 103, .76); color: #d5dcfa; }
+.pet[data-appearance="dusk"] .preferences, .pet[data-appearance="dusk"] .taskPanel, .pet[data-appearance="dusk"] .contextChip { border-color: rgba(175, 187, 255, .24); background: rgba(49, 60, 103, .76); }
+.pet[data-appearance="dusk"] .preferences label, .pet[data-appearance="dusk"] .contextChip span, .pet[data-appearance="dusk"] .empty, .pet[data-appearance="dusk"] .status { color: #bbc5ed; }
+.pet[data-appearance="dusk"] .preferences select, .pet[data-appearance="dusk"] .preferences button, .pet[data-appearance="dusk"] .composer { border-color: #596698; background: rgba(17, 23, 49, .84); color: #eef1ff; }
+.pet[data-appearance="dusk"] .composer textarea { color: #eef1ff; }
+.pet[data-appearance="dusk"] .assistant { background: rgba(64, 75, 121, .88); }
+.pet[data-appearance="dusk"] .taskTitle:hover:not(:disabled) { color: #d8d6ff; }
+.taskPanel { margin: 0 12px 7px; border: 1px solid rgba(133, 149, 205, .22); border-radius: 12px; background: rgba(255,255,255,.52); padding: 8px; }
+.taskPanel { display: grid; gap: 5px; }
+.reviewReminder { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 8px; margin: 0 12px 7px; border: 1px solid rgba(133, 149, 205, .22); border-radius: 10px; background: rgba(255,255,255,.52); padding: 7px 8px; }
+.reviewReminder div { display: grid; min-width: 0; gap: 2px; }
+.reviewReminder strong { font-size: 11px; }
+.reviewReminder span { overflow: hidden; color: #7180a6; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.reviewReminder button { flex: 0 0 auto; border: 0; border-radius: 8px; background: #edf0ff; padding: 5px 7px; color: #5143a0; font: inherit; font-size: 11px; cursor: pointer; }
+.reviewReminder button:disabled { cursor: default; opacity: .5; }
+.taskCard { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 6px; font-size: 11px; }
+.taskCard span { border-radius: 999px; background: #e1f3ff; padding: 3px 5px; color: #397196; font-size: 10px; white-space: nowrap; }
+.taskTitle { overflow: hidden; border: 0; background: transparent; color: inherit; cursor: pointer; font: inherit; font-weight: 600; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.taskTitle:hover:not(:disabled) { color: #5143a0; text-decoration: underline; }
+.taskTitle:disabled { cursor: default; opacity: .55; }
+.taskCard button, .contextChip button { border: 0; border-radius: 8px; background: #edf0ff; padding: 5px 7px; color: #5143a0; font: inherit; font-size: 11px; cursor: pointer; }
+.referenceTray { flex: 0 0 auto; margin: 0 12px 6px; }
+.pastedImageTray { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 7px; flex: 0 0 auto; margin: 0 12px 6px; border: 1px solid rgba(133, 149, 205, .2); border-radius: 10px; background: rgba(255,255,255,.62); padding: 6px; }
+.pastedImageTray img { display: block; width: 46px; height: 38px; border-radius: 6px; object-fit: cover; background: #e8edf7; }
+.pastedImageTray div { display: grid; min-width: 0; gap: 2px; }
+.pastedImageTray strong { color: #504490; font-size: 11px; }
+.pastedImageTray span { overflow: hidden; color: #7180a6; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.pastedImageTray button { width: 24px; height: 24px; border: 0; border-radius: 50%; background: #edf0ff; color: #5143a0; font: inherit; font-size: 15px; line-height: 1; cursor: pointer; }
+.contextChip { display: flex; align-items: flex-start; justify-content: space-between; gap: 7px; border: 1px solid rgba(133, 149, 205, .2); border-radius: 10px; background: rgba(255,255,255,.62); padding: 7px; }
+.contextChip div { min-width: 0; font-size: 10px; }
+.contextChip strong { display: block; color: #504490; font-size: 11px; }
+.contextChip span { color: #7180a6; }
+.contextChip p { display: -webkit-box; margin: 3px 0 0; overflow: hidden; color: #59658b; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.contextChip aside { display: grid; gap: 4px; flex: 0 0 auto; }
+.taskCard button:disabled, .contextChip button:disabled, .attachmentPopover button:disabled, .sendButton:disabled { cursor: default; opacity: .5; }
+.status { flex: 0 0 auto; margin: 0 14px 5px; color: #7b86a8; font-size: 11px; text-align: center; }
+.selectionStatus { flex: 0 0 auto; margin: 0 12px 6px; }
+.selectionStatus > button { border: 0; background: transparent; padding: 0; color: #6d63bc; font: inherit; font-size: 10px; cursor: pointer; }
+.selectionStatus > button:hover { color: #514490; text-decoration: underline; }
+.selectionEditor { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 5px; margin-top: 4px; }
+.selectionEditor textarea { box-sizing: border-box; width: 100%; min-height: 54px; border: 1px solid rgba(133, 149, 205, .28); border-radius: 8px; background: rgba(255,255,255,.78); padding: 6px; color: #293259; font: inherit; font-size: 10px; line-height: 1.4; resize: vertical; }
+.selectionEditor > button { border: 0; border-radius: 7px; background: #edf0ff; padding: 5px 7px; color: #5143a0; font: inherit; font-size: 10px; cursor: pointer; }
+.messages { display: flex; min-height: 0; flex: 1; flex-direction: column; gap: 7px; overflow-y: auto; padding: 8px 14px; }
+.messages article { max-width: 88%; padding: 8px 10px; border-radius: 13px; font-size: 12px; line-height: 1.45; white-space: pre-wrap; }
+.assistant { align-self: flex-start; background: rgba(255,255,255,.8); box-shadow: 0 4px 12px rgba(86,102,163,.1); }
+.user { align-self: flex-end; background: #745cf2; color: #fff; }
+.assistant :global(.markdown-body) { color: inherit; font-size: inherit; line-height: inherit; white-space: normal; }
+.assistant :global(.markdown-body > :first-child) { margin-top: 0; }
+.assistant :global(.markdown-body > :last-child) { margin-bottom: 0; }
+.assistant :global(.markdown-body p), .assistant :global(.markdown-body ul), .assistant :global(.markdown-body ol), .assistant :global(.markdown-body pre) { margin: 0 0 6px; }
+.assistant :global(.markdown-body pre) { overflow-x: auto; border-radius: 7px; background: rgba(39, 48, 90, .08); padding: 6px; font-size: 10px; }
+.assistant :global(.markdown-body a) { color: #5143a0; }
+.empty { margin: auto 8px; color: #7180a6; font-size: 11px; line-height: 1.55; text-align: center; }
+.composer { display: flex; flex: 0 0 auto; flex-direction: column; margin: 0 12px 12px; border: 1px solid rgba(133, 149, 205, .28); border-radius: 16px; background: rgba(255,255,255,.92); box-shadow: 0 7px 20px rgba(76, 93, 157, .12); overflow: visible; }
+.composer textarea { box-sizing: border-box; width: 100%; min-width: 0; min-height: 66px; max-height: 118px; border: 0; border-radius: 16px 16px 0 0; background: transparent; padding: 12px 13px 5px; color: #293259; font: inherit; font-size: 12px; line-height: 1.5; outline: none; resize: none; }
+.composer textarea::placeholder { color: #99a3bb; }
+.composer:focus-within { border-color: #8d79f7; box-shadow: 0 0 0 3px rgba(117,92,242,.12), 0 7px 20px rgba(76, 93, 157, .12); }
+.documentInput { display: none; }
+.composerFooter { display: flex; align-items: center; justify-content: flex-end; min-height: 36px; padding: 0 8px 8px 10px; }
+.attachmentMenu { position: relative; margin-right: 7px; }
+.attachmentMenu > summary { display: grid; width: 28px; height: 28px; place-items: center; border: 0; border-radius: 50%; color: #4b5678; cursor: pointer; list-style: none; }
+.attachmentMenu > summary::-webkit-details-marker { display: none; }
+.attachmentMenu > summary:hover { background: #eef1ff; color: #5143a0; }
+.attachmentMenu > summary svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.attachmentPopover { position: absolute; z-index: 10; right: 0; bottom: calc(100% + 8px); display: grid; min-width: 142px; gap: 2px; border: 1px solid rgba(133, 149, 205, .24); border-radius: 11px; background: #fff; padding: 5px; box-shadow: 0 12px 30px rgba(50, 65, 120, .2); }
+.attachmentPopover button { border: 0; border-radius: 7px; background: transparent; padding: 7px 8px; color: #3d4772; font: inherit; font-size: 11px; text-align: left; cursor: pointer; white-space: nowrap; }
+.attachmentPopover button:hover:not(:disabled) { background: #f0f2ff; color: #5143a0; }
+.sendButton { display: grid; width: 32px; height: 32px; place-items: center; border: 0; border-radius: 50%; background: #9eafff; color: #fff; font: inherit; font-size: 15px; cursor: pointer; transition: background .15s ease, transform .15s ease; }
+.sendButton:hover:not(:disabled) { background: #725bf0; transform: translateY(-1px); }
+.sendButton svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+.pet[data-appearance="dusk"] .composer textarea::placeholder { color: #98a4cb; }
+.pet[data-appearance="dusk"] .attachmentMenu > summary { color: #c8d0ee; }
+.pet[data-appearance="dusk"] .attachmentMenu > summary:hover, .pet[data-appearance="dusk"] .attachmentPopover button:hover:not(:disabled) { background: rgba(93, 107, 168, .45); color: #fff; }
+.pet[data-appearance="dusk"] .attachmentPopover { border-color: #596698; background: #242b52; }
+.pet[data-appearance="dusk"] .attachmentPopover button { color: #dde4ff; }

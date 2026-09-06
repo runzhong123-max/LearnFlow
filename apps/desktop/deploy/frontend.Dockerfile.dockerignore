@@ -1,0 +1,24 @@
+.git
+**/.env
+**/.env.local
+**/node_modules
+**/dist
+**/__pycache__
+**/.pytest_cache
+backend/venv
+backend/learnflow.db*
+backend/backups
+backend/runtime
+backend/data
+data
+output
+
+# Role Atlas has its own Docker build context and ignore file.
+apps/role-atlas
+
+.monorepo-local
+**/venv
+**/.venv
+**/.private
+**/*.db
+**/*.sqlite3

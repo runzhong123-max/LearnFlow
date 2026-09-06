@@ -1,0 +1,23 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "desktop-main",
+  "description": "Minimal desktop window permissions; project files remain behind the authenticated sidecar API.",
+  "windows": ["main", "pet"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-set-size",
+    "core:window:allow-set-min-size",
+    "core:window:allow-show",
+    "core:window:allow-set-focus",
+    "core:webview:allow-create-webview-window",
+    "dialog:allow-open",
+    "global-shortcut:default",
+    "notification:default",
+    "http:default",
+    {
+      "identifier": "http:allow-fetch",
+      "allow": [{ "url": "http://127.0.0.1:*" }]
+    }
+  ]
+}
