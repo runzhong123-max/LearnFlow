@@ -1,0 +1,14 @@
+.profile-learning-overview { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 24px 0; }
+.profile-learning-section { padding: 22px; border: 1px solid #dfe8e1; border-radius: 14px; background: #fff; min-width: 0; }
+.profile-learning-section > header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.profile-learning-section h2 { font-size: 18px; margin: 0; color: #233c31; }
+.profile-learning-section button { border: 0; background: #edf5ef; color: #276148; border-radius: 7px; padding: 6px 12px; cursor: pointer; }
+.profile-learning-section ul { list-style: none; padding: 0; margin: 16px 0 0; }
+.profile-learning-section li + li { border-top: 1px solid #eef2ee; margin-top: 14px; padding-top: 14px; }
+.profile-learning-section li p { margin: 0 0 6px; line-height: 1.65; overflow-wrap: anywhere; }
+.profile-learning-section li small { display: block; color: #66786e; font-size: 12px; line-height: 1.7; }
+.profile-learning-section li time { color: #7a847e; }
+.profile-record-disclosure > summary { cursor: pointer; padding: 16px 0; font-weight: 600; color: #345648; }
+.profile-record-disclosure[open] > summary { margin-bottom: 16px; }
+.profile-overview-footer { display: flex; gap: 16px; align-items: center; justify-content: space-between; color: #66786e; font-size: 13px; margin-bottom: 20px; }
+@media (max-width: 760px) { .profile-learning-overview { grid-template-columns: 1fr; } .profile-overview-footer { align-items: flex-start; flex-direction: column; } }

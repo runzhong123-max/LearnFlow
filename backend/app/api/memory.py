@@ -401,12 +401,21 @@ async def submit_claim_feedback(
     if not row:
         raise HTTPException(404, "Memory claim not found")
     claim_node, claim = row
+    if claim_node.status not in {"active", "legacy"}:
+        raise HTTPException(409, "这条认识已被更新或撤回，请刷新后修改当前认识")
     event_type = {
         "confirm": "memory_correction_confirmed",
         "correct": "memory_correction_added",
         "retract": "memory_correction_retracted",
     }[data.action]
     payload = dict(claim_node.payload or {})
+    evidence_ids = list(payload.get("evidence_fact_ids", []))
+    evidence_nodes = list((await db.execute(select(MemoryNode).where(
+        MemoryNode.learner_id == current.learner.id,
+        MemoryNode.node_type == "fact", MemoryNode.id.in_(evidence_ids),
+    ))).scalars().all())
+    affected_keys = sorted({str((node.payload or {}).get("key")) for node in evidence_nodes
+                            if (node.payload or {}).get("key") not in {None, "memory_feedback"}})
     event = await record_event(
         db,
         learner_id=current.learner.id,
@@ -422,6 +431,8 @@ async def submit_claim_feedback(
             "correction": data.correction.strip(),
             "reason": data.reason.strip(),
             "previous_claim": claim_node.text,
+            "affected_keys": affected_keys,
+            "affected_fact_ids": [node.id for node in evidence_nodes],
         },
         confidence=1.0,
         provenance={"self_report": True, "append_only_feedback": True},
@@ -445,8 +456,8 @@ async def submit_claim_feedback(
             confidence=1.0,
             event_id=event.id,
         )
-    if data.action == "retract":
-        claim_node.status = "challenged"
+    if data.action in {"correct", "retract"}:
+        claim_node.status = "retracted" if data.action == "retract" else "superseded"
     await db.commit()
     queued = (await db.execute(select(MemorySynthesisRun).where(
         MemorySynthesisRun.learner_id == current.learner.id,
@@ -458,5 +469,7 @@ async def submit_claim_feedback(
         "event_id": event.id,
         "fact_id": correction_fact.id if correction_fact else None,
         "queued_consolidation_id": queued.id if queued else None,
-        "status": "queued",
+        "status": "retracted" if data.action == "retract" else "superseded" if data.action == "correct" else "confirmed",
+        "effective": True,
+        "consolidation_status": "queued" if queued else "not_required",
     }

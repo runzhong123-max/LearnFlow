@@ -2079,6 +2079,12 @@ async def _generate_tutor_reply(
         "available_projects": [{"id": p.id, "name": p.name, "description": p.description} for p in projects],
         "learning_projection": prompt_projection,
         "five_kernel_context": five_kernel_context,
+        "immediate_teaching_policy": (
+            "先执行five_kernel_context.teaching_guidance中当前有效的指导，"
+            "它们优先于历史默认偏好，无需等长期合成或再问一次确认。"
+            "指导仅影响当前教学安排，不改变判题、通过条件或掌握状态；"
+            "可逆的澄清建议不等于已确认的学生事实。"
+        ),
         "session_handoff": dict(session.context_summary or {}) if session.session_type == "project" else {},
         "recent_project_reference": dict(session.context_summary or {}) if session.session_type == "global" else {},
         "project_workspace": project_workspace,
@@ -2137,6 +2143,10 @@ async def _generate_tutor_reply(
         else PROJECT_TUTOR_PROMPT if session.session_type == "project"
         else GLOBAL_MAIN_AGENT_PROMPT
     )
+    immediate_guidance = list(five_kernel_context.get("teaching_guidance") or [])
+    context["five_kernel_context"] = {
+        key: value for key, value in five_kernel_context.items() if key != "teaching_guidance"
+    }
     rendered_context = _render_prompt_context(context)
     system = (
         TUTOR_SYSTEM_PROMPT
@@ -2192,6 +2202,11 @@ async def _generate_tutor_reply(
         elif item.role == "assistant":
             messages.append(AIMessage(content=_decode_tutor_content(item.content)[0]))
 
+    if immediate_guidance:
+        messages.append(HumanMessage(content=(
+            "本轮教学指导（正式五核当前有效控制投影，仅指导下一步，不是掌握结论）：\n"
+            + json.dumps({"teaching_guidance": immediate_guidance}, ensure_ascii=False)
+        )))
     model_budget = max(0.01, settings.tutor_model_budget_seconds)
     deadline = model_deadline(model_budget)
     provider_kwargs = openai_chat_provider_kwargs(
@@ -2488,7 +2503,9 @@ async def _user_message_event(
     user_message: AgentMessage,
     message: str,
     learning_task_id: int | None,
+    direct_user_text: str | None = None,
 ) -> EvidenceEvent:
+    direct_text = direct_user_text if direct_user_text is not None else message
     meta = dict(user_message.meta_data or {})
     event_id = meta.get("user_event_id")
     if isinstance(event_id, int):
@@ -2511,13 +2528,14 @@ async def _user_message_event(
         checkpoint_id=session.checkpoint_id,
         session_id=session.id,
         payload={
-            "text": message,
+            "text": direct_text,
+            "direct_user_input": bool(direct_text.strip()),
             "learning_task_id": learning_task_id,
             "interaction_scope": (
                 "learning_task_conversation" if learning_task_id else "conversation"
             ),
         },
-        confidence=0.25 if message.strip().lower() in {
+        confidence=0.25 if direct_text.strip().lower() in {
             "懂了", "明白了", "会了", "got it", "understood",
         } else 1.0,
         provenance={"message_id": user_message.id},
@@ -2535,6 +2553,7 @@ async def process_turn(
     session: AgentSession,
     *,
     message: str,
+    direct_user_text: str | None = None,
     project_id: int | None = None,
     checkpoint_id: int | None = None,
     selected_action_id: int | None = None,
@@ -2548,6 +2567,12 @@ async def process_turn(
         session_id=session.id,
         client_turn_id=client_turn_id,
     )
+    direct_text = direct_user_text if direct_user_text is not None else message
+    if replay_message and (
+        replay_message.content != message
+        or (replay_message.meta_data or {}).get("direct_user_text", replay_message.content) != direct_text
+    ):
+        raise ValueError("client_turn_id 已用于另一条消息或不同的直接输入")
     prepared_skill_turn = await _resolve_prepared_skill_turn(
         db,
         session=session,
@@ -2556,6 +2581,9 @@ async def process_turn(
         replay_message=replay_message,
     )
     if prepared_skill_turn:
+        prepared_message = prepared_skill_turn[0]
+        if (prepared_message.meta_data or {}).get("direct_user_text", prepared_message.content) != direct_text:
+            raise ValueError("prepared Skill turn 与本轮直接输入不匹配")
         if replay_message and replay_message.id != prepared_skill_turn[0].id:
             raise ValueError("client_turn_id 与 prepared Skill turn 不匹配")
         prepared_response = dict(
@@ -2614,7 +2642,7 @@ async def process_turn(
 
     incoming_context = context or {}
     candidate_sources_completed = incoming_context.get("interaction") == "candidate_sources_completed"
-    message_context = {}
+    message_context = {"direct_user_text": direct_text}
     if active_learning_skill:
         message_context["learning_skill"] = active_learning_skill
     if isinstance(incoming_context.get("selected_text"), str):
@@ -2690,6 +2718,7 @@ async def process_turn(
             user_message=user_message,
             message=message,
             learning_task_id=active_learning_task_id,
+            direct_user_text=direct_user_text,
         )
     latest_skill_run = (await db.execute(select(LearningSkillRun).where(
         LearningSkillRun.learner_id == session.learner_id,

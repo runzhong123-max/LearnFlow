@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from typing import Any, Iterable
+import json
+import re
 
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,6 +37,8 @@ PUBLIC_EVENT_TYPES = {
 # architecture registry): the registry may declare candidate events, while
 # this set states which event names the runtime actually handles today.
 REDUCER_EVENT_TYPES = frozenset({
+    "vnext_teaching_input_received",
+    "semantic_observation_proposed",
     "vnext_human_adaptation_requested",
     "memory_correction_confirmed", "memory_correction_added", "memory_correction_retracted",
     "vnext_value_claim_proposal_accepted",
@@ -282,6 +286,37 @@ async def _apply_patch(
 async def _reduce_event(db: AsyncSession, event: EvidenceEvent):
     p = dict(event.payload or {})
     et = event.event_type
+    # Hidden controls and reference-only inputs are ledger records, not learner evidence.
+    # Exit before consuming one-turn guidance or updating any other kernel reducer.
+    if et == "user_message" and p.get("direct_user_input") is False:
+        return
+
+    # Immediate guidance is a deterministic kernel projection. It does not wait
+    # for (or acquire the authority of) background Module/Claim synthesis.
+    from app.services.teaching_guidance import GUIDANCE_EVENT_TYPES, reduce_teaching_guidance
+    if et in GUIDANCE_EVENT_TYPES:
+        rows = (await db.execute(select(KernelState).where(
+            KernelState.learner_id == event.learner_id,
+        ))).scalars().all()
+        states = {row.kernel_name: {"short_term": dict(row.short_term or {}),
+                                   "long_term": dict(row.long_term or {})} for row in rows}
+        for kernel_name, patch in reduce_teaching_guidance(event, states).items():
+            await _apply_patch(db, event, kernel_name, patch.get("short_term", {}),
+                "依据当前证据即时调整教学；适用范围与期限独立于长期掌握门槛",
+                long_patch=patch.get("long_term") or None)
+    if et == "vnext_teaching_input_received":
+        return
+
+    if et == "semantic_observation_proposed":
+        kernel_name = p.get("kernel")
+        candidate = p.get("candidate")
+        if kernel_name in KERNEL_NAMES and isinstance(candidate, dict):
+            await _apply_patch(db, event, kernel_name, {"semantic_candidate": {
+                "fields": candidate, "source_event_id": p.get("source_event_id"),
+                "verification": "inferred", "mastery_inference": False,
+                "scope": event.context_id,
+            }}, "模型观察仅保留为待核对候选，不覆盖已确认背景、偏好或能力")
+        return
 
     if et == "vnext_human_adaptation_requested":
         signal_kind = str(p.get("signal_kind") or "").strip()
@@ -293,7 +328,7 @@ async def _reduce_event(db: AsyncSession, event: EvidenceEvent):
         }
         if signal_kind not in valid_kinds or not bool(p.get("explicit", True)):
             return
-        expires_at = (datetime.utcnow() + timedelta(hours=8)).isoformat()
+        expires_at = ((event.occurred_at or event.created_at or datetime.utcnow()) + timedelta(hours=8)).isoformat()
         patch: dict[str, Any] = {
             "transient_expires_at": expires_at,
             "adaptation_source": "explicit_current_context",
@@ -336,14 +371,28 @@ async def _reduce_event(db: AsyncSession, event: EvidenceEvent):
     }:
         kernel_name = p.get("kernel_name")
         if kernel_name in KERNEL_NAMES:
+            state = await _kernel(db, event.learner_id, kernel_name)
+            cleared = {}
+            long_cleared = {}
+            if p.get("action") in {"correct", "retract"}:
+                keys = {str(key) for key in p.get("affected_keys", [])}
+                cleared = {key: None for key in keys if key in (state.short_term or {})}
+                long_cleared = {key: None for key in keys if key in (state.long_term or {})}
+                preferences = dict((state.long_term or {}).get("learning_preferences") or {})
+                if keys & set(preferences):
+                    long_cleared["learning_preferences"] = {
+                        key: value for key, value in preferences.items() if key not in keys
+                    }
             await _apply_patch(
                 db, event, kernel_name,
-                {"memory_feedback": {
+                {**cleared, "memory_feedback": {
                     "claim_id": p.get("claim_id"),
                     "action": p.get("action"),
                     "correction": p.get("correction", ""),
+                    "affected_keys": p.get("affected_keys", []),
                 }},
                 "学习者对可检查记忆声明提交了追加式反馈",
+                long_patch=long_cleared,
             )
         return
 
@@ -680,7 +729,7 @@ async def _reduce_event(db: AsyncSession, event: EvidenceEvent):
             )
 
         if weekly_min is not None or current_load:
-            expires_at = (datetime.utcnow() + timedelta(hours=8)).isoformat()
+            expires_at = ((event.occurred_at or event.created_at or datetime.utcnow()) + timedelta(hours=8)).isoformat()
             availability = {
                 "weekly_hours": (
                     {"min": weekly_min, "max": weekly_max}
@@ -903,15 +952,22 @@ async def _reduce_event(db: AsyncSession, event: EvidenceEvent):
                 "用户更新了自述基础，不构成掌握证据",
             )
         if "weekly_hours" in p or "preferred_modes" in p:
-            preferences = {
-                "weekly_hours": p.get("weekly_hours"),
-                "preferred_modes": p.get("preferred_modes", []),
-            }
+            state = await _kernel(db, event.learner_id, "human")
+            preferences = dict((state.long_term or {}).get("learning_preferences") or {})
+            preferences.update({key: p[key] for key in ("weekly_hours", "preferred_modes") if key in p})
             await _apply_patch(
-                db, event, "human", preferences,
+                db, event, "human", {key: p[key] for key in ("weekly_hours", "preferred_modes") if key in p},
                 "用户更新了学习节奏与形式偏好",
                 long_patch={"learning_preferences": preferences},
             )
+        if "career_goal" in p or "career_goal_status" in p:
+            status = p.get("career_goal_status", "exploring")
+            goal = str(p.get("career_goal") or "")
+            await _apply_patch(db, event, "value", {
+                "career_goal_candidate": goal, "career_goal_status": status,
+                "goal_status": status, "current_priority": goal,
+            }, "目标修订与确认状态同步更新；探索状态不保留已确认长期目标",
+                long_patch={"career_goal": goal if status == "confirmed" else ""})
         if "focus_areas" in p:
             await _apply_patch(
                 db, event, "value", {"focus_areas": p.get("focus_areas", [])},
@@ -1266,21 +1322,23 @@ async def _reduce_event(db: AsyncSession, event: EvidenceEvent):
     if et == "user_message":
         text = str(p.get("text", ""))
         lower = text.lower()
+        if re.search(r"我(?:的)?(?:朋友|同学|同事|学生)|(?:这是|只是|用于).{0,6}(?:测试|演示)|假设|假如|[“”\"]", text):
+            return
         if any(word in text for word in ("不懂", "没懂", "困惑", "为什么", "不会")):
             await _apply_patch(
                 db, event, "knowledge",
                 {"pending_question": text[:500], "knowledge_gap": text[:500]},
                 "用户表达了待澄清的知识疑问；疑问不等于误解",
             )
-        if any(word in text for word in ("太难", "烦", "崩溃", "跟不上", "累")):
+        if re.search(r"(?:我|现在|今天|这|学得).{0,8}(?:太难|很烦|崩溃|跟不上|很累)", text) and not re.search(r"不(?:太难|烦|累)|没(?:有)?(?:很)?(?:累|烦)", text):
             await _apply_patch(
                 db, event, "human",
                 {"affect": "frustrated", "cognitive_load": 0.85,
                  "frustration": 0.8,
-                 "transient_expires_at": (datetime.utcnow() + timedelta(hours=8)).isoformat()},
+                 "transient_expires_at": ((event.occurred_at or event.created_at or datetime.utcnow()) + timedelta(hours=8)).isoformat()},
                 "用户表达了短期学习负荷",
             )
-        if any(word in text for word in ("想学", "目标", "为了", "计划", "掌握")) or "i want to learn" in lower:
+        if (re.search(r"(?:我(?:的)?(?:目标|计划|想学)|为了).+", text) or "i want to learn" in lower) and not re.search(r"不想|不打算|不再|没有计划", text):
             await _apply_patch(
                 db, event, "value",
                 {"current_priority": text[:500], "current_motivation": "explicit"},
@@ -1330,6 +1388,8 @@ async def _reduce_event(db: AsyncSession, event: EvidenceEvent):
         return
 
     if et == "remediation_mode_rejected":
+        if not (event.provenance or {}).get("explicit_user_action"):
+            return
         human = await _kernel(db, event.learner_id, "human")
         ineffective = list((human.short_term or {}).get("ineffective_explanation_modes") or [])
         mode = p.get("ineffective_mode")
@@ -1340,6 +1400,8 @@ async def _reduce_event(db: AsyncSession, event: EvidenceEvent):
             {
                 "ineffective_explanation_modes": ineffective[-8:],
                 "last_requested_explanation_mode": p.get("next_mode", ""),
+                "adaptation_scope": {"project_id": event.project_id, "checkpoint_id": event.checkpoint_id, "session_id": event.session_id},
+                "transient_expires_at": ((event.occurred_at or event.created_at or datetime.utcnow()) + timedelta(hours=8)).isoformat(),
             },
             "学习者明确要求换一种讲法，记录当前上下文中的无效表征",
         )
@@ -1722,8 +1784,8 @@ async def apply_semantic_observations(
     event: EvidenceEvent,
     observations: Iterable[dict[str, Any]],
 ):
-    """Apply validated LLM observations to short-term state only."""
-    for observation in list(observations or [])[:5]:
+    """Record model proposals under their own provenance, never as user speech."""
+    for index, observation in enumerate(list(observations or [])[:5]):
         kernel_name = observation.get("kernel")
         patch = observation.get("short_term")
         if kernel_name not in KERNEL_NAMES or not isinstance(patch, dict):
@@ -1731,13 +1793,21 @@ async def apply_semantic_observations(
         allowed_keys = SEMANTIC_MEMORY_KEYS[kernel_name]
         safe_patch = {
             str(key)[:80]: value for key, value in list(patch.items())[:8]
-            if key in allowed_keys
+            if key in allowed_keys and isinstance(value, (str, bool, int, float, list, dict))
+            and len(json.dumps(value, ensure_ascii=False)) <= 1000
         }
         if not safe_patch:
             continue
-        await _apply_patch(
-            db, event, kernel_name, safe_patch,
-            str(observation.get("reason") or "Tutor 语义观察")[:500],
+        await record_event(
+            db, learner_id=event.learner_id, project_id=event.project_id,
+            checkpoint_id=event.checkpoint_id, session_id=event.session_id,
+            event_type="semantic_observation_proposed", source="semantic_observation",
+            payload={"kernel": kernel_name, "candidate": safe_patch,
+                     "source_event_id": event.id,
+                     "reason": str(observation.get("reason") or "Tutor 语义观察")[:500]},
+            confidence=0.5, provenance={"semantic_observation": True,
+                "policy_version": "memory-observation.v2", "mastery_inference": False},
+            client_event_id=f"semantic-observation:{event.id}:{index}",
         )
 
 
@@ -1869,13 +1939,31 @@ async def get_kernel_projection(db: AsyncSession, learner_id: int | None = None)
     now = datetime.utcnow()
     result = {}
     from app.services.memory_graph import active_module_claims, recent_atomic_facts
+    from app.services.five_kernel_context import _archived_projection_ids
+    archived_node_ids = await _archived_projection_ids(db, learner_id, archives)
     for state in states:
         short = dict(state.short_term or {})
+        # This compatibility projection has no session scope. Model candidates
+        # are available only through session-filtered transient memory facts.
+        short.pop("semantic_candidate", None)
+        short.pop("teaching_directives", None)
         long = dict(state.long_term or {})
+        long.pop("teaching_preferences", None)
         for kernel_name, scope, key in archived_paths:
             if kernel_name != state.kernel_name:
                 continue
             (short if scope == "short_term" else long).pop(key, None)
+            if state.kernel_name == "human":
+                if key == "learning_preferences":
+                    for preference_key in ("preferred_modes", "pace_preference", "format_preference", "weekly_hours"):
+                        short.pop(preference_key, None)
+                        long.pop(preference_key, None)
+                    long.pop("learning_preferences", None)
+                else:
+                    preferences = dict(long.get("learning_preferences") or {})
+                    preferences.pop(key, None)
+                    if "learning_preferences" in long:
+                        long["learning_preferences"] = preferences
         if state.kernel_name == "human" and short.get("transient_expires_at"):
             try:
                 if datetime.fromisoformat(short["transient_expires_at"]) < now:
@@ -1891,6 +1979,10 @@ async def get_kernel_projection(db: AsyncSession, learner_id: int | None = None)
         module_claims = await active_module_claims(
             db, learner_id, kernel_name=state.kernel_name, limit=30,
         )
+        recent_facts = [item for item in recent_facts if item["id"] not in archived_node_ids]
+        module_claims = [item for item in module_claims if item["id"] not in archived_node_ids]
+        short.pop("memory_graph_recent_facts", None)
+        long.pop("memory_graph_claims", None)
         if recent_facts:
             short["memory_graph_recent_facts"] = recent_facts
         if module_claims:

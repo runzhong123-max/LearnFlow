@@ -460,27 +460,26 @@ function tutorProxy(mode: string, backendBase: string): Plugin {
       let formalDomainKnowledgeContext: unknown = null
       let formalReviewContext: unknown = null
       let formalProjectContext: unknown = null
-      try {
-        const contextPurpose = modeValue === 'learning_plan'
-          ? 'learning_plan'
-          : modeValue === 'guided_learning' ? 'learning_task' : 'global_tutor'
-        const contextQuery = new URLSearchParams({
-          query: latestMessage.slice(0, 1800),
-          purpose: contextPurpose,
-        })
-        if (formalScope.projectId) contextQuery.set('project_id', String(formalScope.projectId))
-        if (formalScope.checkpointId) contextQuery.set('checkpoint_id', String(formalScope.checkpointId))
-        if (formalScope.sessionId) contextQuery.set('session_id', String(formalScope.sessionId))
-        const contextResponse = await fetch(`${backendBase}/api/learner-state/context?${contextQuery}`, {
+      const contextPurpose = modeValue === 'learning_plan' ? 'learning_plan'
+        : modeValue === 'guided_learning' ? 'learning_task' : 'global_tutor'
+      const contextCache = new Map<string, unknown>()
+      const readLearnerContext = async (query: string) => {
+        const key = query.slice(0, 1800)
+        if (contextCache.has(key)) return contextCache.get(key)
+        const params = new URLSearchParams({ query: key, purpose: contextPurpose })
+        if (formalScope.projectId) params.set('project_id', String(formalScope.projectId))
+        if (formalScope.checkpointId) params.set('checkpoint_id', String(formalScope.checkpointId))
+        if (formalScope.sessionId) params.set('session_id', String(formalScope.sessionId))
+        const result = await fetch(`${backendBase}/api/learner-state/context?${params}`, {
           headers: request.headers.cookie ? { Cookie: request.headers.cookie } : {},
           signal: AbortSignal.timeout(4_000),
         })
-        if (contextResponse.ok) {
-          formalLearnerContext = await contextResponse.json()
-        }
-      } catch {
-        formalLearnerContext = null
+        if (!result.ok) throw new Error('学习记忆暂时不可用')
+        const packet = await result.json()
+        contextCache.set(key, packet)
+        return packet
       }
+      const learnerContextPending = readLearnerContext(latestMessage).catch(() => null)
       if (formalScope.projectId) try {
         const projectQuery = new URLSearchParams({ query: latestMessage.slice(0, 1800) })
         if (formalScope.checkpointId) projectQuery.set('checkpoint_id', String(formalScope.checkpointId))
@@ -496,7 +495,7 @@ function tutorProxy(mode: string, backendBase: string): Plugin {
       } catch {
         formalProjectContext = null
       }
-      if (modeValue === 'guided_learning' || modeValue === 'learning_plan') {
+      {
         try {
           const workspaceQuery = new URLSearchParams()
           if (formalScope.sessionId) workspaceQuery.set('session_id', String(formalScope.sessionId))
@@ -564,6 +563,7 @@ function tutorProxy(mode: string, backendBase: string): Plugin {
         requestedPluginIds: activePluginIds || [],
         installedPluginIds: pluginRegistry.packages.map(item => item.manifest.id),
       })
+      formalLearnerContext = await learnerContextPending
       const result = await runTutorAgentTurn({
         baseUrl: runtimeBaseUrl,
         model: runtimeModel,
@@ -580,6 +580,7 @@ function tutorProxy(mode: string, backendBase: string): Plugin {
         taskQueue,
         knowledgeDomains,
         formalLearnerContext,
+        readLearnerContext,
         formalWorkspaceContext,
         formalDomainKnowledgeContext,
         formalReviewContext,

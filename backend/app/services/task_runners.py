@@ -938,7 +938,7 @@ async def run_concept_generation(task_id: int):
                           finished_at=datetime.utcnow())
         return
 
-    checkpoint, user_level, chunks, brief = await _load_lecture_context(checkpoint_id)
+    checkpoint, user_level, chunks, brief = await _load_lecture_context(checkpoint_id, learner_id=task.learner_id)
     if not chunks:
         await update_task(task_id, status="failed",
                           error={"code": "retrieval_empty",
@@ -1057,7 +1057,7 @@ async def run_exercise_generation(task_id: int):
         )
         return
 
-    checkpoint, user_level, chunks, brief = await _load_lecture_context(checkpoint_id)
+    checkpoint, user_level, chunks, brief = await _load_lecture_context(checkpoint_id, learner_id=task.learner_id)
     if not chunks:
         await update_task(task_id, status="failed",
                           error={"code": "retrieval_empty",

@@ -1,3 +1,5 @@
+import { evidenceClauses, isAffirmativeEvidence, isDirectLearnerContext, supportedClause } from './self-report-evidence.ts'
+
 export type LearningPlanKind = 'project_seed' | 'direction'
 export type LearningPlanStatus = 'active' | 'closed'
 export type ValueProposalDecision = 'proposed' | 'accepted' | 'rejected' | 'revision_requested'
@@ -146,12 +148,9 @@ function compact(value: string, limit = 180) {
   return value.replace(/\s+/g, ' ').trim().slice(0, limit)
 }
 
-function sentenceContaining(input: string, pattern: RegExp, fallback: string) {
-  const sentences = input.split(/[。！？!?\n]+/).map(item => compact(item, 240)).filter(Boolean)
-  return sentences.find(sentence => pattern.test(sentence)) || fallback
-}
-
 function directionObjective(input: string) {
+  if (!isDirectLearnerContext(input)) return '规划当前发展方向'
+  input = evidenceClauses(input).filter(clause => !/(?:不想|不希望|不打算|不计划|不再|没想|并非|未打算)/.test(clause)).join('，')
   const explicit = input.match(/(?:我)?(?:未来)?(?:想|希望|打算|计划)(?:未来)?(?:成为|从事|做|走)?\s*([^，。！？!?\n]{2,60}(?:工程师|工程|研究员|开发者|科学家|方向))/i)
   if (explicit?.[1]) return `探索并规划${compact(explicit[1], 80)}`
   return '规划当前发展方向'
@@ -172,7 +171,10 @@ export function extractPlanningProfileSelfReport(
   input: string,
   goalHint = '',
 ): PlanningProfileSelfReport | undefined {
+  if (!isDirectLearnerContext(input)) return undefined
   const evidenceQuote = compact(input, 2_000)
+  // Do not emit candidates whose source falls outside the retained evidence.
+  input = evidenceClauses(input).filter(clause => evidenceQuote.includes(clause)).join('。')
   const knowledgeExposures: PlanningProfileSelfReport['knowledgeExposures'] = []
   const knowledgeGaps: PlanningProfileSelfReport['knowledgeGaps'] = []
   const practiceExposures: PlanningProfileSelfReport['practiceExposures'] = []
@@ -180,34 +182,51 @@ export function extractPlanningProfileSelfReport(
     target: Array<{ subject: string; statement: string }>,
     subject: string,
     pattern: RegExp,
+    affirmative = true,
   ) => {
-    if (!pattern.test(input)) return
-    target.push({ subject, statement: sentenceContaining(input, pattern, subject) })
+    const statement = supportedClause(input, pattern, affirmative)
+    if (!statement) return
+    target.push({ subject, statement: compact(statement, 240) })
   }
 
   add(knowledgeExposures, 'Python', /(?:主要用|熟悉|会用|使用)\s*Python|Python\s*(?:基础|课程|作业|实验)/i)
-  add(knowledgeExposures, '机器学习与深度学习', /(?:上过|学过|了解|熟悉).{0,24}(?:机器学习|深度学习)|(?:CNN|RNN|Transformer)/i)
+  add(knowledgeExposures, '机器学习与深度学习', /(?:上过|学过|了解|熟悉|看过|接触过).{0,24}(?:机器学习|深度学习|CNN|RNN|Transformer)/i)
   add(knowledgeExposures, 'PyTorch', /(?:用过|使用过|写过).{0,12}PyTorch/i)
   add(knowledgeExposures, '大模型 API', /(?:调用过|用过|试过).{0,18}(?:OpenAI|大模型).{0,10}API/i)
   add(knowledgeExposures, 'RAG 与 Agent', /(?:RAG|Agent).{0,30}(?:听过|概念|了解)/i)
 
-  add(knowledgeGaps, '生产级软件工程', /没写过生产级代码|(?:单元测试|日志|异常处理).{0,24}(?:不熟|不太熟|没接触)/i)
-  add(knowledgeGaps, '后端与系统设计', /后端.{0,12}(?:为零|基本为零)|没接触过.{0,24}(?:数据库|系统架构)/i)
-  add(knowledgeGaps, 'RAG 与 Agent 实践', /(?:RAG|Agent).{0,30}(?:没实际|没有实际|没动手|未实践)/i)
+  add(knowledgeGaps, '生产级软件工程', /没写过生产级代码|(?:单元测试|日志|异常处理).{0,24}(?:不熟|不太熟|没接触)/i, false)
+  add(knowledgeGaps, '后端与系统设计', /后端.{0,12}(?:为零|基本为零)|没接触过.{0,24}(?:数据库|系统架构)/i, false)
+  add(knowledgeGaps, 'RAG 与 Agent 实践', /(?:RAG|Agent).{0,30}(?:没实际|没有实际|没动手|未实践)/i, false)
 
   add(practiceExposures, 'Flask 接口', /(?:写过|做过).{0,18}Flask.{0,12}(?:接口|课设)/i)
-  add(practiceExposures, 'PyTorch 训练脚本', /PyTorch.{0,24}(?:训练脚本|跑通实验|简单)/i)
-  add(practiceExposures, '大模型 API 调用', /(?:OpenAI|大模型).{0,12}API.{0,24}(?:摘要|简单任务|调用)/i)
+  add(practiceExposures, 'PyTorch 训练脚本', /(?:用过|使用过|写过|做过|跑通).{0,20}PyTorch.{0,24}(?:训练脚本|跑通实验|简单)|PyTorch.{0,24}(?:写过|跑通实验)/i)
+  add(practiceExposures, '大模型 API 调用', /(?:调用过|用过|试过|做过).{0,18}(?:OpenAI|大模型).{0,12}API|(?:OpenAI|大模型).{0,12}API.{0,24}(?:调用过|做过)/i)
 
-  const educationStage = input.match(/(?:大[一二三四]|研[一二三]|本科生|研究生|在校生)/)?.[0]
-  const weekly = input.match(/每周.{0,8}?(\d{1,2})\s*(?:-|—|~|～|到|至)\s*(\d{1,2})\s*小时/i)
-    || input.match(/每周.{0,8}?(\d{1,2})\s*小时/i)
+  // Generic candidates retain the learner's wording, without inventing a
+  // subject taxonomy or declaring mastery from a self report.
+  const knownStatements = new Set([...knowledgeExposures, ...practiceExposures].map(item => item.statement))
+  for (const clause of evidenceClauses(input)) {
+    if (!isAffirmativeEvidence(clause) || knownStatements.has(clause)) continue
+    if (/(?:熟悉|学过|会用|用过|接触过|上过|学习过).{1,80}/i.test(clause)) {
+      knowledgeExposures.push({ subject: '自述学习背景', statement: compact(clause, 240) })
+    }
+    if (/(?:写过|做过|开发过|实现过|复现过|工作了|从事).{1,80}/i.test(clause)) {
+      practiceExposures.push({ subject: '自述实践经历', statement: compact(clause, 240) })
+    }
+  }
+
+  const affirmativeInput = evidenceClauses(input).filter(isAffirmativeEvidence).join('，')
+  const educationStage = affirmativeInput.match(/(?:大[一二三四]|研[一二三]|本科生|研究生|在校生)/)?.[0]
+  const weekly = affirmativeInput.match(/每周.{0,8}?(\d{1,2})\s*(?:-|—|~|～|到|至)\s*(\d{1,2})\s*小时/i)
+    || affirmativeInput.match(/每周.{0,8}?(\d{1,2})\s*小时/i)
   const weeklyHours = weekly
     ? { min: Number(weekly[1]), max: Number(weekly[2] || weekly[1]) }
     : undefined
-  const currentLoad = /课业压力(?:还好|不大|可控)|时间(?:比较|较)?充足/i.test(input)
+  const loadInput = evidenceClauses(input).filter(clause => !/(?:不是|并非|不再|没有|没觉得|可能|也许|是否)/.test(clause)).join('，')
+  const currentLoad = /课业压力(?:还好|不大|可控)|时间(?:比较|较)?充足/i.test(loadInput)
     ? 'manageable' as const
-    : /课业压力(?:大|较大)|时间不多|很忙/i.test(input) ? 'constrained' as const : undefined
+    : /课业压力(?:大|较大)|时间不多|很忙/i.test(loadInput) ? 'constrained' as const : undefined
   const explicitGoal = directionObjective(input)
   const hasProfileFacts = Boolean(
     educationStage || weeklyHours || currentLoad

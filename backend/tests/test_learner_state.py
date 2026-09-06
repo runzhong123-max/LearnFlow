@@ -552,10 +552,14 @@ def test_explicit_human_adaptation_is_scoped_transient_and_answer_free(client: T
                 project_id, checkpoint_id, session_id,
             )
             assert event.provenance["self_report"] is True
-            mutation = (await db.execute(select(KernelMutation).where(
+            mutations = (await db.execute(select(KernelMutation).where(
                 KernelMutation.event_id == event.id,
                 KernelMutation.kernel_name == "human",
-            ))).scalar_one()
+            ))).scalars().all()
+            assert len(mutations) == 2
+            guidance_mutation = next(item for item in mutations if 'teaching_directives' in item.patch['short_term'])
+            assert guidance_mutation.patch['short_term']['teaching_directives'][0]['source_event_id'] == event.id
+            mutation = next(item for item in mutations if 'transient_expires_at' in item.patch['short_term'])
             assert "transient_expires_at" in mutation.patch["short_term"]
             fact_rows = list((await db.execute(
                 select(MemoryFact, MemoryNode)

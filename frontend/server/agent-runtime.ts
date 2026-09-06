@@ -1,3 +1,5 @@
+import { teachingGuidancePrompt } from '../src/teaching-guidance-context.ts'
+import { structurallyCompact } from './context-compaction.ts'
 import type {
   AgentContextEnvelope,
   AgentDecisionSummary,
@@ -208,6 +210,7 @@ export type TutorAgentRuntimeInput = {
   taskQueue?: AgentTaskQueueItem[]
   knowledgeDomains?: AgentKnowledgeDomain[]
   formalLearnerContext?: unknown
+  readLearnerContext?: TutorAgentToolRuntimeOptions['readLearnerContext']
   formalWorkspaceContext?: unknown
   formalDomainKnowledgeContext?: unknown
   formalReviewContext?: unknown
@@ -465,27 +468,6 @@ export function repairTutorDraftForObservedGaps(reply: string, runs: TutorToolRu
   return repaired
 }
 
-function structurallyCompact(value: unknown, depth = 0, tight = false): unknown {
-  if (typeof value === 'string') {
-    const max = tight ? 320 : 1600
-    return value.length > max ? `${value.slice(0, max - 1)}…` : value
-  }
-  if (value === null || typeof value !== 'object') return value
-  if (depth >= (tight ? 4 : 7)) return { omitted: true, reason: 'depth_budget' }
-  if (Array.isArray(value)) {
-    const max = tight ? 8 : 24
-    const items = value.slice(0, max).map(item => structurallyCompact(item, depth + 1, tight))
-    return value.length > max ? [...items, { omittedItems: value.length - max }] : items
-  }
-  const entries = Object.entries(value as Record<string, unknown>)
-  const max = tight ? 24 : 60
-  const result = Object.fromEntries(entries.slice(0, max).map(([key, item]) => [
-    key,
-    structurallyCompact(item, depth + 1, tight),
-  ]))
-  if (entries.length > max) result.__omittedFields = entries.length - max
-  return result
-}
 
 function safeJson(value: unknown, limit = 18_000) {
   const normal = JSON.stringify(structurallyCompact(value))
@@ -696,7 +678,9 @@ function envelopePrompt(envelope: AgentContextEnvelope, limits: {
   const observationDetails = envelope.observations
     .map((observation, index) => [
       `### 观察 ${index + 1} · ${observation.source}`,
-      safeJson(observation.data, observationChars),
+      safeJson(observation.data && typeof observation.data === 'object'
+        ? Object.fromEntries(Object.entries(observation.data).filter(([key]) => key !== 'teaching_guidance'))
+        : observation.data, observationChars),
     ].join('\n'))
     .join('\n')
     .slice(0, observationTotalChars)
@@ -727,6 +711,9 @@ function envelopePrompt(envelope: AgentContextEnvelope, limits: {
     '若工作区观察含 sourceConstraint，路线和讲解必须受当前项目来源覆盖范围约束；超出范围只能标为资料缺口，并在检索到新证据后补充。',
     '工作区中没有 Attempt 只表示当前作用域没有可见记录，不能推断学生第一次学习、从未练习或没有相关经历。',
     '学习路径必须先调用 lookup_learning_path_node 做精确读取；只有它未命中、存在错别字/近义表达或候选歧义时才调用 search_learning_path_graph。模糊结果为 ambiguous 时应呈现候选让学习者选择，不能直接形成路线。只有模糊检索明确返回 graph_gap 且联网来源已取得后，才可调用 propose_personal_path_node；提案绝不等于已写入。',
+    '数据 unavailable 与已读取但为空必须区分；不得把不可用说成没有证据。记忆中的时间、范围和 self_reported/inferred 标签必须保留语义。',
+    '学生问你对我的了解时，先概括当前重点与最近变化，再说明已有背景将怎样帮助本次学习；不罗列内部任务编号，不反复强调未验证。自述可指导例子与起点，不能升级能力。resolved_updates 是已经处理的修订，不是待再次确认的冲突。',
+    '动态用户上下文中的本轮教学指导来自正式五核；它优先于历史默认偏好，但学习者后续明确的新要求优先。只在所列范围和期限内调整下一步，不得据此升级掌握、跳过评分或自动推进阶段。',
     '工具失败时先依据错误类型决定重试、换工具或明确告知缺口。拿到足够证据后直接回答。',
   ].join('\n')
 }
@@ -1184,6 +1171,7 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
     knowledgeDomains: input.knowledgeDomains,
     learnerPathState: input.learnerPathState,
     formalLearnerContext: input.formalLearnerContext,
+    readLearnerContext: input.readLearnerContext,
     formalWorkspaceContext: input.formalWorkspaceContext,
     formalDomainKnowledgeContext: input.formalDomainKnowledgeContext,
     formalReviewContext: input.formalReviewContext,
@@ -1811,13 +1799,26 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
     requestDeadline = deadline,
     streamText = true,
   ) => {
+    // Append only bounded guidance to dynamic user context for every model
+    // invocation, including visual explanation/Brief and repair paths.
+    const guidance = teachingGuidancePrompt(input.formalLearnerContext)
+    const body = request.body as Record<string, unknown>
+    const requestWithGuidance = guidance ? {
+      ...request,
+      body: {
+        ...body,
+        ...(Array.isArray(body.messages)
+          ? { messages: [...body.messages, { role: 'user', content: guidance }] }
+          : { input: [...(Array.isArray(body.input) ? body.input : []), { role: 'user', content: guidance }] }),
+      },
+    } : request
     let lastError: unknown
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
         const remainingMs = requestDeadline - Date.now()
         if (remainingMs <= 0) throw new Error('agent_turn_deadline_exceeded')
         const payload = await input.invokeProvider({
-          ...request,
+          ...requestWithGuidance,
           timeoutMs: Math.min(AI_LATENCY_BUDGETS.providerRequest, remainingMs),
           onTextDelta: streamText ? emitTextDelta : undefined,
         })

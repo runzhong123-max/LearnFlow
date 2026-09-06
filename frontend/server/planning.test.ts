@@ -67,6 +67,44 @@ test('a continuation-only planning reply does not create a fake self report', ()
   assert.equal(extractPlanningProfileSelfReport('然后呢', '成为大模型应用工程师'), undefined)
 })
 
+test('negation, attributed and hypothetical backgrounds cannot become positive self reports', () => {
+  for (const input of [
+    '我没用过 PyTorch，也没有写过 Flask 接口',
+    '我朋友大三，写过 Flask 接口',
+    '假设我大三，学过 Python，每周能学10小时',
+    '这是产品测试，我大三，用过PyTorch',
+    '老师说“我是研究生，用过PyTorch”',
+    '我不是研究生，每周不能投入10小时',
+    '我想学PyTorch训练脚本',
+    '我熟悉Java吗？', '我用过PyTorch？', '我不是没写过生产级代码',
+  ]) assert.equal(extractPlanningProfileSelfReport(input, '成为工程师'), undefined, input)
+  const report = extractPlanningProfileSelfReport('我没用过PyTorch，但写过Flask接口')
+  assert.equal(report?.knowledgeExposures.some(item => item.subject === 'PyTorch'), false)
+  assert.ok(report?.practiceExposures.some(item => item.subject === 'Flask 接口'))
+})
+
+test('self reports never emit facts beyond the retained evidence quote', () => {
+  const report = extractPlanningProfileSelfReport(`${'背景。'.repeat(800)}我熟悉Java。`)
+  assert.equal(report, undefined)
+})
+
+test('generic learning and practice backgrounds retain exact supporting clauses', () => {
+  const report = extractPlanningProfileSelfReport('我熟悉 Java、Spring 和 SQL，做过三年后端开发，学过线性代数。')
+  assert.ok(report?.knowledgeExposures.some(item => item.statement === '我熟悉 Java、Spring 和 SQL'))
+  assert.ok(report?.knowledgeExposures.some(item => item.statement === '学过线性代数'))
+  assert.ok(report?.practiceExposures.some(item => item.statement === '做过三年后端开发'))
+  for (const item of [...report!.knowledgeExposures, ...report!.practiceExposures]) {
+    assert.ok(report!.evidenceQuote.includes(item.statement))
+  }
+})
+
+test('negated and third-party directions cannot create value proposals', () => {
+  for (const input of ['我不想成为大模型工程师', '我朋友想成为工程师', '假设我想成为工程师']) {
+    const created = createLearningPlan(input)
+    assert.equal(projectLearningPlan(created.plan, created.events).valueProposal, undefined, input)
+  }
+})
+
 test('planning updates and closes only through its local event queue', () => {
   const created = createLearningPlan('我想系统学习强化学习并做项目', 100)
   const first = projectLearningPlan(created.plan, created.events)

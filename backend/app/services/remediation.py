@@ -19,7 +19,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.learning import LearningAttempt, RemediationCase
+from app.models.learning import EvidenceEvent, LearningAttempt, RemediationCase
 
 
 DELIVERY_MODE_LABELS = {
@@ -282,14 +282,27 @@ async def create_remediation_case(
         RemediationCase.item_type == attempt.item_type,
         RemediationCase.item_id == attempt.item_id,
     ))).scalar_one() or 0) + 1
-    recent_ineffective = (await db.execute(
-        select(RemediationCase.ineffective_modes)
-        .where(RemediationCase.learner_id == attempt.learner_id)
-        .order_by(RemediationCase.updated_at.desc())
-        .limit(8)
-    )).scalars().all()
+    # Only explicit user feedback from this exact exercise may carry forward.
+    # A failed retry is performance evidence, not a rejection of a teaching style.
+    same_item_cases = select(RemediationCase.id).where(
+        RemediationCase.learner_id == attempt.learner_id,
+        RemediationCase.project_id == attempt.project_id,
+        RemediationCase.checkpoint_id == attempt.checkpoint_id,
+        RemediationCase.item_type == attempt.item_type,
+        RemediationCase.item_id == attempt.item_id,
+    )
+    case_ids = set((await db.execute(same_item_cases)).scalars().all())
+    rejections = (await db.execute(select(EvidenceEvent).where(
+        EvidenceEvent.learner_id == attempt.learner_id,
+        EvidenceEvent.project_id == attempt.project_id,
+        EvidenceEvent.checkpoint_id == attempt.checkpoint_id,
+        EvidenceEvent.event_type == "remediation_mode_rejected",
+        EvidenceEvent.source == "ui",
+    ).order_by(EvidenceEvent.id.desc()).limit(100))).scalars().all()
     known_ineffective = _unique([
-        mode for modes in recent_ineffective for mode in list(modes or [])
+        (event.payload or {}).get("ineffective_mode") for event in rejections
+        if (event.payload or {}).get("case_id") in case_ids
+        and (event.provenance or {}).get("explicit_user_action") == "switch_explanation"
     ])
     strategy = RemediationStrategy.decide(
         item_type=attempt.item_type,
@@ -416,7 +429,8 @@ async def request_explanation_mode(
             project_id=remediation.project_id, checkpoint_id=remediation.checkpoint_id,
             event_type="remediation_mode_rejected", source="ui",
             payload={"case_id": remediation.id, "ineffective_mode": previous,
-                     "next_mode": strategy["delivery_mode"]},
+                     "next_mode": strategy["delivery_mode"],
+                     "scope_kind": "remediation_case", **_concept_event_fields(remediation)},
             provenance={"explicit_user_action": "switch_explanation"},
             client_event_id=f"remediation:{remediation.id}:mode-rejected:{len(blocked)}",
         )
@@ -529,6 +543,8 @@ async def apply_retry_result(
         event_type="remediation_retry_evaluated", source="assessment",
         payload={"case_id": remediation.id, "attempt_id": attempt.id,
                  "passed": bool(passed), "delivery_mode": remediation.current_delivery_mode,
+                 "item_type": remediation.item_type, "item_id": remediation.item_id,
+                 "assistance_level": attempt.assistance_level,
                  "source_evidence_id": evidence_event_id,
                  **_concept_event_fields(remediation),
                  "observation_type": "original_task",
@@ -544,10 +560,11 @@ async def apply_retry_result(
         await ensure_variant(remediation)
         return remediation
 
-    blocked = list(remediation.ineffective_modes or [])
-    if remediation.current_delivery_mode not in blocked:
-        blocked.append(remediation.current_delivery_mode)
-    remediation.ineffective_modes = blocked
+    blocked = _unique([
+        *list(remediation.ineffective_modes or []),
+        *list((remediation.strategy or {}).get("local_attempted_modes") or []),
+        remediation.current_delivery_mode,
+    ])
     strategy = RemediationStrategy.decide(
         item_type=remediation.item_type,
         error_class=remediation.error_class,
@@ -556,6 +573,7 @@ async def apply_retry_result(
         ]) + 1,
         ineffective_modes=blocked,
     )
+    strategy["local_attempted_modes"] = blocked
     remediation.strategy = strategy
     remediation.current_delivery_mode = strategy["delivery_mode"]
     remediation.explanation_history = [
@@ -568,20 +586,6 @@ async def apply_retry_result(
         ),
     ][-12:]
     remediation.status = "explaining"
-    rejected_event = await record_event(
-        db, learner_id=remediation.learner_id,
-        project_id=remediation.project_id, checkpoint_id=remediation.checkpoint_id,
-        event_type="remediation_mode_rejected", source="assessment",
-        payload={"case_id": remediation.id,
-                 "ineffective_mode": blocked[-1] if blocked else "",
-                 "next_mode": strategy["delivery_mode"],
-                 "reason": "failed_retry"},
-        provenance={"inferred_from": "graded_failed_retry"},
-        client_event_id=f"remediation:{remediation.id}:retry-failed-mode:{attempt.id}",
-    )
-    remediation.evidence_event_ids = _unique_ids([
-        *list(remediation.evidence_event_ids or []), rejected_event.id,
-    ])
     return remediation
 
 
@@ -638,6 +642,8 @@ async def submit_variant(
         event_type="remediation_variant_evaluated", source="assessment",
         payload={"case_id": remediation.id, "attempt_id": attempt.id,
                  "correct": correct,
+                 "item_type": "variant", "item_id": remediation.id,
+                 "assistance_level": attempt.assistance_level,
                  "outcome": "unknown" if unknown else "correct" if correct else "incorrect",
                  "variant_type": variant.get("type"),
                  **_concept_event_fields(remediation),

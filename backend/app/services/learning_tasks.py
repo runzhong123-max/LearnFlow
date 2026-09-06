@@ -219,8 +219,8 @@ def _portable_planner_context(projection: dict[str, Any]) -> dict[str, dict[str,
     KernelState is a learner-level projection, so its volatile structure,
     knowledge, value and practice fields may describe a different conversation
     or task.  A new task gets its content context from its own objective,
-    source_refs and scoped evidence; only explicit delivery/support preferences
-    are portable until the runtime exposes a provenance-aware scoped projection.
+    source_refs and scoped evidence. Only explicit delivery/support preferences
+    are portable here; _scoped_planner_context adds relevant ContextPacket evidence.
     """
     compact = _compact_planner_context(projection)
     portable_human_keys = {"pace_preference", "format_preference", "support_need"}
@@ -230,6 +230,69 @@ def _portable_planner_context(projection: dict[str, Any]) -> dict[str, dict[str,
         if key in portable_human_keys
     }
     return {"human": human} if human else {}
+
+
+def _planner_memory_items(packet: dict[str, Any]) -> list[dict[str, Any]]:
+    """Consume scoped evidence, never the learner-wide volatile hot head."""
+    target = packet.get("scope") or {}
+    selected = []
+    for item in packet.get("items") or []:
+        if item.get("status") != "active":
+            continue
+        scope = item.get("scope") or {}
+        if any(scope.get(key) is not None and scope[key] != target.get(key)
+               for key in ("project_id", "checkpoint_id", "session_id")):
+            continue
+        reasons = (item.get("retrieval") or {}).get("reasons") or []
+        related = bool(set(reasons) & {"lexical_match", "subject_match", "exact_subject"})
+        exact_checkpoint = (target.get("checkpoint_id") is not None
+                            and scope.get("checkpoint_id") == target["checkpoint_id"])
+        if not related and not exact_checkpoint:
+            continue
+        if item.get("kernel") in {"knowledge", "value", "practice", "human"}:
+            selected.append(item)
+    return selected
+
+
+async def _scoped_planner_context(
+    db: AsyncSession, *, learner_id: int, project_id: int | None,
+    checkpoint_id: int | None, session_id: int | None, objective: str,
+) -> dict[str, dict[str, Any]]:
+    from app.models.learning import MemoryFact
+    from app.services.five_kernel_context import _safe_payload, build_five_kernel_context
+
+    context = _portable_planner_context(await get_kernel_projection(db, learner_id))
+    packet = await build_five_kernel_context(
+        db, learner_id=learner_id, policy="checkpoint_tutor",
+        project_id=project_id, checkpoint_id=checkpoint_id, session_id=session_id,
+        subject_keys=[f"checkpoint:{checkpoint_id}"] if checkpoint_id else [],
+        query=objective,
+    )
+    # This control projection is available before long-term synthesis. A new
+    # plan must respect the current time budget/support request immediately.
+    for guidance in packet.get("teaching_guidance", []):
+        context.setdefault(guidance["kernel"], {}).setdefault("teaching_guidance", []).append(guidance)
+    items = _planner_memory_items(packet)
+    facts = {}
+    if items:
+        facts = {fact.node_id: fact for fact in (await db.execute(
+            select(MemoryFact).where(MemoryFact.node_id.in_([item["id"] for item in items]))
+        )).scalars().all()}
+    # Apply oldest first so a newer scoped observation wins over its predecessor.
+    for item in sorted(items, key=lambda row: (row.get("occurred_at") or "", row["id"])):
+        kernel = item["kernel"]
+        values = context.setdefault(kernel, {})
+        values.setdefault("relevant_evidence", []).append({
+            key: item.get(key) for key in (
+                "id", "text", "scope", "occurred_at", "detail", "evidence_refs",
+            )
+        })
+        values["context_snapshot_id"] = packet.get("snapshot_id")
+        fact = facts.get(item["id"])
+        key = str((item.get("provenance") or {}).get("key") or "")
+        if fact is not None and key in SEMANTIC_MEMORY_KEYS.get(kernel, ()):
+            values[key] = _safe_payload(fact.object_value)
+    return context
 
 
 def _fallback_plan(
@@ -597,8 +660,9 @@ async def create_learning_task(
     if checkpoint and not project_id:
         roadmap = await db.get(Roadmap, checkpoint.roadmap_id)
         project_id = roadmap.project_id if roadmap else None
-    learner_context = _portable_planner_context(
-        await get_kernel_projection(db, learner_id)
+    learner_context = await _scoped_planner_context(
+        db, learner_id=learner_id, project_id=project_id,
+        checkpoint_id=checkpoint_id, session_id=session_id, objective=objective,
     )
     plan = dict(plan_override) if plan_override is not None else (
         await generate_learning_task_plan(
@@ -1547,8 +1611,9 @@ async def replan_learning_task(
     if task.status in {"completed", "canceled"}:
         raise RuntimeError("invalid_state")
     previous = _phase_map(task)
-    learner_context = _portable_planner_context(
-        await get_kernel_projection(db, task.learner_id)
+    learner_context = await _scoped_planner_context(
+        db, learner_id=task.learner_id, project_id=task.project_id,
+        checkpoint_id=task.checkpoint_id, session_id=task.session_id, objective=task.objective,
     )
     plan = await generate_learning_task_plan(
         title=task.title,

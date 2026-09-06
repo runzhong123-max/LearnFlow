@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
@@ -65,6 +66,10 @@ async def update_profile(
         setattr(current.profile, field, value.strip() if isinstance(value, str) else value)
     if current.profile.career_goal_status == "confirmed" and not current.profile.career_goal.strip():
         raise HTTPException(400, "确认职业理想前需要填写目标")
+    if "career_goal" in patch or "career_goal_status" in patch:
+        patch.update(career_goal=current.profile.career_goal,
+                     career_goal_status=current.profile.career_goal_status)
+    operation_id = uuid4().hex
     evidence = await record_event(
         db,
         learner_id=current.learner.id,
@@ -73,7 +78,7 @@ async def update_profile(
         payload=patch,
         confidence=1.0,
         provenance={"self_report": True},
-        client_event_id=f"profile-update:{int(datetime.utcnow().timestamp() * 1000)}",
+        client_event_id=f"profile-update:{operation_id}",
     )
     if "career_goal" in patch or "career_goal_status" in patch:
         if current.profile.career_goal_status == "confirmed":
@@ -85,7 +90,7 @@ async def update_profile(
                 payload={"career_goal": current.profile.career_goal.strip()},
                 confidence=1.0,
                 provenance={"explicit_profile_confirmation": True},
-                client_event_id=f"career-goal:{current.profile.career_goal.strip().casefold()}",
+                client_event_id=f"career-goal:{operation_id}",
             )
             await award_career_goal(
                 db,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Integer, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -77,6 +77,8 @@ EVIDENCE_EVENT_LABELS = {
 }
 
 MEMORY_LABELS = {
+    "teaching_directives": "当前教学指导",
+    "teaching_preferences": "你明确要求的持续教学方式",
     "active_project_id": "当前学习项目",
     "active_checkpoint_id": "当前检查点",
     "current_task": "当前任务",
@@ -169,6 +171,22 @@ def _display_value(value, key: str = ""):
     if isinstance(value, bool):
         return "是" if value else "否"
     if isinstance(value, list):
+        if key in {"teaching_directives", "teaching_preferences"}:
+            active = []
+            for item in value:
+                if not isinstance(item, dict) or item.get("status", "active") != "active":
+                    continue
+                if item.get("expires_at"):
+                    try:
+                        expiry = datetime.fromisoformat(str(item["expires_at"]).replace("Z", "+00:00"))
+                        if expiry.tzinfo is None:
+                            expiry = expiry.replace(tzinfo=timezone.utc)
+                        if expiry <= datetime.now(timezone.utc):
+                            continue
+                    except ValueError:
+                        continue
+                active.append(item)
+            return "；".join(str(item.get("instruction", "")) for item in active[-4:]) or "当前没有有效指导"
         if key == "path_dependencies":
             titles = [
                 str(item.get("title")) for item in value

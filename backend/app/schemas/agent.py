@@ -54,6 +54,8 @@ class VNextSessionSyncRequest(BaseModel):
 
 class TutorTurnRequest(BaseModel):
     message: str = Field(min_length=1, max_length=12000)
+    # None supports legacy clients; an explicit empty value excludes control/reference text.
+    direct_user_text: Optional[str] = Field(default=None, max_length=20000)
     project_id: Optional[int] = None
     checkpoint_id: Optional[int] = None
     selected_action_id: Optional[int] = None
@@ -111,6 +113,8 @@ class LearningSkillRunTurnRequest(BaseModel):
     """Advance the deterministic SkillRun without invoking a second Tutor LLM."""
 
     message: str = Field(min_length=1, max_length=12000)
+    # None supports legacy clients; an explicit empty value excludes control/reference text.
+    direct_user_text: Optional[str] = Field(default=None, max_length=20000)
     expected_version: int = Field(ge=1)
     client_turn_id: str = Field(min_length=8, max_length=120)
     domain_source_ids: list[int] = Field(default_factory=list, max_length=20)

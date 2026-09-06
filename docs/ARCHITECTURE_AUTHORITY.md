@@ -1,5 +1,7 @@
 # LearnFlow 架构权威与维护边界
 
+Contract impact（`2026-09-06.2`）：迁移五核记忆证据与即时教学升级，保留当前学习路径 v2、岗位插件与任务交接合同。新增 semantic_observation_proposed 与 vnext_teaching_input_received 注册事件；模型观察仅为短期候选，教学指导由确定性 reducer 生成有 scope 的控制投影。Module policy 升至 memory-module-version-v2，完善撤回、独立事件门槛、检索过滤与偏好更新。旧事件与数据库结构保留；新旧客户端增量兼容，前后端应共同发布。详见 [迁移记录](MEMORY_UPGRADE_MIGRATION.md)。
+
 Contract impact（`2026-09-06.1`）：新增学习路径 v2 源数据契约、岗位语义挂载及图谱特殊节点新增批次的确定性校验器，登记于 `DATA_CONTRACTS` 并纳入 registry digest 与实现漂移检查。节点按课程／技能领域／知识／技能区分，包含关系与先修关系分别校验；包、图谱和节点版本显式固定，source provenance 与 LearnFlow 语义 ownership 分离。108 个官方节点全部提供具体简介，保留 v1 ID、187 条边和个人覆盖层，Role Atlas 同步 v1/v2 只读制品。此次没有新增 ACI 工具、Action Board 写能力或 EvidenceEvent；特殊节点持久化与岗位匹配器切换尚未实现。源图生成不写学习者状态。详见 [契约](product/LEARNING_PATH_CONTRACT_V2.md) 与 [后续工作流设计](implementation/2026-09-06-learning-path-contract-and-graph-workflow.md)。
 
 Contract impact（`2026-09-02.7`）：正式学习型任务的“进入个性化学习 / 回到学习现场”统一成为确定性运行交接：宿主先启动或恢复原 `LearningTask`，再按候选保存的 Conversation/Session/Project/Checkpoint 锚点打开原对话、切换到 `guided_learning`，并建立只镜像该正式任务的 `LearningTaskBinding`。启动 `LearningSkillRun` 时必须携带正式 `learning_task_id`；后端校验 learner 与完整 scope 后认领同一任务，禁止另建重复原子任务。该桥接不改变四阶段完成门、Practice 判定、EvidenceEvent 或五核语义，任务进入学习现场本身仍为零掌握证据。

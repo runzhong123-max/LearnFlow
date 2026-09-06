@@ -1,5 +1,9 @@
 # 五核可检查记忆图谱
 
+Contract impact（`2026-09-05.3`）：即时教学指导与长期记忆合成解耦。新增原始教学输入事件，确定性归约至五核短期 `teaching_directives` 与明确持续 Human `teaching_preferences`；一次明确请求即可生效，保留来源、范围、到期与取消。控制投影不重复送入 Module/Claim，长期能力门槛保持独立。Tutor 每次生成前自动获得有界指导，规划复用同一投影。无数据库迁移；完整合同见 `docs/IMMEDIATE_TEACHING_GUIDANCE.md`。
+
+Contract impact（`2026-09-05.2`）：五核升级修复语义来源、目标/偏好更新、撤回与长期候选窗口。新增 `semantic_observation_proposed` 事件，仅保留有原事件引用的短期候选；Module policy v2按独立事件与类型化能力证据门更新。检索先作用域过滤，关联路径统一答案/人因/有效状态边界，SUPERSEDES作为已解决更新。Tutor保留时间与范围并支持真实重检索；学习任务消费有scope的证据，重做失败不代表明确拒绝讲法，无变式不显示可迁移。画像面向当前重点/基础/进展/支持方式。无需数据库结构迁移，旧事件保留；真实学习收益仍待试点。实施与兼容边界见 `docs/MEMORY_UPGRADE_IMPLEMENTATION.md`。
+
 ## 五核的结构语义
 
 五核是学习者状态的五个互补维度，不是五个 Agent，也不是五份可以互相覆盖的画像。它们分别承载不同对象和决策：`structure` 负责学习路径中的位置、依赖和返回；`knowledge` 负责概念理解、缺口、错误与掌握证据；`human` 负责当前负荷、注意、情绪反应和交互适配；`value` 负责目标、优先级、动机和相关性；`practice` 负责尝试、辅助、产物、反馈和迁移表现。

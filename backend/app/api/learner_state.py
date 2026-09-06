@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
-from app.models.learning import LearningTask, MemoryClaim, MemoryModule, MemoryNode
+from app.models.learning import EvidenceEvent, LearningTask, MemoryClaim, MemoryModule, MemoryNode
 from app.models.project import Roadmap
 from app.services.auth import CurrentLearner, get_current_learner
 from app.services.agent_observations import build_learning_workspace_observation
@@ -36,6 +36,7 @@ PATH_STATUSES = {
 }
 PATH_EDGE_KINDS = {"hard_prerequisite", "soft_prerequisite", "co_learning"}
 SYNC_EVENT_TYPES = {
+    "vnext_teaching_input_received",
     "chat_mode_entered",
     "learning_action_segment_completed",
     "vnext_learning_task_created",
@@ -335,6 +336,12 @@ async def get_learner_context(
     current: CurrentLearner = Depends(get_current_learner),
     db: AsyncSession = Depends(get_db),
 ):
+    from app.services.agent_observations import _resolve_scope
+    try:
+        project_id, checkpoint_id = await _resolve_scope(db, current.learner.id,
+            session_id=session_id, project_id=project_id, checkpoint_id=checkpoint_id)
+    except ValueError as error:
+        raise HTTPException(404, str(error)) from error
     if project_id is not None:
         from app.services.auth import require_owned_project
         await require_owned_project(db, current.learner.id, project_id)
@@ -512,6 +519,27 @@ async def sync_learner_event(
     current: CurrentLearner = Depends(get_current_learner),
     db: AsyncSession = Depends(get_db),
 ):
+    if request.event_type == "vnext_teaching_input_received":
+        text = request.payload.get("text")
+        if not request.session_id or not isinstance(text, str) or not text.strip() or len(text) > 20000:
+            raise HTTPException(422, "教学输入需要正式会话及不超过20000字的用户原文")
+        from app.services.agent_observations import _resolve_scope
+        try:
+            request.project_id, request.checkpoint_id = await _resolve_scope(db, current.learner.id,
+                session_id=request.session_id, project_id=request.project_id, checkpoint_id=request.checkpoint_id)
+        except ValueError as error:
+            raise HTTPException(404, str(error)) from error
+        # Clients submit original text, never executable guidance or conclusions.
+        request.payload = {"text": text}
+        existing = (await db.execute(select(EvidenceEvent).where(
+            EvidenceEvent.learner_id == current.learner.id,
+            EvidenceEvent.client_event_id.in_([request.client_event_id,
+                f"{current.learner.id}:{request.client_event_id}"]),
+        ))).scalar_one_or_none()
+        if existing and (existing.event_type != request.event_type or existing.payload != request.payload
+            or (existing.project_id, existing.checkpoint_id, existing.session_id) !=
+               (request.project_id, request.checkpoint_id, request.session_id)):
+            raise HTTPException(409, "同一教学输入标识不能用于不同文字或会话")
     try:
         event = await record_event(
             db,
@@ -523,7 +551,7 @@ async def sync_learner_event(
             session_id=request.session_id,
             payload=request.payload,
             occurred_at=request.occurred_at,
-            confidence=1.0,
+            confidence=0.8 if request.event_type in {"vnext_human_adaptation_requested", "vnext_planning_profile_self_reported"} else 1.0,
             provenance={
                 "vnext_sync": True,
                 **(
@@ -531,13 +559,14 @@ async def sync_learner_event(
                     if request.event_type in {
                         "vnext_human_adaptation_requested",
                         "vnext_planning_profile_self_reported",
+                        "vnext_teaching_input_received",
                     }
                     else {}
                 ),
             },
             actor_type=(
                 "learner"
-                if request.event_type == "vnext_planning_profile_self_reported"
+                if request.event_type in {"vnext_planning_profile_self_reported", "vnext_teaching_input_received"}
                 else None
             ),
             client_event_id=request.client_event_id,

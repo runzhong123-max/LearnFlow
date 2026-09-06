@@ -131,6 +131,7 @@ import {
   startFormalLearningSkillRun,
   syncFormalGlobalChatWithRecovery,
   syncFormalEvent,
+  syncFormalTeachingInput,
   syncFormalEvents,
   updateFormalLearnerProfile,
   uploadKnowledgeLibraryFile,
@@ -185,6 +186,11 @@ type Message = {
   streaming?: boolean
   streamingPhase?: string
   pluginResultProjection?: boolean
+  /** Direct composer text, excluding attached plugin context; preserved for retries. */
+  directUserText?: string
+  teachingInputRecordedBySkillTurn?: boolean
+  retryableTutorError?: boolean
+  formalSkillSyncPending?: 'start' | 'advance'
   /** Internal control payload produced by an explicit plugin button click. */
   hiddenFromTranscript?: boolean
 }
@@ -352,6 +358,10 @@ function messageFromFormal(message: FormalTutorMessage): Message {
     learningGoalKind: ['learning_task', 'planning_goal', 'conversation_topic'].includes(String(vnext.learningGoalKind))
       ? vnext.learningGoalKind as Message['learningGoalKind']
       : undefined,
+    directUserText: typeof vnext.directUserText === 'string' ? vnext.directUserText : undefined,
+    teachingInputRecordedBySkillTurn: vnext.teachingInputRecordedBySkillTurn === true,
+    retryableTutorError: vnext.retryableTutorError === true,
+    formalSkillSyncPending: vnext.formalSkillSyncPending === 'start' || vnext.formalSkillSyncPending === 'advance' ? vnext.formalSkillSyncPending : undefined,
     hiddenFromTranscript: vnext.hiddenFromTranscript === true,
     persistedByTutor: message.meta_data?.source !== 'vnext_chat_session_store',
   }
@@ -371,6 +381,10 @@ function syncMessageMetaData(message: Message): Record<string, unknown> {
     formalTaskId: message.formalTaskId,
     learningGoal: message.learningGoal,
     learningGoalKind: message.learningGoalKind,
+    directUserText: message.directUserText,
+    teachingInputRecordedBySkillTurn: message.teachingInputRecordedBySkillTurn,
+    retryableTutorError: message.retryableTutorError,
+    formalSkillSyncPending: message.formalSkillSyncPending,
     hiddenFromTranscript: message.hiddenFromTranscript,
   }
 }
@@ -1668,6 +1682,7 @@ function App({ auth }: { auth: AuthGateSession }) {
     conversationId: string,
     rawContent: string,
     options: {
+      directUserText?: string
       replayInterruptedTurn?: boolean
       hideUserMessage?: boolean
       referencedPluginObjects?: LearnFlowPluginObject[]
@@ -1705,12 +1720,36 @@ function App({ auth }: { auth: AuthGateSession }) {
     let planningProjection = activeLearningPlanProjection(learningPlans, planningEvents)
     let createdLocalTask: LearningTask | undefined
     let formalSessionId = conversation.formalSessionId
+    const rememberFormalSession = (sessionId: number) => {
+      formalSessionId = sessionId
+      // Persist the scope before the next network request can fail or time out.
+      setWorkspace(previous => ({
+        ...previous,
+        conversations: previous.conversations.map(item => item.id === conversationId
+          ? { ...item, formalSessionId: sessionId } : item),
+      }))
+      return sessionId
+    }
     let formalSkillRun: FormalLearningSkillRun | undefined
     let formalSnapshotForTurn = formalSnapshot
     const replayInterruptedTurn = Boolean(options.replayInterruptedTurn)
-    const clientTurnId = `vnext-turn:${conversationId}:${now}`.slice(0, 120)
     const activeConversationMessages = activeMessages(conversation)
-    const interruptedMode = activeConversationMessages[activeConversationMessages.length - 1]?.tutorMode
+    const previousUserMessage = [...activeConversationMessages].reverse().find(item => item.role === 'user' && !item.hiddenFromTranscript)
+    let preparedSkillTurn = Boolean(replayInterruptedTurn && previousUserMessage?.teachingInputRecordedBySkillTurn)
+    const userMessageId = replayInterruptedTurn && previousUserMessage ? previousUserMessage.id : uid('message')
+    const updateUserMessageMetadata = (patch: Partial<Message>) => setWorkspace(previous => ({
+      ...previous,
+      conversations: previous.conversations.map(item => item.id === conversationId ? {
+        ...item,
+        messages: item.messages.map(message => message.id === userMessageId ? { ...message, ...patch } : message),
+        sheets: item.sheets.map(sheet => ({ ...sheet,
+          messages: sheet.messages.map(message => message.id === userMessageId ? { ...message, ...patch } : message),
+        })),
+      } : item),
+    }))
+    const clientTurnId = `vnext-turn:${userMessageId}`.slice(0, 120)
+    const directUserText = options.hideUserMessage ? '' : options.directUserText?.trim() || (replayInterruptedTurn ? previousUserMessage?.directUserText || '' : '')
+    const interruptedMode = previousUserMessage?.tutorMode
     const mode = replayInterruptedTurn && isTutorMode(interruptedMode)
       ? interruptedMode
       : conversation.projectRole === 'tutor'
@@ -1807,9 +1846,10 @@ function App({ auth }: { auth: AuthGateSession }) {
         if (item.id !== conversationId) return item
         const firstStudentMessage = !hasVisibleStudentMessage(item.messages)
         const userMessage: Message = {
-          id: uid('message'), role: 'user', content, createdAt: now, tutorMode: mode,
+          id: userMessageId, role: 'user', content, createdAt: now, tutorMode: mode,
           persistedByTutor: isDesktopRuntime(),
           hiddenFromTranscript: Boolean(options.hideUserMessage),
+          directUserText: directUserText || undefined,
           learningSkillId: learningProjection?.skillId,
           learningSubstateId: optimisticTurnStep?.substateId,
           learningSubstateLabel: optimisticTurnStep?.substateLabel,
@@ -1897,13 +1937,23 @@ function App({ auth }: { auth: AuthGateSession }) {
       }
     }
 
-    if (!replayInterruptedTurn && formalConnection.status === 'connected') {
+    const retryFormalSkillTurn = replayInterruptedTurn && mode === 'guided_learning' && !preparedSkillTurn
+      && Boolean(previousUserMessage?.formalSkillSyncPending) && Boolean(learningProjection)
+    if ((!replayInterruptedTurn || retryFormalSkillTurn) && formalConnection.status === 'connected') {
+      // Remember the intended formal action before even session/profile sync:
+      // failure in those preceding requests must resume the same skill action.
+      const skillSyncAction = mode === 'guided_learning' && learningProjection
+        ? replayInterruptedTurn && previousUserMessage?.formalSkillSyncPending
+          ? previousUserMessage.formalSkillSyncPending
+          : createdLocalTask || !learningProjection.task.formalSkillRunId || !learningProjection.task.formalSkillRunVersion ? 'start' : 'advance'
+        : undefined
+      if (skillSyncAction) updateUserMessageMetadata({ formalSkillSyncPending: skillSyncAction })
       try {
         if (!conversation.projectId) {
           const session = await persistGlobalConversation(conversation)
-          formalSessionId = session?.id
+          if (session) formalSessionId = rememberFormalSession(session.id)
         }
-        const humanAdaptationSignals = detectHumanAdaptationSignals(content)
+        const humanAdaptationSignals = detectHumanAdaptationSignals(directUserText)
         for (const [index, signal] of humanAdaptationSignals.entries()) {
           await syncFormalEvent({
             id: `human-adaptation:${clientTurnId}:${index}`,
@@ -1924,10 +1974,10 @@ function App({ auth }: { auth: AuthGateSession }) {
           })
         }
         if (mode === 'learning_plan' && planningProjection) {
-          const selfReport = extractPlanningProfileSelfReport(
-            content,
+          const selfReport = directUserText ? extractPlanningProfileSelfReport(
+            directUserText,
             planningGoalSummary(planningProjection),
-          )
+          ) : null
           if (selfReport) {
             await syncFormalEvent({
               id: `planning-profile:${clientTurnId}`,
@@ -1961,10 +2011,10 @@ function App({ auth }: { auth: AuthGateSession }) {
               projectId: conversation.projectId,
               checkpointId: conversation.checkpointId,
             })
-            formalSessionId = session.id
+            formalSessionId = rememberFormalSession(session.id)
           }
           const binding = learningProjection.task
-          if (createdLocalTask || !binding.formalSkillRunId || !binding.formalSkillRunVersion) {
+          if (skillSyncAction === 'start') {
             const started = await startFormalLearningSkillRun(
               formalSessionId,
               learningProjection.skillId,
@@ -1974,7 +2024,9 @@ function App({ auth }: { auth: AuthGateSession }) {
               binding.formalTaskId,
             )
             formalSkillRun = started.active_skill_run
+            updateUserMessageMetadata({ formalSkillSyncPending: undefined })
           } else {
+            if (!binding.formalSkillRunId || !binding.formalSkillRunVersion) throw new Error('待恢复的正式学习回合缺少技能绑定')
             const advanced = await advanceFormalLearningSkillTurn(
               formalSessionId,
               binding.formalSkillRunId,
@@ -1982,8 +2034,11 @@ function App({ auth }: { auth: AuthGateSession }) {
               binding.formalSkillRunVersion,
               clientTurnId,
               conversation.projectId ? [] : conversation.domainSources.map(source => source.id),
+              directUserText,
             )
             formalSkillRun = advanced.active_skill_run
+            preparedSkillTurn = true
+            updateUserMessageMetadata({ teachingInputRecordedBySkillTurn: true, formalSkillSyncPending: undefined })
           }
           learningTasks = learningTasks.map(task => task.id === binding.id && formalSkillRun
             ? bindFormalSkillRun(task, formalSkillRun)
@@ -2020,7 +2075,47 @@ function App({ auth }: { auth: AuthGateSession }) {
         })
         await syncFormalEvents(atomicEvents)
       } catch (error) {
-        setFormalError(error instanceof Error ? error.message : '原子事件同步失败')
+        const detail = error instanceof Error ? error.message : '原子事件同步失败'
+        setFormalError(detail)
+        if (mode === 'guided_learning') {
+          // Do not fall through to a second evidence channel when the first
+          // request may have committed but its response was lost.
+          finishTurn(conversationId, sheetId, mode, {
+            role: 'system', retryableTutorError: true,
+            content: `本轮学习状态同步未确认，暂未开始回答：${detail}。请点击重新回答，系统会沿用本轮标识核对并继续。`,
+          })
+          return
+        }
+      }
+    }
+
+    // Complete the authoritative immediate-state write before the Tutor reads
+    // context. Replay reuses the persisted message ID, so it cannot add evidence.
+    if (!isDesktopRuntime() && !preparedSkillTurn && formalConnection.status === 'connected' && directUserText) {
+      try {
+        if (!formalSessionId) {
+          const session = await createFormalTutorSession(true, {
+            projectId: conversation.projectId, checkpointId: conversation.checkpointId,
+          })
+          formalSessionId = rememberFormalSession(session.id)
+        }
+        await syncFormalTeachingInput({
+          messageId: userMessageId,
+          text: directUserText,
+          occurredAt: replayInterruptedTurn && previousUserMessage ? previousUserMessage.createdAt : now,
+          sessionId: formalSessionId,
+          projectId: conversation.projectId,
+          checkpointId: conversation.checkpointId,
+        })
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : '同步失败'
+        setFormalError(`本轮教学需求尚未保存：${detail}`)
+        finishTurn(conversationId, sheetId, mode, {
+          role: 'system',
+          retryableTutorError: true,
+          content: `本轮教学需求尚未保存，暂未开始回答：${detail}。请重试。`,
+        })
+        return
       }
     }
 
@@ -2072,6 +2167,8 @@ function App({ auth }: { auth: AuthGateSession }) {
         ? formalSnapshotForTurn?.learning_tasks.find(task => task.id === learningProjection.task.formalTaskId)
         : undefined
       const reply = await requestTutorReply({
+        directUserText,
+        clientTurnId,
         baseUrl: workspace.settings.baseUrl,
         model: workspace.settings.model,
         mode,
@@ -2172,7 +2269,7 @@ function App({ auth }: { auth: AuthGateSession }) {
       : message
     if (!content.trim()) return
     setPluginDraftReferences(previous => ({ ...previous, [draftKey]: [] }))
-    await runTutorTurn(conversationId, content, { referencedPluginObjects: references })
+    await runTutorTurn(conversationId, content, { directUserText: message, referencedPluginObjects: references })
   }
 
   const updateLearningTask = async (
@@ -2817,7 +2914,7 @@ function App({ auth }: { auth: AuthGateSession }) {
           streamingPhase: liveTurn.phase,
         }]
       : persistedMessages
-    const interruptedTurn = recoverableTutorTurn(persistedMessages, Boolean(pendingMode))
+    const interruptedTurn = recoverableTutorTurn(persistedMessages.filter(message => !message.retryableTutorError), Boolean(pendingMode))
     const attachedSources = conversation.projectId ? conversation.projectSources : conversation.domainSources
     const hasWorkbench = conversation.sheets.length > 0
     const paperMode = paperDeskView?.conversationId === conversation.id ? paperDeskView.mode : 'stack'

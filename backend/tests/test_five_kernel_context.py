@@ -189,7 +189,8 @@ def test_context_packet_is_bounded_scoped_deterministic_and_answer_free():
     assert "OTHER_PROJECT_SECRET" not in rendered
     assert superseded_id not in {item["id"] for item in packet["items"]}
     assert active_id in {item["id"] for item in packet["items"]}
-    assert any(path["relation"] == "SUPERSEDES" for path in packet["conflicts"])
+    assert any(path["relation"] == "SUPERSEDES" for path in packet["resolved_updates"])
+    assert all(path["relation"] == "CONTRADICTS" for path in packet["conflicts"])
     assert len(heads) == 5
     assert all(len(head.focus_refs or []) <= 3 for head in heads)
     assert all(len(head.alert_refs or []) <= 5 for head in heads)

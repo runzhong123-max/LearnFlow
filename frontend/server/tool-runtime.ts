@@ -1,3 +1,5 @@
+import { compactTeachingGuidance } from '../src/teaching-guidance-context.ts'
+import { structurallyCompact } from './context-compaction.ts'
 import type {
   SearchSource,
   TutorToolRun,
@@ -544,6 +546,7 @@ export type TutorAgentToolRuntimeOptions = {
   knowledgeDomains?: AgentKnowledgeDomain[]
   learnerPathState?: LearnerPathState
   formalLearnerContext?: unknown
+  readLearnerContext?: (query: string) => Promise<unknown>
   formalWorkspaceContext?: unknown
   formalDomainKnowledgeContext?: unknown
   formalReviewContext?: unknown
@@ -598,6 +601,9 @@ function compactFormalLearnerContext(value: unknown) {
       node_type: item.node_type,
       memory_kind: item.memory_kind,
       subject: item.subject,
+      scope: item.scope,
+      occurred_at: item.occurred_at,
+      evidence_refs: item.evidence_refs,
       text: compactText(item.text, 700),
       confidence: item.confidence,
       status: item.status,
@@ -611,6 +617,10 @@ function compactFormalLearnerContext(value: unknown) {
       manifest: concept.manifest,
     },
     conflicts: (Array.isArray(packet.conflicts) ? packet.conflicts : []).slice(0, 6),
+    resolved_updates: packet.resolved_updates || [],
+    omitted: packet.omitted || {},
+    adaptation_directives: packet.adaptation_directives || [],
+    teaching_guidance: compactTeachingGuidance(packet),
     missing_facets: packet.missing_facets || [],
     manifest: packet.manifest,
   }
@@ -962,7 +972,8 @@ export async function executeTutorAgentTool(
   }
   try {
     if (name === 'read_learner_context') {
-      const formal = compactFormalLearnerContext(options.formalLearnerContext)
+      const formal = compactFormalLearnerContext(options.readLearnerContext
+        ? await options.readLearnerContext(query) : options.formalLearnerContext)
       if (formal) {
         return {
           run: {
@@ -1033,7 +1044,7 @@ export async function executeTutorAgentTool(
         run: {
           ...base, kind: 'workspace', status: 'completed', title: '读取学习工作区',
           detail: `已读取当前任务/规划绑定与 ${queue.length} 个正式队列任务；${formal ? `${formal.recent_attempts.length} 次近期尝试、${formal.open_remediations.length} 个开放纠错` : '实践/复习投影暂不可用'}；${domains.length ? `当前项目有 ${domains.length} 个来源知识领域` : '当前对话未绑定项目知识领域'}。`,
-          observationSummary: `${queue.length} 个正式任务 / ${formal?.recent_attempts.length || 0} 次尝试 / ${domains.length} 个项目知识领域`,
+          observationSummary: `${queue.length} 个正式任务 / ${formal ? `${formal.recent_attempts.length} 次近期尝试` : '实践记录暂不可用'} / ${domains.length} 个项目知识领域`,
           durationMs: Date.now() - startedAt,
           ...(currentArtifact && (currentArtifact.kind === 'lecture' || currentArtifact.kind === 'practice') && currentArtifact.ref ? {
             learningFile: {
@@ -1045,6 +1056,7 @@ export async function executeTutorAgentTool(
         },
         observation: {
           authority: formal?.authority || 'formal_task_queue_plus_scoped_workspace_projection',
+          evidenceAvailability: formal ? 'available_in_scope' : 'unavailable',
           currentTaskBinding: options.learningTaskContext,
           planningDialogue: options.learningPlanContext,
           formalTaskQueue: queue,

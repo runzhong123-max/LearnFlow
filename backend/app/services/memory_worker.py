@@ -4,8 +4,8 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-from datetime import datetime
-from typing import Any
+from datetime import datetime, timedelta
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -24,6 +24,8 @@ from app.models.learning import (
 )
 from app.services.memory_graph import (
     MODULE_VERSION_POLICY,
+    MAX_SYNTHESIS_ATTEMPTS,
+    effective_evidence_ids,
     _add_edge,
     _bounded_evidence_ids,
     current_memory_module,
@@ -42,6 +44,7 @@ from app.services.five_kernel_context import (
 
 
 class SynthesisClaimDraft(BaseModel):
+    claim_type: Literal["record", "independent_success", "stable_mastery", "transfer"] | None = None
     text: str = Field(min_length=1, max_length=800)
     predicate: str = Field(min_length=1, max_length=255)
     value: Any = None
@@ -112,10 +115,15 @@ def _deterministic_draft(
     rows: list[tuple[MemoryNode, MemoryFact, EvidenceEvent]],
 ) -> SynthesisDraft:
     facts = [node for node, _, _ in rows]
-    rendered = [
-        f"[{fact.evidence_grade}] {node.text}"
-        for node, fact, _ in rows
-    ]
+    def render(node, fact, event):
+        if event.event_type == "memory_correction_retracted":
+            return "[corrected] 学习者已撤回相关认识，不再作为当前背景使用"
+        if event.event_type == "memory_correction_added":
+            return "[corrected] 学习者更正为：" + str((event.payload or {}).get("correction", ""))
+        return f"[{fact.evidence_grade}] {node.text}"
+    # New corrections must remain visible even in the bounded text projection.
+    ordered = sorted(rows, key=lambda row: (row[1].evidence_grade == "corrected", row[0].id), reverse=True)
+    rendered = [render(*row) for row in ordered]
     detail = "；".join(rendered)
     policy = KERNELS[kernel_name]
     prefix = {
@@ -131,6 +139,7 @@ def _deterministic_draft(
     return SynthesisDraft(
         summary=summary,
         claims=[SynthesisClaimDraft(
+            claim_type="record",
             text=f"{prefix}：{detail}"[:800],
             predicate=f"{kernel_name}.{policy.claim_mode}",
             value={"fact_count": len(facts), "subject": subject_key, "claim_mode": policy.claim_mode},
@@ -170,6 +179,7 @@ async def _model_draft(
     prompt = (
         "你是 LearnFlow 五核记忆合成器。只总结给定的同一维度事实，不补充外部知识。"
         "每条 claim 必须引用至少一个候选 fact_id，且不得引用列表外 ID。"
+        "claim_type 必填：普通记录为 record；独立成功为 independent_success；稳定掌握为 stable_mastery；变式迁移为 transfer。"
         "知识维度中，exposure_only 或 self_reported 不能被表述成已掌握。"
         "保持可证伪、简洁，保留冲突，不要强行求一致。"
         f"本核的 Module 角色：{policy.module_role} Claim 角色：{policy.claim_role} "
@@ -205,6 +215,24 @@ def _validate_draft(
             errors.append(f"claim_{index}_has_no_evidence")
         if not refs.issubset(allowed):
             errors.append(f"claim_{index}_references_outside_whitelist")
+        verified_ids = {events[i].id for i in refs if i in facts and facts[i].evidence_grade == "verified"}
+        transfer_ids = {events[i].id for i in refs if i in facts and facts[i].evidence_grade == "verified"
+                        and events[i].event_type in {"transfer_attempt_evaluated", "remediation_variant_evaluated"}}
+        kind = claim.claim_type
+        if kind == "independent_success" and not verified_ids:
+            errors.append(f"claim_{index}_insufficient_independent_evidence")
+        if kind == "stable_mastery" and len(verified_ids) < 2:
+            errors.append(f"claim_{index}_insufficient_mastery_evidence")
+        if kind == "transfer" and not transfer_ids:
+            errors.append(f"claim_{index}_insufficient_transfer_evidence")
+        if kind not in {None, "record"} and run.kernel_name not in {"knowledge", "practice"}:
+            errors.append(f"claim_{index}_capability_outside_learning_evidence")
+        # Legacy drafts are readable but cannot acquire untyped capability authority.
+        # Explicit historical boundary records stay compatible.
+        if kind is None and run.kernel_name in {"knowledge", "practice"}:
+            boundary = any(marker in claim.text for marker in ("未", "没有", "缺乏", "自述", "接触", "记录"))
+            if not boundary and not verified_ids:
+                errors.append(f"claim_{index}_untyped_capability_evidence")
         mastery_language = _asserts_mastery(claim.text, claim.predicate)
         if run.kernel_name == "knowledge" and mastery_language:
             verified = {fact.source_event_id for fact_id, fact in facts.items()
@@ -320,7 +348,9 @@ async def _release_run(db: AsyncSession, run: MemorySynthesisRun, error: str) ->
     for fact in facts:
         fact.consumption_status = "eligible"
         fact.reservation_run_id = None
-    run.status = "failed"
+    run.status = "queued" if (run.attempt_count or 0) < MAX_SYNTHESIS_ATTEMPTS else "failed"
+    if run.status == "queued":
+        run.due_at = datetime.utcnow() + timedelta(seconds=2 ** (run.attempt_count or 0))
     run.validation_errors = list(run.validation_errors or []) + [error]
     run.finished_at = datetime.utcnow()
     await db.commit()
@@ -338,6 +368,7 @@ async def process_synthesis_run(run_id: int) -> MemorySynthesisRun | None:
             .join(MemoryFact, MemoryFact.node_id == MemoryNode.id)
             .join(EvidenceEvent, EvidenceEvent.id == MemoryFact.source_event_id)
             .where(
+                MemoryNode.status.in_(["active", "legacy"]),
                 MemoryNode.id.in_(candidate_ids),
                 MemoryNode.learner_id == run.learner_id,
                 MemoryNode.kernel_name == run.kernel_name,
@@ -353,11 +384,11 @@ async def process_synthesis_run(run_id: int) -> MemorySynthesisRun | None:
             await db.commit()
             return run
         current = await current_memory_module(
-            db, run.learner_id, run.kernel_name, run.subject_key,
+            db, run.learner_id, run.kernel_name, run.subject_key, include_inactive=True,
         )
         base_node, base_module = current if current else (None, None)
         base_fact_ids = await module_evidence_fact_ids(db, base_module) if base_module else []
-        evidence_ids = _bounded_evidence_ids(base_fact_ids, candidate_ids)
+        evidence_ids = await effective_evidence_ids(db, run.learner_id, run.kernel_name, run.subject_key, candidate_ids)
         fingerprint = input_fingerprint(run.kernel_name, run.subject_key, evidence_ids)
         duplicate = (await db.execute(select(MemorySynthesisRun.id).where(
             MemorySynthesisRun.learner_id == run.learner_id,
@@ -380,6 +411,7 @@ async def process_synthesis_run(run_id: int) -> MemorySynthesisRun | None:
             .join(MemoryFact, MemoryFact.node_id == MemoryNode.id)
             .join(EvidenceEvent, EvidenceEvent.id == MemoryFact.source_event_id)
             .where(
+                MemoryNode.status.in_(["active", "legacy"]),
                 MemoryNode.id.in_(evidence_ids),
                 MemoryNode.learner_id == run.learner_id,
                 MemoryNode.kernel_name == run.kernel_name,
@@ -422,6 +454,7 @@ async def process_synthesis_run(run_id: int) -> MemorySynthesisRun | None:
             .join(MemoryFact, MemoryFact.node_id == MemoryNode.id)
             .join(EvidenceEvent, EvidenceEvent.id == MemoryFact.source_event_id)
             .where(
+                MemoryNode.status.in_(["active", "legacy"]),
                 MemoryNode.id.in_(evidence_ids),
                 MemoryNode.learner_id == run.learner_id,
                 MemoryNode.kernel_name == run.kernel_name,
@@ -440,6 +473,27 @@ async def process_synthesis_run(run_id: int) -> MemorySynthesisRun | None:
             await _release_run(db, run, "validation_rejected")
             return run
 
+        if run.kernel_name in {"knowledge", "practice"}:
+            safe_claims = []
+            lookup = {node.id: (node, fact, event) for node, fact, event in rows}
+            for claim in draft.claims:
+                if claim.claim_type in {None, "record"}:
+                    safe_claims.extend(_deterministic_draft(
+                        run.kernel_name, run.subject_key,
+                        [lookup[i] for i in dict.fromkeys(claim.evidence_fact_ids)],
+                    ).claims)
+                else:
+                    label = {
+                        "independent_success": "该主题已有独立成功记录，尚不代表稳定掌握或迁移",
+                        "stable_mastery": "该主题已有至少两次独立验证记录，迁移能力须另有变式证据",
+                        "transfer": "该主题已有独立变式迁移记录，结论限已验证情境",
+                    }[claim.claim_type]
+                    safe_claims.append(claim.model_copy(update={
+                        "text": label,
+                        "predicate": f"{run.kernel_name}.{claim.claim_type}",
+                        "value": {"claim_type": claim.claim_type, "subject": run.subject_key},
+                    }))
+            draft = SynthesisDraft(summary="；".join(c.text for c in safe_claims)[:1200], claims=safe_claims)
         fact_nodes = [node for node, _, _ in rows]
         time_start = min(node.occurred_at for node in fact_nodes)
         time_end = max(node.occurred_at for node in fact_nodes)
@@ -463,7 +517,8 @@ async def process_synthesis_run(run_id: int) -> MemorySynthesisRun | None:
             )
         )).scalars().all()
         for previous in previous_modules:
-            previous.status = "superseded" if relation == "SUPERSEDES" else "refined"
+            if previous.status != "retracted":
+                previous.status = "superseded" if relation == "SUPERSEDES" else "refined"
             old_claims = (await db.execute(
                 select(MemoryNode)
                 .join(MemoryClaim, MemoryClaim.node_id == MemoryNode.id)
@@ -574,6 +629,7 @@ async def process_synthesis_run(run_id: int) -> MemorySynthesisRun | None:
                     "session_id": session_id,
                     "evidence_fact_ids": claim.evidence_fact_ids,
                     "module_version": run.target_module_version,
+                    "claim_type": claim.claim_type or "record",
                 },
                 confidence=claim_confidence,
                 salience=memory_salience(

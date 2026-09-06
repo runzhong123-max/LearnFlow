@@ -61,3 +61,7 @@ artifact 或 Event 输入；供应商名称、YAML 或清单字符串本身不�
 ## 同仓产品契约登记（2026-09-06）
 
 Role Atlas 子应用通过 LearnFlow 权威导出同步 v1/v2 学习路径制品；规范语义由 LearnFlow 维护，岗位情境与证据由 Role Atlas 维护。源图、岗位挂载、特殊节点提案校验器已登记为只读数据契约，未新增模型工具或学习者写入口。Graph Hub 继续负责版本化发现与分发。特殊节点接收、图上局部迭代和 Agent／工作流分发见 [后续设计](implementation/2026-09-06-learning-path-contract-and-graph-workflow.md)，不列作本次已实现能力。
+
+## 用户指定的 LearnFlow app 五核升级迁移（2026-09-06）
+
+此次按用户明确迁移请求，选取本人 fork 中 Ryan 提交的 `ed680826` 与 `3e71c833` 两组五核增量，按当前主线逐项适配；未建立持续同步或合并外部历史。新增候选观察与即时教学输入继续经注册事件、确定性 reducer 和有 scope 的 ContextPacket。未迁移桌宠、实验工作台、发布流水线或真实数据库。来源、兼容性与实测结果见 [迁移记录](MEMORY_UPGRADE_MIGRATION.md)。

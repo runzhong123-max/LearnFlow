@@ -17,7 +17,7 @@ from typing import Any
 from app.services.action_board import ACTION_BOARD
 
 
-REGISTRY_VERSION = "2026-09-06.1"
+REGISTRY_VERSION = "2026-09-06.2"
 EVENT_SCHEMA_VERSION = "learnflow.evidence.v1"
 SKILL_SPEC_VERSION = "learnflow.skill.v3"
 # The learner-facing SkillSpec changed in this registry release.
@@ -360,7 +360,7 @@ CHAT_MODES = {
 KERNELS = {
     item.id: item for item in (
         KernelContract("structure", "学习者走到哪里，怎样离开与返回",
-                       tuple(sorted(SEMANTIC_MEMORY_KEYS["structure"])),
+                       tuple(sorted(SEMANTIC_MEMORY_KEYS["structure"] | {"semantic_candidate", "teaching_directives"})),
                        "Only stable path patterns and confirmed project structure may consolidate.",
                        "Event-backed navigation, dependency and boundary observations.",
                        "A replaceable route or boundary snapshot; it may remain state-first with one compact anchor claim.",
@@ -368,7 +368,7 @@ KERNELS = {
                        "sparse_anchor", ("course", "concept", "project", "checkpoint", "task"),
                        ("Learning-path self-report never implies knowledge mastery.",)),
         KernelContract("knowledge", "对哪个知识点理解到什么程度",
-                       tuple(sorted(SEMANTIC_MEMORY_KEYS["knowledge"])),
+                       tuple(sorted(SEMANTIC_MEMORY_KEYS["knowledge"] | {"semantic_candidate", "teaching_directives"})),
                        "Two explicit same-concept self-reports may consolidate only as an exposure boundary; mastery and misconception require graded or explicitly correctable evidence.",
                        "Concept attempts, misconceptions, questions, retention and correction facts.",
                        "Concept-scoped evidence synthesis shared by subject key with Structure but independently authoritative.",
@@ -376,7 +376,7 @@ KERNELS = {
                        "evidence_claims", ("course", "concept", "checkpoint", "task"),
                        ("Exposure and self-report cannot become mastery.", "Mastery requires repeated verified evidence.")),
         KernelContract("human", "当前怎样教更合适",
-                       tuple(sorted(SEMANTIC_MEMORY_KEYS["human"])),
+                       tuple(sorted(SEMANTIC_MEMORY_KEYS["human"] | {"semantic_candidate", "teaching_directives"})),
                        "Preferences consolidate after explicit confirmation or cross-session evidence.",
                        "Explicit preferences plus bounded, time-sensitive load and support observations.",
                        "A compact adaptation directive; transient sensitive facts normally expire before module synthesis.",
@@ -384,7 +384,7 @@ KERNELS = {
                        "directive_claims", ("preference", "session", "task"),
                        ("No personality, medical or fixed learning-style inference.", "Sensitive content is excluded from ordinary Agent context.")),
         KernelContract("value", "为什么学，什么更值得投入",
-                       tuple(sorted(SEMANTIC_MEMORY_KEYS["value"])),
+                       tuple(sorted(SEMANTIC_MEMORY_KEYS["value"] | {"semantic_candidate", "teaching_directives"})),
                        "Long-term goals require explicit learner confirmation.",
                        "Goal proposals, confirmed goals, interests, relevance and priority observations.",
                        "A learner-visible goal or interest trajectory; proposals remain short-lived until explicit confirmation.",
@@ -392,7 +392,7 @@ KERNELS = {
                        "consent_claims", ("goal", "course", "project", "task"),
                        ("Planning tools may propose but never silently confirm a long-term goal.",)),
         KernelContract("practice", "能否独立做出来",
-                       tuple(sorted(SEMANTIC_MEMORY_KEYS["practice"])),
+                       tuple(sorted(SEMANTIC_MEMORY_KEYS["practice"] | {"semantic_candidate", "teaching_directives"})),
                        "Independent and transfer attempts outrank assisted completion.",
                        "Attempts, assistance level, artifacts, feedback, transfer and project performance facts.",
                        "Artifact or task scoped performance history; event/fact-first and often richer than a generic summary module.",
@@ -1319,6 +1319,9 @@ def _event(event_id: str, capability: str, targets: tuple[str, ...], role: str,
 
 EVENTS = {
     item.id: item for item in (
+        _event("vnext_teaching_input_received", "coordinate_vnext_agent_turn", KERNEL_NAMES,
+               "explicit_immediate_teaching_context", origin="vnext"),
+        _event("semantic_observation_proposed", "coordinate_vnext_agent_turn", KERNEL_NAMES, "inferred_candidate"),
         _event("chat_mode_entered", "coordinate_chat_mode", (), "operational_context"),
         _event("learning_action_segment_completed", "coordinate_chat_mode", ("structure", "knowledge", "value"), "learning_action_projection"),
         _event(

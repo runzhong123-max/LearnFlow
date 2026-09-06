@@ -1,3 +1,4 @@
+import { requestFormalTutorTurn } from './formal-runtime.ts'
 import type { TutorToolChoice, TutorToolRun } from './tooling.ts'
 import {
   hasExplicitLearningIntent,
@@ -460,6 +461,8 @@ async function executeDesktopVisualTool(options: {
 }
 
 export async function requestTutorReply(options: {
+  directUserText?: string
+  clientTurnId?: string
   baseUrl: string
   model: string
   mode: TutorMode
@@ -504,26 +507,22 @@ export async function requestTutorReply(options: {
   try {
     if (isDesktopRuntime()) {
       if (!options.formalScope?.sessionId) throw new Error('桌面 Tutor 尚未取得正式会话，请重试本轮')
-      const response = await runtimeFetch(`/api/agent/sessions/${options.formalScope.sessionId}/turns`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: latestUserMessage,
-          project_id: options.formalScope.projectId,
-          checkpoint_id: options.formalScope.checkpointId,
-          selected_skill_id: options.learningTaskContext?.skillId,
-          client_turn_id: `desktop-turn:${options.conversationId || 'chat'}:${Date.now()}`.slice(0, 160),
-          context: {
-            mode: options.mode,
-            selection_context: options.selectionContext,
-            active_artifact: options.activeArtifactContext,
-            sheet_id: options.sheetId,
-          },
-        }),
-        signal: controller.signal,
-      })
-      const payload = await response.json().catch(() => null) as { message?: unknown; detail?: unknown } | null
-      if (!response.ok) throw new Error(typeof payload?.detail === 'string' ? payload.detail : `桌面 Tutor 返回 HTTP ${response.status}`)
+      if (!options.clientTurnId) throw new Error('桌面 Tutor 缺少稳定消息标识，请重试本轮')
+      const payload = await requestFormalTutorTurn(options.formalScope.sessionId, {
+        message: latestUserMessage,
+        // Explicit empty is intentional; never substitute enriched message text.
+        direct_user_text: options.directUserText ?? '',
+        project_id: options.formalScope.projectId,
+        checkpoint_id: options.formalScope.checkpointId,
+        selected_skill_id: options.learningTaskContext?.skillId,
+        client_turn_id: options.clientTurnId,
+        context: {
+          mode: options.mode,
+          selection_context: options.selectionContext,
+          active_artifact: options.activeArtifactContext,
+          sheet_id: options.sheetId,
+        },
+      }, controller.signal)
       if (typeof payload?.message !== 'string' || !payload.message.trim()) throw new Error('桌面 Tutor 没有返回可显示的文本')
       // The formal Tutor reply is persisted before visual_teaching_composition
       // starts. A renderer timeout can therefore never invalidate the lesson.

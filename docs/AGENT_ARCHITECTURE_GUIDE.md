@@ -1,5 +1,7 @@
 # LearnFlow 智能体架构与协作指南
 
+Contract impact（`2026-09-06.2`）：迁移五核记忆证据与即时教学升级，保留当前学习路径 v2、岗位插件与任务交接合同。新增 semantic_observation_proposed 与 vnext_teaching_input_received 注册事件；模型观察仅为短期候选，教学指导由确定性 reducer 生成有 scope 的控制投影。Module policy 升至 memory-module-version-v2，完善撤回、独立事件门槛、检索过滤与偏好更新。旧事件与数据库结构保留；新旧客户端增量兼容，前后端应共同发布。详见 [迁移记录](MEMORY_UPGRADE_MIGRATION.md)。
+
 Contract impact（`2026-09-06.1`）：学习路径规范语义归 Learning Design Agent 所有；新增的 `learning_path_source_v2 / role_learning_alignment_v2 / graph_extension_proposal_v2` 是只读／提案校验的数据契约，字段权威为 `frontend/src/learning-path-contract-v2.ts`，不作为模型工具暴露。Role Atlas 维护岗位情境、任务与挂载依据；LearnFlow 维护规范课程和知识技能语义；Graph Hub 发现并分发固定版本。图谱特殊节点进入共享源图的运行时接收尚待实现，不能借个人节点网关代写，也不能把生成内容升级为学习证据。v1 读图、规划、个人覆盖层和三类主 Agent 保持兼容。详见 [v2 契约](product/LEARNING_PATH_CONTRACT_V2.md)。
 
 Contract impact（`2026-09-02.7`）：从学习任务队列或确认卡进入正式任务时，前端不再只打开来源页面，而是启动/恢复该 `LearningTask`、恢复原 Conversation/Session scope、切换到 `guided_learning` 并创建浏览器 `LearningTaskBinding`。随后首个正式 SkillRun 请求携带 `learning_task_id`，运行时验证 learner/project/checkpoint/session 后把 SkillRun 绑定到同一任务；重复请求重放现有运行，不生成第二条原子任务。该变化只补齐 Tutor 主状态到正式 SkillRun 的既有包含关系，不新增状态机、Agent、事件或掌握写入。

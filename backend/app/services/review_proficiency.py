@@ -12,7 +12,7 @@ from typing import Any
 from app.models.learning import EvidenceEvent, LearningAttempt, RemediationCase, ReviewSchedule
 
 
-PROFICIENCY_POLICY_VERSION = "concept-proficiency-v1"
+PROFICIENCY_POLICY_VERSION = "concept-proficiency-v2"
 REVIEW_INTERVAL_DAYS = (1, 3, 7, 14, 30, 60)
 DSR_DECAY = -0.5
 DSR_TARGET_RETENTION = 0.9
@@ -214,7 +214,7 @@ def build_concept_proficiency(
     elif score < 40:
         level = "fragile"
         label = "脆弱"
-    elif score < 65:
+    elif score < 65 or independent_variants == 0:
         level = "developing"
         label = "形成中"
     elif score < 85:

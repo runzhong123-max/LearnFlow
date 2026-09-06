@@ -3293,12 +3293,21 @@ def test_structure_and_knowledge_memories_have_distinct_boundaries(client: TestC
             assert structure["path_dependencies"][0]["title"] == "张量形状"
             assert structure["resume_anchor"]["checkpoint_id"] == attention.id
             assert structure["focus_transition"]["from_checkpoint_id"] == foundation.id
-            assert structure["deferred_threads"] == ["完成张量热身后回到注意力"]
+            assert "deferred_threads" not in structure
+            assert "semantic_candidate" not in structure
+            from app.models.learning import KernelState
+            raw_states = {row.kernel_name: row.short_term for row in (await db.execute(
+                select(KernelState).where(KernelState.learner_id == learner_id)
+            )).scalars()}
+            assert raw_states["structure"]["semantic_candidate"]["fields"]["deferred_threads"] == ["完成张量热身后回到注意力"]
+            assert raw_states["structure"]["semantic_candidate"]["verification"] == "inferred"
             assert "concept_understanding" not in structure
 
             assert knowledge["knowledge_gap"].startswith("我为什么看不懂")
             assert "current_misconception" not in knowledge
-            assert knowledge["misconceptions"]["qkv"] == "把 Q、K、V 当成三个独立输入"
+            assert "misconceptions" not in knowledge
+            assert "semantic_candidate" not in knowledge
+            assert raw_states["knowledge"]["semantic_candidate"]["fields"]["misconceptions"]["qkv"] == "把 Q、K、V 当成三个独立输入"
             assert "path_position" not in knowledge
             assert value["current_priority"] == "我的目标是亲手实现一个 MiniGPT"
             assert "current_goal" not in structure

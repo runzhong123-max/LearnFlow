@@ -60,3 +60,20 @@ test('adaptation extraction deduplicates and caps simultaneous directives', () =
   assert.equal(signals.length, 3)
   assert.equal(new Set(signals.map(item => `${item.signalKind}:${item.value}`)).size, signals.length)
 })
+
+test('negated and attributed requests do not reverse learner preferences', () => {
+  for (const input of [
+    '不要给我代码例子，先讲原理', '不用画图', '不需要慢一点',
+    '我朋友说给我代码例子', '假如我说给我代码例子',
+    '这是测试，请慢一点', '老师说“给我代码例子”',
+    '以前我想看动画', '给我代码例子就算了',
+  ]) assert.deepEqual(detectHumanAdaptationSignals(input), [], input)
+  assert.deepEqual(detectHumanAdaptationSignals('不要给我代码例子，请用图示').map(item => item.value), ['visual'])
+  assert.deepEqual(detectHumanAdaptationSignals('不要展开，别再重复').map(item => item.value), ['concise', 'alternative'])
+})
+
+test('adaptation evidence is the supporting clause, including requests after long context', () => {
+  const signals = detectHumanAdaptationSignals(`${'这是学习背景。'.repeat(80)}请慢一点。`)
+  assert.equal(signals.length, 1)
+  assert.equal(signals[0].evidenceQuote, '请慢一点')
+})

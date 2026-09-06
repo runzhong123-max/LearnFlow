@@ -6,7 +6,7 @@ import json
 from datetime import datetime, timedelta
 from typing import Any
 
-from sqlalchemy import and_, func, or_, select, text
+from sqlalchemy import and_, case, func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.learning import (
@@ -50,6 +50,10 @@ TRANSIENT_HUMAN_KEYS = {
 }
 NON_MEMORY_PATCH_KEYS = {
     "transient_expires_at", "adaptation_source", "adaptation_scope",
+    # These are bounded, scoped control projections, not evidence summaries.
+    # The original event/mutation already preserves their sources. Re-synthesis
+    # would repeat old instructions and defeat per-turn expiry and replacement.
+    "teaching_directives", "teaching_preferences",
 }
 BOUNDARY_EVENTS = {
     "project_created", "project_imported", "project_selected", "roadmap_applied", "roadmap_revised", "checkpoint_entered",
@@ -60,7 +64,8 @@ EXPLICIT_PREFERENCE_KEYS = {
     "weekly_hours", "preferred_modes", "learning_preferences", "pace_preference",
     "format_preference",
 }
-MODULE_VERSION_POLICY = "memory-module-version-v1"
+MODULE_VERSION_POLICY = "memory-module-version-v2"
+MAX_SYNTHESIS_ATTEMPTS = 3
 MODULE_EVIDENCE_LIMIT = 64
 KNOWLEDGE_SELF_REPORT_THRESHOLD = 2
 
@@ -150,7 +155,7 @@ def _subject_key(event: EvidenceEvent, kernel_name: str, key: str, value: Any) -
     if kernel_name == "structure" and event.project_id is not None:
         return f"project:{event.project_id}"
     if kernel_name == "value":
-        if key in {"career_goal", "current_goal", "goal_candidate", "goal_status"}:
+        if key in {"career_goal", "career_goal_candidate", "career_goal_status", "current_goal", "goal_candidate", "goal_status", "current_priority"}:
             return "goal:primary"
         if event.project_id is not None:
             return f"project:{event.project_id}"
@@ -198,7 +203,9 @@ def _fact_pairs(mutation: KernelMutation) -> list[tuple[str, str, Any]]:
     seen: set[tuple[str, str]] = set()
     for scope, values in (("short_term", short), ("long_term", long)):
         for key, value in values.items():
-            if key in NON_MEMORY_PATCH_KEYS:
+            if key in NON_MEMORY_PATCH_KEYS or (
+                mutation.kernel_name == "human" and scope == "long_term" and key == "learning_preferences"
+            ):
                 continue
             marker = (key, json.dumps(value, ensure_ascii=False, sort_keys=True, default=str))
             if marker in seen:
@@ -245,6 +252,30 @@ async def _add_edge(
     return edge
 
 
+async def invalidate_fact_projections(db: AsyncSession, learner_id: int, fact_ids: list[int], *, status: str) -> None:
+    """Invalidate derived projections, retaining immutable events and old text."""
+    if not fact_ids:
+        return
+    facts = (await db.execute(select(MemoryNode, MemoryFact).join(
+        MemoryFact, MemoryFact.node_id == MemoryNode.id,
+    ).where(MemoryNode.learner_id == learner_id, MemoryNode.id.in_(fact_ids)))).all()
+    for node, fact in facts:
+        node.status = status
+        fact.consumption_status = "excluded"
+        fact.reservation_run_id = None
+    derived = (await db.execute(select(MemoryNode).where(
+        MemoryNode.learner_id == learner_id,
+        MemoryNode.node_type.in_(["module", "claim"]),
+        MemoryNode.status.in_(["active", "legacy"]),
+    ))).scalars().all()
+    affected = set(fact_ids)
+    for node in derived:
+        if affected.intersection((node.payload or {}).get("evidence_fact_ids", [])):
+            node.status = status
+    await db.flush()
+    await rebuild_kernel_long_term_from_modules(db, learner_id)
+
+
 async def create_facts_for_mutation(
     db: AsyncSession,
     event: EvidenceEvent,
@@ -262,13 +293,47 @@ async def create_facts_for_mutation(
     if existing:
         return list(existing)
 
+    if event.event_type in {"memory_correction_added", "memory_correction_retracted"}:
+        await invalidate_fact_projections(
+            db, event.learner_id, list((event.payload or {}).get("affected_fact_ids", [])),
+            status="retracted" if event.event_type.endswith("retracted") else "superseded",
+        )
+    if mutation.kernel_name == "human" and "learning_preferences" in dict((mutation.patch or {}).get("long_term") or {}):
+        # Historical aggregate facts duplicate per-key evidence and must not keep
+        # stale values alive after a partial preference update.
+        aggregates = list((await db.execute(select(MemoryNode.id).where(
+            MemoryNode.learner_id == event.learner_id,
+            MemoryNode.kernel_name == "human", MemoryNode.node_type == "fact",
+            MemoryNode.status.in_(["active", "legacy"]),
+            MemoryNode.payload["key"].as_string() == "learning_preferences",
+        ))).scalars().all())
+        await invalidate_fact_projections(db, event.learner_id, aggregates, status="superseded")
     created: list[MemoryNode] = []
     occurred_at = event.occurred_at or event.created_at or datetime.utcnow()
     for ordinal, (scope, key, value) in enumerate(_fact_pairs(mutation)):
         subject = _subject_key(event, mutation.kernel_name, key, value)
+        replaceable = (
+            mutation.kernel_name == "knowledge" and key == "declared_background"
+        ) or (
+            mutation.kernel_name == "human" and key in EXPLICIT_PREFERENCE_KEYS
+        ) or (mutation.kernel_name == "value" and key in {
+            "career_goal", "career_goal_candidate", "career_goal_status", "current_goal", "goal_candidate", "goal_status", "current_priority",
+        })
+        if replaceable:
+            old_ids = list((await db.execute(select(MemoryNode.id).where(
+                MemoryNode.learner_id == event.learner_id,
+                MemoryNode.kernel_name == mutation.kernel_name,
+                MemoryNode.subject_key == subject,
+                MemoryNode.node_type == "fact",
+                MemoryNode.status.in_(["active", "legacy"]),
+                MemoryNode.payload["key"].as_string() == key,
+            ))).scalars().all())
+            await invalidate_fact_projections(db, event.learner_id, old_ids, status="superseded")
         subject_type, subject_id = subject_parts(subject)
         grade = _evidence_grade(event, key)
-        transient = mutation.kernel_name == "human" and key in TRANSIENT_HUMAN_KEYS
+        transient = key == "semantic_candidate" or (
+            mutation.kernel_name == "human" and key in TRANSIENT_HUMAN_KEYS
+        )
         valid_to = occurred_at + timedelta(hours=8) if transient else None
         memory_kind = memory_kind_for(mutation.kernel_name, key)
         node = MemoryNode(
@@ -395,10 +460,15 @@ async def _eligible_facts(
             MemoryNode.status.in_(["active", "legacy"]),
             MemoryFact.consumption_status == "eligible",
         )
-        .order_by(MemoryNode.occurred_at.asc(), MemoryNode.id.asc())
+        .order_by(
+            case((MemoryFact.evidence_grade == "corrected", 0),
+                 (MemoryFact.evidence_grade == "verified", 1),
+                 (MemoryFact.evidence_grade == "self_reported", 2), else_=3),
+            MemoryNode.occurred_at.desc(), MemoryNode.id.desc(),
+        )
         .limit(limit)
     )).all()
-    return list(rows)
+    return sorted(rows, key=lambda row: (row[0].occurred_at, row[0].id))
 
 
 def _sessions_count(rows: list[tuple[MemoryNode, MemoryFact, EvidenceEvent]]) -> int:
@@ -416,14 +486,15 @@ def _trigger_reason(
 ) -> str | None:
     if not rows:
         return None
+    event_count = len({event.id for _, _, event in rows})
     if trigger_event.event_type == "memory_correction_confirmed":
         return "confirmation"
     if trigger_event.event_type in {"memory_correction_added", "memory_correction_retracted"}:
         return "correction"
     if kernel_name == "structure":
-        if len(rows) >= 3:
+        if event_count >= 3:
             return "structure_threshold"
-        if len(rows) >= 2 and trigger_event.event_type in BOUNDARY_EVENTS:
+        if event_count >= 2 and trigger_event.event_type in BOUNDARY_EVENTS:
             return "structure_boundary"
     elif kernel_name == "knowledge":
         # A learner may explicitly ask LearnFlow to remember the boundary of
@@ -433,7 +504,7 @@ def _trigger_reason(
         # as self-reported and rejects mastery language without repeated
         # verified evidence.
         exposure_only = (
-            len(rows) >= KNOWLEDGE_SELF_REPORT_THRESHOLD
+            event_count >= KNOWLEDGE_SELF_REPORT_THRESHOLD
             and all(fact.evidence_grade == "self_reported" for _, fact, _ in rows)
             and all(
                 event.event_type == "learner_concept_observation_recorded"
@@ -462,7 +533,7 @@ def _trigger_reason(
         )
         if explicit:
             return "explicit_preference"
-        if len(rows) >= 3 and _sessions_count(rows) >= 2:
+        if event_count >= 3 and _sessions_count(rows) >= 2:
             return "human_cross_session"
     elif kernel_name == "value":
         confirmed = any(
@@ -473,7 +544,7 @@ def _trigger_reason(
         )
         if confirmed:
             return "confirmed_goal"
-        if len(rows) >= 3 and _sessions_count(rows) >= 2:
+        if event_count >= 3 and _sessions_count(rows) >= 2:
             return "value_cross_session"
     elif kernel_name == "practice":
         event_types = {event.event_type for _, _, event in rows}
@@ -503,6 +574,7 @@ async def current_memory_module(
     learner_id: int,
     kernel_name: str,
     subject_key: str,
+    *, include_inactive: bool = False,
 ) -> tuple[MemoryNode, MemoryModule] | None:
     """Return the single current module snapshot for one kernel subject."""
     return (await db.execute(
@@ -512,7 +584,7 @@ async def current_memory_module(
             MemoryNode.learner_id == learner_id,
             MemoryNode.kernel_name == kernel_name,
             MemoryNode.subject_key == subject_key,
-            MemoryNode.status.in_(["active", "legacy"]),
+            MemoryNode.status.in_(["active", "legacy", "superseded", "retracted", "refined"] if include_inactive else ["active", "legacy"]),
         )
         .order_by(MemoryModule.version.desc(), MemoryNode.id.desc())
         .limit(1)
@@ -562,6 +634,25 @@ def _bounded_evidence_ids(base_ids: list[int], delta_ids: list[int]) -> list[int
     return base[-room:] + delta if room else delta[-MODULE_EVIDENCE_LIMIT:]
 
 
+async def effective_evidence_ids(db: AsyncSession, learner_id: int, kernel_name: str,
+                                 subject_key: str, delta_ids: list[int]) -> list[int]:
+    """Keep current same-subject evidence, prioritizing corrections and verification."""
+    rows = (await db.execute(select(MemoryNode, MemoryFact).join(
+        MemoryFact, MemoryFact.node_id == MemoryNode.id,
+    ).where(
+        MemoryNode.learner_id == learner_id, MemoryNode.kernel_name == kernel_name,
+        MemoryNode.subject_key == subject_key, MemoryNode.status.in_(["active", "legacy"]),
+        or_(MemoryFact.consumption_status.in_(["consumed", "reserved"]), MemoryNode.id.in_(delta_ids)),
+    ).order_by(
+        case((MemoryFact.evidence_grade == "corrected", 0),
+             (MemoryFact.evidence_grade == "verified", 1), else_=2),
+        MemoryNode.occurred_at.desc(), MemoryNode.id.desc(),
+    ).limit(MODULE_EVIDENCE_LIMIT))).all()
+    priority = [node.id for node, _ in rows if node.id not in delta_ids]
+    room = max(0, MODULE_EVIDENCE_LIMIT - len(delta_ids))
+    return sorted(set(priority[:room] + delta_ids))
+
+
 def _refinement_trigger_reason(
     kernel_name: str,
     rows: list[tuple[MemoryNode, MemoryFact, EvidenceEvent]],
@@ -585,7 +676,7 @@ async def maybe_queue_synthesis(
     trigger_event: EvidenceEvent,
 ) -> MemorySynthesisRun | None:
     rows = await _eligible_facts(db, learner_id, kernel_name, subject_key)
-    current = await current_memory_module(db, learner_id, kernel_name, subject_key)
+    current = await current_memory_module(db, learner_id, kernel_name, subject_key, include_inactive=True)
     reason = _trigger_reason(kernel_name, rows, trigger_event)
     if current and not reason:
         reason = _refinement_trigger_reason(kernel_name, rows)
@@ -594,13 +685,18 @@ async def maybe_queue_synthesis(
     delta_fact_ids = [node.id for node, _, _ in rows]
     base_node, base_module = current if current else (None, None)
     base_fact_ids = await module_evidence_fact_ids(db, base_module) if base_module else []
-    evidence_fact_ids = _bounded_evidence_ids(base_fact_ids, delta_fact_ids)
+    evidence_fact_ids = await effective_evidence_ids(db, learner_id, kernel_name, subject_key, delta_fact_ids)
     fingerprint = input_fingerprint(kernel_name, subject_key, evidence_fact_ids)
     existing = (await db.execute(select(MemorySynthesisRun).where(
         MemorySynthesisRun.learner_id == learner_id,
         MemorySynthesisRun.input_fingerprint == fingerprint,
     ))).scalar_one_or_none()
     if existing:
+        if existing.status == "failed" and (existing.attempt_count or 0) < MAX_SYNTHESIS_ATTEMPTS:
+            existing.status = "queued"
+            existing.due_at = datetime.utcnow() + timedelta(seconds=2 ** (existing.attempt_count or 0))
+            existing.finished_at = None
+            await db.flush()
         return existing
     immediate = reason in {
         "correction", "confirmation", "structure_boundary", "verified_transfer",

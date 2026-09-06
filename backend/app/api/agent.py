@@ -460,6 +460,9 @@ async def advance_learning_skill_turn(
         if (
             existing_message.content != request.message
             or existing_meta.get("learning_skill_run_id") != run.id
+            or existing_meta.get("direct_user_text", existing_message.content) != (
+                request.direct_user_text if request.direct_user_text is not None else request.message
+            )
         ):
             raise HTTPException(409, "client_turn_id 已用于另一条学习方法消息")
         stored_plan = dict(existing_meta.get("learning_skill_turn_plan") or {})
@@ -473,6 +476,7 @@ async def advance_learning_skill_turn(
     if run.version != request.expected_version:
         raise HTTPException(409, "学习方法状态已更新，请刷新后重试")
 
+    direct_text = request.direct_user_text if request.direct_user_text is not None else request.message
     learner_message = AgentMessage(
         session_id=session.id,
         role="user",
@@ -481,6 +485,7 @@ async def advance_learning_skill_turn(
             "source": "vnext_agent_turn_runtime",
             "learning_skill_run_id": run.id,
             "model_answer_generated": False,
+            "direct_user_text": direct_text,
             "domain_source_ids": list(request.domain_source_ids or [])[:20],
         },
         idempotency_key=message_key,
@@ -497,11 +502,12 @@ async def advance_learning_skill_turn(
             event_type="user_message",
             source="user",
             payload={
-                "text": request.message,
+                "text": direct_text,
+                "direct_user_input": bool(direct_text.strip()),
                 "learning_task_id": run.learning_task_id,
                 "interaction_scope": "learning_task_conversation",
             },
-            confidence=0.25 if request.message.strip().lower() in {
+            confidence=0.25 if direct_text.strip().lower() in {
                 "懂了", "明白了", "会了", "got it", "understood",
             } else 1.0,
             provenance={"message_id": learner_message.id},
@@ -829,6 +835,7 @@ async def tutor_turn(
         return await process_turn(
             db, session,
             message=data.message,
+            direct_user_text=data.direct_user_text,
             project_id=data.project_id,
             checkpoint_id=data.checkpoint_id,
             selected_action_id=data.selected_action_id,

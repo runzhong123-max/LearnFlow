@@ -14,7 +14,7 @@ import math
 import re
 from typing import Any, Iterable
 
-from sqlalchemy import or_, select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.learning import (
@@ -25,9 +25,11 @@ from app.models.learning import (
     MemoryFact,
     MemoryModule,
     MemoryNode,
+    MemoryArchive,
 )
 from app.services.architecture_registry import KERNEL_NAMES
 from app.services.personal_concept_graph import build_personal_concept_context
+from app.services.teaching_guidance import GUIDANCE_VERSION, select_teaching_guidance
 
 
 MEMORY_SCHEMA_VERSION = "memory-item.v2"
@@ -526,7 +528,9 @@ def _in_scope(
     checkpoint_id: int | None, session_id: int | None,
     allow_superseded: bool = False,
 ) -> bool:
-    if node.status == "superseded" and not allow_superseded:
+    if node.status not in {"active", "transient", "legacy"} and not (
+        allow_superseded and node.status == "superseded"
+    ):
         return False
     if node.valid_to is not None and node.valid_to <= datetime.utcnow():
         return False
@@ -544,6 +548,60 @@ def _in_scope(
     if policy.scope_mode == "review_item" and node.kernel_name not in {"knowledge", "practice"}:
         return False
     return True
+
+
+def _scope_filters(policy: ContextPolicy, project_id, checkpoint_id, session_id):
+    """Apply scope before bounding candidates; old relevant memories stay reachable."""
+    filters = [
+        MemoryNode.status.in_(("active", "transient", "legacy")),
+        or_(MemoryNode.valid_to.is_(None), MemoryNode.valid_to > datetime.utcnow()),
+        or_(MemoryNode.status != "transient", MemoryNode.session_id == session_id)
+        if session_id is not None else MemoryNode.status != "transient",
+    ]
+    if policy.scope_mode == "portfolio_reference":
+        filters.append(or_(MemoryNode.node_type == "claim", MemoryNode.project_id.is_(None)))
+    else:
+        if project_id is not None:
+            filters.extend([
+                or_(MemoryNode.project_id.is_(None), MemoryNode.project_id == project_id),
+                or_(MemoryNode.status != "legacy", MemoryNode.project_id.is_not(None)),
+            ])
+        if checkpoint_id is not None:
+            filters.append(or_(MemoryNode.checkpoint_id.is_(None), MemoryNode.checkpoint_id == checkpoint_id))
+    return filters
+
+
+async def _archived_projection_ids(db: AsyncSession, learner_id: int, archives) -> set[int]:
+    if not archives:
+        return set()
+    predicates = []
+    for entry in archives:
+        keys = [entry.memory_key]
+        if entry.kernel_name == "human" and entry.memory_key == "learning_preferences":
+            keys.extend(("preferred_modes", "pace_preference", "format_preference", "weekly_hours"))
+        matching_key = and_(
+            MemoryNode.payload["key"].as_string().in_(keys),
+            # Aggregate preferences also project into individual short-term facts.
+            True if len(keys) > 1 else MemoryNode.payload["scope"].as_string() == entry.memory_scope,
+        )
+        if entry.kernel_name == "human" and entry.memory_key in {
+            "preferred_modes", "pace_preference", "format_preference", "weekly_hours",
+        }:
+            # Older versions stored aggregate preference facts. Hiding one key
+            # must also hide their summaries, which can repeat that archived value.
+            matching_key = or_(matching_key, MemoryNode.payload["key"].as_string() == "learning_preferences")
+        predicates.append(and_(MemoryNode.kernel_name == entry.kernel_name, matching_key))
+    excluded = set((await db.execute(select(MemoryNode.id).where(
+        MemoryNode.learner_id == learner_id, or_(*predicates),
+    ))).scalars().all())
+    # Facts support claims directly, and modules one level above those facts.
+    for _ in range(2):
+        excluded.update((await db.execute(select(MemoryEdge.target_node_id).where(
+            MemoryEdge.learner_id == learner_id,
+            MemoryEdge.source_node_id.in_(excluded or {-1}),
+            MemoryEdge.relation_type.in_(("SUPPORTS", "CONSOLIDATED_INTO")),
+        ))).scalars().all())
+    return excluded
 
 
 async def _node_metadata(
@@ -652,6 +710,23 @@ async def build_five_kernel_context(
     """Build a deterministic, answer-free and budgeted ContextPacket."""
     if isinstance(policy, str):
         policy = CONTEXT_POLICIES[policy]
+    archives = list((await db.execute(select(MemoryArchive).where(
+        MemoryArchive.learner_id == learner_id, MemoryArchive.status == "archived",
+    ))).scalars().all())
+    archived_ids = await _archived_projection_ids(db, learner_id, archives)
+    guidance_states = (await db.execute(select(KernelState).where(
+        KernelState.learner_id == learner_id,
+    ))).scalars().all()
+    teaching_guidance = select_teaching_guidance(
+        {row.kernel_name: {"short_term": dict(row.short_term or {}),
+                           "long_term": dict(row.long_term or {})} for row in guidance_states},
+        project_id=project_id, checkpoint_id=checkpoint_id, session_id=session_id,
+        archived_paths={(entry.kernel_name, entry.memory_scope, entry.memory_key) for entry in archives},
+    )
+    guidance_omitted = 0
+    while teaching_guidance and _token_estimate(teaching_guidance) > min(800, policy.token_budget // 3):
+        teaching_guidance.pop()
+        guidance_omitted += 1
     heads = await ensure_kernel_heads(db, learner_id)
     head_rows = [head for head in heads if head.kernel_name in policy.head_kernels]
     raw_head_refs = {
@@ -670,7 +745,7 @@ async def build_five_kernel_context(
     head_facts, _, _ = await _node_metadata(db, raw_head_refs)
     hidden_refs = {
         node.id for node in referenced_nodes
-        if node.kernel_name == "human" or not _in_scope(
+        if node.id in archived_ids or node.kernel_name == "human" or not _in_scope(
             node, policy, project_id=project_id, checkpoint_id=checkpoint_id,
             session_id=session_id,
         ) or _sensitive_node(node, head_facts.get(node.id))
@@ -693,6 +768,12 @@ async def build_five_kernel_context(
         scoped_nodes = [referenced_map[ref] for ref in ordered_refs]
         head_states = dict((head.facets or {}).get("states") or {})
         if head.kernel_name == "human":
+            for archived in archives:
+                if archived.kernel_name == "human":
+                    head_states.pop(archived.memory_key, None)
+                    if archived.memory_key == "learning_preferences":
+                        for key in ("preferred_modes", "pace_preference", "format_preference", "weekly_hours"):
+                            head_states.pop(key, None)
             head_states = _scoped_human_states(
                 head_states,
                 project_id=project_id,
@@ -738,15 +819,26 @@ async def build_five_kernel_context(
             + list(head.get("working_refs") or []) + list(head.get("stable_refs") or [])
         )
     }
-    nodes = list((await db.execute(select(MemoryNode).where(
+    base = select(MemoryNode).where(
         MemoryNode.learner_id == learner_id,
         MemoryNode.kernel_name.in_(policy.deep_kernels),
-        MemoryNode.status.in_(("active", "transient", "legacy")),
-    ).order_by(
-        MemoryNode.occurred_at.desc(), MemoryNode.id.desc(),
-    ).limit(240))).scalars().all())
-    facts, claims, modules = await _node_metadata(db, [node.id for node in nodes])
+        MemoryNode.id.not_in(archived_ids or {-1}),
+        *_scope_filters(policy, project_id, checkpoint_id, session_id),
+    )
+    recent_order = (MemoryNode.occurred_at.desc(), MemoryNode.id.desc())
     query_terms = _search_terms(query)
+    nodes_by_id = {}
+    channels = [MemoryNode.subject_key.in_(requested_subjects or {"__none__"}),
+                MemoryNode.id.in_(head_refs or {-1})]
+    if query_terms:
+        channels.append(or_(*(MemoryNode.text.contains(term, autoescape=True)
+                              for term in sorted(query_terms)[:48])))
+    for channel in [*channels, None]:
+        statement = base.where(channel) if channel is not None else base
+        for node in (await db.execute(statement.order_by(*recent_order).limit(240))).scalars():
+            nodes_by_id[node.id] = node
+    nodes = list(nodes_by_id.values())
+    facts, claims, modules = await _node_metadata(db, [node.id for node in nodes])
     concept_context = await build_personal_concept_context(
         db,
         learner_id,
@@ -820,6 +912,7 @@ async def build_five_kernel_context(
     used_tokens = (
         _token_estimate(head_payload) + _token_estimate(concept_context)
         + _token_estimate(adaptation_directives)
+        + _token_estimate(teaching_guidance)
     )
     for score, _, node, reasons in ranked:
         candidate = _serialize_item(
@@ -856,11 +949,17 @@ async def build_five_kernel_context(
             MemoryNode.id.in_(neighbor_ids or {-1}),
         ))).scalars().all())
         neighbor_map = {node.id: node for node in neighbors}
+        neighbor_facts, _, _ = await _node_metadata(db, neighbor_ids)
         selected_map = {int(item["id"]): item for item in items}
         for edge in edges:
             source = selected_map.get(edge.source_node_id) or neighbor_map.get(edge.source_node_id)
             target = selected_map.get(edge.target_node_id) or neighbor_map.get(edge.target_node_id)
             if not source or not target:
+                continue
+            if any(isinstance(value, MemoryNode) and (
+                value.id in archived_ids or value.kernel_name == "human"
+                or _sensitive_node(value, neighbor_facts.get(value.id))
+            ) for value in (source, target)):
                 continue
             if isinstance(source, MemoryNode) and not _in_scope(
                 source, policy, project_id=project_id, checkpoint_id=checkpoint_id,
@@ -885,7 +984,7 @@ async def build_five_kernel_context(
                 "evidence_event_id": edge.evidence_event_id,
             }
             relation_paths.append(path)
-            if edge.relation_type in {"CONTRADICTS", "SUPERSEDES"}:
+            if edge.relation_type == "CONTRADICTS":
                 conflicts.append(path)
             if len(relation_paths) >= policy.max_paths:
                 break
@@ -897,6 +996,7 @@ async def build_five_kernel_context(
             "paths": relation_paths,
             "personal_concept_graph": concept_context,
             "adaptation_directives": adaptation_directives,
+            "teaching_guidance": teaching_guidance,
         })
 
     # One-hop paths are discovered after item selection.  Trim the least
@@ -920,12 +1020,12 @@ async def build_five_kernel_context(
         break
     conflicts = [
         path for path in relation_paths
-        if path["relation"] in {"CONTRADICTS", "SUPERSEDES"}
+        if path["relation"] == "CONTRADICTS"
     ]
 
     evidence_ids = sorted({
         int(ref) for item in items for ref in item.get("evidence_refs", []) if ref is not None
-    })
+    } | {int(item["source_event_id"]) for item in teaching_guidance if item.get("source_event_id")})
     represented_kernels = {item["kernel"] for item in items}
     missing_facets = [
         kernel for kernel in policy.deep_kernels
@@ -942,6 +1042,7 @@ async def build_five_kernel_context(
         "head_versions": {
             name: value["version"] for name, value in head_payload.items()
         },
+        "teaching_guidance": teaching_guidance,
         "item_ids": [item["id"] for item in items],
         "path_keys": [
             [path["source"]["id"], path["relation"], path["target"]["id"]]
@@ -972,10 +1073,17 @@ async def build_five_kernel_context(
         "relation_paths": relation_paths,
         "personal_concept_graph": concept_context,
         "adaptation_directives": adaptation_directives,
+        "teaching_guidance": teaching_guidance,
+        "teaching_guidance_version": GUIDANCE_VERSION,
         "missing_facets": missing_facets,
         "conflicts": conflicts,
+        "resolved_updates": [path for path in relation_paths if path["relation"] == "SUPERSEDES"],
         "omitted": {
+            "teaching_guidance_budget_filtered": guidance_omitted,
             "candidate_count": len(nodes),
+            "candidate_limit_per_channel": 240,
+            "candidate_channels": len(channels) + 1,
+            "candidate_window_may_be_truncated": len(nodes) >= 240,
             "selected_count": len(items),
             "scope_filtered": excluded_scope,
             "sensitive_filtered": excluded_sensitive,
@@ -992,6 +1100,7 @@ async def build_five_kernel_context(
                 "paths": relation_paths,
                 "personal_concept_graph": concept_context,
                 "adaptation_directives": adaptation_directives,
+                "teaching_guidance": teaching_guidance,
             }),
             "answer_free": True,
             "retrieval_order": ["exact_scope", "subject_and_lexical", "one_hop_relations"],

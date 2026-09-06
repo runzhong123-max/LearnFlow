@@ -226,7 +226,7 @@ def test_review_reflection_is_answer_free_correctable_knowledge_evidence(client:
     context = client.get(f"/api/review/agent-context?query={item['subject_key']}")
     assert context.status_code == 200
     assert not _contains_hidden_answers(context.json())
-    assert context.json()["policy_versions"]["proficiency"] == "concept-proficiency-v1"
+    assert context.json()["policy_versions"]["proficiency"] == "concept-proficiency-v2"
     assert any(
         note["text"] == text
         for context_item in context.json()["items"]

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import type {
   FormalConceptEdge,
   FormalConceptNode,
@@ -14,6 +14,9 @@ import {
   presentModuleTitle,
   presentVerification,
 } from './profile-presentation'
+
+import { buildProfileOverview, profileGrowthArea, profileTimeLabel } from './profile-overview'
+import './profile-overview.css'
 
 const KERNELS: Array<{ id: KernelName; name: string; short: string; description: string }> = [
   { id: 'structure', name: '结构核', short: '结构', description: '学习位置、路径依赖、当前锚点与可返回的位置。它与知识核共享主题标识，但不替知识核判断掌握。' },
@@ -292,6 +295,9 @@ function PersonalConceptGraph({ snapshot, kernel }: { snapshot: FormalLearnerSna
 export default function LearnerProfilePage({
   connection, snapshot, busyKey, error, onRefresh, onOpenPath, onMemoryArchive, onClaimAction, onRecordSelfReport, onUpdateProfile,
 }: Props) {
+  const [recordsOpen, setRecordsOpen] = useState(false)
+  const [editorOpen, setEditorOpen] = useState(false)
+  const recordsRef = useRef<HTMLDetailsElement>(null)
   const [activeKernel, setActiveKernel] = useState<KernelName>('structure')
   const [corrections, setCorrections] = useState<Record<number, string>>({})
   const [selfReport, setSelfReport] = useState('')
@@ -302,7 +308,7 @@ export default function LearnerProfilePage({
   const [careerGoal, setCareerGoal] = useState('')
   const [careerGoalConfirmed, setCareerGoalConfirmed] = useState(false)
   const meta = KERNELS.find(item => item.id === activeKernel) || KERNELS[0]
-  const area = snapshot?.growth.areas.find(item => item.id === activeKernel)
+  const area = snapshot ? profileGrowthArea(snapshot.growth.areas, activeKernel) : undefined
   const modules = useMemo(
     () => snapshot?.modules.filter(item => item.kernel === activeKernel) || [],
     [activeKernel, snapshot],
@@ -346,24 +352,22 @@ export default function LearnerProfilePage({
 
       {error && <div className="formal-inline-error" role="alert">{error}</div>}
 
-      <div className="formal-profile-overview">
-        <div><span>当前重点</span><strong>{String(snapshot.growth.overview.current_focus || '尚未确定')}</strong></div>
-        <div><span>有效记忆</span><strong>{snapshot.growth.stats.active_memories || 0}</strong></div>
-        <div><span>可追溯记录</span><strong>{snapshot.growth.stats.learning_records || 0}</strong></div>
-        <button type="button" onClick={onOpenPath}>打开学习路径</button>
+      <div className="profile-learning-overview">
+        {buildProfileOverview(snapshot).map(section => <section key={section.id} className="profile-learning-section">
+          <header><h2>{section.title}</h2><button type="button" onClick={() => {
+            setActiveKernel(section.kernel)
+            setRecordsOpen(true)
+            setEditorOpen(section.id !== 'progress')
+            requestAnimationFrame(() => recordsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+          }}>{section.id === 'progress' ? '查看依据' : '修改'}</button></header>
+          {section.items.length ? <ul>{section.items.map(item => <li key={item.id}>
+            <p>{item.text}</p><small>{item.source}</small>
+            <small><time>{profileTimeLabel(item.time)}</time>{item.time ? ' · 记录时间' : ''}</small>
+          </li>)}</ul> : <p className="formal-empty-copy">{section.empty}</p>}
+        </section>)}
       </div>
+      <div className="profile-overview-footer"><span>这里呈现当前已读取的资料。自述帮助选择讲解起点，具体能力由学习表现逐步确认。</span><button type="button" onClick={onOpenPath}>打开学习路径</button></div>
 
-      <section className="formal-profile-summary-card">
-        <div className="formal-profile-source">
-          <span>我的明确资料</span>
-          <p>{snapshot.profile.background || '尚未填写学习基础。'}</p>
-          <dl>
-            <div><dt>关注方向</dt><dd>{snapshot.profile.focus_areas.join('、') || '未填写'}</dd></div>
-            <div><dt>偏好形式</dt><dd>{snapshot.profile.preferred_modes.join('、') || '未填写'}</dd></div>
-            <div><dt>方向目标</dt><dd>{snapshot.profile.career_goal || '仍在探索'}</dd></div>
-          </dl>
-        </div>
-      </section>
       <details className="profile-input-disclosure">
         <summary>＋ 补充学习经历、阻碍或联想</summary>
         <form onSubmit={event => {
@@ -373,10 +377,12 @@ export default function LearnerProfilePage({
         }}>
           <p>可以写“我学过……”“我不懂……”或某个知识怎样阻碍、推动了理解。</p>
           <textarea value={selfReport} onChange={event => setSelfReport(event.target.value)} placeholder="例如：我学过概率论，但条件概率总是搞混。链式法则帮助我理解反向传播。" />
-          <button type="submit" disabled={!selfReport.trim() || busyKey === 'concept-report'}>{busyKey === 'concept-report' ? '正在写入事件链…' : '记录明确自述'}</button>
+          <button type="submit" disabled={!selfReport.trim() || busyKey === 'concept-report'}>{busyKey === 'concept-report' ? '正在保存…' : '记录明确自述'}</button>
         </form>
       </details>
 
+      <details ref={recordsRef} className="profile-record-disclosure" open={recordsOpen} onToggle={event => setRecordsOpen(event.currentTarget.open)}>
+        <summary>查看与管理全部学习认识</summary>
       <nav className="kernel-tabs" aria-label="五核切换" role="tablist">
         {KERNELS.map(item => (
           <button key={item.id} type="button" role="tab" aria-selected={activeKernel === item.id} className={activeKernel === item.id ? 'active' : ''} onClick={() => setActiveKernel(item.id)}>
@@ -390,8 +396,8 @@ export default function LearnerProfilePage({
         <small>{area?.active_count || 0} 条当前参考</small>
       </div>
 
-      <details className={`kernel-explicit-editor kernel-explicit-editor-${activeKernel}`}>
-        <summary>编辑{meta.name}</summary>
+      <details className={`kernel-explicit-editor kernel-explicit-editor-${activeKernel}`} open={editorOpen} onToggle={event => setEditorOpen(event.currentTarget.open)}>
+        <summary>修改{activeKernel === 'knowledge' ? '学习背景' : activeKernel === 'human' ? '学习支持设置' : activeKernel === 'value' ? '目标与方向' : '学习记录'}</summary>
         <div className="kernel-editor-body">
         {activeKernel === 'knowledge' && (
           <form onSubmit={event => { event.preventDefault(); if (background.trim()) void onUpdateProfile({ background: background.trim() }) }}>
@@ -446,12 +452,12 @@ export default function LearnerProfilePage({
           {(area?.memories || []).length === 0 && <p className="formal-empty-copy">这个核还没有可展示的有效记忆。它会随着明确自述、学习事件和可验证表现逐步形成。</p>}
           {(area?.memories || []).map(memory => (
             <article key={memory.memory_id} className={`kernel-memory-row ${memory.status === 'archived' ? 'archived' : ''}`}>
-              <div><span>{memory.retention_label} · {memory.source_label}</span><h3>{memory.title}</h3><p>{memory.summary}</p><small>{memory.related_record_count} 条关联记录</small></div>
+              <div><span>{memory.retention_label} · {memory.source_label}</span><h3>{memory.title}</h3><p>{memory.summary}</p><small>{memory.related_record_count} 条关联记录 · {profileTimeLabel(memory.updated_at)}{memory.updated_at ? ' 更新' : ''}</small></div>
               <button
                 type="button"
                 disabled={busyKey === `memory:${memory.memory_id}`}
                 onClick={() => onMemoryArchive(memory.memory_id, memory.status !== 'archived')}
-              >{memory.status === 'archived' ? '恢复参考' : '不再参考'}</button>
+              >{memory.status === 'archived' ? '恢复使用' : '停止使用'}</button>
             </article>
           ))}
         </section>
@@ -472,7 +478,7 @@ export default function LearnerProfilePage({
                 <summary>
                   <div className="module-node-mark" aria-hidden="true">M</div>
                   <div className="module-summary-copy">
-                    <span>主题记忆 Module · {presentModuleScope(module)}</span>
+                    <span>主题记忆 · {presentModuleScope(module)}</span>
                     <strong>{title}</strong>
                     <p>{presentEvidenceCount(module)}</p>
                   </div>
@@ -485,14 +491,15 @@ export default function LearnerProfilePage({
                       <div className="claim-node-body">
                         <div className="claim-node-heading"><span>可纠正认识 Claim</span><b>{presentVerification(claim)} · {Math.round(claim.confidence * 100)}%</b></div>
                         <p>{presentClaimText(module, claim)}</p>
+                        <small>{presentModuleScope(module)} · {presentEvidenceCount(module)} · 未提供形成时间</small>
                         <div className="claim-actions">
                           <button type="button" disabled={busyKey === `claim:${claim.id}`} onClick={() => onClaimAction(claim.id, 'confirm')}>仍然准确</button>
                           <details>
-                            <summary>纠正</summary>
+                            <summary>修改</summary>
                             <textarea value={corrections[claim.id] || ''} onChange={event => setCorrections(previous => ({ ...previous, [claim.id]: event.target.value }))} placeholder="写出你认为更准确的版本" />
-                            <button type="button" disabled={!corrections[claim.id]?.trim() || busyKey === `claim:${claim.id}`} onClick={() => onClaimAction(claim.id, 'correct', corrections[claim.id])}>提交纠正</button>
+                            <button type="button" disabled={!corrections[claim.id]?.trim() || busyKey === `claim:${claim.id}`} onClick={() => onClaimAction(claim.id, 'correct', corrections[claim.id])}>保存修改</button>
                           </details>
-                          <button type="button" className="claim-retract" disabled={busyKey === `claim:${claim.id}`} onClick={() => onClaimAction(claim.id, 'retract')}>撤回这条</button>
+                          <button type="button" className="claim-retract" disabled={busyKey === `claim:${claim.id}`} onClick={() => onClaimAction(claim.id, 'retract')}>停止使用</button>
                         </div>
                       </div>
                     </article>
@@ -510,6 +517,7 @@ export default function LearnerProfilePage({
           })}
         </section>
       </div>
+      </details>
     </section>
   )
 }
