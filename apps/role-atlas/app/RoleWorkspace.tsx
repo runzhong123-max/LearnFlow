@@ -52,6 +52,7 @@ import type { RuntimeConfigStatus } from "@/lib/runtime-config";
 import { SEARCH_PROVIDER_SESSION_KEY, type SearchProviderConfig } from "@/lib/search/providers";
 import type { WorkspaceSkillId } from "@/lib/skills/workspace";
 import { graphFocusStates } from "@/lib/hub/graph-focus";
+import { readLearnFlowLaunchResponse } from "@/lib/integrations/learnflow/launch-response";
 
 type RoleNode = RoleCardNode;
 
@@ -242,6 +243,7 @@ export default function RoleWorkspace({ projectId, initialConversationId }: { pr
   const [packageStatus, setPackageStatus] = useState<PackageStatus | null>(null);
   const [launchReleaseId, setLaunchReleaseId] = useState("");
   const [launchingLearnFlow, setLaunchingLearnFlow] = useState(false);
+  const [learnFlowLaunchError, setLearnFlowLaunchError] = useState("");
   const [workspaceError, setWorkspaceError] = useState("");
   const [modelSummary, setModelSummary] = useState<{ configured: boolean; label: string }>({ configured: false, label: "未配置模型" });
   const [isRunning, setIsRunning] = useState(false);
@@ -392,18 +394,22 @@ export default function RoleWorkspace({ projectId, initialConversationId }: { pr
 
   const launchInLearnFlow = async () => {
     if (!launchReleaseId || launchingLearnFlow) return;
+    setLearnFlowLaunchError("");
     setLaunchingLearnFlow(true);
     try {
       const response = await fetch("/api/integrations/learnflow/launch", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ releaseId: launchReleaseId, source: "role_atlas" }),
+        signal: AbortSignal.timeout(15_000),
       });
-      const payload = await response.json() as { launchUrl?: string; error?: string };
-      if (!response.ok || !payload.launchUrl) throw new Error(payload.error || "无法进入 LearnFlow");
-      window.location.assign(payload.launchUrl);
+      window.location.assign(await readLearnFlowLaunchResponse(response));
     } catch (error) {
-      setWorkspaceError(error instanceof Error ? error.message : "无法进入 LearnFlow");
+      setLearnFlowLaunchError(error instanceof Error && error.name === "TimeoutError"
+        ? "连接 LearnFlow 超时，请稍后重试。"
+        : error instanceof TypeError ? "无法连接 LearnFlow，请检查网络后重试。"
+        : error instanceof Error ? error.message : "无法进入 LearnFlow，请稍后重试。");
+    } finally {
       setLaunchingLearnFlow(false);
     }
   };
@@ -1287,6 +1293,10 @@ export default function RoleWorkspace({ projectId, initialConversationId }: { pr
             <div className={`status-chip ${packageStatus?.publishable === false ? "warning" : ""}`}><span /> {projectStatus === "building" || enrichmentState.running ? "内核可用 · 后台增量中" : `快照 ${packageStatus?.snapshotAsOf || "装载中"}`}</div>
           </div>
         </header>
+        {learnFlowLaunchError ? <div className="learnflow-launch-error" role="alert">
+          <AlertTriangle size={15} /><span>{learnFlowLaunchError}</span>
+          <button type="button" onClick={() => setLearnFlowLaunchError("")} aria-label="关闭引用错误提示"><X size={14} /></button>
+        </div> : null}
         <div className="graph-toolbar">
           {viewOptions.map((option) => <button key={option.key} className={view === option.key ? "active" : ""} onClick={() => {
             setView(option.key);

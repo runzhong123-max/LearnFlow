@@ -42,6 +42,10 @@ button { color: inherit; }
 .package-header-actions { display: flex; align-items: center; gap: 9px; }
 .learnflow-launch { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; color: #fff; background: #244638; border: 0; border-radius: 7px; cursor: pointer; font-size: 8px; font-weight: 800; }
 .learnflow-launch:disabled { opacity: .6; cursor: wait; }
+.learnflow-launch-error { display: flex; align-items: center; gap: 8px; margin: 8px 18px; padding: 10px 12px; border: 1px solid #dec3b6; border-radius: 8px; background: #fff4ed; color: #82432f; font-size: 12px; }
+.learnflow-launch-error > svg { flex-shrink: 0; }
+.learnflow-launch-error span { flex: 1; overflow-wrap: anywhere; }
+.learnflow-launch-error button { display: inline-flex; padding: 4px; border: 0; background: transparent; color: inherit; cursor: pointer; }
 .workspace-operation-layer > .cold-shell { grid-template-columns: 250px minmax(360px, 1fr) 300px; }
 .inline-operation-state { display: flex; height: 100%; align-items: center; justify-content: center; gap: 9px; color: #5d6d64; background: #f5f2ea; font-size: 11px; }
 .inline-operation-state.error { color: #91513d; }.inline-operation-state button { padding: 7px 10px; color: #fff; background: #334b3e; border: 0; border-radius: 7px; cursor: pointer; }

@@ -99,6 +99,8 @@ npm run graph-hub -- search --hub ./graph-hub --catalog ./learner-7-catalog.json
 
 ## 6. 后续实现顺序
 
+工作台的“在 LearnFlow 中引用”失败提示独立于图谱装载状态，在标题下方显示；图谱已加载时也必须可见。重试清除旧提示，15 秒超时后恢复按钮。`ROLE_ATLAS_REGISTRY_UNAVAILABLE` 表示交接代理读取岗位包目录失败，与 `LEARNFLOW_LOGIN_REQUIRED` 区分；不能将目录故障提示为需要重新登录。非 JSON 网关响应显示可重试的 HTTP 错误。该修复不改变交接令牌、主体绑定或学习证据契约。
+
 当前版本完成共享会话校验、通用 Graph Hub 状态机、权限过滤、内容寻址目录、Graph Hub 市场页、LearnFlow 插件检索工具，以及 Graph Hub/Role Atlas 到 LearnFlow 新对话的主体绑定签名交接。两产品同机部署入口见 `deploy/cohost/`。
 下一步应按以下顺序继续：
 
