@@ -24,6 +24,9 @@ The generated target-triple sidecar and Rust/Node build output are ignored by
 Git. macOS signing, Windows signing, and store credentials are intentionally
 outside this repository stage.
 
+The sidecar also bundles the shared VisualSpec `schema.json` as package data;
+collecting Python modules alone does not include this startup dependency.
+
 ## macOS one-click app
 
 After `npm run build` finishes on Apple Silicon, install the real Tauri app and

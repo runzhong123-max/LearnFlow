@@ -78,6 +78,8 @@ def main() -> None:
         "--paths",
         str(SHARED_CORE_SOURCE),
         "--collect-submodules=learnflow_core",
+        "--add-data",
+        f"{SHARED_CORE_SOURCE / 'learnflow_core' / 'visuals' / 'schema.json'}{data_separator}learnflow_core/visuals",
         "--distpath",
         str(BUILD_ROOT / "dist"),
         "--workpath",
