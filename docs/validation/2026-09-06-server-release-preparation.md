@@ -13,6 +13,10 @@
 
 发布配置复用现有身份加密密钥和持久数据卷，仅在新配置中补齐岗位网关签名密钥；未修改当前运行配置。版本目录中的 previous-deployment.json 记录旧镜像 ID，release.override.json 固定新镜像及原图谱目录。
 
-尚未执行：线上服务切换、真实账号跨 Web/macOS 的业务闭环验收、本地项目与云项目自动同步。桌面在线空间消费云端 Web/API，本地主窗口仍独立运行；它不是完整云本地同步实现。
+用户确认后已执行线上切换：六个 cohost 服务正常运行，新后端 healthy，独立 Memory Worker 无重启且持有独占锁。LearnFlow、Role Atlas、Graph Hub 页面返回 200；`/api/platform` 返回 shared core 0.2.0、learning_platform 和 external worker，`/api/architecture/validate` 返回 valid=true。匿名 ecosystem 请求返回 401；从 LearnFlow 后端发往 Atlas 的签名 catalog.search 只读请求通过。最初诊断使用非数字主体被协议正确拒绝，修正诊断主体后通过。
+
+切换前在服务器 `/opt/ceg/backups/pre-monorepo-0f5f338` 对 16 个 SQLite 文件进行在线备份及完整性检查，另保存旧配置和图谱。旧镜像 ID 保存在新发布目录的 previous-deployment.json；回退应用镜像不自动回退数据库。
+
+尚未执行：真实账号跨 Web/macOS 的业务闭环验收、本地项目与云项目自动同步。桌面在线空间消费云端 Web/API，本地主窗口仍独立运行；它不是完整云本地同步实现。服务间诊断通过不等于真实账号、模型生成与学习闭环全部通过。
 
 Contract impact：本次修复仅改变镜像构建与数据卷挂载目标，保留卷名、现有数据及源契约内容；无 API、EvidenceEvent、五核或数据库语义变更。
