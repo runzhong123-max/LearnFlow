@@ -96,11 +96,11 @@ services:
 
   role-atlas:
     build:
-      context: ../..
-      dockerfile: Dockerfile
+      context: ${LEARNFLOW_REPO_PATH:-../../../..}
+      dockerfile: apps/role-atlas/Dockerfile
       args:
         NODE_BUILD_MEMORY_MB: ${ROLE_ATLAS_BUILD_MEMORY_MB:-1280}
-    command: sh -c 'rm -f /app/.vinext/dev/lock.json && exec npm run dev -- --hostname 0.0.0.0 --port 3000'
+    command: sh -c 'rm -f /app/apps/role-atlas/.vinext/dev/lock.json && exec npm run dev -- --hostname 0.0.0.0 --port 3000'
     restart: unless-stopped
     environment:
       LEARNFLOW_BASE_URL: http://learnflow-backend:8010
@@ -117,8 +117,8 @@ services:
       ROLE_ATLAS_MODEL_BASE_URL: http://caddy:8081
       ROLE_ATLAS_SEARCH_PROVIDER: ${ROLE_ATLAS_SEARCH_PROVIDER:-tavily}
     volumes:
-      - role-atlas-state:/app/.wrangler
-      - ../../output/graph-hub:/app/output/graph-hub
+      - role-atlas-state:/app/apps/role-atlas/.wrangler
+      - ../../output/graph-hub:/app/apps/role-atlas/output/graph-hub
 
   role-atlas-launch-proxy:
     image: node:22-bookworm-slim

@@ -6,6 +6,10 @@
 
 安装 Docker + Compose。将根域名及 `learn`、`roles`、`graphs` 三个子域解析到服务器，开放 80/443。首次使用单实例 API、一个 Memory Worker 与持久数据卷；先不引入 Kubernetes、Redis 或额外对象存储。
 
+Role Atlas 的 Docker 构建同样使用单仓根作为上下文：`docker build -f apps/role-atlas/Dockerfile .`。容器工作目录为 `/app/apps/role-atlas`，共享路径契约位于 `/app/frontend/src`；不要继续使用旧的独立仓构建命令。已有部署升级时，保留原 `role-atlas-state` 卷，将其挂载目标调整为 `/app/apps/role-atlas/.wrangler`，图谱目录对应 `/app/apps/role-atlas/output/graph-hub`。Dockerfile 专属 ignore 文件排除凭据、数据库与本地构建目录。
+
+当前 Role Atlas Compose 仍使用 vinext dev 运行 Cloudflare 本地绑定。这是首发运维限制，不应据此宣称已获得完整生产运行时或高可用；切换到生产运行方式前需验证 D1 持久化与 Worker 绑定。
+
 ## 2. 配置并启动
 
 在服务器克隆本仓、进入根目录：
