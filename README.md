@@ -2,6 +2,8 @@
 
 本仓已包含 LearnFlow 网页、桌面与 Role Atlas。网页入口仍为 `frontend/` + `backend/`；桌面入口为 `apps/desktop/`；共用源码在 `packages/`。开发前先读 [单仓目录与跨端开发](docs/MONOREPO.md)。
 
+首发入口：[目标架构与整合范围](docs/TARGET_ARCHITECTURE.md) · [最短上线计划](docs/LAUNCH_PLAN.md)。
+
 全局导航：[模块与 API 总览图](docs/PROJECT_MAP.md) · [完整 API / IPC 清单](docs/API_CATALOG.md)。
 
 

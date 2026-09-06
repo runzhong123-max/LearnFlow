@@ -43,12 +43,20 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-06.6"
-# The learner-facing SkillSpec changed in this registry release.
+REGISTRY_VERSION = "2026-09-06.7"
+# Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Pure source-data validators/exporters, not Agent-callable tools or learner writers.
 # The referenced TypeScript module owns field semantics; this registry owns discovery.
 DATA_CONTRACTS = {
+    "learning_platform_v1": {
+        "schema_version": "learnflow-platform/v1", "owner": "tutor_agent",
+        "origin": "builtin", "mode": "read_only_runtime_discovery", "lifecycle": "implemented",
+        "authority_path": "docs/implementation/LEARNING_PLATFORM_INTEGRATION.md",
+        "binding_ids": ["api:platform.manifest", "api:platform.readiness"],
+        "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "21 shared API implementations retain existing paths and host authorization; no identity or database merge; online platform uses the server account",
+    },
     "golden_role_workspace_v1": {
         "schema_version": "golden-role-workspace/v1", "owner": "tutor_agent",
         "origin": "builtin", "mode": "offline_research_artifact", "lifecycle": "implemented",
@@ -1307,6 +1315,8 @@ _PYTHON_MEMBER_BINDING_TARGETS = {
 
 
 _API_BINDING_TARGETS = {
+    "api:platform.manifest": ("app.api.platform", "/platform", "GET", "platform_manifest"),
+    "api:platform.readiness": ("app.api.health", "/ready", "GET", "readiness_check"),
     "api:agent.consume_role_package_launch": ("app.api.agent", "/agent/role-package-launches/consume", "POST", "consume_role_package_launch"),
     "api:agent.sync_vnext_session": ("app.api.agent", "/agent/sessions/{session_id}/vnext", "PUT", "sync_vnext_session"),
     "api:agent.start_skill_run": ("app.api.agent", "/agent/sessions/{session_id}/skill-runs", "POST", "start_learning_skill_run"),

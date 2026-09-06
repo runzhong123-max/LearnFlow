@@ -113,6 +113,7 @@ class Settings(BaseSettings):
     # remains asynchronous, but must be enabled by default so queued Facts do
     # not leave a learner's graph permanently incomplete.
     memory_auto_synthesis_enabled: bool = True
+    memory_worker_embedded: bool = True
     github_token: str = ""
     github_resource_search_enabled: bool = True
     # Passwordless account switching is a local development/demo affordance.

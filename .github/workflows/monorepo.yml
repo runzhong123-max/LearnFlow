@@ -8,8 +8,10 @@ on:
       - 'frontend/**'
       - 'apps/desktop/**'
       - 'packages/**'
-      - 'scripts/check_shared_contracts.py'
-      - 'scripts/verify_repository_layout.sh'
+      - 'scripts/**'
+      - 'apps/role-atlas/deploy/cohost/**'
+      - 'deploy/**'
+      - '.dockerignore'
       - '.github/workflows/monorepo.yml'
 permissions:
   contents: read
@@ -27,6 +29,22 @@ jobs:
       - run: python -m pip install -r backend/requirements.txt -r apps/desktop/backend/requirements.txt
       - run: python scripts/check_shared_contracts.py --python-web "$(command -v python)"
       - run: bash scripts/verify_repository_layout.sh
+      - run: python -m unittest discover -s scripts/tests -v
+      - run: bash -n scripts/launch.sh
+      - name: Validate launch configuration without deployment
+        run: |
+          python scripts/prepare_launch.py --domain learnflow.test --output /tmp/learnflow-ci.env
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('/tmp/learnflow-ci.env')
+          value = p.read_text()
+          for name in ('LEARNFLOW_LLM_API_KEY', 'DEEPSEEK_API_KEY', 'TAVILY_API_KEY'):
+              value = re.sub(r'^' + name + r'=.*$', name + '=ci-placeholder', value, flags=re.M)
+          p.write_text(value)
+          PY
+          LEARNFLOW_LAUNCH_ENV=/tmp/learnflow-ci.env bash scripts/launch.sh check
+          rm /tmp/learnflow-ci.env
       - run: python -m pytest -q
         working-directory: backend
       - run: python -m pytest -q

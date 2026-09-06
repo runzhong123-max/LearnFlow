@@ -1,0 +1,2 @@
+"""Shared API implementations composed by each authorized host."""
+SHARED_API_MODULES = ('architecture', 'assessment_design', 'health', 'knowledge_library', 'learner_state', 'learning_files', 'learning_task_integrations', 'learning_tasks', 'local_agent', 'memory', 'micro_learning', 'phase1', 'phase2', 'phase3', 'profile', 'projects', 'remediation', 'review', 'settings', 'tasks', 'workspace')

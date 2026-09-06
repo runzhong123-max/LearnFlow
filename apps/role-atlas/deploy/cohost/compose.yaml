@@ -6,7 +6,7 @@ services:
       args:
         PIP_INDEX_URL: ${PIP_INDEX_URL:-https://mirrors.aliyun.com/pypi/simple/}
     restart: unless-stopped
-    environment:
+    environment: &learning_backend_environment
       DATABASE_URL: sqlite+aiosqlite:////data/learnflow.db
       CORS_ORIGINS: https://${LEARNFLOW_HOST}
       AUTH_COOKIE_SECURE: "true"
@@ -17,6 +17,9 @@ services:
       REGISTRATION_INVITE_CODE: ${REGISTRATION_INVITE_CODE:?set registration invite code}
       DEFAULT_ACCOUNT_CREDIT_LIMIT: ${DEFAULT_ACCOUNT_CREDIT_LIMIT:--1}
       MEMORY_AUTO_SYNTHESIS_ENABLED: "true"
+      MEMORY_WORKER_EMBEDDED: "false"
+      ROLE_ATLAS_GATEWAY_BASE_URL: https://${ROLE_ATLAS_HOST}
+      ROLE_ATLAS_GATEWAY_SECRET: ${ROLE_ATLAS_GATEWAY_SECRET:?set ecosystem gateway secret}
       SOURCE_CACHE_DIR: /data/repo-files
       SOURCE_UPLOADS_DIR: /data/source-uploads
       RUNTIME_DIR: /data/runtime
@@ -29,6 +32,29 @@ services:
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
     volumes:
       - learnflow-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/ready', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
+  learnflow-memory-worker:
+    build:
+      context: ${LEARNFLOW_REPO_PATH:-../../../..}
+      dockerfile: deploy/backend.Dockerfile
+      args:
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://mirrors.aliyun.com/pypi/simple/}
+    restart: unless-stopped
+    command: ["python", "-m", "app.worker"]
+    environment:
+      <<: *learning_backend_environment
+      LEARNFLOW_WORKER_LOCK: /data/memory-worker.lock
+    volumes:
+      - learnflow-data:/data
+    depends_on:
+      learnflow-backend:
+        condition: service_healthy
 
   learnflow-frontend:
     build:
@@ -36,7 +62,8 @@ services:
       dockerfile: deploy/frontend.Dockerfile
     restart: unless-stopped
     depends_on:
-      - learnflow-backend
+      learnflow-backend:
+        condition: service_healthy
     environment:
       LEARNFLOW_BACKEND_URL: http://learnflow-backend:8010
       LEARNFLOW_LLM_BASE_URL: ${LEARNFLOW_LLM_BASE_URL:?set LearnFlow model base URL}
@@ -81,6 +108,7 @@ services:
       ROLE_ATLAS_PUBLIC_URL: https://${ROLE_ATLAS_HOST}
       GRAPH_HUB_PUBLIC_URL: https://${GRAPH_HUB_HOST}
       ROLE_PACKAGE_LAUNCH_SECRET: ${ROLE_PACKAGE_LAUNCH_SECRET:?set package launch secret}
+      ROLE_ATLAS_GATEWAY_SECRET: ${ROLE_ATLAS_GATEWAY_SECRET:?set ecosystem gateway secret}
       MIMO_API_KEY: ${MIMO_API_KEY:-}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
       TAVILY_API_KEY: ${TAVILY_API_KEY:-}

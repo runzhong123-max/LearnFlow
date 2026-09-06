@@ -1,6 +1,6 @@
 # LearnFlow 项目模块与 API 总览
 
-源码快照：2026-09-06 单仓迁移后。本文描述当前实现和仓库中的部署配置，不表示这些服务已经全部部署上线。架构权威仍是 registry 与 ARCHITECTURE_AUTHORITY；本图只是入口导航。Contract impact：本次总览不修改任何 API、schema、事件或运行行为。
+源码快照：2026-09-06 共享学习平台首发整合后。本文描述当前实现和仓库中的部署配置，不表示这些服务已经全部部署上线。架构权威仍是 registry 与 ARCHITECTURE_AUTHORITY；本图只是入口导航。目标设计见 [TARGET_ARCHITECTURE.md](TARGET_ARCHITECTURE.md)，本次契约增量见 [首发整合](implementation/LEARNING_PLATFORM_INTEGRATION.md)。
 
 ## 1. 产品、进程与共享源码
 
@@ -24,13 +24,14 @@ flowchart TB
   Desktop -->|HTTP：runtimeFetch| Local
   Desktop -->|invoke| Native
   Native -->|启动和管理| Local
+  Native -->|在线学习空间：隔离 HTTPS 窗口| Web
   AtlasUI --> Atlas
   Atlas --> Hub
   Node -->|岗位插件：只读发现和引用| Hub
   Atlas <-->|会话、固定版本交接、ecosystem gateway| Cloud
   subgraph Shared[共用源码：不是独立服务器]
-    Core["packages/learning-core<br/>三类 Agent 和五核声明<br/>证据归约、记忆、上下文、纠错"]
-    Client["packages/learning-client<br/>密码规则、延迟预算、教学上下文"]
+    Core["packages/learning-core<br/>三类 Agent 和五核声明<br/>证据归约、记忆、上下文、纠错与共享 API"]
+    Client["packages/learning-client<br/>密码规则、延迟预算、教学上下文、运行环境识别"]
   end
   Cloud -.->|导入| Core
   Local -.->|导入| Core
@@ -42,7 +43,7 @@ flowchart TB
   Hub --> Catalog[("发布目录与只读包")]
 ```
 
-- Web 与 Desktop 已共用源码；它们的数据库、账户和云同步尚未因此合并。共享包仍依赖所选宿主的 app 模型与服务，每个后端独立进程运行。
+- Web 与 Desktop 已共用业务 API 源码；桌面的在线窗口使用同一 Web 账号与平台数据库。本地工作区的数据库和身份仍独立，尚无云项目映射或离线同步。共享包仍依赖所选宿主的 app 模型与服务，每个后端独立进程运行。
 - Graph Hub 当前位于 Role Atlas 应用中，cohost 配置通过不同域名将 `/hub` 与 Atlas 页面提供给用户；它尚不是独立部署的微服务。
 - 桌面正式 Tauri 运行时走本地 FastAPI。桌面前端的 Vite dev/preview 另有 Node Tutor 中间件，不能把它画成安装包必备的 Node 服务。
 - 桌面的岗位插件源代码已在仓内，但正式原生 Tutor 的插件执行与云端账户交接需要分别验收；总览不把 Web 的完整跨产品接入画成桌面已经实现的云同步。
@@ -74,7 +75,7 @@ flowchart LR
 
 ## 3. 模块导航
 
-下表的 Python API 实现目录在两端分别为 `backend/app/api` 和 `apps/desktop/backend/app/api`；各自完整路径见 API 清单。
+共用 Python API 实现在 `packages/learning-core/src/learnflow_core/api`；两端 `app/api` 保留兼容入口与有差异的身份、Tutor、项目等接口。各自完整路径见 API 清单。
 
 | 模块 | 主要责任 | 代码入口 / API 模块 |
 |---|---|---|
@@ -91,7 +92,7 @@ flowchart LR
 | 微学习 | 短任务、流程投影、验证 | API micro_learning.py |
 | 桌面本地工作区 | 文件读写、目录联动、权限、冲突与恢复 | API workspace.py、local_agent.py；services/local_agent_broker.py |
 | 桌宠与实验 | 桌宠会话/能力、提醒、实验操作 | 桌面 API pet.py、experiments.py；Tauri IPC |
-| 架构与运行诊断 | registry、版本、能力实现校验、health/demo | API architecture.py、health.py |
+| 架构与运行诊断 | registry、版本、能力实现校验、health/demo | API architecture.py、health.py、platform.py |
 | LearnFlow 生态网关 | 能力发现、dispatch、学习路径交接 | Web API ecosystem.py；services/ecosystem_gateway.py |
 | 岗位消费插件 | 发现、固定版本引用、关系阅读、证据追溯 | 两端 frontend/plugins/role_capability_graph |
 | Role Atlas 生产 | 岗位项目、构建、迭代、风险研究、版本和发布 | apps/role-atlas/lib/{build,iteration,risk,versioning,registry} |
@@ -107,7 +108,7 @@ flowchart TB
   Browser[网页] --> NodeAPI["Node Tutor<br/>GET /api/tutor/status<br/>POST /api/tutor<br/>POST /api/tutor/stream：NDJSON"]
   NodeAPI --> WebAPI["Web FastAPI<br/>其余 /api 转发；正式数据与证据"]
   DesktopUI[桌面] --> DesktopAPI["Desktop FastAPI<br/>随机 loopback 端口 + 桌面身份边界"]
-  DesktopUI --> IPC["15 个 Tauri invoke 命令<br/>窗口、桌宠、捕获、token 与运行配置"]
+  DesktopUI --> IPC["16 个 Tauri invoke 命令<br/>窗口、桌宠、捕获、token 与运行配置"]
   WebAPI --> Business["项目 / 路线 / 关卡 / 学习任务<br/>学习文件 / 判题 / 纠错 / 复习<br/>知识资料 / 五核 / 画像 / 记忆"]
   DesktopAPI --> Business
   WebAPI --> Gateway["/api/ecosystem/*<br/>能力、dispatch、学习路径"]
@@ -119,14 +120,14 @@ API 总数、宿主差异和逐路由实现链接见 [API_CATALOG.md](API_CATALO
 
 | 宿主 | 已登记方法 + 路径条目 |
 |---|---:|
-| Web FastAPI | 232 |
-| Desktop FastAPI | 253 |
+| Web FastAPI | 234 |
+| Desktop FastAPI | 255 |
 | Web Node Tutor | 3 |
 | Desktop Node Tutor（dev/preview） | 3 |
 | Role Atlas / Graph Hub | 46 |
-| Desktop Tauri IPC | 15 |
+| Desktop Tauri IPC | 16 |
 
-共 537 个 HTTP 方法与路径条目、15 个 IPC 命令。这个计数包含不同宿主上的重复路径，不是 537 种独立产品能力。两套 FastAPI 按方法和路径比对共有 227 项；Web 额外 5 项 ecosystem 接口，Desktop 额外 26 项桌宠、视觉凭据、实验与项目工作流接口。共有路径的内部行为和权限并不自动相同。
+共 541 个 HTTP 方法与路径条目、16 个 IPC 命令。这个计数包含不同宿主上的重复路径，不是 541 种独立产品能力。两套 FastAPI 按方法和路径比对共有 229 项；Web 额外 5 项 ecosystem 接口，Desktop 额外 26 项桌宠、视觉凭据、实验与项目工作流接口。共有路径的内部行为和权限并不自动相同。
 
 “两个后端都有 workspace/local_agent 路由”不意味着网页获得桌面本机权限；路由是否可调用仍受运行模式、ownership、确认与权限检查控制。开发诊断和内部凭据桥接路由也不能当作公开业务 API。
 
@@ -145,6 +146,7 @@ flowchart LR
   Role --> Packages["版本包 / Hub 发布目录"]
   Packages -->|只读挂载| WebServer
   API --> Data[("learnflow-data")]
+  Worker["独立 Memory Worker<br/>同卷独占锁；现有合成队列"] --> Data
   Role --> RoleData[("role-atlas-state")]
 ```
 

@@ -23,3 +23,9 @@ apps/desktop
 **/.private
 **/*.db
 **/*.sqlite3
+
+**/.env.*
+!**/.env.example
+labs/golden-role/workspaces
+apps/desktop/backend/runtime
+apps/desktop/backend/data

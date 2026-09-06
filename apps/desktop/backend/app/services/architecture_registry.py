@@ -44,8 +44,20 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-06.6-desktop"
-# The learner-facing SkillSpec changed in this registry release.
+REGISTRY_VERSION = "2026-09-06.7-desktop"
+# Platform discovery is additive; learner evidence semantics are unchanged.
+
+DATA_CONTRACTS = {
+    "learning_platform_v1": {
+        "schema_version": "learnflow-platform/v1", "owner": "tutor_agent",
+        "origin": "builtin", "mode": "read_only_runtime_discovery", "lifecycle": "implemented",
+        "authority_path": "docs/implementation/LEARNING_PLATFORM_INTEGRATION.md",
+        "binding_ids": ["api:platform.manifest", "api:platform.readiness", "frontend:platform.open"],
+        "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "21 shared API implementations retain existing paths and host authorization; no identity or database merge; online platform uses the server account",
+    },
+}
+
 
 # This is the canonical allow-list used by Tutor semantic observations. The
 # runtime imports it instead of maintaining a second copy.
@@ -1283,6 +1295,8 @@ _PYTHON_MEMBER_BINDING_TARGETS = {
 
 
 _API_BINDING_TARGETS = {
+    "api:platform.manifest": ("app.api.platform", "/platform", "GET", "platform_manifest"),
+    "api:platform.readiness": ("app.api.health", "/ready", "GET", "readiness_check"),
     "api:agent.consume_role_package_launch": ("app.api.agent", "/agent/role-package-launches/consume", "POST", "consume_role_package_launch"),
     "api:agent.sync_vnext_session": ("app.api.agent", "/agent/sessions/{session_id}/vnext", "PUT", "sync_vnext_session"),
     "api:agent.start_skill_run": ("app.api.agent", "/agent/sessions/{session_id}/skill-runs", "POST", "start_learning_skill_run"),
@@ -1372,6 +1386,7 @@ _API_BINDING_TARGETS = {
 
 
 _FRONTEND_HANDLER_TARGETS = {
+    "frontend:platform.open": ("frontend/src/runtime-client.ts", "openPlatformWorkspace", ""),
     "frontend:agent_runtime.run": ("frontend/server/agent-runtime.ts", "runTutorAgentTurn", ""),
     "frontend:plugin.registry": ("frontend/src/plugin-api.ts", "LearnFlowPluginRegistry", ""),
     "frontend:plugin.loader": ("frontend/server/plugin-loader.ts", "loadLearnFlowPluginRegistry", ""),
@@ -1937,6 +1952,13 @@ def detect_learning_skill(message: str) -> SkillContract | None:
 
 def validate_registry() -> list[str]:
     errors: list[str] = []
+    for contract_id, contract in DATA_CONTRACTS.items():
+        if contract["owner"] not in AGENTS or contract["lifecycle"] not in LIFECYCLE_STATES:
+            errors.append(f"invalid data contract owner/lifecycle: {contract_id}")
+        if contract["kernel_reads"] or contract["kernel_write_path"] != "none":
+            errors.append(f"source data contract cannot read/write learner state: {contract_id}")
+        if not contract["binding_ids"] or any(key not in IMPLEMENTATION_BINDINGS for key in contract["binding_ids"]):
+            errors.append(f"data contract lacks a valid implementation binding: {contract_id}")
     if tuple(PLUGIN_EXTENSION_POINTS) != ("tool", "skill", "object", "tool_renderer"):
         errors.append("plugin extension API must expose exactly tool, skill, object and tool_renderer")
     for extension in PLUGIN_EXTENSION_POINTS.values():
@@ -2207,6 +2229,7 @@ def registry_manifest() -> dict[str, Any]:
             "assessment_design_authority": "AssessmentBlueprint + Rubric are versioned learner-scoped proposals; generation is zero-target and deterministic grading remains Practice Agent authority",
         },
         "agents": [asdict(item) for item in AGENTS.values()],
+        "data_contracts": [{"id": key, **value} for key, value in DATA_CONTRACTS.items()],
         "chat_modes": [asdict(item) for item in CHAT_MODES.values()],
         "kernels": [asdict(item) for item in KERNELS.values()],
         "capabilities": capabilities,

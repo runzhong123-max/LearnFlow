@@ -47,15 +47,17 @@ async def lifespan(app: FastAPI):
     await mark_interrupted_runs_failed()
     await mark_interrupted_experiment_runs()
     stop_memory_worker = asyncio.Event()
-    memory_task = asyncio.create_task(memory_worker_loop(stop_memory_worker))
+    memory_task = asyncio.create_task(memory_worker_loop(stop_memory_worker)) if settings.memory_worker_embedded else None
     try:
         yield
     finally:
         stop_memory_worker.set()
         try:
-            await asyncio.wait_for(memory_task, timeout=3)
+            if memory_task is not None:
+                await asyncio.wait_for(memory_task, timeout=3)
         except (asyncio.TimeoutError, asyncio.CancelledError):
-            memory_task.cancel()
+            if memory_task is not None:
+                memory_task.cancel()
 
 
 app = FastAPI(
@@ -118,3 +120,6 @@ app.include_router(pet_router, prefix="/api")
 app.include_router(learning_task_integrations_router, prefix="/api")
 app.include_router(experiments_router, prefix="/api")
 app.include_router(project_workflows_router, prefix="/api")
+
+from app.api.platform import router as platform_router
+app.include_router(platform_router, prefix="/api")

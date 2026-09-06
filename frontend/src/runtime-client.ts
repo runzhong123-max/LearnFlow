@@ -1,3 +1,4 @@
+import { usesLocalDesktopRuntime } from './runtime-surface.ts'
 import { AI_LATENCY_BUDGETS } from './latency-budgets.ts'
 
 const DESKTOP_AUTH_STORAGE_KEY = 'learnflow.desktop.auth-token'
@@ -34,7 +35,9 @@ type CsrfBootstrapResult = {
 type WorkspaceStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
 
 function isTauriWindow() {
-  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+  return typeof window !== 'undefined' && usesLocalDesktopRuntime(
+    '__TAURI_INTERNALS__' in window, window.location.protocol, window.location.hostname,
+  )
 }
 
 export function getRuntimeClientState() {

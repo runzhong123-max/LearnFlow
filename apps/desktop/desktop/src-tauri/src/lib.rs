@@ -24,6 +24,7 @@ use windows_sys::Win32::System::Threading::{
     CreateEventW, GetCurrentProcessId, SetEvent, WaitForMultipleObjects, INFINITE,
 };
 const PET_TRAY_TOGGLE_ID: &str = "desktop-pet-toggle";
+const PLATFORM_TRAY_OPEN_ID: &str = "platform-workspace-open";
 const PET_TRAY_OPEN_MAIN_ID: &str = "desktop-pet-open-main";
 const PET_TRAY_DISABLE_MOUSE_THROUGH_ID: &str = "desktop-pet-disable-mouse-through";
 const PET_TRAY_QUIT_ID: &str = "desktop-pet-quit";
@@ -769,13 +770,14 @@ fn toggle_desktop_pet(app: &tauri::AppHandle) -> Result<(), String> {
 
 fn configure_system_tray(app: &tauri::App) -> tauri::Result<()> {
     let toggle_pet = MenuItemBuilder::with_id(PET_TRAY_TOGGLE_ID, "显示 / 隐藏桌宠").build(app)?;
+    let open_platform = MenuItemBuilder::with_id(PLATFORM_TRAY_OPEN_ID, "在线学习空间").build(app)?;
     let open_main = MenuItemBuilder::with_id(PET_TRAY_OPEN_MAIN_ID, "打开 LearnFlow").build(app)?;
     let restore_mouse =
         MenuItemBuilder::with_id(PET_TRAY_DISABLE_MOUSE_THROUGH_ID, "恢复桌宠鼠标交互")
             .build(app)?;
     let quit = MenuItemBuilder::with_id(PET_TRAY_QUIT_ID, "退出 LearnFlow").build(app)?;
     let menu = MenuBuilder::new(app)
-        .items(&[&toggle_pet, &open_main, &restore_mouse])
+        .items(&[&toggle_pet, &open_main, &open_platform, &restore_mouse])
         .separator()
         .item(&quit)
         .build()?;
@@ -791,6 +793,9 @@ fn configure_system_tray(app: &tauri::App) -> tauri::Result<()> {
         .on_menu_event(|app, event| match event.id().as_ref() {
             PET_TRAY_TOGGLE_ID => {
                 let _ = toggle_desktop_pet(app);
+            }
+            PLATFORM_TRAY_OPEN_ID => {
+                if let Err(error) = show_platform_workspace(app) { eprintln!("platform window: {error}"); }
             }
             PET_TRAY_OPEN_MAIN_ID => {
                 let _ = show_desktop_main(app);
@@ -967,6 +972,44 @@ fn allowed_external_url(url: &str) -> bool {
     value.len() <= 4096
         && !value.chars().any(|character| character.is_control())
         && (value.starts_with("http://") || value.starts_with("https://"))
+}
+
+fn validated_platform_url(raw: &str) -> Result<tauri::Url, String> {
+    let url = tauri::Url::parse(raw.trim()).map_err(|_| "在线学习地址无效")?;
+    if url.scheme() != "https" || url.host_str().is_none() || !url.username().is_empty()
+        || url.password().is_some() || url.query().is_some() || url.fragment().is_some()
+        || url.path() != "/" {
+        return Err("在线学习地址必须是无凭据、路径或参数的 HTTPS 站点地址".into());
+    }
+    Ok(url)
+}
+
+fn show_platform_workspace(app: &tauri::AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("platform") {
+        window.show().map_err(|e| e.to_string())?;
+        return window.set_focus().map_err(|e| e.to_string());
+    }
+    // Only the release builder selects the online authority. Page code cannot
+    // choose a destination or send local credentials to it.
+    let url = validated_platform_url(option_env!("LEARNFLOW_PLATFORM_URL").unwrap_or("https://learn.learnflow.club"))?;
+    let origin = url.origin();
+    tauri::WebviewWindowBuilder::new(app, "platform", tauri::WebviewUrl::External(url))
+        .title("LearnFlow · 在线学习空间")
+        .inner_size(1440.0, 920.0)
+        .min_inner_size(768.0, 600.0)
+        .on_navigation(move |next| next.origin() == origin)
+        .build().map_err(|e| e.to_string())?;
+    // No capability file matches this remote window. It cannot use local IPC,
+    // files, sidecar credentials, capture, shell or native notifications.
+    Ok(())
+}
+
+#[tauri::command]
+fn open_platform_workspace(window: WebviewWindow, app: tauri::AppHandle) -> Result<(), String> {
+    if window.label() != "main" {
+        return Err("只有桌面主窗口可以打开在线学习空间".into());
+    }
+    show_platform_workspace(&app)
 }
 
 #[tauri::command]
@@ -1155,6 +1198,7 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             desktop_runtime_config,
+            open_platform_workspace,
             desktop_pet_preferences,
             update_desktop_pet_preferences,
             restore_desktop_pet_geometry,
@@ -1268,4 +1312,16 @@ pub fn run() {
         }
         _ => {}
     });
+}
+
+#[cfg(test)]
+mod platform_workspace_tests {
+    use super::validated_platform_url;
+    #[test]
+    fn validates_pinned_https_authority() {
+        assert!(validated_platform_url("https://learn.example.com").is_ok());
+        for url in ["http://learn.example.com", "file:///tmp/a", "https://user:pass@learn.example.com", "https://learn.example.com/?token=secret", "https://learn.example.com/#token", "https://learn.example.com/other"] {
+            assert!(validated_platform_url(url).is_err(), "{url}");
+        }
+    }
 }

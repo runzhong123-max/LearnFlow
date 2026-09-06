@@ -14,6 +14,7 @@ PROBE = r'''
 import dataclasses, importlib, json
 from app.services import architecture_registry as registry
 from learnflow_core.registry_core import SHARED_CORE_VERSION
+from learnflow_core.api import SHARED_API_MODULES
 names = ('learning_runtime', 'memory_graph', 'five_kernel_context', 'teaching_guidance', 'agent_observations', 'remediation')
 paths = {}
 for name in names:
@@ -21,9 +22,15 @@ for name in names:
     shared = importlib.import_module('learnflow_core.' + name)
     assert legacy is shared, 'split module identity: ' + name
     paths[name] = shared.__file__
+api_paths = {}
+for name in (*SHARED_API_MODULES, 'platform'):
+    legacy = importlib.import_module('app.api.' + name)
+    shared = importlib.import_module('learnflow_core.api.' + name)
+    assert legacy is shared, 'split API module identity: ' + name
+    api_paths[name] = shared.__file__
 assert not registry.validate_registry(), registry.validate_registry()
 print(json.dumps({
-    'version': SHARED_CORE_VERSION, 'paths': paths,
+    'version': SHARED_CORE_VERSION, 'paths': paths, 'apiPaths': api_paths,
     'agents': {k: dataclasses.asdict(v) for k, v in registry.AGENTS.items()},
     'kernels': {k: dataclasses.asdict(v) for k, v in registry.KERNELS.items()},
     'events': {k: dataclasses.asdict(v) for k, v in registry.EVENTS.items()},
@@ -49,20 +56,22 @@ def check(web_python: str, desktop_python: str) -> None:
     for event in sorted(common_events):
         if web['events'][event] != desktop['events'][event]:
             raise RuntimeError(f'common event contract diverged: {event}')
+    if web['apiPaths'] != desktop['apiPaths']:
+        raise RuntimeError('API implementations diverged between hosts')
     for name in MODULES:
         expected = (ROOT / 'packages/learning-core/src/learnflow_core' / f'{name}.py').resolve()
         for state in snapshots:
             if Path(state['paths'][name]).resolve() != expected:
                 raise RuntimeError(f'{name} does not resolve to shared source')
     for app in (ROOT/'frontend', ROOT/'apps/desktop/frontend'):
-        for name in ('password-policy', 'latency-budgets', 'teaching-guidance-context'):
+        for name in ('password-policy', 'latency-budgets', 'teaching-guidance-context', 'runtime-surface'):
             source = (app/'src'/f'{name}.ts').read_text().strip()
             relative = os.path.relpath(ROOT/'packages/learning-client/src'/f'{name}.ts', app/'src').replace(os.sep, '/')
             if source != f"export * from '{relative}'":
                 raise RuntimeError(f'duplicated client implementation: {app.name}/{name}')
     if (ROOT/'apps/desktop/.git').exists():
         raise RuntimeError('nested desktop Git repository is not allowed')
-    print(f'Shared core {web["version"]}: both hosts use the same 6 Python modules, 3 TS sources, three agents, five kernels and {len(common_events)} common event contracts.')
+    print(f'Shared core {web["version"]}: both hosts use the same 6 Python modules, 22 API modules, 4 TS sources, three agents, five kernels and {len(common_events)} common event contracts.')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)

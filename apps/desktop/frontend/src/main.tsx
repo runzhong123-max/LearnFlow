@@ -2,6 +2,7 @@ import { FormEvent, Fragment, lazy, Suspense, useEffect, useMemo, useRef, useSta
 import { createRoot, type Root } from 'react-dom/client'
 import {
   initializeRuntimeClient,
+  openPlatformWorkspace,
   isolateLegacyWorkspaceCache,
   isDesktopPetWindow,
   isDesktopRuntime,
@@ -3746,6 +3747,7 @@ function App({ auth }: { auth: AuthGateSession }) {
             <span className="brand-mark">✦</span><span><strong>LearnFlow</strong><small>学习空间</small></span>
           </button>
           <nav className="sidebar-primary-nav" aria-label="学习工作台">
+            {isDesktopRuntime() && <button type="button" onClick={() => { void openPlatformWorkspace().catch(error => setFormalError(error instanceof Error ? error.message : '在线学习空间打开失败')) }}><span>☁</span>在线学习空间</button>}
             <button type="button" onClick={() => openTab(LEARNING_FILES_TAB)}><span>▤</span>讲义与练习</button>
             <button type="button" onClick={() => openTab(REVIEW_TAB)}><span>↺</span>复习与错题</button>
             <button type="button" onClick={() => openTab(TASKS_TAB)}><span>☷</span>学习任务</button>

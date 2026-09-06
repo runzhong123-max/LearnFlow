@@ -1,3 +1,4 @@
+import { usesLocalDesktopRuntime } from './runtime-surface.ts'
 import { AI_LATENCY_BUDGETS } from './latency-budgets.ts'
 
 const DESKTOP_AUTH_STORAGE_KEY = 'learnflow.desktop.auth-token'
@@ -35,7 +36,9 @@ type CsrfBootstrapResult = {
 type WorkspaceStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
 
 function isTauriWindow() {
-  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+  return typeof window !== 'undefined' && usesLocalDesktopRuntime(
+    '__TAURI_INTERNALS__' in window, window.location.protocol, window.location.hostname,
+  )
 }
 
 export function getRuntimeClientState() {
@@ -311,4 +314,10 @@ export function initializeRuntimeClient(): Promise<RuntimeClientState> {
     return runtime
   })()
   return initialization
+}
+
+export async function openPlatformWorkspace() {
+  if (!isDesktopRuntime()) throw new Error('请从桌面主窗口打开在线学习空间')
+  const { invoke } = await import('@tauri-apps/api/core')
+  await invoke('open_platform_workspace')
 }

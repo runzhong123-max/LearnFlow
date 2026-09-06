@@ -8,11 +8,11 @@
 
 | 宿主 | 方法与路径条目数 |
 |---|---:|
-| Desktop FastAPI | 253 |
+| Desktop FastAPI | 255 |
 | Desktop Node Tutor (dev/preview) | 3 |
-| Desktop Tauri IPC | 15 |
+| Desktop Tauri IPC | 16 |
 | Role Atlas / Graph Hub | 46 |
-| Web FastAPI | 232 |
+| Web FastAPI | 234 |
 | Web Node Tutor | 3 |
 
 ## Desktop FastAPI
@@ -45,21 +45,6 @@
 | PUT | `/api/agent/sessions/{session_id}/vnext` | [sync_vnext_session](../apps/desktop/backend/app/api/agent.py#L750) |
 | GET | `/api/agent/skills` | [list_learning_skills](../apps/desktop/backend/app/api/agent.py#L204) |
 | POST | `/api/learning-events` | [create_learning_event](../apps/desktop/backend/app/api/agent.py#L1186) |
-
-### app.api.architecture
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/architecture/registry` | [get_architecture_registry](../apps/desktop/backend/app/api/architecture.py#L12) |
-| GET | `/api/architecture/validate` | [validate_architecture_registry](../apps/desktop/backend/app/api/architecture.py#L17) |
-
-### app.api.assessment_design
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/assessment-blueprints` | [list_assessment_blueprints](../apps/desktop/backend/app/api/assessment_design.py#L57) |
-| POST | `/api/assessment-blueprints` | [propose_assessment_blueprint](../apps/desktop/backend/app/api/assessment_design.py#L36) |
-| GET | `/api/assessment-blueprints/{blueprint_id}` | [get_assessment_blueprint](../apps/desktop/backend/app/api/assessment_design.py#L81) |
 
 ### app.api.auth
 
@@ -99,115 +84,6 @@
 | GET | `/api/projects/{project_id}/experiments/runs/{run_id}` | [get_experiment_run](../apps/desktop/backend/app/api/experiments.py#L95) |
 | POST | `/api/projects/{project_id}/experiments/runs/{run_id}/confirm` | [confirm_experiment_run](../apps/desktop/backend/app/api/experiments.py#L71) |
 
-### app.api.health
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/health` | [health_check](../apps/desktop/backend/app/api/health.py#L6) |
-
-### app.api.knowledge_library
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/knowledge-library/context` | [read_library_context](../apps/desktop/backend/app/api/knowledge_library.py#L326) |
-| GET | `/api/knowledge-library/sources` | [list_library_sources](../apps/desktop/backend/app/api/knowledge_library.py#L109) |
-| POST | `/api/knowledge-library/sources/upload` | [upload_library_source](../apps/desktop/backend/app/api/knowledge_library.py#L198) |
-| POST | `/api/knowledge-library/sources/url` | [add_library_url](../apps/desktop/backend/app/api/knowledge_library.py#L175) |
-| GET | `/api/knowledge-library/sources/{source_id}/paper` | [read_owned_source_paper](../apps/desktop/backend/app/api/knowledge_library.py#L130) |
-| POST | `/api/knowledge-library/sources/{source_id}/process` | [process_library_source](../apps/desktop/backend/app/api/knowledge_library.py#L284) |
-| POST | `/api/knowledge-library/web-evidence` | [capture_web_evidence](../apps/desktop/backend/app/api/knowledge_library.py#L404) |
-
-### app.api.learner_state
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/learner-state/agent-workspace-context` | [get_agent_workspace_context](../apps/desktop/backend/app/api/learner_state.py#L372) |
-| GET | `/api/learner-state/concept-graph` | [get_personal_concept_graph](../apps/desktop/backend/app/api/learner_state.py#L397) |
-| POST | `/api/learner-state/concept-graph/statements` | [record_concept_statement](../apps/desktop/backend/app/api/learner_state.py#L405) |
-| GET | `/api/learner-state/context` | [get_learner_context](../apps/desktop/backend/app/api/learner_state.py#L329) |
-| POST | `/api/learner-state/events` | [sync_learner_event](../apps/desktop/backend/app/api/learner_state.py#L516) |
-| POST | `/api/learner-state/learning-path/personal-nodes` | [add_personal_learning_path_node](../apps/desktop/backend/app/api/learner_state.py#L606) |
-| DELETE | `/api/learner-state/learning-path/personal-nodes/{node_id}` | [remove_personal_learning_path_node](../apps/desktop/backend/app/api/learner_state.py#L649) |
-| POST | `/api/learner-state/learning-path/plans` | [commit_learning_path_plan](../apps/desktop/backend/app/api/learner_state.py#L682) |
-| DELETE | `/api/learner-state/learning-path/plans/{plan_id}` | [archive_learning_path_plan](../apps/desktop/backend/app/api/learner_state.py#L729) |
-| POST | `/api/learner-state/learning-path/status` | [set_learning_path_status](../apps/desktop/backend/app/api/learner_state.py#L580) |
-| GET | `/api/learner-state/snapshot` | [get_learner_state_snapshot](../apps/desktop/backend/app/api/learner_state.py#L286) |
-| POST | `/api/learner-state/value-claims/confirm` | [confirm_value_claim](../apps/desktop/backend/app/api/learner_state.py#L763) |
-
-### app.api.learning_files
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/learning-files` | [list_learning_files](../apps/desktop/backend/app/api/learning_files.py#L99) |
-| GET | `/api/learning-files/lecture/{lecture_id}` | [get_lecture_file](../apps/desktop/backend/app/api/learning_files.py#L159) |
-| POST | `/api/learning-files/lecture/{lecture_id}/read` | [mark_lecture_read](../apps/desktop/backend/app/api/learning_files.py#L554) |
-| POST | `/api/learning-files/practice/generate` | [generate_dynamic_practice_file](../apps/desktop/backend/app/api/learning_files.py#L283) |
-| GET | `/api/learning-files/practice/{practice_ref}` | [get_practice_file](../apps/desktop/backend/app/api/learning_files.py#L181) |
-| POST | `/api/learning-files/practice/{practice_ref}/quality` | [inspect_dynamic_practice_quality](../apps/desktop/backend/app/api/learning_files.py#L402) |
-| POST | `/api/learning-files/tasks/{task_id}/generate` | [generate_task_learning_files](../apps/desktop/backend/app/api/learning_files.py#L441) |
-| POST | `/api/learning-files/{kind}/{ref}/attached` | [record_learning_file_attached](../apps/desktop/backend/app/api/learning_files.py#L541) |
-| POST | `/api/learning-files/{kind}/{ref}/opened` | [record_learning_file_opened](../apps/desktop/backend/app/api/learning_files.py#L528) |
-
-### app.api.learning_task_integrations
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| POST | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates` | [create_learning_task_candidate](../apps/desktop/backend/app/api/learning_task_integrations.py#L81) |
-| GET | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}` | [read_learning_task_candidate](../apps/desktop/backend/app/api/learning_task_integrations.py#L124) |
-| GET | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}/audit` | [audit_learning_task_candidate](../apps/desktop/backend/app/api/learning_task_integrations.py#L144) |
-| POST | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}/confirm` | [confirm_learning_task_candidate](../apps/desktop/backend/app/api/learning_task_integrations.py#L170) |
-| GET | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}/evidence` | [inspect_learning_task_candidate_evidence](../apps/desktop/backend/app/api/learning_task_integrations.py#L134) |
-| GET | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}/handoff` | [prepare_learning_task_candidate_handoff](../apps/desktop/backend/app/api/learning_task_integrations.py#L157) |
-
-### app.api.learning_tasks
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/learning-tasks` | [list_learning_tasks](../apps/desktop/backend/app/api/learning_tasks.py#L95) |
-| POST | `/api/learning-tasks` | [create_task](../apps/desktop/backend/app/api/learning_tasks.py#L131) |
-| POST | `/api/learning-tasks/reorder` | [reorder_queue](../apps/desktop/backend/app/api/learning_tasks.py#L164) |
-| GET | `/api/learning-tasks/summary` | [get_queue_summary](../apps/desktop/backend/app/api/learning_tasks.py#L61) |
-| GET | `/api/learning-tasks/{task_id}` | [get_task](../apps/desktop/backend/app/api/learning_tasks.py#L184) |
-| PATCH | `/api/learning-tasks/{task_id}` | [update_task](../apps/desktop/backend/app/api/learning_tasks.py#L196) |
-| POST | `/api/learning-tasks/{task_id}/actions` | [task_action](../apps/desktop/backend/app/api/learning_tasks.py#L219) |
-| POST | `/api/learning-tasks/{task_id}/materialize` | [materialize_task](../apps/desktop/backend/app/api/learning_tasks.py#L269) |
-| POST | `/api/learning-tasks/{task_id}/replan` | [replan_task](../apps/desktop/backend/app/api/learning_tasks.py#L244) |
-
-### app.api.local_agent
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/desktop/agent-profiles` | [list_agent_profiles](../apps/desktop/backend/app/api/local_agent.py#L53) |
-| POST | `/api/desktop/agent-profiles` | [create_agent_profile](../apps/desktop/backend/app/api/local_agent.py#L70) |
-| DELETE | `/api/desktop/agent-profiles/{profile_id}` | [delete_agent_profile](../apps/desktop/backend/app/api/local_agent.py#L138) |
-| PATCH | `/api/desktop/agent-profiles/{profile_id}` | [patch_agent_profile](../apps/desktop/backend/app/api/local_agent.py#L97) |
-| GET | `/api/local-agent/runs/{run_id}` | [get_local_agent_run](../apps/desktop/backend/app/api/local_agent.py#L160) |
-| POST | `/api/local-agent/runs/{run_id}/apply` | [apply_local_agent_run](../apps/desktop/backend/app/api/local_agent.py#L206) |
-| POST | `/api/local-agent/runs/{run_id}/cancel` | [cancel_local_agent_run](../apps/desktop/backend/app/api/local_agent.py#L191) |
-| GET | `/api/local-agent/runs/{run_id}/events` | [get_local_agent_run_events](../apps/desktop/backend/app/api/local_agent.py#L173) |
-
-### app.api.memory
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| POST | `/api/memory/claims/{claim_id}/feedback` | [submit_claim_feedback](../apps/desktop/backend/app/api/memory.py#L385) |
-| GET | `/api/memory/consolidations` | [get_consolidations](../apps/desktop/backend/app/api/memory.py#L367) |
-| GET | `/api/memory/graph` | [get_memory_graph](../apps/desktop/backend/app/api/memory.py#L214) |
-| GET | `/api/memory/nodes/{node_id}` | [get_memory_node](../apps/desktop/backend/app/api/memory.py#L260) |
-| GET | `/api/memory/timeline` | [get_memory_timeline](../apps/desktop/backend/app/api/memory.py#L240) |
-
-### app.api.micro_learning
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/micro-learning/runs` | [list_runs](../apps/desktop/backend/app/api/micro_learning.py#L77) |
-| POST | `/api/micro-learning/runs` | [create_run](../apps/desktop/backend/app/api/micro_learning.py#L54) |
-| GET | `/api/micro-learning/runs/{run_id}` | [get_run](../apps/desktop/backend/app/api/micro_learning.py#L96) |
-| POST | `/api/micro-learning/runs/{run_id}/advance` | [advance](../apps/desktop/backend/app/api/micro_learning.py#L109) |
-| POST | `/api/micro-learning/runs/{run_id}/regenerate` | [regenerate](../apps/desktop/backend/app/api/micro_learning.py#L132) |
-| POST | `/api/micro-learning/runs/{run_id}/sync` | [sync](../apps/desktop/backend/app/api/micro_learning.py#L179) |
-| POST | `/api/micro-learning/runs/{run_id}/teach-back` | [teach_back](../apps/desktop/backend/app/api/micro_learning.py#L156) |
-
 ### app.api.pet
 
 | 方法 | 路径 / 命令 | 实现 |
@@ -219,85 +95,6 @@
 | DELETE | `/api/pet/context-packages/{package_id}` | [delete_context_package](../apps/desktop/backend/app/api/pet.py#L373) |
 | POST | `/api/pet/context-packages/{package_id}/confirm` | [confirm_context_package](../apps/desktop/backend/app/api/pet.py#L355) |
 | POST | `/api/pet/selection-text` | [transcribe_selection_text](../apps/desktop/backend/app/api/pet.py#L323) |
-
-### app.api.phase1
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| POST | `/api/projects/{project_id}/reconcile` | [reconcile_sources](../apps/desktop/backend/app/api/phase1.py#L657) |
-| POST | `/api/projects/{project_id}/reconcile/apply` | [apply_reconcile](../apps/desktop/backend/app/api/phase1.py#L737) |
-| POST | `/api/projects/{project_id}/roadmap/briefs` | [backfill_briefs](../apps/desktop/backend/app/api/phase1.py#L1088) |
-| POST | `/api/projects/{project_id}/roadmap/chat` | [roadmap_chat](../apps/desktop/backend/app/api/phase1.py#L858) |
-| GET | `/api/projects/{project_id}/roadmap/history` | [get_roadmap_history](../apps/desktop/backend/app/api/phase1.py#L993) |
-| POST | `/api/projects/{project_id}/roadmap/resync` | [resync_roadmap_chunks](../apps/desktop/backend/app/api/phase1.py#L1217) |
-| POST | `/api/projects/{project_id}/sources/process-all` | [process_all_sources](../apps/desktop/backend/app/api/phase1.py#L529) |
-| POST | `/api/projects/{project_id}/sources/{source_id}/analyze` | [analyze_source_structure](../apps/desktop/backend/app/api/phase1.py#L361) |
-| POST | `/api/projects/{project_id}/sources/{source_id}/images/caption` | [start_image_captioning](../apps/desktop/backend/app/api/phase1.py#L305) |
-| POST | `/api/projects/{project_id}/sources/{source_id}/process` | [process_source](../apps/desktop/backend/app/api/phase1.py#L166) |
-| PUT | `/api/projects/{project_id}/sources/{source_id}/role` | [set_source_role](../apps/desktop/backend/app/api/phase1.py#L636) |
-| POST | `/api/projects/{project_id}/sources/{source_id}/summarize` | [summarize_source_files](../apps/desktop/backend/app/api/phase1.py#L393) |
-| GET | `/api/sources/{source_id}/files/{file_path}` | [serve_source_file](../apps/desktop/backend/app/api/phase1.py#L286) |
-
-### app.api.phase2
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| POST | `/api/animations/generate` | [generate_animation](../apps/desktop/backend/app/api/phase2.py#L402) |
-| GET | `/api/animations/{animation_id}` | [get_animation](../apps/desktop/backend/app/api/phase2.py#L420) |
-| DELETE | `/api/artifact-annotations/{annotation_id}` | [delete_artifact_annotation](../apps/desktop/backend/app/api/phase2.py#L755) |
-| PUT | `/api/artifact-annotations/{annotation_id}` | [update_artifact_annotation](../apps/desktop/backend/app/api/phase2.py#L742) |
-| GET | `/api/artifacts/{artifact_type}/{artifact_id}/annotations` | [list_artifact_annotations](../apps/desktop/backend/app/api/phase2.py#L685) |
-| POST | `/api/artifacts/{artifact_type}/{artifact_id}/annotations` | [create_artifact_annotation](../apps/desktop/backend/app/api/phase2.py#L700) |
-| POST | `/api/checkpoints/{checkpoint_id}/ask` | [ask_question](../apps/desktop/backend/app/api/phase2.py#L576) |
-| POST | `/api/checkpoints/{checkpoint_id}/concept-graph/generate` | [generate_concept_graph](../apps/desktop/backend/app/api/phase2.py#L443) |
-| GET | `/api/checkpoints/{checkpoint_id}/concept-graph/task` | [get_concept_graph_task](../apps/desktop/backend/app/api/phase2.py#L482) |
-| GET | `/api/checkpoints/{checkpoint_id}/lecture` | [get_lecture](../apps/desktop/backend/app/api/phase2.py#L342) |
-| PUT | `/api/checkpoints/{checkpoint_id}/lecture` | [put_lecture](../apps/desktop/backend/app/api/phase2.py#L320) |
-| GET | `/api/checkpoints/{checkpoint_id}/lecture/generate` | [generate_lecture_stream](../apps/desktop/backend/app/api/phase2.py#L111) |
-| POST | `/api/checkpoints/{checkpoint_id}/lecture/generate` | [generate_lecture_task](../apps/desktop/backend/app/api/phase2.py#L33) |
-| POST | `/api/checkpoints/{checkpoint_id}/lecture/rollback` | [rollback_lecture](../apps/desktop/backend/app/api/phase2.py#L527) |
-| POST | `/api/checkpoints/{checkpoint_id}/lecture/save` | [save_lecture_compat](../apps/desktop/backend/app/api/phase2.py#L331) |
-| GET | `/api/checkpoints/{checkpoint_id}/lecture/task` | [get_lecture_task](../apps/desktop/backend/app/api/phase2.py#L86) |
-| GET | `/api/checkpoints/{checkpoint_id}/lecture/versions` | [list_lecture_versions](../apps/desktop/backend/app/api/phase2.py#L504) |
-| GET | `/api/checkpoints/{checkpoint_id}/notes` | [list_notes](../apps/desktop/backend/app/api/phase2.py#L777) |
-| POST | `/api/checkpoints/{checkpoint_id}/notes` | [create_note](../apps/desktop/backend/app/api/phase2.py#L792) |
-| DELETE | `/api/notes/{note_id}` | [delete_note](../apps/desktop/backend/app/api/phase2.py#L825) |
-| PUT | `/api/notes/{note_id}` | [update_note](../apps/desktop/backend/app/api/phase2.py#L815) |
-
-### app.api.phase3
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/checkpoints/{checkpoint_id}/concepts` | [list_concepts](../apps/desktop/backend/app/api/phase3.py#L412) |
-| POST | `/api/checkpoints/{checkpoint_id}/concepts/generate` | [generate_concepts](../apps/desktop/backend/app/api/phase3.py#L437) |
-| GET | `/api/checkpoints/{checkpoint_id}/concepts/task` | [get_concept_task](../apps/desktop/backend/app/api/phase3.py#L476) |
-| POST | `/api/checkpoints/{checkpoint_id}/concepts/{question_id}/explain` | [explain_concept](../apps/desktop/backend/app/api/phase3.py#L496) |
-| POST | `/api/checkpoints/{checkpoint_id}/concepts/{question_id}/submit` | [submit_concept](../apps/desktop/backend/app/api/phase3.py#L536) |
-| GET | `/api/checkpoints/{checkpoint_id}/exercises` | [list_exercises](../apps/desktop/backend/app/api/phase3.py#L57) |
-| POST | `/api/checkpoints/{checkpoint_id}/exercises` | [create_exercise](../apps/desktop/backend/app/api/phase3.py#L84) |
-| POST | `/api/checkpoints/{checkpoint_id}/exercises/generate` | [generate_exercises](../apps/desktop/backend/app/api/phase3.py#L698) |
-| GET | `/api/checkpoints/{checkpoint_id}/exercises/task` | [get_exercise_task](../apps/desktop/backend/app/api/phase3.py#L738) |
-| POST | `/api/code/ask` | [ask_code_question](../apps/desktop/backend/app/api/phase3.py#L324) |
-| GET | `/api/exercises/{exercise_id}` | [get_exercise](../apps/desktop/backend/app/api/phase3.py#L133) |
-| GET | `/api/exercises/{exercise_id}/draft` | [get_exercise_draft](../apps/desktop/backend/app/api/phase3.py#L151) |
-| PUT | `/api/exercises/{exercise_id}/draft` | [put_exercise_draft](../apps/desktop/backend/app/api/phase3.py#L185) |
-| GET | `/api/exercises/{exercise_id}/env` | [exercise_env_status](../apps/desktop/backend/app/api/phase3.py#L270) |
-| POST | `/api/exercises/{exercise_id}/review` | [review_code](../apps/desktop/backend/app/api/phase3.py#L293) |
-| POST | `/api/exercises/{exercise_id}/run` | [run_code](../apps/desktop/backend/app/api/phase3.py#L219) |
-| POST | `/api/exercises/{exercise_id}/submit` | [submit_exercise](../apps/desktop/backend/app/api/phase3.py#L758) |
-| POST | `/api/projects/{project_id}/embeddings/index` | [index_embeddings](../apps/desktop/backend/app/api/phase3.py#L371) |
-
-### app.api.profile
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/profile` | [get_profile](../apps/desktop/backend/app/api/profile.py#L38) |
-| PATCH | `/api/profile` | [update_profile](../apps/desktop/backend/app/api/profile.py#L56) |
-| GET | `/api/profile/growth` | [get_growth](../apps/desktop/backend/app/api/profile.py#L114) |
-| GET | `/api/profile/journey` | [get_journey](../apps/desktop/backend/app/api/profile.py#L158) |
-| GET | `/api/profile/memories` | [get_memories](../apps/desktop/backend/app/api/profile.py#L106) |
-| POST | `/api/profile/memories/{memory_id}/archive` | [archive_memory](../apps/desktop/backend/app/api/profile.py#L124) |
-| POST | `/api/profile/memories/{memory_id}/restore` | [restore_memory](../apps/desktop/backend/app/api/profile.py#L142) |
 
 ### app.api.project_workflows
 
@@ -312,63 +109,6 @@
 | PUT | `/api/vnext-projects/{project_id}/workbench` | [save_workbench](../apps/desktop/backend/app/api/project_workflows.py#L63) |
 | GET | `/api/vnext-projects/{project_id}/workflow` | [read_workflow](../apps/desktop/backend/app/api/project_workflows.py#L40) |
 | POST | `/api/vnext-projects/{project_id}/workflow/initialize` | [initialize](../apps/desktop/backend/app/api/project_workflows.py#L56) |
-
-### app.api.projects
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/projects` | [list_projects](../apps/desktop/backend/app/api/projects.py#L60) |
-| POST | `/api/projects` | [create_project](../apps/desktop/backend/app/api/projects.py#L31) |
-| DELETE | `/api/projects/{project_id}` | [delete_project](../apps/desktop/backend/app/api/projects.py#L108) |
-| GET | `/api/projects/{project_id}` | [get_project](../apps/desktop/backend/app/api/projects.py#L99) |
-| GET | `/api/projects/{project_id}/chunks` | [list_chunks](../apps/desktop/backend/app/api/projects.py#L284) |
-| GET | `/api/projects/{project_id}/roadmap` | [get_roadmap](../apps/desktop/backend/app/api/projects.py#L305) |
-| GET | `/api/projects/{project_id}/sources` | [list_sources](../apps/desktop/backend/app/api/projects.py#L260) |
-| POST | `/api/projects/{project_id}/sources` | [add_source](../apps/desktop/backend/app/api/projects.py#L129) |
-| POST | `/api/projects/{project_id}/sources/upload` | [upload_source](../apps/desktop/backend/app/api/projects.py#L159) |
-
-### app.api.remediation
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/checkpoints/{checkpoint_id}/remediation-cases` | [list_remediation_cases](../apps/desktop/backend/app/api/remediation.py#L38) |
-| GET | `/api/remediation/{case_id}` | [get_remediation_case](../apps/desktop/backend/app/api/remediation.py#L29) |
-| POST | `/api/remediation/{case_id}/explanations` | [change_remediation_explanation](../apps/desktop/backend/app/api/remediation.py#L52) |
-| POST | `/api/remediation/{case_id}/variant` | [create_remediation_variant](../apps/desktop/backend/app/api/remediation.py#L70) |
-| POST | `/api/remediation/{case_id}/variant/submit` | [evaluate_remediation_variant](../apps/desktop/backend/app/api/remediation.py#L84) |
-
-### app.api.review
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/review/agent-context` | [review_agent_context](../apps/desktop/backend/app/api/review.py#L461) |
-| GET | `/api/review/items` | [list_review_items](../apps/desktop/backend/app/api/review.py#L391) |
-| GET | `/api/review/items/{schedule_id}` | [get_review_item](../apps/desktop/backend/app/api/review.py#L525) |
-| POST | `/api/review/items/{schedule_id}/defer` | [defer_review_item](../apps/desktop/backend/app/api/review.py#L974) |
-| GET | `/api/review/items/{schedule_id}/history` | [get_review_history](../apps/desktop/backend/app/api/review.py#L535) |
-| POST | `/api/review/items/{schedule_id}/reflections` | [record_review_reflection](../apps/desktop/backend/app/api/review.py#L579) |
-| POST | `/api/review/items/{schedule_id}/resume` | [resume_review_item](../apps/desktop/backend/app/api/review.py#L1029) |
-| POST | `/api/review/items/{schedule_id}/submit` | [submit_review_item](../apps/desktop/backend/app/api/review.py#L677) |
-| POST | `/api/review/items/{schedule_id}/suspend` | [suspend_review_item](../apps/desktop/backend/app/api/review.py#L1004) |
-| GET | `/api/review/summary` | [review_summary](../apps/desktop/backend/app/api/review.py#L357) |
-
-### app.api.settings
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/settings` | [get_settings](../apps/desktop/backend/app/api/settings.py#L169) |
-| PUT | `/api/settings` | [save_settings](../apps/desktop/backend/app/api/settings.py#L299) |
-| POST | `/api/settings/test` | [test_connection](../apps/desktop/backend/app/api/settings.py#L204) |
-| POST | `/api/settings/test-embedding` | [test_embedding](../apps/desktop/backend/app/api/settings.py#L263) |
-| POST | `/api/settings/test-vision` | [test_vision](../apps/desktop/backend/app/api/settings.py#L348) |
-
-### app.api.tasks
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/tasks/{task_id}` | [get_task_status](../apps/desktop/backend/app/api/tasks.py#L39) |
-| POST | `/api/tasks/{task_id}/cancel` | [cancel_task](../apps/desktop/backend/app/api/tasks.py#L49) |
-| GET | `/api/tasks/{task_id}/events` | [task_events](../apps/desktop/backend/app/api/tasks.py#L69) |
 
 ### app.api.vnext_projects
 
@@ -388,22 +128,289 @@
 | DELETE | `/api/vnext-projects/{project_id}/sources/{source_id}` | [remove_project_source](../apps/desktop/backend/app/api/vnext_projects.py#L697) |
 | POST | `/api/vnext-projects/{project_id}/sources/{source_id}/health` | [update_project_source_health](../apps/desktop/backend/app/api/vnext_projects.py#L1054) |
 
-### app.api.workspace
+### learnflow_core.api.architecture
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
-| GET | `/api/checkpoints/{checkpoint_id}/workspace/artifacts` | [get_checkpoint_workspace_artifacts](../apps/desktop/backend/app/api/workspace.py#L115) |
-| GET | `/api/projects/{project_id}/workspace/agent-files/{file_path}` | [get_workspace_file_for_checkpoint_tutor](../apps/desktop/backend/app/api/workspace.py#L280) |
-| GET | `/api/projects/{project_id}/workspace/files/{file_path}` | [get_workspace_file](../apps/desktop/backend/app/api/workspace.py#L227) |
-| PUT | `/api/projects/{project_id}/workspace/files/{file_path}` | [put_workspace_file](../apps/desktop/backend/app/api/workspace.py#L370) |
-| POST | `/api/projects/{project_id}/workspace/link` | [link_workspace](../apps/desktop/backend/app/api/workspace.py#L137) |
-| POST | `/api/projects/{project_id}/workspace/open` | [open_workspace_item](../apps/desktop/backend/app/api/workspace.py#L339) |
-| GET | `/api/projects/{project_id}/workspace/operations` | [list_workspace_operations](../apps/desktop/backend/app/api/workspace.py#L535) |
-| POST | `/api/projects/{project_id}/workspace/operations/propose` | [propose_workspace_operation](../apps/desktop/backend/app/api/workspace.py#L441) |
-| POST | `/api/projects/{project_id}/workspace/operations/{operation_id}/confirm` | [confirm_workspace_operation](../apps/desktop/backend/app/api/workspace.py#L562) |
-| GET | `/api/projects/{project_id}/workspace/previews/{file_path}` | [preview_workspace_file](../apps/desktop/backend/app/api/workspace.py#L250) |
-| POST | `/api/projects/{project_id}/workspace/reveal` | [reveal_workspace_item](../apps/desktop/backend/app/api/workspace.py#L305) |
-| GET | `/api/projects/{project_id}/workspace/tree` | [workspace_tree](../apps/desktop/backend/app/api/workspace.py#L203) |
+| GET | `/api/architecture/registry` | [get_architecture_registry](../packages/learning-core/src/learnflow_core/api/architecture.py#L12) |
+| GET | `/api/architecture/validate` | [validate_architecture_registry](../packages/learning-core/src/learnflow_core/api/architecture.py#L17) |
+
+### learnflow_core.api.assessment_design
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/assessment-blueprints` | [list_assessment_blueprints](../packages/learning-core/src/learnflow_core/api/assessment_design.py#L57) |
+| POST | `/api/assessment-blueprints` | [propose_assessment_blueprint](../packages/learning-core/src/learnflow_core/api/assessment_design.py#L36) |
+| GET | `/api/assessment-blueprints/{blueprint_id}` | [get_assessment_blueprint](../packages/learning-core/src/learnflow_core/api/assessment_design.py#L81) |
+
+### learnflow_core.api.health
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/health` | [health_check](../packages/learning-core/src/learnflow_core/api/health.py#L6) |
+| GET | `/ready` | [readiness_check](../packages/learning-core/src/learnflow_core/api/health.py#L11) |
+
+### learnflow_core.api.knowledge_library
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/knowledge-library/context` | [read_library_context](../packages/learning-core/src/learnflow_core/api/knowledge_library.py#L326) |
+| GET | `/api/knowledge-library/sources` | [list_library_sources](../packages/learning-core/src/learnflow_core/api/knowledge_library.py#L109) |
+| POST | `/api/knowledge-library/sources/upload` | [upload_library_source](../packages/learning-core/src/learnflow_core/api/knowledge_library.py#L198) |
+| POST | `/api/knowledge-library/sources/url` | [add_library_url](../packages/learning-core/src/learnflow_core/api/knowledge_library.py#L175) |
+| GET | `/api/knowledge-library/sources/{source_id}/paper` | [read_owned_source_paper](../packages/learning-core/src/learnflow_core/api/knowledge_library.py#L130) |
+| POST | `/api/knowledge-library/sources/{source_id}/process` | [process_library_source](../packages/learning-core/src/learnflow_core/api/knowledge_library.py#L284) |
+| POST | `/api/knowledge-library/web-evidence` | [capture_web_evidence](../packages/learning-core/src/learnflow_core/api/knowledge_library.py#L404) |
+
+### learnflow_core.api.learner_state
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/learner-state/agent-workspace-context` | [get_agent_workspace_context](../packages/learning-core/src/learnflow_core/api/learner_state.py#L372) |
+| GET | `/api/learner-state/concept-graph` | [get_personal_concept_graph](../packages/learning-core/src/learnflow_core/api/learner_state.py#L397) |
+| POST | `/api/learner-state/concept-graph/statements` | [record_concept_statement](../packages/learning-core/src/learnflow_core/api/learner_state.py#L405) |
+| GET | `/api/learner-state/context` | [get_learner_context](../packages/learning-core/src/learnflow_core/api/learner_state.py#L329) |
+| POST | `/api/learner-state/events` | [sync_learner_event](../packages/learning-core/src/learnflow_core/api/learner_state.py#L516) |
+| POST | `/api/learner-state/learning-path/personal-nodes` | [add_personal_learning_path_node](../packages/learning-core/src/learnflow_core/api/learner_state.py#L606) |
+| DELETE | `/api/learner-state/learning-path/personal-nodes/{node_id}` | [remove_personal_learning_path_node](../packages/learning-core/src/learnflow_core/api/learner_state.py#L649) |
+| POST | `/api/learner-state/learning-path/plans` | [commit_learning_path_plan](../packages/learning-core/src/learnflow_core/api/learner_state.py#L682) |
+| DELETE | `/api/learner-state/learning-path/plans/{plan_id}` | [archive_learning_path_plan](../packages/learning-core/src/learnflow_core/api/learner_state.py#L729) |
+| POST | `/api/learner-state/learning-path/status` | [set_learning_path_status](../packages/learning-core/src/learnflow_core/api/learner_state.py#L580) |
+| GET | `/api/learner-state/snapshot` | [get_learner_state_snapshot](../packages/learning-core/src/learnflow_core/api/learner_state.py#L286) |
+| POST | `/api/learner-state/value-claims/confirm` | [confirm_value_claim](../packages/learning-core/src/learnflow_core/api/learner_state.py#L763) |
+
+### learnflow_core.api.learning_files
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/learning-files` | [list_learning_files](../packages/learning-core/src/learnflow_core/api/learning_files.py#L99) |
+| GET | `/api/learning-files/lecture/{lecture_id}` | [get_lecture_file](../packages/learning-core/src/learnflow_core/api/learning_files.py#L159) |
+| POST | `/api/learning-files/lecture/{lecture_id}/read` | [mark_lecture_read](../packages/learning-core/src/learnflow_core/api/learning_files.py#L554) |
+| POST | `/api/learning-files/practice/generate` | [generate_dynamic_practice_file](../packages/learning-core/src/learnflow_core/api/learning_files.py#L283) |
+| GET | `/api/learning-files/practice/{practice_ref}` | [get_practice_file](../packages/learning-core/src/learnflow_core/api/learning_files.py#L181) |
+| POST | `/api/learning-files/practice/{practice_ref}/quality` | [inspect_dynamic_practice_quality](../packages/learning-core/src/learnflow_core/api/learning_files.py#L402) |
+| POST | `/api/learning-files/tasks/{task_id}/generate` | [generate_task_learning_files](../packages/learning-core/src/learnflow_core/api/learning_files.py#L441) |
+| POST | `/api/learning-files/{kind}/{ref}/attached` | [record_learning_file_attached](../packages/learning-core/src/learnflow_core/api/learning_files.py#L541) |
+| POST | `/api/learning-files/{kind}/{ref}/opened` | [record_learning_file_opened](../packages/learning-core/src/learnflow_core/api/learning_files.py#L528) |
+
+### learnflow_core.api.learning_task_integrations
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| POST | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates` | [create_learning_task_candidate](../packages/learning-core/src/learnflow_core/api/learning_task_integrations.py#L81) |
+| GET | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}` | [read_learning_task_candidate](../packages/learning-core/src/learnflow_core/api/learning_task_integrations.py#L124) |
+| GET | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}/audit` | [audit_learning_task_candidate](../packages/learning-core/src/learnflow_core/api/learning_task_integrations.py#L144) |
+| POST | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}/confirm` | [confirm_learning_task_candidate](../packages/learning-core/src/learnflow_core/api/learning_task_integrations.py#L170) |
+| GET | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}/evidence` | [inspect_learning_task_candidate_evidence](../packages/learning-core/src/learnflow_core/api/learning_task_integrations.py#L134) |
+| GET | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}/handoff` | [prepare_learning_task_candidate_handoff](../packages/learning-core/src/learnflow_core/api/learning_task_integrations.py#L157) |
+
+### learnflow_core.api.learning_tasks
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/learning-tasks` | [list_learning_tasks](../packages/learning-core/src/learnflow_core/api/learning_tasks.py#L95) |
+| POST | `/api/learning-tasks` | [create_task](../packages/learning-core/src/learnflow_core/api/learning_tasks.py#L131) |
+| POST | `/api/learning-tasks/reorder` | [reorder_queue](../packages/learning-core/src/learnflow_core/api/learning_tasks.py#L164) |
+| GET | `/api/learning-tasks/summary` | [get_queue_summary](../packages/learning-core/src/learnflow_core/api/learning_tasks.py#L61) |
+| GET | `/api/learning-tasks/{task_id}` | [get_task](../packages/learning-core/src/learnflow_core/api/learning_tasks.py#L184) |
+| PATCH | `/api/learning-tasks/{task_id}` | [update_task](../packages/learning-core/src/learnflow_core/api/learning_tasks.py#L196) |
+| POST | `/api/learning-tasks/{task_id}/actions` | [task_action](../packages/learning-core/src/learnflow_core/api/learning_tasks.py#L219) |
+| POST | `/api/learning-tasks/{task_id}/materialize` | [materialize_task](../packages/learning-core/src/learnflow_core/api/learning_tasks.py#L269) |
+| POST | `/api/learning-tasks/{task_id}/replan` | [replan_task](../packages/learning-core/src/learnflow_core/api/learning_tasks.py#L244) |
+
+### learnflow_core.api.local_agent
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/desktop/agent-profiles` | [list_agent_profiles](../packages/learning-core/src/learnflow_core/api/local_agent.py#L53) |
+| POST | `/api/desktop/agent-profiles` | [create_agent_profile](../packages/learning-core/src/learnflow_core/api/local_agent.py#L70) |
+| DELETE | `/api/desktop/agent-profiles/{profile_id}` | [delete_agent_profile](../packages/learning-core/src/learnflow_core/api/local_agent.py#L138) |
+| PATCH | `/api/desktop/agent-profiles/{profile_id}` | [patch_agent_profile](../packages/learning-core/src/learnflow_core/api/local_agent.py#L97) |
+| GET | `/api/local-agent/runs/{run_id}` | [get_local_agent_run](../packages/learning-core/src/learnflow_core/api/local_agent.py#L160) |
+| POST | `/api/local-agent/runs/{run_id}/apply` | [apply_local_agent_run](../packages/learning-core/src/learnflow_core/api/local_agent.py#L206) |
+| POST | `/api/local-agent/runs/{run_id}/cancel` | [cancel_local_agent_run](../packages/learning-core/src/learnflow_core/api/local_agent.py#L191) |
+| GET | `/api/local-agent/runs/{run_id}/events` | [get_local_agent_run_events](../packages/learning-core/src/learnflow_core/api/local_agent.py#L173) |
+
+### learnflow_core.api.memory
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| POST | `/api/memory/claims/{claim_id}/feedback` | [submit_claim_feedback](../packages/learning-core/src/learnflow_core/api/memory.py#L385) |
+| GET | `/api/memory/consolidations` | [get_consolidations](../packages/learning-core/src/learnflow_core/api/memory.py#L367) |
+| GET | `/api/memory/graph` | [get_memory_graph](../packages/learning-core/src/learnflow_core/api/memory.py#L214) |
+| GET | `/api/memory/nodes/{node_id}` | [get_memory_node](../packages/learning-core/src/learnflow_core/api/memory.py#L260) |
+| GET | `/api/memory/timeline` | [get_memory_timeline](../packages/learning-core/src/learnflow_core/api/memory.py#L240) |
+
+### learnflow_core.api.micro_learning
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/micro-learning/runs` | [list_runs](../packages/learning-core/src/learnflow_core/api/micro_learning.py#L77) |
+| POST | `/api/micro-learning/runs` | [create_run](../packages/learning-core/src/learnflow_core/api/micro_learning.py#L54) |
+| GET | `/api/micro-learning/runs/{run_id}` | [get_run](../packages/learning-core/src/learnflow_core/api/micro_learning.py#L96) |
+| POST | `/api/micro-learning/runs/{run_id}/advance` | [advance](../packages/learning-core/src/learnflow_core/api/micro_learning.py#L109) |
+| POST | `/api/micro-learning/runs/{run_id}/regenerate` | [regenerate](../packages/learning-core/src/learnflow_core/api/micro_learning.py#L132) |
+| POST | `/api/micro-learning/runs/{run_id}/sync` | [sync](../packages/learning-core/src/learnflow_core/api/micro_learning.py#L179) |
+| POST | `/api/micro-learning/runs/{run_id}/teach-back` | [teach_back](../packages/learning-core/src/learnflow_core/api/micro_learning.py#L156) |
+
+### learnflow_core.api.phase1
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| POST | `/api/projects/{project_id}/reconcile` | [reconcile_sources](../packages/learning-core/src/learnflow_core/api/phase1.py#L657) |
+| POST | `/api/projects/{project_id}/reconcile/apply` | [apply_reconcile](../packages/learning-core/src/learnflow_core/api/phase1.py#L737) |
+| POST | `/api/projects/{project_id}/roadmap/briefs` | [backfill_briefs](../packages/learning-core/src/learnflow_core/api/phase1.py#L1088) |
+| POST | `/api/projects/{project_id}/roadmap/chat` | [roadmap_chat](../packages/learning-core/src/learnflow_core/api/phase1.py#L858) |
+| GET | `/api/projects/{project_id}/roadmap/history` | [get_roadmap_history](../packages/learning-core/src/learnflow_core/api/phase1.py#L993) |
+| POST | `/api/projects/{project_id}/roadmap/resync` | [resync_roadmap_chunks](../packages/learning-core/src/learnflow_core/api/phase1.py#L1217) |
+| POST | `/api/projects/{project_id}/sources/process-all` | [process_all_sources](../packages/learning-core/src/learnflow_core/api/phase1.py#L529) |
+| POST | `/api/projects/{project_id}/sources/{source_id}/analyze` | [analyze_source_structure](../packages/learning-core/src/learnflow_core/api/phase1.py#L361) |
+| POST | `/api/projects/{project_id}/sources/{source_id}/images/caption` | [start_image_captioning](../packages/learning-core/src/learnflow_core/api/phase1.py#L305) |
+| POST | `/api/projects/{project_id}/sources/{source_id}/process` | [process_source](../packages/learning-core/src/learnflow_core/api/phase1.py#L166) |
+| PUT | `/api/projects/{project_id}/sources/{source_id}/role` | [set_source_role](../packages/learning-core/src/learnflow_core/api/phase1.py#L636) |
+| POST | `/api/projects/{project_id}/sources/{source_id}/summarize` | [summarize_source_files](../packages/learning-core/src/learnflow_core/api/phase1.py#L393) |
+| GET | `/api/sources/{source_id}/files/{file_path}` | [serve_source_file](../packages/learning-core/src/learnflow_core/api/phase1.py#L286) |
+
+### learnflow_core.api.phase2
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| POST | `/api/animations/generate` | [generate_animation](../packages/learning-core/src/learnflow_core/api/phase2.py#L402) |
+| GET | `/api/animations/{animation_id}` | [get_animation](../packages/learning-core/src/learnflow_core/api/phase2.py#L420) |
+| DELETE | `/api/artifact-annotations/{annotation_id}` | [delete_artifact_annotation](../packages/learning-core/src/learnflow_core/api/phase2.py#L755) |
+| PUT | `/api/artifact-annotations/{annotation_id}` | [update_artifact_annotation](../packages/learning-core/src/learnflow_core/api/phase2.py#L742) |
+| GET | `/api/artifacts/{artifact_type}/{artifact_id}/annotations` | [list_artifact_annotations](../packages/learning-core/src/learnflow_core/api/phase2.py#L685) |
+| POST | `/api/artifacts/{artifact_type}/{artifact_id}/annotations` | [create_artifact_annotation](../packages/learning-core/src/learnflow_core/api/phase2.py#L700) |
+| POST | `/api/checkpoints/{checkpoint_id}/ask` | [ask_question](../packages/learning-core/src/learnflow_core/api/phase2.py#L576) |
+| POST | `/api/checkpoints/{checkpoint_id}/concept-graph/generate` | [generate_concept_graph](../packages/learning-core/src/learnflow_core/api/phase2.py#L443) |
+| GET | `/api/checkpoints/{checkpoint_id}/concept-graph/task` | [get_concept_graph_task](../packages/learning-core/src/learnflow_core/api/phase2.py#L482) |
+| GET | `/api/checkpoints/{checkpoint_id}/lecture` | [get_lecture](../packages/learning-core/src/learnflow_core/api/phase2.py#L342) |
+| PUT | `/api/checkpoints/{checkpoint_id}/lecture` | [put_lecture](../packages/learning-core/src/learnflow_core/api/phase2.py#L320) |
+| GET | `/api/checkpoints/{checkpoint_id}/lecture/generate` | [generate_lecture_stream](../packages/learning-core/src/learnflow_core/api/phase2.py#L111) |
+| POST | `/api/checkpoints/{checkpoint_id}/lecture/generate` | [generate_lecture_task](../packages/learning-core/src/learnflow_core/api/phase2.py#L33) |
+| POST | `/api/checkpoints/{checkpoint_id}/lecture/rollback` | [rollback_lecture](../packages/learning-core/src/learnflow_core/api/phase2.py#L527) |
+| POST | `/api/checkpoints/{checkpoint_id}/lecture/save` | [save_lecture_compat](../packages/learning-core/src/learnflow_core/api/phase2.py#L331) |
+| GET | `/api/checkpoints/{checkpoint_id}/lecture/task` | [get_lecture_task](../packages/learning-core/src/learnflow_core/api/phase2.py#L86) |
+| GET | `/api/checkpoints/{checkpoint_id}/lecture/versions` | [list_lecture_versions](../packages/learning-core/src/learnflow_core/api/phase2.py#L504) |
+| GET | `/api/checkpoints/{checkpoint_id}/notes` | [list_notes](../packages/learning-core/src/learnflow_core/api/phase2.py#L777) |
+| POST | `/api/checkpoints/{checkpoint_id}/notes` | [create_note](../packages/learning-core/src/learnflow_core/api/phase2.py#L792) |
+| DELETE | `/api/notes/{note_id}` | [delete_note](../packages/learning-core/src/learnflow_core/api/phase2.py#L825) |
+| PUT | `/api/notes/{note_id}` | [update_note](../packages/learning-core/src/learnflow_core/api/phase2.py#L815) |
+
+### learnflow_core.api.phase3
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/checkpoints/{checkpoint_id}/concepts` | [list_concepts](../packages/learning-core/src/learnflow_core/api/phase3.py#L412) |
+| POST | `/api/checkpoints/{checkpoint_id}/concepts/generate` | [generate_concepts](../packages/learning-core/src/learnflow_core/api/phase3.py#L437) |
+| GET | `/api/checkpoints/{checkpoint_id}/concepts/task` | [get_concept_task](../packages/learning-core/src/learnflow_core/api/phase3.py#L476) |
+| POST | `/api/checkpoints/{checkpoint_id}/concepts/{question_id}/explain` | [explain_concept](../packages/learning-core/src/learnflow_core/api/phase3.py#L496) |
+| POST | `/api/checkpoints/{checkpoint_id}/concepts/{question_id}/submit` | [submit_concept](../packages/learning-core/src/learnflow_core/api/phase3.py#L536) |
+| GET | `/api/checkpoints/{checkpoint_id}/exercises` | [list_exercises](../packages/learning-core/src/learnflow_core/api/phase3.py#L57) |
+| POST | `/api/checkpoints/{checkpoint_id}/exercises` | [create_exercise](../packages/learning-core/src/learnflow_core/api/phase3.py#L84) |
+| POST | `/api/checkpoints/{checkpoint_id}/exercises/generate` | [generate_exercises](../packages/learning-core/src/learnflow_core/api/phase3.py#L698) |
+| GET | `/api/checkpoints/{checkpoint_id}/exercises/task` | [get_exercise_task](../packages/learning-core/src/learnflow_core/api/phase3.py#L738) |
+| POST | `/api/code/ask` | [ask_code_question](../packages/learning-core/src/learnflow_core/api/phase3.py#L324) |
+| GET | `/api/exercises/{exercise_id}` | [get_exercise](../packages/learning-core/src/learnflow_core/api/phase3.py#L133) |
+| GET | `/api/exercises/{exercise_id}/draft` | [get_exercise_draft](../packages/learning-core/src/learnflow_core/api/phase3.py#L151) |
+| PUT | `/api/exercises/{exercise_id}/draft` | [put_exercise_draft](../packages/learning-core/src/learnflow_core/api/phase3.py#L185) |
+| GET | `/api/exercises/{exercise_id}/env` | [exercise_env_status](../packages/learning-core/src/learnflow_core/api/phase3.py#L270) |
+| POST | `/api/exercises/{exercise_id}/review` | [review_code](../packages/learning-core/src/learnflow_core/api/phase3.py#L293) |
+| POST | `/api/exercises/{exercise_id}/run` | [run_code](../packages/learning-core/src/learnflow_core/api/phase3.py#L219) |
+| POST | `/api/exercises/{exercise_id}/submit` | [submit_exercise](../packages/learning-core/src/learnflow_core/api/phase3.py#L758) |
+| POST | `/api/projects/{project_id}/embeddings/index` | [index_embeddings](../packages/learning-core/src/learnflow_core/api/phase3.py#L371) |
+
+### learnflow_core.api.platform
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/platform` | [platform_manifest](../packages/learning-core/src/learnflow_core/api/platform.py#L9) |
+
+### learnflow_core.api.profile
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/profile` | [get_profile](../packages/learning-core/src/learnflow_core/api/profile.py#L38) |
+| PATCH | `/api/profile` | [update_profile](../packages/learning-core/src/learnflow_core/api/profile.py#L56) |
+| GET | `/api/profile/growth` | [get_growth](../packages/learning-core/src/learnflow_core/api/profile.py#L114) |
+| GET | `/api/profile/journey` | [get_journey](../packages/learning-core/src/learnflow_core/api/profile.py#L158) |
+| GET | `/api/profile/memories` | [get_memories](../packages/learning-core/src/learnflow_core/api/profile.py#L106) |
+| POST | `/api/profile/memories/{memory_id}/archive` | [archive_memory](../packages/learning-core/src/learnflow_core/api/profile.py#L124) |
+| POST | `/api/profile/memories/{memory_id}/restore` | [restore_memory](../packages/learning-core/src/learnflow_core/api/profile.py#L142) |
+
+### learnflow_core.api.projects
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/projects` | [list_projects](../packages/learning-core/src/learnflow_core/api/projects.py#L60) |
+| POST | `/api/projects` | [create_project](../packages/learning-core/src/learnflow_core/api/projects.py#L31) |
+| DELETE | `/api/projects/{project_id}` | [delete_project](../packages/learning-core/src/learnflow_core/api/projects.py#L108) |
+| GET | `/api/projects/{project_id}` | [get_project](../packages/learning-core/src/learnflow_core/api/projects.py#L99) |
+| GET | `/api/projects/{project_id}/chunks` | [list_chunks](../packages/learning-core/src/learnflow_core/api/projects.py#L284) |
+| GET | `/api/projects/{project_id}/roadmap` | [get_roadmap](../packages/learning-core/src/learnflow_core/api/projects.py#L305) |
+| GET | `/api/projects/{project_id}/sources` | [list_sources](../packages/learning-core/src/learnflow_core/api/projects.py#L260) |
+| POST | `/api/projects/{project_id}/sources` | [add_source](../packages/learning-core/src/learnflow_core/api/projects.py#L129) |
+| POST | `/api/projects/{project_id}/sources/upload` | [upload_source](../packages/learning-core/src/learnflow_core/api/projects.py#L159) |
+
+### learnflow_core.api.remediation
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/checkpoints/{checkpoint_id}/remediation-cases` | [list_remediation_cases](../packages/learning-core/src/learnflow_core/api/remediation.py#L38) |
+| GET | `/api/remediation/{case_id}` | [get_remediation_case](../packages/learning-core/src/learnflow_core/api/remediation.py#L29) |
+| POST | `/api/remediation/{case_id}/explanations` | [change_remediation_explanation](../packages/learning-core/src/learnflow_core/api/remediation.py#L52) |
+| POST | `/api/remediation/{case_id}/variant` | [create_remediation_variant](../packages/learning-core/src/learnflow_core/api/remediation.py#L70) |
+| POST | `/api/remediation/{case_id}/variant/submit` | [evaluate_remediation_variant](../packages/learning-core/src/learnflow_core/api/remediation.py#L84) |
+
+### learnflow_core.api.review
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/review/agent-context` | [review_agent_context](../packages/learning-core/src/learnflow_core/api/review.py#L461) |
+| GET | `/api/review/items` | [list_review_items](../packages/learning-core/src/learnflow_core/api/review.py#L391) |
+| GET | `/api/review/items/{schedule_id}` | [get_review_item](../packages/learning-core/src/learnflow_core/api/review.py#L525) |
+| POST | `/api/review/items/{schedule_id}/defer` | [defer_review_item](../packages/learning-core/src/learnflow_core/api/review.py#L974) |
+| GET | `/api/review/items/{schedule_id}/history` | [get_review_history](../packages/learning-core/src/learnflow_core/api/review.py#L535) |
+| POST | `/api/review/items/{schedule_id}/reflections` | [record_review_reflection](../packages/learning-core/src/learnflow_core/api/review.py#L579) |
+| POST | `/api/review/items/{schedule_id}/resume` | [resume_review_item](../packages/learning-core/src/learnflow_core/api/review.py#L1029) |
+| POST | `/api/review/items/{schedule_id}/submit` | [submit_review_item](../packages/learning-core/src/learnflow_core/api/review.py#L677) |
+| POST | `/api/review/items/{schedule_id}/suspend` | [suspend_review_item](../packages/learning-core/src/learnflow_core/api/review.py#L1004) |
+| GET | `/api/review/summary` | [review_summary](../packages/learning-core/src/learnflow_core/api/review.py#L357) |
+
+### learnflow_core.api.settings
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/settings` | [get_settings](../packages/learning-core/src/learnflow_core/api/settings.py#L167) |
+| PUT | `/api/settings` | [save_settings](../packages/learning-core/src/learnflow_core/api/settings.py#L297) |
+| POST | `/api/settings/test` | [test_connection](../packages/learning-core/src/learnflow_core/api/settings.py#L202) |
+| POST | `/api/settings/test-embedding` | [test_embedding](../packages/learning-core/src/learnflow_core/api/settings.py#L261) |
+| POST | `/api/settings/test-vision` | [test_vision](../packages/learning-core/src/learnflow_core/api/settings.py#L346) |
+
+### learnflow_core.api.tasks
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/tasks/{task_id}` | [get_task_status](../packages/learning-core/src/learnflow_core/api/tasks.py#L39) |
+| POST | `/api/tasks/{task_id}/cancel` | [cancel_task](../packages/learning-core/src/learnflow_core/api/tasks.py#L49) |
+| GET | `/api/tasks/{task_id}/events` | [task_events](../packages/learning-core/src/learnflow_core/api/tasks.py#L69) |
+
+### learnflow_core.api.workspace
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/checkpoints/{checkpoint_id}/workspace/artifacts` | [get_checkpoint_workspace_artifacts](../packages/learning-core/src/learnflow_core/api/workspace.py#L115) |
+| GET | `/api/projects/{project_id}/workspace/agent-files/{file_path}` | [get_workspace_file_for_checkpoint_tutor](../packages/learning-core/src/learnflow_core/api/workspace.py#L280) |
+| GET | `/api/projects/{project_id}/workspace/files/{file_path}` | [get_workspace_file](../packages/learning-core/src/learnflow_core/api/workspace.py#L227) |
+| PUT | `/api/projects/{project_id}/workspace/files/{file_path}` | [put_workspace_file](../packages/learning-core/src/learnflow_core/api/workspace.py#L370) |
+| POST | `/api/projects/{project_id}/workspace/link` | [link_workspace](../packages/learning-core/src/learnflow_core/api/workspace.py#L137) |
+| POST | `/api/projects/{project_id}/workspace/open` | [open_workspace_item](../packages/learning-core/src/learnflow_core/api/workspace.py#L339) |
+| GET | `/api/projects/{project_id}/workspace/operations` | [list_workspace_operations](../packages/learning-core/src/learnflow_core/api/workspace.py#L535) |
+| POST | `/api/projects/{project_id}/workspace/operations/propose` | [propose_workspace_operation](../packages/learning-core/src/learnflow_core/api/workspace.py#L441) |
+| POST | `/api/projects/{project_id}/workspace/operations/{operation_id}/confirm` | [confirm_workspace_operation](../packages/learning-core/src/learnflow_core/api/workspace.py#L562) |
+| GET | `/api/projects/{project_id}/workspace/previews/{file_path}` | [preview_workspace_file](../packages/learning-core/src/learnflow_core/api/workspace.py#L250) |
+| POST | `/api/projects/{project_id}/workspace/reveal` | [reveal_workspace_item](../packages/learning-core/src/learnflow_core/api/workspace.py#L305) |
+| GET | `/api/projects/{project_id}/workspace/tree` | [workspace_tree](../packages/learning-core/src/learnflow_core/api/workspace.py#L203) |
 
 
 ## Desktop Node Tutor (dev/preview)
@@ -423,21 +430,22 @@
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
-| invoke | `capture_desktop_pet_ocr` | [capture_desktop_pet_ocr](../apps/desktop/desktop/src-tauri/src/lib.rs#L491) |
-| invoke | `capture_desktop_pet_selection` | [capture_desktop_pet_selection](../apps/desktop/desktop/src-tauri/src/lib.rs#L539) |
-| invoke | `clear_desktop_auth_token` | [clear_desktop_auth_token](../apps/desktop/desktop/src-tauri/src/lib.rs#L1045) |
-| invoke | `close_desktop_pet` | [close_desktop_pet](../apps/desktop/desktop/src-tauri/src/lib.rs#L720) |
-| invoke | `desktop_pet_active_session` | [desktop_pet_active_session](../apps/desktop/desktop/src-tauri/src/lib.rs#L1030) |
-| invoke | `desktop_pet_auth_token` | [desktop_pet_auth_token](../apps/desktop/desktop/src-tauri/src/lib.rs#L1071) |
-| invoke | `desktop_pet_preferences` | [desktop_pet_preferences](../apps/desktop/desktop/src-tauri/src/lib.rs#L582) |
-| invoke | `desktop_runtime_config` | [desktop_runtime_config](../apps/desktop/desktop/src-tauri/src/lib.rs#L158) |
-| invoke | `open_desktop_main_path` | [open_desktop_main_path](../apps/desktop/desktop/src-tauri/src/lib.rs#L943) |
-| invoke | `open_external_url` | [open_external_url](../apps/desktop/desktop/src-tauri/src/lib.rs#L973) |
-| invoke | `reset_desktop_pet_geometry` | [reset_desktop_pet_geometry](../apps/desktop/desktop/src-tauri/src/lib.rs#L691) |
-| invoke | `restore_desktop_pet_geometry` | [restore_desktop_pet_geometry](../apps/desktop/desktop/src-tauri/src/lib.rs#L660) |
-| invoke | `store_desktop_pet_capability` | [store_desktop_pet_capability](../apps/desktop/desktop/src-tauri/src/lib.rs#L984) |
-| invoke | `sync_desktop_pet_session` | [sync_desktop_pet_session](../apps/desktop/desktop/src-tauri/src/lib.rs#L1006) |
-| invoke | `update_desktop_pet_preferences` | [update_desktop_pet_preferences](../apps/desktop/desktop/src-tauri/src/lib.rs#L597) |
+| invoke | `capture_desktop_pet_ocr` | [capture_desktop_pet_ocr](../apps/desktop/desktop/src-tauri/src/lib.rs#L492) |
+| invoke | `capture_desktop_pet_selection` | [capture_desktop_pet_selection](../apps/desktop/desktop/src-tauri/src/lib.rs#L540) |
+| invoke | `clear_desktop_auth_token` | [clear_desktop_auth_token](../apps/desktop/desktop/src-tauri/src/lib.rs#L1088) |
+| invoke | `close_desktop_pet` | [close_desktop_pet](../apps/desktop/desktop/src-tauri/src/lib.rs#L721) |
+| invoke | `desktop_pet_active_session` | [desktop_pet_active_session](../apps/desktop/desktop/src-tauri/src/lib.rs#L1073) |
+| invoke | `desktop_pet_auth_token` | [desktop_pet_auth_token](../apps/desktop/desktop/src-tauri/src/lib.rs#L1114) |
+| invoke | `desktop_pet_preferences` | [desktop_pet_preferences](../apps/desktop/desktop/src-tauri/src/lib.rs#L583) |
+| invoke | `desktop_runtime_config` | [desktop_runtime_config](../apps/desktop/desktop/src-tauri/src/lib.rs#L159) |
+| invoke | `open_desktop_main_path` | [open_desktop_main_path](../apps/desktop/desktop/src-tauri/src/lib.rs#L948) |
+| invoke | `open_external_url` | [open_external_url](../apps/desktop/desktop/src-tauri/src/lib.rs#L1016) |
+| invoke | `open_platform_workspace` | [open_platform_workspace](../apps/desktop/desktop/src-tauri/src/lib.rs#L1008) |
+| invoke | `reset_desktop_pet_geometry` | [reset_desktop_pet_geometry](../apps/desktop/desktop/src-tauri/src/lib.rs#L692) |
+| invoke | `restore_desktop_pet_geometry` | [restore_desktop_pet_geometry](../apps/desktop/desktop/src-tauri/src/lib.rs#L661) |
+| invoke | `store_desktop_pet_capability` | [store_desktop_pet_capability](../apps/desktop/desktop/src-tauri/src/lib.rs#L1027) |
+| invoke | `sync_desktop_pet_session` | [sync_desktop_pet_session](../apps/desktop/desktop/src-tauri/src/lib.rs#L1049) |
+| invoke | `update_desktop_pet_preferences` | [update_desktop_pet_preferences](../apps/desktop/desktop/src-tauri/src/lib.rs#L598) |
 
 
 ## Role Atlas / Graph Hub
@@ -635,21 +643,6 @@
 | GET | `/api/agent/skills` | [list_learning_skills](../backend/app/api/agent.py#L200) |
 | POST | `/api/learning-events` | [create_learning_event](../backend/app/api/agent.py#L1145) |
 
-### app.api.architecture
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/architecture/registry` | [get_architecture_registry](../backend/app/api/architecture.py#L12) |
-| GET | `/api/architecture/validate` | [validate_architecture_registry](../backend/app/api/architecture.py#L17) |
-
-### app.api.assessment_design
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/assessment-blueprints` | [list_assessment_blueprints](../backend/app/api/assessment_design.py#L57) |
-| POST | `/api/assessment-blueprints` | [propose_assessment_blueprint](../backend/app/api/assessment_design.py#L36) |
-| GET | `/api/assessment-blueprints/{blueprint_id}` | [get_assessment_blueprint](../backend/app/api/assessment_design.py#L81) |
-
 ### app.api.auth
 
 | 方法 | 路径 / 命令 | 实现 |
@@ -683,251 +676,6 @@
 | POST | `/api/ecosystem/learning-path/commit` | [commit](../backend/app/api/ecosystem.py#L117) |
 | POST | `/api/ecosystem/learning-path/resolve` | [resolve](../backend/app/api/ecosystem.py#L112) |
 
-### app.api.health
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/health` | [health_check](../backend/app/api/health.py#L6) |
-
-### app.api.knowledge_library
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/knowledge-library/context` | [read_library_context](../backend/app/api/knowledge_library.py#L326) |
-| GET | `/api/knowledge-library/sources` | [list_library_sources](../backend/app/api/knowledge_library.py#L109) |
-| POST | `/api/knowledge-library/sources/upload` | [upload_library_source](../backend/app/api/knowledge_library.py#L198) |
-| POST | `/api/knowledge-library/sources/url` | [add_library_url](../backend/app/api/knowledge_library.py#L175) |
-| GET | `/api/knowledge-library/sources/{source_id}/paper` | [read_owned_source_paper](../backend/app/api/knowledge_library.py#L130) |
-| POST | `/api/knowledge-library/sources/{source_id}/process` | [process_library_source](../backend/app/api/knowledge_library.py#L284) |
-| POST | `/api/knowledge-library/web-evidence` | [capture_web_evidence](../backend/app/api/knowledge_library.py#L404) |
-
-### app.api.learner_state
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/learner-state/agent-workspace-context` | [get_agent_workspace_context](../backend/app/api/learner_state.py#L372) |
-| GET | `/api/learner-state/concept-graph` | [get_personal_concept_graph](../backend/app/api/learner_state.py#L397) |
-| POST | `/api/learner-state/concept-graph/statements` | [record_concept_statement](../backend/app/api/learner_state.py#L405) |
-| GET | `/api/learner-state/context` | [get_learner_context](../backend/app/api/learner_state.py#L329) |
-| POST | `/api/learner-state/events` | [sync_learner_event](../backend/app/api/learner_state.py#L516) |
-| POST | `/api/learner-state/learning-path/personal-nodes` | [add_personal_learning_path_node](../backend/app/api/learner_state.py#L606) |
-| DELETE | `/api/learner-state/learning-path/personal-nodes/{node_id}` | [remove_personal_learning_path_node](../backend/app/api/learner_state.py#L649) |
-| POST | `/api/learner-state/learning-path/plans` | [commit_learning_path_plan](../backend/app/api/learner_state.py#L682) |
-| DELETE | `/api/learner-state/learning-path/plans/{plan_id}` | [archive_learning_path_plan](../backend/app/api/learner_state.py#L729) |
-| POST | `/api/learner-state/learning-path/status` | [set_learning_path_status](../backend/app/api/learner_state.py#L580) |
-| GET | `/api/learner-state/snapshot` | [get_learner_state_snapshot](../backend/app/api/learner_state.py#L286) |
-| POST | `/api/learner-state/value-claims/confirm` | [confirm_value_claim](../backend/app/api/learner_state.py#L763) |
-
-### app.api.learning_files
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/learning-files` | [list_learning_files](../backend/app/api/learning_files.py#L99) |
-| GET | `/api/learning-files/lecture/{lecture_id}` | [get_lecture_file](../backend/app/api/learning_files.py#L159) |
-| POST | `/api/learning-files/lecture/{lecture_id}/read` | [mark_lecture_read](../backend/app/api/learning_files.py#L554) |
-| POST | `/api/learning-files/practice/generate` | [generate_dynamic_practice_file](../backend/app/api/learning_files.py#L283) |
-| GET | `/api/learning-files/practice/{practice_ref}` | [get_practice_file](../backend/app/api/learning_files.py#L181) |
-| POST | `/api/learning-files/practice/{practice_ref}/quality` | [inspect_dynamic_practice_quality](../backend/app/api/learning_files.py#L402) |
-| POST | `/api/learning-files/tasks/{task_id}/generate` | [generate_task_learning_files](../backend/app/api/learning_files.py#L441) |
-| POST | `/api/learning-files/{kind}/{ref}/attached` | [record_learning_file_attached](../backend/app/api/learning_files.py#L541) |
-| POST | `/api/learning-files/{kind}/{ref}/opened` | [record_learning_file_opened](../backend/app/api/learning_files.py#L528) |
-
-### app.api.learning_task_integrations
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| POST | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates` | [create_learning_task_candidate](../backend/app/api/learning_task_integrations.py#L81) |
-| GET | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}` | [read_learning_task_candidate](../backend/app/api/learning_task_integrations.py#L124) |
-| GET | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}/audit` | [audit_learning_task_candidate](../backend/app/api/learning_task_integrations.py#L144) |
-| POST | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}/confirm` | [confirm_learning_task_candidate](../backend/app/api/learning_task_integrations.py#L170) |
-| GET | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}/evidence` | [inspect_learning_task_candidate_evidence](../backend/app/api/learning_task_integrations.py#L134) |
-| GET | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}/handoff` | [prepare_learning_task_candidate_handoff](../backend/app/api/learning_task_integrations.py#L157) |
-
-### app.api.learning_tasks
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/learning-tasks` | [list_learning_tasks](../backend/app/api/learning_tasks.py#L95) |
-| POST | `/api/learning-tasks` | [create_task](../backend/app/api/learning_tasks.py#L131) |
-| POST | `/api/learning-tasks/reorder` | [reorder_queue](../backend/app/api/learning_tasks.py#L164) |
-| GET | `/api/learning-tasks/summary` | [get_queue_summary](../backend/app/api/learning_tasks.py#L61) |
-| GET | `/api/learning-tasks/{task_id}` | [get_task](../backend/app/api/learning_tasks.py#L184) |
-| PATCH | `/api/learning-tasks/{task_id}` | [update_task](../backend/app/api/learning_tasks.py#L196) |
-| POST | `/api/learning-tasks/{task_id}/actions` | [task_action](../backend/app/api/learning_tasks.py#L219) |
-| POST | `/api/learning-tasks/{task_id}/materialize` | [materialize_task](../backend/app/api/learning_tasks.py#L269) |
-| POST | `/api/learning-tasks/{task_id}/replan` | [replan_task](../backend/app/api/learning_tasks.py#L244) |
-
-### app.api.local_agent
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/desktop/agent-profiles` | [list_agent_profiles](../backend/app/api/local_agent.py#L53) |
-| POST | `/api/desktop/agent-profiles` | [create_agent_profile](../backend/app/api/local_agent.py#L70) |
-| DELETE | `/api/desktop/agent-profiles/{profile_id}` | [delete_agent_profile](../backend/app/api/local_agent.py#L138) |
-| PATCH | `/api/desktop/agent-profiles/{profile_id}` | [patch_agent_profile](../backend/app/api/local_agent.py#L97) |
-| GET | `/api/local-agent/runs/{run_id}` | [get_local_agent_run](../backend/app/api/local_agent.py#L160) |
-| POST | `/api/local-agent/runs/{run_id}/apply` | [apply_local_agent_run](../backend/app/api/local_agent.py#L206) |
-| POST | `/api/local-agent/runs/{run_id}/cancel` | [cancel_local_agent_run](../backend/app/api/local_agent.py#L191) |
-| GET | `/api/local-agent/runs/{run_id}/events` | [get_local_agent_run_events](../backend/app/api/local_agent.py#L173) |
-
-### app.api.memory
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| POST | `/api/memory/claims/{claim_id}/feedback` | [submit_claim_feedback](../backend/app/api/memory.py#L385) |
-| GET | `/api/memory/consolidations` | [get_consolidations](../backend/app/api/memory.py#L367) |
-| GET | `/api/memory/graph` | [get_memory_graph](../backend/app/api/memory.py#L214) |
-| GET | `/api/memory/nodes/{node_id}` | [get_memory_node](../backend/app/api/memory.py#L260) |
-| GET | `/api/memory/timeline` | [get_memory_timeline](../backend/app/api/memory.py#L240) |
-
-### app.api.micro_learning
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/micro-learning/runs` | [list_runs](../backend/app/api/micro_learning.py#L77) |
-| POST | `/api/micro-learning/runs` | [create_run](../backend/app/api/micro_learning.py#L54) |
-| GET | `/api/micro-learning/runs/{run_id}` | [get_run](../backend/app/api/micro_learning.py#L96) |
-| POST | `/api/micro-learning/runs/{run_id}/advance` | [advance](../backend/app/api/micro_learning.py#L109) |
-| POST | `/api/micro-learning/runs/{run_id}/regenerate` | [regenerate](../backend/app/api/micro_learning.py#L132) |
-| POST | `/api/micro-learning/runs/{run_id}/sync` | [sync](../backend/app/api/micro_learning.py#L179) |
-| POST | `/api/micro-learning/runs/{run_id}/teach-back` | [teach_back](../backend/app/api/micro_learning.py#L156) |
-
-### app.api.phase1
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| POST | `/api/projects/{project_id}/reconcile` | [reconcile_sources](../backend/app/api/phase1.py#L657) |
-| POST | `/api/projects/{project_id}/reconcile/apply` | [apply_reconcile](../backend/app/api/phase1.py#L737) |
-| POST | `/api/projects/{project_id}/roadmap/briefs` | [backfill_briefs](../backend/app/api/phase1.py#L1088) |
-| POST | `/api/projects/{project_id}/roadmap/chat` | [roadmap_chat](../backend/app/api/phase1.py#L858) |
-| GET | `/api/projects/{project_id}/roadmap/history` | [get_roadmap_history](../backend/app/api/phase1.py#L993) |
-| POST | `/api/projects/{project_id}/roadmap/resync` | [resync_roadmap_chunks](../backend/app/api/phase1.py#L1217) |
-| POST | `/api/projects/{project_id}/sources/process-all` | [process_all_sources](../backend/app/api/phase1.py#L529) |
-| POST | `/api/projects/{project_id}/sources/{source_id}/analyze` | [analyze_source_structure](../backend/app/api/phase1.py#L361) |
-| POST | `/api/projects/{project_id}/sources/{source_id}/images/caption` | [start_image_captioning](../backend/app/api/phase1.py#L305) |
-| POST | `/api/projects/{project_id}/sources/{source_id}/process` | [process_source](../backend/app/api/phase1.py#L166) |
-| PUT | `/api/projects/{project_id}/sources/{source_id}/role` | [set_source_role](../backend/app/api/phase1.py#L636) |
-| POST | `/api/projects/{project_id}/sources/{source_id}/summarize` | [summarize_source_files](../backend/app/api/phase1.py#L393) |
-| GET | `/api/sources/{source_id}/files/{file_path}` | [serve_source_file](../backend/app/api/phase1.py#L286) |
-
-### app.api.phase2
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| POST | `/api/animations/generate` | [generate_animation](../backend/app/api/phase2.py#L402) |
-| GET | `/api/animations/{animation_id}` | [get_animation](../backend/app/api/phase2.py#L420) |
-| DELETE | `/api/artifact-annotations/{annotation_id}` | [delete_artifact_annotation](../backend/app/api/phase2.py#L755) |
-| PUT | `/api/artifact-annotations/{annotation_id}` | [update_artifact_annotation](../backend/app/api/phase2.py#L742) |
-| GET | `/api/artifacts/{artifact_type}/{artifact_id}/annotations` | [list_artifact_annotations](../backend/app/api/phase2.py#L685) |
-| POST | `/api/artifacts/{artifact_type}/{artifact_id}/annotations` | [create_artifact_annotation](../backend/app/api/phase2.py#L700) |
-| POST | `/api/checkpoints/{checkpoint_id}/ask` | [ask_question](../backend/app/api/phase2.py#L576) |
-| POST | `/api/checkpoints/{checkpoint_id}/concept-graph/generate` | [generate_concept_graph](../backend/app/api/phase2.py#L443) |
-| GET | `/api/checkpoints/{checkpoint_id}/concept-graph/task` | [get_concept_graph_task](../backend/app/api/phase2.py#L482) |
-| GET | `/api/checkpoints/{checkpoint_id}/lecture` | [get_lecture](../backend/app/api/phase2.py#L342) |
-| PUT | `/api/checkpoints/{checkpoint_id}/lecture` | [put_lecture](../backend/app/api/phase2.py#L320) |
-| GET | `/api/checkpoints/{checkpoint_id}/lecture/generate` | [generate_lecture_stream](../backend/app/api/phase2.py#L111) |
-| POST | `/api/checkpoints/{checkpoint_id}/lecture/generate` | [generate_lecture_task](../backend/app/api/phase2.py#L33) |
-| POST | `/api/checkpoints/{checkpoint_id}/lecture/rollback` | [rollback_lecture](../backend/app/api/phase2.py#L527) |
-| POST | `/api/checkpoints/{checkpoint_id}/lecture/save` | [save_lecture_compat](../backend/app/api/phase2.py#L331) |
-| GET | `/api/checkpoints/{checkpoint_id}/lecture/task` | [get_lecture_task](../backend/app/api/phase2.py#L86) |
-| GET | `/api/checkpoints/{checkpoint_id}/lecture/versions` | [list_lecture_versions](../backend/app/api/phase2.py#L504) |
-| GET | `/api/checkpoints/{checkpoint_id}/notes` | [list_notes](../backend/app/api/phase2.py#L777) |
-| POST | `/api/checkpoints/{checkpoint_id}/notes` | [create_note](../backend/app/api/phase2.py#L792) |
-| DELETE | `/api/notes/{note_id}` | [delete_note](../backend/app/api/phase2.py#L825) |
-| PUT | `/api/notes/{note_id}` | [update_note](../backend/app/api/phase2.py#L815) |
-
-### app.api.phase3
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/checkpoints/{checkpoint_id}/concepts` | [list_concepts](../backend/app/api/phase3.py#L412) |
-| POST | `/api/checkpoints/{checkpoint_id}/concepts/generate` | [generate_concepts](../backend/app/api/phase3.py#L437) |
-| GET | `/api/checkpoints/{checkpoint_id}/concepts/task` | [get_concept_task](../backend/app/api/phase3.py#L476) |
-| POST | `/api/checkpoints/{checkpoint_id}/concepts/{question_id}/explain` | [explain_concept](../backend/app/api/phase3.py#L496) |
-| POST | `/api/checkpoints/{checkpoint_id}/concepts/{question_id}/submit` | [submit_concept](../backend/app/api/phase3.py#L536) |
-| GET | `/api/checkpoints/{checkpoint_id}/exercises` | [list_exercises](../backend/app/api/phase3.py#L57) |
-| POST | `/api/checkpoints/{checkpoint_id}/exercises` | [create_exercise](../backend/app/api/phase3.py#L84) |
-| POST | `/api/checkpoints/{checkpoint_id}/exercises/generate` | [generate_exercises](../backend/app/api/phase3.py#L698) |
-| GET | `/api/checkpoints/{checkpoint_id}/exercises/task` | [get_exercise_task](../backend/app/api/phase3.py#L738) |
-| POST | `/api/code/ask` | [ask_code_question](../backend/app/api/phase3.py#L324) |
-| GET | `/api/exercises/{exercise_id}` | [get_exercise](../backend/app/api/phase3.py#L133) |
-| GET | `/api/exercises/{exercise_id}/draft` | [get_exercise_draft](../backend/app/api/phase3.py#L151) |
-| PUT | `/api/exercises/{exercise_id}/draft` | [put_exercise_draft](../backend/app/api/phase3.py#L185) |
-| GET | `/api/exercises/{exercise_id}/env` | [exercise_env_status](../backend/app/api/phase3.py#L270) |
-| POST | `/api/exercises/{exercise_id}/review` | [review_code](../backend/app/api/phase3.py#L293) |
-| POST | `/api/exercises/{exercise_id}/run` | [run_code](../backend/app/api/phase3.py#L219) |
-| POST | `/api/exercises/{exercise_id}/submit` | [submit_exercise](../backend/app/api/phase3.py#L758) |
-| POST | `/api/projects/{project_id}/embeddings/index` | [index_embeddings](../backend/app/api/phase3.py#L371) |
-
-### app.api.profile
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/profile` | [get_profile](../backend/app/api/profile.py#L38) |
-| PATCH | `/api/profile` | [update_profile](../backend/app/api/profile.py#L56) |
-| GET | `/api/profile/growth` | [get_growth](../backend/app/api/profile.py#L114) |
-| GET | `/api/profile/journey` | [get_journey](../backend/app/api/profile.py#L158) |
-| GET | `/api/profile/memories` | [get_memories](../backend/app/api/profile.py#L106) |
-| POST | `/api/profile/memories/{memory_id}/archive` | [archive_memory](../backend/app/api/profile.py#L124) |
-| POST | `/api/profile/memories/{memory_id}/restore` | [restore_memory](../backend/app/api/profile.py#L142) |
-
-### app.api.projects
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/projects` | [list_projects](../backend/app/api/projects.py#L60) |
-| POST | `/api/projects` | [create_project](../backend/app/api/projects.py#L31) |
-| DELETE | `/api/projects/{project_id}` | [delete_project](../backend/app/api/projects.py#L108) |
-| GET | `/api/projects/{project_id}` | [get_project](../backend/app/api/projects.py#L99) |
-| GET | `/api/projects/{project_id}/chunks` | [list_chunks](../backend/app/api/projects.py#L284) |
-| GET | `/api/projects/{project_id}/roadmap` | [get_roadmap](../backend/app/api/projects.py#L305) |
-| GET | `/api/projects/{project_id}/sources` | [list_sources](../backend/app/api/projects.py#L260) |
-| POST | `/api/projects/{project_id}/sources` | [add_source](../backend/app/api/projects.py#L129) |
-| POST | `/api/projects/{project_id}/sources/upload` | [upload_source](../backend/app/api/projects.py#L159) |
-
-### app.api.remediation
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/checkpoints/{checkpoint_id}/remediation-cases` | [list_remediation_cases](../backend/app/api/remediation.py#L38) |
-| GET | `/api/remediation/{case_id}` | [get_remediation_case](../backend/app/api/remediation.py#L29) |
-| POST | `/api/remediation/{case_id}/explanations` | [change_remediation_explanation](../backend/app/api/remediation.py#L52) |
-| POST | `/api/remediation/{case_id}/variant` | [create_remediation_variant](../backend/app/api/remediation.py#L70) |
-| POST | `/api/remediation/{case_id}/variant/submit` | [evaluate_remediation_variant](../backend/app/api/remediation.py#L84) |
-
-### app.api.review
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/review/agent-context` | [review_agent_context](../backend/app/api/review.py#L461) |
-| GET | `/api/review/items` | [list_review_items](../backend/app/api/review.py#L391) |
-| GET | `/api/review/items/{schedule_id}` | [get_review_item](../backend/app/api/review.py#L525) |
-| POST | `/api/review/items/{schedule_id}/defer` | [defer_review_item](../backend/app/api/review.py#L974) |
-| GET | `/api/review/items/{schedule_id}/history` | [get_review_history](../backend/app/api/review.py#L535) |
-| POST | `/api/review/items/{schedule_id}/reflections` | [record_review_reflection](../backend/app/api/review.py#L579) |
-| POST | `/api/review/items/{schedule_id}/resume` | [resume_review_item](../backend/app/api/review.py#L1029) |
-| POST | `/api/review/items/{schedule_id}/submit` | [submit_review_item](../backend/app/api/review.py#L677) |
-| POST | `/api/review/items/{schedule_id}/suspend` | [suspend_review_item](../backend/app/api/review.py#L1004) |
-| GET | `/api/review/summary` | [review_summary](../backend/app/api/review.py#L357) |
-
-### app.api.settings
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/settings` | [get_settings](../backend/app/api/settings.py#L169) |
-| PUT | `/api/settings` | [save_settings](../backend/app/api/settings.py#L299) |
-| POST | `/api/settings/test` | [test_connection](../backend/app/api/settings.py#L204) |
-| POST | `/api/settings/test-embedding` | [test_embedding](../backend/app/api/settings.py#L263) |
-| POST | `/api/settings/test-vision` | [test_vision](../backend/app/api/settings.py#L348) |
-
-### app.api.tasks
-
-| 方法 | 路径 / 命令 | 实现 |
-|---|---|---|
-| GET | `/api/tasks/{task_id}` | [get_task_status](../backend/app/api/tasks.py#L39) |
-| POST | `/api/tasks/{task_id}/cancel` | [cancel_task](../backend/app/api/tasks.py#L49) |
-| GET | `/api/tasks/{task_id}/events` | [task_events](../backend/app/api/tasks.py#L69) |
-
 ### app.api.vnext_projects
 
 | 方法 | 路径 / 命令 | 实现 |
@@ -946,22 +694,289 @@
 | DELETE | `/api/vnext-projects/{project_id}/sources/{source_id}` | [remove_project_source](../backend/app/api/vnext_projects.py#L684) |
 | POST | `/api/vnext-projects/{project_id}/sources/{source_id}/health` | [update_project_source_health](../backend/app/api/vnext_projects.py#L1040) |
 
-### app.api.workspace
+### learnflow_core.api.architecture
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
-| GET | `/api/checkpoints/{checkpoint_id}/workspace/artifacts` | [get_checkpoint_workspace_artifacts](../backend/app/api/workspace.py#L115) |
-| GET | `/api/projects/{project_id}/workspace/agent-files/{file_path}` | [get_workspace_file_for_checkpoint_tutor](../backend/app/api/workspace.py#L280) |
-| GET | `/api/projects/{project_id}/workspace/files/{file_path}` | [get_workspace_file](../backend/app/api/workspace.py#L227) |
-| PUT | `/api/projects/{project_id}/workspace/files/{file_path}` | [put_workspace_file](../backend/app/api/workspace.py#L370) |
-| POST | `/api/projects/{project_id}/workspace/link` | [link_workspace](../backend/app/api/workspace.py#L137) |
-| POST | `/api/projects/{project_id}/workspace/open` | [open_workspace_item](../backend/app/api/workspace.py#L339) |
-| GET | `/api/projects/{project_id}/workspace/operations` | [list_workspace_operations](../backend/app/api/workspace.py#L535) |
-| POST | `/api/projects/{project_id}/workspace/operations/propose` | [propose_workspace_operation](../backend/app/api/workspace.py#L441) |
-| POST | `/api/projects/{project_id}/workspace/operations/{operation_id}/confirm` | [confirm_workspace_operation](../backend/app/api/workspace.py#L562) |
-| GET | `/api/projects/{project_id}/workspace/previews/{file_path}` | [preview_workspace_file](../backend/app/api/workspace.py#L250) |
-| POST | `/api/projects/{project_id}/workspace/reveal` | [reveal_workspace_item](../backend/app/api/workspace.py#L305) |
-| GET | `/api/projects/{project_id}/workspace/tree` | [workspace_tree](../backend/app/api/workspace.py#L203) |
+| GET | `/api/architecture/registry` | [get_architecture_registry](../packages/learning-core/src/learnflow_core/api/architecture.py#L12) |
+| GET | `/api/architecture/validate` | [validate_architecture_registry](../packages/learning-core/src/learnflow_core/api/architecture.py#L17) |
+
+### learnflow_core.api.assessment_design
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/assessment-blueprints` | [list_assessment_blueprints](../packages/learning-core/src/learnflow_core/api/assessment_design.py#L57) |
+| POST | `/api/assessment-blueprints` | [propose_assessment_blueprint](../packages/learning-core/src/learnflow_core/api/assessment_design.py#L36) |
+| GET | `/api/assessment-blueprints/{blueprint_id}` | [get_assessment_blueprint](../packages/learning-core/src/learnflow_core/api/assessment_design.py#L81) |
+
+### learnflow_core.api.health
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/health` | [health_check](../packages/learning-core/src/learnflow_core/api/health.py#L6) |
+| GET | `/ready` | [readiness_check](../packages/learning-core/src/learnflow_core/api/health.py#L11) |
+
+### learnflow_core.api.knowledge_library
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/knowledge-library/context` | [read_library_context](../packages/learning-core/src/learnflow_core/api/knowledge_library.py#L326) |
+| GET | `/api/knowledge-library/sources` | [list_library_sources](../packages/learning-core/src/learnflow_core/api/knowledge_library.py#L109) |
+| POST | `/api/knowledge-library/sources/upload` | [upload_library_source](../packages/learning-core/src/learnflow_core/api/knowledge_library.py#L198) |
+| POST | `/api/knowledge-library/sources/url` | [add_library_url](../packages/learning-core/src/learnflow_core/api/knowledge_library.py#L175) |
+| GET | `/api/knowledge-library/sources/{source_id}/paper` | [read_owned_source_paper](../packages/learning-core/src/learnflow_core/api/knowledge_library.py#L130) |
+| POST | `/api/knowledge-library/sources/{source_id}/process` | [process_library_source](../packages/learning-core/src/learnflow_core/api/knowledge_library.py#L284) |
+| POST | `/api/knowledge-library/web-evidence` | [capture_web_evidence](../packages/learning-core/src/learnflow_core/api/knowledge_library.py#L404) |
+
+### learnflow_core.api.learner_state
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/learner-state/agent-workspace-context` | [get_agent_workspace_context](../packages/learning-core/src/learnflow_core/api/learner_state.py#L372) |
+| GET | `/api/learner-state/concept-graph` | [get_personal_concept_graph](../packages/learning-core/src/learnflow_core/api/learner_state.py#L397) |
+| POST | `/api/learner-state/concept-graph/statements` | [record_concept_statement](../packages/learning-core/src/learnflow_core/api/learner_state.py#L405) |
+| GET | `/api/learner-state/context` | [get_learner_context](../packages/learning-core/src/learnflow_core/api/learner_state.py#L329) |
+| POST | `/api/learner-state/events` | [sync_learner_event](../packages/learning-core/src/learnflow_core/api/learner_state.py#L516) |
+| POST | `/api/learner-state/learning-path/personal-nodes` | [add_personal_learning_path_node](../packages/learning-core/src/learnflow_core/api/learner_state.py#L606) |
+| DELETE | `/api/learner-state/learning-path/personal-nodes/{node_id}` | [remove_personal_learning_path_node](../packages/learning-core/src/learnflow_core/api/learner_state.py#L649) |
+| POST | `/api/learner-state/learning-path/plans` | [commit_learning_path_plan](../packages/learning-core/src/learnflow_core/api/learner_state.py#L682) |
+| DELETE | `/api/learner-state/learning-path/plans/{plan_id}` | [archive_learning_path_plan](../packages/learning-core/src/learnflow_core/api/learner_state.py#L729) |
+| POST | `/api/learner-state/learning-path/status` | [set_learning_path_status](../packages/learning-core/src/learnflow_core/api/learner_state.py#L580) |
+| GET | `/api/learner-state/snapshot` | [get_learner_state_snapshot](../packages/learning-core/src/learnflow_core/api/learner_state.py#L286) |
+| POST | `/api/learner-state/value-claims/confirm` | [confirm_value_claim](../packages/learning-core/src/learnflow_core/api/learner_state.py#L763) |
+
+### learnflow_core.api.learning_files
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/learning-files` | [list_learning_files](../packages/learning-core/src/learnflow_core/api/learning_files.py#L99) |
+| GET | `/api/learning-files/lecture/{lecture_id}` | [get_lecture_file](../packages/learning-core/src/learnflow_core/api/learning_files.py#L159) |
+| POST | `/api/learning-files/lecture/{lecture_id}/read` | [mark_lecture_read](../packages/learning-core/src/learnflow_core/api/learning_files.py#L554) |
+| POST | `/api/learning-files/practice/generate` | [generate_dynamic_practice_file](../packages/learning-core/src/learnflow_core/api/learning_files.py#L283) |
+| GET | `/api/learning-files/practice/{practice_ref}` | [get_practice_file](../packages/learning-core/src/learnflow_core/api/learning_files.py#L181) |
+| POST | `/api/learning-files/practice/{practice_ref}/quality` | [inspect_dynamic_practice_quality](../packages/learning-core/src/learnflow_core/api/learning_files.py#L402) |
+| POST | `/api/learning-files/tasks/{task_id}/generate` | [generate_task_learning_files](../packages/learning-core/src/learnflow_core/api/learning_files.py#L441) |
+| POST | `/api/learning-files/{kind}/{ref}/attached` | [record_learning_file_attached](../packages/learning-core/src/learnflow_core/api/learning_files.py#L541) |
+| POST | `/api/learning-files/{kind}/{ref}/opened` | [record_learning_file_opened](../packages/learning-core/src/learnflow_core/api/learning_files.py#L528) |
+
+### learnflow_core.api.learning_task_integrations
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| POST | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates` | [create_learning_task_candidate](../packages/learning-core/src/learnflow_core/api/learning_task_integrations.py#L81) |
+| GET | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}` | [read_learning_task_candidate](../packages/learning-core/src/learnflow_core/api/learning_task_integrations.py#L124) |
+| GET | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}/audit` | [audit_learning_task_candidate](../packages/learning-core/src/learnflow_core/api/learning_task_integrations.py#L144) |
+| POST | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}/confirm` | [confirm_learning_task_candidate](../packages/learning-core/src/learnflow_core/api/learning_task_integrations.py#L170) |
+| GET | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}/evidence` | [inspect_learning_task_candidate_evidence](../packages/learning-core/src/learnflow_core/api/learning_task_integrations.py#L134) |
+| GET | `/api/projects/{project_id}/integrations/xingchen/learning-task-candidates/{candidate_id}/handoff` | [prepare_learning_task_candidate_handoff](../packages/learning-core/src/learnflow_core/api/learning_task_integrations.py#L157) |
+
+### learnflow_core.api.learning_tasks
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/learning-tasks` | [list_learning_tasks](../packages/learning-core/src/learnflow_core/api/learning_tasks.py#L95) |
+| POST | `/api/learning-tasks` | [create_task](../packages/learning-core/src/learnflow_core/api/learning_tasks.py#L131) |
+| POST | `/api/learning-tasks/reorder` | [reorder_queue](../packages/learning-core/src/learnflow_core/api/learning_tasks.py#L164) |
+| GET | `/api/learning-tasks/summary` | [get_queue_summary](../packages/learning-core/src/learnflow_core/api/learning_tasks.py#L61) |
+| GET | `/api/learning-tasks/{task_id}` | [get_task](../packages/learning-core/src/learnflow_core/api/learning_tasks.py#L184) |
+| PATCH | `/api/learning-tasks/{task_id}` | [update_task](../packages/learning-core/src/learnflow_core/api/learning_tasks.py#L196) |
+| POST | `/api/learning-tasks/{task_id}/actions` | [task_action](../packages/learning-core/src/learnflow_core/api/learning_tasks.py#L219) |
+| POST | `/api/learning-tasks/{task_id}/materialize` | [materialize_task](../packages/learning-core/src/learnflow_core/api/learning_tasks.py#L269) |
+| POST | `/api/learning-tasks/{task_id}/replan` | [replan_task](../packages/learning-core/src/learnflow_core/api/learning_tasks.py#L244) |
+
+### learnflow_core.api.local_agent
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/desktop/agent-profiles` | [list_agent_profiles](../packages/learning-core/src/learnflow_core/api/local_agent.py#L53) |
+| POST | `/api/desktop/agent-profiles` | [create_agent_profile](../packages/learning-core/src/learnflow_core/api/local_agent.py#L70) |
+| DELETE | `/api/desktop/agent-profiles/{profile_id}` | [delete_agent_profile](../packages/learning-core/src/learnflow_core/api/local_agent.py#L138) |
+| PATCH | `/api/desktop/agent-profiles/{profile_id}` | [patch_agent_profile](../packages/learning-core/src/learnflow_core/api/local_agent.py#L97) |
+| GET | `/api/local-agent/runs/{run_id}` | [get_local_agent_run](../packages/learning-core/src/learnflow_core/api/local_agent.py#L160) |
+| POST | `/api/local-agent/runs/{run_id}/apply` | [apply_local_agent_run](../packages/learning-core/src/learnflow_core/api/local_agent.py#L206) |
+| POST | `/api/local-agent/runs/{run_id}/cancel` | [cancel_local_agent_run](../packages/learning-core/src/learnflow_core/api/local_agent.py#L191) |
+| GET | `/api/local-agent/runs/{run_id}/events` | [get_local_agent_run_events](../packages/learning-core/src/learnflow_core/api/local_agent.py#L173) |
+
+### learnflow_core.api.memory
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| POST | `/api/memory/claims/{claim_id}/feedback` | [submit_claim_feedback](../packages/learning-core/src/learnflow_core/api/memory.py#L385) |
+| GET | `/api/memory/consolidations` | [get_consolidations](../packages/learning-core/src/learnflow_core/api/memory.py#L367) |
+| GET | `/api/memory/graph` | [get_memory_graph](../packages/learning-core/src/learnflow_core/api/memory.py#L214) |
+| GET | `/api/memory/nodes/{node_id}` | [get_memory_node](../packages/learning-core/src/learnflow_core/api/memory.py#L260) |
+| GET | `/api/memory/timeline` | [get_memory_timeline](../packages/learning-core/src/learnflow_core/api/memory.py#L240) |
+
+### learnflow_core.api.micro_learning
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/micro-learning/runs` | [list_runs](../packages/learning-core/src/learnflow_core/api/micro_learning.py#L77) |
+| POST | `/api/micro-learning/runs` | [create_run](../packages/learning-core/src/learnflow_core/api/micro_learning.py#L54) |
+| GET | `/api/micro-learning/runs/{run_id}` | [get_run](../packages/learning-core/src/learnflow_core/api/micro_learning.py#L96) |
+| POST | `/api/micro-learning/runs/{run_id}/advance` | [advance](../packages/learning-core/src/learnflow_core/api/micro_learning.py#L109) |
+| POST | `/api/micro-learning/runs/{run_id}/regenerate` | [regenerate](../packages/learning-core/src/learnflow_core/api/micro_learning.py#L132) |
+| POST | `/api/micro-learning/runs/{run_id}/sync` | [sync](../packages/learning-core/src/learnflow_core/api/micro_learning.py#L179) |
+| POST | `/api/micro-learning/runs/{run_id}/teach-back` | [teach_back](../packages/learning-core/src/learnflow_core/api/micro_learning.py#L156) |
+
+### learnflow_core.api.phase1
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| POST | `/api/projects/{project_id}/reconcile` | [reconcile_sources](../packages/learning-core/src/learnflow_core/api/phase1.py#L657) |
+| POST | `/api/projects/{project_id}/reconcile/apply` | [apply_reconcile](../packages/learning-core/src/learnflow_core/api/phase1.py#L737) |
+| POST | `/api/projects/{project_id}/roadmap/briefs` | [backfill_briefs](../packages/learning-core/src/learnflow_core/api/phase1.py#L1088) |
+| POST | `/api/projects/{project_id}/roadmap/chat` | [roadmap_chat](../packages/learning-core/src/learnflow_core/api/phase1.py#L858) |
+| GET | `/api/projects/{project_id}/roadmap/history` | [get_roadmap_history](../packages/learning-core/src/learnflow_core/api/phase1.py#L993) |
+| POST | `/api/projects/{project_id}/roadmap/resync` | [resync_roadmap_chunks](../packages/learning-core/src/learnflow_core/api/phase1.py#L1217) |
+| POST | `/api/projects/{project_id}/sources/process-all` | [process_all_sources](../packages/learning-core/src/learnflow_core/api/phase1.py#L529) |
+| POST | `/api/projects/{project_id}/sources/{source_id}/analyze` | [analyze_source_structure](../packages/learning-core/src/learnflow_core/api/phase1.py#L361) |
+| POST | `/api/projects/{project_id}/sources/{source_id}/images/caption` | [start_image_captioning](../packages/learning-core/src/learnflow_core/api/phase1.py#L305) |
+| POST | `/api/projects/{project_id}/sources/{source_id}/process` | [process_source](../packages/learning-core/src/learnflow_core/api/phase1.py#L166) |
+| PUT | `/api/projects/{project_id}/sources/{source_id}/role` | [set_source_role](../packages/learning-core/src/learnflow_core/api/phase1.py#L636) |
+| POST | `/api/projects/{project_id}/sources/{source_id}/summarize` | [summarize_source_files](../packages/learning-core/src/learnflow_core/api/phase1.py#L393) |
+| GET | `/api/sources/{source_id}/files/{file_path}` | [serve_source_file](../packages/learning-core/src/learnflow_core/api/phase1.py#L286) |
+
+### learnflow_core.api.phase2
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| POST | `/api/animations/generate` | [generate_animation](../packages/learning-core/src/learnflow_core/api/phase2.py#L402) |
+| GET | `/api/animations/{animation_id}` | [get_animation](../packages/learning-core/src/learnflow_core/api/phase2.py#L420) |
+| DELETE | `/api/artifact-annotations/{annotation_id}` | [delete_artifact_annotation](../packages/learning-core/src/learnflow_core/api/phase2.py#L755) |
+| PUT | `/api/artifact-annotations/{annotation_id}` | [update_artifact_annotation](../packages/learning-core/src/learnflow_core/api/phase2.py#L742) |
+| GET | `/api/artifacts/{artifact_type}/{artifact_id}/annotations` | [list_artifact_annotations](../packages/learning-core/src/learnflow_core/api/phase2.py#L685) |
+| POST | `/api/artifacts/{artifact_type}/{artifact_id}/annotations` | [create_artifact_annotation](../packages/learning-core/src/learnflow_core/api/phase2.py#L700) |
+| POST | `/api/checkpoints/{checkpoint_id}/ask` | [ask_question](../packages/learning-core/src/learnflow_core/api/phase2.py#L576) |
+| POST | `/api/checkpoints/{checkpoint_id}/concept-graph/generate` | [generate_concept_graph](../packages/learning-core/src/learnflow_core/api/phase2.py#L443) |
+| GET | `/api/checkpoints/{checkpoint_id}/concept-graph/task` | [get_concept_graph_task](../packages/learning-core/src/learnflow_core/api/phase2.py#L482) |
+| GET | `/api/checkpoints/{checkpoint_id}/lecture` | [get_lecture](../packages/learning-core/src/learnflow_core/api/phase2.py#L342) |
+| PUT | `/api/checkpoints/{checkpoint_id}/lecture` | [put_lecture](../packages/learning-core/src/learnflow_core/api/phase2.py#L320) |
+| GET | `/api/checkpoints/{checkpoint_id}/lecture/generate` | [generate_lecture_stream](../packages/learning-core/src/learnflow_core/api/phase2.py#L111) |
+| POST | `/api/checkpoints/{checkpoint_id}/lecture/generate` | [generate_lecture_task](../packages/learning-core/src/learnflow_core/api/phase2.py#L33) |
+| POST | `/api/checkpoints/{checkpoint_id}/lecture/rollback` | [rollback_lecture](../packages/learning-core/src/learnflow_core/api/phase2.py#L527) |
+| POST | `/api/checkpoints/{checkpoint_id}/lecture/save` | [save_lecture_compat](../packages/learning-core/src/learnflow_core/api/phase2.py#L331) |
+| GET | `/api/checkpoints/{checkpoint_id}/lecture/task` | [get_lecture_task](../packages/learning-core/src/learnflow_core/api/phase2.py#L86) |
+| GET | `/api/checkpoints/{checkpoint_id}/lecture/versions` | [list_lecture_versions](../packages/learning-core/src/learnflow_core/api/phase2.py#L504) |
+| GET | `/api/checkpoints/{checkpoint_id}/notes` | [list_notes](../packages/learning-core/src/learnflow_core/api/phase2.py#L777) |
+| POST | `/api/checkpoints/{checkpoint_id}/notes` | [create_note](../packages/learning-core/src/learnflow_core/api/phase2.py#L792) |
+| DELETE | `/api/notes/{note_id}` | [delete_note](../packages/learning-core/src/learnflow_core/api/phase2.py#L825) |
+| PUT | `/api/notes/{note_id}` | [update_note](../packages/learning-core/src/learnflow_core/api/phase2.py#L815) |
+
+### learnflow_core.api.phase3
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/checkpoints/{checkpoint_id}/concepts` | [list_concepts](../packages/learning-core/src/learnflow_core/api/phase3.py#L412) |
+| POST | `/api/checkpoints/{checkpoint_id}/concepts/generate` | [generate_concepts](../packages/learning-core/src/learnflow_core/api/phase3.py#L437) |
+| GET | `/api/checkpoints/{checkpoint_id}/concepts/task` | [get_concept_task](../packages/learning-core/src/learnflow_core/api/phase3.py#L476) |
+| POST | `/api/checkpoints/{checkpoint_id}/concepts/{question_id}/explain` | [explain_concept](../packages/learning-core/src/learnflow_core/api/phase3.py#L496) |
+| POST | `/api/checkpoints/{checkpoint_id}/concepts/{question_id}/submit` | [submit_concept](../packages/learning-core/src/learnflow_core/api/phase3.py#L536) |
+| GET | `/api/checkpoints/{checkpoint_id}/exercises` | [list_exercises](../packages/learning-core/src/learnflow_core/api/phase3.py#L57) |
+| POST | `/api/checkpoints/{checkpoint_id}/exercises` | [create_exercise](../packages/learning-core/src/learnflow_core/api/phase3.py#L84) |
+| POST | `/api/checkpoints/{checkpoint_id}/exercises/generate` | [generate_exercises](../packages/learning-core/src/learnflow_core/api/phase3.py#L698) |
+| GET | `/api/checkpoints/{checkpoint_id}/exercises/task` | [get_exercise_task](../packages/learning-core/src/learnflow_core/api/phase3.py#L738) |
+| POST | `/api/code/ask` | [ask_code_question](../packages/learning-core/src/learnflow_core/api/phase3.py#L324) |
+| GET | `/api/exercises/{exercise_id}` | [get_exercise](../packages/learning-core/src/learnflow_core/api/phase3.py#L133) |
+| GET | `/api/exercises/{exercise_id}/draft` | [get_exercise_draft](../packages/learning-core/src/learnflow_core/api/phase3.py#L151) |
+| PUT | `/api/exercises/{exercise_id}/draft` | [put_exercise_draft](../packages/learning-core/src/learnflow_core/api/phase3.py#L185) |
+| GET | `/api/exercises/{exercise_id}/env` | [exercise_env_status](../packages/learning-core/src/learnflow_core/api/phase3.py#L270) |
+| POST | `/api/exercises/{exercise_id}/review` | [review_code](../packages/learning-core/src/learnflow_core/api/phase3.py#L293) |
+| POST | `/api/exercises/{exercise_id}/run` | [run_code](../packages/learning-core/src/learnflow_core/api/phase3.py#L219) |
+| POST | `/api/exercises/{exercise_id}/submit` | [submit_exercise](../packages/learning-core/src/learnflow_core/api/phase3.py#L758) |
+| POST | `/api/projects/{project_id}/embeddings/index` | [index_embeddings](../packages/learning-core/src/learnflow_core/api/phase3.py#L371) |
+
+### learnflow_core.api.platform
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/platform` | [platform_manifest](../packages/learning-core/src/learnflow_core/api/platform.py#L9) |
+
+### learnflow_core.api.profile
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/profile` | [get_profile](../packages/learning-core/src/learnflow_core/api/profile.py#L38) |
+| PATCH | `/api/profile` | [update_profile](../packages/learning-core/src/learnflow_core/api/profile.py#L56) |
+| GET | `/api/profile/growth` | [get_growth](../packages/learning-core/src/learnflow_core/api/profile.py#L114) |
+| GET | `/api/profile/journey` | [get_journey](../packages/learning-core/src/learnflow_core/api/profile.py#L158) |
+| GET | `/api/profile/memories` | [get_memories](../packages/learning-core/src/learnflow_core/api/profile.py#L106) |
+| POST | `/api/profile/memories/{memory_id}/archive` | [archive_memory](../packages/learning-core/src/learnflow_core/api/profile.py#L124) |
+| POST | `/api/profile/memories/{memory_id}/restore` | [restore_memory](../packages/learning-core/src/learnflow_core/api/profile.py#L142) |
+
+### learnflow_core.api.projects
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/projects` | [list_projects](../packages/learning-core/src/learnflow_core/api/projects.py#L60) |
+| POST | `/api/projects` | [create_project](../packages/learning-core/src/learnflow_core/api/projects.py#L31) |
+| DELETE | `/api/projects/{project_id}` | [delete_project](../packages/learning-core/src/learnflow_core/api/projects.py#L108) |
+| GET | `/api/projects/{project_id}` | [get_project](../packages/learning-core/src/learnflow_core/api/projects.py#L99) |
+| GET | `/api/projects/{project_id}/chunks` | [list_chunks](../packages/learning-core/src/learnflow_core/api/projects.py#L284) |
+| GET | `/api/projects/{project_id}/roadmap` | [get_roadmap](../packages/learning-core/src/learnflow_core/api/projects.py#L305) |
+| GET | `/api/projects/{project_id}/sources` | [list_sources](../packages/learning-core/src/learnflow_core/api/projects.py#L260) |
+| POST | `/api/projects/{project_id}/sources` | [add_source](../packages/learning-core/src/learnflow_core/api/projects.py#L129) |
+| POST | `/api/projects/{project_id}/sources/upload` | [upload_source](../packages/learning-core/src/learnflow_core/api/projects.py#L159) |
+
+### learnflow_core.api.remediation
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/checkpoints/{checkpoint_id}/remediation-cases` | [list_remediation_cases](../packages/learning-core/src/learnflow_core/api/remediation.py#L38) |
+| GET | `/api/remediation/{case_id}` | [get_remediation_case](../packages/learning-core/src/learnflow_core/api/remediation.py#L29) |
+| POST | `/api/remediation/{case_id}/explanations` | [change_remediation_explanation](../packages/learning-core/src/learnflow_core/api/remediation.py#L52) |
+| POST | `/api/remediation/{case_id}/variant` | [create_remediation_variant](../packages/learning-core/src/learnflow_core/api/remediation.py#L70) |
+| POST | `/api/remediation/{case_id}/variant/submit` | [evaluate_remediation_variant](../packages/learning-core/src/learnflow_core/api/remediation.py#L84) |
+
+### learnflow_core.api.review
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/review/agent-context` | [review_agent_context](../packages/learning-core/src/learnflow_core/api/review.py#L461) |
+| GET | `/api/review/items` | [list_review_items](../packages/learning-core/src/learnflow_core/api/review.py#L391) |
+| GET | `/api/review/items/{schedule_id}` | [get_review_item](../packages/learning-core/src/learnflow_core/api/review.py#L525) |
+| POST | `/api/review/items/{schedule_id}/defer` | [defer_review_item](../packages/learning-core/src/learnflow_core/api/review.py#L974) |
+| GET | `/api/review/items/{schedule_id}/history` | [get_review_history](../packages/learning-core/src/learnflow_core/api/review.py#L535) |
+| POST | `/api/review/items/{schedule_id}/reflections` | [record_review_reflection](../packages/learning-core/src/learnflow_core/api/review.py#L579) |
+| POST | `/api/review/items/{schedule_id}/resume` | [resume_review_item](../packages/learning-core/src/learnflow_core/api/review.py#L1029) |
+| POST | `/api/review/items/{schedule_id}/submit` | [submit_review_item](../packages/learning-core/src/learnflow_core/api/review.py#L677) |
+| POST | `/api/review/items/{schedule_id}/suspend` | [suspend_review_item](../packages/learning-core/src/learnflow_core/api/review.py#L1004) |
+| GET | `/api/review/summary` | [review_summary](../packages/learning-core/src/learnflow_core/api/review.py#L357) |
+
+### learnflow_core.api.settings
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/settings` | [get_settings](../packages/learning-core/src/learnflow_core/api/settings.py#L167) |
+| PUT | `/api/settings` | [save_settings](../packages/learning-core/src/learnflow_core/api/settings.py#L297) |
+| POST | `/api/settings/test` | [test_connection](../packages/learning-core/src/learnflow_core/api/settings.py#L202) |
+| POST | `/api/settings/test-embedding` | [test_embedding](../packages/learning-core/src/learnflow_core/api/settings.py#L261) |
+| POST | `/api/settings/test-vision` | [test_vision](../packages/learning-core/src/learnflow_core/api/settings.py#L346) |
+
+### learnflow_core.api.tasks
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/tasks/{task_id}` | [get_task_status](../packages/learning-core/src/learnflow_core/api/tasks.py#L39) |
+| POST | `/api/tasks/{task_id}/cancel` | [cancel_task](../packages/learning-core/src/learnflow_core/api/tasks.py#L49) |
+| GET | `/api/tasks/{task_id}/events` | [task_events](../packages/learning-core/src/learnflow_core/api/tasks.py#L69) |
+
+### learnflow_core.api.workspace
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| GET | `/api/checkpoints/{checkpoint_id}/workspace/artifacts` | [get_checkpoint_workspace_artifacts](../packages/learning-core/src/learnflow_core/api/workspace.py#L115) |
+| GET | `/api/projects/{project_id}/workspace/agent-files/{file_path}` | [get_workspace_file_for_checkpoint_tutor](../packages/learning-core/src/learnflow_core/api/workspace.py#L280) |
+| GET | `/api/projects/{project_id}/workspace/files/{file_path}` | [get_workspace_file](../packages/learning-core/src/learnflow_core/api/workspace.py#L227) |
+| PUT | `/api/projects/{project_id}/workspace/files/{file_path}` | [put_workspace_file](../packages/learning-core/src/learnflow_core/api/workspace.py#L370) |
+| POST | `/api/projects/{project_id}/workspace/link` | [link_workspace](../packages/learning-core/src/learnflow_core/api/workspace.py#L137) |
+| POST | `/api/projects/{project_id}/workspace/open` | [open_workspace_item](../packages/learning-core/src/learnflow_core/api/workspace.py#L339) |
+| GET | `/api/projects/{project_id}/workspace/operations` | [list_workspace_operations](../packages/learning-core/src/learnflow_core/api/workspace.py#L535) |
+| POST | `/api/projects/{project_id}/workspace/operations/propose` | [propose_workspace_operation](../packages/learning-core/src/learnflow_core/api/workspace.py#L441) |
+| POST | `/api/projects/{project_id}/workspace/operations/{operation_id}/confirm` | [confirm_workspace_operation](../packages/learning-core/src/learnflow_core/api/workspace.py#L562) |
+| GET | `/api/projects/{project_id}/workspace/previews/{file_path}` | [preview_workspace_file](../packages/learning-core/src/learnflow_core/api/workspace.py#L250) |
+| POST | `/api/projects/{project_id}/workspace/reveal` | [reveal_workspace_item](../packages/learning-core/src/learnflow_core/api/workspace.py#L305) |
+| GET | `/api/projects/{project_id}/workspace/tree` | [workspace_tree](../packages/learning-core/src/learnflow_core/api/workspace.py#L203) |
 
 
 ## Web Node Tutor

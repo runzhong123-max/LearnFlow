@@ -1,6 +1,6 @@
 # LearnFlow 单仓目录与跨端开发
 
-2026-09-06：依据用户明确选择，将网页与桌面源码在本地整合为单仓，开始实际抽取共享代码。
+2026-09-06：网页与桌面源码已整合为单仓。共享 API、在线学习入口与首发部署见 [平台整合](implementation/LEARNING_PLATFORM_INTEGRATION.md) 和 [上线计划](LAUNCH_PLAN.md)。
 
 ## 正式目录
 
@@ -28,9 +28,10 @@ LearnFlow/                         唯一 Git 根目录 / Codex 产品开发项�
 - Python：learning_runtime、memory_graph、five_kernel_context、teaching_guidance、agent_observations、remediation。抽取前六份源文件逐字一致，提取不改变评分/记忆/事件规则。
 - registry_core：三类主 Agent、五核、共同 contract 类型、Chat Mode、插件扩展点与基础 schema；宿主 registry 保留各自工具、事件、实现绑定与能力版本。
 - TypeScript：password-policy、latency-budgets、teaching-guidance-context，两个消费者通过相对 re-export 使用唯一源码。
+- 21 个共同业务 API 与平台发现 API 共用源码；runtime-surface 统一判断本地/在线页面。
 - 两个宿主的共同事件定义必须完全一致；端侧新增事件可以不同，不把目录合并误报为新增能力已经在两端执行。
 
-Contract impact：根 registry 2026-09-06.6、桌面 registry 2026-09-06.6-desktop，新增只读 shared_core_version=0.1.0。旧 Python 导入路径、模块身份和 Event schema 保留，无数据库迁移。共享包依赖宿主 app 的模型与服务，是同源复用，不是独立微服务；同一进程不同时加载两个 app。
+Contract impact：根 registry 2026-09-06.7、桌面 registry 2026-09-06.7-desktop，新增只读 shared_core_version=0.2.0。旧 Python 导入路径、模块身份和 Event schema 保留，无数据库迁移。共享包依赖宿主 app 的模型与服务，是同源复用，不是独立微服务；同一进程不同时加载两个 app。
 
 ## 安装与启动
 

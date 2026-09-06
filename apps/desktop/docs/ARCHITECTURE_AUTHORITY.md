@@ -1,5 +1,7 @@
 # LearnFlow 架构权威与维护边界
 
+Contract impact（2026-09-06.7）：共享 API / 平台发现 / 独立记忆 Worker 与桌面在线入口已按 `learnflow-platform/v1` 登记；旧事件与身份边界保持兼容。详见 implementation/LEARNING_PLATFORM_INTEGRATION.md。
+
 Contract impact（2026-09-06 单仓共享核心 0.1.0）：五核、记忆、上下文、教学指导、观察与纠错实现迁入根仓 `packages/learning-core/src/learnflow_core/`，旧 `app.services.*` 保持模块身份兼容；三类 Agent/Kernel/schema 声明迁入 registry_core.py。两个宿主组合各自 registry，并公开 shared_core_version。无事件 schema、评分策略、数据库或身份迁移。共同事件契约由根跨端检查验证；不同宿主各自运行与测试。目录迁移详见根仓 docs/MONOREPO.md。
 
 
