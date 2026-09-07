@@ -63,3 +63,24 @@ def test_hub_publish_read_and_isolation(monkeypatch):
         call(client,'publish',{'job_id':fresh['job_id'],'expected_version':1,'builder':'interactive_html','source':entry['spec']},422)
         register(client,'hub_other')
         call(client,'read',{'revision_id':artifact['revision_id']},404)
+
+
+def test_gallery_paging_filter_and_authenticated_preview(monkeypatch):
+    from learnflow_core.visuals.hub import browse_works
+    all_rows=browse_works(limit=50)
+    assert all_rows['total']==70 and all_rows['next_offset']==50
+    assert len(browse_works(offset=50,limit=50)['items'])==20
+    huffman=browse_works(query='哈夫曼')['items']
+    assert huffman and huffman[0]['id']=='lab2-huffman'
+    assert all('animation' in row['kind'] for row in browse_works(kind='animation',limit=50)['items'])
+    assert not browse_works(query='not-present-xqz')['items']
+    with pytest.raises(ValueError):browse_works(limit=0)
+    with pytest.raises(ValueError):browse_works(module_id={})
+    monkeypatch.setattr(settings,'desktop_mode',False);monkeypatch.setattr(settings,'desktop_token','')
+    with TestClient(app) as client:
+        assert client.post('/api/visuals/preview',json={'id':'lab2-huffman','version':'1.0.0'}).status_code in (401,403)
+        register(client,'hub_gallery_owner')
+        result=client.post('/api/visuals/gallery',json={'query':'哈夫曼'});assert result.status_code==200
+        result=client.post('/api/visuals/preview',json={'id':'lab2-huffman','version':'1.0.0'});assert result.status_code==200 and result.json()['builder']=='interactive_html'
+        assert client.post('/api/visuals/preview',json={'id':'../../secret','version':'1.0.0'}).status_code==422
+        result=client.post('/api/visuals/preview',json={'id':'deep_learning.cnn.mechanism','version':'1.0.0'});assert result.status_code==200 and result.json()['bundle']['verification']['status']=='pass'

@@ -1,6 +1,6 @@
-# 内部教学可视化 Hub v1
+# 教学可视化 Hub v2
 
-Hub 是 learning_design_agent 所有的维护内容目录，复用现有 visual_content_library / retrieve_learning_visual，不增加第四类 Agent，不增加面向学习者的导航页面。
+Hub 是 learning_design_agent 所有的维护内容目录，复用现有 visual_content_library / retrieve_learning_visual，不增加第四类 Agent，通过 Web 与桌面 `/visual-hub` 提供轻量查询与展示页面。
 
 ## 内容边界与进度
 
@@ -34,4 +34,15 @@ Agent 根据学习目标和适用范围选作品，不能仅因关键词命中�
 
 Contract impact：新增内部只读 Hub 端点和维护专用 interactive_html builder；沿用私有作品、插件引用与 visual_workspace_changed 零核事件契约。两端 registry 同步登记，旧 VisualSpec/SVGStory 读写不变。无数据库迁移、无五核语义变化、无新增掌握写入。
 
-现有 15 份维护模板已关联到相应 session，和首批 5 份 HTML 作品共形成 20 个可检索作品版本；其余 226 个 session 的候选仍为 planned。插件 search 返回少量 curriculum_sessions 给 Agent 作为选题上下文，前端不会为此新增目录面板。用户点击精确模板版本时直接读取和保存，不再要求模型重选一次。
+现有 15 份 VisualSpec、首批 5 份 HTML 和新增 50 份 HTML 共形成 70 个可检索作品版本。完整新增清单见 [第二批作品](VISUAL_HUB_BATCH2.md)。未关联 ready 成品的选题仍为 planned。插件 search 返回少量 curriculum_sessions 给 Agent 作为选题上下文。用户点击精确模板版本时直接读取和保存，不再要求模型重选一次。
+
+## 查询与展示页面
+
+侧栏“图解与动画”进入 `/visual-hub`。关键词、课程模块和形式筛选后分页展示；点击作品读取维护版本，不调用模型、不创建私有副本。预览只保留主题、参数、画面与主要播放控制。原有插件保存/从零生成入口不变。
+
+- `POST /api/visuals/gallery`：认证、只读；query/module_id/kind/offset/limit，分页只返回 ready 作品。
+- `POST /api/visuals/preview`：认证、只读；固定 id/version，返回已登记 HTML 或 VisualSpec bundle，拒绝任意路径/脚本。
+- 共享 `VisualHubPage` 由两个宿主的 runtimeFetch 接入认证与 CSRF；没有新数据库或学习证据写入。
+- 第二批源码位于 `hub/authoring/`，`python3 scripts/build_visual_hub_batch2.py` 重建资产与摘要；`node scripts/test_visual_hub_models.cjs` 核对数值。当前脚本用于本批未发布版本，发布后的修订必须使用新版本和文件，不能覆盖既有引用。
+
+Contract impact（本批）：新增 visual_hub 工作台及两个只读 API 绑定，两端 registry 升至 2026-09-07.8。沿用 retrieve_learning_visual 和 learning_design_agent；既有 API、事件、五核语义向后兼容。

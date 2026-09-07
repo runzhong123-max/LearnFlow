@@ -103,3 +103,43 @@ def compile_work(source, template_ref=None):
         'verification': {'status':'pass','scope':work['scope'], 'method':'maintained_asset_digest',
                          'meaning':'The reviewed version is intact; this is not a learner assessment.'},
         'source_provenance': {'source':'maintained_library','id':work['id'],'version':work['version'],'spec_digest':digest(source)}}
+
+
+def browse_works(query='', module_id=None, kind=None, offset=0, limit=16):
+    """Only completed works are browseable; no candidate is promoted by listing."""
+    if not isinstance(query,str) or len(query)>1000 or kind not in (None,'diagram','animation'):
+        raise ValueError('visual_gallery_query_invalid')
+    if type(offset) is not int or offset<0 or type(limit) is not int or not 1<=limit<=50:
+        raise ValueError('visual_gallery_page_invalid')
+    from .catalog import _entries, _summary, _terms
+    links={}
+    data=curriculum()
+    for m in data['modules']:
+        for ch in m['chapters']:
+            for session in ch['sessions']:
+                for candidate in session['visual_candidates']:
+                    for ref in candidate['work_refs']:
+                        links.setdefault((ref['id'],ref['version']),[]).append({'module_id':m['id'],'module_title':m['title'],'chapter':ch['title'],'session':session['title'],'session_id':session['id']})
+    if module_id is not None and (not isinstance(module_id,str) or module_id not in {m['id'] for m in data['modules']}):
+        raise ValueError('visual_gallery_module_invalid')
+    rows=[];terms=_terms(query)
+    for e in _entries():
+        related=links.get((e['id'],e['version']),[])
+        if module_id and not any(x['module_id']==module_id for x in related):continue
+        if kind and kind not in e['kind']:continue
+        text=' '.join([e['title'],e['description'],*e.get('aliases',[]),*e['tags']])
+        score=len(terms&_terms(text))
+        if query and query.casefold() not in text.casefold() and score<2:continue
+        rows.append({**_summary(e,score),'curriculum':related})
+    if query:rows.sort(key=lambda r:-r['score'])
+    return {'items':rows[offset:offset+limit],'total':len(rows),'offset':offset,
+            'next_offset':offset+limit if offset+limit<len(rows) else None,
+            'modules':[{'id':m['id'],'title':m['title']} for m in data['modules']]}
+
+
+def preview_work(work_id, version):
+    from .catalog import read_template
+    from .engine import compile_visual
+    e=read_template(work_id,version)
+    if e['builder']=='interactive_html':return {'builder':e['builder'],'title':e['title'],'html':compile_work(e['spec'])['html']}
+    return {'builder':'visual_spec','title':e['title'],'bundle':compile_visual(e['spec'])}

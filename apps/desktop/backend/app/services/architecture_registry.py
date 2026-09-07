@@ -44,7 +44,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-07.7-desktop"
+REGISTRY_VERSION = "2026-09-07.8-desktop"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 DATA_CONTRACTS = {
@@ -925,6 +925,7 @@ WORKBENCHES = {
                            "read_personal_concept_graph",
                            "record_concept_self_report", "manage_vnext_personal_path_node",
                            "draft_learning_task_candidate"), "vnext"),
+        WorkbenchContract("visual_hub", "Visual Teaching Gallery", "/visual-hub", "learning_design_agent", ("retrieve_learning_visual",), "vnext"),
         WorkbenchContract("vnext_learning_path", "LearnFlow Learning Path Graph", "/learning-path", "tutor_agent",
                           ("lookup_vnext_learning_path_node", "search_vnext_learning_path_graph", "propose_vnext_personal_path_node",
                            "read_vnext_learning_path_graph", "plan_vnext_learning_path",
@@ -1374,6 +1375,8 @@ _API_BINDING_TARGETS = {
     "api:agent.skill_action": ("app.api.agent", "/agent/sessions/{session_id}/skill-runs/{run_id}/actions", "POST", "update_learning_skill_run"),
     "api:agent.tutor_turn": ("app.api.agent", "/agent/sessions/{session_id}/turns", "POST", "tutor_turn"),
     "api:visuals.workspace": ("learnflow_core.api.visuals", "/visuals/workspace", "POST", "workspace"),
+    "api:visuals.gallery": ("learnflow_core.api.visuals", "/visuals/gallery", "POST", "gallery"),
+    "api:visuals.preview": ("learnflow_core.api.visuals", "/visuals/preview", "POST", "preview"),
     "api:visuals.hub": ("learnflow_core.api.visuals", "/visuals/hub", "POST", "hub"),
     "api:visuals.catalog": ("learnflow_core.api.visuals", "/visuals/catalog", "POST", "catalog"),
     "api:visuals.template": ("learnflow_core.api.visuals", "/visuals/template", "POST", "template"),
@@ -1512,6 +1515,7 @@ _FRONTEND_COMPONENT_TARGETS = {
     "workbench:vnext_chat": ("frontend/src/main.tsx", "App", "/chat/"),
     "frontend:plugin.renderer": ("frontend/src/PluginToolResultView.tsx", "PluginToolResultView", "/chat/"),
     "frontend:plugin.picker": ("frontend/src/PluginCapabilityPicker.tsx", "PluginCapabilityPicker", "/chat/"),
+    "workbench:visual_hub": ("frontend/src/VisualHubPage.tsx", "VisualHubPage", "/visual-hub"),
     "workbench:vnext_learning_path": ("frontend/src/LearningPathPage.tsx", "LearningPathPage", "/learning-path"),
     "workbench:vnext_profile": ("frontend/src/LearnerProfilePage.tsx", "LearnerProfilePage", "/learner-profile"),
     "workbench:vnext_learning_files": ("frontend/src/LearningFilesPage.tsx", "LearningFilesPage", "/learning-files"),
@@ -1590,7 +1594,7 @@ _TOOL_BINDING_IDS = {
     "checkpoint_delivery_readiness": ("py:delivery_readiness.read",),
     "educational_visual_plugin": ("frontend:plugin.educational_visuals", "frontend:visual_workflow.run"),
     "visual_artifact_workspace": ("api:visuals.workspace",),
-    "visual_content_library": ("api:visuals.catalog", "api:visuals.template", "api:visuals.hub"),
+    "visual_content_library": ("api:visuals.catalog", "api:visuals.template", "api:visuals.hub", "api:visuals.gallery", "api:visuals.preview"),
     "safe_visual_generation": ("api:visuals.compile", "api:visuals.inspect", "frontend:visual_storyboard.compile", "frontend:visual_storyboard.design_ascii", "frontend:visual.generate", "api:agent.visual_plan"),
     "learning_diagram_generator": ("frontend:plugin.educational_visuals",),
     "learning_animation_generator": ("frontend:plugin.educational_visuals",),

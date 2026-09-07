@@ -119,5 +119,1243 @@
       "迪杰斯特拉",
       "最短路径"
     ]
+  },
+  {
+    "id": "lab2-riemann",
+    "version": "1.0.0",
+    "title": "积分：矩形怎样逼近面积",
+    "file": "lab2-riemann.html",
+    "session_ids": [
+      "math-calculus.c2.s1"
+    ],
+    "questions": [
+      "积分如何：矩形怎样逼近面积",
+      "比较左端点矩形和 x² 在 [0,1] 上的精确积分 1/3"
+    ],
+    "aliases": [
+      "积分",
+      "riemann"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "比较左端点矩形和 x² 在 [0,1] 上的精确积分 1/3",
+    "sha256": "9d9d176f12e21af203cef71e0b7ab2ad2cfec346888c61a728c53950772426e7",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-chain",
+    "version": "1.0.0",
+    "title": "链式法则：两段变化相乘",
+    "file": "lab2-chain.html",
+    "session_ids": [
+      "math-calculus.c3.s2"
+    ],
+    "questions": [
+      "链式法则如何：两段变化相乘",
+      "复合函数 y=(2x+1)² 的局部导数"
+    ],
+    "aliases": [
+      "链式法则",
+      "chain"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "复合函数 y=(2x+1)² 的局部导数",
+    "sha256": "c943485c53d53de5e6454160bfdd5fb951251adfc49e1deee8708151eba0ef8c",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-projection",
+    "version": "1.0.0",
+    "title": "向量投影：保留哪个方向",
+    "file": "lab2-projection.html",
+    "session_ids": [
+      "math-linear.c1.s1"
+    ],
+    "questions": [
+      "向量投影如何：保留哪个方向",
+      "向量 (3,2) 在单位方向上的正交投影"
+    ],
+    "aliases": [
+      "向量投影",
+      "projection"
+    ],
+    "kind": [
+      "diagram"
+    ],
+    "scope": "向量 (3,2) 在单位方向上的正交投影",
+    "sha256": "88b32308253169c6c5dfe2372e08d0352a572a762307ffc766230d9fe9e5b2dd",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-eigen",
+    "version": "1.0.0",
+    "title": "特征向量：方向不变",
+    "file": "lab2-eigen.html",
+    "session_ids": [
+      "math-linear.c3.s1"
+    ],
+    "questions": [
+      "特征向量如何：方向不变",
+      "对角矩阵 diag(2,1) 如何改变向量"
+    ],
+    "aliases": [
+      "特征向量",
+      "eigen"
+    ],
+    "kind": [
+      "diagram"
+    ],
+    "scope": "对角矩阵 diag(2,1) 如何改变向量",
+    "sha256": "4aa7126d55487e46a642eae939467317cb9b0986d75f6087325a1cbbba4f4ee9",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-svd",
+    "version": "1.0.0",
+    "title": "低秩近似：逐项恢复矩阵",
+    "file": "lab2-svd.html",
+    "session_ids": [
+      "math-linear.c3.s2"
+    ],
+    "questions": [
+      "低秩近似如何：逐项恢复矩阵",
+      "正交基上的奇异值截断；Frobenius 误差"
+    ],
+    "aliases": [
+      "低秩近似",
+      "svd"
+    ],
+    "kind": [
+      "diagram"
+    ],
+    "scope": "正交基上的奇异值截断；Frobenius 误差",
+    "sha256": "95a07438679d02036d286a0532640e8ff350e68efd7f17e0697a5766cda59edf",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-binomial",
+    "version": "1.0.0",
+    "title": "二项分布：成功次数",
+    "file": "lab2-binomial.html",
+    "session_ids": [
+      "math-probability.c2.s1"
+    ],
+    "questions": [
+      "二项分布如何：成功次数",
+      "十次独立伯努利试验的精确分布"
+    ],
+    "aliases": [
+      "二项分布",
+      "binomial"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "十次独立伯努利试验的精确分布",
+    "sha256": "8dcb4e6d9b2201ebbc68c1ca9506a580209509db30cfde1337955a4381104273",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-normal",
+    "version": "1.0.0",
+    "title": "正态分布：尺度与密度",
+    "file": "lab2-normal.html",
+    "session_ids": [
+      "math-probability.c2.s1"
+    ],
+    "questions": [
+      "正态分布如何：尺度与密度",
+      "标准差改变密度高度而不改变总面积"
+    ],
+    "aliases": [
+      "正态分布",
+      "normal"
+    ],
+    "kind": [
+      "diagram"
+    ],
+    "scope": "标准差改变密度高度而不改变总面积",
+    "sha256": "d44c8b90962018ff23ee20f743def54b27de40fef5ca01901c5d977a2b4cf313",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-clt",
+    "version": "1.0.0",
+    "title": "中心极限定理：求和的形状",
+    "file": "lab2-clt.html",
+    "session_ids": [
+      "math-probability.c2.s2"
+    ],
+    "questions": [
+      "中心极限定理如何：求和的形状",
+      "公平骰子点数和的精确离散卷积分布"
+    ],
+    "aliases": [
+      "中心极限定理",
+      "clt"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "公平骰子点数和的精确离散卷积分布",
+    "sha256": "6b9ee72eca5c9585d3d0b0c8cd3088750c7ea5c5437c0016699df5b18413062e",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-entropy",
+    "version": "1.0.0",
+    "title": "熵：什么时候最不确定",
+    "file": "lab2-entropy.html",
+    "session_ids": [
+      "math-probability.c2.s1"
+    ],
+    "questions": [
+      "熵如何：什么时候最不确定",
+      "二元分布的香农熵，以 bit 为单位"
+    ],
+    "aliases": [
+      "熵",
+      "entropy"
+    ],
+    "kind": [
+      "diagram"
+    ],
+    "scope": "二元分布的香农熵，以 bit 为单位",
+    "sha256": "c3cb0090f1a77e4e52336822e6a20db08d6d374bf533e996e0bb1bd00536a301",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-descent",
+    "version": "1.0.0",
+    "title": "梯度下降：收敛与振荡",
+    "file": "lab2-descent.html",
+    "session_ids": [
+      "math-optimization.c1.s1"
+    ],
+    "questions": [
+      "梯度下降如何：收敛与振荡",
+      "对 x² 执行 12 次梯度更新"
+    ],
+    "aliases": [
+      "梯度下降",
+      "descent"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "对 x² 执行 12 次梯度更新",
+    "sha256": "a23ba12bf235a08c987e86910d5584b6a49c516191e0b632bb7ec43fbc315464",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-huffman",
+    "version": "1.0.0",
+    "title": "哈夫曼树：合并最轻的两棵树",
+    "file": "lab2-huffman.html",
+    "session_ids": [
+      "data-structures.c3.s2"
+    ],
+    "questions": [
+      "哈夫曼树如何：合并最轻的两棵树",
+      "每步合并最小权重；最终展示前缀树与加权路径长度"
+    ],
+    "aliases": [
+      "哈夫曼树",
+      "huffman"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "每步合并最小权重；最终展示前缀树与加权路径长度",
+    "sha256": "c0d4136ceb3876ebe7a97216e520fea3380c29cf7069cd737a6ae35635f7cc2b",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-binary",
+    "version": "1.0.0",
+    "title": "二分查找：保持搜索区间",
+    "file": "lab2-binary.html",
+    "session_ids": [
+      "algorithms.c1.s2"
+    ],
+    "questions": [
+      "二分查找如何：保持搜索区间",
+      "有序数组上的闭区间二分，包含未找到分支"
+    ],
+    "aliases": [
+      "二分查找",
+      "binary"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "有序数组上的闭区间二分，包含未找到分支",
+    "sha256": "5c5541ab3dd8f3dc702783b95bcfdfdf48ce643a04abecd646bd605f76855883",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-quicksort",
+    "version": "1.0.0",
+    "title": "快速排序：分区与递归",
+    "file": "lab2-quicksort.html",
+    "session_ids": [
+      "algorithms.c2.s1"
+    ],
+    "questions": [
+      "快速排序如何：分区与递归",
+      "Lomuto 分区；显示每次比较与交换"
+    ],
+    "aliases": [
+      "快速排序",
+      "quicksort"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "Lomuto 分区；显示每次比较与交换",
+    "sha256": "d48e0391e251f607c4b3869f6e406aef5a7fed17536f8e6109d149702d7d866a",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-merge",
+    "version": "1.0.0",
+    "title": "归并排序：两个有序段合并",
+    "file": "lab2-merge.html",
+    "session_ids": [
+      "algorithms.c2.s2"
+    ],
+    "questions": [
+      "归并排序如何：两个有序段合并",
+      "自底向上归并；每次合并后段内有序"
+    ],
+    "aliases": [
+      "归并排序",
+      "merge"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "自底向上归并；每次合并后段内有序",
+    "sha256": "8b3287b95031f5bee3acfff0fd6b8c0bad69399404a667f31cef4c140b6eea60",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-heap",
+    "version": "1.0.0",
+    "title": "堆排序：最大值走到末尾",
+    "file": "lab2-heap.html",
+    "session_ids": [
+      "algorithms.c2.s2"
+    ],
+    "questions": [
+      "堆排序如何：最大值走到末尾",
+      "最大堆下沉与有序后缀"
+    ],
+    "aliases": [
+      "堆排序",
+      "heap"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "最大堆下沉与有序后缀",
+    "sha256": "631a55fff31385dd53bd9baf4373b2b14919d683aba9dc551e76297ac03878d1",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-bfs",
+    "version": "1.0.0",
+    "title": "广度优先：队列怎样分层",
+    "file": "lab2-bfs.html",
+    "session_ids": [
+      "ai-foundations.c1.s1"
+    ],
+    "questions": [
+      "广度优先如何：队列怎样分层",
+      "六节点无向图上的队列与发现顺序"
+    ],
+    "aliases": [
+      "广度优先",
+      "bfs"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "六节点无向图上的队列与发现顺序",
+    "sha256": "f288753bd826cd95c20bab0d5400ed2859743e518f0a29d70fcb89201ba99ae6",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-dfs",
+    "version": "1.0.0",
+    "title": "深度优先：沿分支前进",
+    "file": "lab2-dfs.html",
+    "session_ids": [
+      "ai-foundations.c1.s1"
+    ],
+    "questions": [
+      "深度优先如何：沿分支前进",
+      "六节点无向图上的显式栈与访问顺序"
+    ],
+    "aliases": [
+      "深度优先",
+      "dfs"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "六节点无向图上的显式栈与访问顺序",
+    "sha256": "d7a0b9c0e60642ee9220f3d80a8ea2b1a91668c4a82984344e1bc2280622db6f",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-prim",
+    "version": "1.0.0",
+    "title": "Prim：从一棵树向外生长",
+    "file": "lab2-prim.html",
+    "session_ids": [
+      "algorithms.c3.s1"
+    ],
+    "questions": [
+      "Prim如何：从一棵树向外生长",
+      "正权无向图的最小生成树，显示跨越割的最轻边"
+    ],
+    "aliases": [
+      "Prim",
+      "prim"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "正权无向图的最小生成树，显示跨越割的最轻边",
+    "sha256": "97961b5065ca828767017537548e0a4edae4bc565e035da9edc4975497de640f",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-kruskal",
+    "version": "1.0.0",
+    "title": "Kruskal：便宜的边先选",
+    "file": "lab2-kruskal.html",
+    "session_ids": [
+      "algorithms.c3.s1"
+    ],
+    "questions": [
+      "Kruskal如何：便宜的边先选",
+      "按边权排序，只有连接不同分量才合并"
+    ],
+    "aliases": [
+      "Kruskal",
+      "kruskal"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "按边权排序，只有连接不同分量才合并",
+    "sha256": "18f7600eca4a8850b86be8201e0e0a1afb44d03aab7d384e6c6f3d75ef2ad56a",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-knapsack",
+    "version": "1.0.0",
+    "title": "背包：容量与最优价值",
+    "file": "lab2-knapsack.html",
+    "session_ids": [
+      "algorithms.c3.s2"
+    ],
+    "questions": [
+      "背包如何：容量与最优价值",
+      "0/1 背包动态规划；每件物品只能选一次"
+    ],
+    "aliases": [
+      "背包",
+      "knapsack"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "0/1 背包动态规划；每件物品只能选一次",
+    "sha256": "efb212637d1c457825fe65f0c8e7787ae78ffc2762b7eaeb5eab2c6a81c42ab4",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-cache",
+    "version": "1.0.0",
+    "title": "直接映射缓存：冲突从哪里来",
+    "file": "lab2-cache.html",
+    "session_ids": [
+      "architecture.c2.s1"
+    ],
+    "questions": [
+      "直接映射缓存如何：冲突从哪里来",
+      "按块号取模映射，观察访问序列中的命中与冲突"
+    ],
+    "aliases": [
+      "直接映射缓存",
+      "cache"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "按块号取模映射，观察访问序列中的命中与冲突",
+    "sha256": "9b10c322c4ca32ecae9ace7ae3fab808f3e9d967f32a62ce6b642f8f7db960c4",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-paging",
+    "version": "1.0.0",
+    "title": "地址翻译：页号与偏移",
+    "file": "lab2-paging.html",
+    "session_ids": [
+      "operating-systems.c2.s1"
+    ],
+    "questions": [
+      "地址翻译如何：页号与偏移",
+      "页大小 16，固定页表，物理地址由帧号和偏移拼接"
+    ],
+    "aliases": [
+      "地址翻译",
+      "paging"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "页大小 16，固定页表，物理地址由帧号和偏移拼接",
+    "sha256": "44326b35afde66d3ee6b2bbeb9e59e61585acbf575f5d04161335311a4e90104",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-lru",
+    "version": "1.0.0",
+    "title": "LRU：最近没用的先换出",
+    "file": "lab2-lru.html",
+    "session_ids": [
+      "operating-systems.c2.s1"
+    ],
+    "questions": [
+      "LRU如何：最近没用的先换出",
+      "固定访问流，精确比较最近使用时间"
+    ],
+    "aliases": [
+      "LRU",
+      "lru"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "固定访问流，精确比较最近使用时间",
+    "sha256": "12f22f0a0e5a77068eda0679d0b684e994316f8b9ed33e53764c8a41846d6549",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-fifo",
+    "version": "1.0.0",
+    "title": "FIFO：最早进入的先换出",
+    "file": "lab2-fifo.html",
+    "session_ids": [
+      "operating-systems.c2.s1"
+    ],
+    "questions": [
+      "FIFO如何：最早进入的先换出",
+      "经典 Belady 序列，观察增加帧数未必减少缺页"
+    ],
+    "aliases": [
+      "FIFO",
+      "fifo"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "经典 Belady 序列，观察增加帧数未必减少缺页",
+    "sha256": "dad530f4ec82803a948443bd51c8fa329a985c98241306d96a2958821dbf18aa",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-roundrobin",
+    "version": "1.0.0",
+    "title": "时间片轮转：公平与等待",
+    "file": "lab2-roundrobin.html",
+    "session_ids": [
+      "operating-systems.c1.s2"
+    ],
+    "questions": [
+      "时间片轮转如何：公平与等待",
+      "三个同时到达的任务，无切换成本，显示执行时间线"
+    ],
+    "aliases": [
+      "时间片轮转",
+      "roundrobin"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "三个同时到达的任务，无切换成本，显示执行时间线",
+    "sha256": "72c05d575bdd69f123a3ccb5291970cc17085aea2905f31f0fefc96a0edb4450",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-deadlock",
+    "version": "1.0.0",
+    "title": "死锁：等待环怎样形成",
+    "file": "lab2-deadlock.html",
+    "session_ids": [
+      "operating-systems.c3.s1"
+    ],
+    "questions": [
+      "死锁如何：等待环怎样形成",
+      "三个进程的等待图；出现有向环时构成本示例死锁"
+    ],
+    "aliases": [
+      "死锁",
+      "deadlock"
+    ],
+    "kind": [
+      "diagram"
+    ],
+    "scope": "三个进程的等待图；出现有向环时构成本示例死锁",
+    "sha256": "72d48a929302e358357a554d34ee4c08a3baf30d0779c2079dbc1b345a88980f",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-subnet",
+    "version": "1.0.0",
+    "title": "子网：哪些位属于网络",
+    "file": "lab2-subnet.html",
+    "session_ids": [
+      "networks.c1.s2"
+    ],
+    "questions": [
+      "子网如何：哪些位属于网络",
+      "IPv4 192.168.1.130 的网络地址与广播地址"
+    ],
+    "aliases": [
+      "子网",
+      "subnet"
+    ],
+    "kind": [
+      "diagram"
+    ],
+    "scope": "IPv4 192.168.1.130 的网络地址与广播地址",
+    "sha256": "65f827fbca3064db88f4c9e8947a51535c93314d9d654a38697761e678816fb3",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-window",
+    "version": "1.0.0",
+    "title": "滑动窗口：允许多少在途数据",
+    "file": "lab2-window.html",
+    "session_ids": [
+      "networks.c2.s2"
+    ],
+    "questions": [
+      "滑动窗口如何：允许多少在途数据",
+      "无丢包的简化逐 ACK 发送模型，不是完整 TCP"
+    ],
+    "aliases": [
+      "滑动窗口",
+      "window"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "无丢包的简化逐 ACK 发送模型，不是完整 TCP",
+    "sha256": "036e86d8b2d4824131eb2547e7409843b80033b411b39acabe14e15249cfa334",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-aimd",
+    "version": "1.0.0",
+    "title": "拥塞控制：增长与减半",
+    "file": "lab2-aimd.html",
+    "session_ids": [
+      "networks.c2.s2"
+    ],
+    "questions": [
+      "拥塞控制如何：增长与减半",
+      "教学用 AIMD：每轮加一，到阈值减半；不含慢启动"
+    ],
+    "aliases": [
+      "拥塞控制",
+      "aimd"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "教学用 AIMD：每轮加一，到阈值减半；不含慢启动",
+    "sha256": "8fae384d96da0f57f2bf3542e1b79fadc4f7919e513b1009dd13718bde23a01b",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-bloom",
+    "version": "1.0.0",
+    "title": "布隆过滤器：可能存在",
+    "file": "lab2-bloom.html",
+    "session_ids": [
+      "databases.c3.s2"
+    ],
+    "questions": [
+      "布隆过滤器如何：可能存在",
+      "两个固定哈希函数；没有假阴性但可能误报"
+    ],
+    "aliases": [
+      "布隆过滤器",
+      "bloom"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "两个固定哈希函数；没有假阴性但可能误报",
+    "sha256": "5fa394493a154401b647fa6451b723a45d04de8ed3d7d8466c327a46bbdf1297",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-perceptron",
+    "version": "1.0.0",
+    "title": "感知机：移动分类边界",
+    "file": "lab2-perceptron.html",
+    "session_ids": [
+      "machine-learning.c1.s2"
+    ],
+    "questions": [
+      "感知机如何：移动分类边界",
+      "固定权重 (1,1)，观察平面中样本的分类"
+    ],
+    "aliases": [
+      "感知机",
+      "perceptron"
+    ],
+    "kind": [
+      "diagram"
+    ],
+    "scope": "固定权重 (1,1)，观察平面中样本的分类",
+    "sha256": "09abcb6753b35861e6d739779cac9a021e92f7ef51e0eb0270223a5c47f9d702",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-logistic",
+    "version": "1.0.0",
+    "title": "Sigmoid：分数变成概率",
+    "file": "lab2-logistic.html",
+    "session_ids": [
+      "machine-learning.c1.s2"
+    ],
+    "questions": [
+      "Sigmoid如何：分数变成概率",
+      "逻辑函数的饱和与斜率，不表示模型已训练"
+    ],
+    "aliases": [
+      "Sigmoid",
+      "logistic"
+    ],
+    "kind": [
+      "diagram"
+    ],
+    "scope": "逻辑函数的饱和与斜率，不表示模型已训练",
+    "sha256": "44a3496811bbdd5d60ea2a7e3db37f9a4fe326abe5553b5854c150984cb87f99",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-softmax",
+    "version": "1.0.0",
+    "title": "Softmax：温度改变分布",
+    "file": "lab2-softmax.html",
+    "session_ids": [
+      "nlp.c2.s2"
+    ],
+    "questions": [
+      "Softmax如何：温度改变分布",
+      "固定 logits [1,2,3] 的稳定 Softmax"
+    ],
+    "aliases": [
+      "Softmax",
+      "softmax"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "固定 logits [1,2,3] 的稳定 Softmax",
+    "sha256": "fc7a1bf08dd9644c15fc2f5fb4ccd769bd3958dc2454d582ca34f1cd3d3a7dc3",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-crossentropy",
+    "version": "1.0.0",
+    "title": "交叉熵：自信地错代价更大",
+    "file": "lab2-crossentropy.html",
+    "session_ids": [
+      "deep-learning.c1.s1"
+    ],
+    "questions": [
+      "交叉熵如何：自信地错代价更大",
+      "单样本负对数似然 -ln(p)，自然对数"
+    ],
+    "aliases": [
+      "交叉熵",
+      "crossentropy"
+    ],
+    "kind": [
+      "diagram"
+    ],
+    "scope": "单样本负对数似然 -ln(p)，自然对数",
+    "sha256": "478b3f217ae8c7b1ae17943d102298de57fb77847dd568e53ce1b21f4a919b04",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-backprop",
+    "version": "1.0.0",
+    "title": "反向传播：局部梯度连起来",
+    "file": "lab2-backprop.html",
+    "session_ids": [
+      "deep-learning.c1.s1"
+    ],
+    "questions": [
+      "反向传播如何：局部梯度连起来",
+      "y=wx+b，L=(y-t)²/2，固定 x=2,b=1,t=5"
+    ],
+    "aliases": [
+      "反向传播",
+      "backprop"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "y=wx+b，L=(y-t)²/2，固定 x=2,b=1,t=5",
+    "sha256": "5b3e39c97971ac9a78f76969bcd9cb5d86f6b9ed703590773418b437f7c7ebf8",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-conv",
+    "version": "1.0.0",
+    "title": "卷积：窗口怎样产生输出",
+    "file": "lab2-conv.html",
+    "session_ids": [
+      "deep-learning.c2.s1"
+    ],
+    "questions": [
+      "卷积如何：窗口怎样产生输出",
+      "4×4 输入和 2×2 核逐元素相乘求和，步长一，无填充"
+    ],
+    "aliases": [
+      "卷积",
+      "conv"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "4×4 输入和 2×2 核逐元素相乘求和，步长一，无填充",
+    "sha256": "59b92ad39ac9a6694cb92badf4a751de7a18ab1d1d7903c65f2f7752c95ba9e5",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-pool",
+    "version": "1.0.0",
+    "title": "最大池化：保留局部最强响应",
+    "file": "lab2-pool.html",
+    "session_ids": [
+      "deep-learning.c2.s1"
+    ],
+    "questions": [
+      "最大池化如何：保留局部最强响应",
+      "4×4 输入，2×2 不重叠最大池化"
+    ],
+    "aliases": [
+      "最大池化",
+      "pool"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "4×4 输入，2×2 不重叠最大池化",
+    "sha256": "37f389f6a94b563629fa0775919a7fac59d0d75f75a70ed343f047ac67febefc",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-kmeans",
+    "version": "1.0.0",
+    "title": "K均值：分配与重心交替",
+    "file": "lab2-kmeans.html",
+    "session_ids": [
+      "machine-learning.c3.s1"
+    ],
+    "questions": [
+      "K均值如何：分配与重心交替",
+      "二维固定点集，k=2，确定性初始中心"
+    ],
+    "aliases": [
+      "K均值",
+      "kmeans"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "二维固定点集，k=2，确定性初始中心",
+    "sha256": "fcb202b106143709ab563d6633b66926bc053a6ee3d7e182895232c4d50cbd8f",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-pca",
+    "version": "1.0.0",
+    "title": "PCA：寻找最大方差方向",
+    "file": "lab2-pca.html",
+    "session_ids": [
+      "machine-learning.c3.s2"
+    ],
+    "questions": [
+      "PCA如何：寻找最大方差方向",
+      "中心化二维样本协方差矩阵的主特征向量"
+    ],
+    "aliases": [
+      "PCA",
+      "pca"
+    ],
+    "kind": [
+      "diagram"
+    ],
+    "scope": "中心化二维样本协方差矩阵的主特征向量",
+    "sha256": "205988f4b602ec7761e4fb25aaaa703153643229e9145e239c8c08666e7e85d5",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-attention",
+    "version": "1.0.0",
+    "title": "注意力：查询怎样选择信息",
+    "file": "lab2-attention.html",
+    "session_ids": [
+      "deep-learning.c3.s2"
+    ],
+    "questions": [
+      "注意力如何：查询怎样选择信息",
+      "二维 Q 和三个 K，点积除 sqrt(2) 后 Softmax，再加权 V"
+    ],
+    "aliases": [
+      "注意力",
+      "attention"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "二维 Q 和三个 K，点积除 sqrt(2) 后 Softmax，再加权 V",
+    "sha256": "c328845a4615f64d6cf10f64ead23d06536176889ef3a4a4d4120d0ea9623a50",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-bplus",
+    "version": "1.0.0",
+    "title": "B+树：从索引走到叶子",
+    "file": "lab2-bplus.html",
+    "session_ids": [
+      "data-structures.c3.s1"
+    ],
+    "questions": [
+      "B+树如何：从索引走到叶子",
+      "固定三叶索引，分隔键采用右侧子树最小键"
+    ],
+    "aliases": [
+      "B+树",
+      "bplus"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "固定三叶索引，分隔键采用右侧子树最小键",
+    "sha256": "d928122346c227b0c7daa7150fb86e135d846748a7189e0fa12b470610c08835",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-hash",
+    "version": "1.0.0",
+    "title": "哈希表：线性探测解决冲突",
+    "file": "lab2-hash.html",
+    "session_ids": [
+      "data-structures.c2.s2"
+    ],
+    "questions": [
+      "哈希表如何：线性探测解决冲突",
+      "逐个插入五个键；冲突向后探测，负载未满"
+    ],
+    "aliases": [
+      "哈希表",
+      "hash"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "逐个插入五个键；冲突向后探测，负载未满",
+    "sha256": "b2ba3d60392119005fffe5a96c32c9ec03e7da21bce9aaf48d7ef5e402d45a53",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-bst",
+    "version": "1.0.0",
+    "title": "二叉搜索树：插入保持顺序",
+    "file": "lab2-bst.html",
+    "session_ids": [
+      "data-structures.c2.s1"
+    ],
+    "questions": [
+      "二叉搜索树如何：插入保持顺序",
+      "固定插入序列后的新键路径，重复键不重复插入"
+    ],
+    "aliases": [
+      "二叉搜索树",
+      "bst"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "固定插入序列后的新键路径，重复键不重复插入",
+    "sha256": "7fcaabd50acf46c48db037aac2d1e55928517235471fdaf4153cb5a77c05d961",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-stack",
+    "version": "1.0.0",
+    "title": "调用栈：递归怎样返回",
+    "file": "lab2-stack.html",
+    "session_ids": [
+      "programming.c1.s2"
+    ],
+    "questions": [
+      "调用栈如何：递归怎样返回",
+      "递归阶乘的调用与返回栈帧"
+    ],
+    "aliases": [
+      "调用栈",
+      "stack"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "递归阶乘的调用与返回栈帧",
+    "sha256": "1911a73071695abeba1bf22bc07d4174234fab9fc89d72289852988b0d1d5d85",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-queue",
+    "version": "1.0.0",
+    "title": "环形队列：下标怎样绕回",
+    "file": "lab2-queue.html",
+    "session_ids": [
+      "data-structures.c1.s2"
+    ],
+    "questions": [
+      "环形队列如何：下标怎样绕回",
+      "固定入队出队操作，满队列拒绝入队，显示头尾与元素数"
+    ],
+    "aliases": [
+      "环形队列",
+      "queue"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "固定入队出队操作，满队列拒绝入队，显示头尾与元素数",
+    "sha256": "b97220c4c0d925f8a99aa352cf2c8f7215c451e9f9a3549f6b7c0e083b85e610",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-raft",
+    "version": "1.0.0",
+    "title": "Raft：多数派确认日志",
+    "file": "lab2-raft.html",
+    "session_ids": [
+      "distributed-systems.c2.s1"
+    ],
+    "questions": [
+      "Raft如何：多数派确认日志",
+      "五节点复制示意；当前任期日志获多数确认才提交，不覆盖选举细节"
+    ],
+    "aliases": [
+      "Raft",
+      "raft"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "五节点复制示意；当前任期日志获多数确认才提交，不覆盖选举细节",
+    "sha256": "d595ae2415424f5546f885270ceac6fbe85e3eba6c00afdf4bf8facb42d0ae9f",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-vectorclock",
+    "version": "1.0.0",
+    "title": "向量时钟：识别因果与并发",
+    "file": "lab2-vectorclock.html",
+    "session_ids": [
+      "distributed-systems.c1.s1"
+    ],
+    "questions": [
+      "向量时钟如何：识别因果与并发",
+      "两个进程发送接收；接收取逐项最大值后递增自身分量"
+    ],
+    "aliases": [
+      "向量时钟",
+      "vectorclock"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "两个进程发送接收；接收取逐项最大值后递增自身分量",
+    "sha256": "3f0868b9e3b9216800992048ea26ea9b252b7eed4f244679e95c95051c00874d",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-tokenbucket",
+    "version": "1.0.0",
+    "title": "令牌桶：限制突发流量",
+    "file": "lab2-tokenbucket.html",
+    "session_ids": [
+      "cloud.c2.s1"
+    ],
+    "questions": [
+      "令牌桶如何：限制突发流量",
+      "容量为五，离散轮次补充后处理请求；未满足请求被拒绝"
+    ],
+    "aliases": [
+      "令牌桶",
+      "tokenbucket"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "容量为五，离散轮次补充后处理请求；未满足请求被拒绝",
+    "sha256": "e5fd180b33717b55410320802f1bb8a373b3fbfbfba4d4e31ed2175b68125d29",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-consistenthash",
+    "version": "1.0.0",
+    "title": "一致性哈希：节点变化影响谁",
+    "file": "lab2-consistenthash.html",
+    "session_ids": [
+      "databases.c3.s2"
+    ],
+    "questions": [
+      "一致性哈希如何：节点变化影响谁",
+      "0..99 环，键映射到顺时针首节点，不使用虚拟节点"
+    ],
+    "aliases": [
+      "一致性哈希",
+      "consistenthash"
+    ],
+    "kind": [
+      "diagram"
+    ],
+    "scope": "0..99 环，键映射到顺时针首节点，不使用虚拟节点",
+    "sha256": "fe488d580feef4eb6901f3e4fed344781ed50641444aa13af57b5f21163b9a21",
+    "status": "ready",
+    "builder": "interactive_html"
+  },
+  {
+    "id": "lab2-rag",
+    "version": "1.0.0",
+    "title": "RAG：为什么要先检索再回答",
+    "file": "lab2-rag.html",
+    "session_ids": [
+      "ai-engineering.c1.s2"
+    ],
+    "questions": [
+      "RAG如何：为什么要先检索再回答",
+      "固定示例语料的词项重叠排序与上下文拼接；不是语义向量检索"
+    ],
+    "aliases": [
+      "RAG",
+      "rag"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "固定示例语料的词项重叠排序与上下文拼接；不是语义向量检索",
+    "sha256": "0351dcb497338bd6c592ab0fc4de039820e5b348fa42fbab5e4314637af5ed9d",
+    "status": "ready",
+    "builder": "interactive_html"
   }
 ]

@@ -542,6 +542,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "math-calculus.c2.s1.lab2-riemann",
+                  "question": "积分：矩形怎样逼近面积",
+                  "concepts": [
+                    "积分"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整矩形数，重算并观察状态",
+                  "acceptance": "比较左端点矩形和 x² 在 [0,1] 上的精确积分 1/3",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-riemann",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -619,6 +636,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "math-calculus.c3.s2.lab2-chain",
+                  "question": "链式法则：两段变化相乘",
+                  "concepts": [
+                    "链式法则"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整输入 x，重算并观察状态",
+                  "acceptance": "复合函数 y=(2x+1)² 的局部导数",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-chain",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -663,6 +697,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "math-linear.c1.s1.lab2-projection",
+                  "question": "向量投影：保留哪个方向",
+                  "concepts": [
+                    "向量投影"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整方向角 °，重算并观察状态",
+                  "acceptance": "向量 (3,2) 在单位方向上的正交投影",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-projection",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -777,6 +828,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "math-linear.c3.s1.lab2-eigen",
+                  "question": "特征向量：方向不变",
+                  "concepts": [
+                    "特征向量"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整向量角 °，重算并观察状态",
+                  "acceptance": "对角矩阵 diag(2,1) 如何改变向量",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-eigen",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -801,6 +869,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "math-linear.c3.s2.lab2-svd",
+                  "question": "低秩近似：逐项恢复矩阵",
+                  "concepts": [
+                    "低秩近似"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整保留秩，重算并观察状态",
+                  "acceptance": "正交基上的奇异值截断；Frobenius 误差",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-svd",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -1082,6 +1167,57 @@
                       "version": "1.0.0"
                     }
                   ]
+                },
+                {
+                  "id": "math-probability.c2.s1.lab2-binomial",
+                  "question": "二项分布：成功次数",
+                  "concepts": [
+                    "二项分布"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整成功率 %，重算并观察状态",
+                  "acceptance": "十次独立伯努利试验的精确分布",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-binomial",
+                      "version": "1.0.0"
+                    }
+                  ]
+                },
+                {
+                  "id": "math-probability.c2.s1.lab2-normal",
+                  "question": "正态分布：尺度与密度",
+                  "concepts": [
+                    "正态分布"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整标准差，重算并观察状态",
+                  "acceptance": "标准差改变密度高度而不改变总面积",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-normal",
+                      "version": "1.0.0"
+                    }
+                  ]
+                },
+                {
+                  "id": "math-probability.c2.s1.lab2-entropy",
+                  "question": "熵：什么时候最不确定",
+                  "concepts": [
+                    "熵"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整事件概率 %，重算并观察状态",
+                  "acceptance": "二元分布的香农熵，以 bit 为单位",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-entropy",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -1106,6 +1242,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "math-probability.c2.s2.lab2-clt",
+                  "question": "中心极限定理：求和的形状",
+                  "concepts": [
+                    "中心极限定理"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整骰子个数，重算并观察状态",
+                  "acceptance": "公平骰子点数和的精确离散卷积分布",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-clt",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -1208,6 +1361,23 @@
                   "work_refs": [
                     {
                       "id": "optimization.gd.overshoot",
+                      "version": "1.0.0"
+                    }
+                  ]
+                },
+                {
+                  "id": "math-optimization.c1.s1.lab2-descent",
+                  "question": "梯度下降：收敛与振荡",
+                  "concepts": [
+                    "梯度下降"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整学习率，重算并观察状态",
+                  "acceptance": "对 x² 执行 12 次梯度更新",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-descent",
                       "version": "1.0.0"
                     }
                   ]
@@ -1418,6 +1588,23 @@
                       "version": "1.0.0"
                     }
                   ]
+                },
+                {
+                  "id": "programming.c1.s2.lab2-stack",
+                  "question": "调用栈：递归怎样返回",
+                  "concepts": [
+                    "调用栈"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整阶乘 n，重算并观察状态",
+                  "acceptance": "递归阶乘的调用与返回栈帧",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-stack",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -1600,6 +1787,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "data-structures.c1.s2.lab2-queue",
+                  "question": "环形队列：下标怎样绕回",
+                  "concepts": [
+                    "环形队列"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整队列容量，重算并观察状态",
+                  "acceptance": "固定入队出队操作，满队列拒绝入队，显示头尾与元素数",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-queue",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -1630,6 +1834,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "data-structures.c2.s1.lab2-bst",
+                  "question": "二叉搜索树：插入保持顺序",
+                  "concepts": [
+                    "二叉搜索树"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整新增键，重算并观察状态",
+                  "acceptance": "固定插入序列后的新键路径，重复键不重复插入",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-bst",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -1654,6 +1875,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "data-structures.c2.s2.lab2-hash",
+                  "question": "哈希表：线性探测解决冲突",
+                  "concepts": [
+                    "哈希表"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整桶数，重算并观察状态",
+                  "acceptance": "逐个插入五个键；冲突向后探测，负载未满",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-hash",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -1689,6 +1927,23 @@
                       "version": "1.0.0"
                     }
                   ]
+                },
+                {
+                  "id": "data-structures.c3.s1.lab2-bplus",
+                  "question": "B+树：从索引走到叶子",
+                  "concepts": [
+                    "B+树"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整查找键，重算并观察状态",
+                  "acceptance": "固定三叶索引，分隔键采用右侧子树最小键",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-bplus",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -1713,6 +1968,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "data-structures.c3.s2.lab2-huffman",
+                  "question": "哈夫曼树：合并最轻的两棵树",
+                  "concepts": [
+                    "哈夫曼树"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整A 的频率，重算并观察状态",
+                  "acceptance": "每步合并最小权重；最终展示前缀树与加权路径长度",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-huffman",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -1787,6 +2059,23 @@
                       "version": "1.0.0"
                     }
                   ]
+                },
+                {
+                  "id": "algorithms.c1.s2.lab2-binary",
+                  "question": "二分查找：保持搜索区间",
+                  "concepts": [
+                    "二分查找"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整目标值，重算并观察状态",
+                  "acceptance": "有序数组上的闭区间二分，包含未找到分支",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-binary",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -1821,6 +2110,23 @@
                       "version": "1.0.0"
                     }
                   ]
+                },
+                {
+                  "id": "algorithms.c2.s1.lab2-quicksort",
+                  "question": "快速排序：分区与递归",
+                  "concepts": [
+                    "快速排序"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整首元素，重算并观察状态",
+                  "acceptance": "Lomuto 分区；显示每次比较与交换",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-quicksort",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -1845,6 +2151,40 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "algorithms.c2.s2.lab2-merge",
+                  "question": "归并排序：两个有序段合并",
+                  "concepts": [
+                    "归并排序"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整首元素，重算并观察状态",
+                  "acceptance": "自底向上归并；每次合并后段内有序",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-merge",
+                      "version": "1.0.0"
+                    }
+                  ]
+                },
+                {
+                  "id": "algorithms.c2.s2.lab2-heap",
+                  "question": "堆排序：最大值走到末尾",
+                  "concepts": [
+                    "堆排序"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整首元素，重算并观察状态",
+                  "acceptance": "最大堆下沉与有序后缀",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-heap",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -1880,6 +2220,40 @@
                       "version": "1.0.0"
                     }
                   ]
+                },
+                {
+                  "id": "algorithms.c3.s1.lab2-prim",
+                  "question": "Prim：从一棵树向外生长",
+                  "concepts": [
+                    "Prim"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整C-D 权重，重算并观察状态",
+                  "acceptance": "正权无向图的最小生成树，显示跨越割的最轻边",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-prim",
+                      "version": "1.0.0"
+                    }
+                  ]
+                },
+                {
+                  "id": "algorithms.c3.s1.lab2-kruskal",
+                  "question": "Kruskal：便宜的边先选",
+                  "concepts": [
+                    "Kruskal"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整C-D 权重，重算并观察状态",
+                  "acceptance": "按边权排序，只有连接不同分量才合并",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-kruskal",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -1904,6 +2278,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "algorithms.c3.s2.lab2-knapsack",
+                  "question": "背包：容量与最优价值",
+                  "concepts": [
+                    "背包"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整背包容量，重算并观察状态",
+                  "acceptance": "0/1 背包动态规划；每件物品只能选一次",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-knapsack",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -2177,6 +2568,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "architecture.c2.s1.lab2-cache",
+                  "question": "直接映射缓存：冲突从哪里来",
+                  "concepts": [
+                    "直接映射缓存"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整缓存行数，重算并观察状态",
+                  "acceptance": "按块号取模映射，观察访问序列中的命中与冲突",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-cache",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -2325,6 +2733,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "operating-systems.c1.s2.lab2-roundrobin",
+                  "question": "时间片轮转：公平与等待",
+                  "concepts": [
+                    "时间片轮转"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整时间片，重算并观察状态",
+                  "acceptance": "三个同时到达的任务，无切换成本，显示执行时间线",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-roundrobin",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -2358,6 +2783,57 @@
                   "work_refs": [
                     {
                       "id": "systems.virtual_memory.translation",
+                      "version": "1.0.0"
+                    }
+                  ]
+                },
+                {
+                  "id": "operating-systems.c2.s1.lab2-paging",
+                  "question": "地址翻译：页号与偏移",
+                  "concepts": [
+                    "地址翻译"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整虚拟地址，重算并观察状态",
+                  "acceptance": "页大小 16，固定页表，物理地址由帧号和偏移拼接",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-paging",
+                      "version": "1.0.0"
+                    }
+                  ]
+                },
+                {
+                  "id": "operating-systems.c2.s1.lab2-lru",
+                  "question": "LRU：最近没用的先换出",
+                  "concepts": [
+                    "LRU"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整物理帧数，重算并观察状态",
+                  "acceptance": "固定访问流，精确比较最近使用时间",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-lru",
+                      "version": "1.0.0"
+                    }
+                  ]
+                },
+                {
+                  "id": "operating-systems.c2.s1.lab2-fifo",
+                  "question": "FIFO：最早进入的先换出",
+                  "concepts": [
+                    "FIFO"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整物理帧数，重算并观察状态",
+                  "acceptance": "经典 Belady 序列，观察增加帧数未必减少缺页",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-fifo",
                       "version": "1.0.0"
                     }
                   ]
@@ -2418,6 +2894,23 @@
                   "work_refs": [
                     {
                       "id": "systems.deadlock.wait_cycle",
+                      "version": "1.0.0"
+                    }
+                  ]
+                },
+                {
+                  "id": "operating-systems.c3.s1.lab2-deadlock",
+                  "question": "死锁：等待环怎样形成",
+                  "concepts": [
+                    "死锁"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整等待边数量，重算并观察状态",
+                  "acceptance": "三个进程的等待图；出现有向环时构成本示例死锁",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-deadlock",
                       "version": "1.0.0"
                     }
                   ]
@@ -2515,6 +3008,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "networks.c1.s2.lab2-subnet",
+                  "question": "子网：哪些位属于网络",
+                  "concepts": [
+                    "子网"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整前缀长度，重算并观察状态",
+                  "acceptance": "IPv4 192.168.1.130 的网络地址与广播地址",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-subnet",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -2575,6 +3085,40 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "networks.c2.s2.lab2-window",
+                  "question": "滑动窗口：允许多少在途数据",
+                  "concepts": [
+                    "滑动窗口"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整窗口大小，重算并观察状态",
+                  "acceptance": "无丢包的简化逐 ACK 发送模型，不是完整 TCP",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-window",
+                      "version": "1.0.0"
+                    }
+                  ]
+                },
+                {
+                  "id": "networks.c2.s2.lab2-aimd",
+                  "question": "拥塞控制：增长与减半",
+                  "concepts": [
+                    "拥塞控制"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整丢包阈值，重算并观察状态",
+                  "acceptance": "教学用 AIMD：每轮加一，到阈值减半；不含慢启动",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-aimd",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -2816,6 +3360,40 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "databases.c3.s2.lab2-bloom",
+                  "question": "布隆过滤器：可能存在",
+                  "concepts": [
+                    "布隆过滤器"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整位数组长度，重算并观察状态",
+                  "acceptance": "两个固定哈希函数；没有假阴性但可能误报",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-bloom",
+                      "version": "1.0.0"
+                    }
+                  ]
+                },
+                {
+                  "id": "databases.c3.s2.lab2-consistenthash",
+                  "question": "一致性哈希：节点变化影响谁",
+                  "concepts": [
+                    "一致性哈希"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整新增节点位置，重算并观察状态",
+                  "acceptance": "0..99 环，键映射到顺时针首节点，不使用虚拟节点",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-consistenthash",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -3573,6 +4151,40 @@
                       "version": "1.0.0"
                     }
                   ]
+                },
+                {
+                  "id": "ai-foundations.c1.s1.lab2-bfs",
+                  "question": "广度优先：队列怎样分层",
+                  "concepts": [
+                    "广度优先"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整起点编号，重算并观察状态",
+                  "acceptance": "六节点无向图上的队列与发现顺序",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-bfs",
+                      "version": "1.0.0"
+                    }
+                  ]
+                },
+                {
+                  "id": "ai-foundations.c1.s1.lab2-dfs",
+                  "question": "深度优先：沿分支前进",
+                  "concepts": [
+                    "深度优先"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整起点编号，重算并观察状态",
+                  "acceptance": "六节点无向图上的显式栈与访问顺序",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-dfs",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -3771,6 +4383,40 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "machine-learning.c1.s2.lab2-perceptron",
+                  "question": "感知机：移动分类边界",
+                  "concepts": [
+                    "感知机"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整偏置，重算并观察状态",
+                  "acceptance": "固定权重 (1,1)，观察平面中样本的分类",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-perceptron",
+                      "version": "1.0.0"
+                    }
+                  ]
+                },
+                {
+                  "id": "machine-learning.c1.s2.lab2-logistic",
+                  "question": "Sigmoid：分数变成概率",
+                  "concepts": [
+                    "Sigmoid"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整斜率，重算并观察状态",
+                  "acceptance": "逻辑函数的饱和与斜率，不表示模型已训练",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-logistic",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -3854,6 +4500,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "machine-learning.c3.s1.lab2-kmeans",
+                  "question": "K均值：分配与重心交替",
+                  "concepts": [
+                    "K均值"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整右簇水平偏移，重算并观察状态",
+                  "acceptance": "二维固定点集，k=2，确定性初始中心",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-kmeans",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -3878,6 +4541,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "machine-learning.c3.s2.lab2-pca",
+                  "question": "PCA：寻找最大方差方向",
+                  "concepts": [
+                    "PCA"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整竖直扰动，重算并观察状态",
+                  "acceptance": "中心化二维样本协方差矩阵的主特征向量",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-pca",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -3924,6 +4604,40 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "deep-learning.c1.s1.lab2-crossentropy",
+                  "question": "交叉熵：自信地错代价更大",
+                  "concepts": [
+                    "交叉熵"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整正确类概率 %，重算并观察状态",
+                  "acceptance": "单样本负对数似然 -ln(p)，自然对数",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-crossentropy",
+                      "version": "1.0.0"
+                    }
+                  ]
+                },
+                {
+                  "id": "deep-learning.c1.s1.lab2-backprop",
+                  "question": "反向传播：局部梯度连起来",
+                  "concepts": [
+                    "反向传播"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整权重 w，重算并观察状态",
+                  "acceptance": "y=wx+b，L=(y-t)²/2，固定 x=2,b=1,t=5",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-backprop",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -3982,6 +4696,40 @@
                   "work_refs": [
                     {
                       "id": "deep_learning.cnn.mechanism",
+                      "version": "1.0.0"
+                    }
+                  ]
+                },
+                {
+                  "id": "deep-learning.c2.s1.lab2-conv",
+                  "question": "卷积：窗口怎样产生输出",
+                  "concepts": [
+                    "卷积"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整中心像素，重算并观察状态",
+                  "acceptance": "4×4 输入和 2×2 核逐元素相乘求和，步长一，无填充",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-conv",
+                      "version": "1.0.0"
+                    }
+                  ]
+                },
+                {
+                  "id": "deep-learning.c2.s1.lab2-pool",
+                  "question": "最大池化：保留局部最强响应",
+                  "concepts": [
+                    "最大池化"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整中心像素，重算并观察状态",
+                  "acceptance": "4×4 输入，2×2 不重叠最大池化",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-pool",
                       "version": "1.0.0"
                     }
                   ]
@@ -4063,6 +4811,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "deep-learning.c3.s2.lab2-attention",
+                  "question": "注意力：查询怎样选择信息",
+                  "concepts": [
+                    "注意力"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整查询角 °，重算并观察状态",
+                  "acceptance": "二维 Q 和三个 K，点积除 sqrt(2) 后 Softmax，再加权 V",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-attention",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -4862,6 +5627,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "cloud.c2.s1.lab2-tokenbucket",
+                  "question": "令牌桶：限制突发流量",
+                  "concepts": [
+                    "令牌桶"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整每轮补充令牌，重算并观察状态",
+                  "acceptance": "容量为五，离散轮次补充后处理请求；未满足请求被拒绝",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-tokenbucket",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -5187,6 +5969,23 @@
                   "work_refs": [
                     {
                       "id": "ai.rag.evidence_flow",
+                      "version": "1.0.0"
+                    }
+                  ]
+                },
+                {
+                  "id": "ai-engineering.c1.s2.lab2-rag",
+                  "question": "RAG：为什么要先检索再回答",
+                  "concepts": [
+                    "RAG"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整返回文档数，重算并观察状态",
+                  "acceptance": "固定示例语料的词项重叠排序与上下文拼接；不是语义向量检索",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-rag",
                       "version": "1.0.0"
                     }
                   ]
@@ -5951,6 +6750,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "nlp.c2.s2.lab2-softmax",
+                  "question": "Softmax：温度改变分布",
+                  "concepts": [
+                    "Softmax"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整温度，重算并观察状态",
+                  "acceptance": "固定 logits [1,2,3] 的稳定 Softmax",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-softmax",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -6222,6 +7038,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "distributed-systems.c1.s1.lab2-vectorclock",
+                  "question": "向量时钟：识别因果与并发",
+                  "concepts": [
+                    "向量时钟"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整本地事件数，重算并观察状态",
+                  "acceptance": "两个进程发送接收；接收取逐项最大值后递增自身分量",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-vectorclock",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -6276,6 +7109,23 @@
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
                   "status": "planned",
                   "work_refs": []
+                },
+                {
+                  "id": "distributed-systems.c2.s1.lab2-raft",
+                  "question": "Raft：多数派确认日志",
+                  "concepts": [
+                    "Raft"
+                  ],
+                  "representation": "interactive_model",
+                  "interaction": "调整在线节点数，重算并观察状态",
+                  "acceptance": "五节点复制示意；当前任期日志获多数确认才提交，不覆盖选举细节",
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "lab2-raft",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },

@@ -249,7 +249,7 @@ type Conversation = {
 
 type WorkspaceTab = {
   id: string
-  kind: 'chat' | 'settings' | 'projects' | 'project' | 'learning-path' | 'ecosystem' | 'profile' | 'tasks' | 'review' | 'learning-files' | 'lecture-file' | 'practice-file'
+  kind: 'visual-hub' | 'chat' | 'settings' | 'projects' | 'project' | 'learning-path' | 'ecosystem' | 'profile' | 'tasks' | 'review' | 'learning-files' | 'lecture-file' | 'practice-file'
   title: string
   conversationId?: string
   originConversationId?: string
@@ -272,6 +272,8 @@ type PersistedState = {
   learningPath: LearnerPathState
 }
 
+const VISUAL_HUB_TAB: WorkspaceTab = {id:'visual-hub',kind:'visual-hub',title:'图解与动画'}
+const VisualHubPage = lazy(() => import('./VisualHubPage'))
 const SETTINGS_TAB: WorkspaceTab = { id: 'settings', kind: 'settings', title: '设置' }
 const PROJECTS_TAB: WorkspaceTab = { id: 'projects', kind: 'projects', title: '学习项目' }
 const LEARNING_PATH_TAB: WorkspaceTab = { id: 'learning-path', kind: 'learning-path', title: '学习路径' }
@@ -465,6 +467,7 @@ function learningFileTab(
 
 function tabFromCurrentPath(conversations: Conversation[]): WorkspaceTab | undefined {
   const path = window.location.pathname
+  if (path === '/visual-hub') return VISUAL_HUB_TAB
   if (path === '/settings') return SETTINGS_TAB
   if (path === '/projects') return PROJECTS_TAB
   if (path.startsWith('/projects/')) {
@@ -543,7 +546,7 @@ function restoreState(learnerId: number): PersistedState {
     })
     const conversationIds = new Set(conversations.map(item => item.id))
     const tabs = Array.isArray(value.tabs)
-      ? value.tabs.filter(tab => ['settings', 'projects', 'project', 'learning-path', 'ecosystem', 'profile', 'tasks', 'review', 'learning-files', 'lecture-file', 'practice-file'].includes(tab?.kind) || (tab?.kind === 'chat' && tab?.conversationId && conversationIds.has(tab.conversationId)))
+      ? value.tabs.filter(tab => ['visual-hub', 'settings', 'projects', 'project', 'learning-path', 'ecosystem', 'profile', 'tasks', 'review', 'learning-files', 'lecture-file', 'practice-file'].includes(tab?.kind) || (tab?.kind === 'chat' && tab?.conversationId && conversationIds.has(tab.conversationId)))
       : []
     let safeTabs = tabs.length > 0 ? tabs.slice(-12) : [chatTab(conversations[0])]
     const routeTab = tabFromCurrentPath(conversations)
@@ -572,6 +575,7 @@ function restoreState(learnerId: number): PersistedState {
 }
 
 function pathForTab(tab: WorkspaceTab) {
+  if (tab.kind === 'visual-hub') return '/visual-hub'
   if (tab.kind === 'settings') return '/settings'
   if (tab.kind === 'projects') return '/projects'
   if (tab.kind === 'project') return `/projects/${tab.projectId}`
@@ -2898,6 +2902,7 @@ function App({ auth }: { auth: AuthGateSession }) {
 
   const renderTab = (tab: WorkspaceTab | undefined) => {
     if (!tab) return null
+    if (tab.kind === 'visual-hub') return <Suspense fallback={<p>正在载入图解库…</p>}><VisualHubPage/></Suspense>
     if (tab.kind === 'projects') {
       return <Suspense fallback={<div className="page-loading">正在载入学习项目…</div>}><ProjectsPage onOpen={project => { refreshFormalProjects(); void openProjectTutor(project.id) }} /></Suspense>
     }
@@ -3730,6 +3735,7 @@ function App({ auth }: { auth: AuthGateSession }) {
             <button type="button" onClick={() => openTab(REVIEW_TAB)}><span>↺</span>复习与错题</button>
             <button type="button" onClick={() => openTab(TASKS_TAB)}><span>☷</span>学习任务</button>
             <button type="button" onClick={() => openTab(LEARNING_PATH_TAB)}><span>⌁</span>学习路径</button>
+            <button type="button" onClick={() => openTab(VISUAL_HUB_TAB)}><span>▷</span>图解与动画</button>
             <button type="button" onClick={() => window.location.assign('https://graphs.learnflow.club/hub')}><span>◇</span>岗位图谱</button>
           </nav>
           <div className="sidebar-scroll-area">

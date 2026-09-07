@@ -141,3 +141,22 @@ async def hub(request: Request, current: CurrentLearner = Depends(get_current_le
         return await run_in_threadpool(query_hub, **data)
     except ValueError as exc:
         raise HTTPException(422, str(exc))
+
+
+@router.post('/gallery')
+async def gallery(request: Request, current: CurrentLearner = Depends(get_current_learner)):
+    from learnflow_core.visuals.hub import browse_works
+    data=await body(request)
+    if set(data)-{'query','module_id','kind','offset','limit'}:
+        raise HTTPException(422,'visual_gallery_fields_invalid')
+    try:return await run_in_threadpool(browse_works,**data)
+    except ValueError as exc:raise HTTPException(422,str(exc))
+
+
+@router.post('/preview')
+async def preview(request: Request, current: CurrentLearner = Depends(get_current_learner)):
+    from learnflow_core.visuals.hub import preview_work
+    data=await body(request)
+    if set(data)!={'id','version'}:raise HTTPException(422,'visual_preview_fields_invalid')
+    try:return await run_in_threadpool(preview_work,data['id'],data['version'])
+    except ValueError as exc:raise HTTPException(422,str(exc))
