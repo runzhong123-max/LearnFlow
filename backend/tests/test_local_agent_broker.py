@@ -549,3 +549,167 @@ def test_codex_adapter_uses_fixed_argument_array_without_shell(monkeypatch, tmp_
     assert "shell" not in captured["kwargs"]
     assert captured["kwargs"]["stderr"] == asyncio.subprocess.STDOUT
     assert captured["prompt"] == b"do the task"
+
+
+def test_controlled_codex_permissions_ignore_user_extensions_and_fail_closed(tmp_path, monkeypatch):
+    import pytest
+    from types import SimpleNamespace
+    calls = []
+    supported = {'value': True}
+    executable = tmp_path / 'codex'
+    executable.write_text('#!/bin/sh\n')
+    executable.chmod(0o700)
+    class Stdin:
+        def write(self, data): pass
+        async def drain(self): pass
+        def close(self): pass
+    class Process:
+        stdin = Stdin()
+        returncode = 0
+        async def communicate(self):
+            return ((b'--ignore-user-config --ignore-rules --ephemeral' if supported['value'] else b'old CLI'), b'')
+    async def spawn(*args, **kwargs):
+        calls.append((args, kwargs))
+        return Process()
+    monkeypatch.setattr(asyncio, 'create_subprocess_exec', spawn)
+    for mode in ('read_only', 'workspace_write'):
+        profile = SimpleNamespace(executable_path=str(executable), execution_mode=mode, controlled_execution=True)
+        asyncio.run(CodexCliAdapter().start(profile, tmp_path, 'inspect safely'))
+        args = calls[-1][0]
+        assert args[args.index('--sandbox') + 1] == mode.replace('_', '-')
+        assert all(flag in args for flag in ('--ignore-user-config', '--ignore-rules', '--ephemeral'))
+        assert 'approval_policy="never"' in args
+        assert '--dangerously-bypass-approvals-and-sandbox' not in args and '--add-dir' not in args
+        assert 'shell' not in calls[-1][1]
+    supported['value'] = False
+    count = len(calls)
+    with pytest.raises(broker.LocalAgentError, match='不支持受控帮助'):
+        asyncio.run(CodexCliAdapter().start(profile, tmp_path, 'no fallback'))
+    assert len(calls) == count + 1 and calls[-1][0][-1] == '--help'
+
+
+def test_final_agent_advice_is_bounded_and_excludes_command_output():
+    adapter = CodexCliAdapter()
+    events = [adapter.parse_event('{"type":"item.completed","item":{"type":"command_execution","text":"private logs"}}'),
+              adapter.parse_event('{"type":"item.completed","item":{"type":"agent_message","text":"Start with the input."}}')]
+    assert adapter.collect_result(events, 0)['advice'] == 'Start with the input.'
+    assert len(broker.collect_advice([{'item_type': 'agent_message', 'text': 'x' * 50000}])) == broker.MAX_ADVICE_CHARS
+
+
+def test_local_stage_assistance_controls_execution_and_rejects_old_grants(tmp_path, monkeypatch):
+    import pytest
+    from app.models.learning import AgentAction
+    from app.models.project import ProjectWorkflowState
+    from app.services.project_workflows import get_stage_assistance, request_stage_assistance
+    enable_desktop_demo(monkeypatch, tmp_path / 'runs')
+    root = tmp_path / 'workspace'; root.mkdir()
+    (root / 'main.txt').write_text('original\n')
+    with TestClient(app) as client:
+        account = client.post('/api/auth/register', json=registration('broker_stage_permission')).json()
+        learner_id = account['learner_id']
+        project_id, checkpoint_id = seed_project(client, root)
+        session = client.post('/api/agent/sessions', json={'session_type': 'checkpoint', 'project_id': project_id,
+            'checkpoint_id': checkpoint_id}).json()
+        async def scenario():
+            async with async_session() as db:
+                assert await broker.local_assistance_policy(db, learner_id, project_id, checkpoint_id) is None
+                project = await db.get(Project, project_id)
+                project.project_mode = 'experiment'
+                db.add(ProjectWorkflowState(project_id=project_id, learner_id=learner_id, initialized=True, revision=1, workbench={}))
+                await db.commit()
+                policy = await get_stage_assistance(db, project, checkpoint_id)
+                assert policy['mode'] == 'direction'
+                with pytest.raises(broker.LocalAgentError) as missing:
+                    await broker.local_assistance_policy(db, learner_id, project_id, None)
+                assert missing.value.code == 'assistance_scope_required'
+                profile = await broker.ensure_seeded_profile(db, learner_id)
+                await db.commit()
+                profile_id = profile.id
+            async def create(policy_snapshot):
+                async with async_session() as db:
+                    profile = await db.get(LocalAgentProfile, profile_id)
+                    target = {'task_type': 'code_change', 'goal': 'Inspect and explain this project',
+                              'constraints': [], 'assistance_policy': policy_snapshot}
+                    action = AgentAction(session_id=session['id'], learner_id=learner_id, project_id=project_id,
+                        checkpoint_id=checkpoint_id, capability='delegate_local_agent_task', status='completed',
+                        side_effect='execution', confirmation_policy='explicit', target=target)
+                    db.add(action); await db.flush()
+                    run = await broker.create_run_for_action(db, action, profile, target)
+                    run_id = run.id
+                await broker._tasks[run_id]
+                async with async_session() as db:
+                    return await db.get(LocalAgentRun, run_id)
+            readonly = await create(policy)
+            assert readonly.status == 'completed', readonly.error
+            assert readonly.result['advice'] and not readonly.result['can_apply'] and not readonly.changed_files
+            assert not (root / 'learnflow-seeded-agent.md').exists()
+            async with async_session() as db:
+                project = await db.get(Project, project_id)
+                updated = await request_stage_assistance(db, project, checkpoint_id, {'mode': 'implementation',
+                    'expected_revision': policy['revision'], 'client_action_id': 'enable-implementation'})
+                await db.commit()
+                current = updated['assistance']
+            with pytest.raises(broker.LocalAgentError) as old:
+                await create(policy)
+            assert old.value.code == 'assistance_policy_stale'
+            implementation = await create(current)
+            assert implementation.status == 'completed' and implementation.result['can_apply']
+            async with async_session() as db:
+                project = await db.get(Project, project_id)
+                await request_stage_assistance(db, project, checkpoint_id, {'mode': 'steps',
+                    'expected_revision': current['revision'], 'client_action_id': 'downgrade-implementation'})
+                await db.commit()
+                run = await db.get(LocalAgentRun, implementation.id)
+                with pytest.raises(broker.LocalAgentError) as stale:
+                    await broker.apply_run_result(db, run, confirmed_deletions=[], confirmed_moves=[], idempotency_key='stale-apply')
+                assert stale.value.code == 'assistance_policy_stale'
+                assert not (root / 'learnflow-seeded-agent.md').exists()
+        asyncio.run(scenario())
+
+
+def test_generic_agent_file_operations_cannot_bypass_help_policy(tmp_path, monkeypatch):
+    from app.models.project import ProjectWorkflowState
+    enable_desktop_demo(monkeypatch, tmp_path / 'runs')
+    root = tmp_path / 'workspace'; root.mkdir()
+    (root / 'main.txt').write_text('original\n')
+    with TestClient(app) as client:
+        account = client.post('/api/auth/register', json=registration('generic_agent_permission')).json()
+        learner_id = account['learner_id']
+        project_id, checkpoint_id = seed_project(client, root)
+        session = client.post('/api/agent/sessions', json={'session_type': 'checkpoint', 'project_id': project_id,
+            'checkpoint_id': checkpoint_id}).json()
+        async def prepare_stage():
+            async with async_session() as db:
+                project = await db.get(Project, project_id)
+                project.project_mode = 'experiment'
+                db.add(ProjectWorkflowState(project_id=project_id, learner_id=learner_id, initialized=True, revision=1, workbench={}))
+                await db.commit()
+        asyncio.run(prepare_stage())
+        url = f'/api/projects/{project_id}/workspace/operations'
+        assistance_url = f'/api/vnext-projects/{project_id}/checkpoints/{checkpoint_id}/assistance'
+        body = {'actor': 'agent', 'operation': 'create', 'target_path': 'agent.txt', 'content': 'generated',
+                'checkpoint_id': checkpoint_id, 'session_id': session['id'], 'idempotency_key': 'generic-proposal'}
+        denied = client.post(f"{url}/propose", headers=HEADERS, json=body)
+        assert denied.status_code == 409 and 'assistance_read_only' in denied.text
+        # The learner can still edit files personally while assistant writes are disabled.
+        manual = client.put(f'/api/projects/{project_id}/workspace/files/manual.txt', headers=HEADERS,
+            json={'content': 'my attempt', 'base_hash': None, 'idempotency_key': 'personal-edit'})
+        assert manual.status_code == 200, manual.text
+        policy = client.get(assistance_url).json()
+        enabled = client.post(assistance_url, json={'mode': 'implementation', 'expected_revision': policy['revision'],
+            'client_action_id': 'generic-enable'}).json()['assistance']
+        proposed = client.post(f"{url}/propose", headers=HEADERS, json=body)
+        assert proposed.status_code == 200, proposed.text
+        operation = proposed.json()['id']
+        lowered = client.post(assistance_url, json={'mode': 'direction', 'expected_revision': enabled['revision'],
+            'client_action_id': 'generic-lower'}).json()['assistance']
+        assert client.post(f"{url}/propose", headers=HEADERS, json=body).status_code == 409
+        assert client.post(f'{url}/{operation}/confirm', headers=HEADERS).status_code == 409
+        client.post(assistance_url, json={'mode': 'implementation', 'expected_revision': lowered['revision'],
+            'client_action_id': 'generic-reenable'})
+        assert client.post(f'{url}/{operation}/confirm', headers=HEADERS).status_code == 409
+        assert not (root / 'agent.txt').exists()
+        replacement = client.post(f"{url}/propose", headers=HEADERS, json={**body, 'idempotency_key': 'generic-new'}).json()
+        applied = client.post(f"{url}/{replacement['id']}/confirm", headers=HEADERS)
+        assert applied.status_code == 200, applied.text
+        assert (root / 'agent.txt').read_text() == 'generated'

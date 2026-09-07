@@ -59,6 +59,20 @@ def _raise_workspace_error(exc: WorkspaceError):
     raise HTTPException(exc.status_code, {"code": exc.code, "message": exc.detail}) from exc
 
 
+async def _agent_write_assistance(db, learner_id, project_id, checkpoint_id, *, saved=None, applying=False):
+    from app.services.local_agent_broker import (
+        LocalAgentError, local_assistance_policy, check_assistance_policy, lock_local_assistance_for_apply,
+    )
+    try:
+        if applying:
+            return await lock_local_assistance_for_apply(db, learner_id, project_id, checkpoint_id, saved)
+        policy = await local_assistance_policy(db, learner_id, project_id, checkpoint_id)
+        check_assistance_policy(policy, policy, apply=True)
+        return policy
+    except LocalAgentError as exc:
+        raise HTTPException(exc.status_code, {"code": exc.code, "message": exc.detail}) from exc
+
+
 async def _owned_workspace(
     db: AsyncSession, learner_id: int, project_id: int,
 ) -> ProjectWorkspace:
@@ -480,16 +494,21 @@ async def propose_workspace_operation(
     db: AsyncSession = Depends(get_db),
 ):
     workspace = await _owned_workspace(db, current.learner.id, project_id)
+    assistance_policy = None
     if data.actor == "agent":
         await _validate_agent_scope(
             db, current, project_id, data.checkpoint_id, data.session_id,
         )
+        assistance_policy = await _agent_write_assistance(db, current.learner.id, project_id, data.checkpoint_id)
     key = _operation_key(current.learner.id, data.idempotency_key)
     existing = (await db.execute(select(WorkspaceOperation).where(
         WorkspaceOperation.learner_id == current.learner.id,
         WorkspaceOperation.idempotency_key == key,
     ))).scalar_one_or_none()
     if existing:
+        if data.actor == "agent" and (existing.project_id != project_id or existing.actor != "agent" or
+                (existing.payload or {}).get("assistance_policy") != assistance_policy):
+            raise HTTPException(409, "工程帮助权限或请求范围已变化，请重新准备修改提案")
         return existing
 
     root = Path(workspace.root_path)
@@ -500,6 +519,8 @@ async def propose_workspace_operation(
         "content": data.content,
         "base_hash": data.base_hash,
     }
+    if data.actor == "agent":
+        payload["assistance_policy"] = assistance_policy
     result = {"requires_confirmation": True}
     try:
         if data.operation in {"create", "write"}:
@@ -609,6 +630,10 @@ async def confirm_workspace_operation(
     ))).scalar_one_or_none()
     if not operation:
         raise HTTPException(404, "Workspace operation not found")
+    if operation.actor == "agent":
+        await _validate_agent_scope(db, current, project_id, operation.checkpoint_id, operation.session_id)
+        await _agent_write_assistance(db, current.learner.id, project_id, operation.checkpoint_id,
+            saved=(operation.payload or {}).get("assistance_policy"), applying=True)
     if operation.status == "applied":
         return operation
     if operation.status != "proposed":

@@ -15,6 +15,7 @@ import time
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Literal
+import httpx
 
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -118,17 +119,44 @@ def _lock(storage: Path):
     return _locks.setdefault(str(storage), asyncio.Lock())
 
 
-def _boundary() -> dict:
+def _boundary(policy: dict | None = None) -> dict:
     return {'learning_evidence': False, 'mastery_inference': False,
-            'sandbox_policy': 'workspace_write', 'network_policy': 'unmanaged',
+            'sandbox_policy': policy['execution_mode'] if policy else 'workspace_write', 'network_policy': 'unmanaged',
             'network_boundary_enforced': False, 'host_read_policy': 'unmanaged',
             'host_read_boundary_enforced': False,
-            'warning': '工程 Agent 在筛选后的隔离副本工作；网络和同主机读取未受管。真实文件写回需要再次确认。'}
+            'warning': ('只读分析不会提供可应用修改；网络和同主机读取未受管。' if policy and policy['execution_mode'] == 'read_only'
+                        else '工程 Agent 在筛选后的隔离副本工作；网络和同主机读取未受管。真实文件写回需要再次确认。')}
 
 
-def _public_run(run: dict) -> dict:
-    return {key: deepcopy(value) for key, value in run.items()
+def engineering_provenance(storage: Path, manifest: list[dict]) -> dict:
+    """Read operation history for a report; no source, logs, credentials or evidence writes."""
+    journal = storage / 'agent-journal.json'
+    state = json.loads(journal.read_text()) if journal.exists() else {'runs': []}
+    versions = {entry['path']: entry['sha256'] for entry in manifest}
+    matches = []
+    for run in reversed(state.get('runs', [])):
+        if run.get('status') not in {'completed', 'applied'} or not run.get('changed_files'):
+            continue
+        paths = sorted({change.get('destination_path') or change['path'] for change in run['changed_files']
+                        if change.get('new_hash') and versions.get(change.get('destination_path') or change['path']) == change['new_hash']})
+        if not paths and run['status'] != 'applied':
+            continue
+        matches.append({key: deepcopy(run.get(key)) for key in
+                        ('checkpoint_id', 'status', 'snapshot_hash', 'result_hash', 'assistance_policy')})
+        matches[-1].update(run_id=run['id'], association='exact_files' if paths else 'applied_project_history', matching_paths=paths)
+    return {'schema_version': 'learnflow.engineering-provenance.v1', 'authority': 'device_reported',
+            'independent_completion_verified': False, 'assisted': bool(matches),
+            'runs': matches[:20], 'truncated': len(matches) > 20}
+
+
+def _public_run(run: dict, *, policy_valid: bool = False) -> dict:
+    value = {key: deepcopy(value) for key, value in run.items()
             if key not in {'events', 'operations', 'root', 'process_epoch', 'profile_snapshot'}}
+    policy = run.get('assistance_policy')
+    value['can_apply'] = bool(policy_valid and run['status'] == 'completed' and run.get('changed_files') and
+                              (not policy or policy['execution_mode'] == 'workspace_write'))
+    value.setdefault('advice', '')
+    return value
 
 
 def _run(state: dict, run_id: int) -> dict:
@@ -174,6 +202,43 @@ async def _scope(session, project_id: int, project: dict, request: dict):
             raise broker.LocalAgentError(409, '关卡导师任务必须指定同一关卡', 'scope_mismatch')
 
 
+async def _assistance_policy(session, project_id: int, project: dict, request: dict):
+    # The vnext workspace response nests the Project summary alongside roadmap.
+    # Missing mode is never an implicit legacy write grant.
+    summary = project.get('project', project)
+    mode = summary.get('project_mode') if isinstance(summary, dict) else None
+    if mode not in {'learning', 'experiment', 'practice'}:
+        raise broker.LocalAgentError(409, '无法验证项目类型与帮助权限', 'assistance_policy_unavailable')
+    if mode == 'learning':
+        workflow = await session.client.get(f'/api/vnext-projects/{project_id}/workflow')
+        if workflow.status_code != 200:
+            raise broker.LocalAgentError(409, '无法验证项目帮助权限', 'assistance_policy_unavailable')
+        if not workflow.json().get('initialized'):
+            return None
+    checkpoint = request.get('checkpoint_id')
+    if checkpoint is None:
+        raise broker.LocalAgentError(409, '实验与实践任务必须选择当前阶段', 'assistance_scope_required')
+    response = await session.client.get(f'/api/vnext-projects/{project_id}/checkpoints/{checkpoint}/assistance')
+    if response.status_code != 200:
+        raise broker.LocalAgentError(404 if response.status_code == 404 else 409,
+                                     '当前阶段帮助权限不可用，请检查阶段是否已锁定或完成', 'assistance_policy_unavailable')
+    return broker.normalize_assistance_policy(response.json())
+
+
+async def _validate_assistance(session, project_id: int, project: dict, run: dict, *, apply: bool = False):
+    current = await _assistance_policy(session, project_id, project, run)
+    broker.check_assistance_policy(run.get('assistance_policy'), current, apply=apply)
+    return current
+
+
+async def _view_run(session, project_id: int, project: dict, run: dict):
+    try:
+        await _validate_assistance(session, project_id, project, run)
+        return _public_run(run, policy_valid=True)
+    except (broker.LocalAgentError, httpx.HTTPError):
+        return _public_run(run)  # History remains readable after a stage/policy changes.
+
+
 def _snapshot_paths(storage: Path, run_id: int) -> tuple[Path, Path, Path]:
     isolation = storage / 'agent-runs' / str(run_id)
     return isolation, isolation / 'base', isolation / 'worktree'
@@ -181,7 +246,10 @@ def _snapshot_paths(storage: Path, run_id: int) -> tuple[Path, Path, Path]:
 
 def _run_snapshot_hash(run: dict) -> str:
     request = {key: run[key] for key in RunPreview.model_fields}
-    return _digest([run['manifest'], request, run['profile_snapshot']])
+    values = [run['manifest'], request, run['profile_snapshot']]
+    if 'assistance_policy' in run:
+        values.append(run['assistance_policy'])
+    return _digest(values)
 
 
 def _verify_snapshot(storage: Path, run: dict, *, original: bool = True):
@@ -203,6 +271,7 @@ async def _fresh_scope(session, project_id: int, run: dict):
     if account.status_code != 200 or account.json().get('learner_id') != session.learner_id or project.status_code != 200:
         raise broker.LocalAgentError(401, '云端会话或项目授权已失效', 'cloud_auth_expired')
     await _scope(session, project_id, project.json(), run)
+    return await _validate_assistance(session, project_id, project.json(), run)
 
 
 async def _append(storage: Path, run_id: int, kind: str, payload: dict):
@@ -271,9 +340,10 @@ async def _execute(storage: Path, run_id: int, session, project_id: int):
             if run['status'] != 'queued':
                 return
             run_copy = deepcopy(run)
-        await _fresh_scope(session, project_id, run_copy)
+        policy = await _fresh_scope(session, project_id, run_copy)
         await asyncio.to_thread(_verify_snapshot, storage, run_copy)
-        profile = SimpleNamespace(**run_copy['profile_snapshot'])
+        profile = broker.execution_profile(SimpleNamespace(**run_copy['profile_snapshot']), policy)
+        profile.validate_before_start = lambda: _fresh_scope(session, project_id, run_copy)
         adapter = broker.adapter_for(profile)
         probe = await adapter.probe(profile)
         if not probe.get('available') or not probe.get('authenticated'):
@@ -282,13 +352,15 @@ async def _execute(storage: Path, run_id: int, session, project_id: int):
         await broker._initialize_isolated_git_repository(isolation, worktree)
         # Check the fixed snapshot once more after asynchronous setup, before CLI start.
         await asyncio.to_thread(_verify_snapshot, storage, run_copy)
+        await _fresh_scope(session, project_id, run_copy)
+        readonly_baseline = await asyncio.to_thread(broker.readonly_tree_fingerprint, worktree) if policy and policy['execution_mode'] == 'read_only' else None
         async with _lock(storage):
             state = _load(storage)
             run = _run(state, run_id)
             if run['status'] != 'queued':
                 return
             run.update(status='running', started_at=time.time())
-            _event(run, 'started', _boundary())
+            _event(run, 'started', _boundary(policy))
             _save(storage, state)
         prompt = broker._prompt_for(SimpleNamespace(**run_copy, base_manifest=run_copy['manifest']), profile)
         starting = asyncio.create_task(adapter.start(profile, worktree, prompt))
@@ -300,18 +372,24 @@ async def _execute(storage: Path, run_id: int, session, project_id: int):
             raise
         if process is None or process.stdout is None:
             raise broker.LocalAgentError(409, '适配器没有提供受控输出进程', 'adapter_unsupported')
-        events = await asyncio.wait_for(_read_output(storage, run_id, process, adapter), timeout=profile.timeout_seconds)
+        events = await broker.wait_with_assistance(_read_output(storage, run_id, process, adapter),
+                                                   lambda: _fresh_scope(session, project_id, run_copy), profile.timeout_seconds)
+        await _fresh_scope(session, project_id, run_copy)
         if await asyncio.to_thread(broker._snapshot_manifest, isolation / 'base') != run_copy['manifest']['included']:
             raise broker.LocalAgentError(409, '执行期间基线快照被修改，禁止写回', 'baseline_stale')
         changes, diff, risks = await asyncio.to_thread(broker._collect_changes, isolation / 'base', worktree)
+        if readonly_baseline is not None and (changes or risks or
+                await asyncio.to_thread(broker.readonly_tree_fingerprint, worktree) != readonly_baseline):
+            raise broker.LocalAgentError(409, '只读任务产生了文件改动，结果不可应用', 'assistance_read_only_violation')
         if len(json.dumps([changes, diff]).encode()) > MAX_RESULT_BYTES or any(item.get('code') == 'diff_truncated' for item in risks):
             raise broker.LocalAgentError(409, '修改结果过大，无法完整审阅和安全写回', 'result_limited')
         for change in changes:
             change['change'] = {'create': 'added', 'write': 'modified', 'delete': 'deleted', 'move': 'moved'}[change['operation']]
             if change['operation'] == 'move':
                 change['old_path'] = change['path']
-        result = {**adapter.collect_result(events, process.returncode), **_boundary()}
+        result = {**adapter.collect_result(events, process.returncode), **_boundary(policy)}
         result['risks'] = [*result.get('risks', []), *risks]
+        await _fresh_scope(session, project_id, run_copy)
         async with _lock(storage):
             state = _load(storage)
             run = _run(state, run_id)
@@ -319,6 +397,7 @@ async def _execute(storage: Path, run_id: int, session, project_id: int):
                 return
             run.update(status='completed' if process.returncode == 0 else 'failed', finished_at=time.time(),
                        changed_files=changes, diff_text=diff, result=result,
+                       advice=broker.collect_advice(events),
                        result_hash=_digest([run['snapshot_hash'], changes, diff]))
             _event(run, run['status'], {'return_code': process.returncode, 'changed_file_count': len(changes), 'learning_evidence': False})
             _save(storage, state)
@@ -456,17 +535,20 @@ async def agent_request(session, project_id: int, project: dict, storage: Path,
             if action == 'runs' and method == 'GET':
                 for run in state['runs']:
                     await _scope(session, project_id, project, run)
-                return JSONResponse({'runs': [_public_run(run) for run in reversed(state['runs'])]})
+                return JSONResponse({'runs': [await _view_run(session, project_id, project, run) for run in reversed(state['runs'])]})
             if action == 'runs/preview' and method == 'POST':
                 data = RunPreview.model_validate(payload)
                 if any(len(value) > 500 for value in data.constraints) or not data.goal.strip():
                     raise ValueError('invalid task text')
                 request = data.model_dump()
                 await _scope(session, project_id, project, request)
+                policy = await _assistance_policy(session, project_id, project, request)
                 key = 'preview:' + data.client_request_id
                 previous = _replay(state, key, request)
                 if previous:
-                    return JSONResponse(_public_run(_run(state, previous['id'])))
+                    previous_run = _run(state, previous['id'])
+                    broker.check_assistance_policy(previous_run.get('assistance_policy'), policy)
+                    return JSONResponse(_public_run(previous_run, policy_valid=True))
                 profiles = sorted(state['profiles'], key=lambda item: (item['priority'], item['id']))
                 candidates = [item for item in profiles if item['enabled'] and data.task_type in item['task_types'] and set(data.required_capabilities) <= set(item['capabilities'])]
                 if not candidates:
@@ -492,12 +574,15 @@ async def agent_request(session, project_id: int, project: dict, storage: Path,
                 if any(reason in manifest['summary']['skipped_by_reason'] for reason in ('copy_failed', 'source_changed_during_snapshot', 'file_count_budget_exceeded', 'total_bytes_budget_exceeded')):
                     raise broker.LocalAgentError(409, '工程快照不完整或变化，请缩小工程范围后重试', 'snapshot_incomplete')
                 await asyncio.to_thread(broker._copy_manifest_snapshot, base, worktree, manifest)
-                run = {**request, **_boundary(), 'id': run_id, 'project_id': project_id,
+                run = {**request, **_boundary(policy), 'id': run_id, 'project_id': project_id,
+                       'assistance_policy': policy, 'advice': '',
                        'profile_id': profile['id'], 'profile_snapshot': deepcopy(profile),
                        'root': str(root), 'status': 'proposed', 'created_at': time.time(),
                        'expires_at': time.time() + PREVIEW_TTL, 'manifest': manifest,
-                       'snapshot_hash': _digest([manifest, request, profile]), 'changed_files': [], 'diff_text': '',
-                       'result': _boundary(), 'result_hash': '', 'error': {}, 'events': []}
+                       'changed_files': [], 'diff_text': '',
+                       'result': _boundary(policy), 'result_hash': '', 'error': {}, 'events': []}
+                run['snapshot_hash'] = _run_snapshot_hash(run)
+                await _validate_assistance(session, project_id, project, run)
                 await asyncio.to_thread(_verify_snapshot, storage, run)
                 _event(run, 'proposed', {'learning_evidence': False})
                 state['runs'].append(run)
@@ -512,17 +597,19 @@ async def agent_request(session, project_id: int, project: dict, storage: Path,
             await _scope(session, project_id, project, run)
             operation = '/'.join(parts[2:])
             if method == 'GET' and operation == '':
-                return JSONResponse(_public_run(run))
+                return JSONResponse(await _view_run(session, project_id, project, run))
             if method == 'GET' and operation == 'events':
                 return JSONResponse({'events': run['events'], 'next_sequence': run.get('event_sequence', 0), 'truncated': run.get('event_sequence', 0) > MAX_EVENTS})
             if method != 'POST' or operation not in {'confirm', 'cancel', 'apply'}:
                 raise broker.LocalAgentError(404, '设备 Agent 操作不支持', 'operation_not_found')
             schema = {'confirm': RunConfirm, 'cancel': RunCancel, 'apply': RunApply}[operation]
             data = schema.model_validate(payload)
+            if operation != 'cancel':
+                await _validate_assistance(session, project_id, project, run, apply=operation == 'apply')
             request = [run_id, operation, data.model_dump()]
             key = 'operation:' + data.idempotency_key
             if _replay(state, key, request):
-                return JSONResponse(_public_run(run))
+                return JSONResponse(_public_run(run, policy_valid=operation != 'cancel'))
             if operation == 'confirm':
                 if data.snapshot_hash != run['snapshot_hash']:
                     raise broker.LocalAgentError(409, '任务快照不匹配', 'snapshot_mismatch')
@@ -533,6 +620,7 @@ async def agent_request(session, project_id: int, project: dict, storage: Path,
                     _save(storage, state)
                     raise broker.LocalAgentError(409, '任务预览已过期，请重新准备', 'expired')
                 await asyncio.to_thread(_verify_snapshot, storage, run)
+                await _validate_assistance(session, project_id, project, run)
                 run.update(status='queued', confirmed_at=time.time(), process_epoch=_EPOCH)
                 _event(run, 'confirmed', {'learning_evidence': False})
                 _remember(state, key, request, 'run', run_id)
@@ -574,3 +662,5 @@ async def agent_request(session, project_id: int, project: dict, storage: Path,
         return JSONResponse({'detail': {'code': 'invalid_request', 'message': '设备 Agent 请求格式无效'}}, 422)
     except OSError:
         return JSONResponse({'detail': {'code': 'device_io_failed', 'message': '本机工程操作失败，请检查目录权限与磁盘'}}, 409)
+    except httpx.HTTPError:
+        return JSONResponse({'detail': {'code': 'assistance_policy_unavailable', 'message': '无法实时验证云端帮助权限，请稍后重试'}}, 503)

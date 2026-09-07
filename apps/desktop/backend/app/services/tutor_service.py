@@ -1833,10 +1833,11 @@ async def _local_agent_action(
     required_capabilities: list[str],
     reason: str,
 ) -> AgentAction:
-    from app.services.local_agent_broker import select_profile
+    from app.services.local_agent_broker import select_profile, local_assistance_policy
 
     if session.session_type != "checkpoint" or not session.project_id or not session.checkpoint_id:
         raise ValueError("本地代码 Agent 只能由关卡 Tutor 委派")
+    assistance_policy = await local_assistance_policy(db, session.learner_id, session.project_id, session.checkpoint_id)
     normalized_capabilities = list(dict.fromkeys(
         item for item in required_capabilities if item in {"code_edit", "test"}
     )) or ["code_edit"]
@@ -1844,6 +1845,7 @@ async def _local_agent_action(
         db, session.learner_id, task_type, normalized_capabilities,
     )
     target = {
+        "assistance_policy": assistance_policy,
         "project_id": session.project_id,
         "checkpoint_id": session.checkpoint_id,
         "task_type": task_type,

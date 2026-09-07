@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AliasPath, BaseModel, ConfigDict, Field, model_validator
 
 
 AgentAdapter = Literal["codex_cli", "deterministic_fake"]
@@ -91,6 +91,9 @@ class LocalAgentRunResponse(BaseModel):
     diff_text: str = ""
     result: dict = Field(default_factory=dict)
     error: dict = Field(default_factory=dict)
+    assistance_policy: dict | None = Field(default=None, validation_alias=AliasPath("result", "assistance_policy"))
+    advice: str = Field(default="", validation_alias=AliasPath("result", "advice"))
+    can_apply: bool = Field(default=False, validation_alias=AliasPath("result", "can_apply"))
     created_at: datetime
     started_at: datetime | None
     finished_at: datetime | None

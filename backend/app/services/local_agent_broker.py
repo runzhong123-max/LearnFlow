@@ -7,6 +7,7 @@ import difflib
 import json
 import os
 from pathlib import Path, PurePosixPath
+from types import SimpleNamespace
 import shutil
 import signal
 import stat
@@ -14,15 +15,16 @@ import subprocess
 import tempfile
 from typing import Protocol
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from learnflow_core.project_stage_support import HELP_MODES, assistance_view
 
 from app.core.config import settings
 from app.db.database import async_session
 from app.models.learning import AgentAction
 from app.models.project import (
     LocalAgentProfile, LocalAgentRun, LocalAgentRunEvent, ProjectWorkspace,
-    WorkspaceOperation,
+    WorkspaceOperation, Project, ProjectWorkflowState,
 )
 from app.services.learning_runtime import record_event
 from app.services.workspace_files import (
@@ -47,6 +49,8 @@ MAX_DIFF_BYTES = 2 * 1024 * 1024
 SNAPSHOT_MANIFEST_VERSION = "learnflow.local-agent-snapshot.v1"
 ISOLATED_GIT_BRANCH = "learnflow-isolated"
 ISOLATED_GIT_BASELINE_DATE = "2000-01-01T00:00:00+00:00"
+ASSISTANCE_POLL_SECONDS = 2.0
+MAX_ADVICE_CHARS = 16_000
 
 _tasks: dict[int, asyncio.Task] = {}
 _processes: dict[int, asyncio.subprocess.Process] = {}
@@ -60,6 +64,124 @@ class LocalAgentError(Exception):
         self.status_code = status_code
         self.detail = detail
         self.code = code
+
+
+def normalize_assistance_policy(value: dict) -> dict:
+    if not isinstance(value, dict) or value.get("mode") not in HELP_MODES:
+        raise LocalAgentError(409, "帮助权限无法验证，请重新打开当前阶段", "assistance_policy_unavailable")
+    revision = value.get("revision")
+    if type(revision) is not int or revision < 0 or value.get("execution_mode") != assistance_view(value["mode"])["execution_mode"]:
+        raise LocalAgentError(409, "帮助权限格式无效", "assistance_policy_unavailable")
+    return {key: value[key] for key in ("mode", "revision", "execution_mode")}
+
+
+def check_assistance_policy(saved: dict | None, current: dict | None, *, apply: bool = False):
+    if saved != current:
+        raise LocalAgentError(409, "帮助档位已变化，请重新准备工程任务", "assistance_policy_stale")
+    if apply and current and current["execution_mode"] != "workspace_write":
+        raise LocalAgentError(409, "当前帮助档位只允许分析，不能应用文件修改", "assistance_read_only")
+
+
+def execution_profile(profile, policy: dict | None):
+    """Runtime permissions are server-derived, never a user-editable Profile grant."""
+    values = {key: getattr(profile, key, None) for key in (
+        "id", "name", "adapter", "executable_path", "network_policy", "timeout_seconds", "sandbox_policy")}
+    values.update(execution_mode=policy["execution_mode"] if policy else "workspace_write",
+                  controlled_execution=policy is not None)
+    values["sandbox_policy"] = values["execution_mode"]
+    return SimpleNamespace(**values)
+
+
+def collect_advice(events: list[dict]) -> str:
+    messages = [str(event.get("text") or "") for event in events if event.get("item_type") == "agent_message"]
+    text = "\n\n".join(messages)
+    marker = "[前文已截断]\n"
+    return text if len(text) <= MAX_ADVICE_CHARS else marker + text[-(MAX_ADVICE_CHARS - len(marker)):]
+
+
+def readonly_tree_fingerprint(root: Path) -> dict:
+    """Include ignored/protected entries too; never follow an Agent-created link."""
+    entries, total = {}, 0
+    pending = [root]
+    while pending:
+        directory = pending.pop()
+        for path in directory.iterdir():
+            relative = path.relative_to(root).as_posix()
+            info = path.lstat()
+            if _is_link_or_reparse(path) or _is_reparse(info):
+                entries[relative] = {"kind": "link"}
+            elif stat.S_ISDIR(info.st_mode):
+                entries[relative] = {"kind": "directory"}
+                pending.append(path)
+            elif stat.S_ISREG(info.st_mode):
+                total += info.st_size
+                if total > MAX_SNAPSHOT_TOTAL_BYTES:
+                    raise LocalAgentError(409, "只读结果超出检查预算", "assistance_read_only_violation")
+                entries[relative] = {"kind": "file", "sha256": sha256_file(path), "size": info.st_size}
+            else:
+                entries[relative] = {"kind": "special"}
+            if len(entries) > MAX_SNAPSHOT_FILES:
+                raise LocalAgentError(409, "只读结果超出检查预算", "assistance_read_only_violation")
+    return entries
+
+
+async def wait_with_assistance(work, validate, timeout: float):
+    """Fail closed while a process runs; cancellation remains controlled by its caller."""
+    async def watch():
+        while True:
+            await asyncio.sleep(ASSISTANCE_POLL_SECONDS)
+            await validate()
+    execution = asyncio.create_task(work)
+    watcher = asyncio.create_task(watch())
+    try:
+        done, _ = await asyncio.wait({execution, watcher}, timeout=timeout, return_when=asyncio.FIRST_COMPLETED)
+        if not done:
+            raise asyncio.TimeoutError()
+        if watcher in done:
+            await watcher
+        return await execution
+    finally:
+        for task in (execution, watcher):
+            if not task.done():
+                task.cancel()
+        await asyncio.gather(execution, watcher, return_exceptions=True)
+
+
+async def local_assistance_policy(db: AsyncSession, learner_id: int, project_id: int, checkpoint_id: int | None):
+    from fastapi import HTTPException
+    project = await db.scalar(select(Project).where(Project.id == project_id, Project.learner_id == learner_id, Project.visibility == "visible"))
+    if not project:
+        raise LocalAgentError(404, "工程项目不存在或不属于当前账号", "scope_mismatch")
+    state = await db.scalar(select(ProjectWorkflowState).where(ProjectWorkflowState.project_id == project.id))
+    if project.project_mode == "learning" and not (state and state.initialized):
+        return None  # Existing legacy learning tasks retain their explicit-confirmation contract.
+    if checkpoint_id is None:
+        raise LocalAgentError(409, "请先选择当前项目阶段", "assistance_scope_required")
+    from app.services.project_workflows import get_stage_assistance
+    try:
+        return normalize_assistance_policy(await get_stage_assistance(db, project, checkpoint_id))
+    except HTTPException as exc:
+        raise LocalAgentError(exc.status_code, str(exc.detail), "assistance_policy_unavailable") from exc
+
+
+async def validate_local_run_assistance(run: LocalAgentRun, *, apply: bool = False):
+    # A fresh session sees changes made by another request while this run's session is open.
+    async with async_session() as fresh_db:
+        current = await local_assistance_policy(fresh_db, run.learner_id, run.project_id, run.checkpoint_id)
+    check_assistance_policy((run.result or {}).get("assistance_policy"), current, apply=apply)
+    return current
+
+
+async def lock_local_assistance_for_apply(db: AsyncSession, learner_id: int, project_id: int,
+                                        checkpoint_id: int | None, saved: dict | None):
+    # Use the same per-project row as the shared assistance setter, so a local
+    # downgrade and a file-apply transaction cannot pass one another mid-batch.
+    await db.execute(update(ProjectWorkflowState).where(
+        ProjectWorkflowState.project_id == project_id, ProjectWorkflowState.learner_id == learner_id,
+    ).values(revision=ProjectWorkflowState.revision))
+    current = await local_assistance_policy(db, learner_id, project_id, checkpoint_id)
+    check_assistance_policy(saved, current, apply=True)
+    return current
 
 
 class LocalAgentAdapter(Protocol):
@@ -135,13 +257,36 @@ class CodexCliAdapter:
         self, profile: LocalAgentProfile, workspace: Path, prompt: str,
     ) -> asyncio.subprocess.Process:
         executable = _safe_executable(profile)
+        mode = getattr(profile, "execution_mode", "workspace_write")
+        if mode not in {"read_only", "workspace_write"}:
+            raise LocalAgentError(409, "运行权限无效", "assistance_policy_unavailable")
+        controlled = bool(getattr(profile, "controlled_execution", False))
+        controls = []
+        if controlled:
+            # Fail closed on older CLIs instead of silently loading user extensions/rules.
+            help_process = await asyncio.create_subprocess_exec(
+                str(executable), "exec", "--help", stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE, env=_subprocess_environment())
+            try:
+                help_out, _ = await asyncio.wait_for(help_process.communicate(), timeout=10)
+            except asyncio.TimeoutError:
+                help_process.kill()
+                await help_process.wait()
+                raise LocalAgentError(409, "无法检查 CLI 的受控执行选项", "controlled_execution_unsupported")
+            required = ("--ignore-user-config", "--ignore-rules", "--ephemeral")
+            if help_process.returncode != 0 or any(option.encode() not in help_out for option in required):
+                raise LocalAgentError(409, "此 CLI 不支持受控帮助档位，请更新本机 Codex CLI", "controlled_execution_unsupported")
+            controls = [*required, "-c", 'approval_policy="never"']
+        validate = getattr(profile, "validate_before_start", None)
+        if validate:
+            await validate()
         process_options = (
             {"start_new_session": True}
             if os.name != "nt"
             else {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
         )
         process = await asyncio.create_subprocess_exec(
-            str(executable), "exec", "--json", "--sandbox", "workspace-write",
+            str(executable), "exec", "--json", *controls, "--sandbox", mode.replace("_", "-"),
             "-C", str(workspace), "-",
             stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT, env=_subprocess_environment(),
@@ -207,6 +352,7 @@ class CodexCliAdapter:
             "summary": "本地代码 Agent 已完成。" if return_code == 0 else "本地代码 Agent 异常退出。",
             "tests": tests[-20:],
             "risks": errors[-20:],
+            "advice": collect_advice(events),
         }
 
 
@@ -701,10 +847,17 @@ def _prompt_for(run: LocalAgentRun, profile: LocalAgentProfile) -> str:
     included_count = int(snapshot.get("included_file_count") or 0)
     skipped_count = int(snapshot.get("skipped_entry_count") or 0)
     snapshot_digest = str(snapshot.get("manifest_sha256") or "unknown")
+    policy = getattr(run, "assistance_policy", None) or (getattr(run, "result", None) or {}).get("assistance_policy")
+    readonly = bool(policy and policy["execution_mode"] == "read_only")
+    help_modes = {"direction": "只说明排查方向和应检查的问题，不给完整解法",
+                  "steps": "提供逐步检查顺序与理由，不代写实现",
+                  "pseudocode": "使用伪代码表达分支和过程，不生成可直接替换的实现代码"}
+    help_instruction = (help_modes.get(policy["mode"], "") + "。只读分析，禁止创建、修改、删除文件或运行会写入文件的构建、测试；仅在最终回复中给出分析。") if readonly else "可在隔离副本中提出实现修改；运行必要测试，最终说明修改、测试与风险。"
     return f"""你是由 LearnFlow Tutor 委派的本地代码 Agent。只在当前隔离工作目录内完成任务。
 
 任务类型：{run.task_type}
 目标：{run.goal}
+本次服务端帮助权限：{help_instruction}
 快照摘要：包含 {included_count} 个文件，记录 {skipped_count} 个省略项，manifest SHA-256 为 {snapshot_digest}。
 约束：
 {constraints}
@@ -713,7 +866,7 @@ def _prompt_for(run: LocalAgentRun, profile: LocalAgentProfile) -> str:
 - 不读取或修改 .learnflow、.git、.env、密钥、凭据、符号链接或工作目录之外的路径。
 - 不创建或修改 LearnFlow 讲义、练习、五核画像或数据库。
 - 不提交、推送或发布；不要请求用户交互。
-- 运行必要测试，并在最终结果中简要说明修改、测试与风险。
+- 不要求或尝试提高当前沙箱权限；帮助档位由 LearnFlow 服务端决定。
 - 当前目录是安全筛选后的部分快照；不要假定被省略的文件不存在于真实项目。
 - 联网策略显示为 {profile.network_policy}。Codex 的网络和同主机读取边界均未受管；这些限制是行为约束，不是 Broker 对 OS 隔离的保证。
 """
@@ -787,6 +940,10 @@ async def create_run_for_action(
 ) -> LocalAgentRun:
     if not settings.desktop_mode:
         raise LocalAgentError(404, "本地 Agent Broker 仅在桌面版可用", "desktop_only")
+    policy = await local_assistance_policy(db, action.learner_id, action.project_id, action.checkpoint_id)
+    # Bind the policy to the Tutor proposal before the first confirmation. Old
+    # experimental proposals have no grant and must be prepared again.
+    check_assistance_policy(target.get("assistance_policy"), policy)
     workspace = (await db.execute(select(ProjectWorkspace).where(
         ProjectWorkspace.project_id == action.project_id,
         ProjectWorkspace.learner_id == action.learner_id,
@@ -798,6 +955,7 @@ async def create_run_for_action(
         LocalAgentRun.action_id == action.id,
     ))).scalar_one_or_none()
     if existing:
+        check_assistance_policy((existing.result or {}).get("assistance_policy"), policy)
         return existing
     run = LocalAgentRun(
         learner_id=action.learner_id, project_id=action.project_id,
@@ -808,8 +966,9 @@ async def create_run_for_action(
         required_capabilities=list(target.get("required_capabilities") or []),
         status="queued", idempotency_key=f"local-agent:action:{action.id}",
         result={
+            "assistance_policy": policy, "advice": "", "can_apply": False,
             "profile": {"id": profile.id, "name": profile.name, "adapter": profile.adapter},
-            "sandbox_policy": profile.sandbox_policy,
+            "sandbox_policy": policy["execution_mode"] if policy else profile.sandbox_policy,
             "network_policy": profile.network_policy,
             "network_boundary_enforced": profile.adapter == "deterministic_fake",
             "host_read_policy": "managed_off" if profile.adapter == "deterministic_fake" else "unmanaged",
@@ -878,9 +1037,13 @@ async def execute_run(run_id: int) -> None:
             ))).scalar_one_or_none()
             if not profile or not profile.enabled or not workspace:
                 raise LocalAgentError(409, "本地 Agent 配置或工作区已失效", "run_configuration_stale")
+            policy = await validate_local_run_assistance(run)
+            stored_profile = profile
+            profile = execution_profile(profile, policy)
+            profile.validate_before_start = lambda: validate_local_run_assistance(run)
             root = canonical_root(workspace.root_path)
             probe = await probe_profile(profile)
-            profile.last_probe = probe
+            stored_profile.last_probe = probe
             if not probe.get("available") or not probe.get("authenticated"):
                 raise LocalAgentError(409, probe.get("message") or "本地 Agent 未安装或未登录", "agent_unavailable")
             isolation, worktree, manifest = await _prepare_isolation(root, run.id)
@@ -905,27 +1068,36 @@ async def execute_run(run_id: int) -> None:
             await db.commit()
 
             adapter = adapter_for(profile)
+            await validate_local_run_assistance(run)
+            readonly_baseline = readonly_tree_fingerprint(worktree) if policy and policy["execution_mode"] == "read_only" else None
             if profile.adapter == "deterministic_fake":
                 await append_run_event(db, run.id, "analysis", {"message": "检查隔离副本"})
                 target = worktree / "learnflow-seeded-agent.md"
-                target.write_text(
-                    "# Seeded Local Agent Result\n\n"
-                    f"Task: {run.task_type}\n\nGoal: {run.goal}\n",
-                    encoding="utf-8",
-                )
+                if not policy or policy["execution_mode"] == "workspace_write":
+                    target.write_text(
+                        "# Seeded Local Agent Result\n\n"
+                        f"Task: {run.task_type}\n\nGoal: {run.goal}\n",
+                        encoding="utf-8",
+                    )
                 await append_run_event(db, run.id, "test", {"name": "seeded-check", "status": "passed"})
                 events = [
                     {"type": "analysis", "message": "检查隔离副本"},
                     {"type": "test", "name": "seeded-check", "status": "passed"},
+                    {"item_type": "agent_message", "text": "先检查输入与预期，再验证一个最小案例。"},
                 ]
                 return_code = 0
             else:
-                process = await adapter.start(profile, worktree, _prompt_for(run, profile))
+                starting = asyncio.create_task(adapter.start(profile, worktree, _prompt_for(run, profile)))
+                try:
+                    process = await asyncio.shield(starting)
+                except asyncio.CancelledError:
+                    process = await starting
+                    raise
                 assert process is not None
                 _processes[run.id] = process
                 stdout_task = asyncio.create_task(_read_stdout(run.id, process, adapter))
                 try:
-                    await asyncio.wait_for(process.wait(), timeout=profile.timeout_seconds)
+                    await wait_with_assistance(process.wait(), lambda: validate_local_run_assistance(run), profile.timeout_seconds)
                 except asyncio.TimeoutError:
                     await adapter.cancel(process)
                     raise LocalAgentError(408, "本地 Agent 执行超时", "run_timeout")
@@ -939,11 +1111,16 @@ async def execute_run(run_id: int) -> None:
                     })
                 return_code = process.returncode or 0
 
+            await validate_local_run_assistance(run)
             changed, diff_text, risks = _collect_changes(base=isolation / "base", worktree=worktree)
+            if readonly_baseline is not None and (changed or risks or readonly_tree_fingerprint(worktree) != readonly_baseline):
+                raise LocalAgentError(409, "只读任务产生了文件改动，结果不可应用", "assistance_read_only_violation")
             collected = adapter.collect_result(events, return_code)
+            collected["advice"] = collect_advice(events)
+            collected["can_apply"] = bool(return_code == 0 and changed and (not policy or policy["execution_mode"] == "workspace_write"))
             collected["risks"] = [*list(collected.get("risks") or []), *risks]
             collected["changed_file_count"] = len(changed)
-            collected["requires_second_confirmation"] = True
+            collected["requires_second_confirmation"] = collected["can_apply"]
             run.changed_files = changed
             run.diff_text = diff_text
             run.result = {**dict(run.result or {}), **collected}
@@ -967,10 +1144,16 @@ async def execute_run(run_id: int) -> None:
             await adapter.cancel(process)
         raise
     except Exception as exc:
+        if adapter:
+            await adapter.cancel(process)
+        if stdout_task and not stdout_task.done():
+            stdout_task.cancel()
+            await asyncio.gather(stdout_task, return_exceptions=True)
         async with async_session() as db:
             run = await db.get(LocalAgentRun, run_id)
             if run and run.status != "canceled":
                 run.status = "failed"
+                run.result = {**dict(run.result or {}), "can_apply": False}
                 run.error = {
                     "code": getattr(exc, "code", "run_failed"),
                     "message": str(exc)[:500],
@@ -1074,10 +1257,13 @@ async def apply_run_result(
     db: AsyncSession, run: LocalAgentRun, *, confirmed_deletions: list[str],
     confirmed_moves: list[str], idempotency_key: str,
 ) -> LocalAgentRun:
+    await validate_local_run_assistance(run, apply=True)
     if run.status == "applied":
         return run
     if run.status != "completed":
         raise LocalAgentError(409, "当前结果不能应用", "run_not_applicable")
+    await lock_local_assistance_for_apply(db, run.learner_id, run.project_id, run.checkpoint_id,
+                                          (run.result or {}).get("assistance_policy"))
     workspace = (await db.execute(select(ProjectWorkspace).where(
         ProjectWorkspace.project_id == run.project_id,
         ProjectWorkspace.learner_id == run.learner_id,
@@ -1138,6 +1324,7 @@ async def apply_run_result(
         run.applied_at = datetime.utcnow()
         run.result = {
             **dict(run.result or {}),
+            "can_apply": False,
             "workspace_operation_ids": [item.id for item in operations],
             "applied_file_count": len(operations),
         }

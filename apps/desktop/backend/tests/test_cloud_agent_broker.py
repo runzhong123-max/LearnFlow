@@ -17,6 +17,7 @@ from app.services import cloud_device
 class MockAdapter:
     def __init__(self):
         self.starts, self.processes = [], []
+        self.execution_profiles = []
         self.mode, self.available, self.cancelled = 'write', True, 0
 
     async def probe(self, profile):
@@ -24,6 +25,7 @@ class MockAdapter:
 
     async def start(self, profile, workspace, prompt):
         self.starts.append((workspace, prompt))
+        self.execution_profiles.append(profile)
         modes = {
             'write': "from pathlib import Path; Path('main.c').write_text('int main(void){return 1;}'); print('{\"type\":\"test\",\"status\":\"passed\"}', flush=True)",
             'delete': "from pathlib import Path; Path('main.c').unlink(); print('{}')",
@@ -33,6 +35,8 @@ class MockAdapter:
             'protected': "from pathlib import Path; Path('.env').write_text('secret'); Path('private.lflecture').write_text('bad'); Path('main.c').write_text('safe'); print('{}')",
             'multi': "from pathlib import Path; Path('main.c').write_text('first'); Path('other.c').write_text('second'); print('{}')",
             'nested': "from pathlib import Path; Path('nested').mkdir(); Path('nested/new.c').write_text('new'); print('{}')",
+            'advice': "import json; print(json.dumps({'type':'item.completed','item_type':'agent_message','text':'First inspect the input and expected output.'}))",
+            'ignored_write': "from pathlib import Path; Path('.env').write_text('not allowed'); print('{}')",
         }
         process = await asyncio.create_subprocess_exec(sys.executable, '-c', modes[self.mode], cwd=workspace,
             stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT, start_new_session=True)
@@ -68,14 +72,17 @@ async def env(tmp_path, monkeypatch):
     (root / '.env').write_text('never-copy-this')
     (root / '.git').mkdir(); (root / '.git' / 'private-history').write_text('never-copy-history')
     calls = []
-    auth = {'allowed': True, 'session_project': 11, 'session_checkpoint': 3}
+    auth = {'allowed': True, 'session_project': 11, 'session_checkpoint': 3, 'project_mode': 'experiment',
+            'policy': {'mode': 'implementation', 'revision': 1, 'execution_mode': 'workspace_write'}, 'policy_status': 200}
     def cloud(request):
         calls.append(request)
         assert request.method == 'GET', 'No task, output, files, or learning writes go to cloud'
         assert not request.content
         if not auth['allowed']: return httpx.Response(401, json={})
         if request.url.path == '/api/auth/me': return httpx.Response(200, json={'learner_id': 7})
-        if request.url.path == '/api/vnext-projects/11': return httpx.Response(200, json={'roadmap': {'checkpoints': [{'id': 3}]}})
+        if request.url.path == '/api/vnext-projects/11': return httpx.Response(200, json={'project': {'id': 11, 'project_mode': auth['project_mode']}, 'roadmap': {'checkpoints': [{'id': 3}]}})
+        if request.url.path == '/api/vnext-projects/11/checkpoints/3/assistance': return httpx.Response(auth['policy_status'], json=auth['policy'])
+        if request.url.path == '/api/vnext-projects/11/workflow': return httpx.Response(200, json={'initialized': False})
         if request.url.path == '/api/agent/sessions/5': return httpx.Response(200, json={'project_id': auth['session_project'], 'checkpoint_id': auth['session_checkpoint']})
         return httpx.Response(404, json={})
     async with httpx.AsyncClient(base_url='https://learn.example', transport=httpx.MockTransport(cloud)) as client:
@@ -289,7 +296,7 @@ async def test_symlink_apply_target_is_rejected(env):
 @pytest.mark.asyncio
 async def test_timeout_and_unavailable_cli_fail_without_writeback(env):
     env.adapter.available = False
-    denied = await env.call('runs/preview', 'POST', {'goal': 'test unavailable CLI', 'client_request_id': 'unavailable'})
+    denied = await env.call('runs/preview', 'POST', {'goal': 'test unavailable CLI', 'checkpoint_id': 3, 'client_request_id': 'unavailable'})
     assert denied.status_code == 409 and json.loads(denied.body)['detail']['code'] == 'agent_unavailable'
     assert not env.adapter.starts
     env.adapter.available = True; env.adapter.mode = 'sleep'
@@ -354,3 +361,143 @@ async def test_preview_skips_unavailable_profile_and_refreshes_login_status(env)
     assert disabled.status_code == 200
     third = await preview(env, key='disabled')
     assert third['profile_id'] == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('mode', ['direction', 'steps', 'pseudocode'])
+async def test_readonly_help_returns_advice_without_applicable_diff(env, mode):
+    env.auth['policy'] = {'mode': mode, 'revision': 0, 'execution_mode': 'read_only'}
+    env.adapter.mode = 'advice'
+    run = await preview(env)
+    assert run['assistance_policy'] == env.auth['policy'] and not run['can_apply']
+    assert run['sandbox_policy'] == 'read_only'
+    await confirm(env, run)
+    result = await finished(env)
+    assert result['status'] == 'completed', result
+    assert result['advice'] == 'First inspect the input and expected output.'
+    assert result['changed_files'] == [] and result['diff_text'] == '' and not result['can_apply']
+    assert env.adapter.execution_profiles[0].execution_mode == 'read_only'
+    assert env.adapter.execution_profiles[0].controlled_execution is True
+    assert '只读分析' in env.adapter.starts[0][1]
+    denied = await env.call('runs/1/apply', 'POST', apply_payload(result))
+    assert denied.status_code == 409 and b'assistance_read_only' in denied.body
+    assert (env.root / 'main.c').read_text() == 'int main(void){return 0;}'
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('write_mode', ['write', 'ignored_write'])
+async def test_readonly_adapter_write_is_detected_and_never_applicable(env, write_mode):
+    env.auth['policy'] = {'mode': 'direction', 'revision': 0, 'execution_mode': 'read_only'}
+    env.adapter.mode = write_mode
+    await confirm(env, await preview(env))
+    result = await finished(env)
+    assert result['status'] == 'failed' and result['error']['code'] == 'assistance_read_only_violation', result
+    assert not result['can_apply'] and not result['changed_files']
+    assert (env.root / 'main.c').read_text() == 'int main(void){return 0;}'
+
+
+@pytest.mark.asyncio
+async def test_stage_policy_cannot_be_bypassed_by_missing_scope_or_client_permission(env):
+    for mode in ('experiment', 'practice'):
+        env.auth['project_mode'] = mode
+        missing = await env.call('runs/preview', 'POST', {'goal': 'inspect code', 'client_request_id': mode, 'required_capabilities': []})
+        assert missing.status_code == 409 and b'assistance_scope_required' in missing.body
+    extra = await env.call('runs/preview', 'POST', {'goal': 'inspect code', 'checkpoint_id': 3, 'client_request_id': 'spoof',
+        'assistance_policy': {'mode': 'implementation', 'revision': 1, 'execution_mode': 'workspace_write'}})
+    assert extra.status_code == 422
+    env.auth['policy_status'] = 409
+    locked = await env.call('runs/preview', 'POST', {'goal': 'inspect code', 'checkpoint_id': 3, 'client_request_id': 'locked'})
+    assert locked.status_code == 409 and not env.adapter.starts
+
+
+@pytest.mark.asyncio
+async def test_downgrade_invalidates_old_preview_and_every_replay(env):
+    run = await preview(env)
+    env.auth['policy'] = {'mode': 'direction', 'revision': 2, 'execution_mode': 'read_only'}
+    request = {'snapshot_hash': run['snapshot_hash'], 'confirm_run': True, 'idempotency_key': 'c'}
+    old = await env.call('runs/1/confirm', 'POST', request)
+    assert old.status_code == 409 and b'assistance_policy_stale' in old.body
+    replay = await env.call('runs/preview', 'POST', {'task_type': 'bug_fix', 'goal': 'Fix and test this code',
+        'checkpoint_id': 3, 'session_id': 5, 'client_request_id': 'task1'})
+    assert replay.status_code == 409
+    env.auth['policy'] = {'mode': 'implementation', 'revision': 3, 'execution_mode': 'workspace_write'}
+    assert (await env.call('runs/1/confirm', 'POST', request)).status_code == 409 and not env.adapter.starts
+    history = await env.call('runs/1')
+    assert history.status_code == 200 and not json.loads(history.body)['can_apply']
+    assert (await env.call('runs/1/cancel', 'POST', {'idempotency_key': 'cancel'})).status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_completed_result_and_confirmation_replay_are_revoked_on_downgrade(env):
+    run = await preview(env)
+    await confirm(env, run)
+    complete = await finished(env)
+    assert complete['can_apply']
+    env.auth['policy'] = {'mode': 'steps', 'revision': 2, 'execution_mode': 'read_only'}
+    for action, body in [('confirm', {'snapshot_hash': run['snapshot_hash'], 'confirm_run': True, 'idempotency_key': 'confirm1'}),
+                         ('apply', apply_payload(complete))]:
+        response = await env.call(f'runs/1/{action}', 'POST', body)
+        assert response.status_code == 409 and b'assistance_policy_stale' in response.body
+    assert not json.loads((await env.call('runs/1')).body)['can_apply']
+    assert (env.root / 'main.c').read_text() == 'int main(void){return 0;}'
+
+
+@pytest.mark.asyncio
+async def test_running_downgrade_stops_process_and_does_not_publish_diff(env, monkeypatch):
+    monkeypatch.setattr(agents.broker, 'ASSISTANCE_POLL_SECONDS', .01)
+    env.adapter.mode = 'sleep'
+    await confirm(env, await preview(env))
+    for _ in range(100):
+        if env.adapter.processes: break
+        await asyncio.sleep(.01)
+    assert env.adapter.processes
+    env.auth['policy'] = {'mode': 'pseudocode', 'revision': 2, 'execution_mode': 'read_only'}
+    result = await finished(env)
+    assert result['status'] == 'failed' and result['error']['code'] == 'assistance_policy_stale'
+    assert not result['can_apply'] and not result['changed_files']
+    assert env.adapter.processes[0].returncode is not None
+
+
+@pytest.mark.asyncio
+async def test_policy_revalidated_after_async_setup_and_before_spawn(env):
+    run = await preview(env)
+    original_probe = env.adapter.probe
+    async def late_downgrade(profile):
+        result = await original_probe(profile)
+        env.auth['policy'] = {'mode': 'direction', 'revision': 2, 'execution_mode': 'read_only'}
+        return result
+    env.adapter.probe = late_downgrade
+    await confirm(env, run)
+    result = await finished(env)
+    assert result['status'] == 'failed' and result['error']['code'] == 'assistance_policy_stale'
+    assert not env.adapter.starts
+
+
+@pytest.mark.asyncio
+async def test_legacy_cloud_learning_without_workflow_keeps_existing_confirmation_contract(env):
+    env.auth['project_mode'] = 'learning'
+    run = await preview(env)
+    assert run['assistance_policy'] is None
+    await confirm(env, run)
+    result = await finished(env)
+    assert result['status'] == 'completed' and result['can_apply']
+
+
+@pytest.mark.asyncio
+async def test_report_provenance_preserves_actual_generated_and_applied_assistance(env):
+    original_manifest = [{'path': 'main.c', 'sha256': agents.broker.sha256_file(env.root / 'main.c')}]
+    assert not agents.engineering_provenance(env.storage, original_manifest)['assisted']
+    await confirm(env, await preview(env))
+    result = await finished(env)
+    assert not agents.engineering_provenance(env.storage, original_manifest)['assisted']
+    generated_manifest = [{'path': 'main.c', 'sha256': result['changed_files'][0]['new_hash']}]
+    generated = agents.engineering_provenance(env.storage, generated_manifest)
+    assert generated['assisted'] and generated['runs'][0]['status'] == 'completed'
+    assert generated['runs'][0]['association'] == 'exact_files'
+    assert generated['independent_completion_verified'] is False
+    assert (await env.call('runs/1/apply', 'POST', apply_payload(result))).status_code == 200
+    edited = agents.engineering_provenance(env.storage, [{'path': 'main.c', 'sha256': 'f' * 64}])
+    assert edited['assisted'] and edited['runs'][0]['association'] == 'applied_project_history'
+    assert edited['runs'][0]['run_id'] == result['id']
+    assert edited['runs'][0]['result_hash'] == result['result_hash']
+    assert 'content' not in json.dumps(edited) and 'diff_text' not in json.dumps(edited)
