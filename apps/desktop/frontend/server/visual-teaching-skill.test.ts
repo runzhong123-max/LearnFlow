@@ -81,3 +81,84 @@ test('raw visual tools reject calls that bypass the visual teaching skill', asyn
   assert.match(result.run.detail, /visual_teaching_composition.*VisualBrief/)
   assert.equal(result.run.artifact, undefined)
 })
+
+import { prepareVisualTeachingBrief } from './visual-teaching-skill.ts'
+import { resolveVisualRequest } from './visual-tool-execution.ts'
+
+const conciseBrief = {
+  topic:'卷积的局部窗口', learning_goal:'观察共享卷积核的乘加', modality_rationale:'单步观察窗口和输出',
+  claim_boundary:'小矩阵教学例，不代表训练后的MNIST模型', misconceptions:[],
+  explanation:'共享卷积核在输入矩阵的不同区域重复使用同一组参数。每一步的点乘求和形成一个输出格，这个小例用于解释机制，不代表真实训练结果。',
+}
+const freshSpec = {
+  spec_version:'0.2.0', id:'novel_matrix_composition',title:'局部区域与结果',
+  teaching:{goal:'观察局部运算',assumptions:['教学小矩阵']},
+  model:{id:'computation.pipeline'},data:{program:{steps:[{id:'transpose',op:'transpose',args:{input:[[1,2],[3,4]]}},{id:'sum',op:'reduce_sum',args:{input:{source:'/state/results/transpose'}}}]}},
+}
+const verified = {verification:{status:'pass'},frames:[{step:0},{step:1},{step:2}]}
+
+test('CNN follow-up retrieves metadata, model selects an exact maintained version, host validates it', async () => {
+  const request = resolveVisualRequest('给我一个动画演示一下', [{role:'user',content:'跟我讲一下CNN手写数字识别'},{role:'assistant',content:'卷积核使用共享权重在图像上移动。'}])
+  const actions:string[] = []
+  const ref = {id:'deep_learning.cnn.mechanism',version:'1.0.0'}
+  const result = await prepareVisualTeachingBrief({modality:'animation',request:request.effectiveRequest,
+    transport:async (action,payload) => {
+      actions.push(action)
+      if(action==='catalog') {assert.match(String(payload.query),/CNN手写数字识别/);return {catalog_version:'golden',capabilities:{},patterns:[],templates:[{...ref,title:'CNN机制',description:'共享权重',tags:['cnn'],kind:'animation'}]}}
+      if(action==='template') {assert.deepEqual(payload,ref);return {...ref,spec:freshSpec}}
+      assert.equal((payload.spec as any).id,'novel_matrix_composition'); assert.deepEqual(payload.template_ref,ref);return verified
+    },generate:async prompt => {assert.match(prompt,/deep_learning.cnn.mechanism/);return JSON.stringify({...conciseBrief,template_ref:ref})},
+  })
+  assert.deepEqual(actions,['catalog','template','compile']);assert.deepEqual(result.templateRef,ref)
+  // A requested adaptation must never silently return the unmodified recipe.
+  let adaptations=0;let adaptedCompiles=0
+  await assert.rejects(prepareVisualTeachingBrief({modality:'animation',request:'把CNN案例改成步长2',
+    transport:async(action)=>action==='catalog' ? {catalog_version:'golden',capabilities:{},patterns:[],templates:[{...ref,title:'CNN机制',description:'共享权重',tags:['cnn'],kind:'animation'}]}
+      : action==='template' ? {...ref,spec:freshSpec} : (++adaptedCompiles,verified),
+    generate:async()=>JSON.stringify({...conciseBrief,template_ref:ref,...(++adaptations===1 ? {adapt:true,adaptation_goal:'stride=2'} : {})}),
+  }),/visual_template_adaptation_requires_spec/)
+  assert.equal(adaptedCompiles,0);assert.equal(adaptations,3)
+})
+
+test('fresh novel compositions remain available on catalog failure and do not read a template', async () => {
+  let calls=0
+  const result=await prepareVisualTeachingBrief({modality:'animation',request:'从零组合一个先转置再求和的矩阵动画，不要模板',
+    transport:async (action,payload) => {if(action==='catalog')throw new Error('catalog network unavailable');assert.equal(action,'compile');assert.equal(payload.template_ref,undefined);return verified},
+    generate:async prompt => {calls++;assert.match(prompt,/用户明确要求从零构建/);assert.match(prompt,/computation.pipeline/);return JSON.stringify({...conciseBrief,visual_spec:freshSpec})},
+  })
+  assert.equal(calls,1);assert.equal(result.visualSpec?.id,'novel_matrix_composition');assert.equal(result.templateRef,undefined)
+})
+
+test('unsupported capabilities stop once while actual compile errors get one exact repair', async () => {
+  let calls=0
+  const transport=async (action:string) => action==='catalog' ? {catalog_version:'golden',capabilities:{},patterns:[],templates:[]} : verified
+  await assert.rejects(prepareVisualTeachingBrief({modality:'animation',request:'演示未接入的实时医学影像',transport,
+    generate:async()=>{calls++;return JSON.stringify({unsupported:{reason:'缺少实时输入与对应计算能力'}})}}),/visual_unsupported:缺少实时输入/)
+  assert.equal(calls,1)
+  const prompts:string[]=[];let compiles=0
+  const result=await prepareVisualTeachingBrief({modality:'animation',request:'转置后求和',
+    transport:async(action)=>{if(action==='catalog')return transport(action);if(++compiles===1)throw new Error('/data/program/steps/1/args/input: future result binding');return verified},
+    generate:async prompt=>{prompts.push(prompt);return JSON.stringify({...conciseBrief,visual_spec:freshSpec})},
+  })
+  assert.equal(prompts.length,2);assert.match(prompts[1],/\/data\/program\/steps\/1\/args\/input: future result binding/);assert.equal(result.repairAttempted,true)
+})
+
+
+import { visualPlanningRequest, assertVisualProviderComplete } from './visualize-authoring.ts'
+
+test('visual JSON requests disable supported provider thinking and incomplete responses bypass schema repair', async () => {
+  const ordinary = {endpoint:'https://api.deepseek.com/chat/completions',body:{model:'deepseek-v4-flash',messages:[]}}
+  const visual = visualPlanningRequest(ordinary, 'deepseek-v4-flash')
+  assert.deepEqual((visual.body as any).thinking,{type:'disabled'})
+  assert.equal((ordinary.body as any).thinking,undefined)
+  assert.deepEqual((visualPlanningRequest({...ordinary,endpoint:'https://api.deepseek.com/responses'},'deepseek-v4-flash').body as any).reasoning,{effort:'none'})
+  assert.equal(visualPlanningRequest({...ordinary,endpoint:'https://example.com/chat/completions'},'deepseek-v4-flash').body,ordinary.body)
+  let calls=0
+  await assert.rejects(prepareVisualTeachingBrief({modality:'diagram',request:'从零转置矩阵',
+    transport:async()=>({catalog_version:'golden',capabilities:{},patterns:[],templates:[]}),
+    generate:async()=>{calls++;assertVisualProviderComplete({choices:[{finish_reason:'length'}]},'');return ''},
+  }),/visual_provider_incomplete:finish_reason=length/)
+  assert.equal(calls,1)
+  assert.throws(()=>assertVisualProviderComplete({choices:[{finish_reason:'stop'}]},''),/visual_provider_empty/)
+  assertVisualProviderComplete({choices:[{finish_reason:'stop'}]},'{"topic":"complete"}')
+})

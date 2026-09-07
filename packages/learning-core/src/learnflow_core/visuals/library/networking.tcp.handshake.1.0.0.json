@@ -1,0 +1,343 @@
+{
+  "id": "networking.tcp.handshake",
+  "version": "1.0.0",
+  "status": "production",
+  "title": "TCP 三次握手",
+  "description": "有向消息、双边状态与时间顺序联动的维护图解。",
+  "aliases": [
+    "TCP",
+    "三次握手",
+    "three way handshake"
+  ],
+  "tags": [
+    "networking",
+    "协议",
+    "时序"
+  ],
+  "patterns": [
+    "trace",
+    "linked_views"
+  ],
+  "kind": [
+    "diagram",
+    "animation"
+  ],
+  "spec": {
+    "spec_version": "0.2.0",
+    "id": "tcp_handshake",
+    "title": "TCP 三次握手：消息与状态",
+    "domains": [
+      "computer_science"
+    ],
+    "teaching": {
+      "goal": "把三条消息与双方连接状态对应起来。",
+      "assumptions": [
+        "正常握手的教学顺序示意；尚未模拟超时、丢包或序列号运算。",
+        "第三阶段展示服务端收到 ACK 后的状态，不把发送与接收当成同一时刻。"
+      ],
+      "misconceptions": [],
+      "checkpoints": []
+    },
+    "parameters": [],
+    "data": {
+      "stages": [
+        {
+          "id": "stage_0",
+          "title": "连接前",
+          "narration": "客户端尚未发送请求；服务端处于监听状态。",
+          "content": {
+            "graph": {
+              "nodes": [
+                "client",
+                "server"
+              ],
+              "edges": [],
+              "directed": true,
+              "labels": {
+                "client": "客户端",
+                "server": "服务端"
+              }
+            },
+            "events": [],
+            "rows": [
+              [
+                "客户端",
+                "CLOSED"
+              ],
+              [
+                "服务端",
+                "LISTEN"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "stage_1",
+          "title": "第一次：SYN",
+          "narration": "客户端发送连接请求，等待服务端确认。",
+          "content": {
+            "graph": {
+              "nodes": [
+                "client",
+                "server"
+              ],
+              "edges": [
+                [
+                  "client",
+                  "server"
+                ]
+              ],
+              "directed": true,
+              "labels": {
+                "client": "客户端",
+                "server": "服务端"
+              }
+            },
+            "events": [
+              {
+                "id": "syn",
+                "lane": "client",
+                "label": "发送 SYN",
+                "at": 1
+              }
+            ],
+            "rows": [
+              [
+                "客户端",
+                "SYN-SENT"
+              ],
+              [
+                "服务端",
+                "LISTEN"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "stage_2",
+          "title": "第二次：SYN + ACK",
+          "narration": "服务端收到请求并回复自己的同步与确认，等待客户端的确认。",
+          "content": {
+            "graph": {
+              "nodes": [
+                "client",
+                "server"
+              ],
+              "edges": [
+                [
+                  "server",
+                  "client"
+                ]
+              ],
+              "directed": true,
+              "labels": {
+                "client": "客户端",
+                "server": "服务端"
+              }
+            },
+            "events": [
+              {
+                "id": "syn",
+                "lane": "client",
+                "label": "发送 SYN",
+                "at": 1
+              },
+              {
+                "id": "syn_ack",
+                "lane": "server",
+                "label": "返回 SYN + ACK",
+                "at": 2
+              }
+            ],
+            "rows": [
+              [
+                "客户端",
+                "SYN-SENT"
+              ],
+              [
+                "服务端",
+                "SYN-RECEIVED"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "stage_3",
+          "title": "第三次：ACK",
+          "narration": "客户端收到服务端响应后发送确认；服务端收到确认后双方进入已建立状态。",
+          "content": {
+            "graph": {
+              "nodes": [
+                "client",
+                "server"
+              ],
+              "edges": [
+                [
+                  "client",
+                  "server"
+                ]
+              ],
+              "directed": true,
+              "labels": {
+                "client": "客户端",
+                "server": "服务端"
+              }
+            },
+            "events": [
+              {
+                "id": "syn",
+                "lane": "client",
+                "label": "发送 SYN",
+                "at": 1
+              },
+              {
+                "id": "syn_ack",
+                "lane": "server",
+                "label": "返回 SYN + ACK",
+                "at": 2
+              },
+              {
+                "id": "ack",
+                "lane": "client",
+                "label": "发送 ACK",
+                "at": 3
+              }
+            ],
+            "rows": [
+              [
+                "客户端",
+                "ESTABLISHED"
+              ],
+              [
+                "服务端",
+                "ESTABLISHED"
+              ]
+            ]
+          }
+        }
+      ],
+      "lanes": [
+        "client",
+        "server"
+      ],
+      "columns": [
+        "参与方",
+        "状态"
+      ]
+    },
+    "model": {
+      "id": "structure.sequence",
+      "version": "1.0.0",
+      "inputs": {
+        "stages": {
+          "source": "/data/stages"
+        }
+      },
+      "seed": 42,
+      "max_steps": 128
+    },
+    "layout": {
+      "kind": "columns",
+      "view_order": [
+        "parties",
+        "timing",
+        "states"
+      ]
+    },
+    "views": [
+      {
+        "id": "parties",
+        "title": "当前消息",
+        "renderer": "svg",
+        "elements": [
+          {
+            "id": "parties_graph",
+            "kind": "graph",
+            "label": "通信方向",
+            "inputs": {
+              "graph": {
+                "source": "/state/graph"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "timing",
+        "title": "消息顺序",
+        "renderer": "svg",
+        "elements": [
+          {
+            "id": "messages",
+            "kind": "timeline",
+            "label": "消息事件",
+            "inputs": {
+              "lanes": {
+                "source": "/data/lanes"
+              },
+              "events": {
+                "source": "/state/events"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "states",
+        "title": "双方状态",
+        "renderer": "svg",
+        "elements": [
+          {
+            "id": "state_table",
+            "kind": "table",
+            "label": "状态对照",
+            "inputs": {
+              "columns": {
+                "source": "/data/columns"
+              },
+              "rows": {
+                "source": "/state/rows"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "playback": {
+      "initial_step": 0,
+      "autoplay": false,
+      "transition": {
+        "kind": "cut",
+        "duration_ms": 0,
+        "easing": "linear"
+      },
+      "reduced_motion": "cut"
+    },
+    "interactions": [
+      {
+        "id": "steps",
+        "kind": "stepper",
+        "target": "trace",
+        "allow_back": true
+      }
+    ],
+    "annotations": [],
+    "validation": {
+      "requested_checks": [
+        {
+          "id": "structure.sequence_bindings",
+          "version": "1.0.0"
+        }
+      ]
+    },
+    "accessibility": {
+      "summary": "把三条消息与双方连接状态对应起来。",
+      "keyboard": true,
+      "text_alternative": true
+    },
+    "fallback": {
+      "kind": "text",
+      "text": "显示当前参数下的完整状态与步骤说明。"
+    }
+  }
+}

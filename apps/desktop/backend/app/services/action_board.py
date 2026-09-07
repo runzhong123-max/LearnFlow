@@ -13,6 +13,7 @@ class ActionDefinition:
 
 ACTION_BOARD = {
     item.capability: item for item in (
+        ActionDefinition("retrieve_learning_visual", "检索维护图解与可组合能力", "none", "none", {}, ("generate_learning_diagram", "generate_learning_animation")),
         ActionDefinition("evaluate_visual_prediction", "校验视觉探索预测", "evidence", "explicit", {}, ()),
         ActionDefinition("read_project_workflow", "读取三类项目的当前流程", "none", "none", {}, ("initialize_project_workflow", "submit_project_delivery")),
         ActionDefinition("request_project_hint", "请求当前阶段的分档提示", "context", "explicit_or_click", {}, ("submit_project_delivery",)),

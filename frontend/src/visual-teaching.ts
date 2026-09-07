@@ -41,6 +41,11 @@ export type VisualTeachingBrief = {
   claimBoundary: string
   /** Preferred v2 path: semantic-executable input consumed directly by the Tool. */
   visualSpec?: import('./visualize.ts').VisualSpec
+  templateRef?: {id: string; version: string}
+  adaptTemplate?: boolean
+  adaptationGoal?: string
+  plannerAttempts?: number
+  repairAttempted?: boolean
   storyboardContext?: import('./visual-storyboard.ts').VisualStoryboardContext
 }
 

@@ -1,4 +1,5 @@
 import asyncio
+import pytest
 from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
@@ -36,13 +37,14 @@ async def _evidence_count() -> int:
 
 def test_desktop_visual_planner_is_narrow_scoped_and_uses_requested_budget(monkeypatch):
     calls: list[dict] = []
+    completion_finish = "stop"
 
     class FakeCompletions:
         async def create(self, **kwargs):
             calls.append(kwargs)
             return SimpleNamespace(
                 model="visual-test-model",
-                choices=[SimpleNamespace(message=SimpleNamespace(content='{"kind":"diagram"}'))],
+                choices=[SimpleNamespace(finish_reason=completion_finish, message=SimpleNamespace(content='{"kind":"diagram"}'))],
             )
 
     class FakeAsyncOpenAI:
@@ -82,6 +84,15 @@ def test_desktop_visual_planner_is_narrow_scoped_and_uses_requested_budget(monke
     assert calls[0]["response_format"] == {"type": "json_object"}
     assert calls[0]["messages"][0]["role"] == "system"
     assert calls[0]["messages"][1]["content"] == "画一个编译器前端结构图"
+
+    from app.services.visual_planner import plan_learning_visual
+    monkeypatch.setattr(settings, "llm_base_url", "https://api.deepseek.com")
+    monkeypatch.setattr(settings, "llm_model", "deepseek-v4-flash")
+    asyncio.run(plan_learning_visual(instructions="JSON", input_text="合成矩阵", timeout_ms=1000, max_tokens=8000))
+    assert calls[-1]["extra_body"]["thinking"] == {"type": "disabled"}
+    completion_finish = "length"
+    with pytest.raises(RuntimeError, match="visual_provider_incomplete:length"):
+        asyncio.run(plan_learning_visual(instructions="JSON", input_text="合成矩阵", timeout_ms=1000, max_tokens=8000))
 
 
 def test_visual_planner_bridge_is_hidden_outside_desktop(monkeypatch):

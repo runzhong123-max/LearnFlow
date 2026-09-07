@@ -1053,7 +1053,7 @@ test('learning file study uses a short artifact-first harness instead of resourc
   assert.ok(result.reply.length < 220)
 })
 
-test('explicit visual intent prepares animation prose before the requested visual tool', async () => {
+test('explicit visual intent plans the teaching artifact before rendering', async () => {
   const cases = [
     { message: '什么是联邦学习', expected: '' },
     { message: '画一张联邦学习流程图', expected: 'generate_learning_diagram' },
@@ -1120,7 +1120,8 @@ test('a failed animation preserves the committed explanation and cannot drift', 
   assert.match(result.reply, /^联邦学习由多个客户端/)
   const committed = events.findIndex(event => event.type === 'teaching_segment_committed')
   const toolStarted = events.findIndex(event => event.type === 'tool_started')
-  assert.ok(committed >= 0 && toolStarted > committed)
+  assert.ok(toolStarted >= 0 && committed > toolStarted)
+  assert.ok(events.findIndex(event => event.type === 'tool_completed') > committed)
   assert.equal(events.slice(committed + 1).some(event => event.type === 'text_reset'), false)
 })
 
@@ -1151,7 +1152,7 @@ test('a thrown visual error closes the running tool and ignores late stage callb
   assert.equal(events.length, eventCount)
 })
 
-test('visual follow-up resolves its topic before the explanation and brief calls', async () => {
+test('visual follow-up resolves its topic before the combined plan and brief call', async () => {
   const prompts: string[] = []
   const toolQueries: string[] = []
   await runTutorAgentTurn({
@@ -1171,8 +1172,8 @@ test('visual follow-up resolves its topic before the explanation and brief calls
         observation: { error: 'fixture failure' } } as any
     },
   })
-  assert.ok(prompts.length >= 2)
-  for (const prompt of prompts.slice(0, 2)) {
+  assert.equal(prompts.length, 1)
+  for (const prompt of prompts) {
     assert.match(prompt, /结构化主题锚点/)
     assert.match(prompt, /联邦学习聚合过程/)
   }
@@ -1180,7 +1181,7 @@ test('visual follow-up resolves its topic before the explanation and brief calls
   assert.match(toolQueries[0], /联邦学习聚合过程/)
 })
 
-test('a brief failure after explanation commit never invokes the renderer', async () => {
+test('a brief failure closes a visible tool without generating placeholder prose or invoking the renderer', async () => {
   const executions: string[] = []
   const events: any[] = []
   let calls = 0
@@ -1197,11 +1198,14 @@ test('a brief failure after explanation commit never invokes the renderer', asyn
       return { choices: [{ message: { content: (request.body as any).response_format ? '{"topic":"broken"}' : visualTeachingExplanation } }] }
     },
   })
-  assert.equal(calls, 3)
+  assert.equal(calls, 2)
   assert.deepEqual(executions, [])
   assert.equal(result.visualTeaching?.terminalState, 'explanation_only')
-  assert.match(result.reply, new RegExp(`^${visualTeachingExplanation}`))
-  assert.ok(events.some(event => event.type === 'teaching_segment_committed'))
+  assert.match(result.reply, /图解构建失败/)
+  assert.equal(events.some(event => event.type === 'teaching_segment_committed'), false)
+  assert.ok(events.some(event => event.type === 'tool_started'))
+  assert.ok(events.some(event => event.type === 'tool_completed' && event.run.status === 'failed'))
+  assert.equal(result.trace.toolCalls, 1)
 })
 
 test('visual tool observations expose bounded frame grounding for truthful Tutor narration', async () => {

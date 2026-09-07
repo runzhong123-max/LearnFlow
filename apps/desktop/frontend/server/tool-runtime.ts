@@ -1,3 +1,4 @@
+import type { VisualAuthoringTransport } from './visualize-authoring.ts'
 import { compactTeachingGuidance } from '../src/teaching-guidance-context.ts'
 import { structurallyCompact } from './context-compaction.ts'
 import type {
@@ -1603,21 +1604,7 @@ export async function executeTutorAgentTool(
       if (!options.visualTeachingBrief || options.visualTeachingBrief.modality !== requestedKind) {
         throw new Error('visual_skill_brief_required:视觉工具只能消费 visual_teaching_composition 已校验的 VisualBrief')
       }
-      const execution = await executeLearningVisual(requestedKind, query, options.recentMessages || [], options.generate, options.onVisualStage, options.visualTeachingBrief, async (action, payload) => {
-        if (!options.backendBase) throw new Error('visual_host_required')
-        const csrfResponse = await fetch(`${options.backendBase}/api/auth/csrf`, {
-          headers: options.requestCookie ? { Cookie: options.requestCookie } : {}, signal: AbortSignal.timeout(10_000),
-        })
-        const csrf = await csrfResponse.json()
-        if (!csrfResponse.ok || typeof csrf.csrf_token !== 'string') throw new Error('visual_auth_required')
-        const response = await fetch(`${options.backendBase}/api/visuals/${action}`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf.csrf_token, ...(options.requestCookie ? { Cookie: options.requestCookie } : {}) },
-          body: JSON.stringify(payload), signal: AbortSignal.timeout(30_000),
-        })
-        const result = await response.json()
-        if (!response.ok) throw new Error(result.detail || 'visual_host_failed')
-        return result
-      })
+      const execution = await executeLearningVisual(requestedKind, query, options.recentMessages || [], options.generate, options.onVisualStage, options.visualTeachingBrief, createVisualHostTransport(options))
       const visual = execution.generated
       const effectiveKind = visual.artifact.kind === 'animation' ? 'animation' : 'diagram'
       if (effectiveKind !== requestedKind) {
@@ -1829,5 +1816,31 @@ export async function executeTutorAgentTool(
       },
       observation: { error: message, recoverableByModel: classifyToolError(error) !== 'unexpected' },
     }
+  }
+}
+
+/** The authenticated host owns catalog, template versions and verification. */
+export function createVisualHostTransport(options: {backendBase?: string; requestCookie?: string}): VisualAuthoringTransport {
+  let csrfToken: string | undefined
+  return async (action, payload) => {
+    if (!options.backendBase) throw new Error('visual_host_required')
+    if (!csrfToken) {
+      const response = await fetch(`${options.backendBase}/api/auth/csrf`, {
+        headers: options.requestCookie ? {Cookie: options.requestCookie} : {}, signal: AbortSignal.timeout(10_000),
+      })
+      const result = await response.json()
+      if (!response.ok || typeof result.csrf_token !== 'string') throw new Error('visual_auth_required')
+      csrfToken = result.csrf_token
+    }
+    const response = await fetch(`${options.backendBase}/api/visuals/${action}`, {
+      method: 'POST', headers: {'Content-Type':'application/json', 'X-CSRF-Token':csrfToken, ...(options.requestCookie ? {Cookie:options.requestCookie} : {})},
+      body: JSON.stringify(payload), signal: AbortSignal.timeout(action === 'catalog' ? 10_000 : 30_000),
+    })
+    const result = await response.json()
+    if (!response.ok) {
+      const detail = typeof result.detail === 'string' ? result.detail : JSON.stringify(result.detail || result)
+      throw new Error(`${response.status === 401 || response.status === 403 ? 'visual_auth_required:' : ''}${detail}`)
+    }
+    return result
   }
 }

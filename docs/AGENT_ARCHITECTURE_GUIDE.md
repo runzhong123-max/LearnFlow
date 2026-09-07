@@ -1,5 +1,8 @@
 # LearnFlow 智能体架构与协作指南
 
+> 2026-09-07 可组合视觉升级：VisualSpec 0.2.0 在兼容 0.1.0 的同时增加注册运算组合、结构分镜、维护作品检索与从零生成。图解请求先检索能力，Learning Design 一次产出教学计划与候选 Spec，宿主真实编译校验后渲染；原有讲解保持有效，正式 Desktop Tutor 仍先持久化简短交接。
+> Contract impact：registry 2026-09-07.1，新增只读 visual_content_library / retrieve_learning_visual 与 catalog/template API；无主 Agent、五核、事件语义或数据库迁移。当前合同见 [可组合视觉升级](design/visualize/UPGRADE-2026-09-07.md)，以下旧版流程为历史记录。
+
 > 2026-09-06 视觉重构：新生成以 VisualSpec 0.1.0、共享宿主模拟/独立验证、PresentationPlan/SVG 与状态快照回流为主。下文 ASCII 主路径记录保留为历史，旧产物兼容。三类 Agent 不变，独立讲解先提交；视觉探索不是掌握证据。
 > Contract impact：registry 2026-09-06.8，新增零 target `visual_exploration_recorded`，复用 Practice 的 evaluate_visual_prediction 责任，经 record_event 幂等审计；无 schema 破坏或数据库迁移。实现范围与接口见 [视觉重构](design/visualize/README.md)。
 
@@ -333,14 +336,11 @@ EvidenceEvent 网关。
 覆盖已经形成的有效教学内容。涉及越权写入、无证据掌握、未知引用、记忆冲突或历史臆断等语义违规时仍
 必须拒绝该草稿，不能用确定性补句掩盖安全问题。
 
-显式图解或动画请求是上述草稿协议的一个受限例外：`visual_teaching_composition` 先生成
-`TeachingExplanationArtifact`，Harness 提交该讲解后，再从已提交讲解生成 `VisualStoryboardContext`（旧请求可继续使用 VisualBrief）。
-上下文必须包含稳定对象 ID、关系、分组、初始可见状态、类型化状态操作、逐帧可执行断言和事实边界；
-Tool 只消费已校验上下文，不得自行补写教学策略或从题目关键词选择硬编码主题模板。
-这个教学段不再属于可撤销草稿；之后的 `text_reset` 只能回到已提交讲解，不能清空它。图解/动画 Tool
-只消费已校验 Context（或兼容 VisualBrief），不得自己决定教学策略。视觉成功形成 `bundle_ready`，任何视觉阶段失败形成
-`explanation_only`；两者都是 Playbook 的合法终态，且都不产生掌握证据。Desktop 必须先让正式 Tutor
-回复持久化，再异步/顺序调用视觉增强，禁止把回复和视觉放在同一失败域并行提交。
+显式图解或动画请求由 `visual_teaching_composition` 协调。Harness 先显示运行状态并检索已安装能力与维护作品摘要，Learning Design 一次给出教学计划、简短独立说明与 VisualSpec，或选择精确版本的维护作品。检索无匹配时继续从零组合；明确从零请求禁止引用维护作品。作品内容是只读参考数据，不能替代用户题意；适配后保留来源并重新编译。
+
+宿主验证规格、数据引用、有限计算轨迹与当前验证范围，真实编译失败最多修复一次；unsupported 与 needs_clarification 不进入同样的重试循环。渲染器仅消费已绑定状态。结构分镜必须标注作者示意，不宣称算法或数值真值已验证。旧 VisualStoryboard/VisualBrief 继续兼容读取。
+
+已有讲解和已提交教学段不能被视觉失败清除。成功为 `bundle_ready`，失败保留具体原因；两者都不产生掌握证据。Desktop 本地正式 Tutor 先持久化简短机制说明与视觉交接，再生成视觉；无需生成长篇文字分镜。选择对象、参数、步骤和内容哈希经过 inspect 核验后回流 Tutor，不从点击或播放推断掌握。
 
 `dynamic_practice_loop` 是 Playbook，不是第四类 Agent，也不是单一 Tool。Tutor 决定是否进入“生成—作答—
 纠错—变式—复习”闭环；Learning Design 只生成题目候选，`dynamic_practice` 服务检查题型、target skill、

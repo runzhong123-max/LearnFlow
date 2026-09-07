@@ -1,0 +1,184 @@
+{
+  "id": "probability.density.area",
+  "version": "1.0.0",
+  "status": "production",
+  "title": "概率密度与区间面积",
+  "description": "改变均匀分布的支持集宽度，区分密度高度与区间概率。",
+  "aliases": [
+    "概率密度",
+    "均匀分布",
+    "uniform distribution"
+  ],
+  "tags": [
+    "probability",
+    "积分",
+    "区间"
+  ],
+  "kind": [
+    "diagram"
+  ],
+  "patterns": [
+    "parameter_sweep"
+  ],
+  "spec": {
+    "spec_version": "0.1.0",
+    "id": "density_area",
+    "title": "密度高度与概率面积",
+    "domains": [
+      "probability_statistics"
+    ],
+    "teaching": {
+      "goal": "能够解释密度大于 1 仍满足总概率为 1。",
+      "misconceptions": [
+        "probability_measure"
+      ],
+      "assumptions": [
+        "连续均匀分布 Uniform(0,width)。",
+        "区间固定为 [0.1,0.2]，概率由与支持集交集计算。"
+      ],
+      "checkpoints": []
+    },
+    "parameters": [
+      {
+        "id": "width",
+        "label": "支持区间宽度",
+        "type": "number",
+        "min": 0.2,
+        "max": 2,
+        "step": 0.1,
+        "default": 0.5,
+        "unit": "dimensionless",
+        "on_change": "reset_run"
+      }
+    ],
+    "data": {
+      "a": 0.1,
+      "b": 0.2
+    },
+    "model": {
+      "id": "probability.uniform_interval",
+      "version": "1.0.0",
+      "inputs": {
+        "width": {
+          "source": "/params/width"
+        },
+        "a": {
+          "source": "/data/a"
+        },
+        "b": {
+          "source": "/data/b"
+        }
+      },
+      "seed": 42,
+      "max_steps": 12
+    },
+    "layout": {
+      "kind": "stack",
+      "view_order": [
+        "pdf_view",
+        "prob_view"
+      ]
+    },
+    "views": [
+      {
+        "id": "pdf_view",
+        "renderer": "plot",
+        "title": "高度与区间面积",
+        "elements": [
+          {
+            "id": "axes",
+            "kind": "axis",
+            "label": "x 与密度",
+            "inputs": {
+              "axes": {
+                "source": "/derived/axes"
+              }
+            }
+          },
+          {
+            "id": "density",
+            "kind": "curve",
+            "label": "概率密度",
+            "inputs": {
+              "points": {
+                "source": "/derived/pdf_points"
+              }
+            }
+          },
+          {
+            "id": "area",
+            "kind": "region",
+            "label": "所选区间面积",
+            "inputs": {
+              "polygon": {
+                "source": "/derived/interval_polygon"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "prob_view",
+        "renderer": "svg",
+        "title": "概率数值",
+        "elements": [
+          {
+            "id": "probability",
+            "kind": "metric",
+            "label": "区间概率",
+            "inputs": {
+              "value": {
+                "source": "/state/probability"
+              }
+            }
+          },
+          {
+            "id": "height",
+            "kind": "metric",
+            "label": "密度高度",
+            "inputs": {
+              "value": {
+                "source": "/state/density"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "playback": {
+      "initial_step": 0,
+      "autoplay": false,
+      "transition": {
+        "kind": "cut",
+        "duration_ms": 0,
+        "easing": "linear"
+      },
+      "reduced_motion": "cut"
+    },
+    "interactions": [
+      {
+        "id": "width_control",
+        "kind": "slider",
+        "parameter_id": "width"
+      }
+    ],
+    "annotations": [],
+    "validation": {
+      "requested_checks": [
+        {
+          "id": "probability.uniform_mass",
+          "version": "1.0.0"
+        }
+      ]
+    },
+    "accessibility": {
+      "summary": "能够解释密度大于 1 仍满足总概率为 1。",
+      "keyboard": true,
+      "text_alternative": true
+    },
+    "fallback": {
+      "kind": "static_plot",
+      "text": "width=0.5 时密度为 2；[0.1,0.2] 上面积为 0.1×2=0.2，总面积为 1。"
+    }
+  }
+}

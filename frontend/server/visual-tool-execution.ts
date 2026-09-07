@@ -108,7 +108,10 @@ export async function executeLearningVisual(
   const request = resolveVisualRequest(query, messages)
   if (teachingBrief?.visualSpec) {
     if (!transport) throw new Error('visual_host_required')
-    return {generated: await generateVisualize(teachingBrief.visualSpec, kind, teachingBrief.explanation, transport), request}
+    const generated = await generateVisualize(teachingBrief.visualSpec, kind, teachingBrief.explanation, transport, teachingBrief.templateRef)
+    generated.generation.plannerAttempts = teachingBrief.plannerAttempts || 1
+    generated.generation.repairAttempted = teachingBrief.repairAttempted || false
+    return {generated, request}
   }
   if (teachingBrief?.storyboardContext) {
     try {

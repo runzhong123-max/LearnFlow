@@ -2119,6 +2119,9 @@ async def _generate_tutor_reply(
             ),
         },
         "active_surface_context": review_workspace,
+        "visual_handoff": ({"requested": latest_context["visual_request"],
+            "instruction": "后续视觉工具将接续生成。仅保留简短、可独立成立的机制说明；沿用前文主题与参数，不重写长篇文字分镜，不声称已播放或已生成。"}
+            if latest_context.get("visual_request") in ("diagram", "animation") else None),
         "chat_mode": mode_view,
         "current_state": state,
         "available_projects": [{"id": p.id, "name": p.name, "description": p.description} for p in projects],
@@ -2719,6 +2722,8 @@ async def process_turn(
     incoming_context = context or {}
     candidate_sources_completed = incoming_context.get("interaction") == "candidate_sources_completed"
     message_context = {"direct_user_text": direct_text}
+    if incoming_context.get("visual_request") in ("diagram", "animation"):
+        message_context["visual_request"] = incoming_context["visual_request"]
     if active_learning_skill:
         message_context["learning_skill"] = active_learning_skill
     if isinstance(incoming_context.get("selected_text"), str):

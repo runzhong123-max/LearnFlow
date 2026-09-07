@@ -1,5 +1,8 @@
 # LearnFlow 架构权威与维护边界
 
+> 2026-09-07 可组合视觉升级：VisualSpec 0.2.0 在兼容 0.1.0 的同时增加注册运算组合、结构分镜、维护作品检索与从零生成。图解请求先检索能力，Learning Design 一次产出教学计划与候选 Spec，宿主真实编译校验后渲染；原有讲解保持有效，正式 Desktop Tutor 仍先持久化简短交接。
+> Contract impact：registry 2026-09-07.1，新增只读 visual_content_library / retrieve_learning_visual 与 catalog/template API；无主 Agent、五核、事件语义或数据库迁移。当前合同见 [可组合视觉升级](design/visualize/UPGRADE-2026-09-07.md)，以下旧版流程为历史记录。
+
 > 2026-09-06 视觉重构：新生成以 VisualSpec 0.1.0、共享宿主模拟/独立验证、PresentationPlan/SVG 与状态快照回流为主。下文 ASCII 主路径记录保留为历史，旧产物兼容。三类 Agent 不变，独立讲解先提交；视觉探索不是掌握证据。
 > Contract impact：registry 2026-09-06.8，新增零 target `visual_exploration_recorded`，复用 Practice 的 evaluate_visual_prediction 责任，经 record_event 幂等审计；无 schema 破坏或数据库迁移。实现范围与接口见 [视觉重构](design/visualize/README.md)。
 

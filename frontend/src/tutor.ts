@@ -18,8 +18,7 @@ import {
 } from '../server/visual-tool-execution.ts'
 import { AI_LATENCY_BUDGETS } from './latency-budgets.ts'
 import {
-  parseVisualTeachingBrief,
-  visualTeachingBriefPrompt,
+  prepareVisualTeachingBrief,
 } from '../server/visual-teaching-skill.ts'
 import { VISUAL_TEACHING_BRIEF_VERSION, VISUAL_TEACHING_SKILL_ID } from './visual-teaching.ts'
 import type { LearnFlowPluginObject } from './plugin-api.ts'
@@ -362,47 +361,27 @@ async function executeDesktopVisualTool(options: {
   const title = options.kind === 'animation' ? '生成过程动画' : '生成知识图解'
   const request = resolveVisualRequest(options.query, options.messages)
   try {
-    const briefResponse = await runtimeFetch(`/api/agent/sessions/${options.sessionId}/visual-plans`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        instructions: visualTeachingBriefPrompt(options.kind, options.query, options.teachingExplanation),
-        input: `以下讲解已经由正式 Tutor 独立提交。保持它的事实边界，并据此填写 VisualSpec 0.1.0 visual_spec；不要在 JSON 中复制讲解：\n${options.teachingExplanation}`,
-        timeout_ms: 180_000,
-        max_tokens: 12_000,
-        response_format: 'json_object',
-      }),
-      signal: options.signal,
-    })
-    const briefPayload = await briefResponse.json().catch(() => null) as { text?: unknown; detail?: unknown } | null
-    if (!briefResponse.ok || typeof briefPayload?.text !== 'string') {
-      throw new Error('visual_teaching_brief_failed:视觉教学 Brief 服务不可用')
+    const transport: import('../server/visualize-authoring.ts').VisualAuthoringTransport = async (action, payload) => {
+      const response = await runtimeFetch(`/api/visuals/${action}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:options.signal})
+      const result = await response.json()
+      if (!response.ok) throw new Error(`${response.status === 401 || response.status === 403 ? 'visual_auth_required:' : ''}${typeof result.detail === 'string' ? result.detail : JSON.stringify(result.detail || result)}`)
+      return result
     }
-    const visualBrief = parseVisualTeachingBrief(briefPayload.text, options.kind, options.query, options.teachingExplanation)
-    const execution = await executeLearningVisual(options.kind, options.query, options.messages, async (
-      instructions, input, timeoutMs = 26_000, maxTokens = 2_200, generationOptions,
-    ) => {
+    const generate: import('../server/learning-visual-spec.ts').GenerateText = async (instructions, input, timeoutMs = 90_000, maxTokens = 10_000, generationOptions) => {
       const response = await runtimeFetch(`/api/agent/sessions/${options.sessionId}/visual-plans`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          instructions,
-          input,
-          timeout_ms: timeoutMs,
-          max_tokens: maxTokens,
-          response_format: generationOptions?.responseFormat,
-        }),
-        signal: options.signal,
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({instructions,input,timeout_ms:timeoutMs,max_tokens:maxTokens,response_format:generationOptions?.responseFormat}),signal:options.signal,
       })
-      const payload = await response.json().catch(() => null) as { text?: unknown; detail?: unknown } | null
+      const payload = await response.json().catch(() => null) as {text?:unknown;detail?:unknown}|null
       if (!response.ok) throw new Error(typeof payload?.detail === 'string' ? payload.detail : `视觉规划返回 HTTP ${response.status}`)
       if (typeof payload?.text !== 'string' || !payload.text.trim()) throw new Error('视觉规划没有返回可验证的 JSON')
       return payload.text
-    }, undefined, visualBrief, async (action, payload) => {
-      const response = await runtimeFetch(`/api/visuals/${action}`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload), signal: options.signal})
-      const result = await response.json()
-      if (!response.ok) throw new Error(result.detail || 'visual_host_failed')
-      return result
+    }
+    const visualBrief = await prepareVisualTeachingBrief({
+      modality:options.kind, request:request.effectiveRequest, explanation:options.teachingExplanation,
+      transport, generate:prompt => generate('执行 Visual Planner 与 Spec Builder，只输出完整 JSON。',prompt,90_000,10_000,{responseFormat:'json_object'}),
     })
+    const execution = await executeLearningVisual(options.kind, request.effectiveRequest, options.messages, generate, undefined, visualBrief, transport)
     const visual = execution.generated
     const effectiveKind = visual.artifact.kind === 'animation' ? 'animation' : 'diagram'
     if (effectiveKind !== options.kind) {
@@ -525,6 +504,7 @@ export async function requestTutorReply(options: {
         client_turn_id: options.clientTurnId,
         context: {
           mode: options.mode,
+          ...(visualIntent !== 'none' ? {visual_request:visualIntent} : {}),
           selection_context: options.selectionContext,
           active_artifact: options.activeArtifactContext,
           sheet_id: options.sheetId,

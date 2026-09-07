@@ -1,3 +1,4 @@
+import { visualPlanningRequest, assertVisualProviderComplete } from './visualize-authoring.ts'
 import { teachingGuidancePrompt } from '../src/teaching-guidance-context.ts'
 import { structurallyCompact } from './context-compaction.ts'
 import type {
@@ -27,6 +28,7 @@ import type { LearningPlanTutorContext } from '../src/planning.ts'
 import type { LearnerPathState } from '../src/learning-path-graph.ts'
 import {
   executeTutorAgentTool,
+  createVisualHostTransport,
   TUTOR_AGENT_TOOL_DEFINITIONS,
   type TutorAgentToolExecution,
   type TutorAgentToolRuntimeOptions,
@@ -47,10 +49,7 @@ import { stickyConversationPluginIds, lockedConversationPluginIds } from '../src
 import {
   completeVisualTeachingBundle,
   explanationOnlyVisualTeachingBundle,
-  parseVisualTeachingBrief,
-  validateVisualTeachingExplanation,
-  visualTeachingBriefPrompt,
-  visualTeachingExplanationPrompt,
+  prepareVisualTeachingBrief,
   visualTeachingReply,
 } from './visual-teaching-skill.ts'
 import {
@@ -1281,6 +1280,7 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
     }
   }
 
+  const prestartedVisualTools = new Map<string, number>()
   const execute = async (
     call: AgentToolCall,
     searchSources: SearchSource[] = [],
@@ -1328,7 +1328,7 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
     }
     signatures.add(signature)
     toolCalls += 1
-    input.observe?.({
+    if (!prestartedVisualTools.has(call.id)) input.observe?.({
       type: 'tool_started', toolCallId: call.id, toolName: call.name,
       title: toolDefinitions.find(tool => tool.name === call.name)?.title || call.name,
       startedAt: Date.now(),
@@ -1336,7 +1336,7 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
     record({ phase: 'act', detail: `调用 ${call.name}`, toolCallId: call.id, toolName: call.name, status: 'started' })
     if (recordRuntimeMessages && recordAssistantMessage) runtimeMessages.push({ role: 'assistant', content: '', toolCalls: [call] })
     const visualCall = ['generate_learning_diagram', 'generate_learning_animation'].includes(call.name)
-    const toolStartedAt = Date.now()
+    const toolStartedAt = prestartedVisualTools.get(call.id) || Date.now()
     let acceptingVisualStages = true
     const executionOptions = visualCall ? {
       ...toolOptions,
@@ -1379,6 +1379,11 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
       }
     } finally {
       acceptingVisualStages = false
+    }
+    const visualStartedAt = prestartedVisualTools.get(call.id)
+    if (visualStartedAt) {
+      result.run.startedAt = visualStartedAt
+      result.run.durationMs = Date.now() - visualStartedAt
     }
     if (result.videoCandidates) currentVideoCandidates = result.videoCandidates
     runs.push(result.run)
@@ -1731,8 +1736,7 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
       name: visualIntent === 'animation' ? 'generate_learning_animation' : 'generate_learning_diagram',
       arguments: { query: latestMessage },
   })
-  // Both visual modalities are deferred to visual_teaching_composition. The
-  // Skill commits an independent explanation before either renderer runs.
+  // Both visual modalities enter the shared catalog → plan → verified build workflow.
   if (explicit && !['generate_learning_diagram', 'generate_learning_animation'].includes(explicit.name)) {
     const sources = await execute(explicit, [], false, false)
     if (explicit.name === 'search_computer_knowledge') await refreshPathAfterSearch(sources, false)
@@ -1841,125 +1845,66 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
       const visualQuery = visualRequest.effectiveRequest
       explicit.arguments = { ...explicit.arguments, query: visualQuery }
       if (visualRequest.contextEnriched) record({ phase: 'observe', detail: `视觉主题已从${visualRequest.topicAnchor?.source === 'prior_user' ? '前文用户请求' : '同主题已完成产物'}恢复`, status: 'completed' })
-      record({ phase: 'decide', detail: '视觉教学 Skill 正在形成可独立成立的讲解与结构化 VisualBrief', status: 'started' })
+      const startedAt = Date.now()
+      const toolCallsBeforePlanning = toolCalls
+      prestartedVisualTools.set(explicit.id, startedAt)
+      input.observe?.({type:'tool_started', toolCallId:explicit.id, toolName:explicit.name,
+        title: modality === 'animation' ? '构建教学动画' : '构建教学图解', startedAt})
+      let planningStage = 'catalog'
       let explanation = ''
       try {
-        modelRounds += 1
-        let explanationPayload = await invokeModel(buildAgentProviderRequest({
-          baseUrl: input.baseUrl,
-          model: input.model,
-          instructions,
-          messages: [...runtimeMessages, { role: 'user', content: visualTeachingExplanationPrompt(modality, visualQuery) }],
-          tools: [],
-          includeTools: false,
-          maxOutputTokens: budget.maxOutputTokens,
-        }), deadline, false)
-        explanation = textFromTutorProviderResponse(explanationPayload).trim()
-        let explanationReasoningContent = reasoningContentFromProviderResponse(explanationPayload)
-        try {
-          explanation = validateVisualTeachingExplanation(explanation)
-        } catch (firstError) {
-          if (Date.now() >= deadline - 1_000) throw firstError
-          record({ phase: 'decide', detail: '独立讲解未通过教学门，进行一次限次修复', status: 'retrying' })
-          modelRounds += 1
-          explanationPayload = await invokeModel(buildAgentProviderRequest({
-            baseUrl: input.baseUrl,
-            model: input.model,
-            instructions,
-            messages: [
-              ...runtimeMessages,
-              { role: 'assistant' as const, content: explanation, ...(explanationReasoningContent ? { reasoningContent: explanationReasoningContent } : {}) },
-              { role: 'user' as const, content: visualTeachingExplanationPrompt(modality, visualQuery, true) },
-            ],
-            tools: [],
-            includeTools: false,
-            maxOutputTokens: budget.maxOutputTokens,
-          }), deadline, false)
-          explanation = validateVisualTeachingExplanation(textFromTutorProviderResponse(explanationPayload).trim())
-          explanationReasoningContent = reasoningContentFromProviderResponse(explanationPayload)
-        }
-
-        commitTeachingSegment(explanation, modality)
-        runtimeMessages.push({ role: 'assistant', content: explanation, ...(explanationReasoningContent ? { reasoningContent: explanationReasoningContent } : {}) })
-        replyReasoningContent = explanationReasoningContent
-        record({ phase: 'decide', detail: '独立讲解已提交；后续 Brief 或视觉失败不得撤销', status: 'completed' })
-
-        try {
-          modelRounds += 1
-          let rawBriefPayload = await invokeModel(buildAgentProviderRequest({
-            baseUrl: input.baseUrl,
-            model: input.model,
-            instructions,
-            messages: [...runtimeMessages, { role: 'user', content: visualTeachingBriefPrompt(modality, visualQuery, explanation) }],
-            tools: [],
-            includeTools: false,
-            responseFormat: 'json_object',
-            maxOutputTokens: budget.maxOutputTokens,
-          }), deadline, false)
-          let rawBrief = textFromTutorProviderResponse(rawBriefPayload).trim()
-          let rawBriefReasoningContent = reasoningContentFromProviderResponse(rawBriefPayload)
-          try {
-            visualBrief = parseVisualTeachingBrief(rawBrief, modality, visualQuery, explanation)
-            if (visualBrief.explanation !== explanation) throw new Error('visual_teaching_explanation_mismatch')
-          } catch (firstError) {
-            if (Date.now() >= deadline - 1_000) throw firstError
-            record({ phase: 'decide', detail: 'VisualBrief 未通过结构门，进行一次限次修复', status: 'retrying' })
+        visualBrief = await prepareVisualTeachingBrief({
+          modality, request: visualQuery, transport: createVisualHostTransport(toolOptions),
+          onStage: (stage, detail) => {
+            planningStage = stage
+            record({phase:'act', detail, toolCallId:explicit.id, toolName:explicit.name, status: stage === 'repair' ? 'retrying' : 'started'})
+          },
+          generate: async prompt => {
             modelRounds += 1
-            rawBriefPayload = await invokeModel(buildAgentProviderRequest({
-              baseUrl: input.baseUrl,
-              model: input.model,
-              instructions,
-              messages: [
-                ...runtimeMessages,
-                { role: 'assistant', content: rawBrief, ...(rawBriefReasoningContent ? { reasoningContent: rawBriefReasoningContent } : {}) },
-                { role: 'user', content: visualTeachingBriefPrompt(modality, visualQuery, explanation, true) },
-              ],
-              tools: [],
-              includeTools: false,
-              responseFormat: 'json_object',
-              maxOutputTokens: budget.maxOutputTokens,
-            }), deadline, false)
-            rawBrief = textFromTutorProviderResponse(rawBriefPayload).trim()
-            rawBriefReasoningContent = reasoningContentFromProviderResponse(rawBriefPayload)
-            visualBrief = parseVisualTeachingBrief(rawBrief, modality, visualQuery, explanation)
-            if (visualBrief.explanation !== explanation) throw new Error('visual_teaching_explanation_mismatch')
-          }
-        } catch (briefError) {
-          visualTeaching = explanationOnlyVisualTeachingBundle(explanation, modality, briefError)
-          reply = visualTeachingReply(visualTeaching)
-          stopReason = 'final_answer'
-          reconcileVisibleDraft(reply)
-          record({ phase: 'verify', detail: 'VisualBrief 失败，已以 explanation_only 保留讲解', status: 'completed' })
-        }
-
-        if (visualBrief) {
-          toolOptions.visualTeachingBrief = visualBrief
-          record({ phase: 'decide', detail: 'VisualBrief 已通过对象、关系与过程门', status: 'completed' })
-
-          let visualError: unknown
-          try {
-            await execute(explicit)
-          } catch (error) {
-            visualError = error
-            record({ phase: 'act', detail: `视觉工具异常：${compactDecisionText(error instanceof Error ? error.message : error, '视觉工具异常')}`, status: 'failed' })
-          }
-          const run = [...runs].reverse().find(item => item.toolName === explicit.name)
-          visualTeaching = completeVisualTeachingBundle(visualBrief, run, visualError)
-          reply = visualTeachingReply(visualTeaching)
-          stopReason = 'final_answer'
-          reconcileVisibleDraft(reply)
-          record({
-            phase: 'verify',
-            detail: visualTeaching.terminalState === 'bundle_ready'
-              ? '视觉教学组合产物通过终态校验'
-              : '视觉失败已降级为 explanation_only；已提交讲解保持不变',
-            status: 'completed',
-          })
-        }
+            const payload = await invokeModel(visualPlanningRequest(buildAgentProviderRequest({
+              baseUrl: input.baseUrl, model: input.model, instructions,
+              messages: [...runtimeMessages, {role:'user', content:prompt}],
+              tools:[], includeTools:false, responseFormat:'json_object', maxOutputTokens:Math.max(budget.maxOutputTokens, 8000),
+            }), input.model), deadline, false)
+            replyReasoningContent = reasoningContentFromProviderResponse(payload)
+            const text = textFromTutorProviderResponse(payload).trim()
+            assertVisualProviderComplete(payload, text)
+            return text
+          },
+        })
+        explanation = visualBrief.explanation
+        if (explanation) commitTeachingSegment(explanation, modality)
+        toolOptions.visualTeachingBrief = visualBrief
+        await execute(explicit)
+        const run = [...runs].reverse().find(item => item.toolName === explicit.name)
+        visualTeaching = completeVisualTeachingBundle(visualBrief, run)
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'visual_teaching_brief_failed'
-        record({ phase: 'act', detail: `视觉教学 Skill 未达到讲解提交门槛：${message.slice(0, 220)}`, status: 'failed' })
+        const detail = (error instanceof Error ? error.message : String(error)).slice(0, 1200)
+        const existing = runs.some(item => item.toolCallId === explicit.id)
+        if (!existing) {
+          if (toolCalls === toolCallsBeforePlanning) toolCalls += 1
+          const run: TutorToolRun = {
+            id:explicit.id, toolCallId:explicit.id, toolName:explicit.name,
+            kind:modality === 'animation' ? 'animation' : 'image', status:'failed',
+            title: modality === 'animation' ? '构建教学动画' : '构建教学图解', detail,
+            observationSummary:`${planningStage}: ${detail}`, startedAt, durationMs:Date.now()-startedAt, sequence:toolCalls,
+            inputSummary: visualQuery.slice(0, 500),
+            errorType:/unsupported|clarification|needs_input/.test(detail) ? 'user_fixable' : /timeout|network|fetch/.test(detail) ? 'transient' : 'model_recoverable',
+            visualMeta:{requestedKind:modality,effectiveKind:modality,contextEnriched:visualRequest.contextEnriched,
+              generationSource:'model_plan',compileStatus:'invalid',plannerAttempts:modelRounds,
+              outcomeStage:planningStage === 'validation' ? 'validation' : 'planner',
+              skillId:VISUAL_TEACHING_SKILL_ID,briefVersion:VISUAL_TEACHING_BRIEF_VERSION,explanationPreserved:true},
+          }
+          runs.push(run)
+          input.observe?.({type:'tool_completed',run})
+        }
+        visualTeaching = explanationOnlyVisualTeachingBundle(explanation, modality, error)
+        record({phase:'act',detail:`视觉构建停止（${planningStage}）：${detail}`,toolCallId:explicit.id,toolName:explicit.name,status:'failed'})
       }
+      reply = visualTeachingReply(visualTeaching)
+      stopReason = 'final_answer'
+      reconcileVisibleDraft(reply)
+      record({phase:'verify',detail:visualTeaching.terminalState === 'bundle_ready' ? '图解教学对象已生成并通过终态检查' : '未发布未经验证的产物；具体原因已保存在工具记录中',status:'completed'})
     }
     for (let round = 0; !reply && round < budget.maxModelRounds && Date.now() < deadline; round += 1) {
       modelRounds += 1

@@ -32,10 +32,10 @@ test('new authoring routes to host compiler without ASCII designer or further mo
  assert.ok(output.generated.artifact.visualize)
  assert.match(visualTeachingBriefPrompt('animation','梯度下降动画',explanation),/optimization.quadratic_gd/)
 })
-test('structural diagrams accept one state and escape markup; crowded text becomes explicit diagnostics',()=>{
+test('structural diagrams accept one state and escape markup; crowded text wraps without changing content',()=>{
  const s=example('bfs');s.model={id:'structure.snapshot',version:'1.0.0',inputs:{content:{source:'/data/content'}},seed:0,max_steps:1};s.data={content:{label:'<script>alert(1)</script>'}};s.parameters=[];s.interactions=[];s.teaching.checkpoints=[];s.layout.view_order=['v'];s.views=[{id:'v',title:'文字',renderer:'svg',elements:[{id:'label',kind:'text',label:'说明',inputs:{value:{source:'/state/label'}}}]}];s.validation.requested_checks=[]
  const b=compile(s);assert.equal(b.frames.length,1);assert.equal(b.verification.scope,'structure_only')
  const r=renderView(b.frames[0].views[0]);assert.match(r.svg,/&lt;script&gt;/);assert.doesNotMatch(r.svg,/<script>/)
  b.frames[0].views[0].elements[0].values.value='长'.repeat(100)
- assert.equal(renderView(b.frames[0].views[0]).diagnostics[0].code,'TEXT_TOO_DENSE')
+ const wrapped=renderView(b.frames[0].views[0]);assert.deepEqual(wrapped.diagnostics,[]);assert.ok(wrapped.plan.repairs.some(repair=>repair.code==='WRAP_TEXT'))
 })

@@ -1,4 +1,4 @@
-import { visualSpecPrompt } from './visualize-authoring.ts'
+import { visualSpecPrompt, OFFLINE_VISUAL_CATALOG, requestsFreshVisual, type VisualCatalog, type VisualAuthoringTransport } from './visualize-authoring.ts'
 import {
   VISUAL_TEACHING_BRIEF_VERSION,
   VISUAL_TEACHING_SKILL_ID,
@@ -42,7 +42,9 @@ function classifyFailure(run?: TutorToolRun, error?: unknown): VisualTeachingFai
       : /render|svg/i.test(message) ? 'render' : 'planner'
   return {
     stage,
-    code: /timeout|超时|abort/i.test(message)
+    code: /visual_unsupported/.test(message) ? 'visual_unsupported'
+      : /visual_needs_clarification|needs_input/.test(message) ? 'visual_needs_clarification'
+      : /timeout|超时|abort/i.test(message)
       ? 'visual_timeout'
       : /json|syntax|parse|comma/i.test(message)
         ? 'visual_syntax_invalid'
@@ -84,8 +86,9 @@ export function visualTeachingBriefPrompt(
   request: string,
   explanation: string,
   repair = false,
+  context?: Parameters<typeof visualSpecPrompt>[4],
 ) {
-  return visualSpecPrompt(modality, request, explanation, repair)
+  return visualSpecPrompt(modality, request, explanation, repair, context)
 }
 
 /** Compatibility name for callers that compile a brief from an existing explanation. */
@@ -99,9 +102,14 @@ export function parseVisualTeachingBrief(
 ): VisualTeachingBrief {
   const payload = jsonPayload(raw)
   const explanation = String(committedExplanation ?? payload.explanation ?? '').trim()
-  if (payload.unsupported) throw new Error('visual_unsupported:' + compact(payload.unsupported, 200))
+  if (payload.unsupported) throw new Error('visual_unsupported:' + compact(typeof payload.unsupported === 'object' ? (payload.unsupported as any).reason : payload.unsupported, 600))
+  if (payload.needs_clarification) throw new Error('visual_needs_clarification:' + compact(typeof payload.needs_clarification === 'object' ? (payload.needs_clarification as any).question : payload.needs_clarification, 600))
   const visualSpec = payload.visual_spec as import('../src/visualize.ts').VisualSpec | undefined
-  if (visualSpec && visualSpec.spec_version !== '0.1.0') throw new Error('visual_spec_version_invalid')
+  if (visualSpec && !['0.1.0','0.2.0'].includes(visualSpec.spec_version)) throw new Error('visual_spec_version_invalid')
+  const ref = payload.template_ref as {id?: unknown; version?: unknown} | undefined
+  const templateRef = ref && typeof ref.id === 'string' && typeof ref.version === 'string' ? {id:ref.id,version:ref.version} : undefined
+  if (ref && !templateRef) throw new Error('visual_template_ref_invalid:/template_ref')
+  if (templateRef && requestsFreshVisual(request)) throw new Error('visual_fresh_required:不得在从零生成请求中使用template_ref')
   const topic = compact(payload.topic, 240)
   const learningGoal = compact(payload.learning_goal, 360)
   const modalityRationale = compact(payload.modality_rationale, 360)
@@ -146,12 +154,14 @@ export function parseVisualTeachingBrief(
 
   const errors: string[] = []
   if (explanation.length > 5000) errors.push('explanation_too_long')
-  if ([...explanation].length < 100 || explanation.split(/[。！？.!?]+/).filter(Boolean).length < 3) errors.push('explanation_insufficient')
+  if (visualSpec || templateRef) {
+    if (explanation && [...explanation].length < 20) errors.push('explanation_insufficient')
+  } else if ([...explanation].length < 100 || explanation.split(/[。！？.!?]+/).filter(Boolean).length < 3) errors.push('explanation_insufficient')
   if (!topic || !learningGoal || !modalityRationale || !claimBoundary) errors.push('brief_identity_missing')
-  if (!visualSpec && !storyboardContext && objects.length < 2) errors.push('brief_objects_insufficient')
-  if (!visualSpec && !storyboardContext && (!initialState || !finalState)) errors.push('brief_state_missing')
-  if (modality === 'animation' && !visualSpec && !storyboardContext && steps.length < 2) errors.push('animation_changes_insufficient')
-  if (modality === 'diagram' && !visualSpec && !storyboardContext && relations.length < 1) errors.push('diagram_relations_insufficient')
+  if (!visualSpec && !templateRef && !storyboardContext && objects.length < 2) errors.push('brief_objects_insufficient')
+  if (!visualSpec && !templateRef && !storyboardContext && (!initialState || !finalState)) errors.push('brief_state_missing')
+  if (modality === 'animation' && !visualSpec && !templateRef && !storyboardContext && steps.length < 2) errors.push('animation_changes_insufficient')
+  if (modality === 'diagram' && !visualSpec && !templateRef && !storyboardContext && relations.length < 1) errors.push('diagram_relations_insufficient')
   if (!compact(request, 2200)) errors.push('request_missing')
   if (errors.length) throw new Error(`visual_teaching_brief_invalid:${errors.join(',')}`)
 
@@ -172,6 +182,9 @@ export function parseVisualTeachingBrief(
     claimBoundary,
     storyboardContext,
     visualSpec,
+    templateRef,
+    adaptTemplate: payload.adapt === true,
+    adaptationGoal: compact(payload.adaptation_goal, 1000),
   }
 }
 
@@ -239,13 +252,98 @@ export function visualTeachingReply(bundle: VisualTeachingBundle) {
     const label = bundle.selectedModality === 'animation' ? '动画' : '图解'
     return `${bundle.explanation}\n\n${label}已经生成，可在上方逐步检查；它只是对这段讲解的视觉增强。`
   }
-  return `${bundle.explanation}\n\n视觉增强本轮未能生成成功，但上面的讲解已经保留并且仍然有效。你可以继续基于它追问，或稍后单独重试视觉生成。`
+  const prefix = bundle.explanation ? `${bundle.explanation}\n\n` : ''
+  if (bundle.failure?.code === 'visual_unsupported') return `${prefix}当前图解工具无法完成这一要求：${bundle.failure.message.replace(/^visual_unsupported:/, '')}`
+  if (bundle.failure?.code === 'visual_needs_clarification') return `${prefix}当前信息不足，暂时无法构建：${bundle.failure.message.replace(/^visual_needs_clarification:/, '')}`
+  return `${prefix}图解构建失败，在${bundle.failure?.stage === 'validation' ? '校验' : '规划或构建'}阶段未通过：${bundle.failure?.message || '未返回可用产物'}。${bundle.explanation ? '已提交的讲解已保留。' : ''}`
 }
 
 export const VISUAL_TEACHING_RUNTIME_STATES = [
-  'compose_explanation',
+  'catalog',
+  'plan_and_build',
+  'validate_and_simulate',
   'commit_explanation',
-  'compile_visual_brief',
   'render_visual',
   'bundle_ready_or_explanation_only',
 ] as const
+
+
+export function retryableVisualError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error)
+  return !/visual_unsupported|visual_needs_clarification|visual_auth_required|visual_host_required|401|403|timeout|deadline|abort|network|fetch failed/i.test(message)
+}
+
+/** Router → Plan/Builder → host validation. A failed lookup never disables fresh composition. */
+export async function prepareVisualTeachingBrief(options: {
+  modality: VisualTeachingModality
+  request: string
+  explanation?: string
+  transport: VisualAuthoringTransport
+  generate: (prompt: string) => Promise<string>
+  onStage?: (stage: string, detail: string) => void
+}) {
+  let catalog: VisualCatalog = OFFLINE_VISUAL_CATALOG
+  options.onStage?.('catalog', '读取已安装能力与相关维护案例')
+  try {
+    const result = await options.transport('catalog', {query: options.request, kind: options.modality, templates: !requestsFreshVisual(options.request)})
+    if (result && typeof result.capabilities === 'object' && Array.isArray(result.templates)) {
+      catalog = {...result, templates: requestsFreshVisual(options.request) ? [] : result.templates.slice(0, 5)}
+    }
+  } catch (error) {
+    if (/401|403|visual_auth_required/.test(String(error))) throw error
+    options.onStage?.('catalog', '目录暂不可用，使用本版本计算契约从零规划；最终仍由后端校验')
+  }
+  let previousCandidate = ''
+  let validationError = ''
+  let selectedTemplate: any
+  let adaptedRef: {id:string;version:string} | undefined
+  let plannerAttempts = 0
+  let repairAttempted = false
+  // One optional adaptation call plus one actual schema/compile repair, never unbounded retry.
+  for (let cycle = 0; cycle < 3; cycle += 1) {
+    options.onStage?.(repairAttempted ? 'repair' : 'planning', repairAttempted ? '根据具体错误修复一次' : selectedTemplate ? '按当前要求改编维护案例' : '选择教学模式并组合视觉对象')
+    plannerAttempts += 1
+    const raw = await options.generate(visualTeachingBriefPrompt(options.modality, options.request, options.explanation || '', repairAttempted, {
+      catalog, error: validationError, previousCandidate, selectedTemplate,
+    }))
+    try {
+      const brief = parseVisualTeachingBrief(raw, options.modality, options.request, options.explanation || undefined)
+      if (adaptedRef && !brief.visualSpec) throw new Error('visual_template_adaptation_requires_spec:/visual_spec:改编必须提供修改后的完整规格')
+      if (adaptedRef && brief.templateRef && (brief.templateRef.id !== adaptedRef.id || brief.templateRef.version !== adaptedRef.version)) throw new Error('visual_template_adaptation_source_conflict:/template_ref')
+      if (brief.templateRef) {
+        const match = catalog.templates.find(item => item.id === brief.templateRef!.id && item.version === brief.templateRef!.version)
+        if (!match && !(adaptedRef?.id === brief.templateRef.id && adaptedRef.version === brief.templateRef.version)) throw new Error('visual_template_not_retrieved:/template_ref:必须选择已检索精确版本，或从零输出visual_spec')
+        if (!selectedTemplate || selectedTemplate.id !== brief.templateRef.id || selectedTemplate.version !== brief.templateRef.version) {
+          options.onStage?.('template', '读取所选维护案例的精确版本')
+          selectedTemplate = await options.transport('template', brief.templateRef)
+          if (selectedTemplate.id !== brief.templateRef.id || selectedTemplate.version !== brief.templateRef.version || !selectedTemplate.spec) throw new Error('visual_template_version_conflict')
+        }
+        if (brief.adaptTemplate && !brief.visualSpec) {
+          if (adaptedRef) throw new Error('visual_template_adaptation_requires_spec:/visual_spec')
+          adaptedRef = brief.templateRef
+          selectedTemplate = {...selectedTemplate, adaptation_goal: brief.adaptationGoal, instruction: '按用户要求修改完整visual_spec，并保留template_ref。不要再次返回adapt:true。'}
+          previousCandidate = raw
+          continue
+        }
+        brief.visualSpec ||= selectedTemplate.spec
+      }
+      if (adaptedRef && brief.visualSpec) brief.templateRef = adaptedRef
+      if (brief.visualSpec) {
+        if (!brief.explanation) brief.explanation = [brief.visualSpec.teaching.goal, ...brief.visualSpec.teaching.assumptions, brief.claimBoundary].filter(Boolean).join('。')
+        options.onStage?.('validation', '后端检查规格、绑定、计算状态与验证范围')
+        const bundle = await options.transport('compile', {spec: brief.visualSpec, params: {}, ...(brief.templateRef ? {template_ref: brief.templateRef} : {})})
+        if (bundle.verification?.status !== 'pass' || !bundle.frames?.length) throw new Error('visual_verification_required')
+        if (options.modality === 'animation' && bundle.frames.length < 3) throw new Error('visual_animation_requires_semantic_transitions:/model:动画需要至少两次有意义变化')
+      }
+      brief.plannerAttempts = plannerAttempts
+      brief.repairAttempted = repairAttempted
+      return brief
+    } catch (error) {
+      if (!retryableVisualError(error) || repairAttempted || cycle >= 2) throw error
+      repairAttempted = true
+      validationError = (error instanceof Error ? error.message : String(error)).slice(0, 1800)
+      previousCandidate = raw
+    }
+  }
+  throw new Error('visual_generation_budget_exhausted')
+}

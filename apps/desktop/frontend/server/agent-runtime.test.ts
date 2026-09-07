@@ -999,7 +999,7 @@ test('learning file study uses a short artifact-first harness instead of resourc
   assert.ok(result.reply.length < 220)
 })
 
-test('explicit visual intent prepares animation prose before the requested visual tool', async () => {
+test('explicit visual intent plans the teaching artifact before rendering', async () => {
   const cases = [
     { message: '什么是联邦学习', expected: '' },
     { message: '画一张联邦学习流程图', expected: 'generate_learning_diagram' },
@@ -1066,11 +1066,12 @@ test('a failed animation preserves the committed explanation and cannot drift', 
   assert.match(result.reply, /^联邦学习由多个客户端/)
   const committed = events.findIndex(event => event.type === 'teaching_segment_committed')
   const toolStarted = events.findIndex(event => event.type === 'tool_started')
-  assert.ok(committed >= 0 && toolStarted > committed)
+  assert.ok(toolStarted >= 0 && committed > toolStarted)
+  assert.ok(events.findIndex(event => event.type === 'tool_completed') > committed)
   assert.equal(events.slice(committed + 1).some(event => event.type === 'text_reset'), false)
 })
 
-test('a brief failure after explanation commit never invokes the renderer', async () => {
+test('a brief failure closes a visible tool without generating placeholder prose or invoking the renderer', async () => {
   const executions: string[] = []
   const events: any[] = []
   let calls = 0
@@ -1087,11 +1088,14 @@ test('a brief failure after explanation commit never invokes the renderer', asyn
       return { choices: [{ message: { content: (request.body as any).response_format ? '{"topic":"broken"}' : visualTeachingExplanation } }] }
     },
   })
-  assert.equal(calls, 3)
+  assert.equal(calls, 2)
   assert.deepEqual(executions, [])
   assert.equal(result.visualTeaching?.terminalState, 'explanation_only')
-  assert.match(result.reply, new RegExp(`^${visualTeachingExplanation}`))
-  assert.ok(events.some(event => event.type === 'teaching_segment_committed'))
+  assert.match(result.reply, /图解构建失败/)
+  assert.equal(events.some(event => event.type === 'teaching_segment_committed'), false)
+  assert.ok(events.some(event => event.type === 'tool_started'))
+  assert.ok(events.some(event => event.type === 'tool_completed' && event.run.status === 'failed'))
+  assert.equal(result.trace.toolCalls, 1)
 })
 
 test('visual tool observations expose bounded frame grounding for truthful Tutor narration', async () => {

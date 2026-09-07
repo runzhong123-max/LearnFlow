@@ -23,7 +23,8 @@
     "test:plugins": "node --experimental-strip-types --test server/plugin-api.test.ts server/role-capability-plugin.test.ts server/hub-discovery-client.test.ts server/plugin-object-drop.test.ts server/role-package-file-import.test.ts server/role-package-hub-import.test.ts server/tool-capability-catalog.test.ts server/learning-task-conversion-plugin.test.ts server/learning-task-conversion-intake.test.ts server/ecosystem-client.test.ts",
     "role:import-file": "node --experimental-strip-types scripts/import-role-package-file.mjs",
     "role:import-hub": "node --experimental-strip-types scripts/import-role-package-hub.mjs",
-    "test": "npm run test:teaching && npm run test:search && npm run test:learning && npm run test:planning && npm run test:profile && npm run test:path && npm run test:formal && npm run test:auth && npm run test:plugins"
+    "test": "npm run test:teaching && npm run test:search && npm run test:learning && npm run test:planning && npm run test:profile && npm run test:path && npm run test:formal && npm run test:auth && npm run test:plugins",
+    "test:visuals": "node --experimental-strip-types --test server/visual-teaching-skill.test.ts server/visualize-runtime.test.ts server/visualize-composition-golden.test.ts"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.8.0",

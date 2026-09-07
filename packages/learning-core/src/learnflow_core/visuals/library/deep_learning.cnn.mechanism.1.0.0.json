@@ -1,0 +1,424 @@
+{
+  "id": "deep_learning.cnn.mechanism",
+  "version": "1.0.0",
+  "status": "production",
+  "title": "CNN：卷积到分类分数",
+  "description": "可调步长与补零，逐步核验卷积、ReLU、池化、教学分类头和 softmax；明确使用未训练小模型。",
+  "aliases": [
+    "CNN",
+    "卷积",
+    "手写数字",
+    "convolution",
+    "池化"
+  ],
+  "tags": [
+    "deep_learning",
+    "computer_vision",
+    "神经网络"
+  ],
+  "patterns": [
+    "decomposition",
+    "trace",
+    "linked_views"
+  ],
+  "kind": [
+    "diagram",
+    "animation"
+  ],
+  "spec": {
+    "spec_version": "0.2.0",
+    "id": "cnn_mechanism",
+    "title": "CNN 数值流水线：教学小模型",
+    "domains": [
+      "computer_science"
+    ],
+    "teaching": {
+      "goal": "逐步追踪局部像素如何变成特征和分类分数，并区分机制演示与训练后的识别。",
+      "assumptions": [
+        "6×6 合成数字形状与手工核是机制教学输入，不是 MNIST 数据或训练后的 CNN。",
+        "conv2d 使用互相关约定，核不翻转；步长与对称补零可以调整。",
+        "池化 size=2、stride=2；尾部按 floor 舍弃。分类头使用单通道全局平均池化和未训练的教学权重，输出仅演示 softmax 运算，不代表识别能力或可信度。"
+      ],
+      "misconceptions": [],
+      "checkpoints": [],
+      "pattern": "decomposition",
+      "secondary_pattern": "linked_views"
+    },
+    "parameters": [
+      {
+        "id": "stride",
+        "label": "卷积步长",
+        "type": "integer",
+        "min": 1,
+        "max": 2,
+        "step": 1,
+        "default": 1,
+        "unit": "pixels",
+        "on_change": "reset_run"
+      },
+      {
+        "id": "padding",
+        "label": "边缘补零",
+        "type": "integer",
+        "min": 0,
+        "max": 1,
+        "step": 1,
+        "default": 0,
+        "unit": "pixels",
+        "on_change": "reset_run"
+      }
+    ],
+    "data": {
+      "image": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "kernel": [
+        [
+          1,
+          1,
+          1
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          -1,
+          -1,
+          -1
+        ]
+      ],
+      "program": {
+        "steps": [
+          {
+            "id": "conv",
+            "op": "conv2d",
+            "title": "卷积窗口与共享权重",
+            "narration": "同一个核在输入上逐位置做乘加；高亮区域就是当前使用的像素。",
+            "args": {
+              "input": {
+                "source": "/data/image"
+              },
+              "kernel": {
+                "source": "/data/kernel"
+              },
+              "stride": {
+                "source": "/params/stride"
+              },
+              "padding": {
+                "source": "/params/padding"
+              }
+            }
+          },
+          {
+            "id": "relu",
+            "op": "relu",
+            "title": "ReLU 激活",
+            "narration": "把负值置零，非负值保持不变。",
+            "args": {
+              "input": {
+                "source": "/state/results/conv"
+              }
+            }
+          },
+          {
+            "id": "pool",
+            "op": "max_pool",
+            "title": "最大池化",
+            "narration": "每个 2×2 窗口取最大值；未覆盖的尾部按声明规则舍弃。",
+            "args": {
+              "input": {
+                "source": "/state/results/relu"
+              },
+              "size": 2,
+              "stride": 2
+            }
+          },
+          {
+            "id": "gap",
+            "op": "global_average_pool",
+            "title": "全局平均池化",
+            "narration": "这个教学网络把单通道特征图取平均，得到长度为 1 的向量；也可以用其他架构的展平或多通道特征。",
+            "args": {
+              "input": {
+                "source": "/state/results/pool"
+              }
+            }
+          },
+          {
+            "id": "logits",
+            "op": "linear",
+            "title": "教学分类头：0–9 的分数",
+            "narration": "用声明的未训练权重计算十个分数，位置依次对应数字 0–9。这些分数不能用来评估手写数字识别效果。",
+            "args": {
+              "input": {
+                "source": "/state/results/gap"
+              },
+              "weights": {
+                "source": "/data/weights"
+              },
+              "bias": {
+                "source": "/data/bias"
+              }
+            }
+          },
+          {
+            "id": "probabilities",
+            "op": "softmax",
+            "title": "Softmax：把分数归一化",
+            "narration": "归一化后十个数之和为 1。这里没有训练过程，最大值对应的标签不构成有效识别结论。",
+            "args": {
+              "input": {
+                "source": "/state/results/logits"
+              }
+            }
+          }
+        ]
+      },
+      "weights": [
+        [
+          -0.4
+        ],
+        [
+          0.2
+        ],
+        [
+          -0.1
+        ],
+        [
+          0.3
+        ],
+        [
+          0
+        ],
+        [
+          0.1
+        ],
+        [
+          -0.3
+        ],
+        [
+          0.4
+        ],
+        [
+          -0.2
+        ],
+        [
+          0.15
+        ]
+      ],
+      "bias": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "model": {
+      "id": "computation.pipeline",
+      "version": "1.0.0",
+      "inputs": {
+        "program": {
+          "source": "/data/program"
+        }
+      },
+      "seed": 42,
+      "max_steps": 128
+    },
+    "layout": {
+      "kind": "columns",
+      "view_order": [
+        "input",
+        "kernel",
+        "output"
+      ]
+    },
+    "views": [
+      {
+        "id": "input",
+        "title": "输入与当前窗口",
+        "renderer": "svg",
+        "elements": [
+          {
+            "id": "input_matrix",
+            "kind": "matrix",
+            "label": "输入",
+            "inputs": {
+              "values": {
+                "source": "/state/active/input_matrix"
+              },
+              "visible": {
+                "source": "/state/active/input_visible"
+              },
+              "active_cells": {
+                "source": "/state/active/active_cells"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "kernel",
+        "title": "当前运算的核或权重",
+        "renderer": "svg",
+        "elements": [
+          {
+            "id": "kernel_matrix",
+            "kind": "matrix",
+            "label": "核／权重矩阵",
+            "inputs": {
+              "values": {
+                "source": "/state/active/kernel_matrix"
+              },
+              "visible": {
+                "source": "/state/active/kernel_visible"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "output",
+        "title": "计算结果",
+        "renderer": "svg",
+        "elements": [
+          {
+            "id": "output_matrix",
+            "kind": "matrix",
+            "label": "输出（· 表示尚未计算）",
+            "inputs": {
+              "values": {
+                "source": "/state/active/output_matrix"
+              },
+              "computed_cells": {
+                "source": "/state/active/computed_cells"
+              },
+              "visible": {
+                "source": "/state/active/output_visible"
+              },
+              "active_cells": {
+                "source": "/state/active/output_cells"
+              }
+            }
+          },
+          {
+            "id": "output_vector",
+            "kind": "array",
+            "label": "输出向量",
+            "inputs": {
+              "items": {
+                "source": "/state/active/values"
+              },
+              "visible": {
+                "source": "/state/active/array_visible"
+              },
+              "active_indices": {
+                "source": "/state/active/active_indices"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "playback": {
+      "initial_step": 0,
+      "autoplay": false,
+      "transition": {
+        "kind": "cut",
+        "duration_ms": 0,
+        "easing": "linear"
+      },
+      "reduced_motion": "cut"
+    },
+    "interactions": [
+      {
+        "id": "steps",
+        "kind": "stepper",
+        "target": "trace",
+        "allow_back": true
+      },
+      {
+        "id": "stride_slider",
+        "kind": "slider",
+        "parameter_id": "stride"
+      },
+      {
+        "id": "padding_slider",
+        "kind": "slider",
+        "parameter_id": "padding"
+      }
+    ],
+    "annotations": [],
+    "validation": {
+      "requested_checks": [
+        {
+          "id": "computation.operation_contracts",
+          "version": "1.0.0"
+        }
+      ]
+    },
+    "accessibility": {
+      "summary": "看清共享卷积核如何生成特征，再经过激活、池化和展平。",
+      "keyboard": true,
+      "text_alternative": true
+    },
+    "fallback": {
+      "kind": "text",
+      "text": "显示当前参数下的完整状态与步骤说明。"
+    }
+  }
+}
