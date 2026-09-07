@@ -26,6 +26,7 @@ from app.services.xingchen_learning_task_candidates import (
     generate_candidate,
     handoff_to_integration_bundle,
     load_bundle_service_token,
+    load_xingchen_credentials,
     validate_candidate,
     validate_integration_bundle,
 )
@@ -858,3 +859,21 @@ def test_candidate_table_contains_only_candidate_artifacts(client: TestClient):
             assert all((row.candidate_json or {}).get("provenance", {}).get("kernelTargets") == [] for row in rows)
 
     asyncio.run(inspect())
+
+
+def test_workflow_credentials_do_not_require_unused_app_id(tmp_path):
+    source = tmp_path / "workflow.env"
+    source.write_text("XFYUN_API_KEY=test-key\nXFYUN_API_SECRET=test-secret\nXFYUN_FLOW_ID=test-flow\n")
+    credentials = load_xingchen_credentials(source)
+    assert credentials.app_id == ""
+    assert credentials.flow_id == "test-flow"
+
+
+@pytest.mark.parametrize("missing", ["XFYUN_API_KEY", "XFYUN_API_SECRET", "XFYUN_FLOW_ID"])
+def test_workflow_credentials_still_require_auth_and_flow(tmp_path, missing):
+    source = tmp_path / "workflow.env"
+    source.write_text("".join(f"{key}=test-value\n" for key in ["XFYUN_API_KEY", "XFYUN_API_SECRET", "XFYUN_FLOW_ID"] if key != missing))
+    with pytest.raises(LearningTaskIntegrationError) as error:
+        load_xingchen_credentials(source)
+    assert error.value.code == "provider_not_configured"
+    assert error.value.diagnostics == {"missing": [missing]}

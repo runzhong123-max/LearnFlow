@@ -193,7 +193,7 @@ def load_xingchen_credentials(path: str | Path | None = None) -> XingchenCredent
             who_fixes="operator", suggested_action="在后端私密配置文件中配置并发布固定工作流",
         )
     values = dotenv_values(source)
-    names = ("XFYUN_APP_ID", "XFYUN_API_KEY", "XFYUN_API_SECRET", "XFYUN_FLOW_ID")
+    names = ("XFYUN_API_KEY", "XFYUN_API_SECRET", "XFYUN_FLOW_ID")
     missing = [name for name in names if not str(values.get(name) or "").strip()]
     if missing:
         raise LearningTaskIntegrationError(
@@ -208,7 +208,7 @@ def load_xingchen_credentials(path: str | Path | None = None) -> XingchenCredent
             "integration_config_invalid", "讯飞工作流超时配置不是数字", status_code=503,
         ) from exc
     return XingchenCredentials(
-        app_id=str(values["XFYUN_APP_ID"]).strip(),
+        app_id=str(values.get("XFYUN_APP_ID") or "").strip(),
         api_key=str(values["XFYUN_API_KEY"]).strip(),
         api_secret=str(values["XFYUN_API_SECRET"]).strip(),
         flow_id=str(values["XFYUN_FLOW_ID"]).strip(),

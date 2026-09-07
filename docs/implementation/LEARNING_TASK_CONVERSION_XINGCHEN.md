@@ -123,11 +123,19 @@ LearnFlow 不信任 workflow 自报的 gate。Validator 实际检查：候选版
 
 专属语义预检只从 Vite 服务端读取 `LEARNING_TASK_PREFLIGHT_API_KEY`、`LEARNING_TASK_PREFLIGHT_BASE_URL` 和 `LEARNING_TASK_PREFLIGHT_MODEL`；变量不会进入浏览器 bundle、插件对象或日志，且非本机地址必须使用 HTTPS。预检当前可配置为 DeepSeek，只负责输入分级与候选任务契约，不生成最终步骤，也不取代讯飞工作流。
 
+工作流鉴权必填 `XFYUN_API_KEY`、`XFYUN_API_SECRET` 和 `XFYUN_FLOW_ID`；`XFYUN_APP_ID` 保留可选兼容字段，不参与该 HTTP 接口鉴权。`XFYUN_WORKFLOW_BASE_URL` 填 `https://xingchen-api.xf-yun.com`，不要追加 `/workflow/v1/chat/completions`，路径由客户端固定拼接。
+
 讯飞凭据只从私密文件读取；默认使用 `backend/.private/learning_task_conversion.xfyun.env`，`.private/` 已被忽略，示例配置只列变量名、不包含值。当前工作流结束节点返回 `learning-task-to-personalized-learning-v1` 交接 JSON；LearnFlow 只允许从配置中固定的 HTTPS origin 读取与当前 `task_card_id` 精确匹配的 `handoff.json` 或 `personalized-learning.json`，保持证书校验、禁止重定向、跨域、查询凭据和任意路径，然后规范化为内部 bundle 并走同一 validator。配置 origin 可以是证书 SAN 覆盖的 HTTPS IP，但该许可不扩展为任意 URL fetch。
 
 旧部署仍可通过 `LEARNING_TASK_BUNDLE_CREDENTIALS_PATH` 和 `LEARNING_TASK_BUNDLE_SERVICE_TOKEN` 使用服务间 bundle 接口；旧接口继续要求受信 HTTPS DNS 域名和 Bearer token。私有 CA 可由 `LEARNING_TASK_BUNDLE_CA_FILE` 指定。`task_card_id` 不是访问凭证，插件和错误 payload 均不含密钥。
 
 未配置固定 HTTPS 产物 origin 时在线能力显式返回不可用，不能伪造成功；只有走旧 bundle 接口时才额外要求服务间 token。Seeded demo 不依赖该在线插件即可完成核心 LearnFlow 闭环。
+
+### 容器部署
+
+云账号模式的候选请求由云端后端处理，凭据应配置在云端，不能只放到桌面本机。将私密文件以 0600 权限存放在服务器应用源码与镜像之外，在部署环境设置 `LEARNING_TASK_XFYUN_SECRET_FILE`（服务器绝对路径）和 `LEARNING_TASK_CONVERSION_BASE_URL`（工作流交接产物的受信 HTTPS origin），将 `deploy/xingchen.compose.yaml` 追加到现有 Compose 配置链。只更新 `learnflow-backend`，保留已有身份配置、数据卷和其他服务。不要把原始 API Key/Secret 写入 Compose、Git 或 Docker build context。
+
+发布后先验证 `/ready` 与 `/api/architecture/validate`，再使用隔离测试任务验证真实工作流、交接 JSON 读取和确定性候选校验。普通鉴权可用不代表候选协议与产物服务也已可用。
 
 ## 8. Contract impact 与迁移
 
