@@ -118,3 +118,18 @@ test('archived profile memories stay editable but are not presented as active pe
   value.growth.areas[0].memories[0].status = 'active'
   assert.match(buildProfileOverview(value)[3].items[0].source, /形式偏好/)
 })
+
+test('five-kernel overview keeps tasks out of goals and excludes archived practice', async () => {
+  const { buildFiveKernelOverview } = await import('../src/profile-overview.ts')
+  const value = snapshot()
+  value.learning_tasks = [{ id: 2, title: '当前任务', status: 'active' }] as FormalLearnerSnapshot['learning_tasks']
+  value.growth = { areas: [{ id: 'ability', memories: [
+    { memory_id: 'old', status: 'archived', summary: '旧记录' },
+    { memory_id: 'current', status: 'active', summary: '提示后完成', source_label: '实践记录' },
+  ] }] } as FormalLearnerSnapshot['growth']
+  const sections = buildFiveKernelOverview(value)
+  assert.equal(new Set(sections.map(section => section.kernel)).size, 5)
+  assert.equal(sections[0].items.length, 0)
+  assert.equal(sections[1].items[0].text, '当前任务')
+  assert.deepEqual(sections[3].items.map(item => item.text), ['提示后完成'])
+})

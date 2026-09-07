@@ -84,3 +84,19 @@ export function buildProfileOverview(snapshot: FormalLearnerSnapshot): ProfileOv
     { id: 'support', title: '如何帮助我', kernel: 'human', empty: '当前资料没有可展示的学习支持设置。', items: support },
   ]
 }
+
+export function buildFiveKernelOverview(snapshot: FormalLearnerSnapshot) {
+  const [focus, background, progress, support] = buildProfileOverview(snapshot)
+  const memories = (kernel: KernelName): ProfileOverviewItem[] =>
+    (profileGrowthArea(snapshot.growth?.areas || [], kernel)?.memories || [])
+      .filter(item => item.status === 'active')
+      .sort((a, b) => (Date.parse(b.updated_at || '') || 0) - (Date.parse(a.updated_at || '') || 0))
+      .slice(0, 3).map(item => ({ id: item.memory_id, text: item.summary || item.title, source: item.source_label, time: item.updated_at }))
+  return [
+    { ...focus, title: '我想去哪里', label: '价值核', description: '目标 · 兴趣 · 优先级', items: focus.items.filter(item => !item.id.startsWith('task-')) },
+    { id: 'structure', kernel: 'structure' as const, title: '我学到哪里', label: '结构核', description: '位置 · 路径 · 返回锚点', empty: '还没有可展示的学习位置。可以从学习路径选择下一步。', items: [...focus.items.filter(item => item.id.startsWith('task-')), ...memories('structure')].slice(0, 3) },
+    { ...background, title: '我理解了什么', label: '知识核', description: '理解 · 疑问 · 误解', items: [...background.items, ...progress.items].filter((item, index, all) => all.findIndex(other => other.text === item.text) === index).slice(0, 3) },
+    { id: 'practice', kernel: 'practice' as const, title: '我做过什么', label: '实践核', description: '尝试 · 作品 · 反馈', empty: '还没有可展示的实践记录，不代表你没有练习或进步。', items: memories('practice') },
+    { ...support, title: '怎样学更适合我', label: '人本核', description: '偏好 · 节奏 · 支持', items: support.items },
+  ]
+}

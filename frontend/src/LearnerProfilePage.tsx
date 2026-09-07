@@ -15,7 +15,7 @@ import {
   presentVerification,
 } from './profile-presentation'
 
-import { buildProfileOverview, profileGrowthArea, profileTimeLabel } from './profile-overview'
+import { buildFiveKernelOverview, profileGrowthArea, profileTimeLabel } from './profile-overview'
 import './profile-overview.css'
 
 const KERNELS: Array<{ id: KernelName; name: string; short: string; description: string }> = [
@@ -343,7 +343,7 @@ export default function LearnerProfilePage({
       <header className="profile-page-heading">
         <div>
           <h1>{snapshot.learner.display_name}的学习画像</h1>
-          <p>你的基础、目标、偏好，以及学习过程中逐渐形成的认识。</p>
+          <p>从五个维度看见你的学习：方向、位置、理解、实践与节奏。</p>
         </div>
         <div className="profile-version formal-authority-badge">
           <i /> <span>{connection.status === 'connected' ? '已同步' : '离线'}</span>
@@ -353,16 +353,17 @@ export default function LearnerProfilePage({
       {error && <div className="formal-inline-error" role="alert">{error}</div>}
 
       <div className="profile-learning-overview">
-        {buildProfileOverview(snapshot).map(section => <section key={section.id} className="profile-learning-section">
-          <header><h2>{section.title}</h2><button type="button" onClick={() => {
+        {buildFiveKernelOverview(snapshot).map(section => <section key={section.id} className={`profile-learning-section profile-kernel-${section.kernel}`}>
+          <header><div><span className="profile-kernel-label">{section.label}</span><h2>{section.title}</h2></div><button type="button" onClick={() => {
             setActiveKernel(section.kernel)
             setRecordsOpen(true)
-            setEditorOpen(section.id !== 'progress')
+            setEditorOpen(['value', 'human', 'knowledge'].includes(section.kernel))
             requestAnimationFrame(() => recordsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
-          }}>{section.id === 'progress' ? '查看依据' : '修改'}</button></header>
+          }}>{['structure', 'practice'].includes(section.kernel) ? '查看依据' : '查看与修改'}</button></header>
+          <p className="profile-kernel-description">{section.description}</p>
           {section.items.length ? <ul>{section.items.map(item => <li key={item.id}>
             <p>{item.text}</p><small>{item.source}</small>
-            <small><time>{profileTimeLabel(item.time)}</time>{item.time ? ' · 记录时间' : ''}</small>
+            {item.time && <small><time>{profileTimeLabel(item.time)}</time></small>}
           </li>)}</ul> : <p className="formal-empty-copy">{section.empty}</p>}
         </section>)}
       </div>

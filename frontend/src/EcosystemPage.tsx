@@ -8,7 +8,12 @@ const kinds: Record<string, string> = { task: '工作任务', capability: '岗�
 const unresolvedReasons: Record<string, string> = { needs_decomposition: '该对象还需要拆分出明确的知识或技能要求。', needs_definition: '需要补充适用范围和可检查的考核要求。', needs_evidence: '缺少可追溯的岗位证据。', ambiguous_definition: '名称相近，但定义或适用范围不能确定为相同。', needs_anchor: '需要确定应归属的课程或知识领域。' }
 const relations: Record<string, string> = { equivalent: '语义等价', narrower_than: '岗位要求更具体', related: '相关，尚不等价' }
 function textError(error: unknown) { return error instanceof Error ? error.message : '服务暂不可用，请稍后重试。' }
-export default function EcosystemPage() {
+export default function GraphHubRedirect() {
+  useEffect(() => { window.location.replace('https://graphs.learnflow.club/hub') }, [])
+  return <section className="page-loading">正在打开 Graph Hub… <a href="https://graphs.learnflow.club/hub">前往岗位图谱</a></section>
+}
+
+export function EcosystemPage() {
   const [query, setQuery] = useState('')
   const [items, setItems] = useState<CatalogItem[]>([])
   const [searched, setSearched] = useState(false)

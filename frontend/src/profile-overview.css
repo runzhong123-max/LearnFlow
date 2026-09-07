@@ -12,3 +12,18 @@
 .profile-record-disclosure[open] > summary { margin-bottom: 16px; }
 .profile-overview-footer { display: flex; gap: 16px; align-items: center; justify-content: space-between; color: #66786e; font-size: 13px; margin-bottom: 20px; }
 @media (max-width: 760px) { .profile-learning-overview { grid-template-columns: 1fr; } .profile-overview-footer { align-items: flex-start; flex-direction: column; } }
+
+.profile-learning-overview { grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: start; }
+.profile-learning-section { grid-column: span 2; border-top: 3px solid var(--kernel-accent); padding: 20px; }
+.profile-learning-section:nth-child(n+4) { grid-column: span 3; }
+.profile-kernel-value { --kernel-accent: #ad7938; }
+.profile-kernel-structure { --kernel-accent: #408277; }
+.profile-kernel-knowledge { --kernel-accent: #577fb0; }
+.profile-kernel-practice { --kernel-accent: #8a6ab0; }
+.profile-kernel-human { --kernel-accent: #b77479; }
+.profile-kernel-label { display: block; color: var(--kernel-accent); font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+.profile-kernel-description { color: #718078; font-size: 12px; margin: 12px 0 0; }
+.profile-learning-section header button { font-size: 12px; flex-shrink: 0; }
+.profile-learning-section li p { font-size: 14px; }
+@media (max-width: 1100px) { .profile-learning-section { grid-column: span 3; } .profile-learning-section:last-child { grid-column: span 6; } }
+@media (max-width: 760px) { .profile-learning-overview { grid-template-columns: 1fr; } .profile-learning-section, .profile-learning-section:nth-child(n+4), .profile-learning-section:last-child { grid-column: auto; } }
