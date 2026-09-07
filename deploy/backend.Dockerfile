@@ -8,6 +8,7 @@ COPY packages/learning-core /app/packages/learning-core
 COPY backend ./
 # Registry bindings inspect these versioned source assets in the running image.
 COPY frontend /app/frontend
+COPY packages/learning-client /app/packages/learning-client
 COPY labs/golden-role /app/labs/golden-role
 
 EXPOSE 8010
