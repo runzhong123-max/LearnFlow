@@ -23,3 +23,9 @@ Contract impact：无外部契约变化。PresentationContext 的可选属性仅
 - `git diff --check`。
 
 浏览器使用已有编译结果和隔离 host 模拟，不调用线上模型，不写用户聊天或作品。未重新执行真实模型生成、整仓全量测试、桌面安装或 seeded demo；本次修改不涉及这些运行流程。
+
+## 发布结果
+
+应用提交 `0999997` 已推送到 `origin/main`，线上前端镜像为 `learnflow-frontend:visual-ui-0999997`。发布目录 `/opt/ceg/releases/learnflow-visual-ui-0999997` 保存之前的镜像引用、配置链和回滚覆盖文件。只切换 `learnflow-frontend`；其余 5 个容器的 ID 经核对保持不变。桌面源码同步，未安装替换桌面应用。
+
+镜像内插件装配检查确认 `educational_visuals@1.0.0` 的 6 项工具。切换后前端 HTTP 200、重启数 0；公网首页及 `/assets/index-eKcg-4l7.js`、`/assets/index-CG_JXby9.css` 均返回 200，HTML 引用与镜像内容一致，CSS 含新播放器样式。公网 `/api/architecture/validate` 为 valid=true。
