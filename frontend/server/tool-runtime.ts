@@ -1,3 +1,4 @@
+import { compactProjectWorkflow } from '../../packages/learning-client/src/project-guidance/workflow-context.ts'
 import type { VisualAuthoringTransport } from './visualize-authoring.ts'
 import { compactTeachingGuidance } from '../src/teaching-guidance-context.ts'
 import { structurallyCompact } from './context-compaction.ts'
@@ -704,6 +705,7 @@ function compactProjectContext(value: AgentProjectContext | undefined) {
     authority: 'formal_project_runtime',
     project: value.project,
     checkpoint_id: value.checkpoint_id,
+    project_workflow: compactProjectWorkflow(value),
     roadmap: value.roadmap,
     learning_tasks: (value.learning_tasks || []).slice(0, 16),
     sources: (value.sources || []).slice(0, 16),

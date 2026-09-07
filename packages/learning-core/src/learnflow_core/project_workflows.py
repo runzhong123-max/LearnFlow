@@ -18,7 +18,8 @@ from app.schemas.project_workflow import WorkbenchState
 from app.services.learning_runtime import record_event
 from app.services.learning_tasks import ensure_all_checkpoint_learning_tasks, learning_task_view
 from app.services.teaching_contract import normalize_teaching_contract
-from app.services.practice_cases import digest, get_case, case_summary, evaluate_case
+from app.services.practice_cases import CASE_ID, digest, get_case, case_summary, evaluate_case
+from learnflow_core.project_stage_support import SUPPORT_VERSION, assistance_view, help_guidance, stage_support
 
 SCHEMA_VERSION = "learnflow.project-workflow.v1"
 
@@ -96,7 +97,12 @@ async def _record(db: AsyncSession, project: Project, action_id: str, kind: str,
     if event_type:
         await record_event(db, learner_id=project.learner_id, project_id=project.id,
                            checkpoint_id=checkpoint_id, source="ui", event_type=event_type,
-                           payload={"submission_id": action.id, "kind": kind, "mastery_unchanged": True},
+                           payload={"submission_id": action.id, "kind": kind, "mastery_unchanged": True,
+                                    **({"mode": feedback.get("mode"), "execution_mode": feedback.get("execution_mode"),
+                                        "revision": action.id, "support_version": SUPPORT_VERSION,
+                                        "guidance_delivered": feedback.get("guidance_delivered", False),
+                                        "implementation_performed": False}
+                                       if kind in {"hint", "assistance"} and feedback else {})},
                            provenance={"service": "project_workflows", "explicit_click": True,
                                        "policy_version": SCHEMA_VERSION},
                            client_event_id=f"workflow:{project.id}:{action_id}")
@@ -107,14 +113,16 @@ def _stage_for(checkpoint: Checkpoint, state: ProjectWorkflowState | None, proje
     key = str((checkpoint.brief or {}).get("checkpoint_key") or "")
     if state and state.case_ref:
         case = get_case(state.case_ref["id"], state.case_ref["version"], state.case_ref["root_hash"])
-        return next((stage for stage in case["stages"] if stage["key"] == key), {})
+        stage = next((stage for stage in case["stages"] if stage["key"] == key), {})
+        return {**stage, **stage_support("practice", key, bundled_case=case["id"] == CASE_ID)}
     stage = next((stage for stage in _default_stages(project.project_mode or "learning", project)
                   if stage["key"] == key and (checkpoint.brief or {}).get("workflow_template") == SCHEMA_VERSION), None)
-    return stage or {"key": key or f"checkpoint-{checkpoint.id}", "title": checkpoint.title,
+    stage = stage or {"key": key or f"checkpoint-{checkpoint.id}", "title": checkpoint.title,
                      "objective": checkpoint.description, "materials": [],
                      "fields": [_field("reflection", "交付说明、依据和复盘")],
                      "validator": "formal_verification" if project.project_mode == "learning" else "artifact",
                      "required_artifacts": project.project_mode != "learning"}
+    return {**stage, **stage_support(project.project_mode or "learning", key)}
 
 
 def _submission_view(action: ProjectWorkflowSubmission) -> dict:
@@ -146,6 +154,10 @@ async def workflow_view(db: AsyncSession, project: Project, *, compact: bool = F
                            "materials": stage.get("materials", []) if visible else [],
                            "fields": stage.get("fields", []) if visible else [],
                            "required_artifacts": stage.get("required_artifacts", False),
+                           "support_version": SUPPORT_VERSION,
+                           **{name: stage.get(name, []) if visible else [] for name in
+                              ("student_tasks", "mentor_support", "shared_tasks", "related_files")},
+                           "assistance": _assistance_from_actions(actions, checkpoint.id) if visible and checkpoint.id not in accepted else None,
                            "hint_levels": 2 if visible else 0,
                            "hints_used": [{"level": action.payload["level"], "body": action.feedback["body"]}
                                           for action in actions if visible and action.kind == "hint" and action.checkpoint_id == checkpoint.id],
@@ -374,9 +386,20 @@ async def deliver_checkpoint(db: AsyncSession, project: Project, checkpoint_id: 
     elif validator == "artifact":
         add("artifact", "交付物引用", bool(data["artifact_refs"]), "请附本项目可检查的交付物引用。")
     passed = all(item["passed"] for item in checks)
-    effective_assistance = data["assistance_level"]
-    if effective_assistance == "independent" and any(item.kind == "hint" and item.checkpoint_id == checkpoint_id for item in actions):
-        effective_assistance = "hint"
+    # Help history belongs to this stage, not the current selector position.
+    # A learner's earlier assisted delivery cannot become independent on retry.
+    assistance_order = {"independent": 0, "hint": 1, "together": 2, "demonstrated": 3}
+    observed_assistance = [data["assistance_level"]]
+    for item in actions:
+        if item.checkpoint_id != checkpoint_id:
+            continue
+        if item.kind == "hint" or (item.kind == "assistance" and item.feedback.get("guidance_delivered")):
+            observed_assistance.append("hint")
+        if item.kind == "delivery":
+            prior = item.feedback.get("effective_assistance_level", item.payload.get("assistance_level", "independent"))
+            if prior in assistance_order:
+                observed_assistance.append(prior)
+    effective_assistance = max(observed_assistance, key=assistance_order.__getitem__)
     feedback = {"accepted": passed, "checks": checks, "review_required": True,
                 "effective_assistance_level": effective_assistance,
                 "summary": "交付检查通过；解释与设计质量仍需导师评审。" if passed else "交付尚有未满足项，请按检查结果修改后重新提交。",
@@ -401,31 +424,79 @@ async def record_reading(db: AsyncSession, project: Project, data: dict) -> dict
     return await workflow_view(db, project)
 
 
-async def request_hint(db: AsyncSession, project: Project, checkpoint_id: int, data: dict) -> dict:
-    payload = {"operation": "hint", "checkpoint_id": checkpoint_id, **data}
+def _assistance_from_actions(actions: list[ProjectWorkflowSubmission], checkpoint_id: int) -> dict:
+    for action in reversed(actions):
+        if action.checkpoint_id != checkpoint_id or action.kind not in {"hint", "assistance"}:
+            continue
+        mode = action.payload.get("mode") or ("steps" if action.payload.get("level") == 2 else "direction")
+        return assistance_view(mode, action.id)
+    return assistance_view()
+
+
+async def _assistance_scope(db: AsyncSession, project: Project, checkpoint_id: int):
+    if not project or not project.learner_id:
+        raise HTTPException(404, "项目不存在")
+    checkpoint = next((item for item in await _rows(db, project) if item.id == checkpoint_id), None)
+    if not checkpoint:
+        raise HTTPException(404, "项目关卡不存在")
+    state = await _state(db, project)
+    if not state or not state.initialized:
+        raise HTTPException(409, "项目阶段尚未建立")
+    actions = await _actions(db, project)
+    accepted = {item.checkpoint_id for item in actions if item.kind == "delivery" and item.feedback.get("accepted")}
+    if checkpoint_id in accepted or any(parent not in accepted for parent in checkpoint.prerequisites or []):
+        raise HTTPException(409, "只能使用当前尚未完成阶段的帮助")
+    return state, checkpoint, actions
+
+
+async def get_stage_assistance(db: AsyncSession, project: Project, checkpoint_id: int) -> dict:
+    """Read-only live authority for a scoped, currently available stage.
+
+    Callers must resolve Project through their learner ownership boundary first.
+    No database row is created and no kernel state is read or written.
+    """
+    _, _, actions = await _assistance_scope(db, project, checkpoint_id)
+    return _assistance_from_actions(actions, checkpoint_id)
+
+
+async def _request_assistance(db: AsyncSession, project: Project, checkpoint_id: int, data: dict, *, legacy_hint: bool = False) -> dict:
+    mode = data["mode"]
+    payload = {"operation": "hint" if legacy_hint else "assistance", "checkpoint_id": checkpoint_id,
+               **({"level": data["level"], "client_action_id": data["client_action_id"]} if legacy_hint else data)}
+    # Serialize per-project support updates without tying them to paper revisions.
+    await db.execute(update(ProjectWorkflowState).where(
+        ProjectWorkflowState.project_id == project.id, ProjectWorkflowState.learner_id == project.learner_id,
+    ).values(revision=ProjectWorkflowState.revision))
     if await _replay(db, project, data["client_action_id"], payload):
         row = await db.scalar(select(ProjectWorkflowSubmission).where(
             ProjectWorkflowSubmission.project_id == project.id,
             ProjectWorkflowSubmission.client_action_id == data["client_action_id"]))
-        return {"hint": {"level": data["level"], "body": row.feedback["body"]}, "workflow": await workflow_view(db, project)}
-    state = await _state(db, project)
-    checkpoint = next((item for item in await _rows(db, project) if item.id == checkpoint_id), None)
-    if not checkpoint or not state or not state.initialized:
-        raise HTTPException(404, "项目阶段尚未建立")
-    actions = await _actions(db, project)
-    accepted = {item.checkpoint_id for item in actions if item.kind == "delivery" and item.feedback.get("accepted")}
-    if checkpoint_id in accepted or any(parent not in accepted for parent in checkpoint.prerequisites or []):
-        raise HTTPException(409, "只能请求当前尚未完成阶段的提示")
+        return {"assistance": assistance_view(mode, row.id), "guidance": {"body": row.feedback["body"]},
+                "workflow": await workflow_view(db, project)}
+    state, checkpoint, actions = await _assistance_scope(db, project, checkpoint_id)
+    current = _assistance_from_actions(actions, checkpoint_id)
+    if not legacy_hint and data["expected_revision"] != current["revision"]:
+        raise HTTPException(409, "帮助档位已在另一处变化，请重新读取后选择")
     stage = _stage_for(checkpoint, state, project)
-    hints = stage.get("hints") or [
-        "先把本关的目标、输入、预期输出和限制逐项写清楚。对照材料，提出一个最小的可检查问题。",
-        "把预测、实际观察、解释和下一步分开。每次只改一个条件，保存可复现依据；正式独立验证仍需在本关学习任务中完成。",
-    ]
-    body = hints[data["level"] - 1]
-    await _record(db, project, data["client_action_id"], "hint", payload,
-                  {"body": body, "mastery_inference": False}, checkpoint_id,
-                  event_type="project_assistance_requested")
-    return {"hint": {"level": data["level"], "body": body}, "workflow": await workflow_view(db, project)}
+    body = help_guidance(stage, mode)
+    feedback = {"body": body, "mastery_inference": False, "mode": mode,
+                "execution_mode": assistance_view(mode)["execution_mode"],
+                "guidance_delivered": mode != "implementation", "implementation_performed": False}
+    row = await _record(db, project, data["client_action_id"], "hint" if legacy_hint else "assistance", payload,
+                        feedback, checkpoint_id, event_type="project_assistance_requested")
+    return {"assistance": assistance_view(mode, row.id), "guidance": {"body": body},
+            "workflow": await workflow_view(db, project)}
+
+
+async def request_stage_assistance(db: AsyncSession, project: Project, checkpoint_id: int, data: dict) -> dict:
+    return await _request_assistance(db, project, checkpoint_id, data)
+
+
+async def request_hint(db: AsyncSession, project: Project, checkpoint_id: int, data: dict) -> dict:
+    result = await _request_assistance(db, project, checkpoint_id,
+        {**data, "mode": "steps" if data["level"] == 2 else "direction"}, legacy_hint=True)
+    return {"hint": {"level": data["level"], "body": result["guidance"]["body"]},
+            "assistance": result["assistance"], "workflow": result["workflow"]}
 
 
 async def tutor_workflow_context(db: AsyncSession, project: Project, checkpoint_id: int | None = None) -> dict:

@@ -1830,3 +1830,21 @@ test('assessment mutation stops if its session CSRF bootstrap fails', async () =
     assert.deepEqual(urls, ['https://formal.example.test/api/auth/csrf'])
   } finally { globalThis.fetch = originalFetch }
 })
+
+
+test('project tool preserves current mentoring roles and help policy', async () => {
+  const context = { project: { id: 7, name: '分工' }, checkpoint_id: 10, roadmap: { checkpoints: [] }, learning_tasks: [], sources: [], learning_files: {},
+    project_workflow: { project_mode: 'experiment', milestones: [
+      { checkpoint_id: 10, status: 'available', student_tasks: ['学生实现核心'], mentor_support: ['导师检查边界'], shared_tasks: ['共同复现'],
+        assistance: { mode: 'pseudocode', revision: 4, execution_mode: 'read_only' }, related_files: [{ path: 'main.c', reason: '当前实现', role: 'implementation' }] },
+      { checkpoint_id: 11, status: 'locked', student_tasks: ['FUTURE_TASK'], related_files: [{ path: 'FUTURE_FILE' }] },
+    ] },
+  } as any
+  const result = await executeTutorAgentTool('read_project_workspace', {}, { message: '本关怎么分工', mode: 'guided_learning', formalProjectContext: context, generate: async () => 'unused' })
+  const observed = JSON.stringify(result.observation)
+  assert.match(observed, /学生实现核心/)
+  assert.match(observed, /导师检查边界/)
+  assert.match(observed, /pseudocode/)
+  assert.match(observed, /read_only/)
+  assert.doesNotMatch(observed, /FUTURE_TASK|FUTURE_FILE/)
+})

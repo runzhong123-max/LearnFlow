@@ -109,3 +109,20 @@ class CaseValidationRequest(BaseModel):
 class WorkflowHintRequest(BaseModel):
     client_action_id: str = Field(min_length=4, max_length=120)
     level: Literal[1, 2]
+
+
+HelpMode = Literal["direction", "steps", "pseudocode", "implementation"]
+
+
+class StageAssistance(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    mode: HelpMode = "direction"
+    revision: int = Field(default=0, ge=0)
+    execution_mode: Literal["read_only", "workspace_write"] = "read_only"
+
+
+class StageAssistanceRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    client_action_id: str = Field(min_length=4, max_length=120)
+    expected_revision: int = Field(ge=0)
+    mode: HelpMode

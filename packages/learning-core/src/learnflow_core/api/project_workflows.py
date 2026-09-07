@@ -13,6 +13,8 @@ from app.services import project_workflows as service
 from app.services.practice_cases import case_catalog, case_summary, get_case
 from app.api.workspace import require_desktop_token
 
+from learnflow_core.project_workflow_schema import StageAssistance, StageAssistanceRequest
+
 router = APIRouter(tags=["Project workflows"])
 
 
@@ -89,3 +91,17 @@ async def hint(project_id: int, checkpoint_id: int, data: WorkflowHintRequest,
                current: CurrentLearner = Depends(get_current_learner), db: AsyncSession = Depends(get_db)):
     project = await require_owned_project(db, current.learner.id, project_id)
     return await _commit(db, service.request_hint(db, project, checkpoint_id, data.model_dump()))
+
+
+@router.get("/vnext-projects/{project_id}/checkpoints/{checkpoint_id}/assistance", response_model=StageAssistance)
+async def read_assistance(project_id: int, checkpoint_id: int,
+                          current: CurrentLearner = Depends(get_current_learner), db: AsyncSession = Depends(get_db)):
+    project = await require_owned_project(db, current.learner.id, project_id)
+    return await service.get_stage_assistance(db, project, checkpoint_id)
+
+
+@router.post("/vnext-projects/{project_id}/checkpoints/{checkpoint_id}/assistance")
+async def request_assistance(project_id: int, checkpoint_id: int, data: StageAssistanceRequest,
+                             current: CurrentLearner = Depends(get_current_learner), db: AsyncSession = Depends(get_db)):
+    project = await require_owned_project(db, current.learner.id, project_id)
+    return await _commit(db, service.request_stage_assistance(db, project, checkpoint_id, data.model_dump()))
