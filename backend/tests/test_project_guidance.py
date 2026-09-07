@@ -247,3 +247,33 @@ def test_long_project_brief_remains_complete_and_saveable_with_full_verify_repor
     assert accepted.status_code==200,accepted.text
     assert len(accepted.json()['report']['steps'])==9
     assert client.post(url,json={**body,'client_action_id':key(),'steps':body['steps']+[{'name':'excess','exit_code':0}]}).status_code==422
+
+
+def test_device_report_preserves_bounded_provenance_and_legacy_retry_hash(client):
+    candidate, _ = prepare(client)
+    result, _ = promote(client, candidate)
+    pid = result['project_id']
+    checkpoint = result['workflow']['milestones'][0]['checkpoint_id']
+    path = f'/api/vnext-projects/{pid}/device-reports'
+    legacy = report_body(checkpoint)
+    saved = client.post(path, json=legacy)
+    assert saved.status_code == 200
+    assert 'engineering_provenance' not in saved.json()['report']
+    repeated = client.post(path, json={**legacy, 'engineering_provenance': None})
+    assert repeated.status_code == 200 and repeated.json()['artifact_ref'] == saved.json()['artifact_ref']
+    provenance = {'schema_version': 'learnflow.engineering-provenance.v1', 'authority': 'device_reported',
+                  'independent_completion_verified': False, 'assisted': True, 'truncated': False,
+                  'runs': [{'run_id': 1, 'checkpoint_id': checkpoint, 'status': 'applied',
+                            'snapshot_hash': 'a' * 64, 'result_hash': 'b' * 64,
+                            'assistance_policy': {'mode': 'implementation', 'revision': 2, 'execution_mode': 'workspace_write'},
+                            'association': 'exact_files', 'matching_paths': ['main.c']}]}
+    body = report_body(checkpoint, engineering_provenance=provenance)
+    uploaded = client.post(path, json=body)
+    assert uploaded.status_code == 200
+    value = uploaded.json()
+    assert value['report']['engineering_provenance'] == provenance
+    assert value['mastery_inference'] is False and value['validation'] == 'structure_and_ownership_only'
+    assert client.get(f"{path}/{value['report_id']}").json()['report']['engineering_provenance'] == provenance
+    assert client.post(path, json=body).json()['artifact_ref'] == value['artifact_ref']
+    body['engineering_provenance']['runs'][0]['result_hash'] = 'c' * 64
+    assert client.post(path, json=body).status_code == 409
