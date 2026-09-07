@@ -77,6 +77,7 @@ def query_hub(query='', module_id=None, offset=0, limit=20):
 BASE_STYLE = '''
 :root{color-scheme:light dark;--background:#fff;--foreground:#172d34;--border:#d5dfe1;--muted-foreground:#526b72;--viz-series-1:#067b99;--viz-series-2:#c76c18;--viz-series-3:#7b52b5;--muted:#f2f7f7;font-family:system-ui,sans-serif;font-size:14px}
 @media(prefers-color-scheme:dark){:root{--background:#142125;--foreground:#e2eff2;--border:#48616a;--muted-foreground:#aac1c8;--viz-series-1:#54bbd2;--viz-series-2:#f7ae60;--muted:#203239}}
+[data-lab]{max-width:620px;margin:auto}[data-lab] svg{max-height:320px;width:100%;display:block}[data-lab] [data-note]{min-height:0!important}[data-lab] h3{font-size:17px;margin-bottom:10px}
 *{box-sizing:border-box}body{margin:0;padding:12px;background:var(--background);color:var(--foreground)}h3{font-size:18px;margin:0 0 16px}button,select,input{font:inherit;color:inherit}button,select{background:var(--background);border:1px solid var(--border);border-radius:7px;padding:7px 12px}button{cursor:pointer}.btn-primary{background:var(--viz-series-1);color:var(--background);border-color:var(--viz-series-1)}button:disabled{opacity:.45}.viz-controls,.viz-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0}.viz-controls label{flex:1;min-width:130px}.viz-controls input[type=range],.form-range{display:block;width:100%;accent-color:var(--viz-series-1)}.text-small{font-size:12px}.tabular-nums{font-variant-numeric:tabular-nums}p{line-height:1.65}svg{max-width:100%}@media(max-width:420px){[data-lab] svg text{font-size:18px}[data-lab=bayes] svg text{font-size:20px}}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--viz-series-2);outline-offset:2px}
 '''
 
@@ -123,8 +124,11 @@ def browse_works(query='', module_id=None, kind=None, offset=0, limit=16):
     if module_id is not None and (not isinstance(module_id,str) or module_id not in {m['id'] for m in data['modules']}):
         raise ValueError('visual_gallery_module_invalid')
     rows=[];terms=_terms(query)
-    for e in _entries():
-        related=links.get((e['id'],e['version']),[])
+    latest={}
+    for entry in _entries():
+        if entry['id'] not in latest or tuple(map(int,entry['version'].split('.')))>tuple(map(int,latest[entry['id']]['version'].split('.'))):latest[entry['id']]=entry
+    for e in latest.values():
+        related=links.get((e['id'],e['version']),next((v for (i,_),v in links.items() if i==e['id']),[]))
         if module_id and not any(x['module_id']==module_id for x in related):continue
         if kind and kind not in e['kind']:continue
         text=' '.join([e['title'],e['description'],*e.get('aliases',[]),*e['tags']])

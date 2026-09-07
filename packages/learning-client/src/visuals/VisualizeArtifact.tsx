@@ -224,7 +224,7 @@ export default function VisualizeArtifact({initial, transport, onAsk, storageSco
   }
   function renderViews(items: typeof views, interactive = true) {
     return <div className={`visualize-views${matrixOverview ? ' visualize-views-compact' : ''}`} role={matrixOverview ? 'region' : undefined} aria-label={matrixOverview ? '运算画面' : undefined} tabIndex={matrixOverview ? 0 : undefined} style={{gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`}}>{items.map(({view, svg, plan, diagnostics}) => <section key={view.id} aria-label={view.title}>
-      <h4>{view.title}</h4>
+
       {diagnostics.length > 0 && <p className="visualize-notice">此视图无法完整排版，已保留原始数据。</p>}
       {textOnly || diagnostics.length > 0 ? <dl>{view.elements.filter(element => element.values?.visible !== false).map(element => <div key={element.id}><dt>{element.label}</dt><dd><pre>{JSON.stringify(element.values, null, 2)}</pre></dd></div>)}</dl> : <div className="visualize-svg-scroll"><div className="visualize-svg" style={{minWidth: plan?.width}} onClick={event => {
         if (!interactive) return
@@ -254,7 +254,8 @@ export default function VisualizeArtifact({initial, transport, onAsk, storageSco
 
       <VisualStages stages={stages} step={step} disabled={busy} blocked={gate} onMove={move}/>
 
-      {renderViews(views)}
+      {renderViews(views.filter(item=>!item.view.elements.every(e=>e.kind==='table')))}
+      {views.some(item=>item.view.elements.every(e=>e.kind==='table'))&&<details className="visualize-state-details"><summary>查看当前数据</summary>{renderViews(views.filter(item=>item.view.elements.every(e=>e.kind==='table')))}</details>}
       {matrixOverview && <p className="visualize-matrix-key">橙框：当前窗口 · 空点：尚未计算<span>横向滑动查看各部分</span></p>}
       <div className="visualize-caption" role="status" aria-live={playing ? 'off' : 'polite'}>
         {(frame.title || frame.state.title) && <strong>{String(frame.title || frame.state.title)}</strong>}

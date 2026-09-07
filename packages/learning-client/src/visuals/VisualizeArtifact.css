@@ -72,3 +72,5 @@
   .visualize-views-compact > section { flex: 0 0 90%; scroll-snap-align: start; }
   .visualize-matrix-key span { display: block; margin-top: 3px; }
 }
+
+.visualize-artifact{padding:14px;border:0}.visualize-heading{margin-bottom:10px}.visualize-heading strong{font-size:18px}.visualize-heading p{margin-top:4px}.visualize-state-details{margin:5px 0;font-size:12px;color:#60756b}.visualize-state-details>summary{cursor:pointer;padding:5px 0}.visualize-caption{padding:8px 0}.visualize-views{gap:4px}.visualize-svg-scroll{padding:0}.visualize-views>section{padding:0}
