@@ -40,3 +40,20 @@ test('projection bounds paths and text and does not trust inconsistent write mod
   assert.equal(result.milestones[0].assistance?.execution_mode, 'read_only')
   assert.deepEqual(result.milestones[0].related_files.map(file => file.path), ['src/main.c'])
 })
+
+test('requested guidance is bounded, matches current policy, and remains readable after delivery', () => {
+  const guide = { mode: 'implementation', revision: 9, body: 'REQUESTED_HELP'.repeat(300) }
+  const stage = { checkpoint_id: 1, status: 'available', assistance: { ...guide, execution_mode: 'workspace_write' }, assistance_guidance: guide }
+  const project = (current: Record<string, unknown>) => ({ checkpoint_id: 1, project_workflow: { milestones: [
+    current, { ...stage, checkpoint_id: 2, status: 'locked', assistance_guidance: { ...guide, body: 'FUTURE_GUIDE' } },
+  ] } })
+  const restored = compactProjectWorkflow(project(stage))!
+  assert.deepEqual(restored.milestones[0].assistance_guidance, { ...guide, body: guide.body.slice(0, 1800) })
+  assert.doesNotMatch(JSON.stringify(restored), /FUTURE_GUIDE/)
+  assert.equal(compactProjectWorkflow(project({ ...stage, assistance_guidance: { ...guide, revision: 8 } }))!.milestones[0].assistance_guidance, null)
+  assert.equal(compactProjectWorkflow(project({ ...stage, assistance_guidance: undefined }))!.milestones[0].assistance_guidance, null)
+  const accepted = compactProjectWorkflow(project({ ...stage, status: 'accepted', assistance: null }))!
+  assert.equal(accepted.milestones[0].assistance, null)
+  assert.deepEqual(accepted.milestones[0].assistance_guidance, restored.milestones[0].assistance_guidance)
+  assert.equal(compactProjectWorkflow(project({ ...stage, status: 'locked' }))!.milestones[0].assistance_guidance, null)
+})

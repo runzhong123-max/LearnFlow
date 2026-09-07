@@ -2,13 +2,14 @@
 type Row = Record<string, any>
 export type StageHelpMode = 'direction' | 'steps' | 'pseudocode' | 'implementation'
 export type StageAssistance = { mode: StageHelpMode; revision: number; execution_mode: 'read_only' | 'workspace_write' }
+export type StageAssistanceGuidance = { mode: StageHelpMode; body: string; revision: number }
 export type StageRelatedFile = { path: string; role: 'implementation' | 'test' | 'input' | 'docs'; reason: string }
 const record = (value: unknown): Row => value && typeof value === 'object' && !Array.isArray(value) ? value as Row : {}
 const array = (value: unknown): any[] => Array.isArray(value) ? value : []
 const text = (value: unknown, limit: number) => typeof value === 'string' ? value.slice(0, limit) : ''
 const lines = (value: unknown, limit = 6) => array(value).slice(0, limit).map(line => text(line, 280)).filter(Boolean)
 const relative = (value: unknown) => typeof value === 'string' && value.length <= 500 && value.length > 0
-  && !/^[\\/]|:|\0/.test(value) && !value.replaceAll('\\', '/').split('/').includes('..')
+  && !/^[\\/]|:|\0/.test(value) && !value.replace(/\\/g, '/').split('/').includes('..')
 function boundedValues(value: unknown, limit = 12): Row {
   return Object.fromEntries(Object.entries(record(value)).slice(0, limit).map(([key, value]) => [key.slice(0, 80),
     typeof value === 'string' ? value.slice(0, 1800) : typeof value === 'boolean' || typeof value === 'number' ? value : null]))
@@ -19,6 +20,13 @@ function assistance(value: unknown): StageAssistance | null {
     || !Number.isSafeInteger(row.revision) || row.revision < 0) return null
   return { mode: row.mode, revision: row.revision,
     execution_mode: row.mode === 'implementation' && row.execution_mode === 'workspace_write' ? 'workspace_write' : 'read_only' }
+}
+function assistanceGuidance(value: unknown, support: StageAssistance | null, status: unknown): StageAssistanceGuidance | null {
+  const row = record(value)
+  const metadata = assistance(row)
+  if (!metadata || metadata.revision === 0 || typeof row.body !== 'string' || !row.body) return null
+  if (support ? metadata.mode !== support.mode || metadata.revision !== support.revision : status !== 'accepted') return null
+  return { mode: metadata.mode, revision: metadata.revision, body: text(row.body, 1800) }
 }
 export function compactProjectWorkflow(value: { checkpoint_id?: number | null; project_workflow?: unknown }) {
   if (!value.project_workflow) return null
@@ -48,6 +56,7 @@ export function compactProjectWorkflow(value: { checkpoint_id?: number | null; p
           path: file.path, role: text(file.role, 30), reason: text(file.reason, 200),
         })) : [],
         assistance: visible ? support : null,
+        assistance_guidance: visible ? assistanceGuidance(stage.assistance_guidance, support, stage.status) : null,
         help_boundary: visible ? support?.mode === 'implementation'
           ? '允许准备工程修改方案；仍需确认运行和确认写回。选择此档不代表已经实现。'
           : '仅提供当前档位的提示、步骤或伪代码；工程助手只做只读分析，不能修改工作区。' : '',

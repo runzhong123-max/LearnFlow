@@ -158,6 +158,7 @@ async def workflow_view(db: AsyncSession, project: Project, *, compact: bool = F
                            **{name: stage.get(name, []) if visible else [] for name in
                               ("student_tasks", "mentor_support", "shared_tasks", "related_files")},
                            "assistance": _assistance_from_actions(actions, checkpoint.id) if visible and checkpoint.id not in accepted else None,
+                           "assistance_guidance": _assistance_guidance_from_actions(actions, checkpoint.id) if visible else None,
                            "hint_levels": 2 if visible else 0,
                            "hints_used": [{"level": action.payload["level"], "body": action.feedback["body"]}
                                           for action in actions if visible and action.kind == "hint" and action.checkpoint_id == checkpoint.id],
@@ -178,6 +179,8 @@ async def workflow_view(db: AsyncSession, project: Project, *, compact: bool = F
         view.pop("workbench")
         view["reading_records"] = [{key: value for key, value in item.items() if key != "notes"} for item in readings[-8:]]
         for item in view["milestones"]:
+            if item["assistance_guidance"]:
+                item["assistance_guidance"]["body"] = item["assistance_guidance"]["body"][:1800]
             if item["submission"]:
                 item["submission"]["answers"] = {key: value[:1800] for key, value in item["submission"]["answers"].items()}
     return view
@@ -424,13 +427,29 @@ async def record_reading(db: AsyncSession, project: Project, data: dict) -> dict
     return await workflow_view(db, project)
 
 
-def _assistance_from_actions(actions: list[ProjectWorkflowSubmission], checkpoint_id: int) -> dict:
+def _latest_assistance_action(actions: list[ProjectWorkflowSubmission], checkpoint_id: int) -> ProjectWorkflowSubmission | None:
     for action in reversed(actions):
-        if action.checkpoint_id != checkpoint_id or action.kind not in {"hint", "assistance"}:
-            continue
+        if action.checkpoint_id == checkpoint_id and action.kind in {"hint", "assistance"}:
+            return action
+    return None
+
+
+def _assistance_from_actions(actions: list[ProjectWorkflowSubmission], checkpoint_id: int) -> dict:
+    action = _latest_assistance_action(actions, checkpoint_id)
+    if action:
         mode = action.payload.get("mode") or ("steps" if action.payload.get("level") == 2 else "direction")
         return assistance_view(mode, action.id)
     return assistance_view()
+
+
+def _assistance_guidance_from_actions(actions: list[ProjectWorkflowSubmission], checkpoint_id: int) -> dict | None:
+    # Restore exactly the requested response, including an implementation permission notice.
+    # Never generate a default guide or fall back to an older, different help mode.
+    action = _latest_assistance_action(actions, checkpoint_id)
+    if not action or not isinstance(action.feedback.get("body"), str) or not action.feedback["body"]:
+        return None
+    mode = action.payload.get("mode") or ("steps" if action.payload.get("level") == 2 else "direction")
+    return {"mode": mode, "body": action.feedback["body"], "revision": action.id}
 
 
 async def _assistance_scope(db: AsyncSession, project: Project, checkpoint_id: int):

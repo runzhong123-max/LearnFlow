@@ -59,10 +59,12 @@ def test_case_hash_and_current_stage_responsibilities_are_compatible(client):
     first, second, last = workflow['milestones']
     assert first['support_version'] == 'learnflow.stage-support.v1'
     assert first['student_tasks'] and first['mentor_support'] and first['shared_tasks']
+    assert first['assistance_guidance'] is None
     assert {item['path'] for item in first['related_files']} == {'README.md', 'input.csv'}
     for later in (second, last):
         assert later['related_files'] == later['student_tasks'] == later['mentor_support'] == later['shared_tasks'] == []
         assert later['assistance'] is None
+        assert later['assistance_guidance'] is None
     context = client.get(f'/api/vnext-projects/{pid}/agent-context').json()
     assert context['project_workflow']['milestones'][0]['student_tasks'] == first['student_tasks']
     assert context['project_workflow']['milestones'][1]['related_files'] == []
@@ -83,6 +85,12 @@ def test_help_modes_persist_with_separate_revision_and_replay(client):
         assert value['assistance']['revision'] > revision
         assert value['workflow']['revision'] == workflow['revision']
         assert value['guidance']['body']
+        restored = client.get(f'/api/vnext-projects/{pid}/workflow').json()['milestones']
+        assert restored[0]['assistance_guidance'] == {
+            'mode': mode, 'body': value['guidance']['body'], 'revision': value['assistance']['revision']}
+        assert all(stage['assistance_guidance'] is None for stage in restored[1:])
+        context = client.get(f'/api/vnext-projects/{pid}/agent-context').json()['project_workflow']
+        assert context['milestones'][0]['assistance_guidance'] == restored[0]['assistance_guidance']
         assert choose(client, pid, cp, mode, revision, action).json()['assistance'] == value['assistance']
         assert choose(client, pid, cp, 'steps' if mode != 'steps' else 'direction', revision, action).status_code == 409
         assert choose(client, pid, cp, mode, revision).status_code == 409
@@ -91,6 +99,10 @@ def test_help_modes_persist_with_separate_revision_and_replay(client):
     accepted = deliver(client, pid, cp)
     assert accepted.status_code == 200, accepted.text
     assert accepted.json()['milestones'][0]['submission']['assistance_level'] == 'hint'
+    finished = client.get(f'/api/vnext-projects/{pid}/workflow').json()['milestones'][0]
+    assert finished['assistance'] is None
+    assert finished['student_tasks'] == workflow['milestones'][0]['student_tasks']
+    assert finished['assistance_guidance'] == restored[0]['assistance_guidance']
     assert client.get(path(pid, cp)).status_code == 409
     async def inspect():
         async with async_session() as db:
@@ -131,7 +143,15 @@ def test_legacy_hint_preserves_contract_and_is_part_of_live_policy(client):
     assert client.get(path(pid, cp)).json() == result['assistance']
     assert client.post(url, json=body).json()['hint'] == result['hint']
     assert len(result['workflow']['milestones'][0]['hints_used']) == 1
-    assert choose(client, pid, cp, 'implementation', result['assistance']['revision']).status_code == 200
+    assert result['workflow']['milestones'][0]['assistance_guidance'] == {
+        'mode': 'steps', 'revision': result['assistance']['revision'], 'body': result['hint']['body']}
+    implementation = choose(client, pid, cp, 'implementation', result['assistance']['revision'])
+    assert implementation.status_code == 200
+    restored = client.get(f'/api/vnext-projects/{pid}/workflow').json()['milestones'][0]
+    assert restored['assistance_guidance'] == {
+        'mode': 'implementation', 'revision': implementation.json()['assistance']['revision'],
+        'body': implementation.json()['guidance']['body']}
+    assert restored['hints_used'] == result['workflow']['milestones'][0]['hints_used']
     assert deliver(client, pid, cp).json()['milestones'][0]['submission']['assistance_level'] == 'hint'
 
 
