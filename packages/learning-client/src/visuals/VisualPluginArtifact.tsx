@@ -1,5 +1,6 @@
-import {useCallback, useEffect, useRef, useState} from 'react'
+import {useCallback, useEffect, useRef, useState, type ReactNode} from 'react'
 import VisualizeArtifact, {type VisualViewState} from './VisualizeArtifact'
+import {VisualMore, VisualPlayback, VisualStages} from './VisualPlayerChrome'
 import type {VisualBundle} from './types'
 import './VisualPluginArtifact.css'
 
@@ -31,7 +32,7 @@ function validWork(value: unknown): Work {
   return item as Work
 }
 
-function StoryPlayer({work, onPrompt, onViewChange}: {work: Work; onPrompt?: Props['onPrompt']; onViewChange: (state: VisualViewState) => void}) {
+function StoryPlayer({work, onPrompt, onViewChange, secondaryActions}: {secondaryActions?: ReactNode; work: Work; onPrompt?: Props['onPrompt']; onViewChange: (state: VisualViewState) => void}) {
   const scenes = work.scenes || []
   const [step, setStep] = useState(Math.max(0, Math.min(scenes.length - 1, Number(work.view_state?.step) || 0)))
   const [speed, setSpeed] = useState([0.5, 1, 1.5, 2].includes(work.view_state?.speed || 0) ? work.view_state!.speed! : 1)
@@ -61,14 +62,23 @@ function StoryPlayer({work, onPrompt, onViewChange}: {work: Work; onPrompt?: Pro
   }
   if (!scene) return <p role="status">没有可展示的分镜。</p>
   return <figure className="visual-plugin-story" aria-label={work.title}>
-    <nav className="visual-plugin-scenes" aria-label="分镜阶段">{scenes.map((item, index) => <button key={`${item.snapshot_ref}-${index}`} type="button" aria-current={index === step ? 'step' : undefined} onClick={() => move(index)}>{index + 1}. {item.title}</button>)}</nav>
+    <figcaption className="visualize-heading"><span className="visualize-kind">{work.kind === 'animation' ? '动画演示' : '交互图解'} · 教学示意</span><strong>{work.title}</strong></figcaption>
+    <VisualStages stages={scenes.map((item, index) => ({step: index, title: item.title}))} step={step} onMove={move}/>
     {/* SVG stays in an image document. Never insert generated markup into the host DOM. */}
     <img className="visual-plugin-image" src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(scene.svg)}`} alt={`${scene.title}${scene.note ? `：${scene.note}` : ''}`} />
-    <figcaption aria-live={playing ? 'off' : 'polite'}><strong>{scene.title}</strong>{scene.note && <p>{scene.note}</p>}</figcaption>
-    {scenes.length > 1 && <div className="visual-plugin-playback"><nav aria-label="分镜播放"><button type="button" disabled={step === 0} onClick={() => move(step - 1)}>上一步</button>{work.kind === 'animation' && <button type="button" disabled={reduced || step === scenes.length - 1} onClick={() => setPlaying(value => !value)}>{playing ? '暂停' : '播放'}</button>}<output>{step + 1} / {scenes.length}</output><button type="button" disabled={step === scenes.length - 1} onClick={() => move(step + 1)}>下一步</button><button type="button" onClick={() => move(0)}>重播</button>{work.kind === 'animation' && <label>播放速度<select aria-label="播放速度" value={speed} onChange={event => setSpeed(Number(event.target.value))}>{[0.5, 1, 1.5, 2].map(value => <option key={value} value={value}>{value}×</option>)}</select></label>}</nav><input type="range" aria-label="当前分镜" min="0" max={scenes.length - 1} step="1" value={step} onChange={event => move(Number(event.target.value))}/></div>}
+    <div className="visualize-caption" aria-live={playing ? 'off' : 'polite'}><strong>{scene.title}</strong>{scene.note && <p>{scene.note}</p>}</div>
+    <VisualPlayback step={step} count={scenes.length} playing={playing} speed={speed} animation={work.kind === 'animation'} reduced={reduced} onMove={move} onSpeed={setSpeed} sliderLabel="当前分镜" onPlay={() => {
+      if (playing) setPlaying(false)
+      else if (step === scenes.length - 1) {move(0); setPlaying(!reduced)}
+      else setPlaying(value => !value)
+    }}/>
     {reduced && work.kind === 'animation' && <p>已减少动态效果，可逐步查看。</p>}
-    <div className="visual-plugin-actions"><button type="button" onClick={() => downloadable(scene.svg, 'image/svg+xml', `${work.revision_id}-${step + 1}.svg`)}>导出当前 SVG</button><button type="button" onClick={() => downloadable(JSON.stringify({format: 'learnflow-visual-work-snapshot/v1', artifact_id: work.artifact_id, revision_id: work.revision_id, run_id: work.run_id, builder: work.builder, verification: work.verification, step, scene}, null, 2), 'application/json', `${work.revision_id}-${step + 1}.json`)}>导出当前状态</button></div>
-    <div className="visual-plugin-question"><label>关注内容<input maxLength={200} value={focus} onChange={event => setFocus(event.target.value)} placeholder="例如：请求如何到达缓存"/></label><label>围绕当前画面追问<input maxLength={1000} value={question} onChange={event => setQuestion(event.target.value)} placeholder="这一步为什么发生？" onKeyDown={event => {if (event.key === 'Enter' && onPrompt) ask()}}/></label><button type="button" disabled={!onPrompt} onClick={ask}>问 Tutor</button></div>
+    <VisualMore>
+      <div className="visual-plugin-actions"><button type="button" onClick={() => downloadable(scene.svg, 'image/svg+xml', `${work.revision_id}-${step + 1}.svg`)}>导出当前 SVG</button><button type="button" onClick={() => downloadable(JSON.stringify({format: 'learnflow-visual-work-snapshot/v1', artifact_id: work.artifact_id, revision_id: work.revision_id, run_id: work.run_id, builder: work.builder, verification: work.verification, step, scene}, null, 2), 'application/json', `${work.revision_id}-${step + 1}.json`)}>导出当前状态</button></div>
+      <div className="visual-plugin-question"><label>关注内容<input maxLength={200} value={focus} onChange={event => setFocus(event.target.value)} placeholder="例如：请求如何到达缓存"/></label><label>围绕当前画面追问<input maxLength={1000} value={question} onChange={event => setQuestion(event.target.value)} placeholder="这一步为什么发生？" onKeyDown={event => {if (event.key === 'Enter' && onPrompt) ask()}}/></label><button type="button" disabled={!onPrompt} onClick={ask}>问 Tutor</button></div>
+      <p className="visual-plugin-boundary">这是逐帧教学示意。结构与渲染检查不等同于算法或数值过程已经计算验证。</p>
+      {secondaryActions}
+    </VisualMore>
   </figure>
 }
 
@@ -165,6 +175,11 @@ export default function VisualPluginArtifact({reference, result, host, onPrompt}
     try {const value = await host.request('cancel_job', {job_id: jobId}); setJob(record(value))}
     catch (cause) {setError(message(cause))}
   }
+  const secondaryActions = work ? <>
+      <details className="visual-plugin-details"><summary>改编这份作品</summary><label>希望怎样调整<textarea maxLength={1500} value={editRequest} onChange={event => setEditRequest(event.target.value)} placeholder="例如：只保留卷积部分，加上输入和输出尺寸的对照。"/></label><div className="visual-plugin-actions"><button type="button" disabled={!onPrompt || !editRequest.trim()} onClick={() => onPrompt?.(`修改作品 revision_id=${work.revision_id}\n${editRequest.trim()}`)}>创建个人改编</button>{work.parent_revision_id && <button type="button" onClick={() => onPrompt?.(`打开图解 revision_id=${work.parent_revision_id}`)} disabled={!onPrompt}>查看原版本</button>}</div><p>原版会保留，修改后形成新版本。</p></details>
+      <details className="visual-plugin-details"><summary>作品来源与验证范围</summary><p>{sourceLabels[work.source_mode || ''] || '已保存作品'}</p><p>版本：{work.revision_id}</p>{work.run_id && <p>运行：{work.run_id}</p>}<pre>{JSON.stringify({verification: work.verification, source_mode: work.source_mode, source: work.source, parent_revision_id: work.parent_revision_id}, null, 2)}</pre></details>
+      <details className="visual-plugin-details"><summary>记录这份作品的问题</summary><label>反馈<textarea maxLength={2000} value={feedback} onChange={event => setFeedback(event.target.value)} placeholder="例如：第三步跳得太快，缺少对变量变化的说明。"/></label><button type="button" disabled={!feedback.trim() || feedbackState === '正在保存…'} onClick={() => void submitFeedback()}>保存反馈</button><p role="status">{feedbackState}</p></details>
+  </> : null
   const reason = String(job.reason || job.message || job.error || reference.message || result?.summary || '')
   return <section className="visual-plugin-work" aria-label="图解与动画作品">
     {!host && <p role="alert">当前宿主未连接作品服务，请更新或重新打开页面。</p>}
@@ -178,13 +193,9 @@ export default function VisualPluginArtifact({reference, result, host, onPrompt}
       return <li key={`${entry.id}-${entry.version}`}><strong>{entry.title}</strong>{entry.description && <p>{entry.description}</p>}{Array.isArray(nodes) && <small>课程：{nodes.map((node: RecordValue) => node.title).join(' · ')}</small>}{Array.isArray(metadata.questions) && metadata.questions.length > 0 && <p>适合回答：{metadata.questions.slice(0, 2).join('；')}</p>}<div className="visual-plugin-actions">{(['diagram', 'animation'] as const).filter(kind => !Array.isArray(entry.kind) || entry.kind.includes(kind)).map(kind => <button key={kind} type="button" disabled={!onPrompt} onClick={() => onPrompt?.(`复用维护图解 template_id=${entry.id} template_version=${entry.version} kind=${kind}\n${entry.title}`)}>{kind === 'animation' ? '观看动画' : '打开图解'}</button>)}</div></li>
     })}</ul></section>}
     {work && <>
-      <header><div className="visual-plugin-badges"><span>{sourceLabels[work.source_mode || ''] || '已保存作品'}</span><span>{work.builder === 'svg_story' ? '教学分镜示意' : '交互式图解'}</span></div>{work.builder !== 'visual_spec' && <h3>{work.title}</h3>}</header>
-      {work.builder === 'visual_spec' && work.bundle ? <VisualizeArtifact key={work.revision_id} initial={work.bundle} storageScope={`artwork:${work.artifact_id}`} mode={work.kind} transport={transport} initialViewState={work.view_state} onRun={rerun} onViewChange={saveView} onAsk={prompt => onPrompt?.(`${prompt}\n作品版本：${work.revision_id}；作品：${work.artifact_id}。`)}/> : work.builder === 'svg_story' ? <StoryPlayer key={work.revision_id} work={work} onPrompt={onPrompt} onViewChange={storyView}/> : <p>当前宿主暂不支持此作品的展示方式，作品版本已保留。</p>}
-      {work.builder === 'svg_story' && <p className="visual-plugin-boundary">这是逐帧教学示意。结构与渲染检查不等同于算法或数值过程已经计算验证。</p>}
+      {work.builder === 'visual_spec' && work.bundle ? <VisualizeArtifact secondaryActions={secondaryActions} key={work.revision_id} initial={work.bundle} storageScope={`artwork:${work.artifact_id}`} mode={work.kind} transport={transport} initialViewState={work.view_state} onRun={rerun} onViewChange={saveView} onAsk={prompt => onPrompt?.(`${prompt}\n作品版本：${work.revision_id}；作品：${work.artifact_id}。`)}/> : work.builder === 'svg_story' ? <StoryPlayer secondaryActions={secondaryActions} key={work.revision_id} work={work} onPrompt={onPrompt} onViewChange={storyView}/> : <p>当前宿主暂不支持此作品的展示方式，作品版本已保留。</p>}
+
       {viewError && <p role="status">{viewError}</p>}
-      <details className="visual-plugin-details"><summary>改编这份作品</summary><label>希望怎样调整<textarea maxLength={1500} value={editRequest} onChange={event => setEditRequest(event.target.value)} placeholder="例如：只保留卷积部分，加上输入和输出尺寸的对照。"/></label><div className="visual-plugin-actions"><button type="button" disabled={!onPrompt || !editRequest.trim()} onClick={() => onPrompt?.(`修改作品 revision_id=${work.revision_id}\n${editRequest.trim()}`)}>创建个人改编</button>{work.parent_revision_id && <button type="button" onClick={() => onPrompt?.(`打开图解 revision_id=${work.parent_revision_id}`)} disabled={!onPrompt}>查看原版本</button>}</div><p>原版会保留，修改后形成新版本。</p></details>
-      <details className="visual-plugin-details"><summary>作品来源与验证范围</summary><p>版本：{work.revision_id}</p>{work.run_id && <p>运行：{work.run_id}</p>}<pre>{JSON.stringify({verification: work.verification, source_mode: work.source_mode, source: work.source, parent_revision_id: work.parent_revision_id}, null, 2)}</pre></details>
-      <details className="visual-plugin-details"><summary>记录这份作品的问题</summary><label>反馈<textarea maxLength={2000} value={feedback} onChange={event => setFeedback(event.target.value)} placeholder="例如：第三步跳得太快，缺少对变量变化的说明。"/></label><button type="button" disabled={!feedback.trim() || feedbackState === '正在保存…'} onClick={() => void submitFeedback()}>保存反馈</button><p role="status">{feedbackState}</p></details>
     </>}
   </section>
 }
