@@ -44,7 +44,7 @@ def test_registry_has_three_agents_five_kernels_and_no_drift():
     assert set(ACTION_BOARD) == set(CAPABILITY_OWNERS)
     assert validate_registry() == []
     manifest = registry_manifest()
-    assert REGISTRY_VERSION == "2026-09-07.5-desktop"
+    assert REGISTRY_VERSION == "2026-09-07.6-desktop"
     cloud_contract = next(item for item in manifest['data_contracts'] if item['id'] == 'desktop_cloud_connection_v1')
     assert cloud_contract['kernel_write_path'] == 'none'
     assert manifest["schema_valid"] is True
@@ -751,3 +751,14 @@ def test_cloud_account_device_execution_uses_python_broker_bindings():
     assert report.module == "app.services.cloud_device_reports"
     assert report.symbol == "publish_run_report"
     assert not any(binding.module == broker.module and binding.kind == "api_route" for binding in IMPLEMENTATION_BINDINGS.values())
+
+
+def test_stage_support_and_file_navigation_are_registered_without_learner_writes():
+    manifest = registry_manifest()
+    contracts = {row["id"]: row for row in manifest["data_contracts"]}
+    for contract_id in ("project_stage_support_v1", "workspace_recommendations_v1"):
+        assert contracts[contract_id]["owner"] == "tutor_agent"
+        assert contracts[contract_id]["kernel_write_path"] == "none"
+        assert all(binding in IMPLEMENTATION_BINDINGS for binding in contracts[contract_id]["binding_ids"])
+    assert "py:project_workflow.set_assistance" in IMPLEMENTATION_BINDINGS
+    assert "py:workspace.recommendations" in IMPLEMENTATION_BINDINGS

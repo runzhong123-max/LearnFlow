@@ -1,4 +1,4 @@
-import { workbenchActionId, workbenchRequest } from './project-workbench-api'
+import { workbenchActionId, workbenchRequest, type StageAssistance } from './project-workbench-api'
 
 export type EngineeringTaskKind = 'code_change' | 'bug_fix' | 'test' | 'documentation'
 export type EngineeringProfile = {
@@ -11,6 +11,7 @@ export type EngineeringRun = {
   manifest?: { included: Record<string, { sha256: string; size: number; is_text?: boolean }>; skipped?: unknown[]; summary?: Record<string, unknown> }
   changed_files: Array<{ path: string; change?: string; kind?: string; old_path?: string; destination_path?: string; operation?: string; status?: string }>
   diff_text: string; result: Record<string, unknown>; error?: Record<string, unknown>
+  assistance_policy?: StageAssistance; advice?: string; can_apply?: boolean
   learning_evidence: false
 }
 export type EngineeringEvent = { sequence: number; event_type: string; payload: Record<string, unknown> }

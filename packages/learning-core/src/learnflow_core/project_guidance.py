@@ -141,6 +141,16 @@ async def record_device_report(db: AsyncSession, project: Project, data: dict):
         raise HTTPException(404, "关卡不属于当前项目")
     if project.project_mode not in {"experiment", "practice"}:
         raise HTTPException(422, "设备操作报告只用于实验或实践项目")
+    # Device-local run IDs are descriptive; referenced learning scopes must still
+    # belong to this authenticated project, including older applied stages.
+    provenance = data.get("engineering_provenance") or {}
+    run_checkpoints = {run["checkpoint_id"] for run in provenance.get("runs", []) if run.get("checkpoint_id") is not None}
+    if run_checkpoints:
+        owned = set(await db.scalars(select(Checkpoint.id).join(Roadmap).where(
+            Checkpoint.id.in_(run_checkpoints), Roadmap.project_id == project.id,
+        )))
+        if run_checkpoints != owned:
+            raise HTTPException(422, "工程辅助来源的关卡不属于当前项目")
     report_hash = digest(data)
     previous = await db.scalar(select(ProjectDeviceReport).where(
         ProjectDeviceReport.project_id == project.id, ProjectDeviceReport.client_action_id == data["client_action_id"]))

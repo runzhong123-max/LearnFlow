@@ -18,7 +18,7 @@ ACTION_BOARD = {
         ActionDefinition("record_project_device_report", "保存设备上报的实验操作摘要", "write", "explicit", {}, ("read_project_device_report", "submit_project_delivery")),
         ActionDefinition("read_project_device_report", "读取有作用域的设备操作报告", "none", "none", {}, ("submit_project_delivery",)),
         ActionDefinition("read_project_workflow", "读取三类项目的当前流程", "none", "none", {}, ("initialize_project_workflow", "submit_project_delivery")),
-        ActionDefinition("request_project_hint", "请求当前阶段的分档提示", "context", "explicit_or_click", {}, ("submit_project_delivery",)),
+        ActionDefinition("request_project_hint", "设置当前阶段帮助档位并获取提示", "context", "explicit_or_click", {}, ("submit_project_delivery",)),
         ActionDefinition("prepare_local_work_case", "校验固定版本实践案例候选", "proposal", "explicit_or_click", {}, ("initialize_project_workflow",)),
         ActionDefinition("initialize_project_workflow", "确认项目路线与正式关卡任务", "write", "explicit_or_click", {}, ("read_project_workflow",)),
         ActionDefinition("save_project_workbench", "保存工作台纸张与布局", "write", "explicit_or_click", {}, ()),

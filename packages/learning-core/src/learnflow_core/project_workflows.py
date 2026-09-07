@@ -348,6 +348,30 @@ async def _validate_refs(db: AsyncSession, project: Project, checkpoint_id: int,
     return has_run
 
 
+async def _known_engineering_assistance(db: AsyncSession, project: Project, checkpoint_id: int) -> bool:
+    """Known helper output lowers independence; absence never proves independence."""
+    from learnflow_core.project_guidance_models import ProjectDeviceReport
+    from app.models.project import LocalAgentRun, WorkspaceOperation
+    report = await db.scalar(select(ProjectDeviceReport.id).where(
+        ProjectDeviceReport.learner_id == project.learner_id, ProjectDeviceReport.project_id == project.id,
+        ProjectDeviceReport.checkpoint_id == checkpoint_id,
+        ProjectDeviceReport.report["engineering_provenance"]["assisted"].as_boolean().is_(True),
+    ).limit(1))
+    if report:
+        return True
+    # Applied code remains project history even after its file hashes change.
+    applied = await db.scalar(select(LocalAgentRun.id).where(
+        LocalAgentRun.learner_id == project.learner_id, LocalAgentRun.project_id == project.id,
+        LocalAgentRun.status == "applied",
+    ).limit(1))
+    if applied:
+        return True
+    return bool(await db.scalar(select(WorkspaceOperation.id).where(
+        WorkspaceOperation.learner_id == project.learner_id, WorkspaceOperation.project_id == project.id,
+        WorkspaceOperation.actor == "agent", WorkspaceOperation.status == "applied",
+    ).limit(1)))
+
+
 async def deliver_checkpoint(db: AsyncSession, project: Project, checkpoint_id: int, data: dict) -> dict:
     payload = {"operation": "delivery", "checkpoint_id": checkpoint_id, **data}
     if await _replay(db, project, data["client_action_id"], payload):
@@ -402,9 +426,12 @@ async def deliver_checkpoint(db: AsyncSession, project: Project, checkpoint_id: 
             prior = item.feedback.get("effective_assistance_level", item.payload.get("assistance_level", "independent"))
             if prior in assistance_order:
                 observed_assistance.append(prior)
+    engineering_assisted = await _known_engineering_assistance(db, project, checkpoint_id)
+    if engineering_assisted:
+        observed_assistance.append("together")
     effective_assistance = max(observed_assistance, key=assistance_order.__getitem__)
     feedback = {"accepted": passed, "checks": checks, "review_required": True,
-                "effective_assistance_level": effective_assistance,
+                "effective_assistance_level": effective_assistance, "engineering_assisted": engineering_assisted,
                 "summary": "交付检查通过；解释与设计质量仍需导师评审。" if passed else "交付尚有未满足项，请按检查结果修改后重新提交。",
                 "mastery_inference": False}
     await _record(db, project, data["client_action_id"], "delivery", payload, feedback, checkpoint_id,

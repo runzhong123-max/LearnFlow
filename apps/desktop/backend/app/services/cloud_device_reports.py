@@ -70,14 +70,34 @@ async def publish_run_report(session, project_id: int, storage: Path, run_id: in
 
 async def _publish_receipt(session, project_id: int, storage: Path, request_id: str, payload: dict):
     from app.services.cloud_device import digest, save
+    from learnflow_core.project_guidance_schema import DeviceReportInput
     journal = storage / "reported-runs.json"
     reports = json.loads(journal.read_text()) if journal.exists() else {}
-    fingerprint = digest(payload)
+    # The explicit share action chooses one immutable run/file version. Pin its
+    # provenance before contacting the user's currently signed-in cloud project.
+    source_fingerprint = digest({"project_id": project_id, "payload": payload})
     previous = reports.get(request_id)
     if previous:
-        if previous["fingerprint"] != fingerprint:
+        if "source_fingerprint" not in previous:
+            # Older journals only recorded successful, provenance-free receipts.
+            if previous["fingerprint"] != digest(payload):
+                return JSONResponse({"detail": "同一报告请求编号的内容不同"}, 409)
+            return JSONResponse(previous["result"])
+        if previous["source_fingerprint"] != source_fingerprint:
             return JSONResponse({"detail": "同一报告请求编号的内容不同"}, 409)
-        return JSONResponse(previous["result"])
+        if "result" in previous:
+            return JSONResponse(previous["result"])
+        payload = previous["payload"]
+        if digest(payload) != previous["fingerprint"]:
+            return JSONResponse({"detail": "待重试报告内容已变化，请检查本机记录"}, 409)
+        DeviceReportInput.model_validate(payload)
+    else:
+        from app.services.cloud_agent_broker import engineering_provenance
+        payload = {**payload, "engineering_provenance": engineering_provenance(storage, payload["manifest"])}
+        DeviceReportInput.model_validate(payload)
+        previous = {"source_fingerprint": source_fingerprint, "fingerprint": digest(payload), "payload": payload}
+        reports[request_id] = previous
+        save(journal, reports)
     if not getattr(session, "csrf", ""):
         csrf = await session.client.get("/api/auth/csrf")
         if csrf.status_code != 200:
@@ -88,7 +108,7 @@ async def _publish_receipt(session, project_id: int, storage: Path, request_id: 
     if response.status_code not in {200, 201}:
         return JSONResponse(response.json(), response.status_code)
     result = response.json()
-    reports[request_id] = {"fingerprint": fingerprint, "result": result}
+    reports[request_id] = {**previous, "result": result}
     save(journal, reports)
     return JSONResponse(result)
 

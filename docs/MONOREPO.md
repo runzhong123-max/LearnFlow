@@ -98,3 +98,5 @@ VisualSpec计算与API统一位于learning-core的visuals及api/visuals.py；表
 工作任务转学习项目的对话引导、候选协议和项目工作流在 shared packages 中复用。云端保存项目、对话、阶段和设备报告参考；桌面 sidecar 执行文件操作和工程子 Agent，按云账号/项目隔离且不镜像云端数据库身份。详见[实现与边界](implementation/DESKTOP_PROJECT_GUIDANCE.md)。
 
 共享协议：`learnflow.project-guidance.v1` 保存候选与显式确认；`learnflow.project-workflow.v1` 投影正式阶段和纸张；`learnflow.device-report.v1` 记录设备报告的运行或文件摘要。全部以既有项目 ownership 为边界，不自动生成掌握证据。
+
+2026-09-07 阶段支持增强：`project_stage_support`、帮助策略和文件推荐服务位于 learning-core，Tutor 的有界流程裁剪位于 learning-client。两端 API 与 Tutor 消费同一说明，桌面负责真实文件扫描和工程执行。固定案例包不变，不迁移日常数据库；端侧权限和账户隔离继续保留。注册与验收见[三类项目实现](implementation/DESKTOP_PROJECT_GUIDANCE.md)。

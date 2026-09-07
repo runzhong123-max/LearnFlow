@@ -21,7 +21,7 @@ ACTION_BOARD = {
         ActionDefinition("retrieve_learning_visual", "检索维护图解与可组合能力", "none", "none", {}, ("generate_learning_diagram", "generate_learning_animation")),
         ActionDefinition("evaluate_visual_prediction", "校验视觉探索预测", "evidence", "explicit", {}, ()),
         ActionDefinition("read_project_workflow", "读取三类项目的当前流程", "none", "none", {}, ("initialize_project_workflow", "submit_project_delivery")),
-        ActionDefinition("request_project_hint", "请求当前阶段的分档提示", "context", "explicit_or_click", {}, ("submit_project_delivery",)),
+        ActionDefinition("request_project_hint", "设置当前阶段帮助档位并获取提示", "context", "explicit_or_click", {}, ("submit_project_delivery",)),
         ActionDefinition("prepare_local_work_case", "校验固定版本实践案例候选", "proposal", "explicit_or_click", {}, ("initialize_project_workflow",)),
         ActionDefinition("initialize_project_workflow", "确认项目路线与正式关卡任务", "write", "explicit_or_click", {}, ("read_project_workflow",)),
         ActionDefinition("save_project_workbench", "保存工作台纸张与布局", "write", "explicit_or_click", {}, ()),

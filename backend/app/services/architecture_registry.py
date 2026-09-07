@@ -43,12 +43,31 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-07.5"
+REGISTRY_VERSION = "2026-09-07.6"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Pure source-data validators/exporters, not Agent-callable tools or learner writers.
 # The referenced TypeScript module owns field semantics; this registry owns discovery.
 DATA_CONTRACTS = {
+    "engineering_provenance_v1": {
+        "schema_version": "learnflow.engineering-provenance.v1", "owner": "tutor_agent", "origin": "builtin",
+        "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "docs/implementation/DESKTOP_PROJECT_GUIDANCE.md",
+        "binding_ids": ["api:project_device_report.create"], "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "optional bounded assistance provenance in explicitly shared reports; old receipt hashes retained; absence never proves independent completion",
+    },
+    "workspace_recommendations_v1": {
+        "schema_version": "learnflow.workspace-recommendations.v1", "owner": "tutor_agent", "origin": "builtin",
+        "mode": "read_only_navigation", "lifecycle": "implemented", "authority_path": "docs/implementation/DESKTOP_PROJECT_GUIDANCE.md",
+        "binding_ids": ["py:workspace.recommendations"], "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "bounded device-only file navigation under existing inspect_workspace_files; no source upload or edit permission",
+    },
+    "project_stage_support_v1": {
+        "schema_version": "learnflow.stage-support.v1", "owner": "tutor_agent", "origin": "builtin",
+        "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "docs/implementation/DESKTOP_PROJECT_GUIDANCE.md",
+        "binding_ids": ["py:project_workflow.assistance", "py:project_workflow.set_assistance"],
+        "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "additive stage support overlay and help policy; fixed case hash, hint endpoint and database schema retained",
+    },
     "project_guidance_v1": {
         "schema_version": "learnflow.project-guidance.v1", "owner": "tutor_agent", "origin": "builtin",
         "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "docs/MONOREPO.md",
@@ -1301,6 +1320,8 @@ _PYTHON_BINDING_TARGETS = {
     "py:project_workflow.deliver": ("app.services.project_workflows", "deliver_checkpoint"),
     "py:project_workflow.save": ("app.services.project_workflows", "save_workbench"),
     "py:project_workflow.initialize": ("app.services.project_workflows", "initialize_workflow"),
+    "py:project_workflow.assistance": ("app.services.project_workflows", "get_stage_assistance"),
+    "py:project_workflow.set_assistance": ("app.services.project_workflows", "request_stage_assistance"),
     "py:project_workflow.hint": ("app.services.project_workflows", "request_hint"),
     "py:project_workflow.read": ("app.services.project_workflows", "workflow_view"),
     "py:golden_role.workspace": ("app.services.golden_role_workspace", "GoldenWorkspace"),
@@ -1353,6 +1374,7 @@ _PYTHON_BINDING_TARGETS = {
     "py:micro_learning.analyze": ("app.services.micro_learning", "analyze_teach_back"),
     "py:workspace.delete_conversation": ("app.services.workspace_lifecycle", "delete_conversation_workspace"),
     "py:workspace.delete_project": ("app.services.workspace_lifecycle", "delete_project_workspace"),
+    "py:workspace.recommendations": ("app.services.workspace_recommendations", "recommend_files"),
     "py:workspace.scan": ("app.services.workspace_files", "scan_workspace_tree"),
     "py:local_agent.create": ("app.services.local_agent_broker", "create_run_for_action"),
     "py:demo.seed": ("app.services.demo_seed", "seed_competition_demo"),
@@ -1590,7 +1612,7 @@ IMPLEMENTATION_BINDINGS = {
 _TOOL_BINDING_IDS = {
     "project_guidance_gateway": ("py:project_guidance.prepare", "py:project_guidance.confirm", "api:project_guidance.prepare", "api:project_guidance.confirm"),
     "project_device_report_gateway": ("py:project_device_report.record", "api:project_device_report.create", "api:project_device_report.read"),
-    "project_workflow_runtime": ("py:project_workflow.tutor_context", "py:project_workflow.read", "py:project_workflow.initialize", "py:project_workflow.save", "py:project_workflow.deliver", "py:project_workflow.reading", "py:project_workflow.hint"),
+    "project_workflow_runtime": ("py:project_workflow.tutor_context", "py:project_workflow.read", "py:project_workflow.initialize", "py:project_workflow.save", "py:project_workflow.deliver", "py:project_workflow.reading", "py:project_workflow.hint", "py:project_workflow.assistance", "py:project_workflow.set_assistance"),
     "local_work_case_catalog": ("py:work_case.catalog", "py:work_case.validate"),
     "golden_role_workspace": ("py:golden_role.workspace",),
     "ecosystem_gateway": ("py:ecosystem.dispatch", "api:ecosystem.dispatch"),
@@ -1679,7 +1701,7 @@ _TOOL_BINDING_IDS = {
     "context_packet_assembler": ("py:five_kernel.context",),
     "seeded_demo": ("py:demo.seed", "py:demo.grade_seeded_code", "api:demo.status"),
     "task_runtime": ("py:task.manager",),
-    "workspace_file_service": ("py:workspace.scan",),
+    "workspace_file_service": ("py:workspace.recommendations", "py:workspace.scan",),
     "managed_artifact_service": ("api:phase2.put_lecture",),
     "local_agent_broker": ("py:local_agent.create",),
 }

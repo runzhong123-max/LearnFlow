@@ -671,3 +671,5 @@ frontend 当前没有该 route，所以 `learner_growth` lifecycle 为 `optional
 岗位跨产品网关新增 `ecosystem_gateway_v1` 数据契约，以及 `ecosystem_gateway` / `curriculum_source_runtime` 两个服务端能力。源图变更是主体作用域内容操作，通过 CAS、幂等回执和零 target 事件审计，不归约学习掌握状态。权威字段沿用 LearnFlow v2 TS 校验器。接口、中央身份与桌面边界见 [ECOSYSTEM_GATEWAY_V1](product/ECOSYSTEM_GATEWAY_V1.md)。
 
 Contract impact（`2026-09-06.5`）：新增 `golden_role_workspace_v1` 离线研究契约与 `golden_role_workspace` artifact adapter，绑定标准库实现。宿主 Codex 操作独立工作区，保存源图候选、人工裁决、案例报告及指令版本；没有新增主 Agent、Action Board 处理器或学习事件。local journal 不作为 EvidenceEvent，实验图谱不替代正式 Role Package/LearnFlow v2。正式桌面代码执行仍必须经过 local_agent_broker。见 [黄金岗位项目](../labs/golden-role/README.md)。
+
+Contract impact（`2026-09-07.6`）：阶段分工与帮助策略登记为 `project_stage_support_v1`，复用工作流与 `project_assistance_requested` 零 target 事件；相关文件推荐登记为 `workspace_recommendations_v1`，复用 `inspect_workspace_files`。Broker 从宿主权威读取帮助策略并绑定运行快照；方向、步骤、伪代码仅只读，实现档仍两次确认。推荐是本机有界导航，不授予修改权限或上传正文。旧案例摘要与数据库 schema 不变。见[阶段支持契约](implementation/DESKTOP_PROJECT_GUIDANCE.md#阶段分工帮助权限与文件导航2026-09-07-增强)。

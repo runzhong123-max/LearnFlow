@@ -1,4 +1,7 @@
 import { runtimeFetch } from './runtime-client.ts'
+import type { StageAssistance } from '../../../../packages/learning-client/src/project-guidance/workflow-context'
+export type { StageAssistance, StageHelpMode as AssistanceMode } from '../../../../packages/learning-client/src/project-guidance/workflow-context'
+import type { StageHelpMode as AssistanceMode } from '../../../../packages/learning-client/src/project-guidance/workflow-context'
 import type { ProjectBrief, ProjectMode } from './project'
 
 export type ArtifactReference = { kind: string; ref: string; revision?: string }
@@ -10,6 +13,9 @@ export type WorkbenchState = {
 }
 export type MilestoneFeedback = { accepted: boolean; checks: Array<{ key: string; label: string; passed: boolean; detail: string }>; review_required: boolean; summary: string; mastery_inference: false }
 export type WorkflowMilestone = {
+  support_version?: string; student_tasks?: string[]; mentor_support?: string[]; shared_tasks?: string[]
+  related_files?: Array<{ path: string; role: string; reason: string }>; assistance?: StageAssistance | null
+  assistance_guidance?: { mode: AssistanceMode; body: string; revision: number } | null
   checkpoint_id: number; key: string; title: string; objective: string; status: 'available' | 'locked' | 'accepted'
   materials: Array<{ id: string; title: string; body: string }>
   fields: Array<{ key: string; label: string; kind: 'text' | 'textarea'; placeholder?: string }>
@@ -88,3 +94,8 @@ export const publishFileReport = async (id: number, file: WorkspaceFile, checkpo
     client_action_id: `file-report:${fingerprint}`,
   })
 }
+
+export const setStageAssistance = (id: number, checkpointId: number, current: StageAssistance, mode: AssistanceMode) => workbenchRequest<{ assistance: StageAssistance; guidance: { body: string }; workflow: ProjectWorkflow }>(`${workflowPath(id)}/checkpoints/${checkpointId}/assistance`, 'POST', { client_action_id: workbenchActionId('assistance'), expected_revision: current.revision, mode })
+
+export type WorkspaceRecommendations = { schema_version: string; checkpoint_id: number; items: Array<{ path: string; reason: string; provenance: Array<Record<string, unknown>> }>; truncated: boolean; learning_evidence: false }
+export const loadWorkspaceRecommendations = (id: number, checkpointId: number) => workbenchRequest<WorkspaceRecommendations>(`${filesPath(id)}/recommendations`, 'POST', { checkpoint_id: checkpointId, limit: 6 })
