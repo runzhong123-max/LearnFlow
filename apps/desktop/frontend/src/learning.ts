@@ -45,10 +45,12 @@ export type LearningTaskBinding = {
   formalSkillRunId?: number
   formalSkillRunVersion?: number
   formalSkillStatus?: string
+  formalVerificationRunId?: number
   formalSkillState?: string
   formalSkillStageLabel?: string
   formalSkillDirective?: string
   formalSkillTurnCount?: number
+  formalSkillSupportExit?: boolean
   formalSkillTurnBudget?: number
   formalSkillGapLoopCount?: number
   formalSkillCalibration?: FeynmanCalibration
@@ -72,6 +74,7 @@ export type LearningSkillStep = {
 }
 
 export type LearningSkillDefinition = {
+  entryPolicy: 'primary' | 'legacy'
   name: string
   description: string
   bestFor: string
@@ -153,6 +156,7 @@ export type LearningTaskTutorContext = {
 }
 
 export type FormalSkillRunBindingInput = {
+  micro_learning_run?: { id: number } | null
   id: number
   version: number
   status: string
@@ -161,6 +165,7 @@ export type FormalSkillRunBindingInput = {
   next_prompt?: string
   step_index?: number
   turn_count?: number
+  support_exit?: { status?: string; [key: string]: unknown }
   turn_budget?: number
   gap_loop_count?: number
   calibration?: Record<string, string>
@@ -197,6 +202,7 @@ function skillFromManifest(
   const runtime = skill.runtime
   if (!runtime) throw new Error(`Skill ${skill.id} 缺少 SkillSpec v2 runtime`)
   return {
+    entryPolicy: skill.entry_policy as 'primary' | 'legacy',
     name: skill.name,
     description: skill.description,
     bestFor: skill.best_for.join('、'),
@@ -235,6 +241,9 @@ export const LEARNING_SKILLS = Object.fromEntries(
   ]),
 ) as Record<LearningSkillId, LearningSkillDefinition>
 
+export const PRIMARY_LEARNING_SKILL_IDS = (Object.keys(LEARNING_SKILLS) as LearningSkillId[])
+  .filter(id => LEARNING_SKILLS[id].entryPolicy === 'primary')
+
 const LEGACY_SKILL_STEP_ALIASES: Record<LearningSkillId, Record<string, string>> = {
   guided_explanation: {
     anchor_model: 'presenting_core_model',
@@ -272,8 +281,6 @@ function canonicalSkillStepId(skillId: LearningSkillId, stepId: string) {
 
 const LEARNING_INTENT = /(?:带我(?:学|学习|弄懂|理解|练习|做|写|实现|完成)|教我(?:学会|理解|弄懂)|陪我(?:学|练)|让我练习|(?:开始|创建|建立|加入)(?:一个)?学习任务|练习并(?:检查|验证)|从头学会)/
 const SUPPORT_REQUEST = /(?:不会|不知道|没懂|不明白|想不出来|给个提示|提示一下|举个例子|直接讲|跳过)/
-const PROCEDURAL_GOAL = /(?:代码|编程|算法|配置|命令|调试|实现|写一个|手写|步骤|操作|SQL|指针)/i
-const REASONING_GOAL = /(?:为什么|证明|推导|不变量|因果|判断)/
 
 function eventId() {
   return `learning-event-${globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`}`
@@ -302,8 +309,8 @@ export function learningObjectiveFromInput(input: string) {
 }
 
 export function recommendedLearningSkill(objective: string): LearningSkillId {
-  if (PROCEDURAL_GOAL.test(objective)) return 'worked_example_fading'
-  if (REASONING_GOAL.test(objective)) return 'socratic_dialogue'
+  if (/(讲义|练习文件|文件共学)/.test(objective)) return 'learning_file_study'
+  if (/(复述|查漏|用自己的话)/.test(objective)) return 'feynman_dialogue'
   return 'guided_explanation'
 }
 
@@ -462,6 +469,11 @@ export function projectLearningTask(task: LearningTask, events: LearningEvent[])
     if (event.type === 'vnext_learning_support_requested') supportCount += 1
   })
 
+  // Persisted run status wins over stale browser pause/completion events.
+  if (task.formalSkillStatus === 'completed') status = 'completed'
+  else if (task.formalSkillStatus === 'paused') status = 'paused'
+  else if (task.formalSkillStatus === 'active' || task.formalSkillStatus === 'verification') status = 'active'
+
   const steps = LEARNING_SKILLS[skillId].steps
   if (!hasSkillStep) stepId = steps[legacyStepIndex(legacyPhase, steps.length)].id
   const stepIndex = Math.max(0, steps.findIndex(step => step.id === stepId))
@@ -551,6 +563,33 @@ export function learningTaskTutorContext(projection: LearningTaskProjection): Le
   }
 }
 
+/** Rebuild the local binding when a persisted conversation has no browser task cache. */
+export function restoreFormalSkillRunBinding(
+  tasks: LearningTask[], events: LearningEvent[],
+  run: FormalSkillRunBindingInput & { goal: string; skill: { id: LearningSkillId } },
+  now = Date.now(),
+) {
+  if (!run.learning_task) return null
+  const activated = activateFormalLearningTask({
+    id: run.learning_task.id,
+    objective: run.goal,
+    version: run.learning_task.version || 1,
+    preferred_skills: [run.skill.id],
+  }, tasks, events, now)
+  let restoredEvents = activated.events
+  if (projectLearningTask(activated.task, restoredEvents).skillId !== run.skill.id) {
+    restoredEvents = switchLearningSkill(restoredEvents, projectLearningTask(activated.task, restoredEvents), run.skill.id, now + 1)
+  }
+  const task = bindFormalSkillRun(activated.task, run)
+  const projection = projectLearningTask(task, restoredEvents)
+  restoredEvents = reconcileLearningEventsWithFormalSkillRun(restoredEvents, projection, run, now + 2)
+  return {
+    tasks: activated.tasks.map(item => item.id === task.id ? task : item),
+    events: restoredEvents,
+    projection: projectLearningTask(task, restoredEvents),
+  }
+}
+
 export function bindFormalSkillRun(task: LearningTask, run: FormalSkillRunBindingInput): LearningTask {
   return {
     ...task,
@@ -559,9 +598,11 @@ export function bindFormalSkillRun(task: LearningTask, run: FormalSkillRunBindin
     formalSkillRunId: run.id,
     formalSkillRunVersion: run.version,
     formalSkillStatus: run.status.slice(0, 40),
+    formalVerificationRunId: run.micro_learning_run?.id,
     formalSkillState: run.state.slice(0, 80),
     formalSkillStageLabel: String(run.stage_label || run.state).slice(0, 100),
     formalSkillDirective: String(run.next_prompt || '').slice(0, 1800),
+    formalSkillSupportExit: run.support_exit?.status === 'required',
     formalSkillTurnCount: Math.max(0, Math.floor(run.turn_count || 0)),
     formalSkillTurnBudget: Math.max(0, Math.floor(run.turn_budget || 0)),
     formalSkillGapLoopCount: Math.max(0, Math.floor(run.gap_loop_count || 0)),

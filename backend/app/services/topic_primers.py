@@ -168,8 +168,107 @@ CONDITIONAL_PROBABILITY = {
 }
 
 
-def deterministic_topic_primer(goal: str) -> tuple[dict[str, Any], str] | None:
+
+PROGRAM_LINKING = {
+    "card": {
+        "title": "程序的链接：从目标文件到可执行程序",
+        "objective": "能区分编译与链接，解释符号解析和重定位，并定位缺少定义与重复定义两类链接错误。",
+        "key_points": [
+            "以常见 C 工具链为例，源文件分别编译成目标文件；目标文件包含机器代码、数据、符号表和重定位信息。链接器组合多个目标文件及所需库，生成可执行文件或共享库。",
+            "符号解析把一个目标文件中的外部引用与其他目标文件或库中的定义对应起来。例如 main.o 调用 add，但定义位于 add.o，链接器需要找到该定义。",
+            "重定位根据最终布局修正代码或数据中的地址引用。单独编译时尚不知道其他模块的最终地址，因此目标文件记录待修正的位置，而不是提前知道全部地址。",
+            "静态链接通常把选中的库目标代码纳入输出文件；动态链接保留对共享库及符号的依赖，由加载器和动态链接器在装载或运行时完成相关工作。动态链接不代表完全没有链接阶段。",
+            "声明告诉编译器名称的类型和调用方式，定义才提供函数体或存储。声明存在不保证链接成功；未找到所需定义会出现未定义引用，冲突的多个强定义可能导致重复定义错误。",
+        ],
+        "target_concepts": ["目标文件", "符号解析", "重定位", "静态链接", "动态链接"],
+        "example": "main.c 声明 int add(int, int); 并在 main 中返回 add(2,3)，add.c 定义 int add(int a,int b){return a+b;}。分别执行 cc -c main.c 与 cc -c add.c 得到 main.o、add.o；cc main.o add.o -o demo 才把两者链接起来。若只执行 cc main.o -o demo，链接器通常报告 add 的未定义引用。这个例子中的两个源文件都可以通过单独编译，故出错阶段不能仅凭‘构建失败’判断。",
+        "common_confusion": "头文件声明不会自动带来函数实现；编译成功不保证链接成功。这里描述的是常见原生 C 工具链，不把所有语言的解释执行、JIT 或模块加载都当作同一种流程。具体报错措辞及符号处理细节随平台和工具链变化。",
+        "success_criteria": "给定两个目标文件，指出谁提供定义、谁发出引用；解释缺少 add.o 为什么导致链接失败，并说明何时需要修正地址。",
+    },
+    "questions": [
+        {
+            "q_type": "single", "difficulty": "easy", "learning_target": "区分声明与链接所需的定义",
+            "evidence_claim": "能从缺失目标文件定位未定义引用的原因",
+            "question": "main.o 引用了 add，add.o 提供唯一的 add 定义。只用 main.o 链接时报告 add 未定义，最直接的修复是哪项？",
+            "options": ["把 main.c 中的函数声明再复制一次", "把 add.o 或提供该定义的库加入链接输入", "只把输出文件名改成 add", "删除全部重定位信息"],
+            "answer_indexes": [1], "explanation": "声明不提供函数体；链接器需要在实际输入目标文件或库中找到 add 的定义。",
+            "variant": {"type": "concept_choice", "validated": True,
+                "prompt": "util.o 定义了 print_result，report.o 引用它。两者分别编译成功，链接只输入 report.o。应该补充什么？",
+                "options": ["util.o 或包含它的库", "再写一遍同名声明", "一个不同的输出文件名"], "answer_indexes": [0]},
+        },
+        {
+            "q_type": "single", "difficulty": "medium", "learning_target": "理解重定位与模块最终布局的关系",
+            "evidence_claim": "能区分符号解析与地址修正",
+            "question": "链接器已找到函数的定义，但该函数在输出文件中的位置与单独编译时假定的位置不同。修正调用处地址引用属于什么工作？",
+            "options": ["符号解析", "宏展开", "重定位", "常量折叠"],
+            "answer_indexes": [2], "explanation": "符号解析找到引用对应的定义，重定位则依据最终布局修正地址引用。",
+            "variant": {"type": "concept_choice", "validated": True,
+                "prompt": "两个目标文件合并后，全局数据的位置发生变化，访问该数据的地址引用需要随之更新。这属于哪项？",
+                "options": ["符号解析", "重定位", "宏展开"], "answer_indexes": [1]},
+        },
+        {
+            "q_type": "single", "difficulty": "medium", "learning_target": "区分静态链接与动态链接",
+            "evidence_claim": "能判断输出文件对共享库的运行依赖",
+            "question": "某可执行文件在启动时需要加载特定共享库。以下哪项最符合这种机制？",
+            "options": ["库中所有实现一定已完整复制进可执行文件", "程序从未经过任何链接处理", "头文件声明在运行时自动变成实现", "输出保留共享库依赖，装载时由加载器和动态链接器参与处理"],
+            "answer_indexes": [3], "explanation": "动态链接保留对共享库和符号的依赖，相关绑定可发生在装载或运行时。",
+            "variant": {"type": "concept_choice", "validated": True,
+                "prompt": "把选中的库目标代码纳入输出文件，以减少对该共享库的运行依赖，通常对应哪种方式？",
+                "options": ["静态链接", "只添加头文件", "只进行语法检查"], "answer_indexes": [0]},
+        },
+    ],
+}
+
+# A separate, reviewed scenario bank for verification after the lecture/practice
+# pair. These are different reasoning situations, not renamed original items.
+PROGRAM_LINKING_VERIFICATION_QUESTIONS = [
+    {
+        "q_type": "single", "difficulty": "medium",
+        "learning_target": "定位跨模块重复定义并保持唯一外部定义",
+        "evidence_claim": "能将冲突的变量实现与可重复的声明区分开",
+        "question": "配置模块和日志模块各自提供了全局变量 log_level 的一个强定义，单独编译均成功，合并时报重复定义。若二者应共享同一份状态，应如何组织代码？",
+        "options": ["保留两个强定义，只调整目标文件排列", "让一个模块保留定义，另一个模块只引用相应外部声明", "在两个模块都增加同名强定义", "把可执行文件重命名"],
+        "answer_indexes": [1],
+        "explanation": "共享的外部对象应由一个模块提供定义，其他模块通过声明引用它；重新排序不能消除冲突的强定义。",
+        "variant": {"type": "concept_choice", "validated": True,
+            "prompt": "两个插件把同一个非内联工具函数的实现复制进各自源文件，最终静态组合时报该函数多重定义。要共享这一实现，哪种调整符合模块边界？",
+            "options": ["将实现集中到一个工具模块，其余模块保留声明并链接工具模块", "为每份实现增加一份相同声明即可", "只改调用位置，保留全部冲突强定义"], "answer_indexes": [0]},
+    },
+    {
+        "q_type": "single", "difficulty": "medium",
+        "learning_target": "判断动态库的部署依赖与构建产物的区别",
+        "evidence_claim": "能根据运行环境缺少共享库定位故障阶段",
+        "question": "图像工具在开发机上构建并运行成功，复制可执行文件到新机器后，启动器报告找不到它依赖的共享图像库。下列哪项最直接针对这个问题？",
+        "options": ["在源码里重复增加库函数声明", "把所有源文件再单独编译一次但不部署任何库", "部署兼容的共享库，并让运行环境能够找到它", "认为开发机链接成功意味着所有机器都自带该库"],
+        "answer_indexes": [2],
+        "explanation": "动态链接输出保留运行时共享库依赖。开发机成功不能替代目标机器上的库部署及查找配置。",
+        "variant": {"type": "concept_choice", "validated": True,
+            "prompt": "离线设备上的应用已把压缩库的目标代码静态纳入可执行文件。维护者只替换构建目录中的静态库文件，没有重新链接或更换设备上的可执行文件。设备会自动使用新库实现吗？",
+            "options": ["会，静态库总在启动时重新载入", "不会，需重新链接并部署含新代码的可执行文件", "会，只要修改头文件声明"], "answer_indexes": [1]},
+    },
+    {
+        "q_type": "single", "difficulty": "medium",
+        "learning_target": "将最终布局用于修正绝对地址引用",
+        "evidence_claim": "能在指定地址模型中推导链接后的引用值",
+        "question": "在一个简化的链接示例中，跳转表的一项需要保存目标函数的绝对地址。目标文件暂填 0，并记录了需要修正的位置。最终布局把该函数放在地址 8192，该表项应如何处理？",
+        "options": ["保留 0，因为编译已经结束", "填入源文件行号", "删除该函数的定义", "根据重定位记录把表项修正为 8192"],
+        "answer_indexes": [3],
+        "explanation": "这里明确指定表项存放绝对地址；链接器根据最终布局与重定位记录把占位值修正为目标地址。",
+        "variant": {"type": "concept_choice", "validated": True,
+            "prompt": "另一个简化示例中，数据表项须保存全局缓冲区起点之后 12 字节处的绝对地址。合并布局后缓冲区起点为 5000，该表项的最终值应是多少？",
+            "options": ["12", "5000", "5012"], "answer_indexes": [2]},
+    },
+]
+
+
+def deterministic_topic_primer(goal: str, *, verification: bool = False) -> tuple[dict[str, Any], str] | None:
     normalized = "".join(str(goal or "").casefold().split())
+    if any(alias in normalized for alias in ("程序的链接", "程序链接", "链接器", "静态链接", "动态链接", "programlinking", "linker")):
+        artifact = deepcopy(PROGRAM_LINKING)
+        if verification:
+            artifact["questions"] = deepcopy(PROGRAM_LINKING_VERIFICATION_QUESTIONS)
+            return artifact, "curated.program_linking.verification.v1"
+        return artifact, "curated.program_linking.v1"
     if any(alias in normalized for alias in (
         "朴素贝叶斯", "naivebayes", "naïvebayes",
     )):

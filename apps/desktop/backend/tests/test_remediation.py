@@ -287,3 +287,75 @@ def test_exercise_wrong_then_retry_uses_same_case(client: TestClient, monkeypatc
     )
     assert variant.status_code == 200
     assert variant.json()["remediation"]["status"] == "completed"
+
+def _ready_concept_remediation(client: TestClient):
+    checkpoint_id, question_id, _, learner_id = asyncio.run(_seed_items())
+    path = f"/api/checkpoints/{checkpoint_id}/concepts/{question_id}/submit"
+    wrong = client.post(path, json={"answer_indexes": [0], "client_submission_id": uuid.uuid4().hex})
+    assert wrong.status_code == 200, wrong.text
+    case = wrong.json()["remediation"]
+    retried = client.post(path, json={"answer_indexes": [1], "assistance_level": "guided",
+        "remediation_case_id": case["id"], "client_submission_id": uuid.uuid4().hex})
+    assert retried.status_code == 200, retried.text
+    assert retried.json()["remediation"]["status"] == "variant_ready"
+    return retried.json()["remediation"], learner_id
+
+
+def test_variant_submission_replays_wrong_and_completed_answers_without_new_evidence(client: TestClient):
+    case, learner_id = _ready_concept_remediation(client)
+    path = f"/api/remediation/{case['id']}/variant/submit"
+    wrong_body = {"answer_indexes": [0], "client_submission_id": uuid.uuid4().hex}
+    wrong = client.post(path, json=wrong_body)
+    replay_wrong = client.post(path, json=wrong_body)
+    assert wrong.status_code == replay_wrong.status_code == 200
+    assert wrong.json()["result"]["correct"] is False
+    assert replay_wrong.json()["idempotent_replay"] is True
+    assert replay_wrong.json()["attempt_id"] == wrong.json()["attempt_id"]
+    assert replay_wrong.json()["result"] == wrong.json()["result"]
+    changed_answer = client.post(path, json={**wrong_body, "answer_indexes": [1]})
+    assert changed_answer.status_code == 409
+
+    correct_body = {"answer_indexes": [1], "client_submission_id": uuid.uuid4().hex}
+    correct = client.post(path, json=correct_body)
+    replay_correct = client.post(path, json=correct_body)
+    assert correct.status_code == replay_correct.status_code == 200
+    assert correct.json()["result"]["correct"] is True
+    assert replay_correct.json()["remediation"]["status"] == "completed"
+    assert replay_correct.json()["attempt_id"] == correct.json()["attempt_id"]
+    assert replay_correct.json()["idempotent_replay"] is True
+    assert replay_correct.json()["result"] == correct.json()["result"]
+    assert "answer_indexes" not in replay_correct.json()["result"]
+    assert "expected" not in replay_correct.json()["result"]
+    late_wrong_replay = client.post(path, json=wrong_body)
+    assert late_wrong_replay.status_code == 200
+    assert late_wrong_replay.json()["result"]["correct"] is False
+    assert late_wrong_replay.json()["remediation"]["status"] == "completed"
+
+    async def audit():
+        async with async_session() as db:
+            attempts = list((await db.execute(select(LearningAttempt).where(
+                LearningAttempt.learner_id == learner_id, LearningAttempt.item_type == "remediation_variant",
+                LearningAttempt.remediation_case_id == case["id"],
+            ))).scalars())
+            events = list((await db.execute(select(EvidenceEvent).where(
+                EvidenceEvent.learner_id == learner_id,
+                EvidenceEvent.event_type.in_({"remediation_variant_evaluated", "remediation_completed"}),
+            ))).scalars())
+            return len(attempts), [event.event_type for event in events if event.payload.get("case_id") == case["id"]]
+    count, event_types = asyncio.run(audit())
+    assert count == 2
+    assert event_types.count("remediation_variant_evaluated") == 2
+    assert event_types.count("remediation_completed") == 1
+
+
+def test_variant_submission_key_cannot_be_reused_for_another_case(client: TestClient):
+    first_case, _ = _ready_concept_remediation(client)
+    second_case, _ = _ready_concept_remediation(client)
+    payload = {"answer_indexes": [0], "client_submission_id": uuid.uuid4().hex}
+    first = client.post(f"/api/remediation/{first_case['id']}/variant/submit", json=payload)
+    assert first.status_code == 200, first.text
+    second = client.post(f"/api/remediation/{second_case['id']}/variant/submit", json=payload)
+    assert second.status_code == 409, second.text
+    current = client.get(f"/api/remediation/{second_case['id']}")
+    assert current.json()["variant_attempt_id"] is None
+    assert current.json()["status"] == "variant_ready"

@@ -47,11 +47,19 @@ def _normalized(value: Any) -> str:
 def _fingerprint(candidate: dict[str, Any]) -> str:
     stable = {
         "question": _normalized(candidate.get("question")),
-        "options": [_normalized(item) for item in candidate.get("options", [])],
+        "options": [_normalized(item) for item in (candidate.get("options") if isinstance(candidate.get("options"), list) else [])],
         "q_type": candidate.get("q_type"),
         "target": _normalized(candidate.get("target_skill")),
     }
     return hashlib.sha256(json.dumps(stable, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+
+
+def _valid_trace_table(value: Any) -> bool:
+    return (isinstance(value, list) and 0 < len(value) <= 100
+        and all(isinstance(row, list) and 0 < len(row) <= 30 for row in value)
+        and len({len(row) for row in value}) == 1
+        and all(isinstance(cell, (str, int, float, bool)) and str(cell).strip()
+            and (not isinstance(cell, float) or math.isfinite(cell)) for row in value for cell in row))
 
 
 def validate_practice_candidate(candidate: dict[str, Any]) -> PracticeValidation:
@@ -61,12 +69,19 @@ def validate_practice_candidate(candidate: dict[str, Any]) -> PracticeValidation
     q_type = str(candidate.get("q_type") or "single")
     difficulty = str(candidate.get("difficulty") or "medium")
     purpose = str(candidate.get("purpose") or "practice")
-    options = [_clean_text(item, 1200) for item in candidate.get("options", []) if _clean_text(item, 1200)]
+    raw_options = candidate.get("options") if isinstance(candidate.get("options"), list) else []
+    options = [_clean_text(item, 1200) for item in raw_options if _clean_text(item, 1200)]
     answer_indexes = candidate.get("answer_indexes") if isinstance(candidate.get("answer_indexes"), list) else []
     expected_response = candidate.get("expected_response")
     target_skill = _clean_text(candidate.get("target_skill"), 240)
     explanation = _clean_text(candidate.get("explanation"), 6000)
 
+    if not isinstance(candidate.get("answer_indexes", []), list):
+        errors.append("answer_indexes 必须是列表")
+    if any(not isinstance(item, str) for item in raw_options):
+        errors.append("候选项必须是文本")
+    if not isinstance(candidate.get("options", []), list):
+        errors.append("options 必须是列表")
     if len(question) < 8:
         errors.append("题干过短，无法形成可检查任务")
     if q_type not in SUPPORTED_ITEM_TYPES:
@@ -82,15 +97,19 @@ def validate_practice_candidate(candidate: dict[str, Any]) -> PracticeValidation
 
     selection_types = {"single", "multi", "judge", "ordered_blocks"}
     if q_type in selection_types:
+        if len(options) != len(raw_options):
+            errors.append("候选项不得为空")
         if len(options) < 2:
             errors.append("选择或排序题至少需要两个候选项")
         if len(set(map(_normalized, options))) != len(options):
             errors.append("候选项存在重复")
         if not answer_indexes:
             errors.append("缺少确定性答案索引")
-        elif any(not isinstance(index, int) or index < 0 or index >= len(options) for index in answer_indexes):
+        elif any(isinstance(index, bool) or not isinstance(index, int) or index < 0 or index >= len(options) for index in answer_indexes):
             errors.append("答案索引越界")
-        if q_type == "single" and len(answer_indexes) != 1:
+        if answer_indexes and all(isinstance(index, int) for index in answer_indexes) and len(set(answer_indexes)) != len(answer_indexes):
+            errors.append("答案索引不得重复")
+        if q_type in {"single", "judge"} and len(answer_indexes) != 1:
             errors.append("单选题必须且只能有一个答案")
         if q_type == "judge" and len(options) != 2:
             errors.append("判断题必须有两个选项")
@@ -98,6 +117,8 @@ def validate_practice_candidate(candidate: dict[str, Any]) -> PracticeValidation
             errors.append("排序题答案必须是所有候选块的一个完整排列")
     elif q_type in {"exact_text", "numeric", "trace_table"} and expected_response in (None, "", []):
         errors.append("该题型缺少 expected_response")
+    if q_type == "trace_table" and not _valid_trace_table(expected_response):
+        errors.append("轨迹表答案必须是非空、等宽的二维标量列表")
     if q_type == "numeric":
         try:
             expected = float(expected_response)
@@ -105,6 +126,12 @@ def validate_practice_candidate(candidate: dict[str, Any]) -> PracticeValidation
                 raise ValueError
         except (TypeError, ValueError):
             errors.append("数值题 expected_response 必须是有限数值")
+        try:
+            tolerance = float(candidate.get("numeric_tolerance") or 0.0)
+            if not math.isfinite(tolerance) or tolerance < 0:
+                raise ValueError
+        except (TypeError, ValueError):
+            errors.append("数值容差必须是有限非负数")
     if q_type == "code_output" and expected_response in (None, ""):
         errors.append("代码输出题缺少已验证输出")
 
@@ -139,7 +166,7 @@ def normalized_candidate(
         "concept_key": _clean_text(candidate.get("concept_key"), 160),
         "response_schema": q_type,
         "expected_response": candidate.get("expected_response"),
-        "numeric_tolerance": max(0.0, float(candidate.get("numeric_tolerance") or 0.0)),
+        "numeric_tolerance": max(0.0, float(candidate.get("numeric_tolerance") or 0.0)) if q_type == "numeric" else 0.0,
         "quality": validation.quality,
         "quality_warnings": list(validation.warnings),
         "generation": {
@@ -238,6 +265,8 @@ def grade_structured_response(question: ConceptQuestion, data: dict[str, Any]) -
             correct = False
         return correct, {"response": submitted}, {"response": expected, "tolerance": meta.get("numeric_tolerance", 0)}
     if q_type == "trace_table":
+        if not _valid_trace_table(submitted) or not _valid_trace_table(expected):
+            return False, {"response": submitted}, {"response": expected}
         normalize_table = lambda value: [[_normalized(cell) for cell in row] for row in value] if isinstance(value, list) else []
         return normalize_table(submitted) == normalize_table(expected), {"response": submitted}, {"response": expected}
     return _normalized(submitted) == _normalized(expected), {"response": submitted}, {"response": expected}

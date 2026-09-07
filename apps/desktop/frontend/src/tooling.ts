@@ -120,6 +120,7 @@ export type TutorToolRun = {
   pathProposal?: PersonalPathNodeProposal
   pathPlanProposal?: LearningPathPlanProposal
   projectRoadmapProposal?: ProjectRoadmapProposal
+  materializedLearningFiles?: Array<{ kind: 'lecture' | 'practice'; ref: string; title: string }>
   projectLearningFileProposal?: ProjectLearningFileProposal
   assessmentBlueprint?: {
     id: number

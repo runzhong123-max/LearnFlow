@@ -1,5 +1,7 @@
 # LearnFlow 架构权威与维护边界
 
+Contract impact（`2026-09-07.4`）：学习方法主入口收敛为清晰讲解、费曼复述、讲义与练习共学；其余稳定 ID 保留旧运行兼容。Skill runtime v7 以真实文件/已读/Attempt 同步文件学习阶段，生成与验证解耦且保留任务原 scope。多节讲义、配对练习、失败缺口和重复/受助提交投影向后兼容；无新表、主 Agent 或五核 reducer 改动。当前合同优先见[学习方法与文件闭环 v2](implementation/LEARNING_METHODS_AND_FILES_V2.md)。
+
 Contract impact（`2026-09-07.3`）：图解与动画产品迁入 `educational_visuals` 插件，Learning Design 内部的统一工作流负责检索、两种构建器、改编和有限修复；宿主新增受限 artifact grant 与私有作品/版本/运行/检查点服务，重要操作统一发出零 target `visual_workspace_changed`。预算失败暂停并保留候选，旧版本不覆盖。四个扩展点、三类主 Agent、五核与掌握语义不变。Web/Desktop 使用同一个工作流，旧视觉聊天仍可读。详见 [插件工作流](design/visualize/PLUGIN-WORKFLOW.md)。本条取代此前把所有新图解限定为主 Tutor VisualBrief 分支和无独立作品存储的产品描述。
 
 > 2026-09-07 视觉规划入口与课程图库：registry 2026-09-07.2，隔离 Tutor 正文合同与视觉 JSON 规划合同，15 份维护作品关联正式学习路径并提供问题/别名/适用边界检索。Contract impact：只读元数据增量，稳定工具 ID、五核及事件语义不变，无数据库迁移。见 [实现与验证](design/visualize/CURRICULUM-LIBRARY-2026-09-07.md)。

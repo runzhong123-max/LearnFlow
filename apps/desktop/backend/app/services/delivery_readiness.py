@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.learning import AssessmentBlueprint, AssessmentRubric, LearningTask
@@ -247,7 +247,8 @@ async def checkpoint_delivery_readiness(
         ))) or 0)
     task = (await db.execute(select(LearningTask).where(
         LearningTask.learner_id == learner_id,
-        LearningTask.checkpoint_id == checkpoint.id,
+        or_(LearningTask.checkpoint_id == checkpoint.id,
+            LearningTask.execution_state["artifact_scope"]["checkpoint_id"].as_integer() == checkpoint.id),
     ))).scalar_one_or_none()
     task_count = int(task is not None and task.status != "canceled")
     deterministic_answers = sum(

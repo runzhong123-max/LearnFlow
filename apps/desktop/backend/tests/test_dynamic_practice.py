@@ -77,3 +77,21 @@ def test_structured_grader_handles_selection_order_numeric_and_trace_table():
         assessment_meta={"expected_response": [["i", "sum"], ["1", "1"]]},
     )
     assert grade_structured_response(trace, {"response": [[" I ", "SUM"], ["1", "1"]]})[0]
+
+
+def test_trace_table_rejects_malformed_answers_and_missing_submission():
+    for expected in ({}, [], ["row"], [["x"], ["x", "y"]]):
+        report = validate_practice_candidate(_candidate(q_type="trace_table", options=[], answer_indexes=[], expected_response=expected))
+        assert not report.valid
+    malformed = ConceptQuestion(q_type="trace_table", assessment_meta={"expected_response": {}})
+    assert not grade_structured_response(malformed, {"response": None})[0]
+    valid = ConceptQuestion(q_type="trace_table", assessment_meta={"expected_response": [["i", "value"], ["1", "2"]]})
+    assert not grade_structured_response(valid, {"response": [["i", "value"], "12"]})[0]
+
+
+def test_dynamic_numeric_tolerance_and_answer_indexes_have_strict_shapes():
+    assert not validate_practice_candidate(_candidate(answer_indexes=[True])).valid
+    assert not validate_practice_candidate(_candidate(q_type="multi", answer_indexes=[1, 1])).valid
+    assert not validate_practice_candidate(_candidate(options=["", "队列", "栈"])).valid
+    for tolerance in (float("inf"), float("nan"), -1, "bad"):
+        assert not validate_practice_candidate(_candidate(q_type="numeric", options=[], answer_indexes=[], expected_response=3, numeric_tolerance=tolerance)).valid

@@ -30,6 +30,7 @@ type Props = {
   result?: CodePaperResult
   inline?: boolean
   onOpenPaper?: () => void
+  onHintViewed?: () => void
   onSubmitCode: (code: string) => void | Promise<void>
 }
 
@@ -169,6 +170,7 @@ export default function CodePaperWorkbench({
   result,
   inline = false,
   onOpenPaper,
+  onHintViewed,
   onSubmitCode,
 }: Props) {
   const idPrefix = `code-paper-${useId()}`
@@ -251,7 +253,7 @@ export default function CodePaperWorkbench({
         </div>
       </header>
 
-      {hints.length > 0 && <details className={styles.hints}>
+      {hints.length > 0 && <details className={styles.hints} onToggle={event => { if (event.currentTarget.open) onHintViewed?.() }}>
         <summary>查看提示 <span>{hints.length}</span></summary>
         <ol>{hints.map((hint, index) => <li key={`${index}-${hint}`}>{hint}</li>)}</ol>
       </details>}

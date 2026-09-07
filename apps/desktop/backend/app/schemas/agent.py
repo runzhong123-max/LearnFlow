@@ -94,7 +94,7 @@ class LearningSkillRunCreateRequest(BaseModel):
 
 
 class LearningSkillRunActionRequest(BaseModel):
-    action: Literal["pause", "resume", "start_verification", "calibrate"]
+    action: Literal["pause", "resume", "start_verification", "calibrate", "sync_artifacts"]
     expected_version: int = Field(ge=1)
     client_action_id: str = Field(min_length=8, max_length=120)
     audience_level: Optional[Literal[

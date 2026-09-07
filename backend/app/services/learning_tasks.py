@@ -17,7 +17,7 @@ from urllib.parse import quote
 
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -43,6 +43,7 @@ from app.models.project import (
 from app.services.architecture_registry import SEMANTIC_MEMORY_KEYS, SKILLS
 from app.services.learning_runtime import get_kernel_projection, record_event
 from app.services.model_latency import invoke_with_budget
+from learnflow_core.learning_file_generation import task_artifact_checkpoint_id, task_artifact_project_id
 
 
 PLAN_SCHEMA_VERSION = "learning-task-plan.v1"
@@ -760,10 +761,11 @@ async def ensure_checkpoint_learning_task(
 ) -> LearningTask:
     existing = (await db.execute(select(LearningTask).where(
         LearningTask.learner_id == learner_id,
-        LearningTask.checkpoint_id == checkpoint.id,
+        or_(LearningTask.checkpoint_id == checkpoint.id,
+            LearningTask.execution_state["artifact_scope"]["checkpoint_id"].as_integer() == checkpoint.id),
     ))).scalar_one_or_none()
     if existing:
-        if session_id and not existing.session_id:
+        if session_id and not existing.session_id and existing.checkpoint_id == checkpoint.id:
             existing.session_id = session_id
         return existing
     roadmap = await db.get(Roadmap, checkpoint.roadmap_id)
@@ -939,8 +941,8 @@ async def _valid_evidence_refs(
         LearningAttempt.learner_id == task.learner_id,
         LearningAttempt.evaluated_at.is_not(None),
     )
-    if task.checkpoint_id:
-        query = query.where(LearningAttempt.checkpoint_id == task.checkpoint_id)
+    if task_artifact_checkpoint_id(task):
+        query = query.where(LearningAttempt.checkpoint_id == task_artifact_checkpoint_id(task))
     rows = list((await db.execute(query)).scalars().all())
     return [
         {
@@ -983,11 +985,11 @@ def _attempt_is_verification_evidence(attempt: LearningAttempt) -> bool:
 
 
 async def _scoped_attempts(db: AsyncSession, task: LearningTask) -> list[LearningAttempt]:
-    if not task.checkpoint_id:
+    if not task_artifact_checkpoint_id(task):
         return []
     return list((await db.execute(select(LearningAttempt).where(
         LearningAttempt.learner_id == task.learner_id,
-        LearningAttempt.checkpoint_id == task.checkpoint_id,
+        LearningAttempt.checkpoint_id == task_artifact_checkpoint_id(task),
         LearningAttempt.evaluated_at.is_not(None),
     ).order_by(LearningAttempt.id.desc()).limit(100))).scalars().all())
 
@@ -1032,16 +1034,16 @@ async def _verification_refs(db: AsyncSession, task: LearningTask) -> list[dict[
 
 
 async def _learning_exposure_refs(db: AsyncSession, task: LearningTask) -> list[dict[str, Any]]:
-    if not task.checkpoint_id:
+    if not task_artifact_checkpoint_id(task):
         return []
     rows = list((await db.execute(select(EvidenceEvent).where(
         EvidenceEvent.learner_id == task.learner_id,
-        EvidenceEvent.checkpoint_id == task.checkpoint_id,
+        EvidenceEvent.checkpoint_id == task_artifact_checkpoint_id(task),
         EvidenceEvent.event_type.in_({"lecture_viewed", "micro_learning_card_viewed"}),
     ).order_by(EvidenceEvent.id.desc()).limit(20))).scalars().all())
     return [
         {"type": "evidence_event", "id": row.id, "event_type": row.event_type}
-        for row in rows
+        for row in rows if dict(row.payload or {}).get("explicit_completion", True)
     ]
 
 
@@ -1072,11 +1074,11 @@ def _set_phase_status(task: LearningTask, phase_id: str, status: str) -> None:
 
 
 async def _review_schedule_refs(db: AsyncSession, task: LearningTask) -> list[dict[str, Any]]:
-    if not task.checkpoint_id:
+    if not task_artifact_checkpoint_id(task):
         return []
     schedules = list((await db.execute(select(ReviewSchedule).where(
         ReviewSchedule.learner_id == task.learner_id,
-        ReviewSchedule.checkpoint_id == task.checkpoint_id,
+        ReviewSchedule.checkpoint_id == task_artifact_checkpoint_id(task),
     ).order_by(ReviewSchedule.id))).scalars().all())
     return [
         {"type": "review_schedule", "id": row.id, "due_at": row.due_at.isoformat()}
@@ -1179,9 +1181,9 @@ async def reconcile_learning_task(db: AsyncSession, task: LearningTask) -> bool:
 
 
 async def _artifact_refs(db: AsyncSession, task: LearningTask) -> list[dict[str, Any]]:
-    if not task.checkpoint_id:
+    if not task_artifact_checkpoint_id(task):
         return list(task.artifact_refs or [])
-    checkpoint = await db.get(Checkpoint, task.checkpoint_id)
+    checkpoint = await db.get(Checkpoint, task_artifact_checkpoint_id(task))
     if not checkpoint:
         return list(task.artifact_refs or [])
     lecture = (await db.execute(select(Lecture).where(
@@ -1190,36 +1192,46 @@ async def _artifact_refs(db: AsyncSession, task: LearningTask) -> list[dict[str,
     exercises = list((await db.execute(select(Exercise).where(
         Exercise.checkpoint_id == checkpoint.id,
     ).order_by(Exercise.order, Exercise.id))).scalars().all())
-    questions = list((await db.execute(select(ConceptQuestion.id).where(
+    questions = list((await db.execute(select(ConceptQuestion).where(
         ConceptQuestion.checkpoint_id == checkpoint.id,
     ).order_by(ConceptQuestion.order, ConceptQuestion.id))).scalars().all())
-    project_id = task.project_id
+    project_id = task_artifact_project_id(task)
     focused_path = (
         f"/learn/{task.micro_learning_run_id}"
         if task.micro_learning_run_id else None
     )
     prefix = f"{str(checkpoint.order).zfill(2)}-{checkpoint.title}"
     refs: list[dict[str, Any]] = []
-    if lecture:
+    if lecture and lecture.status == "published" and lecture.sections:
         refs.append({
             "type": "managed_lecture",
             "id": lecture.id,
             "logical_filename": f"{prefix}.lflecture",
-            "path": focused_path or f"/projects/{project_id}/checkpoints/{checkpoint.id}",
+            "path": focused_path or f"/files/lecture/{lecture.id}",
+            "checkpoint_id": checkpoint.id, "project_id": project_id, "version": lecture.version,
         })
     for exercise in exercises:
         refs.append({
             "type": "managed_exercise",
             "id": exercise.id,
             "logical_filename": f"{prefix}-{str(exercise.order).zfill(2)}.lfexercise",
-            "path": focused_path or f"/projects/{project_id}/checkpoints/{checkpoint.id}/exercises?exercise={exercise.id}",
+            "path": focused_path or f"/files/practice/exercise-{exercise.id}",
+            "checkpoint_id": checkpoint.id, "project_id": project_id,
         })
-    if questions:
+    groups = {}
+    for question in questions:
+        set_id = str((question.assessment_meta or {}).get("practice_set_id") or "")
+        groups.setdefault(set_id, []).append(question)
+    for set_id, items in groups.items():
+        practice_ref = f"practice-set-{set_id}" if set_id else f"questions-{checkpoint.id}"
         refs.append({
             "type": "concept_question_set",
-            "ids": questions,
+            "ids": [item.id for item in items],
+            "kind": "practice", "ref": practice_ref,
+            "practice_kind": "dynamic_question_set" if set_id else "concept_question_set",
             "logical_filename": f"{prefix}-概念验证.lfexercise",
-            "path": focused_path or f"/projects/{project_id}/checkpoints/{checkpoint.id}/exercises",
+            "path": focused_path or f"/files/practice/{practice_ref}",
+            "checkpoint_id": checkpoint.id, "project_id": project_id,
         })
     return refs
 

@@ -11,6 +11,7 @@ from datetime import datetime
 import json
 import logging
 import re
+import unicodedata
 from typing import Any
 
 from langchain_core.messages import HumanMessage
@@ -106,8 +107,8 @@ def _sentences(source_text: str) -> list[str]:
     return [item for item in rows if len(item) >= 8]
 
 
-def _fallback_artifact(goal: str, source_text: str) -> dict[str, Any]:
-    primer = deterministic_topic_primer(goal)
+def _fallback_artifact(goal: str, source_text: str, *, verification: bool = False) -> dict[str, Any]:
+    primer = deterministic_topic_primer(goal, verification=verification)
     if primer:
         artifact, source_id = primer
         artifact["_generation_source"] = source_id
@@ -211,19 +212,24 @@ def _valid_question(raw: Any) -> dict[str, Any] | None:
     if q_type not in {"single", "multi", "judge"}:
         return None
     question = _clean(raw.get("question"), 1_200)
-    options = [_clean(item, 500) for item in list(raw.get("options") or [])]
-    options = [item for item in options if item]
+    if not isinstance(raw.get("options"), list) or not isinstance(raw.get("answer_indexes"), list):
+        return None
+    options = [_clean(item, 500) for item in raw["options"]]
+    if any(not item for item in options):
+        return None
     answers = sorted({
         int(item) for item in list(raw.get("answer_indexes") or [])
         if str(item).lstrip("-").isdigit()
     })
-    if not question or not 2 <= len(options) <= 5 or not answers:
+    if not question or not 2 <= len(options) <= 5 or not answers or len(set(options)) != len(options):
         return None
     if any(index < 0 or index >= len(options) for index in answers):
         return None
     if q_type in {"single", "judge"} and len(answers) != 1:
         return None
-    variant = dict(raw.get("variant") or {})
+    if not isinstance(raw.get("variant"), dict):
+        return None
+    variant = dict(raw["variant"])
     variant_options = [_clean(item, 500) for item in list(variant.get("options") or [])]
     variant_answers = sorted({
         int(item) for item in list(variant.get("answer_indexes") or [])
@@ -242,7 +248,9 @@ def _valid_question(raw: Any) -> dict[str, Any] | None:
         variant.get("type") == "concept_choice"
         and bool(variant.get("validated"))
         and bool(_clean(variant.get("prompt"), 1_200))
-        and len(variant_options) >= 2
+        and 2 <= len(variant_options) <= 5
+        and len(set(variant_options)) == len(variant_options)
+        and _clean(variant.get("prompt"), 1_200) != question
         and bool(variant_answers)
         and all(0 <= index < len(variant_options) for index in variant_answers)
     )
@@ -271,13 +279,14 @@ def _valid_question(raw: Any) -> dict[str, Any] | None:
 
 
 def _validated_artifact(
-    raw: dict[str, Any], goal: str, source_text: str,
+    raw: dict[str, Any], goal: str, source_text: str, *, verification: bool = False,
 ) -> dict[str, Any]:
-    fallback = _fallback_artifact(goal, source_text)
+    fallback = _fallback_artifact(goal, source_text, verification=verification)
     raw_card = dict(raw.get("card") or {})
     key_points = [_clean(item, 500) for item in list(raw_card.get("key_points") or [])]
     key_points = [item for item in key_points if item][:5]
-    if len(key_points) < 3:
+    card_fallback_used = len(key_points) < 3
+    if card_fallback_used:
         key_points = fallback["card"]["key_points"]
     concepts = [_clean(item, 80) for item in list(raw_card.get("target_concepts") or [])]
     concepts = list(dict.fromkeys(item for item in concepts if len(item) >= 2))[:5]
@@ -296,17 +305,53 @@ def _validated_artifact(
         question for question in (_valid_question(item) for item in list(raw.get("questions") or []))
         if question
     ][:3]
+    authored_question_count = len(questions)
     for fallback_question in fallback["questions"]:
         if len(questions) >= 2:
             break
         questions.append(fallback_question)
-    return {"card": card, "questions": questions}
+    sections = []
+    for item in list(raw.get("lecture_sections") or [])[:8]:
+        if isinstance(item, dict) and item.get("role") in {"objective", "mechanism", "example", "boundary"}:
+            content = str(item.get("content") or "").strip()[:16000]
+            if len(content) >= 20:
+                sections.append({"role": item["role"], "title": _clean(item.get("title"), 180), "content": content})
+    return {"card": card, "questions": questions, "lecture_sections": sections,
+            "content_quality": {"card_fallback_used": card_fallback_used, "authored_question_count": authored_question_count}}
+
+
+def normalize_question_stem(value: Any) -> str:
+    """Compare content rather than IDs, whitespace, Markdown or punctuation.
+
+    This is an exact normalized duplicate guard, not semantic equivalence or
+    proof of transfer. Scenario quality remains an authored-content requirement.
+    """
+    return "".join(character for character in unicodedata.normalize("NFKC", str(value or "")).casefold()
+                   if character.isalnum())
+
+
+def _require_fresh_verification_questions(artifact: dict[str, Any], excluded_question_stems: list[str] | None) -> None:
+    if excluded_question_stems is None:
+        return  # Existing standalone/non-file workflows retain their contract.
+    seen = {normalize_question_stem(item) for item in excluded_question_stems if normalize_question_stem(item)}
+    questions = list(artifact.get("questions") or [])
+    if len(questions) < 2:
+        raise RuntimeError("verification_questions_not_fresh")
+    for question in questions:
+        if not isinstance(question, dict) or not _valid_question(question):
+            raise RuntimeError("verification_questions_not_fresh")
+        for stem in (question.get("question"), (question.get("variant") or {}).get("prompt")):
+            key = normalize_question_stem(stem)
+            if not key or key in seen:
+                raise RuntimeError("verification_questions_not_fresh")
+            seen.add(key)
 
 
 async def generate_micro_learning_artifact(
-    *, goal: str, source_text: str, education_stage: str, background: str,
+    *, goal: str, source_text: str, education_stage: str, background: str, full_lecture: bool = False,
+    excluded_question_stems: list[str] | None = None,
 ) -> dict[str, Any]:
-    fallback = _fallback_artifact(goal, source_text)
+    fallback = _fallback_artifact(goal, source_text, verification=excluded_question_stems is not None)
     fallback_source = fallback.pop("_generation_source", "generic_goal_scaffold")
     fallback["generation"] = {
         "mode": "deterministic_fallback",
@@ -316,6 +361,7 @@ async def generate_micro_learning_artifact(
     if not settings.llm_api_key or settings.llm_api_key in {
         "", "***", "sk-your-key-here",
     }:
+        _require_fresh_verification_questions(fallback, excluded_question_stems)
         return fallback
     llm = ChatOpenAI(
         model=settings.llm_model,
@@ -324,7 +370,7 @@ async def generate_micro_learning_artifact(
         temperature=0.35,
         timeout=max(1.0, settings.micro_learning_artifact_model_budget_seconds),
         max_retries=0,
-        max_tokens=6_000,
+        max_tokens=10_000 if full_lecture else 6_000,
         model_kwargs={"response_format": {"type": "json_object"}},
     )
     try:
@@ -335,14 +381,24 @@ async def generate_micro_learning_artifact(
             source_mode="用户材料" if source_text else "主题生成",
             source_text=source_text[:14_000] if source_text else "（没有外部材料）",
         ))]
+        if excluded_question_stems is not None:
+            messages[0].content += (
+                "\n本轮是已有学习文件之后的独立验证。下面是学习者已接触题干的规范形式：\n"
+                + json.dumps(excluded_question_stems, ensure_ascii=False)
+                + "\n请使用不同的问题情境和推理任务，原题与各自变式都不得复用以上题干；改 ID、标点、选项顺序或仅替换名字不算新题。每个候选题和变式也必须互不重复。"
+            )
+        if full_lecture:
+            messages[0].content += "\n本次交付为完整学习文件：额外输出 lecture_sections 数组（4–8节），每节包含 role/title/content。role 必须覆盖 objective/mechanism/example/boundary。content 用 Markdown 写实际学科解释、步骤、完整例子和边界；禁止只写提纲、学习建议或占位句。练习必须与具体机制或例子对应，干扰项应为学科中的合理误解，不能用‘阅读等于掌握’等学习常识凑题。"
         response = await invoke_with_budget(
             lambda: llm.ainvoke(messages),
             settings.micro_learning_artifact_model_budget_seconds,
         )
         artifact = _validated_artifact(
             _extract_json(str(response.content)), goal, source_text,
+            verification=excluded_question_stems is not None,
         )
         artifact["generation"] = {"mode": "model_enhanced", "reason": ""}
+        _require_fresh_verification_questions(artifact, excluded_question_stems)
         return artifact
     except Exception as error:
         reason = (
@@ -359,6 +415,7 @@ async def generate_micro_learning_artifact(
             "micro-learning artifact used deterministic fallback: %s",
             type(error).__name__,
         )
+        _require_fresh_verification_questions(fallback, excluded_question_stems)
         return fallback
 
 
@@ -432,7 +489,9 @@ def _ground_artifact_in_packet(
     # rebuilt from cited claims.  This prevents the old command-shaped
     # scaffold from leaking into a published lecture or practice set.
     assessment_claims = list(dict.fromkeys([*relations, *claims]))[:3]
-    if len(assessment_claims) >= 2:
+    generation = dict(artifact.get("generation") or {})
+    has_authored_questions = generation.get("mode") == "model_enhanced" or str(generation.get("source") or "").startswith("curated.")
+    if len(assessment_claims) >= 2 and not has_authored_questions:
         first, second = assessment_claims[:2]
         artifact["questions"] = [
             {
@@ -517,6 +576,7 @@ async def create_micro_learning_run(
     attach_learning_task: bool = True,
     learning_task_id: int | None = None,
     domain_packet: DomainKnowledgePacket | None = None,
+    excluded_question_stems: list[str] | None = None,
 ) -> MicroLearningRun:
     existing = (await db.execute(select(MicroLearningRun).where(
         MicroLearningRun.learner_id == learner_id,
@@ -539,10 +599,12 @@ async def create_micro_learning_run(
     artifact = await generate_micro_learning_artifact(
         goal=goal, source_text=source_text,
         education_stage=education_stage, background=background,
+        **({"excluded_question_stems": excluded_question_stems} if excluded_question_stems is not None else {}),
     )
     artifact, teaching_content_brief = _ground_artifact_in_packet(
         artifact, goal, domain_packet,
     )
+    _require_fresh_verification_questions(artifact, excluded_question_stems)
     card = artifact["card"]
     project = Project(
         learner_id=learner_id,
@@ -665,6 +727,7 @@ async def create_micro_learning_run(
             "estimated_minutes": 15,
             "steps": ["learning_card", "feynman_teach_back", "retrieval_practice", "spaced_review"],
             "learning_task_id": learning_task_id,
+            **({"excluded_question_stems": list(excluded_question_stems)} if excluded_question_stems is not None else {}),
         },
         learning_card={
             **card,
@@ -895,12 +958,15 @@ async def regenerate_learning_artifact(
     if attempt_count:
         raise RuntimeError("invalid_state")
 
+    excluded_question_stems = (run.skill_plan or {}).get("excluded_question_stems")
     artifact = await generate_micro_learning_artifact(
         goal=run.goal,
         source_text=run.source_text or "",
         education_stage=education_stage,
         background=background,
+        **({"excluded_question_stems": excluded_question_stems} if excluded_question_stems is not None else {}),
     )
+    _require_fresh_verification_questions(artifact, excluded_question_stems)
     card = dict(artifact["card"])
     generation = dict(artifact.get("generation") or {})
     run.learning_card = {
@@ -929,6 +995,7 @@ async def regenerate_learning_artifact(
                 **dict(checkpoint.brief or {}),
                 "teaching_content_brief": teaching_content_brief,
             }
+    _require_fresh_verification_questions(artifact, excluded_question_stems)
     lecture = (await db.execute(select(Lecture).where(
         Lecture.checkpoint_id == run.checkpoint_id,
     ))).scalar_one_or_none()

@@ -43,7 +43,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-07.3"
+REGISTRY_VERSION = "2026-09-07.4"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Pure source-data validators/exporters, not Agent-callable tools or learner writers.
@@ -227,7 +227,7 @@ TOOLS = {
         ToolContract("graph_hub_reader", "Scoped Graph Hub Search and Recommender", "tutor_agent", "vnext", "read",
                      (), (), "authenticated LearnFlow learner scope + content-addressed Graph Hub catalog -> official, approved-personal, and owner-only pending-personal graph recommendations with bounded node matches; zero learner-state write"),
         ToolContract("learning_file_service", "Managed Lecture and Practice File Service", "tutor_agent", "vnext", "artifact",
-                     (), (), "learner-owned Lecture/Exercise/ConceptQuestion refs -> answer-safe file views, explicit open/attach audit events; generation and opening never imply mastery"),
+                     (), (), "owned task + requested file kinds -> versioned multi-section lecture and validated paired practice; preserve task scope, reuse files, report partial/blocked; answer-safe attempt summaries and explicit read/open/attach audit; generation never implies mastery"),
         ToolContract("active_learning_file_reader", "Active Paper Learning File Reader", "tutor_agent", "vnext", "read",
                      (), (), "current paper artifact ref -> owned Lecture/Practice/Source answer-safe bounded content; Source remains untrusted and access never implies mastery"),
         ToolContract("assessment_blueprint_builder", "Assessment Blueprint and Rubric Builder", "learning_design_agent", "vnext", "proposal",
@@ -426,7 +426,7 @@ def _skill_runtime(
     knowledge_requirements: dict[str, Any] | None = None,
 ) -> SkillRuntimeContract:
     return SkillRuntimeContract(
-        version="atomic-learning-skill-runtime-v6",
+        version="atomic-learning-skill-runtime-v7",
         bound_chat_modes=("learn",),
         initial_state=states[0].id,
         states=tuple(states),
@@ -912,7 +912,7 @@ WORKBENCHES = {
                            "draft_learning_project", "create_project", "manage_learning_tasks",
                            "plan_learning_task", "run_learning_task", "delete_conversation")),
         WorkbenchContract("vnext_chat", "LearnFlow Chat + Selection Follow-up Desk", "/chat/:conversationId", "tutor_agent",
-                          ("manage_visual_workspace", "coordinate_vnext_agent_turn", "search_computer_knowledge", "read_web_evidence", "search_learning_videos", "inspect_learning_video", "retrieve_learning_visual", "generate_learning_diagram", "generate_learning_animation", "open_selection_followup",
+                          ("start_skill_verification", "continue_micro_learning", "analyze_teach_back", "manage_visual_workspace", "coordinate_vnext_agent_turn", "search_computer_knowledge", "read_web_evidence", "search_learning_videos", "inspect_learning_video", "retrieve_learning_visual", "generate_learning_diagram", "generate_learning_animation", "open_selection_followup",
                            "run_vnext_learning_task", "run_vnext_learning_plan", "read_vnext_five_kernel_profile",
                            "read_vnext_learning_workspace",
                            "manage_domain_knowledge_sources", "read_domain_knowledge", "read_active_learning_file", "recommend_learning_resources",
@@ -939,7 +939,7 @@ WORKBENCHES = {
         WorkbenchContract("vnext_lecture_file", "vNext Lecture File Workbench", "/files/lecture/:lectureId", "tutor_agent",
                           ("open_learning_file", "attach_learning_file_to_chat", "explain_selection"), "vnext"),
         WorkbenchContract("vnext_practice_file", "vNext Practice File Workbench", "/files/practice/:practiceRef", "tutor_agent",
-                          ("open_learning_file", "attach_learning_file_to_chat", "inspect_practice_quality", "generate_similar_practice", "evaluate_attempt"), "vnext"),
+                          ("open_learning_file", "attach_learning_file_to_chat", "inspect_practice_quality", "generate_similar_practice", "evaluate_attempt", "request_remediation_explanation", "retry_attempt", "evaluate_transfer_variant"), "vnext"),
         WorkbenchContract("learning_tasks", "Learning Task Queue", "/tasks", "tutor_agent",
                           ("manage_learning_tasks",)),
         WorkbenchContract("focused_learning", "Learning Artifact Workbench", "/learn/:runId", "tutor_agent",
@@ -1454,6 +1454,8 @@ _FRONTEND_HANDLER_TARGETS = {
 
 
 _FRONTEND_COMPONENT_TARGETS = {
+    "frontend:learning.verification": ("frontend/src/LearningVerificationPanel.tsx", "LearningVerificationPanel", "/chat/"),
+    "frontend:learning.remediation": ("frontend/src/RemediationPanel.tsx", "RemediationPanel", "/files/practice/"),
     "frontend:path.extensions": ("frontend/src/PathSourceExtensions.tsx", "PathSourceExtensions", "/learning-path"),
     "workbench:ecosystem": ("frontend/src/EcosystemPage.tsx", "EcosystemPage", "/ecosystem"),
     "workbench:vnext_chat": ("frontend/src/main.tsx", "App", "/chat/"),
@@ -1584,7 +1586,7 @@ _TOOL_BINDING_IDS = {
     "repository_knowledge_domains": ("py:source.domains",),
     "hierarchical_rag": ("py:lecture.agent",),
     "content_generation": ("py:roadmap.agent", "py:lecture.agent", "py:concept.agent", "py:exercise.agent"),
-    "micro_learning_orchestrator": ("py:micro_learning.create",),
+    "micro_learning_orchestrator": ("py:micro_learning.create", "frontend:learning.verification"),
     "learning_skill_runtime": ("py:learning_skill.create",),
     "learning_task_runtime": ("py:learning_task.reconcile",),
     "learning_task_planner": ("py:learning_task.plan",),
@@ -1592,7 +1594,7 @@ _TOOL_BINDING_IDS = {
     "process_animation": ("py:animation.agent",),
     "code_executor": ("py:code.execute",),
     "deterministic_assessment": ("api:visuals.predict", "py:practice.grade",),
-    "deterministic_remediation": ("py:remediation.strategy",),
+    "deterministic_remediation": ("py:remediation.strategy", "frontend:learning.remediation"),
     "review_scheduler": ("py:review.schedule",),
     "review_proficiency_projector": ("py:review.proficiency",),
     "review_context_reader": ("py:review.context",),
@@ -1680,7 +1682,7 @@ _WORKBENCH_LIFECYCLES = {
     "focused_learning": ("optional_unimplemented", "The /learn/:runId frontend surface is not routed by the canonical frontend."),
     "lecture": ("deprecated", "The legacy checkpoint lecture surface is replaced by project and lecture-file workbenches."),
     "assessment": ("deprecated", "The legacy checkpoint assessment surface is replaced by practice-file and review workbenches."),
-    "remediation": ("deprecated", "Remediation is integrated into practice and review; no standalone RemediationPanel component is published."),
+    "remediation": ("deprecated", "RemediationPanel is embedded in practice files; the legacy standalone route is retired."),
     "learner_growth": ("optional_unimplemented", "The /growth frontend surface is not routed by the canonical frontend."),
     "profile": ("deprecated", "Legacy /profile redirect is not a canonical frontend workbench."),
     "memory": ("deprecated", "Legacy /memory redirect is not a canonical frontend workbench."),
@@ -1859,6 +1861,9 @@ def capability_manifest(
     return result
 
 
+PRIMARY_LEARNING_SKILL_IDS = ("guided_explanation", "feynman_dialogue", "learning_file_study")
+
+
 def selectable_learning_skill_manifest() -> list[dict[str, Any]]:
     """Return the learner-facing portion of registered conversational skills."""
     result = []
@@ -1874,6 +1879,7 @@ def selectable_learning_skill_manifest() -> list[dict[str, Any]]:
             "description": skill.description,
             "best_for": list(skill.best_for),
             "avoid_when": list(skill.avoid_when),
+            "entry_policy": "primary" if skill.id in PRIMARY_LEARNING_SKILL_IDS else "legacy",
             "atomic_task_capable": skill.atomic_task_capable,
             "spec_version": skill.spec_version,
             "runtime": asdict(skill.runtime) if skill.runtime else None,
@@ -1970,7 +1976,7 @@ def detect_learning_skill(message: str) -> SkillContract | None:
     if not any(marker in normalized for marker in ("用", "切换", "选择", "换成", "按照")):
         return None
     for skill in SKILLS.values():
-        if skill.learner_selectable and any(
+        if skill.id in PRIMARY_LEARNING_SKILL_IDS and skill.learner_selectable and any(
             "".join(alias.lower().split()) in normalized for alias in skill.aliases
         ):
             return skill
@@ -2110,7 +2116,7 @@ def validate_registry() -> list[str]:
             errors.append(f"learner-selectable skill must be a pedagogical method: {skill.id}")
         if skill.learner_selectable:
             runtime = skill.runtime
-            if not runtime or runtime.version != "atomic-learning-skill-runtime-v6":
+            if not runtime or runtime.version != "atomic-learning-skill-runtime-v7":
                 errors.append(f"learner-selectable skill lacks atomic runtime: {skill.id}")
                 continue
             requirements = dict(runtime.knowledge_requirements or {})

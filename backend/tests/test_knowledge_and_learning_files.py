@@ -127,26 +127,29 @@ def test_task_files_are_persisted_answer_safe_and_audited():
         })
         assert generated.status_code == 200, generated.text
         body = generated.json()
+        assert body["project_id"] is None and body["checkpoint_id"] is None
+        assert body["micro_learning_run_id"] is None
+        checkpoint_id = body["execution_state"]["artifact_scope"]["checkpoint_id"]
         lecture_ref = next(item for item in body["artifact_refs"] if item["type"] == "managed_lecture")
         questions_ref = next(item for item in body["artifact_refs"] if item["type"] == "concept_question_set")
 
         library = client.get("/api/learning-files")
         assert library.status_code == 200, library.text
         assert any(item["id"] == lecture_ref["id"] for item in library.json()["lectures"])
-        assert any(item["checkpoint_id"] == body["checkpoint_id"] for item in library.json()["practices"])
+        assert any(item["checkpoint_id"] == checkpoint_id for item in library.json()["practices"])
 
         lecture = client.get(f"/api/learning-files/lecture/{lecture_ref['id']}")
         assert lecture.status_code == 200
         assert lecture.json()["sections"]
         assert lecture.json()["mastery_inference"] is False
-        practice = client.get(f"/api/learning-files/practice/questions-{body['checkpoint_id']}")
+        practice = client.get(f"/api/learning-files/practice/questions-{checkpoint_id}")
         assert practice.status_code == 200
         assert practice.json()["answers_hidden"] is True
         assert practice.json()["questions"]
         assert "answer_indexes" not in practice.json()["questions"][0]
 
         opened = client.post(f"/api/learning-files/lecture/{lecture_ref['id']}/opened", json={"conversation_id": "chat-test"})
-        attached = client.post(f"/api/learning-files/practice/questions-{body['checkpoint_id']}/attached", json={"conversation_id": "chat-test", "sheet_id": "sheet-test"})
+        attached = client.post(f"/api/learning-files/practice/questions-{checkpoint_id}/attached", json={"conversation_id": "chat-test", "sheet_id": "sheet-test"})
         assert opened.status_code == attached.status_code == 200
         assert opened.json()["mastery_unchanged"] is True
 
@@ -180,7 +183,7 @@ def test_dynamic_practice_is_answer_safe_and_only_formal_attempt_reaches_kernels
             "client_request_id": f"dynamic-base-{uuid.uuid4().hex}",
         })
         assert materialized.status_code == 200, materialized.text
-        checkpoint_id = materialized.json()["checkpoint_id"]
+        checkpoint_id = materialized.json()["execution_state"]["artifact_scope"]["checkpoint_id"]
         generated = client.post("/api/learning-files/practice/generate", json={
             "learning_task_id": task["id"],
             "title": "队列动态检测",

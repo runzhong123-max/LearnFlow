@@ -11,14 +11,14 @@ from datetime import datetime
 import re
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.learning import (
-    AgentMessage, AgentSession, LearnerProfile, LearningSkillRun, LearningTask,
-    MicroLearningRun,
+    AgentMessage, AgentSession, EvidenceEvent, LearnerProfile, LearningAttempt, LearningSkillRun, LearningTask,
+    MicroLearningRun, RemediationCase,
 )
-from app.models.project import Checkpoint, Project, Roadmap
+from app.models.project import Checkpoint, ConceptQuestion, Exercise, Lecture, Project, Roadmap
 from app.services.architecture_registry import (
     learning_skill_runtime_contract,
     selectable_learning_skill,
@@ -26,7 +26,7 @@ from app.services.architecture_registry import (
 from app.services.learning_runtime import record_event
 
 
-SKILL_RUNTIME_VERSION = "atomic-learning-skill-runtime-v6"
+SKILL_RUNTIME_VERSION = "atomic-learning-skill-runtime-v7"
 SUPPORT_TURN_BUDGET = 3
 RUNTIME_SKILL_IDS = (
     "guided_explanation",
@@ -381,7 +381,7 @@ def recommend_learning_skill(message: str) -> dict[str, Any] | None:
         (
             "socratic_dialogue",
             ("不要直接告诉", "自己推导", "怎么想", "思路", "引导我", "用问题引导", "证明"),
-            "这个问题适合保留你的思考过程，用连续小问题逐步推到结论。",
+            "这个问题适合保留你的思考过程，在清晰讲解中用一个有界问题检查关键关系。",
         ),
         (
             "guided_explanation",
@@ -391,14 +391,17 @@ def recommend_learning_skill(message: str) -> dict[str, Any] | None:
         (
             "socratic_dialogue",
             ("为什么", "推导", "自己想"),
-            "这个问题适合保留你的思考过程，用连续小问题逐步推到结论。",
+            "这个问题适合保留你的思考过程，在清晰讲解中用一个有界问题检查关键关系。",
         ),
     )
     for skill_id, markers, reason in rules:
         matched = [marker for marker in markers if marker in normalized]
         if not matched:
             continue
-        skill = selectable_learning_skill(skill_id)
+        recommended_id = "guided_explanation" if skill_id in {
+            "socratic_dialogue", "worked_example_fading",
+        } else skill_id
+        skill = selectable_learning_skill(recommended_id)
         if not skill:
             continue
         return {
@@ -407,7 +410,7 @@ def recommend_learning_skill(message: str) -> dict[str, Any] | None:
             "reason": reason,
             "matched_signals": matched[:3],
             "requires_confirmation": True,
-            "policy_version": "learning-skill-recommendation-v2",
+            "policy_version": "learning-skill-recommendation-v3",
         }
     return None
 
@@ -893,6 +896,16 @@ def transition_learning_skill_turn(
         raise ValueError(f"unsupported_skill:{skill_id}")
     if current_state not in WORKFLOWS[skill_id]["states"]:
         raise ValueError(f"unsupported_skill_state:{skill_id}:{current_state}")
+    if skill_id == "learning_file_study":
+        return {
+            "state": current_state, "step_index": step_index,
+            "directive": "回答当前文件问题；文件阶段仅由正式文件、已读记录与本轮提交同步，不按聊天文字推进。",
+            "fallback": "请继续在当前纸张操作；这里可以讨论卡点，文件进度会按实际记录同步。",
+            "response_signal": "file_activity", "support_only": False,
+            "support_count": support_count, "support_budget": SUPPORT_TURN_BUDGET,
+            "support_exit": {}, "turn_count": turn_count, "calibration": {},
+            "teach_back_diagnostic": {}, "gap_loop_count": 0, "advanced": False,
+        }
     response_signal = learner_response_signal(message)
     normalized_calibration = normalize_feynman_calibration(calibration)
     normalized_choice = re.sub(r"[\s，,。.!！?？、]", "", str(message or "").casefold())
@@ -1089,6 +1102,54 @@ def _task_matches_session_scope(task: LearningTask, session: AgentSession) -> bo
     )
 
 
+async def _repair_legacy_generated_task_scope(
+    db: AsyncSession, *, task: LearningTask, session: AgentSession, run: LearningSkillRun,
+) -> bool:
+    """Recover only the old global-task -> internal micro-artifact scope bug."""
+    if not (
+        session.session_type == "global" and session.project_id is None and session.checkpoint_id is None
+        and task.learner_id == session.learner_id == run.learner_id
+        and task.session_id == session.id == run.session_id
+        and run.learning_task_id == task.id and task.micro_learning_run_id
+        and task.project_id and task.checkpoint_id
+    ):
+        return False
+    micro = await db.get(MicroLearningRun, task.micro_learning_run_id)
+    if not (
+        micro and micro.learner_id == task.learner_id
+        and micro.project_id == task.project_id and micro.checkpoint_id == task.checkpoint_id
+        and (micro.skill_plan or {}).get("learning_task_id") == task.id
+    ):
+        return False
+    internal = (await db.execute(
+        select(Project.id).join(Roadmap, Roadmap.project_id == Project.id)
+        .join(Checkpoint, Checkpoint.roadmap_id == Roadmap.id).where(
+            Project.id == task.project_id, Checkpoint.id == task.checkpoint_id,
+            Project.learner_id == task.learner_id,
+            Project.project_kind == "task_artifact", Project.visibility == "internal",
+        )
+    )).scalar_one_or_none()
+    if not internal:
+        return False
+    artifact_scope = {"project_id": task.project_id, "checkpoint_id": task.checkpoint_id}
+    previous_scope = dict((task.execution_state or {}).get("artifact_scope") or {})
+    if previous_scope and previous_scope != artifact_scope:
+        return False
+    task.project_id, task.checkpoint_id = None, None
+    task.execution_state = {**dict(task.execution_state or {}), "artifact_scope": artifact_scope,
+                            "scope_recovery": "legacy-global-micro-artifact-v1"}
+    task.version += 1
+    await record_event(db, learner_id=run.learner_id, session_id=run.session_id,
+        event_type="learning_skill_run_advanced", source="runtime", payload={
+            "skill_run_id": run.id, "learning_task_id": task.id, "skill_id": run.skill_id,
+            "from_state": run.state, "to_state": run.state,
+            "reason": "legacy_generated_artifact_scope_recovered", "artifact_scope": artifact_scope,
+            "runtime_version": SKILL_RUNTIME_VERSION, "mastery_unchanged": True,
+        }, provenance={"decision_owner": "deterministic_skill_runtime"},
+        client_event_id=f"learning-skill-run:{run.id}:legacy-artifact-scope-recovered")
+    return True
+
+
 async def validate_learning_skill_run_scope(
     db: AsyncSession,
     *,
@@ -1101,6 +1162,8 @@ async def validate_learning_skill_run_scope(
         raise RuntimeError("unsupported_scope")
     if run.learning_task_id:
         task = await db.get(LearningTask, run.learning_task_id)
+        if task and not _task_matches_session_scope(task, session):
+            await _repair_legacy_generated_task_scope(db, task=task, session=session, run=run)
         if not task or not _task_matches_session_scope(task, session):
             raise RuntimeError("unsupported_scope")
 
@@ -1115,6 +1178,8 @@ async def _linked_learning_task(
         LearningTask.learner_id == run.learner_id,
     ))).scalar_one_or_none()
     session = await db.get(AgentSession, run.session_id)
+    if task and session and not _task_matches_session_scope(task, session):
+        await _repair_legacy_generated_task_scope(db, task=task, session=session, run=run)
     if not task or not session or not _task_matches_session_scope(task, session):
         return None
     return task
@@ -1397,7 +1462,7 @@ async def create_learning_skill_run(
         return current, False
     if current:
         await validate_learning_skill_run_scope(db, session=session, run=current)
-        previous_state = current.state
+        previous_state = str((current.run_data or {}).get("resume_state") or current.state) if current.status == "paused" else current.state
         current.status = "paused"
         current.state = "paused"
         current.run_data = {
@@ -1508,7 +1573,7 @@ async def pause_active_skill_run_for_selection(
     selected_skill_id: str | None,
 ) -> LearningSkillRun | None:
     current = await active_skill_run(db, session)
-    if not current or selected_skill_id == current.skill_id:
+    if not current or selected_skill_id == current.skill_id or current.status == "paused":
         return current
     await validate_learning_skill_run_scope(db, session=session, run=current)
     previous_state = current.state
@@ -1548,7 +1613,7 @@ def current_learning_skill_turn_plan(
         "directive": str(data.get("next_directive") or ""),
         "fallback": str(data.get("next_prompt") or ""),
         "response_signal": response_signal,
-        "support_only": response_signal not in {"", "opening", "attempt"},
+        "support_only": response_signal not in {"", "opening", "attempt", "file_activity"},
         "support_count": int(data.get("support_count") or 0),
         "support_budget": int(data.get("support_budget") or SUPPORT_TURN_BUDGET),
         "support_exit": dict(data.get("support_exit") or {}),
@@ -1565,6 +1630,141 @@ def is_learning_skill_opening_turn(run: LearningSkillRun, message: str) -> bool:
         and not list(data.get("responses") or [])
         and _learning_goal(message, run.skill_id) == run.goal
     )
+
+
+def _file_skill_step(goal: str, progress: dict[str, Any]) -> dict[str, Any]:
+    """Describe the next user action without inferring knowledge or file activity."""
+    if progress.get("attempt_ids"):
+        state, index = "verification_ready", 4
+        directive = "已有当前任务、本轮发生的正式练习提交。只按真实提交反馈复盘；不要把提交或阅读当成掌握。邀请独立验证或复习，不再追加教学问题。"
+        fallback = "已找到本轮正式练习记录。可以查看反馈，再进入无提示独立验证；提交本身不说明已经掌握。"
+        waiting = "verification"
+    elif progress.get("practice_item_count") and (
+        progress.get("read_lecture_ids") or not progress.get("lecture_ids")
+    ):
+        state, index = "practicing_in_file", 3
+        directive = "已有对齐的练习文件。请学习者在练习纸张正式提交；对话只回答当前卡点并给最小提示。没有正式 Attempt 前保持本阶段，不重复生成文件，不要求伪作答消息。"
+        fallback = "请在练习纸张中提交一道题。这里可以继续讨论卡点，提交完成后会自动同步进度。"
+        waiting = "practice_submission"
+    elif progress.get("lecture_ids"):
+        state, index = "reading_with_anchor", 2
+        directive = f"已经有“{goal}”的正式讲义。读取当前讲义并指出一个小节锚点，回答学习者当下问题；阅读结束后使用纸张的已读动作。没有已读记录前不推进，不重复生成讲义。"
+        fallback = "讲义已就绪。先读一个相关小节，读完在讲义纸张中标记已读；需要解释时直接在这里提问。"
+        waiting = "lecture_read"
+        if progress.get("read_lecture_ids"):
+            directive = "当前讲义已有本轮已读记录，但缺少对齐的练习。复用已有练习；确实没有时仅提出一次练习生成并等待确认。不要重复要求阅读或生成讲义。"
+            fallback = "本轮阅读记录已同步。还需要一份对齐的练习；确认生成练习后就能继续。"
+            waiting = "practice_artifact"
+    else:
+        state, index = "selecting_learning_artifact", 1
+        directive, fallback = _opening_prompt("learning_file_study", goal)
+        waiting = "learning_artifact"
+    return {"state": state, "step_index": index, "directive": directive,
+            "fallback": fallback, "waiting_for": waiting}
+
+
+async def sync_learning_file_skill_progress(db: AsyncSession, run: LearningSkillRun) -> bool:
+    """Rebuild file workflow position from owned task artifacts and actual activity.
+
+    No client-provided completion booleans, model output, ordinary messages or
+    historical attempts can advance this projection. Access/read events remain
+    exposure only, and an Attempt is participation, never a correctness claim.
+    """
+    task = await _linked_learning_task(db, run)
+    if not task or run.skill_id != "learning_file_study" or run.status != "active":
+        return False
+    scope = dict((task.execution_state or {}).get("artifact_scope") or {})
+    checkpoint_id = task.checkpoint_id or scope.get("checkpoint_id")
+    project_id = task.project_id or scope.get("project_id")
+    if not checkpoint_id and task.micro_learning_run_id:
+        micro = await db.get(MicroLearningRun, task.micro_learning_run_id)
+        if micro and micro.learner_id == run.learner_id:
+            checkpoint_id, project_id = micro.checkpoint_id, micro.project_id
+    refs = [item for item in list(task.artifact_refs or []) if isinstance(item, dict)]
+    lecture_ids: set[int] = set()
+    concept_ids: set[int] = set()
+    exercise_ids: set[int] = set()
+    for ref in refs:
+        kind = str(ref.get("type") or "")
+        values = ref.get("ids", []) if kind == "concept_question_set" else [ref.get("id")]
+        target = {"managed_lecture": lecture_ids, "concept_question_set": concept_ids,
+                  "managed_exercise": exercise_ids}.get(kind)
+        if target is not None:
+            target.update(int(value) for value in values if str(value or "").isdigit())
+    progress: dict[str, Any] = {"lecture_ids": [], "read_lecture_ids": [],
+                                "practice_item_count": 0, "attempt_ids": []}
+    if checkpoint_id:
+        owned_scope = (await db.execute(
+            select(Checkpoint.id).join(Roadmap, Roadmap.id == Checkpoint.roadmap_id)
+            .join(Project, Project.id == Roadmap.project_id).where(
+                Checkpoint.id == checkpoint_id, Project.id == project_id,
+                Project.learner_id == run.learner_id, Project.visibility != "deleted",
+            )
+        )).scalar_one_or_none()
+        if not owned_scope:
+            raise RuntimeError("unsupported_scope")
+        lectures = list((await db.execute(select(Lecture).where(
+            Lecture.id.in_(lecture_ids), Lecture.checkpoint_id == checkpoint_id,
+        ))).scalars().all()) if lecture_ids else []
+        concept_ids = set((await db.execute(select(ConceptQuestion.id).where(
+            ConceptQuestion.id.in_(concept_ids), ConceptQuestion.checkpoint_id == checkpoint_id,
+        ))).scalars().all()) if concept_ids else set()
+        exercise_ids = set((await db.execute(select(Exercise.id).where(
+            Exercise.id.in_(exercise_ids), Exercise.checkpoint_id == checkpoint_id,
+        ))).scalars().all()) if exercise_ids else set()
+        versions = {lecture.id: int(lecture.version or 1) for lecture in lectures}
+        progress["lecture_ids"] = sorted(versions)
+        progress["practice_item_count"] = len(concept_ids) + len(exercise_ids)
+        if versions:
+            events = list((await db.execute(select(EvidenceEvent).where(
+                EvidenceEvent.learner_id == run.learner_id,
+                EvidenceEvent.project_id == project_id,
+                EvidenceEvent.checkpoint_id == checkpoint_id,
+                EvidenceEvent.event_type == "lecture_viewed",
+                EvidenceEvent.created_at >= run.started_at,
+                (EvidenceEvent.session_id == run.session_id) | EvidenceEvent.session_id.is_(None),
+            ))).scalars().all())
+            progress["read_lecture_ids"] = sorted({
+                int(event.payload["lecture_id"]) for event in events
+                if isinstance(event.payload, dict)
+                and str(event.payload.get("lecture_id") or "").isdigit()
+                and int(event.payload["lecture_id"]) in versions
+                and event.payload.get("explicit_completion") is True
+                and event.payload.get("lecture_version") == versions[int(event.payload["lecture_id"])]
+                and event.payload.get("learning_task_id") in {None, task.id}
+            })
+        if concept_ids or exercise_ids:
+            attempts = list((await db.execute(select(LearningAttempt).where(
+                LearningAttempt.learner_id == run.learner_id,
+                LearningAttempt.project_id == project_id,
+                LearningAttempt.checkpoint_id == checkpoint_id,
+                LearningAttempt.submitted_at >= run.started_at,
+                LearningAttempt.status.in_({"submitted", "evaluated"}),
+                ((LearningAttempt.item_type == "concept") & LearningAttempt.item_id.in_(concept_ids)) |
+                ((LearningAttempt.item_type == "exercise") & LearningAttempt.item_id.in_(exercise_ids)),
+            ))).scalars().all())
+            progress["attempt_ids"] = sorted(attempt.id for attempt in attempts)[-100:]
+    step = _file_skill_step(run.goal, progress)
+    progress["waiting_for"] = step["waiting_for"]
+    data = dict(run.run_data or {})
+    if run.state == step["state"] and data.get("file_progress") == progress:
+        return False
+    previous_state = run.state
+    run.state, run.step_index = step["state"], step["step_index"]
+    run.run_data = {**data, "file_progress": progress, "next_directive": step["directive"],
+                    "next_prompt": step["fallback"], "last_response_signal": "file_activity",
+                    "support_count": 0, "support_exit": {},
+                    "flow_note": "文件进度来自实际文件、已读记录和本轮正式提交；对话消息不代替纸张操作。"}
+    run.version += 1
+    run.updated_at = datetime.utcnow()
+    await _record_run_event(db, run, "learning_skill_run_advanced", payload={
+        "from_state": previous_state, "to_state": run.state,
+        "reason": "file_activity_reconciled", "file_progress": progress,
+        "mastery_unchanged": True,
+    }, client_event_id=f"learning-skill-run:{run.id}:file-sync:{run.version}", source="runtime")
+    if run.state == "verification_ready":
+        await _advance_linked_task(db, run, action="complete_learn", operation_id="file-practice-recorded")
+    return True
 
 
 async def prepare_learning_skill_turn(
@@ -1609,8 +1809,10 @@ async def prepare_learning_skill_turn(
 
     if current.status == "paused":
         resume_state = str((current.run_data or {}).get("resume_state") or WORKFLOWS[skill_id]["initial_state"])
-        current.status = "active"
-        current.state = resume_state
+        if resume_state not in WORKFLOWS[skill_id]["states"]:
+            resume_state = str(WORKFLOWS[skill_id]["initial_state"])
+        current.status = "verification" if current.micro_learning_run_id else "active"
+        current.state = "verification_in_progress" if current.micro_learning_run_id else resume_state
         current.version += 1
         current.updated_at = datetime.utcnow()
         await _record_run_event(
@@ -1624,6 +1826,10 @@ async def prepare_learning_skill_turn(
             action="resume",
             operation_id=f"auto-resumed-{current.version}",
         )
+
+    if current.skill_id == "learning_file_study" and current.status == "active":
+        await sync_learning_file_skill_progress(db, current)
+        return current, current_learning_skill_turn_plan(current)
 
     turn_key = f"turn:{session.id}:{client_turn_id or message_id}"
     history = list(current.action_log or [])
@@ -1655,6 +1861,14 @@ async def prepare_learning_skill_turn(
         # The learner message and its EvidenceEvent still exist, but the formal
         # support loop is closed: reuse the persisted exit plan without another
         # SkillRun transition, version bump, or model-owned state decision.
+        if learner_response_signal(message) == "direct_explanation_requested":
+            # A bounded questioning loop must never prevent an explicit explanation.
+            plan = _support_budget_exit_step(_support_step(
+                current.skill_id, current.state, current.step_index, current.goal,
+                "direct_explanation_requested", SUPPORT_TURN_BUDGET,
+            ), support_count=SUPPORT_TURN_BUDGET)
+            return current, {**current_learning_skill_turn_plan(current), **plan,
+                             "response_signal": "direct_explanation_requested", "support_only": True}
         return current, current_learning_skill_turn_plan(current)
     previous_state = current.state
     transition = transition_learning_skill_turn(
@@ -1694,6 +1908,10 @@ async def prepare_learning_skill_turn(
         "support_budget": int(transition["support_budget"]),
         "support_exit": dict(transition.get("support_exit") or {}),
         "last_response_signal": response_signal,
+        "entry_mode": (
+            "grounded_ready" if response_signal.startswith("orientation_") else
+            str(data.get("entry_mode") or "standard")
+        ),
         "flow_note": transition.get(
             "flow_note",
             "已收到一个可检查的尝试，流程只推进了一步。",
@@ -1888,6 +2106,7 @@ async def learning_skill_run_view(
         "support_count": int(data.get("support_count") or 0),
         "support_budget": int(data.get("support_budget") or SUPPORT_TURN_BUDGET),
         "support_exit": dict(data.get("support_exit") or {}),
+        "file_progress": dict(data.get("file_progress") or {}),
         "gap_loop_count": int(data.get("gap_loop_count") or 0),
         "calibration": calibration,
         "calibration_axes": calibration_axes,
@@ -1945,6 +2164,62 @@ async def latest_learning_skill_run_view(
     return await learning_skill_run_view(db, await latest_skill_run(db, session))
 
 
+async def _file_verification_excluded_stems(db: AsyncSession, task: LearningTask) -> list[str]:
+    """Read only the originating task's owned questions and exposed variants.
+
+    Reserve authored variant stems too, even before they have been displayed,
+    so later remediation cannot reuse an independent verification item.
+    """
+    from app.services.micro_learning import normalize_question_stem
+    scope = dict((task.execution_state or {}).get("artifact_scope") or {})
+    checkpoint_id = task.checkpoint_id or scope.get("checkpoint_id")
+    project_id = task.project_id or scope.get("project_id")
+    if not checkpoint_id and task.micro_learning_run_id:
+        previous = await db.get(MicroLearningRun, task.micro_learning_run_id)
+        if previous and previous.learner_id == task.learner_id:
+            checkpoint_id, project_id = previous.checkpoint_id, previous.project_id
+    owned = (await db.execute(select(Checkpoint.id).join(Roadmap, Roadmap.id == Checkpoint.roadmap_id)
+        .join(Project, Project.id == Roadmap.project_id).where(
+            Checkpoint.id == checkpoint_id, Project.id == project_id,
+            Project.learner_id == task.learner_id, Project.visibility != "deleted",
+        ))).scalar_one_or_none()
+    if not owned:
+        raise RuntimeError("unsupported_scope")
+    concept_ids: set[int] = set()
+    exercise_ids: set[int] = set()
+    for ref in list(task.artifact_refs or []):
+        if not isinstance(ref, dict):
+            continue
+        if ref.get("type") == "concept_question_set":
+            concept_ids.update(int(value) for value in ref.get("ids", []) if str(value or "").isdigit())
+        elif ref.get("type") == "managed_exercise" and str(ref.get("id") or "").isdigit():
+            exercise_ids.add(int(ref["id"]))
+    concepts = list((await db.execute(select(ConceptQuestion).where(
+        ConceptQuestion.checkpoint_id == checkpoint_id, ConceptQuestion.id.in_(concept_ids),
+    ))).scalars()) if concept_ids else []
+    exercises = list((await db.execute(select(Exercise).where(
+        Exercise.checkpoint_id == checkpoint_id, Exercise.id.in_(exercise_ids),
+    ))).scalars()) if exercise_ids else []
+    if len(concepts) != len(concept_ids) or len(exercises) != len(exercise_ids):
+        raise RuntimeError("unsupported_scope")
+    stems: list[str] = []
+    for item in [*concepts, *exercises]:
+        stems.extend([item.question if isinstance(item, ConceptQuestion) else item.description,
+                      ((item.assessment_meta or {}).get("variant") or {}).get("prompt", "")])
+    cases = list((await db.execute(select(RemediationCase).where(
+        RemediationCase.learner_id == task.learner_id,
+        RemediationCase.project_id == project_id, RemediationCase.checkpoint_id == checkpoint_id,
+        or_(and_(RemediationCase.item_type == "concept", RemediationCase.item_id.in_(concept_ids)),
+            and_(RemediationCase.item_type == "exercise", RemediationCase.item_id.in_(exercise_ids))),
+    ))).scalars()) if concept_ids or exercise_ids else []
+    for case in cases:
+        stems.extend([(case.variant_payload or {}).get("prompt", ""), (case.evidence or {}).get("question", "")])
+    normalized = sorted({normalize_question_stem(stem) for stem in stems if normalize_question_stem(stem)})
+    if not normalized:
+        raise RuntimeError("verification_questions_not_fresh")
+    return normalized
+
+
 async def _materialize_skill_verification(
     db: AsyncSession,
     *,
@@ -1958,6 +2233,8 @@ async def _materialize_skill_verification(
     from app.services.learning_tasks import RUNTIME_VERSION as LEARNING_TASK_RUNTIME_VERSION
     from app.services.micro_learning import create_micro_learning_run
 
+    excluded_question_stems = (await _file_verification_excluded_stems(db, task)
+                               if run.skill_id == "learning_file_study" else None)
     request_id = f"skill-run-{run.id}-{client_action_id}"
     micro = await create_micro_learning_run(
         db,
@@ -1970,6 +2247,7 @@ async def _materialize_skill_verification(
         source="learning_task",
         attach_learning_task=False,
         learning_task_id=task.id,
+        **({"excluded_question_stems": excluded_question_stems} if excluded_question_stems is not None else {}),
     )
     if micro.learner_id != task.learner_id:
         raise RuntimeError("unsupported_scope")
@@ -2044,6 +2322,14 @@ async def act_on_learning_skill_run(
     if run.version != expected_version:
         raise RuntimeError("version_conflict")
     micro: MicroLearningRun | None = None
+    if action == "sync_artifacts":
+        if run.skill_id != "learning_file_study":
+            raise RuntimeError("invalid_state")
+        if run.status != "active":
+            return run, None
+        if await sync_learning_file_skill_progress(db, run):
+            run.action_log = [*history, action_key][-80:]
+        return run, None
     if action == "calibrate":
         if run.skill_id != "feynman_dialogue" or run.status not in {"active", "paused"}:
             raise RuntimeError("invalid_state")
@@ -2081,29 +2367,34 @@ async def act_on_learning_skill_run(
         event_payload = {"resume_state": resume_state, "reason": "learner"}
     elif action == "resume" and run.status == "paused":
         resume_state = str((run.run_data or {}).get("resume_state") or WORKFLOWS[run.skill_id]["initial_state"])
+        if resume_state not in WORKFLOWS[run.skill_id]["states"]:
+            resume_state = str(WORKFLOWS[run.skill_id]["initial_state"])
         run.status = "verification" if run.micro_learning_run_id else "active"
         run.state = "verification_in_progress" if run.micro_learning_run_id else resume_state
         event_type = "learning_skill_run_resumed"
         event_payload = {"resume_state": run.state, "reason": "learner"}
     elif action == "start_verification" and run.status == "active" and run.state == "verification_ready":
-        task = await _ensure_atomic_learning_task(
-            db, session=session, run=run, source="user",
-        )
-        if task.status == "paused":
-            await _advance_linked_task(
-                db, run, action="resume", operation_id=f"verify-{client_action_id}",
+        # Savepoint restores task transitions and any packet work if fresh
+        # verification cannot be produced. No empty micro/project is published.
+        async with db.begin_nested():
+            task = await _ensure_atomic_learning_task(
+                db, session=session, run=run, source="user",
             )
-        await _advance_linked_task(
-            db, run, action="complete_learn", operation_id="verification-handoff",
-        )
-        micro = await _materialize_skill_verification(
-            db,
-            task=task,
-            run=run,
-            client_action_id=client_action_id,
-            education_stage=education_stage,
-            background=background,
-        )
+            if task.status == "paused":
+                await _advance_linked_task(
+                    db, run, action="resume", operation_id=f"verify-{client_action_id}",
+                )
+            await _advance_linked_task(
+                db, run, action="complete_learn", operation_id="verification-handoff",
+            )
+            micro = await _materialize_skill_verification(
+                db,
+                task=task,
+                run=run,
+                client_action_id=client_action_id,
+                education_stage=education_stage,
+                background=background,
+            )
         run.micro_learning_run_id = micro.id
         run.status = "verification"
         run.state = "verification_in_progress"

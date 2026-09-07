@@ -45,7 +45,7 @@ def test_registry_has_three_agents_five_kernels_and_no_drift():
     assert set(ACTION_BOARD) == set(CAPABILITY_OWNERS)
     assert validate_registry() == []
     manifest = registry_manifest()
-    assert REGISTRY_VERSION == "2026-09-07.3"
+    assert REGISTRY_VERSION == "2026-09-07.4"
     assert manifest["schema_valid"] is True
     assert manifest["valid"] is (
         manifest["schema_valid"] and manifest["implementation_valid"]
@@ -269,6 +269,7 @@ def test_vnext_tools_use_formal_event_gateway_without_direct_kernel_writes():
     assert TOOLS["vnext_chat_session_store"].writes_kernels == ()
     assert WORKBENCHES["vnext_chat"].surface == "/chat/:conversationId"
     assert set(WORKBENCHES["vnext_chat"].capabilities) == {
+        "start_skill_verification", "continue_micro_learning", "analyze_teach_back",
         "manage_visual_workspace",
         "coordinate_vnext_agent_turn",
         "search_computer_knowledge", "read_web_evidence", "search_learning_videos", "inspect_learning_video", "retrieve_learning_visual", "generate_learning_diagram", "generate_learning_animation", "open_selection_followup",
@@ -628,7 +629,7 @@ def test_conversational_learning_skills_are_registered_without_mastery_side_effe
     assert "learning_skill_runtime" in SKILLS["feynman_dialogue"].tools
     feynman_runtime = SKILLS["feynman_dialogue"].runtime
     assert feynman_runtime is not None
-    assert feynman_runtime.version == "atomic-learning-skill-runtime-v6"
+    assert feynman_runtime.version == "atomic-learning-skill-runtime-v7"
     assert feynman_runtime.turn_budget == 5
     assert {axis.id for axis in feynman_runtime.calibration_axes} == {
         "audience_level", "cognitive_demand", "scaffold_level", "representation_mode",

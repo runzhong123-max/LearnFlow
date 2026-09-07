@@ -285,6 +285,8 @@ def _skill_run_error(error: RuntimeError) -> HTTPException:
         return HTTPException(409, "学习方法状态已更新，请刷新后重试")
     if message == "invalid_state":
         return HTTPException(409, "当前步骤不能执行这个操作")
+    if message == "verification_questions_not_fresh":
+        return HTTPException(409, "未生成足够的新验证题；原文件和学习进度已保留，请补充资料或稍后重试")
     if message == "unsupported_scope":
         return HTTPException(400, "学习方法的学习者、项目、关卡或会话作用域不匹配")
     if message == "unsupported_skill":

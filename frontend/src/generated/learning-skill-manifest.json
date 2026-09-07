@@ -1,6 +1,6 @@
 {
   "schema_version": "learnflow.skill.v3",
-  "registry_version": "2026-08-29.1",
+  "registry_version": "2026-09-07.4",
   "generated_from": "backend/app/services/architecture_registry.py",
   "skills": {
     "guided_explanation": {
@@ -16,10 +16,11 @@
         "学习者明确要求自己推导",
         "目标主要是程序性步骤练习"
       ],
+      "entry_policy": "primary",
       "atomic_task_capable": true,
       "spec_version": "learnflow.skill.v3",
       "runtime": {
-        "version": "atomic-learning-skill-runtime-v6",
+        "version": "atomic-learning-skill-runtime-v7",
         "bound_chat_modes": [
           "learn"
         ],
@@ -153,10 +154,11 @@
         "完全陌生且没有可调用的先备知识",
         "学习者明确要求直接解释"
       ],
+      "entry_policy": "legacy",
       "atomic_task_capable": true,
       "spec_version": "learnflow.skill.v3",
       "runtime": {
-        "version": "atomic-learning-skill-runtime-v6",
+        "version": "atomic-learning-skill-runtime-v7",
         "bound_chat_modes": [
           "learn"
         ],
@@ -290,10 +292,11 @@
         "尚未接触主题",
         "程序性任务只需要先看步骤示范"
       ],
+      "entry_policy": "primary",
       "atomic_task_capable": true,
       "spec_version": "learnflow.skill.v3",
       "runtime": {
-        "version": "atomic-learning-skill-runtime-v6",
+        "version": "atomic-learning-skill-runtime-v7",
         "bound_chat_modes": [
           "learn"
         ],
@@ -539,10 +542,11 @@
         "只需事实解释",
         "已经能独立完成且只需迁移验证"
       ],
+      "entry_policy": "legacy",
       "atomic_task_capable": true,
       "spec_version": "learnflow.skill.v3",
       "runtime": {
-        "version": "atomic-learning-skill-runtime-v6",
+        "version": "atomic-learning-skill-runtime-v7",
         "bound_chat_modes": [
           "learn"
         ],
@@ -677,10 +681,11 @@
         "没有明确原子目标",
         "当前任务无法形成可验证练习"
       ],
+      "entry_policy": "primary",
       "atomic_task_capable": true,
       "spec_version": "learnflow.skill.v3",
       "runtime": {
-        "version": "atomic-learning-skill-runtime-v6",
+        "version": "atomic-learning-skill-runtime-v7",
         "bound_chat_modes": [
           "learn"
         ],

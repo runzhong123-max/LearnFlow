@@ -809,6 +809,39 @@ async function generatePracticeCandidates(
   }))
 }
 
+function requirePracticeTaskScope(options: TutorAgentToolRuntimeOptions, requestedTaskId: unknown) {
+  const taskId = Number(requestedTaskId)
+  const boundTaskId = Number(options.learningTaskContext?.formalTaskId)
+  if (!Number.isInteger(taskId) || taskId <= 0 || taskId !== boundTaskId) {
+    throw new Error('习题操作必须使用当前对话绑定的正式学习任务')
+  }
+  const checkpointId = Number(options.formalProjectContext?.checkpoint_id)
+  const hasProjectCheckpoint = Number.isInteger(checkpointId) && checkpointId > 0
+  const hasBoundFiles = options.taskQueue?.some(task => task.id === taskId && task.artifactRefs?.some(ref => (
+    (ref.kind === 'lecture' || ref.kind === 'practice')
+    && (typeof ref.ref === 'number' && ref.ref > 0 || typeof ref.ref === 'string' && Boolean(ref.ref.trim()))
+  )))
+  if (!hasProjectCheckpoint && !hasBoundFiles) throw new Error('请先为当前学习任务准备讲义或练习文件')
+  return taskId
+}
+
+async function formalBackendWriteHeaders(options: TutorAgentToolRuntimeOptions) {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (!options.requestCookie) return headers
+  if (!options.backendBase) throw new Error('正式学习后端未连接')
+  headers.Cookie = options.requestCookie
+  const response = await fetch(`${options.backendBase}/api/auth/csrf`, {
+    headers: { Cookie: options.requestCookie },
+    signal: AbortSignal.timeout(AI_LATENCY_BUDGETS.formalApi),
+  })
+  const payload = await response.json().catch(() => ({})) as Record<string, unknown>
+  if (!response.ok || typeof payload.csrf_token !== 'string' || !payload.csrf_token) {
+    throw new Error('无法验证当前登录，请重新登录后重试')
+  }
+  headers['X-CSRF-Token'] = payload.csrf_token
+  return headers
+}
+
 async function callFormalPracticeApi(
   options: TutorAgentToolRuntimeOptions,
   path: string,
@@ -817,11 +850,7 @@ async function callFormalPracticeApi(
   if (!options.backendBase) throw new Error('正式习题后端未连接')
   const response = await fetch(`${options.backendBase}/api/learning-files${path}`, {
     ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.requestCookie ? { Cookie: options.requestCookie } : {}),
-      ...(init.headers || {}),
-    },
+    headers: { ...(init.headers || {}), ...await formalBackendWriteHeaders(options) },
     signal: AbortSignal.timeout(AI_LATENCY_BUDGETS.formalApi),
   })
   const payload = await response.json().catch(() => ({})) as any
@@ -909,10 +938,7 @@ async function callAssessmentBlueprintApi(
   if (!options.backendBase) throw new Error('正式评估蓝图后端未连接')
   const response = await fetch(`${options.backendBase}/api/assessment-blueprints`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.requestCookie ? { Cookie: options.requestCookie } : {}),
-    },
+    headers: await formalBackendWriteHeaders(options),
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(AI_LATENCY_BUDGETS.formalApi),
   })
@@ -1018,8 +1044,10 @@ export async function executeTutorAgentTool(
         updatedAt: task.updatedAt,
       }))
       const currentTask = queue.find(task => task.id === Number(options.learningTaskContext?.formalTaskId || 0))
-      const currentArtifact = currentTask?.artifactRefs.find(ref => ref.kind === 'lecture')
-        || currentTask?.artifactRefs.find(ref => ref.kind === 'practice')
+      const fileStage = options.learningTaskContext?.formalSkillState || options.learningTaskContext?.stepId
+      const preferredKind = ['practicing_in_file', 'verification_ready'].includes(fileStage || '') ? 'practice' : 'lecture'
+      const currentArtifact = currentTask?.artifactRefs.find(ref => ref.kind === preferredKind)
+        || currentTask?.artifactRefs.find(ref => ref.kind === 'lecture' || ref.kind === 'practice')
       const formalDomains = (formal?.knowledge_domains || []).map((domain: any) => ({
         id: String(domain.id || '').slice(0, 120),
         title: compactText(domain.title, 100),
@@ -1633,9 +1661,7 @@ export async function executeTutorAgentTool(
     }
     if (name === 'design_assessment_blueprint') {
       if (options.mode !== 'guided_learning') throw new Error('评估蓝图只能在带领学习态的正式学习任务中设计')
-      if (!options.formalProjectContext?.checkpoint_id) throw new Error('评估蓝图必须绑定当前项目关卡')
-      const learningTaskId = Number(args.learning_task_id)
-      if (!Number.isInteger(learningTaskId) || learningTaskId <= 0) throw new Error('缺少正式 LearningTask ID')
+      const learningTaskId = requirePracticeTaskScope(options, args.learning_task_id)
       const itemTypes = Array.isArray(args.item_types) ? args.item_types.map(String).slice(0, 6) : ['single']
       const count = Math.max(1, Math.min(12, Number(args.count) || 3))
       const blueprint = await callAssessmentBlueprintApi(options, {
@@ -1674,9 +1700,7 @@ export async function executeTutorAgentTool(
     }
     if (name === 'generate_dynamic_practice' || name === 'generate_similar_practice') {
       if (options.mode !== 'guided_learning') throw new Error('动态习题只能在带领学习态的正式学习任务中生成')
-      if (!options.formalProjectContext?.checkpoint_id) throw new Error('动态习题必须绑定当前项目关卡')
-      const learningTaskId = Number(args.learning_task_id)
-      if (!Number.isInteger(learningTaskId) || learningTaskId <= 0) throw new Error('缺少正式 LearningTask ID')
+      const learningTaskId = requirePracticeTaskScope(options, args.learning_task_id)
       const similar = name === 'generate_similar_practice'
       const candidates = await generatePracticeCandidates(args, options, similar)
       const clientRequestId = `${similar ? 'similar' : 'dynamic'}-practice:${learningTaskId}:${meta.callId || Date.now()}`.slice(0, 160)

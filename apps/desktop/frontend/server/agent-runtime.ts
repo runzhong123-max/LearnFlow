@@ -669,6 +669,11 @@ function shouldAutoSupplementKnowledge(input: TutorAgentRuntimeInput, message: s
 }
 
 function availableTools(input: TutorAgentRuntimeInput) {
+  const hasPracticeScope = Boolean(input.learningTaskContext?.formalTaskId) && (
+    Boolean(input.formalProjectContext?.checkpoint_id)
+    || Boolean(input.taskQueue?.some(task => task.id === input.learningTaskContext?.formalTaskId
+      && task.artifactRefs?.some(ref => ref.kind === 'lecture' || ref.kind === 'practice')))
+  )
   const projectTutor = input.formalProjectContext?.tool_policy?.roadmap_tool_access === 'project_tutor'
   const latestMessage = [...input.messages].reverse().find(item => item.role === 'user')?.content || ''
   const visualIntent = resolveExplicitVisualIntent(input.toolChoice, latestMessage)
@@ -682,8 +687,8 @@ function availableTools(input: TutorAgentRuntimeInput) {
     && (tool.name !== 'propose_project_roadmap' || projectTutor && input.mode === 'learning_plan')
     && (tool.name !== 'propose_project_learning_files' || Boolean(input.formalProjectContext) && input.mode === 'guided_learning')
     && (!['design_assessment_blueprint', 'generate_dynamic_practice', 'generate_similar_practice'].includes(tool.name)
-      || Boolean(input.formalProjectContext?.checkpoint_id) && input.mode === 'guided_learning' && Boolean(input.learningTaskContext))
-    && (tool.name !== 'inspect_practice_quality' || Boolean(input.formalProjectContext) && input.mode === 'guided_learning')
+      || hasPracticeScope && input.mode === 'guided_learning')
+    && (tool.name !== 'inspect_practice_quality' || hasPracticeScope && input.mode === 'guided_learning')
     && !['generate_learning_diagram', 'generate_learning_animation', 'retrieve_learning_visual'].includes(tool.name)
   ))
   const pluginTools = input.pluginRegistry?.toolDefinitions(pluginActivation(input)) || []

@@ -10,7 +10,7 @@ EVENT_SCHEMA_VERSION = "learnflow.evidence.v1"
 SKILL_SPEC_VERSION = "learnflow.skill.v3"
 
 
-FRONTEND_SKILL_MANIFEST_REGISTRY_VERSION = "2026-08-29.1"
+FRONTEND_SKILL_MANIFEST_REGISTRY_VERSION = "2026-09-07.4"
 
 
 KERNEL_NAMES = ("structure", "knowledge", "human", "value", "practice")

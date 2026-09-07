@@ -10,11 +10,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
-from app.models.learning import LearningTask
+from app.models.learning import AgentSession, LearningAttempt, LearningTask, RemediationCase
 from app.models.project import Checkpoint, ConceptQuestion, Exercise, Lecture, Project, Roadmap
 from app.services.auth import CurrentLearner, get_current_learner, require_owned_checkpoint, require_owned_exercise, require_owned_source
 from app.services.learning_runtime import record_event
-from app.services.learning_tasks import learning_task_view, materialize_learning_task
+from app.services.learning_tasks import learning_task_view
+from learnflow_core.learning_file_generation import generate_task_files, normalize_file_kinds, task_artifact_checkpoint_id, task_artifact_project_id
 from app.services.dynamic_practice import (
     create_practice_set,
     validate_practice_candidate,
@@ -178,6 +179,39 @@ async def get_lecture_file(
     }
 
 
+def _answer_safe(value):
+    private = {"answer", "answers", "answer_indexes", "correct_answer", "correct_answers", "expected",
+        "expected_output", "expected_response", "solution", "reference_output", "hidden_tests", "judge_config"}
+    if isinstance(value, dict):
+        return {key: _answer_safe(item) for key, item in value.items() if str(key).casefold() not in private}
+    if isinstance(value, list):
+        return [_answer_safe(item) for item in value]
+    return value
+
+
+async def _attempt_history(db, learner_id: int, item_type: str, item_ids: list[int]) -> dict[int, dict]:
+    attempts = list((await db.execute(select(LearningAttempt).where(
+        LearningAttempt.learner_id == learner_id, LearningAttempt.item_type == item_type,
+        LearningAttempt.item_id.in_(item_ids), LearningAttempt.evaluated_at.is_not(None),
+    ).order_by(LearningAttempt.id))).scalars()) if item_ids else []
+    cases = list((await db.execute(select(RemediationCase).where(
+        RemediationCase.learner_id == learner_id, RemediationCase.item_type == item_type,
+        RemediationCase.item_id.in_(item_ids), RemediationCase.status != "completed",
+    ).order_by(RemediationCase.id))).scalars()) if item_ids else []
+    result = {item_id: {"attempt_count": 0, "latest_attempt_id": None, "latest_assistance_level": None,
+        "latest_passed": None, "remediation_case_id": None} for item_id in item_ids}
+    for attempt in attempts:
+        row = result[attempt.item_id]
+        scored = dict(attempt.result or {})
+        passed = bool(scored.get("correct")) if item_type == "concept" else (scored.get("passed") is True or
+            int(scored.get("total") or 0) > 0 and int(scored.get("passed") or 0) == int(scored.get("total") or 0))
+        row.update(attempt_count=row["attempt_count"] + 1, latest_attempt_id=attempt.id,
+            latest_assistance_level=attempt.assistance_level, latest_passed=passed)
+    for case in cases:
+        result[case.item_id]["remediation_case_id"] = case.id
+    return result
+
+
 @router.get("/practice/{practice_ref}")
 async def get_practice_file(
     practice_ref: str,
@@ -196,16 +230,17 @@ async def get_practice_file(
         if not project:
             raise HTTPException(404, "练习所属项目不存在")
         safe_tests = [
-            {key: value for key, value in item.items() if key not in {"expected", "expected_output", "answer", "solution"}}
+            _answer_safe(item)
             for item in (exercise.test_cases or []) if isinstance(item, dict)
         ]
-        private_file_keys = {"solution", "answer", "expected", "expected_output", "reference_output", "hidden_tests"}
+        history = await _attempt_history(db, current.learner.id, "exercise", [exercise.id])
         return {
             **_exercise_ref(exercise, checkpoint, project),
+            **history[exercise.id],
             "description": exercise.description or "",
             "starter_code": exercise.starter_code or "",
             "files": [
-                {key: value for key, value in item.items() if key not in private_file_keys}
+                _answer_safe(item)
                 for item in (exercise.files or []) if isinstance(item, dict)
             ],
             "entrypoint": exercise.entrypoint or "",
@@ -241,6 +276,9 @@ async def get_practice_file(
             questions = list((await db.execute(select(ConceptQuestion).where(
                 ConceptQuestion.checkpoint_id == checkpoint.id,
             ).order_by(ConceptQuestion.order, ConceptQuestion.id))).scalars().all())
+        if not dynamic_set_id:
+            questions = [item for item in questions if not (item.assessment_meta or {}).get("practice_set_id")]
+        history = await _attempt_history(db, current.learner.id, "concept", [item.id for item in questions])
         title = str((questions[0].assessment_meta or {}).get("practice_title") or f"{checkpoint.title} · 概念验证") if questions else f"{checkpoint.title} · 概念验证"
         return {
             "kind": "practice",
@@ -252,6 +290,7 @@ async def get_practice_file(
             "logical_filename": f"{checkpoint.title}-{title}.lfexercise",
             "questions": [{
                 "id": item.id,
+                **history[item.id],
                 "question": item.question,
                 "options": list(item.options or []),
                 "q_type": item.q_type,
@@ -274,9 +313,9 @@ async def _owned_learning_task(db: AsyncSession, learner_id: int, task_id: int) 
         LearningTask.id == task_id,
         LearningTask.learner_id == learner_id,
     ))).scalar_one_or_none()
-    if not task or not task.checkpoint_id:
+    if not task or not task_artifact_checkpoint_id(task):
         raise HTTPException(404, "学习任务不存在或未绑定关卡")
-    await require_owned_checkpoint(db, learner_id, task.checkpoint_id)
+    await require_owned_checkpoint(db, learner_id, task_artifact_checkpoint_id(task))
     return task
 
 
@@ -350,7 +389,7 @@ async def generate_dynamic_practice_file(
     try:
         questions = await create_practice_set(
             db,
-            checkpoint_id=task.checkpoint_id,
+            checkpoint_id=task_artifact_checkpoint_id(task),
             practice_set_id=practice_set_id,
             title=str(data.get("title") or f"{task.title} · 动态练习")[:255],
             candidates=candidates,
@@ -359,7 +398,7 @@ async def generate_dynamic_practice_file(
         )
     except ValueError as error:
         raise HTTPException(422, str(error)) from error
-    checkpoint = await require_owned_checkpoint(db, current.learner.id, task.checkpoint_id)
+    checkpoint = await require_owned_checkpoint(db, current.learner.id, task_artifact_checkpoint_id(task))
     roadmap = await db.get(Roadmap, checkpoint.roadmap_id)
     project = await db.get(Project, roadmap.project_id) if roadmap else None
     if not project:
@@ -375,7 +414,7 @@ async def generate_dynamic_practice_file(
     await record_event(
         db, event_type=event_type, source="dynamic_practice",
         learner_id=current.learner.id, session_id=task.session_id,
-        project_id=task.project_id, checkpoint_id=task.checkpoint_id,
+        project_id=task_artifact_project_id(task), checkpoint_id=task_artifact_checkpoint_id(task),
         payload={
             "learning_task_id": task.id, "practice_ref": ref["ref"],
             "item_count": len(questions), "quality_status": "validated_static_uncalibrated",
@@ -453,9 +492,10 @@ async def generate_task_learning_files(
         raise HTTPException(404, "学习任务不存在")
     client_request_id = str(data.get("client_request_id") or f"learning-files:{task.id}:{task.version}")[:160]
     try:
-        await materialize_learning_task(
+        generation = await generate_task_files(
             db,
             task=task,
+            file_kinds=data.get("file_kinds"),
             source_text=str(data.get("source_text") or "")[:20_000],
             expected_version=int(data.get("expected_version", task.version)),
             client_request_id=client_request_id,
@@ -464,14 +504,15 @@ async def generate_task_learning_files(
         )
     except RuntimeError as error:
         message = str(error)
-        status = 409 if message == "version_conflict" else 400
+        status = 409 if message in {"version_conflict", "idempotency_conflict"} else 400
         raise HTTPException(status, message) from error
     view = await learning_task_view(db, task)
+    view["file_generation"] = generation
     if view.get("artifact_refs"):
         await record_event(
             db, event_type="learning_file_generated", source="learning_task_runtime",
             learner_id=current.learner.id, session_id=task.session_id,
-            project_id=task.project_id, checkpoint_id=task.checkpoint_id,
+            project_id=task_artifact_project_id(task), checkpoint_id=task_artifact_checkpoint_id(task),
             payload={"task_id": task.id, "artifact_refs": view.get("artifact_refs", []), "mastery_unchanged": True},
             provenance={"endpoint": "POST /api/learning-files/tasks/{id}/generate"},
             client_event_id=f"learning-files:task:{task.id}:{client_request_id}",
@@ -559,17 +600,31 @@ async def mark_lecture_read(
     db: AsyncSession = Depends(get_db),
 ):
     lecture, checkpoint, project = await _owned_lecture(db, current.learner.id, lecture_id)
+    session_id = int(data.get("session_id") or 0) or None
+    task_id = int(data.get("learning_task_id") or 0)
+    if task_id:
+        task = await _owned_learning_task(db, current.learner.id, task_id)
+        if task_artifact_checkpoint_id(task) != checkpoint.id or session_id and task.session_id != session_id:
+            raise HTTPException(400, "讲义与学习任务范围不一致")
+        session_id = task.session_id
+    if session_id:
+        session = await db.get(AgentSession, session_id)
+        if not session or session.learner_id != current.learner.id:
+            raise HTTPException(404, "对话不存在")
+        if session.project_id and session.project_id != project.id or session.checkpoint_id and session.checkpoint_id != checkpoint.id:
+            raise HTTPException(400, "讲义与对话范围不一致")
     await record_event(
-        db, event_type="lecture_viewed", source="ui",
+        db, event_type="lecture_viewed", source="ui", session_id=session_id,
         learner_id=current.learner.id, project_id=project.id, checkpoint_id=checkpoint.id,
         payload={
             "lecture_id": lecture.id,
             "lecture_version": int(lecture.version or 1),
+            "learning_task_id": task_id or None,
             "explicit_completion": bool(data.get("explicit_completion", True)),
             "mastery_unchanged": True,
         },
         provenance={"endpoint": "POST /api/learning-files/lecture/{id}/read"},
-        client_event_id=str(data.get("client_event_id") or f"lecture:{lecture.id}:read:v{lecture.version}")[:160],
+        client_event_id=str(data.get("client_event_id") or f"lecture:{lecture.id}:read:v{lecture.version}:session:{session_id or 0}:task:{task_id}")[:160],
     )
     await db.commit()
     return {"status": "ok", "evidence_role": "exposure", "mastery_unchanged": True}

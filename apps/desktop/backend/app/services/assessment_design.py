@@ -33,22 +33,16 @@ def _text(value: Any, limit: int) -> str:
 async def owned_task_scope(
     db: AsyncSession, learner_id: int, learning_task_id: int,
 ) -> tuple[LearningTask, Checkpoint, Project]:
-    row = (await db.execute(
-        select(LearningTask, Checkpoint, Project)
-        .join(Checkpoint, Checkpoint.id == LearningTask.checkpoint_id)
-        .join(Roadmap, Roadmap.id == Checkpoint.roadmap_id)
-        .join(Project, Project.id == Roadmap.project_id)
-        .where(
-            LearningTask.id == learning_task_id,
-            LearningTask.learner_id == learner_id,
-            Project.learner_id == learner_id,
-            Project.visibility != "deleted",
-        )
-    )).first()
-    if not row:
+    from learnflow_core.learning_file_generation import task_artifact_checkpoint_id, task_artifact_project_id
+    task = (await db.execute(select(LearningTask).where(
+        LearningTask.id == learning_task_id, LearningTask.learner_id == learner_id,
+    ))).scalar_one_or_none()
+    checkpoint = await db.get(Checkpoint, task_artifact_checkpoint_id(task)) if task and task_artifact_checkpoint_id(task) else None
+    roadmap = await db.get(Roadmap, checkpoint.roadmap_id) if checkpoint else None
+    project = await db.get(Project, roadmap.project_id) if roadmap else None
+    if not task or not checkpoint or not project or project.learner_id != learner_id or project.visibility == "deleted":
         raise ValueError("learning_task_scope_not_found")
-    task, checkpoint, project = row
-    if task.project_id and task.project_id != project.id:
+    if task_artifact_project_id(task) and task_artifact_project_id(task) != project.id:
         raise ValueError("learning_task_project_scope_mismatch")
     return task, checkpoint, project
 

@@ -6,7 +6,7 @@ import {
   type FocusEvent,
   type KeyboardEvent,
 } from 'react'
-import { LEARNING_SKILLS, type LearningSkillId } from './learning'
+import { LEARNING_SKILLS, PRIMARY_LEARNING_SKILL_IDS, type LearningSkillId } from './learning'
 import { installedClientPlugins } from './PluginToolResultView.tsx'
 import { visibleToolCapabilities } from './tool-capability-catalog.ts'
 import { TOOL_CHOICE_LABELS, type TutorToolChoice } from './tooling'
@@ -41,7 +41,7 @@ type PickerOption<Value extends string> = {
   status?: string
 }
 
-const LEARNING_SKILL_IDS = Object.keys(LEARNING_SKILLS) as LearningSkillId[]
+const LEARNING_SKILL_IDS = PRIMARY_LEARNING_SKILL_IDS
 const TOOL_CHOICE_IDS = Object.keys(TOOL_CHOICE_LABELS) as TutorToolChoice[]
 
 const TOOL_META: Record<TutorToolChoice, { glyph: string; purpose: string }> = {
@@ -117,7 +117,8 @@ export default function ComposerCapabilityPicker({
   const coreCapabilityCount = toolCapabilities.filter(item => item.source === 'core').length
   const pluginCapabilityCount = toolCapabilities.length - coreCapabilityCount
 
-  const selectedSkill = skillOptions.find(option => option.value === skillChoice) || skillOptions[0]
+  const selectedSkill = skillOptions.find(option => option.value === skillChoice)
+    || (skillChoice !== 'auto' ? { label: `${LEARNING_SKILLS[skillChoice].name}（已有运行）`, value: skillChoice, purpose: '可继续已有运行，或切换到维护中的学习方法', glyph: '◎' } : skillOptions[0])
   const selectedTool = toolOptions.find(option => option.value === toolChoice) || toolOptions[0]
   const methodUnavailable = skillDisabled || !isGuidedLearning
 

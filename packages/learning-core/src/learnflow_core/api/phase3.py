@@ -12,7 +12,7 @@ from sqlalchemy import select
 
 from app.core.config import settings
 from app.db.database import get_db
-from app.models.learning import LearningAttempt, LearningTask
+from app.models.learning import LearningAttempt, LearningTask, EvidenceEvent
 from app.models.project import (
     Checkpoint, Exercise, ExerciseDraft, ConceptQuestion, Task, Roadmap,
 )
@@ -50,6 +50,41 @@ def _execution_result_fields(result: dict) -> dict:
         "error_code": result.get("error_code"),
         "limits": dict(result.get("limits") or {}),
     }
+
+
+async def _file_submission_context(db, learner_id, item_type, item_id, requested_assistance, data=None):
+    """Derive repeat/support semantics from owned history, including older clients."""
+    assistance = str(requested_assistance or "none")
+    if assistance not in {"none", "hint", "guided"}:
+        raise HTTPException(400, "辅助等级无效")
+    supplied = data or {}
+    if supplied.get("support_effective") and supplied.get("helpful_format"):
+        assistance = "guided" if supplied["helpful_format"] in {"worked_example", "step_by_step", "code_example"} else ("hint" if assistance == "none" else assistance)
+    previous = (await db.execute(select(LearningAttempt).where(
+        LearningAttempt.learner_id == learner_id,
+        LearningAttempt.item_type == item_type,
+        LearningAttempt.item_id == item_id,
+        LearningAttempt.status == "evaluated",
+    ).order_by(LearningAttempt.id.desc()).limit(1))).scalar_one_or_none()
+    # The concept endpoint returned the expected answer after the previous attempt.
+    explanation = await db.scalar(select(EvidenceEvent.id).where(
+        EvidenceEvent.learner_id == learner_id,
+        EvidenceEvent.event_type == "explanation_requested",
+        EvidenceEvent.payload["item_type"].as_string() == item_type,
+        EvidenceEvent.payload["item_id"].as_integer() == item_id,
+    ).limit(1))
+    if explanation or previous and item_type == "concept":
+        assistance = "guided"
+    elif previous and assistance == "none":
+        assistance = "hint"
+    return assistance, "retry" if previous else "original"
+
+
+async def _task_for_file_checkpoint(db, learner_id, checkpoint_id):
+    tasks = (await db.execute(select(LearningTask).where(LearningTask.learner_id == learner_id))).scalars().all()
+    matches = [task for task in tasks if task.checkpoint_id == checkpoint_id
+               or (task.execution_state or {}).get("artifact_scope", {}).get("checkpoint_id") == checkpoint_id]
+    return matches[0].id if len(matches) == 1 else None
 
 
 # ── Exercise CRUD ──
@@ -576,7 +611,9 @@ async def submit_concept(
     user = list(submitted_response.get("answer_indexes") or [])
     from app.services.progress import record_concept_answer
     await record_concept_answer(checkpoint_id, question_id, is_correct, db=db)
-    assistance_level = str((data or {}).get("assistance_level") or "none")
+    assistance_level, attempt_role = await _file_submission_context(
+        db, current.learner.id, "concept", question_id, (data or {}).get("assistance_level"), data,
+    )
     from app.services.learning_runtime import (
         create_attempt, record_event, evaluate_checkpoint_status,
     )
@@ -589,15 +626,12 @@ async def submit_concept(
         submission=submitted_response,
         result={"correct": is_correct, **expected_response},
         assistance_level=assistance_level,
-        attempt_role=str((data or {}).get("attempt_role") or "original"),
+        attempt_role=attempt_role,
         client_submission_id=submission_key,
     )
     cp = await db.get(Checkpoint, checkpoint_id)
     roadmap = await db.get(Roadmap, cp.roadmap_id) if cp else None
-    learning_task_id = (await db.execute(select(LearningTask.id).where(
-        LearningTask.learner_id == current.learner.id,
-        LearningTask.checkpoint_id == checkpoint_id,
-    ))).scalar_one_or_none()
+    learning_task_id = await _task_for_file_checkpoint(db, current.learner.id, checkpoint_id)
     evaluation_event = await record_event(
         db, event_type="concept_attempt_evaluated", source="assessment",
         learner_id=current.learner.id,
@@ -655,8 +689,10 @@ async def submit_concept(
                 "assessment_meta": q.assessment_meta or {},
             },
             evaluation={
-            **expected_response,
-            "submitted_response": submitted_response,
+                **expected_response,
+                "correct": is_correct,
+                "user_answer_indexes": user,
+                "submitted_response": submitted_response,
             },
         )
         remediation_payload = serialize_case(remediation)
@@ -684,6 +720,7 @@ async def submit_concept(
         "explanation": q.explanation or "",
         "attempt_id": attempt.id,
         "assistance_level": assistance_level,
+        "attempt_role": attempt_role,
         "remediation": remediation_payload,
         "review_schedule_id": schedule.id,
         "review_due_at": schedule.due_at.isoformat(),
@@ -778,6 +815,9 @@ async def submit_exercise(
         if replay:
             return {**dict(replay.result or {}), "attempt_id": replay.id, "idempotent_replay": True}
 
+    assistance_level, attempt_role = await _file_submission_context(
+        db, current.learner.id, "exercise", exercise_id, req.assistance_level,
+    )
     effective_code = req.code
     execution_fields = require_trusted_local_execution("formal_exercise_submission")
 
@@ -807,16 +847,13 @@ async def submit_exercise(
             item_id=exercise.id,
             submission=submission,
             result=response,
-            assistance_level=req.assistance_level or "none",
-            attempt_role=req.attempt_role or "original",
+            assistance_level=assistance_level,
+            attempt_role=attempt_role,
             client_submission_id=submission_key,
         )
         cp = await db.get(Checkpoint, exercise.checkpoint_id)
         roadmap = await db.get(Roadmap, cp.roadmap_id) if cp else None
-        learning_task_id = (await db.execute(select(LearningTask.id).where(
-            LearningTask.learner_id == current.learner.id,
-            LearningTask.checkpoint_id == exercise.checkpoint_id,
-        ))).scalar_one_or_none()
+        learning_task_id = await _task_for_file_checkpoint(db, current.learner.id, exercise.checkpoint_id)
         evaluation_event = await record_event(
             db, event_type="exercise_attempt_evaluated", source="assessment",
             learner_id=current.learner.id,
@@ -827,7 +864,7 @@ async def submit_exercise(
                 "learning_task_id": learning_task_id,
                 "item_id": exercise.id,
                 "passed": passed_ok,
-                "assistance_level": req.assistance_level or "none",
+                "assistance_level": assistance_level,
             },
             provenance={
                 "grader": exercise.judge_mode or "test_cases",
@@ -891,6 +928,8 @@ async def submit_exercise(
             await evaluate_project_badge(
                 db, learner_id=current.learner.id, project_id=roadmap.project_id,
             )
+        response["assistance_level"] = assistance_level
+        response["attempt_role"] = attempt_role
         response["review_schedule_id"] = schedule.id
         response["review_due_at"] = schedule.due_at.isoformat()
         attempt.result = {

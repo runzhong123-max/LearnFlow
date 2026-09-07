@@ -1,3 +1,4 @@
+import { taskLearningFiles, fileKindForStage, fileProgressMessage } from './learning-file-flow'
 import { directVisualWorkflowCall } from '../../packages/learning-client/src/visuals/workflow.ts'
 import { resolveExplicitVisualIntent } from '../server/visual-tool-execution.ts'
 import { FormEvent, Fragment, lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
@@ -19,6 +20,7 @@ import {
 import {
   activeLearningTaskProjection,
   activateFormalLearningTask,
+  restoreFormalSkillRunBinding,
   advanceLearningSkillStep,
   appendLearningEvents,
   bindFormalSkillRun,
@@ -29,6 +31,7 @@ import {
   isSupportRequest,
   latestLearningTaskProjection,
   LEARNING_SKILLS,
+  PRIMARY_LEARNING_SKILL_IDS,
   learningObjectiveFromInput,
   learningTaskTutorContext,
   nextLearningSkillStep,
@@ -286,6 +289,7 @@ const LearningTasksPage = lazy(() => import('./LearningTasksPage'))
 const ReviewWorkbenchPage = lazy(() => import('./ReviewWorkbenchPage'))
 const LearningFilesPage = lazy(() => import('./LearningFilesPage'))
 const LectureFilePage = lazy(() => import('./LectureFilePage'))
+const LearningVerificationPanel = lazy(() => import('./LearningVerificationPanel'))
 const PracticeFilePage = lazy(() => import('./PracticeFilePage'))
 const SourceFilePage = lazy(() => import('./SourceFilePage'))
 const ProjectsPage = lazy(() => import('./ProjectsPage'))
@@ -653,6 +657,7 @@ function App({ auth }: { auth: AuthGateSession }) {
   const [formalConnection, setFormalConnection] = useState<FormalRuntimeConnection>({ status: 'connecting', detail: '正在连接正式五核事件链' })
   const [formalSnapshot, setFormalSnapshot] = useState<FormalLearnerSnapshot>()
   const [formalBusyKey, setFormalBusyKey] = useState('')
+  const [verificationConversationId, setVerificationConversationId] = useState('')
   const [formalError, setFormalError] = useState('')
   const [learningFileProposalErrors, setLearningFileProposalErrors] = useState<Record<number, string>>({})
   const [pathPlanWriteErrors, setPathPlanWriteErrors] = useState<Record<string, string>>({})
@@ -663,6 +668,11 @@ function App({ auth }: { auth: AuthGateSession }) {
   const [formalProjectWorkspaces, setFormalProjectWorkspaces] = useState<Record<number, FormalProjectWorkspace>>({})
   const [expandedProjects, setExpandedProjects] = useState<Record<number, boolean>>({})
   const [projectPanelConversationId, setProjectPanelConversationId] = useState('')
+  const workspaceRef = useRef(workspace)
+  workspaceRef.current = workspace
+  const fileProgressSyncs = useRef(new Map<string, Promise<void>>())
+  const fileGenerationLocks = useRef(new Set<number>())
+  const learningActionLocks = useRef(new Set<string>())
   const formalChatHydrated = useRef(false)
   const pendingRolePackageLaunchToken = useRef(rolePackageLaunchTokenFromPath())
   const rolePackageLaunchStarted = useRef(false)
@@ -2197,25 +2207,7 @@ function App({ auth }: { auth: AuthGateSession }) {
           sourceType: task.origin_kind,
           sourceId: task.source_refs[0] ? JSON.stringify(task.source_refs[0]).slice(0, 160) : undefined,
           version: task.version,
-          artifactRefs: task.artifact_refs.flatMap(ref => {
-            const type = typeof ref.type === 'string' ? ref.type : ''
-            const logicalTitle = typeof ref.logical_filename === 'string'
-              ? ref.logical_filename.replace(/\.lf(?:lecture|exercise)$/i, '')
-              : task.objective
-            if (type === 'managed_lecture' && typeof ref.id === 'number') {
-              return [{ kind: 'lecture', ref: ref.id, title: logicalTitle }]
-            }
-            if (type === 'concept_question_set' && task.checkpoint_id) {
-              return [{ kind: 'practice', ref: `questions-${task.checkpoint_id}`, title: logicalTitle }]
-            }
-            if (type === 'managed_exercise' && typeof ref.id === 'number') {
-              return [{ kind: 'practice', ref: `exercise-${ref.id}`, title: logicalTitle }]
-            }
-            if ((ref.kind === 'lecture' || ref.kind === 'practice') && (typeof ref.ref === 'string' || typeof ref.ref === 'number')) {
-              return [{ kind: ref.kind, ref: ref.ref, title: typeof ref.title === 'string' ? ref.title : logicalTitle }]
-            }
-            return []
-          }),
+          artifactRefs: taskLearningFiles(task),
           updatedAt: task.updated_at || undefined,
         })),
         knowledgeDomains: [],
@@ -2286,8 +2278,11 @@ function App({ auth }: { auth: AuthGateSession }) {
     action: 'pause' | 'resume' | 'complete' | 'verify' | 'skill',
     skillId?: LearningSkillId,
   ) => {
-    if (pendingTurns[conversationId]) return
-    const conversation = workspace.conversations.find(item => item.id === conversationId)
+    if (pendingTurns[conversationId] || learningActionLocks.current.has(conversationId)) return
+    learningActionLocks.current.add(conversationId)
+    try {
+    await fileProgressSyncs.current.get(conversationId)
+    const conversation = workspaceRef.current.conversations.find(item => item.id === conversationId)
     if (!conversation) return
     const projection = latestLearningTaskProjection(conversation.learningTasks, conversation.learningEvents)
     if (!projection || projection.status === 'completed') return
@@ -2307,7 +2302,7 @@ function App({ auth }: { auth: AuthGateSession }) {
             conversation.formalSessionId,
             skillId,
             projection.task.objective,
-            `vnext-skill-switch:${projection.task.id}:${skillId}`.slice(0, 120),
+            `vnext-skill-switch:${projection.task.id}:${projection.task.formalSkillRunVersion}:${skillId}`.slice(0, 120),
             [],
             projection.task.formalTaskId,
           )
@@ -2340,15 +2335,15 @@ function App({ auth }: { auth: AuthGateSession }) {
       setFormalError('正式 SkillRun 未连接，不能创建可验证学习附件。')
       return
     }
-    if (effectiveAction === 'skill') {
+    if (effectiveAction === 'verify') {
+      setVerificationConversationId(conversationId)
+    } else if (effectiveAction === 'skill') {
       learningEvents = switchLearningSkill(learningEvents, projection, skillId || projection.skillId, Date.now())
     } else {
       const event = effectiveAction === 'pause'
         ? { type: 'vnext_learning_task_paused' as const, detail: '暂停学习任务' }
         : effectiveAction === 'resume'
           ? { type: 'vnext_learning_task_resumed' as const, detail: '恢复学习任务' }
-          : effectiveAction === 'verify'
-            ? { type: 'vnext_learning_task_paused' as const, detail: '已转交独立验证；对话任务暂停，等待验证结果' }
           : { type: 'vnext_learning_task_completed' as const, detail: '结束本段 Skill 流程；不代表掌握，正式任务仍需可检查证据' }
       learningEvents = appendLearningEvents(learningEvents, projection.task.id, [event], Date.now())
     }
@@ -2360,7 +2355,7 @@ function App({ auth }: { auth: AuthGateSession }) {
         ...item,
         learningTasks,
         learningEvents,
-        mode: effectiveAction === 'resume' || effectiveAction === 'skill' ? 'guided_learning' : 'free',
+        mode: effectiveAction === 'resume' || effectiveAction === 'skill' || effectiveAction === 'verify' ? 'guided_learning' : 'free',
         preferredSkillId: effectiveAction === 'complete' ? undefined : item.preferredSkillId,
         updatedAt: Date.now(),
       } : item),
@@ -2380,6 +2375,9 @@ function App({ auth }: { auth: AuthGateSession }) {
         setFormalError(error instanceof Error ? error.message : '学习任务状态同步失败')
       }
     }
+    } catch (error) {
+      setFormalError(error instanceof Error ? error.message : '学习进度暂未同步，请重试。')
+    } finally { learningActionLocks.current.delete(conversationId) }
   }
 
   const selectLearningSkill = (conversationId: string, value: string) => {
@@ -2700,6 +2698,127 @@ function App({ auth }: { auth: AuthGateSession }) {
     }
   }
 
+  const learningScopeForFile = (conversationId: string | undefined, kind: 'lecture' | 'practice', ref: string) => {
+    const conversation = workspace.conversations.find(item => item.id === conversationId)
+    const projection = conversation && latestLearningTaskProjection(conversation.learningTasks, conversation.learningEvents)
+    const task = formalSnapshot?.learning_tasks.find(item => item.id === projection?.task.formalTaskId)
+    const belongs = taskLearningFiles(task).some(file => file.kind === kind && file.ref === ref)
+    return belongs ? { formalSessionId: conversation?.formalSessionId, learningTaskId: task?.id } : {}
+  }
+
+  // File operations use persisted facts to reconcile the same run; no synthetic user turn.
+  const syncLearningFileProgress = async (conversationId?: string) => {
+    if (!conversationId) return
+    const previousSync = fileProgressSyncs.current.get(conversationId) || Promise.resolve()
+    const nextSync = previousSync.catch(() => undefined).then(async () => {
+      const conversation = workspaceRef.current.conversations.find(item => item.id === conversationId)
+      if (!conversation?.formalSessionId) return
+      const session = await loadFormalTutorSession(conversation.formalSessionId)
+      const previousRun = session.active_skill_run
+      if (!previousRun) return
+      let result = { active_skill_run: previousRun }
+      if (previousRun.skill.id === 'learning_file_study' && previousRun.status === 'active') {
+        try { result = await actOnFormalLearningSkillRun(conversation.formalSessionId, previousRun, 'sync_artifacts') }
+        catch (error) {
+          if (!(error instanceof Error) || !/version_conflict|版本|409/.test(error.message)) throw error
+          const latest = (await loadFormalTutorSession(conversation.formalSessionId)).active_skill_run
+          if (!latest || latest.id !== previousRun.id || latest.status !== 'active') return
+          result = await actOnFormalLearningSkillRun(conversation.formalSessionId, latest, 'sync_artifacts')
+        }
+      }
+      const run = result.active_skill_run
+      if (!run) return
+      setWorkspace(previous => ({
+        ...previous,
+        conversations: previous.conversations.map(item => {
+          if (item.id !== conversationId) return item
+          let tasks = item.learningTasks
+          let events = item.learningEvents
+          let projection = latestLearningTaskProjection(tasks, events)
+          if (projection?.task.formalSkillRunId && projection.task.formalSkillRunId > run.id) return item
+          if (!projection || projection.task.formalSkillRunId !== run.id) {
+            const restored = restoreFormalSkillRunBinding(tasks, events, run)
+            if (!restored) return item
+            tasks = restored.tasks
+            events = restored.events
+            projection = restored.projection
+          }
+          if ((projection.task.formalSkillRunVersion || 0) > run.version) return item
+          const messageId = `file-progress:${run.id}:${run.state}`
+          const content = fileProgressMessage(run.state)
+          const changed = projection.task.formalSkillState !== run.state
+          return {
+            ...item,
+            mode: run.status === 'completed' ? 'free' as const : run.status === 'paused' ? item.mode : 'guided_learning' as const,
+            preferredSkillId: run.skill.id,
+            learningTasks: tasks.map(task => task.id === projection.task.id ? bindFormalSkillRun(task, run) : task),
+            learningEvents: reconcileLearningEventsWithFormalSkillRun(events, projection, run, Date.now()),
+            messages: changed && content && !item.messages.some(message => message.id === messageId)
+              ? [...item.messages, { id: messageId, role: 'system' as const, content, createdAt: Date.now() }]
+              : item.messages,
+            updatedAt: Date.now(),
+          }
+        }),
+      }))
+      await refreshFormalSnapshot(true)
+    })
+    fileProgressSyncs.current.set(conversationId, nextSync)
+    try { await nextSync } finally {
+      if (fileProgressSyncs.current.get(conversationId) === nextSync) fileProgressSyncs.current.delete(conversationId)
+    }
+  }
+
+  useEffect(() => {
+    if (formalConnection.status !== 'connected' || !activeConversation?.formalSessionId) return
+    void syncLearningFileProgress(activeConversation.id).catch(error => {
+      setFormalError(error instanceof Error ? error.message : '学习进度恢复失败，请重试。')
+    })
+  }, [formalConnection.status, activeConversation?.id, activeConversation?.formalSessionId])
+
+  useEffect(() => {
+    const onProgress = (event: Event) => {
+      const conversationId = (event as CustomEvent<{ conversationId?: string }>).detail?.conversationId
+      void syncLearningFileProgress(conversationId).catch(error => setFormalError(error instanceof Error ? error.message : '文件已保存，学习进度续接失败'))
+    }
+    window.addEventListener('learnflow-learning-file-progress', onProgress)
+    return () => window.removeEventListener('learnflow-learning-file-progress', onProgress)
+  }, [])
+
+  const openTaskLearningFile = async (conversationId: string, kind?: 'lecture' | 'practice') => {
+    try {
+      await syncLearningFileProgress(conversationId)
+      const conversation = workspaceRef.current.conversations.find(item => item.id === conversationId)
+      if (!conversation) return
+      const projection = latestLearningTaskProjection(conversation.learningTasks, conversation.learningEvents)
+      const snapshot = await loadFormalLearnerSnapshot(true)
+      const task = snapshot.learning_tasks.find(item => item.id === projection?.task.formalTaskId)
+      const targetKind = kind || fileKindForStage(projection?.task.formalSkillState)
+      const file = taskLearningFiles(task).find(item => item.kind === targetKind)
+      if (!file) {
+        if (task) {
+          const proposal: ProjectLearningFileProposal = {
+            schema_version: 'vnext.learning-file-proposal.v2', learning_task_id: task.id,
+            checkpoint_title: task.title, file_kinds: projection?.task.formalSkillState === 'selecting_learning_artifact' ? ['lecture', 'practice'] : [targetKind], source_strategy: 'task_sources_first',
+            confirmation_required: true, mastery_unchanged: true,
+          }
+          setWorkspace(previous => ({ ...previous, conversations: previous.conversations.map(item => {
+            if (item.id !== conversationId) return item
+            const alreadyProposed = item.messages.some(message => message.toolRuns?.some(run => run.projectLearningFileProposal?.learning_task_id === task.id
+              && run.projectLearningFileProposal.file_kinds.includes(targetKind)))
+            return { ...item, activeSheetId: 'main', messages: alreadyProposed ? item.messages : [...item.messages, {
+              id: `file-proposal:${task.id}:${targetKind}`, role: 'system' as const, createdAt: Date.now(),
+              content: '这份文件尚未生成。确认后会保存到当前任务，已有内容会保留。',
+              toolRuns: [{ id: `file-proposal:${task.id}:${targetKind}`, kind: 'file' as const, status: 'completed' as const,
+                title: '学习文件待确认', detail: '等待确认生成。', durationMs: 0, projectLearningFileProposal: proposal }],
+            }] }
+          }) }))
+        }
+        return
+      }
+      attachLearningFileToConversation(file, conversationId)
+    } catch (error) { setFormalError(error instanceof Error ? error.message : '学习文件打开失败') }
+  }
+
   const generateTaskFiles = async (task: NonNullable<FormalLearnerSnapshot['learning_tasks'][number]>) => {
     setFormalBusyKey(`task:${task.id}`)
     setFormalError('')
@@ -2733,28 +2852,48 @@ function App({ auth }: { auth: AuthGateSession }) {
   }
 
   const acceptProjectLearningFileProposal = async (proposal: ProjectLearningFileProposal, conversationId?: string) => {
+    if (fileGenerationLocks.current.has(proposal.learning_task_id)) return
+    fileGenerationLocks.current.add(proposal.learning_task_id)
     setFormalBusyKey(`project-file:${proposal.learning_task_id}`)
     setLearningFileProposalErrors(previous => ({ ...previous, [proposal.learning_task_id]: '' }))
     try {
       const snapshot = await loadFormalLearnerSnapshot(true)
       const task = snapshot.learning_tasks.find(item => item.id === proposal.learning_task_id)
       if (!task) throw new Error('正式学习任务已经变化，请刷新项目后重试')
-      const updated = await generateFormalLearningFiles(task)
-      const library = await loadLearningFiles()
-      const matching = [...library.lectures, ...library.practices]
-        .filter(item => item.checkpoint_id === updated.checkpoint_id)
-      const preferred = matching.find(item => item.kind === 'lecture') || matching[0]
-      await refreshFormalSnapshot(true)
-      if (preferred) {
-        openTab(learningFileTab(preferred, { conversationId }))
-        if (conversationId) attachLearningFileToConversation(preferred, conversationId)
-      } else openTab(LEARNING_FILES_TAB)
-    } catch (error) {
-      setLearningFileProposalErrors(previous => ({
+      const boundConversation = workspaceRef.current.conversations.find(item => item.id === conversationId)
+      const boundTask = boundConversation && latestLearningTaskProjection(boundConversation.learningTasks, boundConversation.learningEvents)
+      if (boundTask?.task.formalTaskId && boundTask.task.formalTaskId !== task.id) throw new Error('这是另一项学习任务的文件提案，请先从学习任务中返回该任务。')
+      const updated = await generateFormalLearningFiles(task, proposal.file_kinds)
+      const files = taskLearningFiles(updated)
+      const gaps = updated.file_generation?.gaps || []
+      const requestedReady = proposal.file_kinds.every(kind => files.some(file => file.kind === kind))
+      if (!requestedReady) setLearningFileProposalErrors(previous => ({
+        ...previous, [proposal.learning_task_id]: gaps.join('；') || '部分文件尚未准备好，可补充资料后重试。',
+      }))
+      setWorkspace(previous => ({
         ...previous,
+        conversations: previous.conversations.map(item => {
+          if (item.id !== conversationId) return item
+          const updateMessages = (messages: Message[]) => messages.map(message => ({ ...message,
+            toolRuns: message.toolRuns?.map(run => run.projectLearningFileProposal?.learning_task_id === updated.id
+              ? { ...run, materializedLearningFiles: files, title: requestedReady ? '学习文件已准备好' : '学习文件部分就绪', detail: requestedReady ? '打开讲义阅读，或进入配对练习。' : gaps.join('；') }
+              : run),
+          }))
+          return { ...item, messages: updateMessages(item.messages), sheets: item.sheets.map(sheet => ({ ...sheet, messages: updateMessages(sheet.messages) })) }
+        }),
+      }))
+      await refreshFormalSnapshot(true)
+      const preferred = files.find(file => file.kind === proposal.file_kinds[0]) || files[0]
+      if (preferred) {
+        if (conversationId) attachLearningFileToConversation(preferred, conversationId)
+        else openTab(learningFileTab(preferred))
+      }
+      await syncLearningFileProgress(conversationId)
+    } catch (error) {
+      setLearningFileProposalErrors(previous => ({ ...previous,
         [proposal.learning_task_id]: error instanceof Error ? error.message : '学习文件生成失败',
       }))
-    } finally { setFormalBusyKey('') }
+    } finally { fileGenerationLocks.current.delete(proposal.learning_task_id); setFormalBusyKey('') }
   }
 
   const renderTab = (tab: WorkspaceTab | undefined) => {
@@ -2836,10 +2975,10 @@ function App({ auth }: { auth: AuthGateSession }) {
       return <Suspense fallback={<div className="page-loading">正在载入学习文件…</div>}><LearningFilesPage onOpen={file => openTab(learningFileTab(file))} /></Suspense>
     }
     if (tab.kind === 'lecture-file' && tab.fileRef) {
-      return <Suspense fallback={<div className="page-loading">正在打开讲义…</div>}><LectureFilePage lectureId={Number(tab.fileRef)} onAttach={file => attachLearningFileToConversation(file, tab.originConversationId, { parentSheetId: tab.originSheetId })} /></Suspense>
+      return <Suspense fallback={<div className="page-loading">正在打开讲义…</div>}><LectureFilePage lectureId={Number(tab.fileRef)} conversationId={tab.originConversationId} {...learningScopeForFile(tab.originConversationId, 'lecture', String(tab.fileRef))} onProgress={() => syncLearningFileProgress(tab.originConversationId)} onContinue={tab.originConversationId && learningScopeForFile(tab.originConversationId, 'lecture', String(tab.fileRef)).learningTaskId ? () => { void openTaskLearningFile(tab.originConversationId!, 'practice') } : undefined} onAttach={file => attachLearningFileToConversation(file, tab.originConversationId, { parentSheetId: tab.originSheetId })} /></Suspense>
     }
     if (tab.kind === 'practice-file' && tab.fileRef) {
-      return <Suspense fallback={<div className="page-loading">正在打开练习…</div>}><PracticeFilePage practiceRef={tab.fileRef} onAttach={file => attachLearningFileToConversation(file, tab.originConversationId, { parentSheetId: tab.originSheetId })} /></Suspense>
+      return <Suspense fallback={<div className="page-loading">正在打开练习…</div>}><PracticeFilePage practiceRef={tab.fileRef} conversationId={tab.originConversationId} onProgress={() => syncLearningFileProgress(tab.originConversationId)} onRemediate={() => openTab(REVIEW_TAB)} onAttach={file => attachLearningFileToConversation(file, tab.originConversationId, { parentSheetId: tab.originSheetId })} /></Suspense>
     }
     if (tab.kind === 'settings') {
       return (
@@ -2990,6 +3129,14 @@ function App({ auth }: { auth: AuthGateSession }) {
             </span>
           </div>
         </header>
+        {verificationConversationId === conversation.id && taskProjection?.task.formalVerificationRunId && (
+          <section className="learning-verification-host" aria-label="独立验证工作台">
+            <header><strong>独立验证</strong><button type="button" onClick={() => setVerificationConversationId('')}>返回对话</button></header>
+            <Suspense fallback={<div className="page-loading">正在恢复独立验证…</div>}>
+              <LearningVerificationPanel runId={taskProjection.task.formalVerificationRunId} onProgress={() => syncLearningFileProgress(conversation.id)} />
+            </Suspense>
+          </section>
+        )}
         <div className={hasWorkbench ? 'paper-workbench' : 'chat-thread'}>
           {hasWorkbench && (
             <div className="paper-toolbar">
@@ -3157,7 +3304,7 @@ function App({ auth }: { auth: AuthGateSession }) {
                 <div className={hasWorkbench ? `paper-sheet${sheet?.artifact ? ' paper-sheet-artifact' : ''}${pluginProjectionSheet ? ' paper-sheet-plugin' : ''}` : 'conversation-page-content'}>
                   {sheet?.artifact?.kind === 'lecture' && (
                     <Suspense fallback={<div className="page-loading">正在打开讲义纸张…</div>}>
-                      <LectureFilePage lectureId={Number(sheet.artifact.ref)} embedded conversationId={conversation.id} sheetId={sheet.id} onFollowUp={() => {
+                      <LectureFilePage lectureId={Number(sheet.artifact.ref)} embedded conversationId={conversation.id} sheetId={sheet.id} {...learningScopeForFile(conversation.id, 'lecture', sheet.artifact.ref)} onProgress={() => syncLearningFileProgress(conversation.id)} onContinue={learningScopeForFile(conversation.id, 'lecture', sheet.artifact.ref).learningTaskId ? () => { void openTaskLearningFile(conversation.id, 'practice') } : undefined} onFollowUp={() => {
                         const quote = globalThis.getSelection()?.toString().replace(/\s+/g, ' ').trim() || `继续追问讲义“${sheet.artifact?.title || '当前讲义'}”`
                         createFollowUpSheet(conversation.id, `artifact:lecture:${sheet.artifact?.ref}`, quote)
                         globalThis.getSelection()?.removeAllRanges()
@@ -3166,7 +3313,7 @@ function App({ auth }: { auth: AuthGateSession }) {
                   )}
                   {sheet?.artifact?.kind === 'practice' && (
                     <Suspense fallback={<div className="page-loading">正在打开练习纸张…</div>}>
-                      <PracticeFilePage practiceRef={sheet.artifact.ref} embedded conversationId={conversation.id} sheetId={sheet.id} onFollowUp={() => {
+                      <PracticeFilePage practiceRef={sheet.artifact.ref} embedded conversationId={conversation.id} sheetId={sheet.id} onProgress={() => syncLearningFileProgress(conversation.id)} onRemediate={() => openTab(REVIEW_TAB)} onFollowUp={() => {
                         const quote = globalThis.getSelection()?.toString().replace(/\s+/g, ' ').trim() || `继续追问练习“${sheet.artifact?.title || '当前练习'}”`
                         createFollowUpSheet(conversation.id, `artifact:practice:${sheet.artifact?.ref}`, quote)
                         globalThis.getSelection()?.removeAllRanges()
@@ -3297,9 +3444,9 @@ function App({ auth }: { auth: AuthGateSession }) {
                 <div className="learning-task-anchor-main">
                   <strong>{taskProjection.task.objective}</strong>
                   <span>
-                    {taskProjection.status === 'paused' ? '已暂停 · ' : ''}带领学习态 · {taskProjection.task.formalSkillStageLabel || taskStep?.substateLabel} · {taskSkill?.name} · {taskStep?.title}
+                    {taskProjection.status === 'paused' ? '已暂停 · ' : ''}{taskSkill?.name} · {taskStep?.title}
                     {taskProjection.loopCount > 0 ? ` · 本步第 ${taskProjection.loopCount + 1} 轮` : ''}
-                    {taskProjection.task.formalSkillRunId ? ' · 正式 SkillRun' : ' · 离线回退'}
+                    {!taskProjection.task.formalSkillRunId ? ' · 离线回退' : ''}
                   </span>
                 </div>
                 <div className="learning-skill-dots" aria-label={`${taskSkill?.name}：第 ${taskProjection.stepIndex + 1}/${taskSkill?.steps.length} 步`}>
@@ -3309,8 +3456,14 @@ function App({ auth }: { auth: AuthGateSession }) {
                 </div>
                 {taskProjection.status === 'paused' ? (
                   <button type="button" className="learning-primary-action" onClick={() => updateLearningTask(conversation.id, 'resume')}>继续</button>
+                ) : taskProjection.task.formalVerificationRunId ? (
+                  <button type="button" className="learning-primary-action" onClick={() => setVerificationConversationId(conversation.id)}>继续独立验证</button>
                 ) : formalVerificationReady ? (
                   <button type="button" className="learning-primary-action" onClick={() => updateLearningTask(conversation.id, 'verify')} disabled={Boolean(pendingMode)}>开始独立验证</button>
+                ) : taskProjection.skillId === 'learning_file_study' && taskProjection.task.formalSkillRunId ? (
+                  <button type="button" className="learning-primary-action" onClick={() => { void openTaskLearningFile(conversation.id) }} disabled={Boolean(pendingMode) || Boolean(formalBusyKey)}>
+                    {fileKindForStage(taskProjection.task.formalSkillState) === 'practice' ? '打开配对练习' : taskProjection.task.formalSkillState === 'selecting_learning_artifact' ? '准备学习文件' : '打开讲义'}
+                  </button>
                 ) : taskProjection.task.formalSkillRunId ? (
                   <button
                     type="button"
@@ -3327,6 +3480,11 @@ function App({ auth }: { auth: AuthGateSession }) {
                 ) : (
                   <button type="button" className="learning-primary-action" onClick={() => updateLearningTask(conversation.id, 'complete')} disabled={Boolean(pendingMode) || !taskCanAdvance}>完成本轮</button>
                 )}
+                {taskProjection.task.formalSkillSupportExit && <div className="learning-support-exit">
+                  <span>这一步先不继续追问。</span>
+                  {taskProjection.skillId !== 'guided_explanation' && <button type="button" onClick={() => updateLearningTask(conversation.id, 'skill', 'guided_explanation')}>改为清晰讲解</button>}
+                  <button type="button" onClick={() => updateLearningTask(conversation.id, 'pause')}>暂停，回到自由对话</button>
+                </div>}
                 <details className="learning-task-menu">
                   <summary role="button" aria-label="学习任务选项">•••</summary>
                   <div className="learning-task-popover">
@@ -3381,7 +3539,7 @@ function App({ auth }: { auth: AuthGateSession }) {
                           event.currentTarget.closest('details')?.removeAttribute('open')
                         }}
                       >
-                        {(Object.keys(LEARNING_SKILLS) as LearningSkillId[]).map(skillId => (
+                        {PRIMARY_LEARNING_SKILL_IDS.map(skillId => (
                           <option key={skillId} value={skillId}>{LEARNING_SKILLS[skillId].name}</option>
                         ))}
                       </select>
@@ -3804,12 +3962,13 @@ function ToolRunCard({ run, sourceMessageId, conversationId, compactPluginResult
       )}
       {run.projectLearningFileProposal && (
         <div className="project-tool-proposal project-file-proposal">
-          <span>学习文件提案 · 尚未生成</span>
+          <span>{run.materializedLearningFiles?.length ? '学习文件' : '学习文件提案 · 尚未生成'}</span>
           <strong>{run.projectLearningFileProposal.checkpoint_title}</strong>
-          <p>{run.projectLearningFileProposal.file_kinds.join(' + ')} · {run.projectLearningFileProposal.source_strategy === 'project_sources_first' ? '优先使用当前项目来源' : '优先使用任务已有资料'} · 生成不等于掌握</p>
-          <button type="button" disabled={projectBusyKey === `project-file:${run.projectLearningFileProposal.learning_task_id}`} onClick={() => onAcceptProjectLearningFile(run.projectLearningFileProposal!)}>
+          <p>{run.projectLearningFileProposal.file_kinds.map(kind => kind === 'lecture' ? '讲义' : '练习').join(' + ')} · {run.projectLearningFileProposal.source_strategy === 'project_sources_first' ? '优先使用当前项目来源' : '优先使用任务已有资料'} · 生成不等于掌握</p>
+          {run.materializedLearningFiles?.map(file => <button key={`${file.kind}:${file.ref}`} type="button" onClick={() => onAttachLearningFile(file, sourceMessageId)}>{file.kind === 'lecture' ? '打开讲义' : '打开练习'}</button>)}
+          {!run.projectLearningFileProposal.file_kinds.every(kind => run.materializedLearningFiles?.some(file => file.kind === kind)) && <button type="button" disabled={projectBusyKey === `project-file:${run.projectLearningFileProposal.learning_task_id}`} onClick={() => onAcceptProjectLearningFile(run.projectLearningFileProposal!)}>
             {projectBusyKey === `project-file:${run.projectLearningFileProposal.learning_task_id}` ? '正在生成并保存…' : '确认生成，并作为纸张加入对话'}
-          </button>
+          </button>}
           {learningFileProposalError && <em>{learningFileProposalError}</em>}
         </div>
       )}

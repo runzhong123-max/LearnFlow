@@ -133,13 +133,41 @@ def _build_evidence(
     if item_type == "concept":
         options = list(item_snapshot.get("options") or [])
         expected_indexes = [int(index) for index in evaluation.get("answer_indexes") or []]
-        actual_indexes = [int(index) for index in evaluation.get("user_answer_indexes") or []]
+        submitted_response = evaluation.get("submitted_response")
+        submitted = submitted_response if isinstance(submitted_response, dict) else {}
+        # Current file submissions carry a structured response; older callers use
+        # user_answer_indexes. An explicitly empty selection stays empty.
+        actual_indexes = [int(index) for index in (
+            evaluation["user_answer_indexes"] if "user_answer_indexes" in evaluation
+            else submitted.get("answer_indexes")
+        ) or []]
+        expected = [options[index] for index in expected_indexes if 0 <= index < len(options)]
+        actual = [options[index] for index in actual_indexes if 0 <= index < len(options)]
+        if not options:
+            def response_text(value: Any) -> list[str]:
+                if value is None:
+                    return []
+                # Zero and False are valid responses. Preserve table/list shape
+                # instead of treating structured values as selection indexes.
+                text = value.strip() if isinstance(value, str) else json.dumps(
+                    value, ensure_ascii=False, sort_keys=True,
+                )
+                return [text[:2000]] if text else []
+
+            expected_response = evaluation.get("expected_response")
+            expected_value = evaluation["response"] if "response" in evaluation else (
+                expected_response.get("response") if isinstance(expected_response, dict)
+                else expected_response
+            )
+            actual_value = submitted.get("response") if isinstance(submitted_response, dict) else submitted_response
+            expected = response_text(expected_value)
+            actual = response_text(actual_value)
         return {
             "question": _text(item_snapshot.get("question"), 1500),
             "expected_indexes": expected_indexes,
             "actual_indexes": actual_indexes,
-            "expected": [options[index] for index in expected_indexes if 0 <= index < len(options)],
-            "actual": [options[index] for index in actual_indexes if 0 <= index < len(options)],
+            "expected": expected,
+            "actual": actual,
             "base_explanation": _text(item_snapshot.get("explanation"), 2000),
             "source_chunk_ids": list(item_snapshot.get("source_chunk_ids") or []),
             "assessment_meta": dict(item_snapshot.get("assessment_meta") or {}),

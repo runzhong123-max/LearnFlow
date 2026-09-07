@@ -1,3 +1,4 @@
+import type { PracticeAttemptHistory, PracticeSubmissionContext } from './learning-file-progress.ts'
 import type { LearningEvent, LearningSkillId } from './learning'
 import type {
   LearningPathPlan,
@@ -66,6 +67,17 @@ export type FormalMemoryModule = {
   claims: FormalClaim[]
 }
 
+export type LearningFileGeneration = {
+  schema_version: 'learning-file-package.v2'
+  status: 'ready' | 'partial' | 'blocked'
+  requested_kinds: string[]
+  generated_kinds: string[]
+  reused_kinds: string[]
+  gaps: string[]
+  generation?: { mode: string; reason?: string; source?: string }
+  mastery_inference: false
+}
+
 export type FormalLearningTask = {
   id: number
   title: string
@@ -81,6 +93,12 @@ export type FormalLearningTask = {
   preferred_skills?: string[]
   source_refs: Array<Record<string, unknown>>
   artifact_refs: Array<Record<string, unknown>>
+  file_generation?: LearningFileGeneration
+  execution_state?: {
+    artifact_scope?: { checkpoint_id: number; project_id: number }
+    file_generation?: LearningFileGeneration
+    [key: string]: unknown
+  }
   success_criteria: string[]
   plan: {
     schema_version?: string
@@ -137,7 +155,7 @@ export type FormalSourcePaper = FormalKnowledgeSource & {
 
 export type FormalLearningFileRef = {
   kind: 'lecture' | 'practice'
-  practice_kind?: 'exercise' | 'concept_question_set'
+  practice_kind?: 'exercise' | 'concept_question_set' | 'dynamic_question_set'
   ref: string
   id?: number
   title: string
@@ -181,6 +199,14 @@ export type FormalLearningSkillRun = {
   flow_note: string
   version: number
   next_prompt: string
+  support_exit?: { status?: string; [key: string]: unknown }
+  file_progress?: {
+    lecture_ids: number[]
+    read_lecture_ids: number[]
+    practice_item_count: number
+    attempt_ids: number[]
+    waiting_for: string
+  }
   can_start_verification: boolean
   can_pause: boolean
   can_resume: boolean
@@ -668,7 +694,7 @@ export async function listFormalAdminAccounts() {
   }))
 }
 
-async function ensureFormalIdentity() {
+export async function ensureFormalIdentity() {
   if (!identityInitialization) {
     identityInitialization = getFormalAuthStatus()
       .then(status => {
@@ -1297,7 +1323,7 @@ export async function advanceFormalLearningSkillTurn(
 export async function actOnFormalLearningSkillRun(
   sessionId: number,
   run: Pick<FormalLearningSkillRun, 'id' | 'version'>,
-  action: 'pause' | 'resume' | 'start_verification' | 'calibrate',
+  action: 'pause' | 'resume' | 'start_verification' | 'calibrate' | 'sync_artifacts',
   calibrationPatch: Partial<{
     audience_level: string
     cognitive_demand: string
@@ -1382,22 +1408,28 @@ export async function loadLectureFile(lectureId: number) {
 
 export async function loadPracticeFile(ref: string) {
   await ensureFormalIdentity()
-  return jsonRequest<FormalLearningFileRef & {
+  return jsonRequest<FormalLearningFileRef & PracticeAttemptHistory & {
     practice_kind: 'exercise' | 'concept_question_set' | 'dynamic_question_set'
     description?: string
     starter_code?: string
     hints?: string[]
-    questions?: Array<{ id: number; question: string; options: string[]; q_type: string; difficulty: string; code?: string; response_schema?: string; target_skill?: string; quality?: Record<string, unknown> }>
+    questions?: Array<PracticeAttemptHistory & { id: number; question: string; options: string[]; q_type: string; difficulty: string; code?: string; response_schema?: string; target_skill?: string; quality?: Record<string, unknown> }>
     answers_hidden: true
   }>(`/api/learning-files/practice/${encodeURIComponent(ref)}`)
 }
 
-export async function generateFormalLearningFiles(task: FormalLearningTask, sourceText = '') {
+export async function generateFormalLearningFiles(
+  task: FormalLearningTask,
+  fileKindsOrSource: Array<'lecture' | 'practice'> | string = ['lecture', 'practice'],
+) {
+  const sourceText = typeof fileKindsOrSource === 'string' ? fileKindsOrSource : ''
+  const fileKinds = Array.isArray(fileKindsOrSource) ? fileKindsOrSource : ['lecture', 'practice']
   await ensureFormalIdentity()
   return jsonRequest<FormalLearningTask>(`/api/learning-files/tasks/${task.id}/generate`, {
     method: 'POST',
     body: JSON.stringify({
       source_text: sourceText,
+      file_kinds: fileKinds,
       expected_version: task.version,
       client_request_id: `vnext-learning-files:${task.id}:${task.version}:${Date.now()}`,
     }),
@@ -1417,12 +1449,90 @@ export async function recordLearningFileAccess(
   })
 }
 
-export async function markFormalLectureRead(lectureId: number) {
+export async function markFormalLectureRead(lectureId: number, scope: { session_id?: number; learning_task_id?: number } = {}) {
   await ensureFormalIdentity()
   return jsonRequest<{ status: string; evidence_role: 'exposure'; mastery_unchanged: true }>(`/api/learning-files/lecture/${lectureId}/read`, {
     method: 'POST',
-    body: JSON.stringify({ explicit_completion: true, client_event_id: `vnext-lecture-read:${lectureId}:${Date.now()}` }),
+    body: JSON.stringify({ ...scope, explicit_completion: true, client_event_id: `vnext-lecture-read:${lectureId}:${Date.now()}` }),
   })
+}
+
+export type FormalRemediationCase = {
+  id: number
+  status: string
+  item_type: 'concept' | 'exercise' | string
+  item_id: number
+  current_delivery_mode?: string
+  explanation?: { delivery_mode_label?: string; sections?: Array<{ title: string; content: string }> }
+  available_actions?: Partial<Record<'switch' | 'steps' | 'example' | 'retry' | 'variant', boolean>>
+  retry_attempt_id?: number | null
+  variant_attempt_id?: number | null
+  completed_at?: string | null
+  variant?: { type?: string; prompt?: string; options?: string[]; multiple?: boolean; input?: string }
+}
+
+export function remediationCaseId(result: { remediation?: { id?: number } | null } | undefined, history?: PracticeAttemptHistory) {
+  const id = Number(result?.remediation?.id || history?.remediation_case_id)
+  return Number.isInteger(id) && id > 0 ? id : undefined
+}
+
+export function remediationViewState(remediation?: FormalRemediationCase) {
+  const completed = remediation?.status === 'completed'
+  const actions = remediation?.available_actions || {}
+  return {
+    completed,
+    canRetry: !completed && actions.retry === true,
+    canVariant: remediation?.status === 'variant_ready' && actions.variant === true,
+    explanationActions: (['switch', 'steps', 'example'] as const).filter(action => !completed && actions[action] === true),
+    statusText: completed ? '本次纠错已完成：原题重做与变式验证均已通过。'
+      : remediation?.status === 'variant_ready' ? '原题重做已通过，接下来完成变式验证。'
+        : '先查看讲解，再按当前进度重做原题。',
+  }
+}
+
+export function remediationRetryContext(remediation: FormalRemediationCase, context: PracticeSubmissionContext, priorHelp = '') {
+  const guided = context.assistance_level === 'guided' || priorHelp === 'guided'
+    || ['step_by_step', 'worked_example', 'execution_trace'].includes(remediation.current_delivery_mode || '')
+  return { ...context, assistance_level: guided ? 'guided' as const : 'hint' as const,
+    attempt_role: 'retry' as const, remediation_case_id: remediation.id }
+}
+
+function validRemediationId(caseId: number) {
+  if (!Number.isInteger(caseId) || caseId <= 0) throw new Error('缺少有效纠错记录')
+  return caseId
+}
+
+export async function loadFormalRemediationCase(caseId: number) {
+  validRemediationId(caseId)
+  await ensureFormalIdentity()
+  return jsonRequest<FormalRemediationCase>(`/api/remediation/${caseId}`)
+}
+
+export async function changeFormalRemediationExplanation(caseId: number, action: 'switch' | 'steps' | 'example') {
+  validRemediationId(caseId)
+  await ensureFormalIdentity()
+  return jsonRequest<FormalRemediationCase>(`/api/remediation/${caseId}/explanations`, {
+    method: 'POST', body: JSON.stringify({ action }),
+  })
+}
+
+export async function prepareFormalRemediationVariant(caseId: number) {
+  validRemediationId(caseId)
+  await ensureFormalIdentity()
+  return jsonRequest<FormalRemediationCase>(`/api/remediation/${caseId}/variant`, { method: 'POST' })
+}
+
+export async function submitFormalRemediationVariant(caseId: number, submission: {
+  answer_indexes?: number[]; answer_text?: string; response_status?: 'answered' | 'unknown'
+}, clientSubmissionId: string) {
+  validRemediationId(caseId)
+  if (!clientSubmissionId.trim()) throw new Error('缺少作答请求标识，请重新打开纠错')
+  await ensureFormalIdentity()
+  return jsonRequest<{ result: { correct: boolean; outcome?: string }; remediation: FormalRemediationCase }>(
+    `/api/remediation/${caseId}/variant/submit`, {
+      method: 'POST', body: JSON.stringify({ ...submission, client_submission_id: clientSubmissionId }),
+    },
+  )
 }
 
 export async function submitFormalConceptAnswer(
@@ -1435,29 +1545,32 @@ export async function submitFormalConceptAnswer(
     helpful_format?: string
     support_effective?: boolean
   },
+  context: PracticeSubmissionContext & { remediation_case_id?: number } = {},
 ) {
   await ensureFormalIdentity()
-  return jsonRequest<{ correct: boolean; answer_indexes: number[]; explanation?: string; attempt_id: number }>(`/api/checkpoints/${checkpointId}/concepts/${questionId}/submit`, {
+  return jsonRequest<{ correct: boolean; answer_indexes: number[]; explanation?: string; attempt_id: number; assistance_level?: string; remediation?: FormalRemediationCase | null }>(`/api/checkpoints/${checkpointId}/concepts/${questionId}/submit`, {
     method: 'POST',
     body: JSON.stringify({
       ...submission,
-      assistance_level: 'none',
-      attempt_role: 'original',
-      client_submission_id: `vnext-practice:${questionId}:${Date.now()}`,
+      assistance_level: context.assistance_level || 'none',
+      attempt_role: context.attempt_role || 'original',
+      ...(context.remediation_case_id ? { remediation_case_id: validRemediationId(context.remediation_case_id) } : {}),
+      client_submission_id: context.client_submission_id || `vnext-practice:${questionId}:${Date.now()}`,
     }),
   })
 }
 
-export async function submitFormalExercise(exerciseId: number, code: string) {
+export async function submitFormalExercise(exerciseId: number, code: string, context: PracticeSubmissionContext & { remediation_case_id?: number } = {}) {
   await ensureFormalIdentity()
-  return jsonRequest<{ passed: boolean; stdout?: string; stderr?: string; results?: Array<Record<string, unknown>>; attempt_id: number }>(`/api/exercises/${exerciseId}/submit`, {
+  return jsonRequest<{ passed: boolean; stdout?: string; stderr?: string; results?: Array<Record<string, unknown>>; attempt_id: number; assistance_level?: string; remediation?: FormalRemediationCase | null }>(`/api/exercises/${exerciseId}/submit`, {
     method: 'POST',
     body: JSON.stringify({
       code,
       files: [],
-      assistance_level: 'none',
-      attempt_role: 'original',
-      client_submission_id: `vnext-exercise:${exerciseId}:${Date.now()}`,
+      assistance_level: context.assistance_level || 'none',
+      attempt_role: context.attempt_role || 'original',
+      ...(context.remediation_case_id ? { remediation_case_id: validRemediationId(context.remediation_case_id) } : {}),
+      client_submission_id: context.client_submission_id || `vnext-exercise:${exerciseId}:${Date.now()}`,
     }),
   })
 }
@@ -1554,3 +1667,6 @@ export function learnerPathStateFromFormal(overlay: FormalPathOverlay): LearnerP
   }
   return { version: 1, events }
 }
+
+// Internal workbenches share the authenticated transport.
+export { jsonRequest as formalJsonRequest }

@@ -758,6 +758,7 @@ test('assessment blueprint tool persists a zero-target deterministic grading con
       message: '先设计检测蓝图',
       mode: 'guided_learning',
       formalProjectContext: { checkpoint_id: 45 } as any,
+      learningTaskContext: { formalTaskId: 81 } as any,
       backendBase: 'http://formal.example.test',
       generate: async () => 'unused',
     })
@@ -797,6 +798,7 @@ test('dynamic practice generation receives an item-sized output budget', async (
       message: '生成四道 QKV 检测题',
       mode: 'guided_learning',
       formalProjectContext: { checkpoint_id: 45 } as any,
+      learningTaskContext: { formalTaskId: 81 } as any,
       backendBase: 'http://formal.example.test',
       generate: async (_instructions, _input, timeoutMs, maxTokens) => {
         observedTimeout = Number(timeoutMs)
@@ -1694,4 +1696,94 @@ test('visual follow-up preserves the previous subject while changing the request
     messages:[{role:'user',content:'用动画演示联邦学习聚合过程'},{role:'assistant',content:'视觉生成失败。'},{role:'user',content:'改成图片吧'}],
     generate:async()=>{throw new Error('old brief forbidden')},invokeProvider:async()=>{throw new Error('ordinary Tutor generation forbidden')}})
   assert.equal(queries.length,1);assert.equal(queries[0].kind,'diagram');assert.match(queries[0].request,/联邦学习聚合过程/)
+})
+
+
+test('practice executors accept bound global task files and forward session CSRF for every mutation', async () => {
+  const originalFetch = globalThis.fetch
+  const requests: Array<{ url: string; headers: Headers; body: any }> = []
+  globalThis.fetch = async (input, init) => {
+    const url = String(input)
+    const headers = new Headers(init?.headers)
+    requests.push({ url, headers, body: JSON.parse(String(init?.body || '{}')) })
+    if (url.endsWith('/api/auth/csrf')) {
+      return new Response(JSON.stringify({ csrf_token: `csrf:${headers.get('Cookie')}` }))
+    }
+    return new Response(JSON.stringify(url.endsWith('/api/assessment-blueprints')
+      ? { id: 19, title: '链接检查', purpose: 'practice', item_mix: [{ count: 1 }], rubric: { id: 23 } }
+      : { ref: 'practice-set-linker', title: '链接练习', checkpoint_id: 45, question_count: 1, quality_reports: [] }))
+  }
+  try {
+    for (const [index, tool] of ['design_assessment_blueprint', 'generate_dynamic_practice', 'generate_similar_practice'].entries()) {
+      const start = requests.length
+      const cookie = `learnflow_session=learner-${index}`
+      const result = await executeTutorAgentTool(tool, {
+        learning_task_id: 81, concept: '程序链接', count: 1,
+        source_practice_ref: 'practice-set-linker-source',
+      }, {
+        message: '继续检查链接的理解', mode: 'guided_learning',
+        learningTaskContext: { formalTaskId: 81 } as any,
+        taskQueue: [{ id: 81, objective: '程序链接', status: 'active', artifactRefs: [
+          { kind: index === 1 ? 'practice' : 'lecture', ref: index === 1 ? 'questions-45' : '17', title: '程序链接' },
+        ] }],
+        backendBase: 'https://formal.example.test', requestCookie: cookie,
+        generate: async () => JSON.stringify({ candidates: [{ question: '链接阶段处理什么？', q_type: 'single', options: ['符号引用', '注释'], answer_indexes: [0], target_skill: '符号解析', explanation: '链接器解析目标文件之间的符号引用。' }] }),
+      })
+      assert.equal(result.run.status, 'completed', result.run.detail)
+      assert.equal(requests.length - start, 2)
+      assert.match(requests[start].url, /\/api\/auth\/csrf$/)
+      assert.equal(requests[start].headers.get('Cookie'), cookie)
+      assert.equal(requests[start + 1].headers.get('Cookie'), cookie)
+      assert.equal(requests[start + 1].headers.get('X-CSRF-Token'), `csrf:${cookie}`)
+      assert.equal(requests[start + 1].body.learning_task_id, 81)
+    }
+  } finally { globalThis.fetch = originalFetch }
+})
+
+test('practice executors reject other tasks or missing task scope before model and backend calls', async () => {
+  const originalFetch = globalThis.fetch
+  let backendCalls = 0
+  let generationCalls = 0
+  globalThis.fetch = async () => { backendCalls += 1; throw new Error('backend must not be called') }
+  try {
+    for (const tool of ['design_assessment_blueprint', 'generate_dynamic_practice', 'generate_similar_practice']) {
+      for (const context of [
+        { learningTaskContext: { formalTaskId: 82 }, formalProjectContext: { checkpoint_id: 45 } },
+        { formalProjectContext: { checkpoint_id: 45 } },
+        { learningTaskContext: { formalTaskId: 81 } },
+        { learningTaskContext: { formalTaskId: 81 }, taskQueue: [{ id: 82, artifactRefs: [{ kind: 'lecture', ref: '17' }] }] },
+      ]) {
+        const result = await executeTutorAgentTool(tool, { learning_task_id: 81, count: 1 }, {
+          message: '准备练习', mode: 'guided_learning', backendBase: 'https://formal.example.test',
+          requestCookie: 'learnflow_session=learner-1', ...context as any,
+          generate: async () => { generationCalls += 1; throw new Error('model must not be called') },
+        })
+        assert.equal(result.run.status, 'failed')
+        assert.match(result.run.detail, /当前对话绑定|当前学习任务/)
+      }
+    }
+    assert.equal(backendCalls, 0)
+    assert.equal(generationCalls, 0)
+  } finally { globalThis.fetch = originalFetch }
+})
+
+test('assessment mutation stops if its session CSRF bootstrap fails', async () => {
+  const originalFetch = globalThis.fetch
+  const urls: string[] = []
+  globalThis.fetch = async input => {
+    urls.push(String(input))
+    return new Response(JSON.stringify({ detail: 'expired session' }), { status: 401 })
+  }
+  try {
+    const result = await executeTutorAgentTool('design_assessment_blueprint', { learning_task_id: 81 }, {
+      message: '准备练习', mode: 'guided_learning',
+      learningTaskContext: { formalTaskId: 81 } as any,
+      formalProjectContext: { checkpoint_id: 45 } as any,
+      backendBase: 'https://formal.example.test', requestCookie: 'learnflow_session=expired',
+      generate: async () => 'unused',
+    })
+    assert.equal(result.run.status, 'failed')
+    assert.match(result.run.detail, /重新登录/)
+    assert.deepEqual(urls, ['https://formal.example.test/api/auth/csrf'])
+  } finally { globalThis.fetch = originalFetch }
 })

@@ -1250,19 +1250,19 @@ def test_adaptive_tutor_recommends_but_does_not_silently_activate_skill(client: 
     assert turn.json()["active_skill"] is None
     assert turn.json()["active_skill_run"] is None
     recommendation = turn.json()["skill_recommendation"]
-    assert recommendation["skill"]["id"] == "socratic_dialogue"
+    assert recommendation["skill"]["id"] == "guided_explanation"
     assert recommendation["goal"] == "递归为什么会终止"
     assert recommendation["requires_confirmation"] is True
 
     acceptance_request = {
-        "skill_id": "socratic_dialogue",
+        "skill_id": "guided_explanation",
         "goal": "推导递归为什么会终止",
         "client_request_id": f"accept-{uuid.uuid4().hex}",
     }
     accepted = client.post(f"/api/agent/sessions/{session_id}/skill-runs", json=acceptance_request)
     assert accepted.status_code == 200, accepted.text
-    assert accepted.json()["active_skill"]["id"] == "socratic_dialogue"
-    assert accepted.json()["active_skill_run"]["state"] == "eliciting_prior_model"
+    assert accepted.json()["active_skill"]["id"] == "guided_explanation"
+    assert accepted.json()["active_skill_run"]["state"] == "presenting_core_model"
     assert accepted.json()["created"] is True
     replayed = client.post(f"/api/agent/sessions/{session_id}/skill-runs", json=acceptance_request)
     assert replayed.status_code == 200, replayed.text
@@ -1477,7 +1477,7 @@ def test_worked_example_fading_is_task_linked_and_bounded(client: TestClient):
     assert cleared.json()["active_skill"] is None
 
 
-def test_learning_file_study_keeps_content_in_papers_and_reaches_verification(client: TestClient):
+def test_learning_file_study_requires_real_file_activity(client: TestClient):
     session = client.post("/api/agent/sessions", json={
         "session_type": "global", "create_new": True,
     }).json()
@@ -1502,8 +1502,10 @@ def test_learning_file_study_keeps_content_in_papers_and_reaches_verification(cl
         })
         assert advanced.status_code == 200, advanced.text
         run = advanced.json()["active_skill_run"]
-        assert run["state"] == expected_state
-    assert run["can_start_verification"] is True
+        assert run["state"] == "selecting_learning_artifact"
+    assert run["can_start_verification"] is False
+    assert run["turn_count"] == 0
+    assert run["support_count"] == 0
 
 
 def test_conversation_skill_runtime_migration_is_idempotent(client: TestClient):

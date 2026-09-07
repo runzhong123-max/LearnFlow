@@ -1191,3 +1191,16 @@ button { cursor: pointer; }
   .path-layout{grid-template-columns:1fr}.path-inspector{border-top:1px solid #dfe6e1}.path-filters{grid-template-columns:1fr}.path-active-plan{padding-inline:16px}.formal-profile-overview,.formal-profile-summary-card,.profile-input-disclosure,.kernel-tabs,.kernel-definition-card,.kernel-explicit-editor,.concept-graph-disclosure,.formal-profile-grid,.profile-page-heading{width:calc(100% - 24px)}.formal-profile-overview,.formal-profile-source dl,.formal-profile-grid{grid-template-columns:1fr}.profile-page-heading{align-items:flex-start;flex-direction:column}.profile-version{margin-top:8px}
   .paper-tree-map{grid-template-columns:1fr}.paper-tree-branches{display:block}.paper-tree-branches>section{margin:12px 0}.paper-tree-branches>section::before{display:none}.practice-reflection>div{grid-template-columns:1fr}
 }
+
+/* File learning actions stay available beside the material. */
+.learning-file-next-action, .learning-support-exit { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin-block: 1rem; }
+.learning-file-next-action .learning-primary-action, .learning-support-exit button { border: 1px solid #087b59; border-radius: 8px; padding: .6rem .9rem; background: #087b59; color: white; cursor: pointer; }
+.learning-file-next-action button:disabled { opacity: .6; cursor: wait; }
+.learning-support-exit { font-size: .85rem; }
+
+.chat-page { position: relative; }
+.learning-verification-host { position: absolute; inset: 58px 0 0; z-index: 25; overflow: auto; background: #fff; padding: 20px; }
+.learning-verification-host > header { position: sticky; top: -20px; z-index: 1; display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 12px 0; border-bottom: 1px solid #dae5de; margin-bottom: 20px; }
+.learning-verification-host button { border: 1px solid #c9dcd1; border-radius: 8px; padding: 8px 12px; background: #f3f8f5; cursor: pointer; }
+.learning-verification-host button:disabled { opacity: .55; cursor: default; }
+.learning-verification-host textarea { width: 100%; min-height: 100px; padding: 12px; }
