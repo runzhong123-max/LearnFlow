@@ -1,4 +1,4 @@
-import type {VisualView, VisualElement, PresentationPlan, RenderDiagnostic, VisualBundle, PresentationContext} from './types.ts'
+import type {VisualView, VisualElement, VisualFrame, PresentationPlan, RenderDiagnostic, VisualBundle, PresentationContext} from './types.ts'
 
 const escape = (value: unknown) => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 const fmt = (n: number) => Number.isFinite(n) ? Number(n.toPrecision(5)).toString() : String(n)
@@ -20,6 +20,19 @@ function wrap(value: string, width: number, size = 15): string[] {
 }
 function cells(values: unknown): Set<string> {return new Set(Array.isArray(values) ? values.map(value => Array.isArray(value) ? value.join(',') : String(value)) : [])}
 
+/** The player already presents stage narration in HTML. Keep all domain content. */
+export function visualFocusViews(frame: VisualFrame): VisualView[] {
+  if (!frame) return []
+  const repeated: Record<string, unknown> = {
+    '/state/title': frame.title || frame.state.title,
+    '/state/narration': frame.narration || frame.state.narration,
+  }
+  return frame.views.map(view => ({...view, elements: view.elements.filter(element => {
+    const source = element.inputs?.value?.source
+    return !(element.kind === 'text' && source && repeated[source] && element.values?.value === repeated[source])
+  })})).filter(view => view.elements.some(element => element.values?.visible !== false))
+}
+
 /** Stable node slots come from the entire immutable trace, never from the current active subset. */
 export function presentationContext(bundle: VisualBundle): PresentationContext {
   const graphNodes: Record<string, string[]> = {}
@@ -32,7 +45,9 @@ export function presentationContext(bundle: VisualBundle): PresentationContext {
 }
 
 export function renderView(view: VisualView, viewport = 720, context: PresentationContext = {graphNodes: {}}): {svg: string; plan: PresentationPlan; diagnostics: RenderDiagnostic[]} {
-  const targetWidth = Math.max(260, Math.min(960, viewport))
+  const compact = context.compactMatrices === true
+  const targetWidth = Math.max(compact ? 190 : 260, Math.min(960, viewport))
+  const matrixCellWidth = (matrix: unknown[][]) => Math.max(compact ? 26 : 46, Math.min(100, Math.max(0, ...matrix.flat().map(value => widthOf(display(value), compact ? 12 : 14) + (compact ? 10 : 18)))))
   const plan: PresentationPlan = {version: '2', viewId: view.id, width: targetWidth, height: 120, objects: [], transition: 'cut', repairs: []}
   const diagnostics: RenderDiagnostic[] = []
   const shapes: string[] = []
@@ -52,8 +67,8 @@ export function renderView(view: VisualView, viewport = 720, context: Presentati
     let required = 0
     if (element.kind === 'matrix') {
       const matrix = values.values as unknown[][] || []
-      const cellWidth = Math.max(46, Math.min(100, Math.max(0, ...matrix.flat().map(value => widthOf(display(value), 14) + 18))))
-      required = 66 + (matrix[0]?.length || 0) * cellWidth
+      const cellWidth = matrixCellWidth(matrix)
+      required = (compact ? 44 : 66) + (matrix[0]?.length || 0) * cellWidth
     }
     if (element.kind === 'table') required = 48 + (values.columns?.length || 0) * 110
     if (required > plan.width) {plan.width = required; repair('HORIZONTAL_SCROLL', element.id)}
@@ -108,31 +123,54 @@ export function renderView(view: VisualView, viewport = 720, context: Presentati
     if (element.kind === 'matrix') {
       const matrix = values.values as unknown[][] || []
       const rows = matrix.length, columns = matrix[0]?.length || 0
-      const cellWidth = Math.max(46, Math.min(100, Math.max(0, ...matrix.flat().map(value => widthOf(display(value), 14) + 18))))
+      const cellWidth = matrixCellWidth(matrix), rowHeight = compact ? 31 : 43, baseline = compact ? 21 : 25
       const active = cells(values.active_cells ?? values.active)
       const computed = values.computed_cells == null ? null : cells(values.computed_cells)
       const numeric = matrix.flat().filter((value): value is number => typeof value === 'number')
       const max = Math.max(1, ...numeric.map(Math.abs))
-      const xStart = 42, yStart = cursor + 18
+      const xStart = compact ? 28 : 42, yStart = cursor + 18
       for (let col = 0; col < columns; col++) shapes.push(text(xStart + col * cellWidth + cellWidth / 2, cursor + 2, col, 11, 'middle', '#64748b'))
       for (let row = 0; row < rows; row++) {
-        shapes.push(text(32, yStart + row * 43 + 25, row, 11, 'end', '#64748b'))
+        shapes.push(text(xStart - 8, yStart + row * rowHeight + baseline, row, 11, 'end', '#64748b'))
         for (let col = 0; col < columns; col++) {
           const id = `${element.id}[${row},${col}]`, value = matrix[row][col], known = !computed || computed.has(`${row},${col}`)
-          const isActive = active.has(`${row},${col}`), x = xStart + col * cellWidth, y = yStart + row * 43
+          const isActive = active.has(`${row},${col}`), x = xStart + col * cellWidth, y = yStart + row * rowHeight
           const intensity = typeof value === 'number' ? Math.abs(value) / max : 0
           const fill = !known ? '#f8fafc' : isActive ? '#ffedd5' : `hsl(${typeof value === 'number' && value < 0 ? 272 : 205} 65% ${97 - intensity * 19}%)`
           const label = `${element.label}，第 ${row} 行第 ${col} 列，${known ? display(value) : '尚未计算'}${isActive ? '，当前窗口' : ''}`
-          const rendered = rectangle(x + 1, y + 1, cellWidth - 3, 39, fill, isActive ? '#c2410c' : '#cbd5e1', 4) + text(x + cellWidth / 2, y + 25, known ? display(value) : '·', 14, 'middle') + (isActive ? `<path d="M${x + 6} ${y + 6} h7 M${x + 6} ${y + 6} v7" stroke="#9a3412" stroke-width="2"/>` : '')
-          shapes.push(selectable(id, label, rendered)); object(id, label, x, y, cellWidth, 41)
+          const rendered = rectangle(x + 1, y + 1, cellWidth - 3, rowHeight - 4, fill, isActive ? '#c2410c' : '#cbd5e1', 4) + text(x + cellWidth / 2, y + baseline, known ? display(value) : '·', compact ? 12 : 14, 'middle') + (isActive ? `<path d="M${x + 6} ${y + 6} h7 M${x + 6} ${y + 6} v7" stroke="#9a3412" stroke-width="2"/>` : '')
+          shapes.push(selectable(id, label, rendered)); object(id, label, x, y, cellWidth, rowHeight - 2)
         }
       }
-      cursor = yStart + rows * 43 + 24
-      shapes.push(text(42, cursor, `${rows} × ${columns} · 行、列索引从 0 开始${computed ? ' · · 表示尚未计算' : ''}`, 11, 'start', '#64748b'))
-      const legend = lines('蓝色为非负，紫色为负；颜色越深绝对值越大。橙色角标为当前窗口。', 42, cursor + 19, width - 66, element.id, 10); shapes.push(legend.svg); cursor += legend.height + 31
+      cursor = yStart + rows * rowHeight + (compact ? 16 : 24)
+      shapes.push(text(xStart, cursor, compact ? `${rows} × ${columns}` : `${rows} × ${columns} · 行、列索引从 0 开始${computed ? ' · · 表示尚未计算' : ''}`, 11, 'start', '#64748b'))
+      if (compact) cursor += 16
+      else {const legend = lines('蓝色为非负，紫色为负；颜色越深绝对值越大。橙色角标为当前窗口。', 42, cursor + 19, width - 66, element.id, 10); shapes.push(legend.svg); cursor += legend.height + 31}
     } else if (element.kind === 'array') {
       const items = Array.isArray(values.items) ? values.items : []
       const active = cells(values.active_indices ?? values.active)
+      // Only registered softmax roles identify probabilities; arbitrary arrays stay arrays.
+      const probabilities = (context.operation === 'softmax' || (element.binding_policy === 'registered_operation_roles' && element.label === '当前概率'))
+        && element.inputs.items?.source === '/state/active/values' && items.length > 0
+        && items.every((item: unknown) => typeof item === 'number' && Number.isFinite(item) && item >= 0 && item <= 1)
+      if (probabilities) {
+        const maximum = Math.max(...items as number[], 0.001)
+        const columns = Math.min(items.length, width >= 540 ? 10 : 5)
+        const pitch = (width - 48) / columns, rowHeight = 125
+        items.forEach((value: number, i: number) => {
+          const x = 24 + i % columns * pitch, y = cursor + Math.floor(i / columns) * rowHeight
+          const id = `${element.id}[${i}]`, label = `${element.label}，索引 ${i}，${value}`
+          const height = value / maximum * 70, leading = value === maximum
+          shapes.push(selectable(id, label,
+            rectangle(x + pitch * .23, y + 84 - height, pitch * .54, height, leading ? '#147653' : '#c6dfd1', active.has(String(i)) ? '#c2410c' : 'none', 3)
+            + text(x + pitch / 2, y + 76 - height, `${(value * 100).toFixed(1)}%`, 11, 'middle', leading ? '#106b4c' : '#63746b')
+            + text(x + pitch / 2, y + 105, i, 12, 'middle', '#425b4e')))
+          object(id, label, x, y, pitch, 116)
+        })
+        cursor += Math.ceil(items.length / columns) * rowHeight + 6
+        object(element.id, element.label, 20, start - 20, width - 40, cursor - start + 20)
+        continue
+      }
       const pitch = Math.max(72, Math.min(160, Math.max(0, ...items.map((value: unknown) => widthOf(display(value), 14) + 22))))
       const columns = Math.max(1, Math.floor((width - 48) / pitch))
       if (!items.length) shapes.push(text(28, cursor + 25, '空'))

@@ -30,4 +30,4 @@ export type PresentationObject = {id: string; label?: string; linkId?: string; b
 export type PresentationRepair = {code: 'WRAP_TEXT'|'REFLOW_GRAPH'|'HORIZONTAL_SCROLL'; object_id: string; semantic_mutation_allowed: false}
 export type PresentationPlan = {version: '2'; viewId: string; width: number; height: number; objects: PresentationObject[]; transition: 'cut'; repairs: PresentationRepair[]}
 export type RenderDiagnostic = {code: 'VIEWPORT_OVERFLOW'|'TEXT_TOO_DENSE'|'INVALID_GEOMETRY'; object_id: string; semantic_mutation_allowed: false}
-export type PresentationContext = {graphNodes: Record<string, string[]>; selected?: string; selectedLink?: string}
+export type PresentationContext = {graphNodes: Record<string, string[]>; selected?: string; selectedLink?: string; operation?: string; compactMatrices?: boolean}

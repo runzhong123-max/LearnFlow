@@ -1,9 +1,12 @@
-import {useEffect, useMemo, useRef, useState} from 'react'
+import {useEffect, useMemo, useRef, useState, type ReactNode} from 'react'
 import type {VisualBundle, VisualTransport} from './types'
-import {renderView, describeFrame, presentationContext} from './presentation'
+import {VisualMore, VisualPlayback, VisualStages} from './VisualPlayerChrome'
+import './VisualizeArtifact.css'
+import {renderView, describeFrame, presentationContext, visualFocusViews} from './presentation'
 
 export type VisualViewState = {step: number; speed: number; focus: string}
 type Props = {
+  secondaryActions?: ReactNode;
   initial: VisualBundle; transport: VisualTransport; onAsk?: (prompt: string) => void;
   storageScope: string; mode?: 'diagram'|'animation'; initialViewState?: Partial<VisualViewState>;
   onRun?: (params: Record<string, number>, purpose: 'primary'|'comparison') => Promise<VisualBundle>;
@@ -46,7 +49,7 @@ function saveFile(content: string, type: string, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-export default function VisualizeArtifact({initial, transport, onAsk, storageScope, mode = 'animation', initialViewState, onRun, onViewChange}: Props) {
+export default function VisualizeArtifact({initial, transport, onAsk, storageScope, mode = 'animation', initialViewState, onRun, onViewChange, secondaryActions}: Props) {
   const container = useRef<HTMLElement>(null)
   const [viewport, setViewport] = useState(720)
   const [bundle, setBundle] = useState(initial)
@@ -76,20 +79,23 @@ export default function VisualizeArtifact({initial, transport, onAsk, storageSco
   const checkpoint = bundle.spec.teaching.checkpoints.find(item => item.at_step === step && bundle.spec.interactions.some(interaction => interaction.kind === 'prediction' && interaction.checkpoint_id === item.id))
   const choices = checkpoint ? bundle.checkpoint_choices?.[checkpoint.id] || (bundle.spec.model.id === 'optimization.quadratic_gd' ? legacyChoices : []) : []
   const gate = Boolean(mode === 'animation' && checkpoint && choices.length && frame && !answered[frame.snapshot_ref])
-  const context = useMemo(() => ({...presentationContext(bundle), selected, selectedLink}), [bundle, selected, selectedLink])
-  const columns = bundle.spec.layout.kind !== 'stack' && viewport >= 740 ? 2 : 1
-  const viewWidth = Math.max(260, (viewport - (columns - 1) * 16) / columns - 24)
-  const views = useMemo(() => (frame?.views || []).filter(view => view.elements.some(element => element.values?.visible !== false)).map(view => {
+  const focusViews = useMemo(() => visualFocusViews(frame), [frame])
+  const matrixOverview = !textOnly && bundle.spec.layout.kind !== 'stack' && focusViews.length > 1 && focusViews.every(view => view.elements.filter(element => element.values?.visible !== false).every(element => element.kind === 'matrix'))
+  const layoutContext = useMemo(() => presentationContext(bundle), [bundle])
+  const context = useMemo(() => ({...layoutContext, operation: bundle.spec.model.id === 'computation.pipeline' ? frame?.state.operation : undefined, compactMatrices: matrixOverview, selected, selectedLink}), [layoutContext, bundle.spec.model.id, frame?.state.operation, matrixOverview, selected, selectedLink])
+  const columns = bundle.spec.layout.kind === 'stack' ? 1 : matrixOverview && viewport >= 600 ? Math.min(3, focusViews.length) : viewport >= 740 && focusViews.length > 1 ? 2 : 1
+  const viewWidth = Math.max(matrixOverview ? 190 : 260, (matrixOverview && viewport < 600 ? viewport * .9 : (viewport - (columns - 1) * 10) / columns) - 14)
+  const views = useMemo(() => (textOnly ? frame?.views || [] : focusViews).filter(view => view.elements.some(element => element.values?.visible !== false)).map(view => {
     try {return {view, ...renderView(view, viewWidth, context)}}
     catch {return {view, svg: '', plan: null, diagnostics: [{code: 'INVALID_GEOMETRY', object_id: view.id, semantic_mutation_allowed: false}]}}
-  }), [frame, viewWidth, context])
+  }), [frame, focusViews, textOnly, viewWidth, context])
   const objects = views.flatMap(view => view.plan?.objects || [])
   const comparisonAlignment = alignComparison(bundle, step, comparison)
   const comparisonStep = comparisonAlignment.step
-  const comparisonViews = useMemo(() => comparison ? comparison.frames[comparisonStep].views.filter(view => view.elements.some(element => element.values?.visible !== false)).map(view => {
-    try {return {view, ...renderView(view, viewWidth, presentationContext(comparison))}}
+  const comparisonViews = useMemo(() => comparison ? (textOnly ? comparison.frames[comparisonStep].views : visualFocusViews(comparison.frames[comparisonStep])).filter(view => view.elements.some(element => element.values?.visible !== false)).map(view => {
+    try {return {view, ...renderView(view, viewWidth, {...presentationContext(comparison), operation: comparison.spec.model.id === 'computation.pipeline' ? comparison.frames[comparisonStep].state.operation : undefined})}}
     catch {return {view, svg: '', plan: null, diagnostics: [{code: 'INVALID_GEOMETRY', object_id: view.id, semantic_mutation_allowed: false}]}}
-  }) : [], [comparison, comparisonStep, viewWidth])
+  }) : [], [comparison, comparisonStep, textOnly, viewWidth])
 
   useEffect(() => {
     if (!container.current || typeof ResizeObserver === 'undefined') return
@@ -155,7 +161,10 @@ export default function VisualizeArtifact({initial, transport, onAsk, storageSco
   }, [step, speed, selected, bundle, busy, scopeInvalid])
   useEffect(() => {
     if (!playing || busy || gate || reduced) return
-    const timer = setTimeout(() => {if (step >= bundle.frames.length - 1) setPlaying(false); else setStep(value => value + 1)}, 1300 / speed)
+    const timer = setTimeout(() => {
+      if (step >= bundle.frames.length - 1) setPlaying(false)
+      else {setStep(value => value + 1); if (step + 1 >= bundle.frames.length - 1) setPlaying(false)}
+    }, 1300 / speed)
     return () => clearTimeout(timer)
   }, [playing, step, bundle.frames.length, busy, gate, reduced, speed])
   function move(next: number) {setPlaying(false); setFeedback(''); setStep(Math.max(0, Math.min(bundle.frames.length - 1, next)))}
@@ -197,7 +206,7 @@ export default function VisualizeArtifact({initial, transport, onAsk, storageSco
     finally {if (mounted.current && ticket === compareSequence.current) setComparisonBusy(false)}
   }
   function exportState() {
-    saveFile(JSON.stringify({format: 'learnflow-visual-snapshot/v1', static_snapshot: true, title: bundle.spec.title, goal: bundle.spec.teaching.goal, assumptions: bundle.verification.assumptions, source_provenance: bundle.source_provenance, spec_revision: bundle.spec_revision, run_id: bundle.run_id, spec: bundle.spec, params: bundle.params, step, snapshot_ref: frame?.snapshot_ref, state: frame?.state, verification: bundle.verification}, null, 2), 'application/json', `${bundle.spec.id}-step-${step}.json`)
+    saveFile(JSON.stringify({format: 'learnflow-visual-snapshot/v1', static_snapshot: true, title: bundle.spec.title, current_step: describeFrame(bundle, step), goal: bundle.spec.teaching.goal, assumptions: bundle.verification.assumptions, source_provenance: bundle.source_provenance, spec_revision: bundle.spec_revision, run_id: bundle.run_id, spec: bundle.spec, params: bundle.params, step, snapshot_ref: frame?.snapshot_ref, state: frame?.state, verification: bundle.verification}, null, 2), 'application/json', `${bundle.spec.id}-step-${step}.json`)
   }
   function exportSvg() {
     const visible = views.filter(view => view.svg && !view.diagnostics.length)
@@ -209,11 +218,11 @@ export default function VisualizeArtifact({initial, transport, onAsk, storageSco
       return `<g transform="translate(0 ${current})">${view.svg.replace('<svg ', `<svg width="${view.plan?.width || 720}" height="${view.plan?.height || 120}" `)}</g>`
     }).join('')
     const escape = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    const metadata = escape(JSON.stringify({static_snapshot: true, title: bundle.spec.title, goal: bundle.spec.teaching.goal, assumptions: bundle.verification.assumptions, source_provenance: bundle.source_provenance, params: bundle.params, step, spec_revision: bundle.spec_revision, verification: bundle.verification}))
+    const metadata = escape(JSON.stringify({static_snapshot: true, title: bundle.spec.title, current_step: describeFrame(bundle, step), goal: bundle.spec.teaching.goal, assumptions: bundle.verification.assumptions, source_provenance: bundle.source_provenance, params: bundle.params, step, spec_revision: bundle.spec_revision, verification: bundle.verification}))
     saveFile(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${top}" viewBox="0 0 ${width} ${top}"><metadata>${metadata}</metadata><rect width="100%" height="100%" fill="white"/><text x="24" y="28" font-size="18">${escape(bundle.spec.title)}</text><text x="24" y="53" font-size="13">静态快照 · 第 ${step + 1} 个状态 · ${escape(parameterLabel(bundle, bundle.params))}</text><text x="24" y="75" font-size="11">模型假设、来源与验证范围保存在 SVG metadata 中。</text>${fragments}</svg>`, 'image/svg+xml', `${bundle.spec.id}-step-${step}.svg`)
   }
   function renderViews(items: typeof views, interactive = true) {
-    return <div className="visualize-views" style={{gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`}}>{items.map(({view, svg, plan, diagnostics}) => <section key={view.id} aria-label={view.title}>
+    return <div className={`visualize-views${matrixOverview ? ' visualize-views-compact' : ''}`} role={matrixOverview ? 'region' : undefined} aria-label={matrixOverview ? '运算画面' : undefined} tabIndex={matrixOverview ? 0 : undefined} style={{gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`}}>{items.map(({view, svg, plan, diagnostics}) => <section key={view.id} aria-label={view.title}>
       <h4>{view.title}</h4>
       {diagnostics.length > 0 && <p className="visualize-notice">此视图无法完整排版，已保留原始数据。</p>}
       {textOnly || diagnostics.length > 0 ? <dl>{view.elements.filter(element => element.values?.visible !== false).map(element => <div key={element.id}><dt>{element.label}</dt><dd><pre>{JSON.stringify(element.values, null, 2)}</pre></dd></div>)}</dl> : <div className="visualize-svg-scroll"><div className="visualize-svg" style={{minWidth: plan?.width}} onClick={event => {
@@ -236,23 +245,38 @@ export default function VisualizeArtifact({initial, transport, onAsk, storageSco
     return list
   }, [])
   return <figure ref={container} className="visualize-artifact" aria-label={bundle.spec.title}>
-    <figcaption><div className="visualize-kicker"><span>{sourceLabel}</span>{bundle.spec.teaching.pattern && <span>{patternNames[bundle.spec.teaching.pattern] || bundle.spec.teaching.pattern}</span>}<span>{illustrative ? '教学示意' : '已核算过程'}</span></div><strong>{bundle.spec.title}</strong><p>{bundle.spec.teaching.goal}</p></figcaption>
-    <details className="visualize-assumptions"><summary>假设、来源与验证范围</summary><ul>{bundle.verification.assumptions.map((assumption, i) => <li key={i}>{assumption}</li>)}</ul><p>{illustrative ? '结构、引用与状态格式已校验；教学示意中的陈述不构成领域计算证明。' : '当前参数的过程已通过注册计算与相应检查，验证结论只覆盖本次输入。'}{bundle.termination === 'budget_exhausted' ? ' 展示固定次数的迭代，不表示已收敛。' : ''}</p><p>按离散状态切换；画面之间不推断额外的计算过程。数值显示最多 5 位有效数字，完整精度见数据与 JSON 导出。</p>{bundle.source_provenance?.id && <p>作品：{bundle.source_provenance.id} · {bundle.source_provenance.version}</p>}</details>
+    <figcaption className="visualize-heading"><span className="visualize-kind">{mode === 'animation' ? '动画演示' : '交互图解'}{illustrative ? ' · 教学示意' : ''}</span><strong>{bundle.spec.title}</strong><p>{bundle.spec.teaching.goal}</p></figcaption>
+
     {error && <p role="alert" className="visualize-error">{error}{!scopeInvalid && ' 已保留上一次有效状态。'}<button disabled={busy} onClick={() => void recompute(bundle.params, step)}>重试</button></p>}
     {busy && <p role="status" className="visualize-notice">正在验证当前状态…</p>}
     {!scopeInvalid && frame ? <>
-      <div className="visualize-parameters">{bundle.spec.parameters.filter(parameter => bundle.spec.interactions.some(interaction => interaction.kind === 'slider' && interaction.parameter_id === parameter.id)).map(parameter => <label key={parameter.id}>{parameter.label} <strong>{draft[parameter.id]} {parameter.unit}</strong><input aria-label={parameter.label} disabled={busy} type="range" min={parameter.min} max={parameter.max} step={parameter.step} value={draft[parameter.id]} onChange={event => setDraft({...draft, [parameter.id]: Number(event.target.value)})} onPointerUp={() => {if (!same(draft, bundle.params)) void recompute(draft)}} onKeyUp={() => {if (!same(draft, bundle.params)) void recompute(draft)}} onBlur={() => {if (!busy && !same(draft, bundle.params)) void recompute(draft)}}/><small>调整后重新计算并回到起点</small></label>)}</div>
-      {stages.length > 1 && <nav className="visualize-stages" aria-label="教学阶段">{stages.map(stage => <button key={stage.step} disabled={busy || Boolean(gate && stage.step > step)} aria-current={stage.step <= step && (stages[stages.indexOf(stage) + 1]?.step ?? Infinity) > step ? 'step' : undefined} onClick={() => move(stage.step)}>{stage.title}</button>)}</nav>}
-      <div className="visualize-toolbar"><button onClick={() => setTextOnly(value => !value)}>{textOnly ? '查看图形' : '查看完整数据'}</button><button disabled={!views.some(view => view.svg && !view.diagnostics.length)} onClick={exportSvg}>导出当前 SVG</button><button onClick={exportState}>导出状态 JSON</button></div>
+
+      <VisualStages stages={stages} step={step} disabled={busy} blocked={gate} onMove={move}/>
+
       {renderViews(views)}
-      <p className="visualize-caption" role="status" aria-live={playing ? 'off' : 'polite'}>{describeFrame(bundle, step)}</p>
+      {matrixOverview && <p className="visualize-matrix-key">橙框：当前窗口 · 空点：尚未计算<span>横向滑动查看各部分</span></p>}
+      <div className="visualize-caption" role="status" aria-live={playing ? 'off' : 'polite'}>
+        {(frame.title || frame.state.title) && <strong>{String(frame.title || frame.state.title)}</strong>}
+        <p>{String(frame.narration || frame.state.narration || describeFrame(bundle, step))}</p>
+      </div>
       {mode === 'animation' && checkpoint && <section className="visualize-prediction" aria-label="预测下一步"><strong>{checkpoint.prompt}</strong>{choices.length > 0 ? <div>{choices.map(choice => <button key={choice.id} disabled={busy || Boolean(answered[frame.snapshot_ref])} onClick={() => void predict(choice.id)}>{choice.label}</button>)}</div> : <p>先想一想，再单步观察；可以把你的解释交给 Tutor 讨论。</p>}<p role="status">{feedback}</p><small>探索反馈，不计入掌握度。</small></section>}
-      {bundle.frames.length > 1 && <div className="visualize-playback"><nav aria-label="过程播放"><button disabled={busy || step === 0} onClick={() => move(step - 1)}>上一步</button>{mode === 'animation' && <button disabled={busy || gate || reduced || step === bundle.frames.length - 1} onClick={() => setPlaying(value => !value)}>{playing ? '暂停' : '播放'}</button>}{mode === 'animation' && <label>播放速度<select aria-label="播放速度" value={speed} onChange={event => setSpeed(Number(event.target.value))}>{[0.5, 1, 1.5, 2].map(value => <option key={value} value={value}>{value}×</option>)}</select></label>}<output>{step + 1} / {bundle.frames.length}</output><button disabled={busy || gate || step === bundle.frames.length - 1} onClick={() => move(step + 1)}>下一步</button><button disabled={busy} onClick={() => {move(0); setAnswered({})}}>重播</button></nav><input type="range" aria-label="当前步骤" min={0} max={bundle.frames.length - 1} step={1} value={step} disabled={busy} onChange={event => move(gate ? Math.min(step, Number(event.target.value)) : Number(event.target.value))}/></div>}
+      <VisualPlayback step={step} count={bundle.frames.length} playing={playing} speed={speed} animation={mode === 'animation'} busy={busy} blocked={gate} reduced={reduced} onMove={move} onSpeed={setSpeed} onPlay={() => {
+        if (playing) setPlaying(false)
+        else if (step === bundle.frames.length - 1) {move(0); setAnswered({}); setPlaying(!reduced)}
+        else setPlaying(value => !value)
+      }}/>
+
       {reduced && mode === 'animation' && <p className="visualize-notice">已减少动态效果，可逐步查看。</p>}
-      {history.length > 1 && <div className="visualize-comparison"><label>比较先前参数组 <select disabled={busy || comparisonBusy} value={comparison ? JSON.stringify(comparison.params) : ''} onChange={event => void compare(event.target.value ? JSON.parse(event.target.value) : null)}><option value="">选择对照条件</option>{history.filter(params => !same(params, bundle.params)).map((params, i) => <option key={i} value={JSON.stringify(params)}>{parameterLabel(bundle, params)}</option>)}</select></label>{comparisonBusy && <p role="status">正在计算对照状态…</p>}{comparison && <><h4>对照 · {parameterLabel(comparison, comparison.params)} · 第 {comparisonStep + 1} 个状态</h4>{renderViews(comparisonViews, false)}<p>{describeFrame(comparison, comparisonStep)}</p><small>{comparisonAlignment.note}</small></>}</div>}
-      <div className="visualize-ask"><label>关注对象<select value={selected} onChange={event => {const object = objects.find(item => item.id === event.target.value); chooseObject(event.target.value, object?.linkId)}}><option value="">整张图</option>{objects.filter((object, index) => objects.findIndex(item => item.id === object.id) === index).map(object => <option key={object.id} value={object.id}>{object.label || object.id}</option>)}</select></label><label>围绕当前状态追问<input value={question} maxLength={1000} onChange={event => setQuestion(event.target.value)} placeholder="为什么这一步会发生这样的变化？" onKeyDown={event => {if (event.key === 'Enter' && !busy) void ask()}}/></label><button disabled={busy || !onAsk} onClick={() => void ask()}>问 Tutor</button></div>
-      {selected && <p className="visualize-selection">已选：{objects.find(object => object.id === selected)?.label || selected}。追问会携带此对象及当前参数、步骤。</p>}
-      {bundle.spec.annotations.length > 0 && <ul className="visualize-annotations">{bundle.spec.annotations.filter(annotation => !selected || selected.startsWith(annotation.target_id)).map(annotation => <li key={annotation.id}>{annotation.text}</li>)}</ul>}
+      <VisualMore>
+        <div className="visualize-parameters">{bundle.spec.parameters.filter(parameter => bundle.spec.interactions.some(interaction => interaction.kind === 'slider' && interaction.parameter_id === parameter.id)).map(parameter => <label key={parameter.id}>{parameter.label} <strong>{draft[parameter.id]} {parameter.unit}</strong><input aria-label={parameter.label} disabled={busy} type="range" min={parameter.min} max={parameter.max} step={parameter.step} value={draft[parameter.id]} onChange={event => setDraft({...draft, [parameter.id]: Number(event.target.value)})} onPointerUp={() => {if (!same(draft, bundle.params)) void recompute(draft)}} onKeyUp={() => {if (!same(draft, bundle.params)) void recompute(draft)}} onBlur={() => {if (!busy && !same(draft, bundle.params)) void recompute(draft)}}/><small>调整后重新计算并回到起点</small></label>)}</div>
+        <div className="visualize-toolbar"><button onClick={() => setTextOnly(value => !value)}>{textOnly ? '查看图形' : '查看完整数据'}</button><button disabled={!views.some(view => view.svg && !view.diagnostics.length)} onClick={exportSvg}>导出当前 SVG</button><button onClick={exportState}>导出状态 JSON</button></div>
+        {history.length > 1 && <div className="visualize-comparison"><label>比较先前参数组 <select disabled={busy || comparisonBusy} value={comparison ? JSON.stringify(comparison.params) : ''} onChange={event => void compare(event.target.value ? JSON.parse(event.target.value) : null)}><option value="">选择对照条件</option>{history.filter(params => !same(params, bundle.params)).map((params, i) => <option key={i} value={JSON.stringify(params)}>{parameterLabel(bundle, params)}</option>)}</select></label>{comparisonBusy && <p role="status">正在计算对照状态…</p>}{comparison && <><h4>对照 · {parameterLabel(comparison, comparison.params)} · 第 {comparisonStep + 1} 个状态</h4>{renderViews(comparisonViews, false)}<p>{describeFrame(comparison, comparisonStep)}</p><small>{comparisonAlignment.note}</small></>}</div>}
+        <div className="visualize-ask"><label>关注对象<select value={selected} onChange={event => {const object = objects.find(item => item.id === event.target.value); chooseObject(event.target.value, object?.linkId)}}><option value="">整张图</option>{objects.filter((object, index) => objects.findIndex(item => item.id === object.id) === index).map(object => <option key={object.id} value={object.id}>{object.label || object.id}</option>)}</select></label><label>围绕当前状态追问<input value={question} maxLength={1000} onChange={event => setQuestion(event.target.value)} placeholder="为什么这一步会发生这样的变化？" onKeyDown={event => {if (event.key === 'Enter' && !busy) void ask()}}/></label><button disabled={busy || !onAsk} onClick={() => void ask()}>问 Tutor</button></div>
+        {selected && <p className="visualize-selection">已选：{objects.find(object => object.id === selected)?.label || selected}。追问会携带此对象及当前参数、步骤。</p>}
+        {bundle.spec.annotations.length > 0 && <ul className="visualize-annotations">{bundle.spec.annotations.filter(annotation => !selected || selected.startsWith(annotation.target_id)).map(annotation => <li key={annotation.id}>{annotation.text}</li>)}</ul>}
+        <details className="visualize-assumptions"><summary>假设、来源与验证范围</summary><p>{sourceLabel}{bundle.spec.teaching.pattern ? ` · ${patternNames[bundle.spec.teaching.pattern] || bundle.spec.teaching.pattern}` : ''}</p><ul>{bundle.verification.assumptions.map((assumption, i) => <li key={i}>{assumption}</li>)}</ul><p>{illustrative ? '结构、引用与状态格式已校验；教学示意中的陈述不构成领域计算证明。' : '当前参数的过程已通过注册计算与相应检查，验证结论只覆盖本次输入。'}{bundle.termination === 'budget_exhausted' ? ' 展示固定次数的迭代，不表示已收敛。' : ''}</p><p>按离散状态切换；画面之间不推断额外的计算过程。数值显示最多 5 位有效数字，完整精度见数据与 JSON 导出。</p>{bundle.source_provenance?.id && <p>作品：{bundle.source_provenance.id} · {bundle.source_provenance.version}</p>}</details>
+        {secondaryActions}
+      </VisualMore>
     </> : !scopeInvalid && <p role="status">没有可显示的有效状态。{bundle.spec.fallback.text}</p>}
   </figure>
 }
