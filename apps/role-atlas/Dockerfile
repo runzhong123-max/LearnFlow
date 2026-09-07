@@ -10,7 +10,9 @@ COPY frontend/src/learning-path-contract-v2.ts frontend/src/learning-path-protoc
 RUN NODE_OPTIONS="--max-old-space-size=${NODE_BUILD_MEMORY_MB}" npm run build
 
 # workerd uses the OS trust store for outbound HTTPS (including GLM search).
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+ARG DEBIAN_MIRROR=deb.debian.org
+RUN sed -i "s|deb.debian.org|${DEBIAN_MIRROR}|g" /etc/apt/sources.list.d/debian.sources \
+    && apt-get update && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 3000
