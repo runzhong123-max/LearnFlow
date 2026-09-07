@@ -92,9 +92,15 @@ export async function listRegistryPackages(input: { query?: string; visibility?:
   const publicIds = new Set(publicRows?.results.map(row => row.id) || []);
   const visibleReleases = releases.filter(row => (!input.ownerSubjectId || Boolean(row.projectId && ownedIds.has(row.projectId)))
     && (!publicOnly || publicIds.has(row.id)));
+  const hubEligible = input.ownerSubjectId ? await getD1().prepare(`SELECT r.id FROM package_releases r
+    JOIN package_artifacts a ON a.root_hash=r.artifact_root_hash WHERE r.status='published' AND r.published_at IS NOT NULL
+    AND json_extract(a.content, '$.manifest.visibility')='public'`).all<{ id: string }>() : null;
+  const hubEligibleIds = new Set(hubEligible?.results.map(row => row.id) || []);
   const visibleLines = new Set(visibleReleases.map(row => row.packageLineId));
   return filtered.filter(line => (!input.ownerSubjectId && !publicOnly) || visibleLines.has(line.id)).map((line) => ({
     ...line,
+    canManageHub: Boolean(line.recommendedReleaseId && hubEligibleIds.has(line.recommendedReleaseId) && input.ownerSubjectId && releases.some(row => row.packageLineId === line.id)
+      && releases.filter(row => row.packageLineId === line.id).every(row => row.projectId && ownedIds.has(row.projectId))),
     scope: safeJson(line.scopeJson, {}),
     maintenancePolicy: safeJson(line.maintenancePolicyJson, {}),
     roleIdentity: (() => {

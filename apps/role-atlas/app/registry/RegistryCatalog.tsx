@@ -12,6 +12,8 @@ export type RegistryPackage = {
   maintenanceKind: string;
   hostingKind: string;
   visibility: string;
+  registryVersion?: number;
+  canManageHub?: boolean;
   evidencePolicy: string;
   license: string;
   protocolRange: string;
@@ -37,9 +39,11 @@ export default function RegistryCatalog({ initialPackages, initialQuery = "", em
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery.slice(0, 500));
   const [notice, setNotice] = useState("");
+  const [publicationBusy, setPublicationBusy] = useState("");
+  const [publicationOverrides, setPublicationOverrides] = useState<Record<string, { visibility: string; registryVersion: number }>>({});
   const [uploading, setUploading] = useState(false);
   const [launchingReleaseId, setLaunchingReleaseId] = useState("");
-  const packages = useMemo(() => initialPackages.filter((item) => `${item.title}${item.packageId}`.toLowerCase().includes(query.toLowerCase())), [initialPackages, query]);
+  const packages = useMemo(() => initialPackages.map(item => ({ ...item, ...publicationOverrides[item.id] })).filter((item) => `${item.title}${item.packageId}`.toLowerCase().includes(query.toLowerCase())), [initialPackages, query, publicationOverrides]);
   const roleAtlasHref = (path: string) => {
     return publicHref(roleAtlasBaseUrl, path);
   };
@@ -78,6 +82,28 @@ export default function RegistryCatalog({ initialPackages, initialQuery = "", em
     finally { setLaunchingReleaseId(""); }
   };
 
+  const changePublication = async (item: RegistryPackage) => {
+    if (publicationBusy || !item.recommendedReleaseId || item.registryVersion === undefined) return;
+    const withdraw = item.visibility === "public";
+    if (!window.confirm(withdraw
+      ? `确定从 Graph Hub 撤回“${item.title}”？公开搜索、详情和下载将停止提供；个人岗位包与历史版本保留，已下载的副本无法追回。`
+      : `确定将“${item.title}”的推荐版本重新公开到 Graph Hub？`)) return;
+    setPublicationBusy(item.id); setNotice("");
+    try {
+      const response = await fetch("/api/releases", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+        action: withdraw ? "withdraw_from_hub" : "restore_to_hub", packageLineId: item.id,
+        expectedReleaseId: item.recommendedReleaseId, expectedRegistryVersion: item.registryVersion,
+      }) });
+      const payload = await response.json() as { publication?: { visibility: string; registry_version: number }; error?: string };
+      if (!response.ok || !payload.publication) throw new Error(payload.error === "PUBLICATION_CONFLICT" ? "岗位包已被更新，请刷新后重试。" : "操作未完成，请刷新页面并确认你拥有此岗位包。");
+      const result = payload.publication;
+      setPublicationOverrides(previous => ({ ...previous, [item.id]: { visibility: result.visibility, registryVersion: result.registry_version } }));
+      setNotice(withdraw ? "已从 Graph Hub 撤回。个人岗位包和历史版本仍保留，可随时重新公开。" : "已重新公开到 Graph Hub。");
+      if (onChanged) onChanged(); else router.refresh();
+    } catch (error) { setNotice(error instanceof Error ? error.message : "发布状态更新失败。"); }
+    finally { setPublicationBusy(""); }
+  };
+
   const Shell = embedded ? "div" : "main";
   return <Shell className={`registry-shell${embedded ? " embedded-operation" : ""}`}>
     <header className="registry-topbar">{embedded && onClose ? <button type="button" onClick={onClose}><ArrowLeft size={14} /> 返回工作台</button> : <a href={roleAtlasHref("/")}><ArrowLeft size={14} /> 进入 Role Atlas</a>}<b>{surface === "hub" ? "GRAPH HUB · SHARED DISCOVERY" : "ROLE ATLAS PACKAGE REGISTRY"}</b><span>{initialPackages.length} 条岗位包线</span></header>
@@ -109,7 +135,7 @@ export default function RegistryCatalog({ initialPackages, initialQuery = "", em
             {release.artifactRootHash && ["ready", "published", "deprecated"].includes(release.status) ? <a href={`/api/releases/${release.id}/export`}><Download size={11} /> 导出</a> : null}
           </span>)}</div>
         </details>
-        <footer><span>{item.releases.length} 个 Release</span><div className="registry-card-actions">{surface === "hub" && recommended ? <a href={roleAtlasHref(recommended.projectId ? `/projects/${recommended.projectId}` : `/snapshots/${encodeURIComponent(recommended.snapshotId)}/iterate`)}><ExternalLink size={12} /> 进入 Role Atlas</a> : recommended && item.visibility === "public" ? <a href={graphHubHref(item.id)}><ExternalLink size={12} /> 进入 Graph Hub</a> : <span>尚未发布到 Graph Hub</span>}{recommended ? <button type="button" disabled={launchingReleaseId === recommended.id} onClick={() => void launchLearnFlow(recommended.id)}><MessageCircle size={12} /> {launchingReleaseId === recommended.id ? "正在进入…" : "在 LearnFlow 中引用"}</button> : null}{recommended ? <a href={`/api/releases/${recommended.id}/export`}><Download size={12} /> 导出</a> : null}</div></footer>
+        <footer><span>{item.releases.length} 个 Release</span><div className="registry-card-actions">{surface === "registry" && item.canManageHub && recommended?.status === "published" ? <button type="button" disabled={Boolean(publicationBusy)} onClick={() => void changePublication(item)}>{publicationBusy === item.id ? "正在更新…" : item.visibility === "public" ? "从 Graph Hub 撤回" : "重新公开到 Graph Hub"}</button> : null}{surface === "hub" && recommended ? <a href={roleAtlasHref(recommended.projectId ? `/projects/${recommended.projectId}` : `/snapshots/${encodeURIComponent(recommended.snapshotId)}/iterate`)}><ExternalLink size={12} /> 进入 Role Atlas</a> : recommended && item.visibility === "public" ? <a href={graphHubHref(item.id)}><ExternalLink size={12} /> 进入 Graph Hub</a> : <span>尚未发布到 Graph Hub</span>}{recommended ? <button type="button" disabled={launchingReleaseId === recommended.id} onClick={() => void launchLearnFlow(recommended.id)}><MessageCircle size={12} /> {launchingReleaseId === recommended.id ? "正在进入…" : "在 LearnFlow 中引用"}</button> : null}{recommended ? <a href={`/api/releases/${recommended.id}/export`}><Download size={12} /> 导出</a> : null}</div></footer>
       </article>;
     })}</section>
   </Shell>;

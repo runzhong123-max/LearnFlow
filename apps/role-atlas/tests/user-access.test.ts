@@ -227,3 +227,20 @@ test("same role results can be prepared independently by two owners using projec
     assert.equal((await h.policy.authorizeApiRequest(request("/api/releases", 2, { projectId: "same-role-b", projectVersionId: "same-version-b", packageVersion: "1.0.0", packageId: "role-package:project:same-role-a" })))?.status, 403, "cannot reserve another project's future default namespace");
   } finally { h.cleanup(); }
 });
+
+test("Hub 撤回仅允许所有者操作，撤回后匿名导出与快照访问被拒绝", async () => {
+  const h = await policyHarness();
+  try {
+    h.db.exec(`UPDATE package_lines SET visibility='public' WHERE id='line-a';
+      UPDATE package_releases SET status='published',published_at='today',artifact_root_hash='root-public' WHERE id='release-a';`);
+    const body = { action: "withdraw_from_hub", packageLineId: "line-a", expectedReleaseId: "release-a", expectedRegistryVersion: 1 };
+    assert.equal(await h.policy.authorizeApiRequest(request("/api/releases", 1, body, "PATCH")), undefined);
+    assert.equal((await h.policy.authorizeApiRequest(request("/api/releases", 2, body, "PATCH")))?.status, 404);
+    assert.equal((await h.policy.authorizeApiRequest(request("/api/releases", undefined, body, "PATCH")))?.status, 401);
+    assert.equal(await h.policy.authorizeApiRequest(request("/api/releases/release-a/export")), undefined);
+    h.db.exec("UPDATE package_lines SET visibility='private' WHERE id='line-a'");
+    assert.equal((await h.policy.authorizeApiRequest(request("/api/releases/release-a/export")))?.status, 401);
+    assert.equal((await h.policy.authorizeApiRequest(request("/api/snapshots/resolve?snapshotId=snapshot-a")))?.status, 401);
+    assert.equal(await h.policy.authorizeApiRequest(request("/api/releases/release-a/export", 1)), undefined);
+  } finally { h.cleanup(); }
+});
