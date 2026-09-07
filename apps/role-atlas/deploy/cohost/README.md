@@ -59,3 +59,8 @@ docker compose --env-file .env up -d --build
 引用代理使用 Node HTTP/HTTPS 请求读取上游，明确保留目录请求的 `Host: localhost`，与 Caddy 的 Atlas 转发一致。不要换成忽略自定义 Host 的 Node `fetch`，否则内部 `role-atlas` 主机会被 Vite 拒绝（403），用户收到 `ROLE_ATLAS_REGISTRY_UNAVAILABLE`。上游请求保留 10 秒空闲超时、不自动跟随重定向；没有放宽 Vite 主机白名单或改变主体绑定签名契约。回归入口：`tests/cohost-launch-proxy.test.ts`。
 
 Role Atlas 当前继续使用其 Cloudflare/Miniflare D1 兼容存储，状态保存在 `role-atlas-state` volume；这是首发单机配置，不是多副本数据库方案。扩成多实例前，应把 D1/R2 接到正式 Cloudflare 资源或实现 PostgreSQL/对象存储适配，并把公共与个人 Graph Hub 目录改为服务端按主体实时导出。
+
+
+身份桥接以 `LEARNFLOW_BASE_URL` 的原始 origin 和可选路径前缀构造 `/api/auth/me`。
+根地址不得拼成 `//api/auth/me`：它会被 URL 解析器当作主机 `api`，导致有会话的项目创建在冷启动之前报 DNS/internal error。
+回归测试见 `tests/learnflow-auth.test.ts`；无效会话应返回未登录，而不是 DNS 错误。此修复不改变身份协议、项目归属或数据库。

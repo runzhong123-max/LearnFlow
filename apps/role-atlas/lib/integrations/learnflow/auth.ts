@@ -23,7 +23,6 @@ function normalizedBaseUrl(value: string) {
   if (url.username || url.password || (url.protocol !== "https:" && !(local && url.protocol === "http:"))) {
     throw new Error("LEARNFLOW_AUTH_BASE_URL_INVALID");
   }
-  url.pathname = url.pathname.replace(/\/$/u, "");
   url.search = "";
   url.hash = "";
   return url;
@@ -36,7 +35,10 @@ export async function resolveLearnFlowIdentity(input: {
   timeoutMs?: number;
 }): Promise<LearnFlowIdentity | null> {
   const base = normalizedBaseUrl(input.baseUrl);
-  const endpoint = new URL(`${base.pathname}/api/auth/me`, base);
+  // Assign a pathname: a root base otherwise produces //api/auth/me,
+  // which URL resolves as a new host and forwards credentials there.
+  const endpoint = new URL(base);
+  endpoint.pathname = `${base.pathname.replace(/\/+$/u, "")}/api/auth/me`;
   const headers = new Headers({ Accept: "application/json" });
   for (const name of ["cookie", "authorization", "x-learnflow-desktop-token"] as const) {
     const value = input.request.headers.get(name);
