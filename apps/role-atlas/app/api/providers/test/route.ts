@@ -1,3 +1,4 @@
+import { authorizeApiRequest } from "@/lib/access";
 import { providerModelsEndpoint, PROVIDERS } from "@/lib/providers";
 import { resolveProviderConfig } from "@/lib/server-runtime-config";
 
@@ -11,6 +12,8 @@ function safeProviderError(status: number) {
 }
 
 export async function POST(request: Request) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   const contentLength = Number(request.headers.get("content-length") || 0);
   if (contentLength > 16_384) {
     return Response.json({ ok: false, message: "请求体过大。" }, { status: 413 });

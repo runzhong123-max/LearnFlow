@@ -1,3 +1,4 @@
+import { assertRoleJobLease } from "@/lib/jobs/repository";
 import type { ModelInvoker } from "@/lib/agent/model";
 import type { ColdStartBuildResult } from "@/lib/build/types";
 import type { SearchProviderConfig } from "@/lib/search/providers";
@@ -19,6 +20,8 @@ export async function runAutomaticSnapshotIteration(input: {
   model: ModelInvoker;
   modelLabel?: string;
   searchConfig?: SearchProviderConfig;
+  execution?: { jobId: string; jobOwner: string };
+  signal?: AbortSignal;
 }) {
   await startSnapshotIteration(input.request);
   const graph = createSnapshotIterationSkill({
@@ -38,6 +41,7 @@ export async function runAutomaticSnapshotIteration(input: {
     }, {
       configurable: { thread_id: `${input.base.snapshot.id}:${input.request.runId}:automatic` },
       streamMode: "custom",
+      signal: input.signal,
     });
     for await (const raw of events) {
       const event = raw as IterationEvent;
@@ -50,9 +54,10 @@ export async function runAutomaticSnapshotIteration(input: {
         ...event, kind: "iteration.snapshot.write.started", phase: "snapshot",
         payload: { parentSnapshotId: result.baseSnapshotId, status: "candidate" },
       });
+      if (input.execution) await assertRoleJobLease(input.execution.jobId, input.execution.jobOwner);
       const candidateSnapshotId = await completeSnapshotIteration(result);
       const projectVersionId = input.request.projectId
-        ? await saveProjectCandidateFromIteration(result, input.request.projectId, input.request.conversationId)
+        ? await saveProjectCandidateFromIteration(result, input.request.projectId, input.request.conversationId, input.execution)
         : null;
       result.candidateSnapshotId = candidateSnapshotId || undefined;
       result.projectVersionId = projectVersionId || undefined;

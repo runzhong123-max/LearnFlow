@@ -5,7 +5,7 @@ import { RotateCcw, Trash2 } from "lucide-react";
 
 type TrashedProject = { id: string; title: string; deletedAt: string };
 
-export default function ProjectManagement({ projectId, title }: { projectId?: string; title: string }) {
+export default function ProjectManagement({ projectId, title, variant = "both" }: { projectId?: string; title: string; variant?: "both" | "delete" | "trash" }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -34,8 +34,8 @@ export default function ProjectManagement({ projectId, title }: { projectId?: st
   };
   return <div className="project-management">
     <div className="project-actions">
-      {projectId && <button type="button" className="project-new-chat" disabled={busy} onClick={() => void change(projectId, "delete")}><Trash2 size={13} /> 删除当前项目</button>}
-      <button type="button" className="project-new-chat" disabled={busy} onClick={() => open ? setOpen(false) : void loadTrash()} aria-expanded={open}><RotateCcw size={13} /> 项目回收站</button>
+      {projectId && variant !== "trash" && <button type="button" className="project-new-chat" disabled={busy} onClick={() => void change(projectId, "delete")}><Trash2 size={13} /> 删除当前项目</button>}
+      {variant !== "delete" && <button type="button" className="project-new-chat" disabled={busy} onClick={() => open ? setOpen(false) : void loadTrash()} aria-expanded={open}><RotateCcw size={13} /> 回收站</button>}
     </div>
     {error && <p role="alert" className="project-empty">{error}</p>}
     {open && <section aria-label="项目回收站">

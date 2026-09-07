@@ -1,13 +1,18 @@
+import { authorizeApiRequest } from "@/lib/access";
 import { getConversation, getProjectWorkspace } from "@/lib/projects/repository";
 import { manageProject } from "@/lib/projects/lifecycle-api";
 
 export const runtime = "edge";
 
 export async function DELETE(request: Request, context: { params: Promise<{ projectId: string }> }) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   return manageProject(request, (await context.params).projectId, "delete");
 }
 
 export async function PATCH(request: Request, context: { params: Promise<{ projectId: string }> }) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   try {
     const input = await request.json() as { action?: unknown };
     if (input.action !== "restore") return Response.json({ error: "仅支持 restore 操作。" }, { status: 400 });
@@ -16,6 +21,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ proje
 }
 
 export async function GET(request: Request, context: { params: Promise<{ projectId: string }> }) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   try {
     const { projectId } = await context.params;
     const conversationId = new URL(request.url).searchParams.get("conversation");

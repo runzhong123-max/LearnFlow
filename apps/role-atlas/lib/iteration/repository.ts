@@ -1,4 +1,4 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { and, sql, asc, desc, eq } from "drizzle-orm";
 import { ensureAppSchema, getD1, getDb } from "@/db";
 import { snapshotIterationEvents, snapshotIterationRuns } from "@/db/schema";
 import type { IterationEvent, SnapshotIterationRequest, SnapshotIterationResult } from "./types";
@@ -23,11 +23,10 @@ export async function startSnapshotIteration(request: SnapshotIterationRequest) 
       initiativeProfile: request.initiativeProfile,
       phase: "contract",
       inputJson: JSON.stringify(request),
-      checkpointJson: null,
-      resultJson: null,
       error: null,
       completedAt: null,
     },
+    setWhere: and(eq(snapshotIterationRuns.projectId, request.snapshotRef.projectId || request.projectId || ""), eq(snapshotIterationRuns.baseSnapshotId, request.snapshotRef.snapshotId), eq(snapshotIterationRuns.status, "failed")),
   });
 }
 
@@ -97,14 +96,14 @@ export async function failSnapshotIteration(runId: string, error: string, cancel
     status: cancelled ? "cancelled" : "failed",
     error,
     completedAt: new Date().toISOString(),
-  }).where(eq(snapshotIterationRuns.id, runId));
+  }).where(and(eq(snapshotIterationRuns.id, runId), eq(snapshotIterationRuns.status, "running")));
 }
 
-export async function getLatestSnapshotIteration(snapshotId: string) {
+export async function getLatestSnapshotIteration(snapshotId: string, ownerSubjectId?: string) {
   await ensureAppSchema();
   const db = getDb();
   const [run] = await db.select().from(snapshotIterationRuns)
-    .where(eq(snapshotIterationRuns.baseSnapshotId, snapshotId))
+    .where(and(eq(snapshotIterationRuns.baseSnapshotId, snapshotId), ownerSubjectId ? sql`EXISTS (SELECT 1 FROM projects p WHERE p.id=${snapshotIterationRuns.projectId} AND p.owner_subject_id=${ownerSubjectId} AND p.deleted_at IS NULL)` : undefined))
     .orderBy(desc(snapshotIterationRuns.startedAt)).limit(1);
   if (!run) return null;
   const events = await db.select().from(snapshotIterationEvents)

@@ -1,3 +1,4 @@
+import { authorizeApiRequest } from "@/lib/access";
 import { z } from "zod/v4";
 import { deprecateRelease, listProjectReleases, prepareRelease, publishProjectVersionToHub, publishRelease, rollbackRelease } from "@/lib/releases/service";
 
@@ -43,12 +44,16 @@ const actionSchema = z.discriminatedUnion("action", [
 ]);
 
 export async function GET(request: Request) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   const projectId = new URL(request.url).searchParams.get("projectId");
   if (!projectId) return Response.json({ error: "缺少 projectId。" }, { status: 400 });
   return Response.json({ releases: await listProjectReleases(projectId) });
 }
 
 export async function POST(request: Request) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   try {
     const input = createSchema.parse(await request.json());
     const release = input.action === "publish_to_hub"
@@ -62,6 +67,8 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   try {
     const input = actionSchema.parse(await request.json());
     if (input.action === "publish") return Response.json({ release: await publishRelease(input) });

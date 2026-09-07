@@ -11,7 +11,7 @@
 | Desktop FastAPI | 261 |
 | Desktop Node Tutor (dev/preview) | 3 |
 | Desktop Tauri IPC | 16 |
-| Role Atlas / Graph Hub | 46 |
+| Role Atlas / Graph Hub | 52 |
 | Web FastAPI | 234 |
 | Web Node Tutor | 3 |
 
@@ -465,7 +465,7 @@
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
-| POST | `/api/agent` | [POST](../apps/role-atlas/app/api/agent/route.ts#L54) |
+| POST | `/api/agent` | [POST](../apps/role-atlas/app/api/agent/route.ts#L55) |
 
 ### auth
 
@@ -477,14 +477,14 @@
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
-| POST | `/api/build-runs` | [POST](../apps/role-atlas/app/api/build-runs/route.ts#L59) |
-| POST | `/api/build-runs/enrich` | [POST](../apps/role-atlas/app/api/build-runs/enrich/route.ts#L55) |
+| POST | `/api/build-runs` | [POST](../apps/role-atlas/app/api/build-runs/route.ts#L61) |
+| POST | `/api/build-runs/enrich` | [POST](../apps/role-atlas/app/api/build-runs/enrich/route.ts#L57) |
 
 ### conversations
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
-| GET | `/api/conversations/{conversationId}/messages` | [GET](../apps/role-atlas/app/api/conversations/[conversationId]/messages/route.ts#L5) |
+| GET | `/api/conversations/{conversationId}/messages` | [GET](../apps/role-atlas/app/api/conversations/[conversationId]/messages/route.ts#L6) |
 
 ### hub
 
@@ -497,13 +497,13 @@
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
 | POST | `/api/integrations/learnflow/gateway` | [POST](../apps/role-atlas/app/api/integrations/learnflow/gateway/route.ts#L10) |
-| POST | `/api/integrations/learnflow/launch` | [POST](../apps/role-atlas/app/api/integrations/learnflow/launch/route.ts#L17) |
+| POST | `/api/integrations/learnflow/launch` | [POST](../apps/role-atlas/app/api/integrations/learnflow/launch/route.ts#L18) |
 
 ### jobs
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
-| GET | `/api/jobs/{jobId}` | [GET](../apps/role-atlas/app/api/jobs/[jobId]/route.ts#L5) |
+| GET | `/api/jobs/{jobId}` | [GET](../apps/role-atlas/app/api/jobs/[jobId]/route.ts#L6) |
 
 ### navigation
 
@@ -515,61 +515,66 @@
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
-| POST | `/api/packages/import` | [POST](../apps/role-atlas/app/api/packages/import/route.ts#L5) |
+| POST | `/api/packages/import` | [POST](../apps/role-atlas/app/api/packages/import/route.ts#L6) |
 
 ### projects
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
-| GET | `/api/projects` | [GET](../apps/role-atlas/app/api/projects/route.ts#L16) |
-| POST | `/api/projects` | [POST](../apps/role-atlas/app/api/projects/route.ts#L25) |
-| GET | `/api/projects/trash` | [GET](../apps/role-atlas/app/api/projects/trash/route.ts#L4) |
-| DELETE | `/api/projects/{projectId}` | [DELETE](../apps/role-atlas/app/api/projects/[projectId]/route.ts#L6) |
-| GET | `/api/projects/{projectId}` | [GET](../apps/role-atlas/app/api/projects/[projectId]/route.ts#L18) |
-| PATCH | `/api/projects/{projectId}` | [PATCH](../apps/role-atlas/app/api/projects/[projectId]/route.ts#L10) |
-| POST | `/api/projects/{projectId}/conversations` | [POST](../apps/role-atlas/app/api/projects/[projectId]/conversations/route.ts#L12) |
-| GET | `/api/projects/{projectId}/diffs` | [GET](../apps/role-atlas/app/api/projects/[projectId]/diffs/route.ts#L5) |
-| DELETE | `/api/projects/{projectId}/tags` | [DELETE](../apps/role-atlas/app/api/projects/[projectId]/tags/route.ts#L29) |
-| GET | `/api/projects/{projectId}/tags` | [GET](../apps/role-atlas/app/api/projects/[projectId]/tags/route.ts#L12) |
-| POST | `/api/projects/{projectId}/tags` | [POST](../apps/role-atlas/app/api/projects/[projectId]/tags/route.ts#L17) |
-| GET | `/api/projects/{projectId}/versions` | [GET](../apps/role-atlas/app/api/projects/[projectId]/versions/route.ts#L12) |
-| POST | `/api/projects/{projectId}/versions` | [POST](../apps/role-atlas/app/api/projects/[projectId]/versions/route.ts#L26) |
+| GET | `/api/projects` | [GET](../apps/role-atlas/app/api/projects/route.ts#L17) |
+| POST | `/api/projects` | [POST](../apps/role-atlas/app/api/projects/route.ts#L28) |
+| GET | `/api/projects/trash` | [GET](../apps/role-atlas/app/api/projects/trash/route.ts#L5) |
+| DELETE | `/api/projects/{projectId}` | [DELETE](../apps/role-atlas/app/api/projects/[projectId]/route.ts#L7) |
+| GET | `/api/projects/{projectId}` | [GET](../apps/role-atlas/app/api/projects/[projectId]/route.ts#L23) |
+| PATCH | `/api/projects/{projectId}` | [PATCH](../apps/role-atlas/app/api/projects/[projectId]/route.ts#L13) |
+| POST | `/api/projects/{projectId}/conversations` | [POST](../apps/role-atlas/app/api/projects/[projectId]/conversations/route.ts#L14) |
+| PATCH | `/api/projects/{projectId}/conversations/{conversationId}` | [PATCH](../apps/role-atlas/app/api/projects/[projectId]/conversations/[conversationId]/route.ts#L4) |
+| GET | `/api/projects/{projectId}/diffs` | [GET](../apps/role-atlas/app/api/projects/[projectId]/diffs/route.ts#L6) |
+| GET | `/api/projects/{projectId}/jobs` | [GET](../apps/role-atlas/app/api/projects/[projectId]/jobs/route.ts#L4) |
+| GET | `/api/projects/{projectId}/jobs/{jobId}` | [GET](../apps/role-atlas/app/api/projects/[projectId]/jobs/[jobId]/route.ts#L4) |
+| POST | `/api/projects/{projectId}/jobs/{jobId}/cancel` | [POST](../apps/role-atlas/app/api/projects/[projectId]/jobs/[jobId]/cancel/route.ts#L5) |
+| DELETE | `/api/projects/{projectId}/tags` | [DELETE](../apps/role-atlas/app/api/projects/[projectId]/tags/route.ts#L34) |
+| GET | `/api/projects/{projectId}/tags` | [GET](../apps/role-atlas/app/api/projects/[projectId]/tags/route.ts#L13) |
+| POST | `/api/projects/{projectId}/tags` | [POST](../apps/role-atlas/app/api/projects/[projectId]/tags/route.ts#L20) |
+| GET | `/api/projects/{projectId}/versions` | [GET](../apps/role-atlas/app/api/projects/[projectId]/versions/route.ts#L13) |
+| POST | `/api/projects/{projectId}/versions` | [POST](../apps/role-atlas/app/api/projects/[projectId]/versions/route.ts#L29) |
+| POST | `/api/projects/{projectId}/versions/{versionId}/adopt` | [POST](../apps/role-atlas/app/api/projects/[projectId]/versions/[versionId]/adopt/route.ts#L5) |
 
 ### providers
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
-| POST | `/api/providers/test` | [POST](../apps/role-atlas/app/api/providers/test/route.ts#L13) |
+| POST | `/api/providers/test` | [POST](../apps/role-atlas/app/api/providers/test/route.ts#L14) |
 
 ### reference-migrations
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
-| GET | `/api/reference-migrations` | [GET](../apps/role-atlas/app/api/reference-migrations/route.ts#L5) |
+| GET | `/api/reference-migrations` | [GET](../apps/role-atlas/app/api/reference-migrations/route.ts#L6) |
 
 ### registry
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
-| GET | `/api/registry` | [GET](../apps/role-atlas/app/api/registry/route.ts#L7) |
-| PATCH | `/api/registry` | [PATCH](../apps/role-atlas/app/api/registry/route.ts#L24) |
-| GET | `/api/registry/{packageLineId}` | [GET](../apps/role-atlas/app/api/registry/[packageLineId]/route.ts#L5) |
+| GET | `/api/registry` | [GET](../apps/role-atlas/app/api/registry/route.ts#L9) |
+| PATCH | `/api/registry` | [PATCH](../apps/role-atlas/app/api/registry/route.ts#L31) |
+| GET | `/api/registry/{packageLineId}` | [GET](../apps/role-atlas/app/api/registry/[packageLineId]/route.ts#L6) |
 
 ### releases
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
-| GET | `/api/releases` | [GET](../apps/role-atlas/app/api/releases/route.ts#L45) |
-| PATCH | `/api/releases` | [PATCH](../apps/role-atlas/app/api/releases/route.ts#L64) |
-| POST | `/api/releases` | [POST](../apps/role-atlas/app/api/releases/route.ts#L51) |
-| GET | `/api/releases/{releaseId}/export` | [GET](../apps/role-atlas/app/api/releases/[releaseId]/export/route.ts#L6) |
+| GET | `/api/releases` | [GET](../apps/role-atlas/app/api/releases/route.ts#L46) |
+| PATCH | `/api/releases` | [PATCH](../apps/role-atlas/app/api/releases/route.ts#L69) |
+| POST | `/api/releases` | [POST](../apps/role-atlas/app/api/releases/route.ts#L54) |
+| GET | `/api/releases/{releaseId}/export` | [GET](../apps/role-atlas/app/api/releases/[releaseId]/export/route.ts#L7) |
 
 ### risk-runs
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
-| GET | `/api/risk-runs` | [GET](../apps/role-atlas/app/api/risk-runs/route.ts#L49) |
-| POST | `/api/risk-runs` | [POST](../apps/role-atlas/app/api/risk-runs/route.ts#L59) |
+| GET | `/api/risk-runs` | [GET](../apps/role-atlas/app/api/risk-runs/route.ts#L6) |
+| POST | `/api/risk-runs` | [POST](../apps/role-atlas/app/api/risk-runs/route.ts#L20) |
 
 ### role-tools
 
@@ -588,20 +593,26 @@
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
-| POST | `/api/search/providers/test` | [POST](../apps/role-atlas/app/api/search/providers/test/route.ts#L16) |
+| POST | `/api/search/providers/test` | [POST](../apps/role-atlas/app/api/search/providers/test/route.ts#L17) |
 
 ### snapshot-iterations
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
-| GET | `/api/snapshot-iterations` | [GET](../apps/role-atlas/app/api/snapshot-iterations/route.ts#L65) |
-| POST | `/api/snapshot-iterations` | [POST](../apps/role-atlas/app/api/snapshot-iterations/route.ts#L75) |
+| GET | `/api/snapshot-iterations` | [GET](../apps/role-atlas/app/api/snapshot-iterations/route.ts#L68) |
+| POST | `/api/snapshot-iterations` | [POST](../apps/role-atlas/app/api/snapshot-iterations/route.ts#L80) |
 
 ### snapshots
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
 | GET | `/api/snapshots/resolve` | [GET](../apps/role-atlas/app/api/snapshots/resolve/route.ts#L5) |
+
+### source-materials
+
+| 方法 | 路径 / 命令 | 实现 |
+|---|---|---|
+| POST | `/api/source-materials` | [POST](../apps/role-atlas/app/api/source-materials/route.ts#L7) |
 
 ### work-process
 
@@ -613,14 +624,14 @@
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
-| POST | `/api/workspace-upgrades` | [POST](../apps/role-atlas/app/api/workspace-upgrades/route.ts#L76) |
+| POST | `/api/workspace-upgrades` | [POST](../apps/role-atlas/app/api/workspace-upgrades/route.ts#L79) |
 
 ### workspaces
 
 | 方法 | 路径 / 命令 | 实现 |
 |---|---|---|
-| GET | `/api/workspaces/ingest` | [GET](../apps/role-atlas/app/api/workspaces/ingest/route.ts#L23) |
-| POST | `/api/workspaces/ingest` | [POST](../apps/role-atlas/app/api/workspaces/ingest/route.ts#L35) |
+| GET | `/api/workspaces/ingest` | [GET](../apps/role-atlas/app/api/workspaces/ingest/route.ts#L6) |
+| POST | `/api/workspaces/ingest` | [POST](../apps/role-atlas/app/api/workspaces/ingest/route.ts#L22) |
 
 
 ## Web FastAPI

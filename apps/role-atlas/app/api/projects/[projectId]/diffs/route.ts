@@ -1,8 +1,11 @@
+import { authorizeApiRequest } from "@/lib/access";
 import { createSemanticDiff } from "@/lib/versioning/diff";
 
 export const runtime = "edge";
 
 export async function GET(request: Request, context: { params: Promise<{ projectId: string }> }) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   try {
     const { projectId } = await context.params;
     const params = new URL(request.url).searchParams;

@@ -1,3 +1,4 @@
+import { serverMayReadProject } from "@/lib/access-server";
 import { notFound, redirect } from "next/navigation";
 import { resolveSnapshot } from "@/lib/snapshots/resolver";
 
@@ -9,6 +10,7 @@ export default async function LegacyProjectRiskPage({
   searchParams: Promise<{ conversation?: string }>;
 }) {
   const [{ projectId }, query] = await Promise.all([params, searchParams]);
+  if (!await serverMayReadProject(projectId)) notFound();
   const resolved = await resolveSnapshot({ projectId });
   if (!resolved) notFound();
   const paramsOut = new URLSearchParams({ profile: "co_guided", project: projectId });

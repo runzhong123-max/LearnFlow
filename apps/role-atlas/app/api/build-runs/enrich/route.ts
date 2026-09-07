@@ -1,3 +1,6 @@
+import { startRoleJobExecution } from "@/lib/jobs/execution";
+import { projectVersionHeadState } from "@/lib/versioning/commit";
+import { authorizeApiRequest } from "@/lib/access";
 import { z } from "zod/v4";
 import { createModelInvoker } from "@/lib/agent/model";
 import { createColdStartSkill } from "@/lib/build/graph";
@@ -13,11 +16,10 @@ import {
   getProjectWorkspace,
   startBuildRun,
 } from "@/lib/projects/repository";
-import { checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob, renewRoleJobLease } from "@/lib/jobs/repository";
-import { createDurableJobStream, durableJobResponse, startRoleJobHeartbeat } from "@/lib/jobs/runtime";
+import { appendRoleJobEvent, assertRoleJobLease, checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob } from "@/lib/jobs/repository";
+import { createDurableJobStream, durableJobResponse } from "@/lib/jobs/runtime";
 import { resolveProviderConfig, resolveSearchProviderConfig } from "@/lib/server-runtime-config";
 import { workerRuntimeBindings } from "@/lib/worker-runtime-bindings";
-import { getRequestExecutionContext } from "vinext/shims/request-context";
 import { createColdStartDeepResearchRequest, createColdStartRiskRepairRequest } from "@/lib/iteration/automatic-followup";
 import { runAutomaticSnapshotIteration } from "@/lib/iteration/automatic-runner";
 
@@ -53,6 +55,8 @@ function failureEvent(input: { runId: string; projectId: string }, error: unknow
 }
 
 export async function POST(request: Request) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   let parsed: z.infer<typeof requestSchema>;
   try {
     parsed = requestSchema.parse(await request.json());
@@ -66,6 +70,9 @@ export async function POST(request: Request) {
   if (!conversation || conversation.conversation.projectId !== parsed.build.projectId) {
     return Response.json({ ok: false, error: "构建会话不存在或不属于当前项目。" }, { status: 404 });
   }
+  if (conversation.conversation.mode !== "iteration") return Response.json({ error: "请先切换到迭代态。", code: "ITERATION_MODE_REQUIRED" }, { status: 409 });
+  if (conversation.conversation.snapshotId !== parsed.baseSnapshotId) return Response.json({ error: "对话基线已改变。", code: "CONVERSATION_BASE_CHANGED" }, { status: 409 });
+  let parentVersionId = conversation.conversation.versionId;
   const existingRun = await getBuildRunStatus(parsed.build.projectId, parsed.build.runId);
   if (existingRun?.status === "completed") {
     return Response.json({
@@ -96,6 +103,8 @@ export async function POST(request: Request) {
   }
   const jobOwner = crypto.randomUUID();
   const job = await claimRoleJob({
+    conversationId: parsed.conversationId,
+    baseVersionId: parentVersionId || undefined,
     id: parsed.build.runId,
     kind: "cold_start",
     threadId: `${parsed.build.projectId}:${parsed.build.runId}`,
@@ -113,7 +122,8 @@ export async function POST(request: Request) {
     await failRoleJob({ jobId: parsed.build.runId, owner: jobOwner, error: "无法保存后台增量运行。", retryable: false }).catch(() => undefined);
     return Response.json({ ok: false, error: error instanceof Error ? error.message : "无法保存后台增量运行。" }, { status: 500 });
   }
-  const stopHeartbeat = startRoleJobHeartbeat({ renew: () => renewRoleJobLease(parsed.build.runId, jobOwner) });
+  const execution = startRoleJobExecution(parsed.build.runId, jobOwner);
+  const commitExecution = { jobId: parsed.build.runId, jobOwner };
   const model = createModelInvoker(providerConfig);
   const modelLabel = `${providerConfig.provider}/${providerConfig.model}`;
   const graph = createColdStartSkill(model, {
@@ -129,16 +139,19 @@ export async function POST(request: Request) {
       {
         configurable: { thread_id: `${parsed.build.projectId}:${parsed.build.runId}` },
         streamMode: "custom",
+        signal: execution.signal,
       },
     ),
-    persist: appendBuildEvent,
+    persist: async (event) => { await appendBuildEvent(event); await appendRoleJobEvent(parsed.build.runId, event); },
     handle: async (raw, journal) => {
       const event = raw as BuildEvent;
       if (event.kind === "build.enrichment.semantic.completed" && event.payload.result) {
         const result = event.payload.result as ColdStartBuildResult;
         await journal.commit(event, async () => {
           await checkpointRoleJob({ jobId: parsed.build.runId, owner: jobOwner, kind: "cold_start", phase: "semantic.completed", state: { snapshotId: result.snapshot.id, eventSeq: event.seq } });
-          await completeEnrichmentBuildSnapshot(result, parsed.conversationId, "semantic");
+          await assertRoleJobLease(parsed.build.runId, jobOwner);
+          const committed = await completeEnrichmentBuildSnapshot(result, parsed.conversationId, "semantic", { ...commitExecution, parentVersionId });
+          parentVersionId = committed.id;
         });
         return;
       }
@@ -146,7 +159,9 @@ export async function POST(request: Request) {
         const result = event.payload.result as ColdStartBuildResult;
         await journal.commit(event, async () => {
           await checkpointRoleJob({ jobId: parsed.build.runId, owner: jobOwner, kind: "cold_start", phase: "full.commit", state: { snapshotId: result.snapshot.id, eventSeq: event.seq } });
-          await completeEnrichmentBuildSnapshot(result, parsed.conversationId, "full");
+          await assertRoleJobLease(parsed.build.runId, jobOwner);
+          const committed = await completeEnrichmentBuildSnapshot(result, parsed.conversationId, "full", { ...commitExecution, parentVersionId });
+          parentVersionId = committed.id;
           await completeBuildStageRun(parsed.build.runId, parsed.build.projectId, result);
         });
         try {
@@ -158,10 +173,13 @@ export async function POST(request: Request) {
                 request: createColdStartDeepResearchRequest({
                   runId: parsed.build.runId,
                   snapshotId: result.snapshot.id,
+                  versionId: parentVersionId || undefined,
                   projectId: parsed.build.projectId,
                   conversationId: parsed.conversationId,
                   learningPathGraph: parsed.build.learningPathGraph,
                 }),
+                execution: commitExecution,
+                signal: execution.signal,
                 base: result,
                 model,
                 modelLabel,
@@ -181,17 +199,19 @@ export async function POST(request: Request) {
               runId: parsed.build.runId,
               snapshotId: researchedSnapshotId,
               projectId: parsed.build.projectId,
-              versionId: deepResult?.projectVersionId,
+              versionId: deepResult?.projectVersionId || parentVersionId || undefined,
               conversationId: parsed.conversationId,
               learningPathGraph: parsed.build.learningPathGraph,
             }),
+            execution: commitExecution,
+            signal: execution.signal,
             base: deepResult?.candidate || result,
             model,
             modelLabel,
           });
           const finalSnapshotId = repairResult.candidateSnapshotId || repairResult.candidate.snapshot.id;
           await journal.commit({ ...event, seq: event.seq + 4, time: new Date().toISOString(), kind: "build.followup.risk_repair.completed", profile: "system", payload: { result: repairResult, snapshotId: finalSnapshotId, deepResearchStatus: deepResult ? "completed" : "skipped" } }, async () => {
-            await completeRoleJob({ jobId: parsed.build.runId, owner: jobOwner, phase: deepResult ? "followup.completed" : "followup.degraded", result: { snapshotId: finalSnapshotId, deepResearchRunId: deepResult?.runId, riskRepairRunId: repairResult.runId } });
+            await completeRoleJob({ jobId: parsed.build.runId, owner: jobOwner, phase: deepResult ? "followup.completed" : "followup.degraded", result: { snapshotId: finalSnapshotId, candidateSnapshotId: finalSnapshotId, projectVersionId: repairResult.projectVersionId, ...await projectVersionHeadState(parsed.build.projectId, repairResult.projectVersionId || ""), deepResearchRunId: deepResult?.runId, riskRepairRunId: repairResult.runId } });
           });
         } catch (followupError) {
           await journal.commit({
@@ -212,8 +232,8 @@ export async function POST(request: Request) {
       await journal.commit(event, () => failBuildRun(parsed.build.runId, parsed.build.projectId, String(event.payload.message || "后台增量失败"), false)).catch(() => undefined);
       await failRoleJob({ jobId: parsed.build.runId, owner: jobOwner, error: String(event.payload.message || "后台增量失败"), retryable: true }).catch(() => undefined);
     },
-    onFinally: stopHeartbeat,
-    keepAlive: (execution) => getRequestExecutionContext()?.waitUntil(execution),
+    onFinally: execution.stop,
+    keepAlive: execution.keepAlive,
   });
   return durableJobResponse(stream);
 }

@@ -416,6 +416,7 @@ export default function ColdStartWorkspace({ initialQuery, embedded = false, onC
           body: JSON.stringify({
             id: activeProjectId,
             conversationId: activeConversationId,
+            conversationMode: "iteration",
             title: roleTitle.trim(),
             description: roleDescription.trim(),
             market: market.trim() || "中国大陆",

@@ -1,4 +1,4 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { and, sql, asc, desc, eq } from "drizzle-orm";
 import { ensureAppSchema, getDb } from "@/db";
 import { workspaceIngestionEvents, workspaceIngestionRuns } from "@/db/schema";
 import type { WorkspaceRunEvent } from "./events";
@@ -33,12 +33,10 @@ export async function startWorkspaceIngestion(input: {
       status: "running",
       phase: "register",
       inputJson: JSON.stringify(input.request),
-      checkpointJson: null,
-      resultJson: null,
-      alignmentJson: null,
       error: null,
       completedAt: null,
     },
+    setWhere: and(eq(workspaceIngestionRuns.projectId, input.request.projectId || ""), eq(workspaceIngestionRuns.baseSnapshotId, input.baseSnapshotId || ""), eq(workspaceIngestionRuns.status, "failed")),
   });
 }
 
@@ -92,10 +90,10 @@ export async function failWorkspaceIngestion(runId: string, error: string, cance
     status: cancelled ? "cancelled" : "failed",
     error,
     completedAt: new Date().toISOString(),
-  }).where(eq(workspaceIngestionRuns.id, runId));
+  }).where(and(eq(workspaceIngestionRuns.id, runId), eq(workspaceIngestionRuns.status, "running")));
 }
 
-export async function getLatestWorkspaceIngestion(input: { projectId?: string; snapshotId?: string }) {
+export async function getLatestWorkspaceIngestion(input: { projectId?: string; snapshotId?: string; ownerSubjectId?: string }) {
   await ensureAppSchema();
   const db = getDb();
   const condition = input.projectId
@@ -104,7 +102,7 @@ export async function getLatestWorkspaceIngestion(input: { projectId?: string; s
       ? eq(workspaceIngestionRuns.baseSnapshotId, input.snapshotId)
       : undefined;
   if (!condition) return null;
-  const [run] = await db.select().from(workspaceIngestionRuns).where(condition)
+  const [run] = await db.select().from(workspaceIngestionRuns).where(and(condition, input.ownerSubjectId ? sql`EXISTS (SELECT 1 FROM projects p WHERE p.id=${workspaceIngestionRuns.projectId} AND p.owner_subject_id=${input.ownerSubjectId} AND p.deleted_at IS NULL)` : undefined))
     .orderBy(desc(workspaceIngestionRuns.startedAt)).limit(1);
   if (!run) return null;
   const events = await db.select().from(workspaceIngestionEvents)

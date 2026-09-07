@@ -1,3 +1,4 @@
+import { authorizeApiRequest } from "@/lib/access";
 import { z } from "zod/v4";
 import { listProjectVersions, restoreProjectVersion } from "@/lib/versioning/commit";
 
@@ -9,7 +10,9 @@ const restoreSchema = z.object({
   message: z.string().max(240).optional(),
 });
 
-export async function GET(_: Request, context: { params: Promise<{ projectId: string }> }) {
+export async function GET(request: Request, context: { params: Promise<{ projectId: string }> }) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   try {
     const { projectId } = await context.params;
     const versions = await listProjectVersions(projectId);
@@ -24,6 +27,8 @@ export async function GET(_: Request, context: { params: Promise<{ projectId: st
 }
 
 export async function POST(request: Request, context: { params: Promise<{ projectId: string }> }) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   try {
     const { projectId } = await context.params;
     const input = restoreSchema.parse(await request.json());

@@ -1,6 +1,7 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import { gatewayOnlyReject } from "../lib/ecosystem/ingress";
+import { privateAppResponse } from "../lib/private-response";
 import handler from "vinext/server/app-router-entry";
 
 interface Env {
@@ -44,7 +45,7 @@ const worker = {
       }, allowedWidths);
     }
 
-    return handler.fetch(request, env, ctx);
+    return privateAppResponse(request, await handler.fetch(request, env, ctx));
   },
 };
 

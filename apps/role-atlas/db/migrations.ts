@@ -263,7 +263,29 @@ const projectLifecycleMigration: RuntimeMigration = {
   },
 };
 
-const runtimeMigrations: RuntimeMigration[] = [versioningRegistryMigration, pinLegacyConversationsMigration, registryMetadataV2Migration, registryMaintenancePolicyBackfill, durableRoleJobsMigration, unifiedRolePackageProtocolMigration, projectLifecycleMigration];
+export const conversationJobsMigration: RuntimeMigration = {
+  id: "2026-09-07-conversation-jobs-v1",
+  async apply(d1) {
+    await addColumns(d1, "conversations", { mode: "mode TEXT NOT NULL DEFAULT 'explanation' CHECK(mode IN ('explanation','iteration'))" });
+    await addColumns(d1, "role_jobs", {
+      conversation_id: "conversation_id TEXT REFERENCES conversations(id) ON DELETE CASCADE",
+      base_version_id: "base_version_id TEXT",
+    });
+    // Legacy jobs remain unbound: never guess conversation ownership from run names.
+    await d1.batch([
+      d1.prepare("CREATE INDEX IF NOT EXISTS idx_role_jobs_conversation ON role_jobs(conversation_id, updated_at DESC)"),
+      d1.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_role_jobs_active_conversation ON role_jobs(conversation_id) WHERE conversation_id IS NOT NULL AND status IN ('running','waiting_user')"),
+      d1.prepare(`CREATE TABLE IF NOT EXISTS role_job_events (
+        cursor INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id TEXT NOT NULL REFERENCES role_jobs(id) ON DELETE CASCADE,
+        event_run_id TEXT NOT NULL, event_seq INTEGER NOT NULL, kind TEXT NOT NULL, event_json TEXT NOT NULL,
+        UNIQUE(job_id, event_run_id, event_seq, kind)
+      )`),
+    ]);
+  },
+};
+
+const runtimeMigrations: RuntimeMigration[] = [versioningRegistryMigration, pinLegacyConversationsMigration, registryMetadataV2Migration, registryMaintenancePolicyBackfill, durableRoleJobsMigration, unifiedRolePackageProtocolMigration, projectLifecycleMigration, conversationJobsMigration];
 
 /**
  * Runtime migration runner for local/D1 preview environments. Production can

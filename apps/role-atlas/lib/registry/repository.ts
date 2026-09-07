@@ -1,5 +1,5 @@
 import { asc, desc, eq, like, or } from "drizzle-orm";
-import { ensureAppSchema, getDb } from "@/db";
+import { ensureAppSchema, getD1, getDb } from "@/db";
 import { maintainers, packageLines, packageReleases, roleIdentities } from "@/db/schema";
 import type { ColdStartBuildResult } from "@/lib/build/types";
 import { domainId } from "@/lib/versioning/canonical";
@@ -69,7 +69,7 @@ export async function ensureRegistryPackageLine(input: {
   return created;
 }
 
-export async function listRegistryPackages(input: { query?: string; visibility?: string; status?: string } = {}) {
+export async function listRegistryPackages(input: { query?: string; visibility?: string; status?: string; ownerSubjectId?: string; scope?: "mine" | "public" } = {}) {
   await ensureAppSchema();
   const db = getDb();
   const query = input.query?.trim();
@@ -82,18 +82,37 @@ export async function listRegistryPackages(input: { query?: string; visibility?:
     db.select().from(maintainers),
     db.select().from(packageReleases).orderBy(desc(packageReleases.createdAt)),
   ]);
-  return filtered.map((line) => ({
+  const ownedProjects = input.ownerSubjectId ? await getD1().prepare("SELECT id FROM projects WHERE owner_subject_id=? AND deleted_at IS NULL")
+    .bind(input.ownerSubjectId).all<{ id: string }>() : null;
+  const ownedIds = new Set(ownedProjects?.results.map(row => row.id) || []);
+  const publicOnly = input.scope === "public" || input.visibility === "public";
+  const publicRows = publicOnly ? await getD1().prepare(`SELECT r.id FROM package_releases r JOIN package_lines l ON l.id=r.package_line_id
+    JOIN package_artifacts a ON a.root_hash=r.artifact_root_hash WHERE l.visibility='public' AND r.status IN ('published','deprecated')
+    AND r.published_at IS NOT NULL AND json_extract(a.content, '$.manifest.visibility')='public'`).all<{ id: string }>() : null;
+  const publicIds = new Set(publicRows?.results.map(row => row.id) || []);
+  const visibleReleases = releases.filter(row => (!input.ownerSubjectId || Boolean(row.projectId && ownedIds.has(row.projectId)))
+    && (!publicOnly || publicIds.has(row.id)));
+  const visibleLines = new Set(visibleReleases.map(row => row.packageLineId));
+  return filtered.filter(line => (!input.ownerSubjectId && !publicOnly) || visibleLines.has(line.id)).map((line) => ({
     ...line,
     scope: safeJson(line.scopeJson, {}),
     maintenancePolicy: safeJson(line.maintenancePolicyJson, {}),
-    roleIdentity: identities.find((item) => item.id === line.roleIdentityId) || null,
+    roleIdentity: (() => {
+      const identity = identities.find((item) => item.id === line.roleIdentityId);
+      if (!identity) return null;
+      // Taxonomy identities are shared by role title, not by owner. Never project a different
+      // project's private description or aliases through that shared row into personal/public catalogs.
+      return input.ownerSubjectId || publicOnly
+        ? { ...identity, canonicalName: line.title, description: "", aliasesJson: "[]", industryDomainsJson: "[]" }
+        : identity;
+    })(),
     maintainer: maintainerRows.find((item) => item.id === line.maintainerId) || null,
-    releases: releases.filter((item) => item.packageLineId === line.id),
+    releases: visibleReleases.filter((item) => item.packageLineId === line.id),
   }));
 }
 
-export async function getRegistryPackage(packageLineId: string) {
-  const packages = await listRegistryPackages();
+export async function getRegistryPackage(packageLineId: string, input: { ownerSubjectId?: string; scope?: "mine" | "public" } = {}) {
+  const packages = await listRegistryPackages(input);
   return packages.find((item) => item.id === packageLineId || item.packageId === packageLineId) || null;
 }
 

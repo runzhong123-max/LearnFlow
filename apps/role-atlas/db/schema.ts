@@ -21,6 +21,7 @@ export const projects = sqliteTable("projects", {
 });
 
 export const conversations = sqliteTable("conversations", {
+  mode: text("mode", { enum: ["explanation", "iteration"] }).notNull().default("explanation"),
   id: text("id").primaryKey(),
   projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
@@ -69,6 +70,8 @@ export const roleJobs = sqliteTable("role_jobs", {
   id: text("id").primaryKey(),
   kind: text("kind", { enum: ["cold_start", "snapshot_iteration", "node_deepening", "workspace_instantiation"] }).notNull(),
   threadId: text("thread_id").notNull(),
+  conversationId: text("conversation_id").references(() => conversations.id, { onDelete: "cascade" }),
+  baseVersionId: text("base_version_id"),
   projectId: text("project_id").references(() => projects.id, { onDelete: "cascade" }),
   baseSnapshotId: text("base_snapshot_id"),
   status: text("status", { enum: ["queued", "running", "waiting_user", "completed", "failed", "cancelled"] }).notNull().default("queued"),

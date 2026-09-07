@@ -1,3 +1,4 @@
+import { serverMayReadProject } from "@/lib/access-server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProjectWorkspace } from "@/lib/projects/repository";
@@ -10,6 +11,7 @@ export const metadata: Metadata = { title: "版本与发布 · Role Atlas" };
 
 export default async function VersionPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
+  if (!await serverMayReadProject(projectId)) notFound();
   const [workspace, versions, tags, releases] = await Promise.all([
     getProjectWorkspace(projectId),
     listProjectVersions(projectId),

@@ -1,4 +1,4 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { and, sql, asc, desc, eq } from "drizzle-orm";
 import { ensureAppSchema, getD1, getDb } from "@/db";
 import { snapshotRiskEvents, snapshotRiskRuns, snapshotVersions } from "@/db/schema";
 import type { ColdStartBuildResult } from "@/lib/build/types";
@@ -86,11 +86,11 @@ export async function failSnapshotRiskRun(runId: string, error: string, cancelle
   }).where(eq(snapshotRiskRuns.id, runId));
 }
 
-export async function getLatestSnapshotRiskRun(snapshotId: string) {
+export async function getLatestSnapshotRiskRun(snapshotId: string, ownerSubjectId?: string) {
   await ensureAppSchema();
   const db = getDb();
   const [run] = await db.select().from(snapshotRiskRuns)
-    .where(eq(snapshotRiskRuns.baseSnapshotId, snapshotId))
+    .where(and(eq(snapshotRiskRuns.baseSnapshotId, snapshotId), ownerSubjectId ? sql`EXISTS (SELECT 1 FROM projects p WHERE p.id=${snapshotRiskRuns.projectId} AND p.owner_subject_id=${ownerSubjectId} AND p.deleted_at IS NULL)` : undefined))
     .orderBy(desc(snapshotRiskRuns.startedAt)).limit(1);
   if (!run) return null;
   const events = await db.select().from(snapshotRiskEvents)

@@ -1,3 +1,6 @@
+import { startRoleJobExecution } from "@/lib/jobs/execution";
+import { projectVersionHeadState } from "@/lib/versioning/commit";
+import { authorizeApiRequest, requestActor } from "@/lib/access";
 import { z } from "zod/v4";
 import { createModelInvoker, type ModelInvoker } from "@/lib/agent/model";
 import { createSnapshotIterationSkill } from "@/lib/iteration/graph";
@@ -19,8 +22,8 @@ import { getConversation, saveProjectCandidateFromIteration } from "@/lib/projec
 import { resolveProviderConfig, resolveSearchProviderConfig } from "@/lib/server-runtime-config";
 import { resolveSnapshot } from "@/lib/snapshots/resolver";
 import { workerRuntimeBindings } from "@/lib/worker-runtime-bindings";
-import { createDurableJobStream, durableJobResponse, startRoleJobHeartbeat } from "@/lib/jobs/runtime";
-import { checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob, renewRoleJobLease } from "@/lib/jobs/repository";
+import { createDurableJobStream, durableJobResponse } from "@/lib/jobs/runtime";
+import { appendRoleJobEvent, assertRoleJobLease, checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob } from "@/lib/jobs/repository";
 
 export const runtime = "edge";
 
@@ -63,16 +66,20 @@ function inactiveModel(): ModelInvoker {
 }
 
 export async function GET(request: Request) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   const snapshotId = new URL(request.url).searchParams.get("snapshotId");
   if (!snapshotId) return Response.json({ error: "缺少 snapshotId。" }, { status: 400 });
   try {
-    return Response.json({ run: await getLatestSnapshotIteration(snapshotId) });
+    return Response.json({ run: await getLatestSnapshotIteration(snapshotId, (await requestActor(request)).subjectId) });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : "迭代运行读取失败。" }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   let parsed: z.infer<typeof postSchema>;
   try {
     parsed = postSchema.parse(await request.json());
@@ -83,10 +90,15 @@ export async function POST(request: Request) {
   const resolved = await resolveSnapshot(parsed.iteration.snapshotRef).catch(() => null);
   if (!resolved) return Response.json({ error: "没有可迭代的岗位快照。" }, { status: 404 });
   const projectId = resolved.reference.projectId || parsed.iteration.projectId;
-  if (parsed.iteration.conversationId) {
+  if (!projectId || !parsed.iteration.conversationId) return Response.json({ error: "请选择当前项目的迭代对话。", code: "CONVERSATION_REQUIRED" }, { status: 400 });
+  {
     const conversation = await getConversation(parsed.iteration.conversationId).catch(() => null);
-    if (!conversation || !projectId || conversation.conversation.projectId !== projectId) {
-      return Response.json({ error: "迭代会话不存在或不属于当前项目。" }, { status: 404 });
+    if (!conversation || conversation.conversation.projectId !== projectId) {
+      return Response.json({ error: "会话不存在或不属于当前项目。" }, { status: 404 });
+    }
+    if (conversation.conversation.mode !== "iteration") return Response.json({ error: "请先切换到迭代态再运行工具。", code: "ITERATION_MODE_REQUIRED" }, { status: 409 });
+    if (conversation.conversation.versionId !== (resolved.reference.versionId || null) || conversation.conversation.snapshotId !== resolved.reference.snapshotId) {
+      return Response.json({ error: "对话基线已改变，请刷新后继续。", code: "CONVERSATION_BASE_CHANGED" }, { status: 409 });
     }
   }
 
@@ -121,6 +133,8 @@ export async function POST(request: Request) {
     ? "node_deepening" as const
     : "snapshot_iteration" as const;
   const job = await claimRoleJob({
+    conversationId: iterationRequest.conversationId,
+    baseVersionId: resolved.reference.versionId,
     id: iterationRequest.runId,
     kind: jobKind,
     threadId: `${resolved.reference.snapshotId}:${iterationRequest.runId}`,
@@ -139,7 +153,7 @@ export async function POST(request: Request) {
     return Response.json({ error: error instanceof Error ? error.message : "无法创建岗位快照迭代运行。" }, { status: 500 });
   }
 
-  const stopHeartbeat = startRoleJobHeartbeat({ renew: () => renewRoleJobLease(iterationRequest.runId, jobOwner) });
+  const execution = startRoleJobExecution(iterationRequest.runId, jobOwner);
 
   const graph = createSnapshotIterationSkill({
     model,
@@ -160,7 +174,7 @@ export async function POST(request: Request) {
     ? String(recovered.phase) as "contract" | "discovery" | "research-plan" | "research" | "rebuild" | "consolidate" | "evaluate" | "next-round"
     : undefined;
   const stream = createDurableJobStream<IterationEvent>({
-    signal: request.signal,
+    signal: execution.signal,
     execute: () => graph.stream(
       {
         round: 1,
@@ -180,10 +194,10 @@ export async function POST(request: Request) {
       {
         configurable: { thread_id: `${resolved.reference.snapshotId}:${iterationRequest.runId}` },
         streamMode: "custom",
-        signal: request.signal,
+        signal: execution.signal,
       },
     ),
-    persist: appendIterationEvent,
+    persist: async (event) => { await appendIterationEvent(event); await appendRoleJobEvent(iterationRequest.runId, event); },
     handle: async (raw, journal) => {
       const event = raw as IterationEvent;
       if (event.kind !== "iteration.run.completed" || !event.payload.result) {
@@ -200,10 +214,13 @@ export async function POST(request: Request) {
           payload: { parentSnapshotId: result.baseSnapshotId, status: "candidate" },
         });
       }
+      await assertRoleJobLease(iterationRequest.runId, jobOwner);
       const candidateSnapshotId = await completeSnapshotIteration(result);
       const projectVersionId = projectId
-        ? await saveProjectCandidateFromIteration(result, projectId, iterationRequest.conversationId)
+        ? await saveProjectCandidateFromIteration(result, projectId, iterationRequest.conversationId, { jobId: iterationRequest.runId, jobOwner })
         : null;
+      const headState = projectId && projectVersionId ? await projectVersionHeadState(projectId, projectVersionId) : undefined;
+      Object.assign(result, headState);
       result.candidateSnapshotId = candidateSnapshotId || undefined;
       result.projectVersionId = projectVersionId || undefined;
       if (projectVersionId) await attachIterationProjectVersion(result, projectVersionId);
@@ -225,18 +242,19 @@ export async function POST(request: Request) {
       } else {
         await journal.commit({ ...event, payload: { ...event.payload, result, projectVersionId } });
       }
-      await completeRoleJob({ jobId: iterationRequest.runId, owner: jobOwner, phase: "completed", result: { candidateSnapshotId, projectVersionId } });
+      await completeRoleJob({ jobId: iterationRequest.runId, owner: jobOwner, phase: "completed", result: { candidateSnapshotId, projectVersionId, ...headState } });
     },
     onFailure: async (error, journal) => {
       const event = failureEvent(iterationRequest, error);
       await journal.commit(event, () => failSnapshotIteration(
         iterationRequest.runId,
         String(event.payload.message || "迭代失败"),
-        request.signal.aborted,
+        execution.signal.aborted,
       )).catch(() => undefined);
-      await failRoleJob({ jobId: iterationRequest.runId, owner: jobOwner, error: String(event.payload.message || "迭代失败"), retryable: !request.signal.aborted }).catch(() => undefined);
+      await failRoleJob({ jobId: iterationRequest.runId, owner: jobOwner, error: String(event.payload.message || "迭代失败"), retryable: !execution.signal.aborted }).catch(() => undefined);
     },
-    onFinally: stopHeartbeat,
+    onFinally: execution.stop,
+    keepAlive: execution.keepAlive,
   });
   return durableJobResponse(stream);
 }

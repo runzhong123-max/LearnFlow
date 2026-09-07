@@ -15,7 +15,7 @@ test("供应商地址和模型只能从服务端白名单选择", () => {
   assert.throws(() => validateProviderConfig({ provider: "deepseek", model: "attacker-model", apiKey: "test-key-long", thinking: false }));
 });
 
-test("连接测试忽略客户端配置且不在响应中回显密钥", async () => {
+test("未登录的连接测试在读取配置前拒绝，且不在响应中回显密钥", async () => {
   const apiKey = "secret-should-never-appear";
   const response = await testProvider(new Request("http://localhost/api/providers/test", {
     method: "POST",
@@ -23,7 +23,7 @@ test("连接测试忽略客户端配置且不在响应中回显密钥", async ()
     body: JSON.stringify({ config: { provider: "deepseek", model: "attacker-model", apiKey, thinking: false } }),
   }));
   const text = await response.text();
-  assert.equal(response.status, 400);
+  assert.ok([401, 503].includes(response.status));
   assert.doesNotMatch(text, new RegExp(apiKey));
-  assert.match(text, /服务端/);
+  assert.match(text, /LOGIN_REQUIRED|IDENTITY_SERVICE_NOT_CONFIGURED/);
 });

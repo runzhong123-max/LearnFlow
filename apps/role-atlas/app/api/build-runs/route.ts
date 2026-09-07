@@ -1,3 +1,6 @@
+import { startRoleJobExecution } from "@/lib/jobs/execution";
+import { projectVersionHeadState } from "@/lib/versioning/commit";
+import { authorizeApiRequest } from "@/lib/access";
 import { z } from "zod/v4";
 import { createModelInvoker } from "@/lib/agent/model";
 import { createColdStartSkill } from "@/lib/build/graph";
@@ -7,8 +10,7 @@ import { resolveProviderConfig, resolveSearchProviderConfig } from "@/lib/server
 import { workerRuntimeBindings } from "@/lib/worker-runtime-bindings";
 import { appendBuildEvent, completeBuildStageRun, completeFastBuildSnapshot, failBuildRun, getConversation, getProjectWorkspace, startBuildRun } from "@/lib/projects/repository";
 import { createDurableJobStream, durableJobResponse } from "@/lib/jobs/runtime";
-import { startRoleJobHeartbeat } from "@/lib/jobs/runtime";
-import { checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob, renewRoleJobLease } from "@/lib/jobs/repository";
+import { appendRoleJobEvent, assertRoleJobLease, checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob } from "@/lib/jobs/repository";
 
 export const runtime = "edge";
 
@@ -57,6 +59,8 @@ function failureEvent(input: { runId?: string; projectId?: string }, error: unkn
 }
 
 export async function POST(request: Request) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   const contentLength = Number(request.headers.get("content-length") || 0);
   if (contentLength > 800_000) return Response.json({ ok: false, error: "冷启动请求体过大。" }, { status: 413 });
 
@@ -131,8 +135,12 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, error: "构建会话不存在或不属于当前项目。" }, { status: 404 });
   }
 
+  if (buildConversation.conversation.mode !== "iteration") return Response.json({ error: "请先切换到迭代态再运行工具。", code: "ITERATION_MODE_REQUIRED" }, { status: 409 });
+
   const jobOwner = crypto.randomUUID();
   const job = await claimRoleJob({
+    conversationId: parsed.conversationId,
+    baseVersionId: buildConversation.conversation.versionId || undefined,
     id: buildRequest.runId,
     kind: "cold_start",
     threadId: `${buildRequest.projectId}:${buildRequest.runId}`,
@@ -151,7 +159,7 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, error: notFound ? "项目不存在，请重新创建项目。" : "无法保存冷启动运行。" }, { status: notFound ? 404 : 500 });
   }
 
-  const stopHeartbeat = startRoleJobHeartbeat({ renew: () => renewRoleJobLease(buildRequest.runId, jobOwner) });
+  const execution = startRoleJobExecution(buildRequest.runId, jobOwner);
 
   pruneWorkItemCache();
   const graph = createColdStartSkill(createModelInvoker(providerConfig), {
@@ -162,17 +170,17 @@ export async function POST(request: Request) {
     execution: "kernel",
   });
   const stream = createDurableJobStream<BuildEvent>({
-    signal: request.signal,
+    signal: execution.signal,
     execute: () => graph.stream(
       { request: buildRequest, laneFailures: [] },
       {
         configurable: { thread_id: `${buildRequest.projectId}:${buildRequest.runId}` },
         streamMode: "custom",
-        signal: request.signal,
+        signal: execution.signal,
       },
     ),
     persist: async (event) => {
-      try { await appendBuildEvent(event); }
+      try { await appendBuildEvent(event); await appendRoleJobEvent(buildRequest.runId, event); }
       catch { throw new Error("PERSISTENCE_FAILED"); }
     },
     handle: async (raw, journal) => {
@@ -181,13 +189,17 @@ export async function POST(request: Request) {
         journal.publish(buildEvent);
         return;
       }
+      await assertRoleJobLease(buildRequest.runId, jobOwner);
       const kernel = buildEvent.payload.result as ColdStartBuildResult;
       await journal.commit(buildEvent, async () => {
         try {
           await checkpointRoleJob({ jobId: buildRequest.runId, owner: jobOwner, kind: "cold_start", phase: "kernel.commit", state: { snapshotId: kernel.snapshot.id, eventSeq: buildEvent.seq } });
-          await completeFastBuildSnapshot(kernel, parsed.conversationId);
+          const committed = await completeFastBuildSnapshot(kernel, parsed.conversationId, { parentVersionId: job.job?.baseVersionId || null, jobId: buildRequest.runId, jobOwner });
+          buildEvent.payload.projectVersionId = committed.id;
+          buildEvent.payload.appliedToHead = committed.appliedToHead;
+          buildEvent.payload.currentHeadVersionId = committed.currentHeadVersionId;
           await completeBuildStageRun(buildRequest.runId, buildRequest.projectId, kernel);
-          await completeRoleJob({ jobId: buildRequest.runId, owner: jobOwner, phase: "kernel.completed", result: { snapshotId: kernel.snapshot.id } });
+          await completeRoleJob({ jobId: buildRequest.runId, owner: jobOwner, phase: "kernel.completed", result: { snapshotId: kernel.snapshot.id, candidateSnapshotId: kernel.snapshot.id, projectVersionId: committed.id, appliedToHead: committed.appliedToHead, currentHeadVersionId: committed.currentHeadVersionId } });
         } catch {
           throw new Error("PERSISTENCE_FAILED");
         }
@@ -199,11 +211,12 @@ export async function POST(request: Request) {
         buildRequest.runId,
         buildRequest.projectId,
         String(event.payload.message || "冷启动失败"),
-        request.signal.aborted,
+        execution.signal.aborted,
       )).catch(() => undefined);
       await failRoleJob({ jobId: buildRequest.runId, owner: jobOwner, error: String(event.payload.message || "冷启动失败"), retryable: event.payload.retryable !== false }).catch(() => undefined);
     },
-    onFinally: stopHeartbeat,
+    onFinally: execution.stop,
+    keepAlive: execution.keepAlive,
   });
   return durableJobResponse(stream);
 }

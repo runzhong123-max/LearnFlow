@@ -1,13 +1,14 @@
-import { ArrowUpRight, Focus, FolderKanban, RefreshCw } from "lucide-react";
+import { ArrowUpRight, Focus, FolderKanban, RefreshCw, Sparkles } from "lucide-react";
 import Link from "next/link";
 import {
-  workspaceSkillDefinitions,
+  roleSkillDefinitions,
   workspaceSkillHref,
   type WorkspaceSkillContext,
-  type WorkspaceSkillId,
+  type RoleSkillId,
 } from "@/lib/skills/workspace";
 
-const skillIcons: Record<WorkspaceSkillId, typeof RefreshCw> = {
+const skillIcons: Record<RoleSkillId, typeof RefreshCw> = {
+  "cold-start-role-package": Sparkles,
   "snapshot-iteration": RefreshCw,
   "node-deepening": Focus,
   "workspace-instantiation": FolderKanban,
@@ -18,13 +19,13 @@ export default function WorkspaceSkillLauncher({
   onLaunch,
 }: {
   context: WorkspaceSkillContext;
-  onLaunch?: (skillId: WorkspaceSkillId) => void;
+  onLaunch?: (skillId: RoleSkillId) => void;
 }) {
   return (
-    <nav className="chat-skill-launcher" aria-label="当前岗位可用技能">
-      {workspaceSkillDefinitions.map((skill) => {
+    <nav className="chat-skill-launcher" aria-label="对话工具">
+      {roleSkillDefinitions.map((skill) => {
         const Icon = skillIcons[skill.id];
-        const available = Boolean(context.snapshotId);
+        const available = Boolean(context.projectId) && (skill.id === "cold-start-role-package" ? !context.snapshotId : Boolean(context.snapshotId) && (skill.id !== "node-deepening" || Boolean(context.selectedNodeIds?.length)));
         const className = `chat-skill-card ${skill.id}${available ? "" : " disabled"}`;
         const content = <>
           <i><Icon size={14} /></i>
@@ -42,7 +43,7 @@ export default function WorkspaceSkillLauncher({
             disabled={!available}
             onClick={() => onLaunch(skill.id)}
             key={skill.id}
-            aria-label={`在当前工作台启动${skill.label}技能`}
+            aria-label={`在当前对话启动${skill.label}技能`}
           >
             {content}
           </button>
@@ -50,7 +51,7 @@ export default function WorkspaceSkillLauncher({
           <Link
             className={className}
             data-testid={`workspace-skill-${skill.id}`}
-            href={workspaceSkillHref(skill.id, context)}
+            href={skill.id === "cold-start-role-package" ? "/projects/new" : workspaceSkillHref(skill.id, context)}
             aria-disabled={!available}
             onClick={(event) => { if (!available) event.preventDefault(); }}
             key={skill.id}

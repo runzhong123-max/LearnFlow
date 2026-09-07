@@ -6,7 +6,7 @@ import { normalizeRolePackage } from "@/lib/packages/role-package-manifest";
 import { canonicalStringify, domainId, projectVersionLabel, sha256Hex } from "./canonical";
 import { preserveStableIdentities } from "./identity";
 import type { ProjectVersionRecord, ProjectVersionSourceKind } from "./types";
-import { versionCommitStatements } from "./commit-transaction";
+import { versionAdoptionStatements, versionCommitStatements } from "./commit-transaction";
 
 function parseResult(value: string) {
   return normalizeRolePackage(JSON.parse(value) as ColdStartBuildResult);
@@ -86,6 +86,12 @@ export async function commitStaticSnapshot(input: {
   return { snapshotId: input.result.snapshot.id, contentHash, created: inserted.length > 0 };
 }
 
+export async function projectVersionHeadState(projectId: string, versionId: string) {
+  const row = await getD1().prepare("SELECT COALESCE(head_version_id,active_version_id) AS head FROM projects WHERE id=?")
+    .bind(projectId).first<{ head: string | null }>();
+  return { appliedToHead: row?.head === versionId, currentHeadVersionId: row?.head || null };
+}
+
 export async function commitProjectVersion(input: {
   projectId: string;
   result: ColdStartBuildResult;
@@ -94,6 +100,8 @@ export async function commitProjectVersion(input: {
   sourceInput?: unknown;
   parentVersionId?: string | null;
   conversationId?: string | null;
+  jobId?: string;
+  jobOwner?: string;
   message: string;
   authorKind?: "user" | "agent" | "system";
   /** Reuse an already committed immutable artifact while still recording a new timeline event. */
@@ -103,6 +111,11 @@ export async function commitProjectVersion(input: {
   const db = getDb();
   const [project] = await db.select().from(projects).where(and(eq(projects.id, input.projectId), isNull(projects.deletedAt))).limit(1);
   if (!project) throw new Error("PROJECT_NOT_FOUND");
+  if (input.conversationId) {
+    const conversation = await getD1().prepare("SELECT id FROM conversations WHERE id=? AND project_id=?")
+      .bind(input.conversationId, input.projectId).first();
+    if (!conversation) throw new Error("CONVERSATION_PROJECT_CONFLICT");
+  }
   const [existingVersion] = await db.select().from(projectVersions).where(and(
     eq(projectVersions.projectId, input.projectId),
     eq(projectVersions.sourceRunId, input.sourceRunId),
@@ -115,6 +128,7 @@ export async function commitProjectVersion(input: {
       rootHash: existingVersion.rootHash,
       parentVersionId: existingVersion.parentVersionId,
       status: existingVersion.status,
+      ...await projectVersionHeadState(input.projectId, existingVersion.id),
     };
   }
   const parentVersionId = input.parentVersionId === undefined
@@ -150,7 +164,7 @@ export async function commitProjectVersion(input: {
       sourceInput: JSON.stringify(input.sourceInput || { kind: input.sourceKind }), parentVersionId,
       expectedHeadId: parentVersionId, version, snapshotId: result.snapshot.id,
       rootHash: snapshot.contentHash, status, message: input.message, authorKind: input.authorKind || "agent",
-      packageJson: canonicalStringify(result), now, conversationId: input.conversationId,
+      packageJson: canonicalStringify(result), now, conversationId: input.conversationId, jobId: input.jobId, jobOwner: input.jobOwner,
     }));
     if (!committed[1].meta.changes) throw new Error("BUILD_RUN_PROJECT_CONFLICT");
   } catch (error) {
@@ -160,9 +174,9 @@ export async function commitProjectVersion(input: {
     )).limit(1);
     if (!winner) throw error;
     return { id: winner.id, version: winner.version, snapshotId: winner.snapshotId, rootHash: winner.rootHash,
-      parentVersionId: winner.parentVersionId, status: winner.status };
+      parentVersionId: winner.parentVersionId, status: winner.status, ...await projectVersionHeadState(input.projectId, winner.id) };
   }
-  return { id, version, snapshotId: result.snapshot.id, rootHash: snapshot.contentHash, parentVersionId, status };
+  return { id, version, snapshotId: result.snapshot.id, rootHash: snapshot.contentHash, parentVersionId, status, ...await projectVersionHeadState(input.projectId, id) };
 }
 
 export async function listProjectVersions(projectId: string): Promise<ProjectVersionRecord[]> {
@@ -239,4 +253,27 @@ export async function restoreProjectVersion(input: {
     message: input.message || `恢复到 ${target.message || target.version}`,
     authorKind: input.actorKind || "user",
   });
+}
+
+
+/** Explicitly adopt an already retained conversation candidate; never merge its facts implicitly. */
+export async function adoptProjectVersion(input: {
+  projectId: string; versionId: string; expectedHeadVersionId: string | null; conversationId?: string;
+}) {
+  await ensureAppSchema();
+  const version = await getProjectVersionRecord(input.projectId, input.versionId);
+  if (!version) throw new Error("VERSION_NOT_FOUND");
+  if (input.conversationId) {
+    const conversation = await getD1().prepare("SELECT id FROM conversations WHERE id=? AND project_id=?")
+      .bind(input.conversationId, input.projectId).first();
+    if (!conversation) throw new Error("CONVERSATION_NOT_FOUND");
+  }
+  const batch = await getD1().batch(versionAdoptionStatements(getD1(), {
+    ...input, operationId: crypto.randomUUID(), now: new Date().toISOString(),
+  }));
+  const state = await projectVersionHeadState(input.projectId, input.versionId);
+  const conversationSwitched = Boolean(input.conversationId && batch[2]?.meta.changes);
+  const adopted = (Boolean(batch[0].meta.changes) || (state.appliedToHead && input.expectedHeadVersionId === input.versionId))
+    && (!input.conversationId || conversationSwitched);
+  return { adopted, conversationSwitched, ...state };
 }

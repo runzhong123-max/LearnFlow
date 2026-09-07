@@ -1,8 +1,11 @@
+import { authorizeApiRequest } from "@/lib/access";
 import { importStaticRolePackage } from "@/lib/packages/importer";
 
 export const runtime = "edge";
 
 export async function POST(request: Request) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   try {
     const contentType = request.headers.get("content-type") || "";
     let bytes: Uint8Array;

@@ -81,3 +81,13 @@ test("租约心跳在停止后不再续期，并等待在途续期完成", async
   assert.ok(stoppedAt >= 1);
   assert.equal(pulses, stoppedAt);
 });
+
+
+test("领域写入失败不会在可重放日志中留下成功完成事件", async () => {
+  const persisted: Event[] = [];
+  const visible: Event[] = [];
+  const journal = new DurableJobJournal<Event>(async event => { persisted.push(event); }, event => { visible.push(event); });
+  await assert.rejects(() => journal.commit({ runId: "run:fail", seq: 1, time: "now", kind: "completed" }, async () => { throw new Error("write failed"); }), /write failed/);
+  assert.equal(persisted.length, 0);
+  assert.equal(visible.length, 0);
+});

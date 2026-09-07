@@ -1,3 +1,6 @@
+import { startRoleJobExecution } from "@/lib/jobs/execution";
+import { projectVersionHeadState } from "@/lib/versioning/commit";
+import { authorizeApiRequest } from "@/lib/access";
 import { z } from "zod/v4";
 import { createModelInvoker } from "@/lib/agent/model";
 import { stableHash } from "@/lib/build/compiler";
@@ -26,8 +29,8 @@ import {
   startWorkspaceIngestion,
 } from "@/lib/workspaces/repository";
 import { workspaceIngestionRequestSchema, type WorkspaceAlignmentReport, type WorkspaceIngestionResult } from "@/lib/workspaces/types";
-import { createDurableJobStream, durableJobResponse, startRoleJobHeartbeat } from "@/lib/jobs/runtime";
-import { checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob, renewRoleJobLease } from "@/lib/jobs/repository";
+import { createDurableJobStream, durableJobResponse } from "@/lib/jobs/runtime";
+import { appendRoleJobEvent, assertRoleJobLease, checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob } from "@/lib/jobs/repository";
 
 export const runtime = "edge";
 
@@ -74,6 +77,8 @@ function iterationFailureEvent(input: { runId: string; snapshotId: string; proje
 }
 
 export async function POST(request: Request) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   let parsed: z.infer<typeof postSchema>;
   try {
     parsed = postSchema.parse(await request.json());
@@ -84,15 +89,22 @@ export async function POST(request: Request) {
   if (!resolved) return Response.json({ error: "没有可升级的岗位快照。" }, { status: 404 });
   const resolvedSnapshot = resolved;
   const projectId = resolvedSnapshot.reference.projectId || parsed.workspace.projectId;
-  if (parsed.conversationId) {
+  if (!projectId || !parsed.conversationId) return Response.json({ error: "请选择当前项目的迭代对话。", code: "CONVERSATION_REQUIRED" }, { status: 400 });
+  {
     const conversation = await getConversation(parsed.conversationId).catch(() => null);
-    if (!conversation || !projectId || conversation.conversation.projectId !== projectId) {
-      return Response.json({ error: "升级会话不存在或不属于当前项目。" }, { status: 404 });
+    if (!conversation || conversation.conversation.projectId !== projectId) {
+      return Response.json({ error: "会话不存在或不属于当前项目。" }, { status: 404 });
+    }
+    if (conversation.conversation.mode !== "iteration") return Response.json({ error: "请先切换到迭代态再运行工具。", code: "ITERATION_MODE_REQUIRED" }, { status: 409 });
+    if (conversation.conversation.versionId !== (resolvedSnapshot.reference.versionId || null) || conversation.conversation.snapshotId !== resolvedSnapshot.reference.snapshotId) {
+      return Response.json({ error: "对话基线已改变，请刷新后继续。", code: "CONVERSATION_BASE_CHANGED" }, { status: 409 });
     }
   }
   const workspaceRequest = { ...parsed.workspace, projectId };
   const jobOwner = crypto.randomUUID();
   const job = await claimRoleJob({
+    conversationId: parsed.conversationId,
+    baseVersionId: resolvedSnapshot.reference.versionId,
     id: workspaceRequest.runId,
     kind: "workspace_instantiation",
     threadId: `${resolvedSnapshot.reference.snapshotId}:${workspaceRequest.runId}`,
@@ -109,7 +121,7 @@ export async function POST(request: Request) {
     await failRoleJob({ jobId: workspaceRequest.runId, owner: jobOwner, error: "无法创建工作区实例化运行。", retryable: false }).catch(() => undefined);
     return Response.json({ error: error instanceof Error ? error.message : "无法创建工作区实例化运行。" }, { status: 500 });
   }
-  const stopHeartbeat = startRoleJobHeartbeat({ renew: () => renewRoleJobLease(workspaceRequest.runId, jobOwner) });
+  const execution = startRoleJobExecution(workspaceRequest.runId, jobOwner);
 
   const recovered = (job.job?.attempt || 1) > 1 && job.checkpoint?.state && typeof job.checkpoint.state === "object"
     ? job.checkpoint.state as Record<string, unknown>
@@ -141,7 +153,7 @@ export async function POST(request: Request) {
       }, {
         configurable: { thread_id: `${resolvedSnapshot.reference.snapshotId}:${workspaceRequest.runId}:workspace` },
         streamMode: "custom",
-        signal: request.signal,
+        signal: execution.signal,
       });
       for await (const raw of workspaceEvents) yield raw as WorkspaceRunEvent;
     }
@@ -220,17 +232,19 @@ export async function POST(request: Request) {
     }, {
       configurable: { thread_id: `${resolvedSnapshot.reference.snapshotId}:${iterationRunId}` },
       streamMode: "custom",
-      signal: request.signal,
+      signal: execution.signal,
     });
     for await (const raw of iterationEvents) yield raw as IterationEvent;
   }
 
   const stream = createDurableJobStream<WorkspaceRunEvent | IterationEvent>({
-    signal: request.signal,
+    signal: execution.signal,
     execute: executeWorkflow,
-    persist: (event) => event.runId === workspaceRequest.runId
-      ? appendWorkspaceEvent(event as WorkspaceRunEvent)
-      : appendIterationEvent(event as IterationEvent),
+    persist: async (event) => {
+      if (event.runId === workspaceRequest.runId) await appendWorkspaceEvent(event as WorkspaceRunEvent);
+      else await appendIterationEvent(event as IterationEvent);
+      await appendRoleJobEvent(workspaceRequest.runId, event);
+    },
     handle: async (raw, journal) => {
       const event = raw as WorkspaceRunEvent | IterationEvent;
       if (event.runId === workspaceRequest.runId) {
@@ -265,8 +279,11 @@ export async function POST(request: Request) {
           payload: { parentSnapshotId: result.baseSnapshotId, workspaceRunId: workspaceRequest.runId, status: "candidate" },
         });
       }
+      await assertRoleJobLease(workspaceRequest.runId, jobOwner);
       const candidateSnapshotId = await completeSnapshotIteration(result);
-      const projectVersionId = projectId ? await saveProjectCandidateFromIteration(result, projectId, parsed.conversationId) : null;
+      const projectVersionId = projectId ? await saveProjectCandidateFromIteration(result, projectId, parsed.conversationId, { jobId: workspaceRequest.runId, jobOwner }) : null;
+      const headState = projectId && projectVersionId ? await projectVersionHeadState(projectId, projectVersionId) : undefined;
+      Object.assign(result, headState);
       result.candidateSnapshotId = candidateSnapshotId || undefined;
       result.projectVersionId = projectVersionId || undefined;
       if (projectVersionId) await attachIterationProjectVersion(result, projectVersionId);
@@ -288,7 +305,7 @@ export async function POST(request: Request) {
       } else {
         await journal.commit({ ...iterationEvent, payload: { ...iterationEvent.payload, result, projectVersionId, workspaceRunId: workspaceRequest.runId } });
       }
-      await completeRoleJob({ jobId: workspaceRequest.runId, owner: jobOwner, phase: "completed", result: { candidateSnapshotId, projectVersionId, workspacePackageId: workspaceResult?.package.id } });
+      await completeRoleJob({ jobId: workspaceRequest.runId, owner: jobOwner, phase: "completed", result: { candidateSnapshotId, projectVersionId, ...headState, workspacePackageId: workspaceResult?.package.id } });
     },
     onFailure: async (error, journal) => {
       if (!workspaceResult) {
@@ -303,20 +320,21 @@ export async function POST(request: Request) {
           phase: "system",
           payload: { message },
         };
-        await journal.commit(workspaceEvent, () => failWorkspaceIngestion(workspaceRequest.runId, message, request.signal.aborted)).catch(() => undefined);
-        await failRoleJob({ jobId: workspaceRequest.runId, owner: jobOwner, error: message, retryable: !request.signal.aborted }).catch(() => undefined);
+        await journal.commit(workspaceEvent, () => failWorkspaceIngestion(workspaceRequest.runId, message, execution.signal.aborted)).catch(() => undefined);
+        await failRoleJob({ jobId: workspaceRequest.runId, owner: jobOwner, error: message, retryable: !execution.signal.aborted }).catch(() => undefined);
         return;
       }
       const event = iterationFailureEvent({ runId: iterationRunId, snapshotId: resolvedSnapshot.reference.snapshotId, projectId }, error);
       await journal.commit(event, async () => {
         await Promise.allSettled([
-          failSnapshotIteration(iterationRunId, String(event.payload.message || "工作区升级失败"), request.signal.aborted),
-          failWorkspaceIngestion(workspaceRequest.runId, String(event.payload.message || "工作区升级失败"), request.signal.aborted),
+          failSnapshotIteration(iterationRunId, String(event.payload.message || "工作区升级失败"), execution.signal.aborted),
+          failWorkspaceIngestion(workspaceRequest.runId, String(event.payload.message || "工作区升级失败"), execution.signal.aborted),
         ]);
       }).catch(() => undefined);
-      await failRoleJob({ jobId: workspaceRequest.runId, owner: jobOwner, error: String(event.payload.message || "工作区升级失败"), retryable: !request.signal.aborted }).catch(() => undefined);
+      await failRoleJob({ jobId: workspaceRequest.runId, owner: jobOwner, error: String(event.payload.message || "工作区升级失败"), retryable: !execution.signal.aborted }).catch(() => undefined);
     },
-    onFinally: stopHeartbeat,
+    onFinally: execution.stop,
+    keepAlive: execution.keepAlive,
   });
   return durableJobResponse(stream);
 }

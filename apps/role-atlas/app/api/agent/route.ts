@@ -1,3 +1,4 @@
+import { authorizeApiRequest } from "@/lib/access";
 import { z } from "zod";
 import { createRoleAgent } from "@/lib/agent/graph";
 import type { AgentEvent, AgentRequest } from "@/lib/agent/events";
@@ -52,6 +53,8 @@ function failureEvent(request: Partial<AgentRequest>, error: unknown): AgentEven
 }
 
 export async function POST(request: Request) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   const contentLength = Number(request.headers.get("content-length") || 0);
   if (contentLength > 96_000) return Response.json({ ok: false, error: "请求体过大。" }, { status: 413 });
 

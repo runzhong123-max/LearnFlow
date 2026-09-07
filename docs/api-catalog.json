@@ -2807,7 +2807,7 @@
     "module": "agent",
     "handler": "POST",
     "source": "apps/role-atlas/app/api/agent/route.ts",
-    "line": 54
+    "line": 55
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -2827,7 +2827,7 @@
     "module": "build-runs",
     "handler": "POST",
     "source": "apps/role-atlas/app/api/build-runs/route.ts",
-    "line": 59
+    "line": 61
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -2837,7 +2837,7 @@
     "module": "build-runs",
     "handler": "POST",
     "source": "apps/role-atlas/app/api/build-runs/enrich/route.ts",
-    "line": 55
+    "line": 57
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -2847,7 +2847,7 @@
     "module": "conversations",
     "handler": "GET",
     "source": "apps/role-atlas/app/api/conversations/[conversationId]/messages/route.ts",
-    "line": 5
+    "line": 6
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -2877,7 +2877,7 @@
     "module": "integrations",
     "handler": "POST",
     "source": "apps/role-atlas/app/api/integrations/learnflow/launch/route.ts",
-    "line": 17
+    "line": 18
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -2887,7 +2887,7 @@
     "module": "jobs",
     "handler": "GET",
     "source": "apps/role-atlas/app/api/jobs/[jobId]/route.ts",
-    "line": 5
+    "line": 6
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -2907,7 +2907,7 @@
     "module": "packages",
     "handler": "POST",
     "source": "apps/role-atlas/app/api/packages/import/route.ts",
-    "line": 5
+    "line": 6
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -2917,7 +2917,7 @@
     "module": "projects",
     "handler": "GET",
     "source": "apps/role-atlas/app/api/projects/route.ts",
-    "line": 16
+    "line": 17
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -2927,7 +2927,7 @@
     "module": "projects",
     "handler": "POST",
     "source": "apps/role-atlas/app/api/projects/route.ts",
-    "line": 25
+    "line": 28
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -2937,7 +2937,7 @@
     "module": "projects",
     "handler": "GET",
     "source": "apps/role-atlas/app/api/projects/trash/route.ts",
-    "line": 4
+    "line": 5
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -2947,7 +2947,7 @@
     "module": "projects",
     "handler": "DELETE",
     "source": "apps/role-atlas/app/api/projects/[projectId]/route.ts",
-    "line": 6
+    "line": 7
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -2957,7 +2957,7 @@
     "module": "projects",
     "handler": "GET",
     "source": "apps/role-atlas/app/api/projects/[projectId]/route.ts",
-    "line": 18
+    "line": 23
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -2967,7 +2967,7 @@
     "module": "projects",
     "handler": "PATCH",
     "source": "apps/role-atlas/app/api/projects/[projectId]/route.ts",
-    "line": 10
+    "line": 13
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -2977,7 +2977,17 @@
     "module": "projects",
     "handler": "POST",
     "source": "apps/role-atlas/app/api/projects/[projectId]/conversations/route.ts",
-    "line": 12
+    "line": 14
+  },
+  {
+    "host": "Role Atlas / Graph Hub",
+    "kind": "HTTP",
+    "method": "PATCH",
+    "path": "/api/projects/{projectId}/conversations/{conversationId}",
+    "module": "projects",
+    "handler": "PATCH",
+    "source": "apps/role-atlas/app/api/projects/[projectId]/conversations/[conversationId]/route.ts",
+    "line": 4
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -2987,6 +2997,36 @@
     "module": "projects",
     "handler": "GET",
     "source": "apps/role-atlas/app/api/projects/[projectId]/diffs/route.ts",
+    "line": 6
+  },
+  {
+    "host": "Role Atlas / Graph Hub",
+    "kind": "HTTP",
+    "method": "GET",
+    "path": "/api/projects/{projectId}/jobs",
+    "module": "projects",
+    "handler": "GET",
+    "source": "apps/role-atlas/app/api/projects/[projectId]/jobs/route.ts",
+    "line": 4
+  },
+  {
+    "host": "Role Atlas / Graph Hub",
+    "kind": "HTTP",
+    "method": "GET",
+    "path": "/api/projects/{projectId}/jobs/{jobId}",
+    "module": "projects",
+    "handler": "GET",
+    "source": "apps/role-atlas/app/api/projects/[projectId]/jobs/[jobId]/route.ts",
+    "line": 4
+  },
+  {
+    "host": "Role Atlas / Graph Hub",
+    "kind": "HTTP",
+    "method": "POST",
+    "path": "/api/projects/{projectId}/jobs/{jobId}/cancel",
+    "module": "projects",
+    "handler": "POST",
+    "source": "apps/role-atlas/app/api/projects/[projectId]/jobs/[jobId]/cancel/route.ts",
     "line": 5
   },
   {
@@ -2997,47 +3037,57 @@
     "module": "projects",
     "handler": "DELETE",
     "source": "apps/role-atlas/app/api/projects/[projectId]/tags/route.ts",
+    "line": 34
+  },
+  {
+    "host": "Role Atlas / Graph Hub",
+    "kind": "HTTP",
+    "method": "GET",
+    "path": "/api/projects/{projectId}/tags",
+    "module": "projects",
+    "handler": "GET",
+    "source": "apps/role-atlas/app/api/projects/[projectId]/tags/route.ts",
+    "line": 13
+  },
+  {
+    "host": "Role Atlas / Graph Hub",
+    "kind": "HTTP",
+    "method": "POST",
+    "path": "/api/projects/{projectId}/tags",
+    "module": "projects",
+    "handler": "POST",
+    "source": "apps/role-atlas/app/api/projects/[projectId]/tags/route.ts",
+    "line": 20
+  },
+  {
+    "host": "Role Atlas / Graph Hub",
+    "kind": "HTTP",
+    "method": "GET",
+    "path": "/api/projects/{projectId}/versions",
+    "module": "projects",
+    "handler": "GET",
+    "source": "apps/role-atlas/app/api/projects/[projectId]/versions/route.ts",
+    "line": 13
+  },
+  {
+    "host": "Role Atlas / Graph Hub",
+    "kind": "HTTP",
+    "method": "POST",
+    "path": "/api/projects/{projectId}/versions",
+    "module": "projects",
+    "handler": "POST",
+    "source": "apps/role-atlas/app/api/projects/[projectId]/versions/route.ts",
     "line": 29
   },
   {
     "host": "Role Atlas / Graph Hub",
     "kind": "HTTP",
-    "method": "GET",
-    "path": "/api/projects/{projectId}/tags",
-    "module": "projects",
-    "handler": "GET",
-    "source": "apps/role-atlas/app/api/projects/[projectId]/tags/route.ts",
-    "line": 12
-  },
-  {
-    "host": "Role Atlas / Graph Hub",
-    "kind": "HTTP",
     "method": "POST",
-    "path": "/api/projects/{projectId}/tags",
+    "path": "/api/projects/{projectId}/versions/{versionId}/adopt",
     "module": "projects",
     "handler": "POST",
-    "source": "apps/role-atlas/app/api/projects/[projectId]/tags/route.ts",
-    "line": 17
-  },
-  {
-    "host": "Role Atlas / Graph Hub",
-    "kind": "HTTP",
-    "method": "GET",
-    "path": "/api/projects/{projectId}/versions",
-    "module": "projects",
-    "handler": "GET",
-    "source": "apps/role-atlas/app/api/projects/[projectId]/versions/route.ts",
-    "line": 12
-  },
-  {
-    "host": "Role Atlas / Graph Hub",
-    "kind": "HTTP",
-    "method": "POST",
-    "path": "/api/projects/{projectId}/versions",
-    "module": "projects",
-    "handler": "POST",
-    "source": "apps/role-atlas/app/api/projects/[projectId]/versions/route.ts",
-    "line": 26
+    "source": "apps/role-atlas/app/api/projects/[projectId]/versions/[versionId]/adopt/route.ts",
+    "line": 5
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -3047,7 +3097,7 @@
     "module": "providers",
     "handler": "POST",
     "source": "apps/role-atlas/app/api/providers/test/route.ts",
-    "line": 13
+    "line": 14
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -3057,7 +3107,7 @@
     "module": "reference-migrations",
     "handler": "GET",
     "source": "apps/role-atlas/app/api/reference-migrations/route.ts",
-    "line": 5
+    "line": 6
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -3067,7 +3117,7 @@
     "module": "registry",
     "handler": "GET",
     "source": "apps/role-atlas/app/api/registry/route.ts",
-    "line": 7
+    "line": 9
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -3077,7 +3127,7 @@
     "module": "registry",
     "handler": "PATCH",
     "source": "apps/role-atlas/app/api/registry/route.ts",
-    "line": 24
+    "line": 31
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -3087,7 +3137,7 @@
     "module": "registry",
     "handler": "GET",
     "source": "apps/role-atlas/app/api/registry/[packageLineId]/route.ts",
-    "line": 5
+    "line": 6
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -3097,7 +3147,7 @@
     "module": "releases",
     "handler": "GET",
     "source": "apps/role-atlas/app/api/releases/route.ts",
-    "line": 45
+    "line": 46
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -3107,7 +3157,7 @@
     "module": "releases",
     "handler": "PATCH",
     "source": "apps/role-atlas/app/api/releases/route.ts",
-    "line": 64
+    "line": 69
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -3117,7 +3167,7 @@
     "module": "releases",
     "handler": "POST",
     "source": "apps/role-atlas/app/api/releases/route.ts",
-    "line": 51
+    "line": 54
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -3127,7 +3177,7 @@
     "module": "releases",
     "handler": "GET",
     "source": "apps/role-atlas/app/api/releases/[releaseId]/export/route.ts",
-    "line": 6
+    "line": 7
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -3137,7 +3187,7 @@
     "module": "risk-runs",
     "handler": "GET",
     "source": "apps/role-atlas/app/api/risk-runs/route.ts",
-    "line": 49
+    "line": 6
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -3147,7 +3197,7 @@
     "module": "risk-runs",
     "handler": "POST",
     "source": "apps/role-atlas/app/api/risk-runs/route.ts",
-    "line": 59
+    "line": 20
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -3187,7 +3237,7 @@
     "module": "search",
     "handler": "POST",
     "source": "apps/role-atlas/app/api/search/providers/test/route.ts",
-    "line": 16
+    "line": 17
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -3197,7 +3247,7 @@
     "module": "snapshot-iterations",
     "handler": "GET",
     "source": "apps/role-atlas/app/api/snapshot-iterations/route.ts",
-    "line": 65
+    "line": 68
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -3207,7 +3257,7 @@
     "module": "snapshot-iterations",
     "handler": "POST",
     "source": "apps/role-atlas/app/api/snapshot-iterations/route.ts",
-    "line": 75
+    "line": 80
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -3218,6 +3268,16 @@
     "handler": "GET",
     "source": "apps/role-atlas/app/api/snapshots/resolve/route.ts",
     "line": 5
+  },
+  {
+    "host": "Role Atlas / Graph Hub",
+    "kind": "HTTP",
+    "method": "POST",
+    "path": "/api/source-materials",
+    "module": "source-materials",
+    "handler": "POST",
+    "source": "apps/role-atlas/app/api/source-materials/route.ts",
+    "line": 7
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -3237,7 +3297,7 @@
     "module": "workspace-upgrades",
     "handler": "POST",
     "source": "apps/role-atlas/app/api/workspace-upgrades/route.ts",
-    "line": 76
+    "line": 79
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -3247,7 +3307,7 @@
     "module": "workspaces",
     "handler": "GET",
     "source": "apps/role-atlas/app/api/workspaces/ingest/route.ts",
-    "line": 23
+    "line": 6
   },
   {
     "host": "Role Atlas / Graph Hub",
@@ -3257,7 +3317,7 @@
     "module": "workspaces",
     "handler": "POST",
     "source": "apps/role-atlas/app/api/workspaces/ingest/route.ts",
-    "line": 35
+    "line": 22
   },
   {
     "method": "GET",

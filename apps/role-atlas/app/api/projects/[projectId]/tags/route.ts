@@ -1,3 +1,4 @@
+import { authorizeApiRequest } from "@/lib/access";
 import { z } from "zod/v4";
 import { createProjectTag, deleteProjectTag, listProjectTags } from "@/lib/versioning/tags";
 
@@ -9,12 +10,16 @@ const createSchema = z.object({
   description: z.string().max(500).optional(),
 });
 
-export async function GET(_: Request, context: { params: Promise<{ projectId: string }> }) {
+export async function GET(request: Request, context: { params: Promise<{ projectId: string }> }) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   const { projectId } = await context.params;
   return Response.json({ tags: await listProjectTags(projectId) });
 }
 
 export async function POST(request: Request, context: { params: Promise<{ projectId: string }> }) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   try {
     const { projectId } = await context.params;
     const input = createSchema.parse(await request.json());
@@ -27,6 +32,8 @@ export async function POST(request: Request, context: { params: Promise<{ projec
 }
 
 export async function DELETE(request: Request, context: { params: Promise<{ projectId: string }> }) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   const { projectId } = await context.params;
   const tagId = new URL(request.url).searchParams.get("tagId");
   if (!tagId) return Response.json({ error: "缺少 tagId。" }, { status: 400 });

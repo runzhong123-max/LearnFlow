@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull, ne } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, ne } from "drizzle-orm";
 import { ensureAppSchema, getD1, getDb } from "@/db";
 import { buildEvents, buildRuns, conversations, messages, projects, projectVersions, riskEvents, riskRuns } from "@/db/schema";
 import type { AgentEvent } from "@/lib/agent/events";
@@ -21,7 +21,7 @@ export type StoredProjectSummary = {
   activeVersionId: string | null;
   createdAt: string;
   updatedAt: string;
-  conversations: Array<{ id: string; title: string; snapshotId: string | null; versionId: string | null; updatedAt: string }>;
+  conversations: Array<{ id: string; title: string; snapshotId: string | null; versionId: string | null; updatedAt: string; mode?: "explanation" | "iteration" }>;
 };
 
 export type StoredMessage = {
@@ -45,18 +45,18 @@ function safeArray(value: string) {
   }
 }
 
-export async function listProjects(): Promise<StoredProjectSummary[]> {
+export async function listProjects(ownerSubjectId?: string): Promise<StoredProjectSummary[]> {
   await ensureAppSchema();
   const db = getDb();
-  const [projectRows, conversationRows] = await Promise.all([
-    db.select().from(projects).where(isNull(projects.deletedAt)).orderBy(desc(projects.updatedAt)),
-    db.select().from(conversations).orderBy(desc(conversations.updatedAt)),
-  ]);
+  const projectRows = await db.select().from(projects).where(ownerSubjectId
+    ? and(isNull(projects.deletedAt), eq(projects.ownerSubjectId, ownerSubjectId))
+    : isNull(projects.deletedAt)).orderBy(desc(projects.updatedAt));
+  const conversationRows = projectRows.length ? await db.select().from(conversations)
+    .where(inArray(conversations.projectId, projectRows.map(project => project.id))).orderBy(desc(conversations.updatedAt)) : [];
   return projectRows.map((project) => ({
     ...project,
-    conversations: conversationRows
-      .filter((conversation) => conversation.projectId === project.id)
-      .map(({ id, title, snapshotId, versionId, updatedAt }) => ({ id, title, snapshotId, versionId, updatedAt })),
+    conversations: conversationRows.filter(conversation => conversation.projectId === project.id)
+      .map(({ id, title, snapshotId, versionId, updatedAt, mode }) => ({ id, title, snapshotId, versionId, updatedAt, mode })),
   }));
 }
 
@@ -67,6 +67,7 @@ export async function createProject(input: {
   market: string;
   conversationId: string;
   conversationTitle?: string;
+  conversationMode?: "explanation" | "iteration";
   ownerSubjectId?: string;
 }) {
   await ensureAppSchema();
@@ -74,8 +75,8 @@ export async function createProject(input: {
   await d1.batch([
     d1.prepare("INSERT INTO projects (id, title, description, market, status, owner_subject_id) VALUES (?, ?, ?, ?, 'draft', ?)")
       .bind(input.id, input.title, input.description, input.market, input.ownerSubjectId || null),
-    d1.prepare("INSERT INTO conversations (id, project_id, title) VALUES (?, ?, ?)")
-      .bind(input.conversationId, input.id, input.conversationTitle || "岗位理解与研究"),
+    d1.prepare("INSERT INTO conversations (id, project_id, title, mode) VALUES (?, ?, ?, ?)")
+      .bind(input.conversationId, input.id, input.conversationTitle || "岗位理解与研究", input.conversationMode || "explanation"),
   ]);
   return { projectId: input.id, conversationId: input.conversationId };
 }
@@ -113,7 +114,7 @@ export async function getProjectWorkspace(projectId: string, snapshotId?: string
   return { project, conversations: conversationRows, version: versionRows[0] || null, result };
 }
 
-export async function createConversation(input: { id: string; projectId: string; title: string; snapshotId?: string | null; versionId?: string | null; pinToActive?: boolean }) {
+export async function createConversation(input: { id: string; projectId: string; title: string; snapshotId?: string | null; versionId?: string | null; pinToActive?: boolean; mode?: "explanation" | "iteration" }) {
   await ensureAppSchema();
   const db = getDb();
   const [project] = await db.select({ id: projects.id, headVersionId: projects.headVersionId, activeVersionId: projects.activeVersionId })
@@ -125,8 +126,16 @@ export async function createConversation(input: { id: string; projectId: string;
     : [];
   const snapshotId = input.pinToActive === false ? null : input.snapshotId || activeVersion?.snapshotId || null;
   const versionId = input.pinToActive === false ? null : input.versionId || activeVersion?.id || null;
-  await db.insert(conversations).values({ id: input.id, projectId: input.projectId, title: input.title, snapshotId, versionId });
-  return { id: input.id, projectId: input.projectId, title: input.title, snapshotId, versionId };
+  await db.insert(conversations).values({ id: input.id, projectId: input.projectId, title: input.title, snapshotId, versionId, mode: input.mode || "explanation" });
+  return { id: input.id, projectId: input.projectId, title: input.title, snapshotId, versionId, mode: input.mode || "explanation" };
+}
+
+export async function setConversationMode(input: { projectId: string; conversationId: string; mode: "explanation" | "iteration" }) {
+  await ensureAppSchema();
+  const result = await getD1().prepare(`UPDATE conversations SET mode=?, updated_at=? WHERE id=? AND project_id=?
+    AND NOT EXISTS (SELECT 1 FROM role_jobs WHERE conversation_id=? AND status IN ('queued','running','waiting_user'))`)
+    .bind(input.mode, new Date().toISOString(), input.conversationId, input.projectId, input.conversationId).run();
+  return Boolean(result.meta.changes);
 }
 
 export async function getConversation(conversationId: string) {
@@ -239,7 +248,7 @@ export async function completeBuildRun(result: ColdStartBuildResult, conversatio
   });
 }
 
-export async function completeFastBuildSnapshot(result: ColdStartBuildResult, conversationId?: string) {
+export async function completeFastBuildSnapshot(result: ColdStartBuildResult, conversationId?: string, execution?: { parentVersionId: string | null; jobId: string; jobOwner: string }) {
   return commitProjectVersion({
     projectId: result.projectId,
     result,
@@ -247,6 +256,7 @@ export async function completeFastBuildSnapshot(result: ColdStartBuildResult, co
     sourceKind: "cold_start",
     sourceInput: { kind: "cold_start_fast_snapshot", brief: result.brief },
     conversationId,
+    ...execution,
     message: `建立“${result.brief.roleTitle}”岗位内核快照`,
     authorKind: "agent",
   });
@@ -267,6 +277,7 @@ export async function completeEnrichmentBuildSnapshot(
   result: ColdStartBuildResult,
   conversationId: string | undefined,
   stage: "semantic" | "full",
+  execution?: { parentVersionId: string | null; jobId: string; jobOwner: string },
 ) {
   const committed = await commitProjectVersion({
     projectId: result.projectId,
@@ -275,13 +286,14 @@ export async function completeEnrichmentBuildSnapshot(
     sourceKind: "cold_start",
     sourceInput: { kind: stage === "semantic" ? "cold_start_semantic_enrichment" : "cold_start_full_enrichment", brief: result.brief },
     conversationId,
+    ...execution,
     message: stage === "semantic"
       ? `增量形成“${result.brief.roleTitle}”知识技能与依赖版本`
       : `完成“${result.brief.roleTitle}”事理森林与结构检查版本`,
     authorKind: "agent",
   });
-  if (stage === "semantic") {
-    await getDb().update(projects).set({ status: "building", updatedAt: new Date().toISOString() }).where(eq(projects.id, result.projectId));
+  if (stage === "semantic" && committed.appliedToHead) {
+    await getDb().update(projects).set({ status: "building", updatedAt: new Date().toISOString() }).where(and(eq(projects.id, result.projectId), eq(projects.headVersionId, committed.id), isNull(projects.deletedAt)));
   }
   return committed;
 }
@@ -440,6 +452,7 @@ export async function saveProjectCandidateFromSnapshotRisk(
     sourceKind: "iteration",
     sourceInput: request,
     conversationId,
+    parentVersionId: result.snapshotRef.versionId || null,
     message: "完成岗位风险研究与修复",
     authorKind: "agent",
   });
@@ -451,6 +464,7 @@ export async function saveProjectCandidateFromIteration(
   result: SnapshotIterationResult,
   projectId: string,
   conversationId?: string,
+  execution?: { jobId: string; jobOwner: string },
 ) {
   const request = {
     kind: "snapshot_iteration",
@@ -465,6 +479,8 @@ export async function saveProjectCandidateFromIteration(
     sourceKind: result.workItems.some((item) => item.origin === "workspace" || item.kind === "instantiate") ? "workspace" : "iteration",
     sourceInput: request,
     conversationId,
+    parentVersionId: result.snapshotRef.versionId || null,
+    ...execution,
     message: result.createdSnapshot ? result.contract.objective || "迭代岗位快照" : `${result.contract.objective || "迭代岗位快照"}（未改变岗位事实）`,
     authorKind: "agent",
     reuseSnapshotId: result.createdSnapshot ? undefined : result.baseSnapshotId,

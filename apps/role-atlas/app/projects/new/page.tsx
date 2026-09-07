@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import ColdStartWorkspace from "./ColdStartWorkspace";
+import RoleWorkspace from "@/app/RoleWorkspace";
 
 export const metadata: Metadata = {
   title: "新建岗位项目 · Role Atlas",
@@ -18,5 +18,6 @@ export default async function NewProjectPage({
     skill?: string;
   }>;
 }) {
-  return <ColdStartWorkspace initialQuery={await searchParams} />;
+  const query = await searchParams;
+  return <RoleWorkspace projectId={query.project} initialConversationId={query.conversation} initialNewProject={!query.project} newProjectBrief={query} />;
 }

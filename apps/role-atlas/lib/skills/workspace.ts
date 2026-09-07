@@ -29,7 +29,7 @@ export type RoleSkillDefinition = {
 
 /**
  * Product-wide Skill catalog. The normal workspace only sees this compact
- * metadata; the complete workflow is entered through a dedicated job screen.
+ * metadata; conversation plugins submit persisted jobs while the central display stays mounted.
  */
 export const roleSkillDefinitions: RoleSkillDefinition[] = [
   {
@@ -96,4 +96,10 @@ export function workspaceSkillHref(skillId: WorkspaceSkillId, context: Workspace
 
   const pathname = skillId === "workspace-instantiation" ? "workspace" : "iterate";
   return `/snapshots/${encodeURIComponent(context.snapshotId)}/${pathname}?${params.toString()}`;
+}
+
+/** Apply an async conversation update without replacing neighboring conversations. */
+export function updateConversationValue<T>(values: Record<string, T>, conversationId: string, initial: T, update: T | ((value: T) => T)): Record<string, T> {
+  const previous = values[conversationId] ?? initial;
+  return { ...values, [conversationId]: typeof update === "function" ? (update as (value: T) => T)(previous) : update };
 }

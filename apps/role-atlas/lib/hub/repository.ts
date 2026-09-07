@@ -20,7 +20,7 @@ export async function listPublicHubRepositories(query?: string) {
 }
 
 export async function getPublicHubRepository(packageLineId: string) {
-  const item = await getRegistryPackage(packageLineId);
+  const item = await getRegistryPackage(packageLineId, { scope: "public" });
   if (!item || item.visibility !== "public" || item.status !== "active") return null;
   const release = item.releases.find((candidate) => candidate.id === item.recommendedReleaseId && candidate.status === "published");
   if (!release?.artifactRootHash) return { item, release: null, bundle: null, overview: null };

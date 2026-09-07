@@ -1,4 +1,6 @@
 import { ensureAppSchema, getD1 } from "@/db";
+import { canonicalStringify } from "@/lib/versioning/canonical";
+import { roleJobClaimStatements } from "./claim-transaction";
 import type { RoleJobCheckpoint, RoleJobDescriptor, RoleJobKind, RoleJobStatus } from "./runtime";
 
 type RoleJobRow = {
@@ -6,6 +8,8 @@ type RoleJobRow = {
   kind: RoleJobKind;
   thread_id: string;
   project_id: string | null;
+  conversation_id: string | null;
+  base_version_id: string | null;
   base_snapshot_id: string | null;
   status: RoleJobStatus;
   phase: string;
@@ -31,6 +35,8 @@ function descriptor(row: RoleJobRow): RoleJobDescriptor {
     kind: row.kind,
     threadId: row.thread_id,
     projectId: row.project_id || undefined,
+    conversationId: row.conversation_id || undefined,
+    baseVersionId: row.base_version_id || undefined,
     baseSnapshotId: row.base_snapshot_id || undefined,
     status: row.status,
     phase: row.phase,
@@ -52,6 +58,8 @@ export async function claimRoleJob(input: {
   threadId: string;
   owner: string;
   projectId?: string;
+  conversationId?: string;
+  baseVersionId?: string;
   baseSnapshotId?: string;
   phase: string;
   payload?: unknown;
@@ -61,21 +69,14 @@ export async function claimRoleJob(input: {
   const d1 = getD1();
   const now = new Date().toISOString();
   const expiresAt = isoAfter(input.leaseMs || 45_000);
-  await d1.batch([
-    d1.prepare(`INSERT OR IGNORE INTO role_jobs
-      (id, kind, thread_id, project_id, base_snapshot_id, status, phase, attempt, input_json, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, 'queued', ?, 0, ?, ?, ?)`)
-      .bind(input.id, input.kind, input.threadId, input.projectId || null, input.baseSnapshotId || null, input.phase, JSON.stringify(input.payload || {}), now, now),
-    d1.prepare(`UPDATE role_jobs SET
-        kind=?, thread_id=?, project_id=COALESCE(?, project_id), base_snapshot_id=COALESCE(?, base_snapshot_id),
-        status='running', attempt=attempt+1, input_json=?, lease_owner=?, lease_expires_at=?,
-        error=NULL, completed_at=NULL, updated_at=?
-      WHERE id=?
-        AND status NOT IN ('completed', 'cancelled')
-        AND (lease_owner IS NULL OR lease_owner=? OR lease_expires_at IS NULL OR lease_expires_at<=?)`)
-      .bind(input.kind, input.threadId, input.projectId || null, input.baseSnapshotId || null, JSON.stringify(input.payload || {}), input.owner, expiresAt, now, input.id, input.owner, now),
-  ]);
+  await d1.batch(roleJobClaimStatements(d1, {
+    ...input, now, expiresAt, payloadJson: canonicalStringify(input.payload || {}),
+  }));
   const row = await d1.prepare("SELECT * FROM role_jobs WHERE id=?").bind(input.id).first<RoleJobRow>();
+  const sameScope = row && row.project_id === (input.projectId || null) && row.conversation_id === (input.conversationId || null)
+    && row.kind === input.kind && row.thread_id === input.threadId
+    && row.base_snapshot_id === (input.baseSnapshotId || null) && row.base_version_id === (input.baseVersionId || null);
+  if (row && !sameScope) throw new Error("JOB_SCOPE_CONFLICT");
   const claimed = Boolean(row && row.status === "running" && row.lease_owner === input.owner);
   return {
     claimed,
@@ -90,8 +91,8 @@ export async function renewRoleJobLease(jobId: string, owner: string, leaseMs = 
   const now = new Date().toISOString();
   const expiresAt = isoAfter(leaseMs);
   await getD1().prepare(`UPDATE role_jobs SET lease_expires_at=?, updated_at=?
-    WHERE id=? AND lease_owner=? AND status='running'`).bind(expiresAt, now, jobId, owner).run();
-  const row = await getD1().prepare("SELECT lease_owner, status FROM role_jobs WHERE id=?").bind(jobId).first<{ lease_owner: string | null; status: RoleJobStatus }>();
+    WHERE id=? AND lease_owner=? AND status='running' AND lease_expires_at>?`).bind(expiresAt, now, jobId, owner, now).run();
+  const row = await getD1().prepare("SELECT lease_owner, status FROM role_jobs WHERE id=? AND lease_expires_at>?").bind(jobId, now).first<{ lease_owner: string | null; status: RoleJobStatus }>();
   return Boolean(row?.lease_owner === owner && row.status === "running");
 }
 
@@ -104,8 +105,9 @@ export async function checkpointRoleJob(input: {
   leaseMs?: number;
 }) {
   await ensureAppSchema();
-  const row = await getD1().prepare("SELECT attempt FROM role_jobs WHERE id=? AND lease_owner=? AND status='running'")
-    .bind(input.jobId, input.owner).first<{ attempt: number }>();
+  const now = new Date().toISOString();
+  const row = await getD1().prepare("SELECT attempt FROM role_jobs WHERE id=? AND lease_owner=? AND status='running' AND lease_expires_at>?")
+    .bind(input.jobId, input.owner, now).first<{ attempt: number }>();
   if (!row) return false;
   const savedAt = new Date().toISOString();
   const checkpoint: RoleJobCheckpoint = {
@@ -136,7 +138,7 @@ export async function failRoleJob(input: { jobId: string; owner: string; error: 
   const now = new Date().toISOString();
   await getD1().prepare(`UPDATE role_jobs SET status=?, lease_owner=NULL, lease_expires_at=NULL, error=?,
     completed_at=?, updated_at=? WHERE id=? AND lease_owner=? AND status='running'`)
-    .bind(input.retryable ? "queued" : "failed", input.error, input.retryable ? null : now, now, input.jobId, input.owner).run();
+    .bind("failed", input.error, now, now, input.jobId, input.owner).run();
 }
 
 export async function getRoleJob(jobId: string) {
@@ -150,5 +152,45 @@ export async function getRoleJob(jobId: string) {
     leaseExpiresAt: row.lease_expires_at || undefined,
     error: row.error || undefined,
     completedAt: row.completed_at || undefined,
+    resumable: row.status === "failed" || row.status === "queued" || (row.status === "running" && Boolean(row.lease_expires_at && row.lease_expires_at < new Date().toISOString())),
   };
+}
+
+
+export async function listRoleJobs(projectId: string, conversationId?: string) {
+  await ensureAppSchema();
+  const rows = await getD1().prepare(`SELECT id FROM role_jobs WHERE project_id=?
+    AND (? IS NULL OR conversation_id=?) ORDER BY created_at DESC LIMIT 60`)
+    .bind(projectId, conversationId || null, conversationId || null).all<{ id: string }>();
+  return Promise.all(rows.results.map(row => getRoleJob(row.id)));
+}
+
+export async function appendRoleJobEvent(jobId: string, event: { runId: string; seq: number; kind: string }) {
+  await ensureAppSchema();
+  await getD1().prepare(`INSERT OR IGNORE INTO role_job_events(job_id,event_run_id,event_seq,kind,event_json)
+    VALUES(?,?,?,?,?)`).bind(jobId, event.runId, event.seq, event.kind, JSON.stringify(event)).run();
+}
+
+export async function readRoleJobEvents(jobId: string, after = 0) {
+  await ensureAppSchema();
+  const rows = await getD1().prepare(`SELECT cursor,event_json FROM role_job_events WHERE job_id=? AND cursor>?
+    ORDER BY cursor LIMIT 200`).bind(jobId, after).all<{ cursor: number; event_json: string }>();
+  return { events: rows.results.flatMap(row => { const event = parseJson(row.event_json); return event ? [event] : []; }),
+    cursor: rows.results.at(-1)?.cursor || after };
+}
+
+export async function cancelRoleJob(jobId: string, projectId: string) {
+  await ensureAppSchema();
+  const now = new Date().toISOString();
+  await getD1().prepare(`UPDATE role_jobs SET status='cancelled', lease_owner=NULL, lease_expires_at=NULL,
+    completed_at=?, updated_at=? WHERE id=? AND project_id=? AND status IN ('queued','running','waiting_user','failed')`)
+    .bind(now, now, jobId, projectId).run();
+  return getRoleJob(jobId);
+}
+
+export async function assertRoleJobLease(jobId: string, owner: string) {
+  await ensureAppSchema();
+  const row = await getD1().prepare(`SELECT id FROM role_jobs WHERE id=? AND lease_owner=? AND status='running'
+    AND lease_expires_at>?`).bind(jobId, owner, new Date().toISOString()).first();
+  if (!row) throw new DOMException("任务已取消或执行租约失效", "AbortError");
 }

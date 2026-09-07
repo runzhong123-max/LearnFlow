@@ -1,8 +1,11 @@
+import { authorizeApiRequest } from "@/lib/access";
 import { getRoleJob } from "@/lib/jobs/repository";
 
 export const runtime = "edge";
 
-export async function GET(_request: Request, context: { params: Promise<{ jobId: string }> }) {
+export async function GET(request: Request, context: { params: Promise<{ jobId: string }> }) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   try {
     const { jobId } = await context.params;
     const job = await getRoleJob(jobId);

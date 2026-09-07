@@ -1,3 +1,4 @@
+import { accessErrorResponse, requireReleaseAccess } from "@/lib/access";
 import { getReleaseWithArtifact } from "@/lib/releases/resolver";
 import { resolveLearnFlowIdentity } from "@/lib/integrations/learnflow/auth";
 import { signRolePackageLaunch } from "@/lib/integrations/learnflow/launch-token";
@@ -37,6 +38,8 @@ export async function POST(request: Request) {
     if (typeof input.releaseId !== "string" || input.releaseId.length > 240) {
       return Response.json({ error: "RELEASE_ID_REQUIRED" }, { status: 400 });
     }
+    try { await requireReleaseAccess(identity, input.releaseId); }
+    catch (error) { return accessErrorResponse(error); }
     const resolved = await getReleaseWithArtifact(input.releaseId);
     if (!resolved || !["ready", "published", "deprecated"].includes(resolved.release.status)) {
       return Response.json({ error: "RELEASE_NOT_LAUNCHABLE" }, { status: 404 });

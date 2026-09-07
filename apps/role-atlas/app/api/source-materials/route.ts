@@ -1,17 +1,15 @@
+import { authorizeApiRequest } from "@/lib/access";
 import { sourceKindSchema } from "@/lib/build/types";
 import { readMaterialUrl } from "@/lib/source-url";
-import { projectActor } from "@/lib/projects/lifecycle-api";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   const origin = request.headers.get("origin");
   const allowed = [new URL(request.url).origin, process.env.ROLE_ATLAS_PUBLIC_URL].filter(Boolean);
   if (origin && !allowed.includes(origin)) return Response.json({ error: "不允许跨站读取资料。" }, { status: 403 });
-  if (process.env.LEARNFLOW_BASE_URL) {
-    const actor = await projectActor(request);
-    if (actor instanceof Response) return actor;
-  }
   try {
     const bodyText = await request.text();
     if (bodyText.length > 4096) throw new Error("URL 请求过大。");

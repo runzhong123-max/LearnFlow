@@ -1,3 +1,4 @@
+import { projectReleasePackageId } from "./package-identity";
 import { and, desc, eq } from "drizzle-orm";
 import { ensureAppSchema, getD1, getDb } from "@/db";
 import { packageLines, packageReleases, releaseEvents } from "@/db/schema";
@@ -34,13 +35,28 @@ export async function prepareRelease(input: {
     visibility: input.visibility || input.registry?.visibility || "private",
     evidencePolicy: input.evidencePolicy || input.registry?.evidencePolicy || "metadata",
   };
-  const line = await ensureRegistryPackageLine({ result: version.result, packageId: input.packageId, metadata });
+  const packageId = await projectReleasePackageId(getD1(), input);
+  const line = await ensureRegistryPackageLine({ result: version.result, packageId, metadata });
   const db = getDb();
   const [duplicate] = await db.select().from(packageReleases).where(and(
     eq(packageReleases.packageLineId, line.id),
     eq(packageReleases.packageVersion, input.packageVersion),
   )).limit(1);
-  if (duplicate) return duplicate;
+  if (duplicate) {
+    // A package version is immutable. Reusing its number must identify exactly the
+    // same source and disclosure policy, even when the mutable line has changed.
+    const artifact = duplicate.artifactRootHash ? await getPackageArtifact(duplicate.artifactRootHash) : null;
+    const manifest = artifact?.bundle.manifest;
+    if (duplicate.projectId !== input.projectId || duplicate.sourceProjectVersionId !== input.projectVersionId
+      || !manifest || manifest.rootHash !== duplicate.artifactRootHash
+      || manifest.packageId !== line.packageId || manifest.packageVersion !== input.packageVersion
+      || manifest.sourceProjectVersionId !== input.projectVersionId || manifest.sourceRootHash !== version.rootHash
+      || manifest.snapshotId !== version.snapshotId || duplicate.snapshotId !== version.snapshotId
+      || manifest.visibility !== metadata.visibility || manifest.evidencePolicy !== metadata.evidencePolicy) {
+      throw new Error("RELEASE_VERSION_CONFLICT");
+    }
+    return duplicate;
+  }
 
   const id = domainId("release");
   await db.insert(packageReleases).values({

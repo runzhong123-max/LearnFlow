@@ -7,6 +7,8 @@ export type RoleJobDescriptor = {
   kind: RoleJobKind;
   threadId: string;
   projectId?: string;
+  conversationId?: string;
+  baseVersionId?: string;
   baseSnapshotId?: string;
   status: RoleJobStatus;
   phase: string;
@@ -60,8 +62,10 @@ export class DurableJobJournal<TEvent extends JournalEvent> {
   async commit(event: TEvent, afterPersist?: () => Promise<void>) {
     await this.flush();
     try {
-      await this.persist(event);
+      // Commit the domain change before publishing its completion into the replay log.
+      // A failed domain write must never leave a durable successful completion.
       await afterPersist?.();
+      await this.persist(event);
     } catch (error) {
       this.persistenceError = error;
       throw error;
@@ -117,8 +121,8 @@ export function createDurableJobStream<TEvent extends JournalEvent>(input: {
     },
     cancel() {
       connected = false;
-      // The request's AbortSignal remains the authority for stopping graph work.
-      // Persisted events/checkpoints stay available for a new attempt.
+      // Detaching a view does not cancel its job. Explicit cancellation and lease loss
+      // abort the independent execution signal owned by the server.
     },
   });
 }

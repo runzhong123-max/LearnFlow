@@ -1,3 +1,4 @@
+import { authorizeApiRequest } from "@/lib/access";
 import { SEARCH_PROVIDERS } from "@/lib/search/providers";
 import { testSearchProvider } from "@/lib/search/web-research";
 import { resolveSearchProviderConfig } from "@/lib/server-runtime-config";
@@ -14,6 +15,8 @@ function safeError(error: unknown) {
 }
 
 export async function POST(request: Request) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   try {
     const body = await request.json() as { config?: unknown };
     const config = resolveSearchProviderConfig(body.config);

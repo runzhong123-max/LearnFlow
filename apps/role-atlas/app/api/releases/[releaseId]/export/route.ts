@@ -1,9 +1,12 @@
+import { authorizeApiRequest } from "@/lib/access";
 import { bundleToJson, bundleToZip } from "@/lib/packages/archive";
 import { getReleaseWithArtifact } from "@/lib/releases/resolver";
 
 export const runtime = "edge";
 
 export async function GET(request: Request, context: { params: Promise<{ releaseId: string }> }) {
+  const denied = await authorizeApiRequest(request);
+  if (denied) return denied;
   const { releaseId } = await context.params;
   const resolved = await getReleaseWithArtifact(releaseId);
   if (!resolved) return Response.json({ error: "发布制品不存在。" }, { status: 404 });
