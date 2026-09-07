@@ -9,8 +9,7 @@ const unresolvedReasons: Record<string, string> = { needs_decomposition: '该对
 const relations: Record<string, string> = { equivalent: '语义等价', narrower_than: '岗位要求更具体', related: '相关，尚不等价' }
 function textError(error: unknown) { return error instanceof Error ? error.message : '服务暂不可用，请稍后重试。' }
 export default function GraphHubRedirect() {
-  useEffect(() => { window.location.replace('https://graphs.learnflow.club/hub') }, [])
-  return <section className="page-loading">正在打开 Graph Hub… <a href="https://graphs.learnflow.club/hub">前往岗位图谱</a></section>
+  return <section className="page-loading"><h1>岗位图谱</h1><p>在 Graph Hub 浏览岗位与知识技能。</p><a href="https://graphs.learnflow.club/hub" target="_blank" rel="noopener noreferrer">打开 Graph Hub ↗</a></section>
 }
 
 export function EcosystemPage() {
