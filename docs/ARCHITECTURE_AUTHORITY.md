@@ -673,3 +673,7 @@ frontend 当前没有该 route，所以 `learner_growth` lifecycle 为 `optional
 Contract impact（`2026-09-06.5`）：新增 `golden_role_workspace_v1` 离线研究契约与 `golden_role_workspace` artifact adapter，绑定标准库实现。宿主 Codex 操作独立工作区，保存源图候选、人工裁决、案例报告及指令版本；没有新增主 Agent、Action Board 处理器或学习事件。local journal 不作为 EvidenceEvent，实验图谱不替代正式 Role Package/LearnFlow v2。正式桌面代码执行仍必须经过 local_agent_broker。见 [黄金岗位项目](../labs/golden-role/README.md)。
 
 Contract impact（`2026-09-07.6`）：阶段分工与帮助策略登记为 `project_stage_support_v1`，复用工作流与 `project_assistance_requested` 零 target 事件；相关文件推荐登记为 `workspace_recommendations_v1`，复用 `inspect_workspace_files`。Broker 从宿主权威读取帮助策略并绑定运行快照；方向、步骤、伪代码仅只读，实现档仍两次确认。推荐是本机有界导航，不授予修改权限或上传正文。旧案例摘要与数据库 schema 不变。见[阶段支持契约](implementation/DESKTOP_PROJECT_GUIDANCE.md#阶段分工帮助权限与文件导航2026-09-07-增强)。
+
+### 内部教学可视化 Hub（2026-09-07）
+
+`visual_content_library` 的共享实现扩展为内部方向/模块/章节/session 目录与版本化维护作品，见 [VISUAL_HUB.md](VISUAL_HUB.md)。新增只读 `/visuals/hub`，维护专用 `interactive_html` 只接收服务器目录中的摘要引用，通过隔离 iframe 展示；生成入口仍为 VisualSpec/SVGStory。两端共享同一实现，不改变五核与 EvidenceEvent 语义。

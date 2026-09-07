@@ -1,0 +1,105 @@
+"""Internal authored curriculum and immutable, reviewed interactive works.
+
+Only bundled manifest references can execute. Generated code, paths and URLs are
+never accepted. This is teaching content, not learner state or mastery evidence.
+"""
+from pathlib import Path
+from hashlib import sha256
+import json
+from .engine import digest
+
+ROOT = Path(__file__).with_name('hub')
+VERSION = '1.0.0'
+
+
+def curriculum():
+    return json.loads((ROOT / 'curriculum.json').read_text(encoding='utf-8'))
+
+
+def works():
+    return json.loads((ROOT / 'works.json').read_text(encoding='utf-8'))
+
+
+def reference(work):
+    return {'hub_version': VERSION, 'work_id': work['id'], 'version': work['version'],
+            'title': work['title'], 'sha256': work['sha256']}
+
+
+def entries():
+    sessions = {s['id']: s for m in curriculum()['modules'] for c in m['chapters'] for s in c['sessions']}
+    result = []
+    for w in works():
+        if w['status'] != 'ready':
+            continue
+        result.append({'id': w['id'], 'version': w['version'], 'title': w['title'],
+            'description': w['scope'], 'builder': 'interactive_html', 'spec': reference(w),
+            'kind': w['kind'], 'patterns': ['linked_views', 'parameter_sweep'],
+            'tags': [sessions[s]['title'] for s in w['session_ids']],
+            'aliases': w['questions'] + [w['title'], w['id']] + w.get('aliases', []),
+            'assumptions': [w['scope']],
+            'retrieval': {'questions': w['questions'], 'use_when': w['scope'],
+                'learning_path': {'nodes': [{'id': s, 'title': sessions[s]['title']} for s in w['session_ids']]}}})
+    return result
+
+
+def query_hub(query='', module_id=None, offset=0, limit=20):
+    if not isinstance(query, str) or len(query) > 6000 or (module_id is not None and not isinstance(module_id, str)):
+        raise ValueError('visual_hub_query_invalid')
+    if type(offset) is not int or offset < 0 or type(limit) is not int or not 1 <= limit <= 50:
+        raise ValueError('visual_hub_page_invalid')
+    data = curriculum()
+    if module_id and not any(m['id'] == module_id for m in data['modules']):
+        raise ValueError('visual_hub_module_not_found')
+    from .catalog import _terms
+    terms = _terms(query)
+    hits = []
+    for m in data['modules']:
+        if module_id and m['id'] != module_id:
+            continue
+        for chapter in m['chapters']:
+            for session in chapter['sessions']:
+                row = {'module_id': m['id'], 'module_title': m['title'], 'area': m['area'],
+                    'chapter_id': chapter['id'], 'chapter_title': chapter['title'], **session}
+                target = json.dumps(row, ensure_ascii=False)
+                overlap = len(terms & _terms(target))
+                if query and query.casefold() not in target.casefold() and overlap < 2:
+                    continue
+                hits.append((overlap, row))
+    hits.sort(key=lambda pair: -pair[0])
+    return {'schema_version': VERSION, 'visibility': 'agent_internal', 'coverage': data['coverage'],
+        'total': len(hits), 'offset': offset, 'next_offset': offset+limit if offset+limit<len(hits) else None,
+        'sessions': [row for _, row in hits[offset:offset+limit]],
+        'modules': [{k:m[k] for k in ('id','title','area','prerequisite_module_ids')} for m in data['modules']],
+        'tracks': data['tracks'], 'sources': data['sources'],
+        'policy': 'planned is a topic proposal, never an available work. Reuse only ready work_refs; fresh generation remains available.'}
+
+
+BASE_STYLE = '''
+:root{color-scheme:light dark;--background:#fff;--foreground:#172d34;--border:#d5dfe1;--muted-foreground:#526b72;--viz-series-1:#067b99;--viz-series-2:#c76c18;--viz-series-3:#7b52b5;--muted:#f2f7f7;font-family:system-ui,sans-serif;font-size:14px}
+@media(prefers-color-scheme:dark){:root{--background:#142125;--foreground:#e2eff2;--border:#48616a;--muted-foreground:#aac1c8;--viz-series-1:#54bbd2;--viz-series-2:#f7ae60;--muted:#203239}}
+*{box-sizing:border-box}body{margin:0;padding:12px;background:var(--background);color:var(--foreground)}h3{font-size:18px;margin:0 0 16px}button,select,input{font:inherit;color:inherit}button,select{background:var(--background);border:1px solid var(--border);border-radius:7px;padding:7px 12px}button{cursor:pointer}.btn-primary{background:var(--viz-series-1);color:var(--background);border-color:var(--viz-series-1)}button:disabled{opacity:.45}.viz-controls,.viz-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0}.viz-controls label{flex:1;min-width:130px}.viz-controls input[type=range],.form-range{display:block;width:100%;accent-color:var(--viz-series-1)}.text-small{font-size:12px}.tabular-nums{font-variant-numeric:tabular-nums}p{line-height:1.65}svg{max-width:100%}@media(max-width:420px){[data-lab] svg text{font-size:18px}[data-lab=bayes] svg text{font-size:20px}}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--viz-series-2);outline-offset:2px}
+'''
+
+
+def compile_work(source, template_ref=None):
+    if not isinstance(source, dict):
+        raise ValueError('visual_hub_reference_required')
+    work = next((w for w in works() if w['id']==source.get('work_id') and w['version']==source.get('version') and w['status']=='ready'), None)
+    if work is None or source != reference(work):
+        raise ValueError('visual_hub_immutable_reference_invalid')
+    if template_ref is not None and template_ref != {'id':work['id'], 'version':work['version']}:
+        raise ValueError('visual_hub_template_identity_conflict')
+    path = ROOT / 'works' / work['file']
+    # The filename is deployment-controlled, still reject accidental path escape.
+    if path.resolve().parent != (ROOT / 'works').resolve():
+        raise ValueError('visual_hub_asset_path_invalid')
+    payload = path.read_bytes()
+    if sha256(payload).hexdigest() != work['sha256']:
+        raise ValueError('visual_hub_asset_digest_mismatch')
+    csp = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'"
+    resize = "<script>new ResizeObserver(()=>parent.postMessage({type:'learnflow-visual-height',height:document.body.scrollHeight},'*')).observe(document.body);</script>"
+    html = '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="'+csp+'"><style>'+BASE_STYLE+'</style></head><body>'+payload.decode('utf-8')+resize+'</body></html>'
+    return {'runtime_version': 'maintained-html/1', 'html': html, 'params': {},
+        'verification': {'status':'pass','scope':work['scope'], 'method':'maintained_asset_digest',
+                         'meaning':'The reviewed version is intact; this is not a learner assessment.'},
+        'source_provenance': {'source':'maintained_library','id':work['id'],'version':work['version'],'spec_digest':digest(source)}}

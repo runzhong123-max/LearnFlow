@@ -207,10 +207,14 @@ async def record_workspace_event(db, learner_id, operation, result_id, *, job_id
 
 
 async def compiled(builder, source, params, kind, learner_id, template_ref=None):
-    require(builder in ('visual_spec','svg_story'), 'visual_workspace:builder_invalid')
+    require(builder in ('visual_spec','svg_story','interactive_html'), 'visual_workspace:builder_invalid')
     require(isinstance(source, dict), 'visual_workspace:source_invalid')
     require(isinstance(params, dict), 'visual_workspace:params_invalid')
     json_budget(source,'source',262144 if builder=='visual_spec' else 131072)
+    if builder == 'interactive_html':
+        from .hub import compile_work
+        require(not params, 'visual_hub_parameters_are_local')
+        return {**await run_in_threadpool(compile_work, source, template_ref), 'owner_scope':str(learner_id)}
     if builder == 'visual_spec':
         bundle = await run_in_threadpool(compile_visual, source, params)
         if kind == 'animation':
@@ -281,6 +285,7 @@ async def publish(db,learner_id,p):
     route=job.route if isinstance(job.route,dict) else {}
     source_mode=job.source_mode if job.source_mode!='auto' else route.get('source_mode','adapt' if parent_id or p.get('template_ref') else 'fresh')
     require(source_mode in ('reuse','adapt','fresh'),'visual_workspace:resolved_source_mode_required')
+    require(p['builder']!='interactive_html' or source_mode=='reuse', 'visual_hub_reuse_only')
     require(source_mode!='fresh' or not (parent_id or p.get('template_ref')),'visual_workspace:fresh_cannot_reference_source')
     selected=route.get('source_ref')
     if isinstance(selected,dict) and selected.get('kind')=='revision':
@@ -427,11 +432,11 @@ async def dispatch(db,learner_id,operation,p):
                 except IntegrityError:
                     await db.rollback();rev=await owned(db,VisualRevision,learner_id,revision_id)
                     run=await db.scalar(select(VisualRun).where(VisualRun.learner_id==learner_id,VisualRun.revision_id==rev.id,VisualRun.input_digest==fingerprint))
-            return {**artifact_ref(rev,run),'source':copy.deepcopy(rev.source),**({'bundle':copy.deepcopy(run.compiled)} if rev.builder=='visual_spec' else {'scenes':copy.deepcopy(run.compiled['scenes'])})}
+            return {**artifact_ref(rev,run),'source':copy.deepcopy(rev.source),**({'bundle':copy.deepcopy(run.compiled)} if rev.builder=='visual_spec' else {'html':run.compiled['html']} if rev.builder=='interactive_html' else {'scenes':copy.deepcopy(run.compiled['scenes'])})}
         run=await choose_run(db,learner_id,rev,p.get('run_id'))
         if operation=='read':
             view=await db.scalar(select(VisualViewState).where(VisualViewState.learner_id==learner_id,VisualViewState.revision_id==rev.id,VisualViewState.run_id==run.id))
-            return {**artifact_ref(rev,run),'source':copy.deepcopy(rev.source),**({'bundle':copy.deepcopy(run.compiled)} if rev.builder=='visual_spec' else {'scenes':copy.deepcopy(run.compiled['scenes'])}),**({'view_state':copy.deepcopy(view.state)} if view else {})}
+            return {**artifact_ref(rev,run),'source':copy.deepcopy(rev.source),**({'bundle':copy.deepcopy(run.compiled)} if rev.builder=='visual_spec' else {'html':run.compiled['html']} if rev.builder=='interactive_html' else {'scenes':copy.deepcopy(run.compiled['scenes'])}),**({'view_state':copy.deepcopy(view.state)} if view else {})}
         if operation=='view':
             require(('state' in p) != ('view_state' in p),'visual_workspace:view_state_required')
             state=p.get('view_state',p.get('state'));require(isinstance(state,dict),'visual_workspace:view_state_invalid');json_budget(state,'view_state',16000)

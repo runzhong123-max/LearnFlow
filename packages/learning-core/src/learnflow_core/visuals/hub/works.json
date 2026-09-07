@@ -1,0 +1,123 @@
+[
+  {
+    "id": "hub-functions",
+    "version": "1.0.0",
+    "title": "函数变换",
+    "file": "functions.html",
+    "session_ids": [
+      "math-functions.c2.s2"
+    ],
+    "questions": [
+      "平移与缩放如何改变函数图像？"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "数学机制演示；改变参数实时重算。观看不代表掌握。",
+    "sha256": "ef27a0fc024daf813797b8807920199c667a31251e12e3864ca9eb866ada68f2",
+    "status": "ready",
+    "builder": "interactive_html",
+    "aliases": [
+      "函数变换"
+    ]
+  },
+  {
+    "id": "hub-derivative",
+    "version": "1.0.0",
+    "title": "割线与导数",
+    "file": "derivative.html",
+    "session_ids": [
+      "math-calculus.c1.s2"
+    ],
+    "questions": [
+      "割线为什么趋近切线？"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "数学机制演示；改变参数实时重算。观看不代表掌握。",
+    "sha256": "7976abc4ef99eac116744df47d7bf6ae5c1821b8f6ea975fb9038bf864c65a97",
+    "status": "ready",
+    "builder": "interactive_html",
+    "aliases": [
+      "导数",
+      "割线",
+      "切线"
+    ]
+  },
+  {
+    "id": "hub-linear",
+    "version": "1.0.0",
+    "title": "二维线性变换",
+    "file": "linear.html",
+    "session_ids": [
+      "math-linear.c2.s1"
+    ],
+    "questions": [
+      "两个基向量如何决定整个平面？"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "数学机制演示；改变参数实时重算。观看不代表掌握。",
+    "sha256": "f7aacb1169128e4fe3003c7a819a17f7ac8a9b668704319264ddd3e574790dc0",
+    "status": "ready",
+    "builder": "interactive_html",
+    "aliases": [
+      "线性变换"
+    ]
+  },
+  {
+    "id": "hub-bayes",
+    "version": "1.0.0",
+    "title": "贝叶斯与基率",
+    "file": "bayes.html",
+    "session_ids": [
+      "math-probability.c1.s2"
+    ],
+    "questions": [
+      "阳性结果为什么不等于高患病概率？"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "数学机制演示；改变参数实时重算。观看不代表掌握。",
+    "sha256": "334a1f741e5b103459bbb27236b030aeadc933e5587c28851faaf7dcd3e1643b",
+    "status": "ready",
+    "builder": "interactive_html",
+    "aliases": [
+      "贝叶斯",
+      "基率"
+    ]
+  },
+  {
+    "id": "hub-dijkstra",
+    "version": "1.0.0",
+    "title": "Dijkstra：最短路径怎样确定",
+    "file": "dijkstra.html",
+    "session_ids": [
+      "algorithms.c3.s1"
+    ],
+    "questions": [
+      "迪杰斯特拉算法如何松弛？",
+      "改变起点或边权，最短路径怎样改变？"
+    ],
+    "kind": [
+      "diagram",
+      "animation"
+    ],
+    "scope": "六节点无向正权图；C-D 边权 1..12；不支持负权。",
+    "sha256": "5baa50c2d48874ac0b22dd7b7ceba91990c3b724137901a9d14fd5f98df3d1fc",
+    "status": "ready",
+    "builder": "interactive_html",
+    "aliases": [
+      "Dijkstra",
+      "迪杰斯特拉",
+      "最短路径"
+    ]
+  }
+]

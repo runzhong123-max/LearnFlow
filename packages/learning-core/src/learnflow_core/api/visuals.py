@@ -128,3 +128,16 @@ async def workspace(request: Request, current: CurrentLearner = Depends(get_curr
         raise HTTPException(exc.status, str(exc)[:1800])
     except (ValueError, TypeError, KeyError, RecursionError) as exc:
         raise HTTPException(422, str(exc)[:1800] if isinstance(exc, ValueError) else 'visual_workspace:invalid_payload')
+
+
+@router.post('/hub')
+async def hub(request: Request, current: CurrentLearner = Depends(get_current_learner)):
+    """Internal curriculum discovery; planned candidates are not runnable works."""
+    from learnflow_core.visuals.hub import query_hub
+    data = await body(request)
+    if set(data) - {'query', 'module_id', 'offset', 'limit'}:
+        raise HTTPException(422, 'visual_hub_fields_invalid')
+    try:
+        return await run_in_threadpool(query_hub, **data)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))

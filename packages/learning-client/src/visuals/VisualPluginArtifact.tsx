@@ -3,6 +3,7 @@ import VisualizeArtifact, {type VisualViewState} from './VisualizeArtifact'
 import {VisualMore, VisualPlayback, VisualStages} from './VisualPlayerChrome'
 import type {VisualBundle} from './types'
 import './VisualPluginArtifact.css'
+import InteractiveHtmlPlayer from './InteractiveHtmlPlayer'
 
 export type VisualArtifactHost = {request: (operation: string, payload: Record<string, unknown>) => Promise<any>}
 type RecordValue = Record<string, any>
@@ -10,7 +11,7 @@ type Scene = {title: string; note?: string; svg: string; snapshot_ref: string}
 type Work = {
   artifact_id: string; revision_id: string; run_id?: string; builder: string; title: string;
   kind: 'diagram'|'animation'; verification?: RecordValue; source_mode?: string;
-  parent_revision_id?: string; source?: RecordValue; bundle?: VisualBundle; scenes?: Scene[];
+  parent_revision_id?: string; source?: RecordValue; bundle?: VisualBundle; scenes?: Scene[]; html?: string;
   view_state?: Partial<VisualViewState>;
 }
 type Props = {reference: RecordValue; result?: RecordValue; host?: VisualArtifactHost; onPrompt?: (prompt: string) => void}
@@ -29,6 +30,7 @@ function validWork(value: unknown): Work {
   if (!item.revision_id || !item.artifact_id) throw new Error('作品引用不完整，请重新打开。')
   if (item.builder === 'visual_spec' && (!item.bundle?.frames?.length || item.bundle.verification?.status !== 'pass')) throw new Error('没有可展示的计算结果；已保存的作品引用仍然保留。')
   if (item.builder === 'svg_story' && (!Array.isArray(item.scenes) || !item.scenes.length || item.scenes.some((scene: Scene) => typeof scene.svg !== 'string' || !/^\s*<svg[\s>]/.test(scene.svg) || !scene.snapshot_ref))) throw new Error('分镜缺少可展示的画面或状态引用。')
+  if (item.builder === 'interactive_html' && (typeof item.html !== 'string' || !item.html.startsWith('<!doctype html>'))) throw new Error('维护作品内容缺失。')
   return item as Work
 }
 
@@ -193,7 +195,7 @@ export default function VisualPluginArtifact({reference, result, host, onPrompt}
       return <li key={`${entry.id}-${entry.version}`}><strong>{entry.title}</strong>{entry.description && <p>{entry.description}</p>}{Array.isArray(nodes) && <small>课程：{nodes.map((node: RecordValue) => node.title).join(' · ')}</small>}{Array.isArray(metadata.questions) && metadata.questions.length > 0 && <p>适合回答：{metadata.questions.slice(0, 2).join('；')}</p>}<div className="visual-plugin-actions">{(['diagram', 'animation'] as const).filter(kind => !Array.isArray(entry.kind) || entry.kind.includes(kind)).map(kind => <button key={kind} type="button" disabled={!onPrompt} onClick={() => onPrompt?.(`复用维护图解 template_id=${entry.id} template_version=${entry.version} kind=${kind}\n${entry.title}`)}>{kind === 'animation' ? '观看动画' : '打开图解'}</button>)}</div></li>
     })}</ul></section>}
     {work && <>
-      {work.builder === 'visual_spec' && work.bundle ? <VisualizeArtifact secondaryActions={secondaryActions} key={work.revision_id} initial={work.bundle} storageScope={`artwork:${work.artifact_id}`} mode={work.kind} transport={transport} initialViewState={work.view_state} onRun={rerun} onViewChange={saveView} onAsk={prompt => onPrompt?.(`${prompt}\n作品版本：${work.revision_id}；作品：${work.artifact_id}。`)}/> : work.builder === 'svg_story' ? <StoryPlayer secondaryActions={secondaryActions} key={work.revision_id} work={work} onPrompt={onPrompt} onViewChange={storyView}/> : <p>当前宿主暂不支持此作品的展示方式，作品版本已保留。</p>}
+      {work.builder === 'visual_spec' && work.bundle ? <VisualizeArtifact secondaryActions={secondaryActions} key={work.revision_id} initial={work.bundle} storageScope={`artwork:${work.artifact_id}`} mode={work.kind} transport={transport} initialViewState={work.view_state} onRun={rerun} onViewChange={saveView} onAsk={prompt => onPrompt?.(`${prompt}\n作品版本：${work.revision_id}；作品：${work.artifact_id}。`)}/> : work.builder === 'svg_story' ? <StoryPlayer secondaryActions={secondaryActions} key={work.revision_id} work={work} onPrompt={onPrompt} onViewChange={storyView}/> : work.builder === 'interactive_html' && work.html ? <InteractiveHtmlPlayer key={work.revision_id} html={work.html} title={work.title}/> : <p>当前宿主暂不支持此作品的展示方式，作品版本已保留。</p>}
 
       {viewError && <p role="status">{viewError}</p>}
     </>}

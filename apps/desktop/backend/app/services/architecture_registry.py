@@ -44,7 +44,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-07.6-desktop"
+REGISTRY_VERSION = "2026-09-07.7-desktop"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 DATA_CONTRACTS = {
@@ -186,7 +186,7 @@ TOOLS = {
         ToolContract("visual_artifact_workspace", "Private Visual Works and Workflow Checkpoints", "learning_design_agent", "learnflow", "harness",
                      (), (), "authenticated owned jobs -> immutable source revisions and parameter runs + view state; optimistic version checks, bounded JSON, event audit; generated works never enter public library automatically"),
         ToolContract("visual_content_library", "Maintained Visual Recipes and Capability Discovery", "learning_design_agent", "vnext", "harness",
-                     (), (), "authenticated question and curriculum-node retrieval -> immutable maintained recipe with aliases, questions, prerequisites and applicability boundaries or fresh composition; no automatic publication of generated content; no learner-state write"),
+                     (), (), "authenticated internal hub v1 tracks/modules/chapters/sessions and question retrieval -> immutable maintained recipe or digest-pinned sandboxed interactive_html with aliases, questions, prerequisites and applicability boundaries or fresh composition; no automatic publication of generated content; no learner-state write"),
         ToolContract("safe_visual_generation", "Shared Learning VisualSpec Runtime", "learning_design_agent", "vnext", "harness",
                      (), (), "independently valid explanation -> VisualSpec 0.1.0/0.2.0 from maintained retrieval or fresh composition -> registered operations or explicitly illustrative authored sequence -> versioned trace and verification scope -> PresentationPlan/SVG interaction; local layout repair/current-state fallback; legacy ASCII reader retained; no mastery inference"),
         ToolContract("learning_diagram_generator", "Learning Diagram Generator", "learning_design_agent", "vnext", "artifact",
@@ -1374,6 +1374,7 @@ _API_BINDING_TARGETS = {
     "api:agent.skill_action": ("app.api.agent", "/agent/sessions/{session_id}/skill-runs/{run_id}/actions", "POST", "update_learning_skill_run"),
     "api:agent.tutor_turn": ("app.api.agent", "/agent/sessions/{session_id}/turns", "POST", "tutor_turn"),
     "api:visuals.workspace": ("learnflow_core.api.visuals", "/visuals/workspace", "POST", "workspace"),
+    "api:visuals.hub": ("learnflow_core.api.visuals", "/visuals/hub", "POST", "hub"),
     "api:visuals.catalog": ("learnflow_core.api.visuals", "/visuals/catalog", "POST", "catalog"),
     "api:visuals.template": ("learnflow_core.api.visuals", "/visuals/template", "POST", "template"),
     "api:visuals.compile": ("learnflow_core.api.visuals", "/visuals/compile", "POST", "compile_artifact"),
@@ -1589,7 +1590,7 @@ _TOOL_BINDING_IDS = {
     "checkpoint_delivery_readiness": ("py:delivery_readiness.read",),
     "educational_visual_plugin": ("frontend:plugin.educational_visuals", "frontend:visual_workflow.run"),
     "visual_artifact_workspace": ("api:visuals.workspace",),
-    "visual_content_library": ("api:visuals.catalog", "api:visuals.template"),
+    "visual_content_library": ("api:visuals.catalog", "api:visuals.template", "api:visuals.hub"),
     "safe_visual_generation": ("api:visuals.compile", "api:visuals.inspect", "frontend:visual_storyboard.compile", "frontend:visual_storyboard.design_ascii", "frontend:visual.generate", "api:agent.visual_plan"),
     "learning_diagram_generator": ("frontend:plugin.educational_visuals",),
     "learning_animation_generator": ("frontend:plugin.educational_visuals",),

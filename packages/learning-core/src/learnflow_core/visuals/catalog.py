@@ -12,7 +12,7 @@ from functools import lru_cache
 from pathlib import Path
 from .engine import compile_visual, digest
 
-CATALOG_VERSION = '2026-09-07.2'
+CATALOG_VERSION = '2026-09-07.3'
 PATTERNS = [
     {'id': 'trace', 'goal': '观察并解释一次状态变化', 'controls': ['stepper'], 'stop_rule': '有限步骤结束'},
     {'id': 'decomposition', 'goal': '从总览展开一个机制', 'controls': ['stepper', 'selection'], 'stop_rule': '回到输入输出关系'},
@@ -34,6 +34,8 @@ def _entries() -> tuple[dict, ...]:
         if entry.get('status') != 'production':
             continue
         entries.append(entry)
+    from .hub import entries as hub_entries
+    entries.extend(hub_entries())
     keys = [(e['id'], e['version']) for e in entries]
     if len(keys) != len(set(keys)):
         raise ValueError('duplicate maintained visual version')
@@ -51,7 +53,8 @@ def _terms(value: str) -> set[str]:
 def _summary(entry: dict, score: float) -> dict:
     return {k: copy.deepcopy(entry[k]) for k in ('id', 'version', 'title', 'description', 'tags', 'kind', 'patterns')} | {
         'score': score, 'source': 'maintained_library', 'spec_digest': digest(entry['spec']),
-        'assumptions': entry['spec']['teaching']['assumptions'],
+        'builder': entry.get('builder', 'visual_spec'),
+        'assumptions': entry.get('assumptions', entry['spec'].get('teaching', {}).get('assumptions', [])),
         'retrieval': copy.deepcopy(entry.get('retrieval', {})),
     }
 
@@ -83,7 +86,10 @@ def search_catalog(query: str, kind: str, include_templates: bool = True) -> dic
         score = round(exact * 10 + curriculum_match * 5 + overlap / max(1, len(topic)) + detail_overlap / max(1, len(detail)), 4)
         hits.append(_summary(entry, score))
     hits.sort(key=lambda e: (-e['score'], e['id'], e['version']))
+    from .hub import query_hub
+    curriculum_hits = query_hub(query, limit=5)['sessions'] if include_templates else []
     return {
+        'curriculum_sessions': curriculum_hits,
         'catalog_version': CATALOG_VERSION,
         'capabilities': capability_manifest(), 'patterns': PATTERNS,
         'templates': hits[:5], 'candidate_count': len(hits),
@@ -97,7 +103,11 @@ def _validated_entry(template_id: str, version: str) -> dict:
     if entry is None:
         raise ValueError('visual_template_not_found')
     # Maintained recipes do not bypass runtime validation or gain trusted answer status.
-    bundle = compile_visual(entry['spec'])
+    if entry.get('builder') == 'interactive_html':
+        from .hub import compile_work
+        bundle = compile_work(entry['spec'])
+    else:
+        bundle = compile_visual(entry['spec'])
     return {
         **_summary(entry, 0), 'spec': entry['spec'],
         'provenance': {'source': 'maintained_library', 'id': template_id, 'version': version,

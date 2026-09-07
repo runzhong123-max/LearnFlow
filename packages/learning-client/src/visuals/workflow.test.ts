@@ -98,3 +98,21 @@ test('plugin contract and local JSON repair keep data and explicit control routi
   const paused=await createVisualWork({request:'从零演示消息',kind:'animation',request_id:'cancel-golden'},fixture.context)
   assert.equal((await cancelVisualWork(paused.job_id!,fixture.context)).status,'cancelled')
 })
+
+test('maintained interactive reference is reused without generating executable source',async()=>{
+  const source={hub_version:'1.0.0',work_id:template.id,version:'1.0.0',title:'交互作品',sha256:'test-digest'}
+  const setup=harness([{source_mode:'reuse',source_ref:{kind:'template',id:template.id,version:template.version},builder:'interactive_html'}],{templates:true})
+  const base=setup.context.artifactHost!.request
+  setup.context.artifactHost!.request=async(op,p)=>op==='template'?{...template,builder:'interactive_html',source}:base(op,p)
+  const result=await createVisualWork({request:'复用交互作品',kind:'animation',request_id:'hub-reuse'},setup.context)
+  assert.equal(result.status,'ready');assert.equal(result.artifact?.builder,'interactive_html')
+  assert.deepEqual(setup.calls.find(c=>c.operation==='publish')?.payload.source,source)
+  assert.equal(setup.generations,1)
+})
+
+test('exact retrieved template button does not call the model',async()=>{
+  const setup=harness([],{templates:true})
+  const result=await createVisualWork({request:`复用维护图解 template_id=${template.id} template_version=${template.version}`,source_mode:'reuse',kind:'animation',request_id:'exact-ui'},setup.context)
+  assert.equal(result.status,'ready');assert.equal(setup.generations,0)
+  assert.deepEqual(setup.calls.find(c=>c.operation==='publish')?.payload.source,maintained)
+})
