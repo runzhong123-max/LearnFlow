@@ -41,6 +41,7 @@ import MarkdownContent from "@/app/components/MarkdownContent";
 import RoleCardView, { type RoleCardNode } from "@/app/components/RoleCardView";
 import TaskWorkspace, { type TaskPerspective } from "@/app/components/TaskWorkspace";
 import WorkspaceSkillLauncher from "@/app/components/WorkspaceSkillLauncher";
+import { iterationTargetNodes } from "@/lib/iteration/targets";
 import ProjectToolPane from "@/app/components/ProjectToolPane";
 import NewProjectDialog from "@/app/components/NewProjectDialog";
 import { useConversationState } from "@/app/components/useConversationState";
@@ -233,7 +234,7 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
   const [activeConversationId, setActiveConversationId] = useState(initialConversationId || "");
   const activeConversationRef = useRef(activeConversationId);
   activeConversationRef.current = activeConversationId;
-  const [toolInstances, setToolInstances] = useState<Record<string, { tool: RoleSkillId | null; context: import("@/lib/skills/workspace").WorkspaceSkillContext; promptSeed?: { text: string; nonce: number } }>>({});
+  const [toolInstances, setToolInstances] = useState<Record<string, { tool: RoleSkillId | null; context: import("@/lib/skills/workspace").WorkspaceSkillContext; promptSeed?: { text: string; nonce: number }; targetSeed?: { ids: string[]; nonce: number } }>>({});
   const [toolBusy, setToolBusy] = useState<Record<string, boolean>>({});
   const [modeSaving, setModeSaving] = useState(false);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
@@ -1243,7 +1244,7 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
     if (!projectId || !activeConversationId || conversationLoading || toolBusy[activeConversationId]) return;
     if (conversations.find((item) => item.id === activeConversationId)?.mode !== "iteration" && !await changeMode("iteration")) return;
     setChatCollapsed(false);
-    setToolInstances((current) => ({ ...current, [activeConversationId]: { tool, context: { ...skillContext, selectedNodeIds: tool === "node-deepening" ? (references.length ? references.map((node) => node.id) : selectedNode ? [selectedNode.id] : []) : [] }, ...(prompt ? { promptSeed: { text: prompt, nonce: Date.now() } } : {}) } }));
+    setToolInstances((current) => ({ ...current, [activeConversationId]: { tool, ...(tool === "node-deepening" ? { targetSeed: { ids: references.length ? references.map((node) => node.id) : selectedNode ? [selectedNode.id] : [], nonce: Date.now() } } : {}), context: { ...skillContext, selectedNodeIds: references.length ? references.map((node) => node.id) : selectedNode ? [selectedNode.id] : [] }, ...(prompt ? { promptSeed: { text: prompt, nonce: Date.now() } } : {}) } }));
   }
 
   async function refreshConversationResult(id: string) {
@@ -1253,7 +1254,7 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
       if (!response.ok) return;
       const workspace = await response.json() as ProjectWorkspaceEnvelope;
       const conversation = workspace.conversations.find((item) => item.id === id);
-      setToolInstances((current) => current[id] ? { ...current, [id]: { ...current[id], context: { ...current[id].context, snapshotId: conversation?.snapshotId || undefined, versionId: conversation?.versionId || undefined } } } : current);
+      setToolInstances((current) => current[id] ? { ...current, [id]: { ...current[id], context: { ...current[id].context, snapshotId: conversation?.snapshotId || undefined, versionId: conversation?.versionId || undefined, availableNodes: workspace.result ? iterationTargetNodes(workspace.result) : [] } } } : current);
       if (activeConversationRef.current !== id) return;
       applyProjectWorkspace(workspace);
     } catch { /* Persisted task cards retain errors and can be reopened. */ }
@@ -1273,6 +1274,7 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
     versionId: projectId ? conversations.find((conversation) => conversation.id === activeConversationId)?.versionId || undefined : undefined,
     conversationId: projectId ? activeConversationId : undefined,
     selectedNodeIds: selectedNode ? [selectedNode.id] : [],
+    availableNodes: projectResult ? iterationTargetNodes(projectResult) : [...(graphData?.nodes || []), ...processNodeMap.values()].map((node) => ({ id: node.id, label: node.label })),
     roleTitle: workspaceTitle,
     roleDescription: projectResult?.brief.roleDescription || projectBrief.description,
     market: projectResult?.brief.market || projectBrief.market,
@@ -1462,7 +1464,7 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
           {projectId && conversations.filter((conversation) => conversation.id === activeConversationId || toolInstances[conversation.id] || toolBusy[conversation.id]).map((conversation) => {
             const instance = toolInstances[conversation.id];
             const context = instance?.context || { ...skillContext, conversationId: conversation.id, snapshotId: conversation.snapshotId || undefined, versionId: conversation.versionId || undefined };
-            return <div key={conversation.id} hidden={conversation.id !== activeConversationId}><ProjectToolPane context={context} activeTool={instance?.tool || null} promptSeed={instance?.promptSeed} onClose={() => setToolInstances((current) => current[conversation.id] ? { ...current, [conversation.id]: { ...current[conversation.id], tool: null } } : current)} onBusyChange={(busy) => setToolBusy((current) => current[conversation.id] === busy ? current : { ...current, [conversation.id]: busy })} onPreview={(result) => {
+            return <div key={conversation.id} hidden={conversation.id !== activeConversationId}><ProjectToolPane context={context} currentSelectedNodeIds={conversation.id === activeConversationId ? skillContext.selectedNodeIds : undefined} activeTool={instance?.tool || null} promptSeed={instance?.promptSeed} targetSeed={instance?.targetSeed} onClose={() => setToolInstances((current) => current[conversation.id] ? { ...current, [conversation.id]: { ...current[conversation.id], tool: null } } : current)} onBusyChange={(busy) => setToolBusy((current) => current[conversation.id] === busy ? current : { ...current, [conversation.id]: busy })} onPreview={(result) => {
               if (activeConversationRef.current !== conversation.id) return;
               applyProjectWorkspace({ project: { title: result.brief.roleTitle, status: "building" }, conversations, result });
             }} onComplete={(id) => void refreshConversationResult(id)} /></div>;

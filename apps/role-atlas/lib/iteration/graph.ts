@@ -92,18 +92,23 @@ function coldStartRequest(input: {
   };
 }
 
-function stampSnapshot(candidate: ColdStartBuildResult, request: SnapshotIterationRequest, baseAsOf: string) {
+/** Evaluate the requested date before committing it; changing a date is not evidence gain. */
+function snapshotAtTargetDate(candidate: ColdStartBuildResult, targetAsOf: string) {
+  return { ...candidate, snapshot: { ...candidate.snapshot, asOf: targetAsOf } };
+}
+
+function stampSnapshot(candidate: ColdStartBuildResult, request: SnapshotIterationRequest, baseAsOf: string, asOf: string) {
   const result = structuredClone(candidate);
   const revision = stableHash(`${request.runId}:${JSON.stringify(result.semantic.nodes)}:${JSON.stringify(result.process.scenarios)}:${JSON.stringify(result.sources.assets.map((source) => source.contentHash))}`);
-  const asOf = request.targetAsOf || result.snapshot.asOf;
   const roleSlug = stableHash(result.brief.roleTitle);
   const snapshotId = `snapshot:${roleSlug}@${asOf}:${revision}`;
   const current = result.packages.rolePackage.packageVersion.match(/^(\d+)\.(\d+)\.(\d+)/u)?.slice(1).map(Number) || [0, 1, 0];
   const [major, minor, patch] = current;
-  const changedTime = Boolean(request.targetAsOf && request.targetAsOf !== baseAsOf);
+  const changedTime = asOf !== baseAsOf;
   const version = changedTime ? `${major}.${minor + 1}.0` : `${major}.${minor}.${patch + 1}`;
   const packageVersion = `${version}-candidate.${revision}`;
   result.runId = request.runId;
+  result.brief = { ...result.brief, snapshotAsOf: asOf };
   result.snapshot = { ...result.snapshot, id: snapshotId, asOf, status: "candidate" };
   return refreshRolePackageManifest(result, { packageVersion, status: "candidate" });
 }
@@ -165,7 +170,7 @@ export function createSnapshotIterationSkill(input: {
 
   const inspectAndDiscover = async (state: IterationStateType) => {
     emit(state, "iteration.inspection.started", "inspect", { targetIds: state.contract!.targetIds, scope: state.contract!.budgets.graphRadius });
-    const inspection = inspectSnapshot(state.candidate, { targetIds: state.contract!.initiativeProfile === "autonomous" ? [] : state.contract!.targetIds });
+    const inspection = inspectSnapshot(snapshotAtTargetDate(state.candidate, state.contract!.targetAsOf), { targetIds: state.contract!.initiativeProfile === "autonomous" ? [] : state.contract!.targetIds });
     for (const finding of inspection.findings) emit(state, "iteration.finding.discovered", "inspect", { finding });
     emit(state, "iteration.inspection.completed", "inspect", {
       protocolValid: inspection.protocolValid,
@@ -297,7 +302,7 @@ export function createSnapshotIterationSkill(input: {
       nodeCount: state.candidate.semantic.nodes.length,
       edgeCount: state.candidate.semantic.edges.length,
     });
-    const inspection = inspectSnapshot(state.candidate, { targetIds: state.contract!.initiativeProfile === "autonomous" ? [] : state.contract!.targetIds });
+    const inspection = inspectSnapshot(snapshotAtTargetDate(state.candidate, state.contract!.targetAsOf), { targetIds: state.contract!.initiativeProfile === "autonomous" ? [] : state.contract!.targetIds });
     const proposed = proposeSafePatch({ result: state.candidate, audit: inspection.audit, iteration: state.round });
     emit(state, "iteration.patch.proposed", "consolidate", { patch: proposed });
     if (!proposed.operations.length) {
@@ -319,7 +324,7 @@ export function createSnapshotIterationSkill(input: {
       baseSnapshotId: state.base.snapshot.id,
       candidateNodeCount: state.candidate.semantic.nodes.length,
     });
-    const inspectionAfter = inspectSnapshot(state.candidate, { targetIds: state.contract!.initiativeProfile === "autonomous" ? [] : state.contract!.targetIds });
+    const inspectionAfter = inspectSnapshot(snapshotAtTargetDate(state.candidate, state.contract!.targetAsOf), { targetIds: state.contract!.initiativeProfile === "autonomous" ? [] : state.contract!.targetIds });
     const candidate = applyInspectionToSnapshot(state.candidate, inspectionAfter);
     const remainingFindingIds = new Set(inspectionAfter.findings.map((finding) => finding.id));
     const workItems = state.workItems.map((item) => item.findingIds.length && item.findingIds.every((id) => !remainingFindingIds.has(id))
@@ -365,7 +370,7 @@ export function createSnapshotIterationSkill(input: {
 
   const finalize = async (state: IterationStateType) => {
     const createdSnapshot = Boolean(state.evaluation?.meaningful);
-    const candidate = createdSnapshot ? stampSnapshot(state.candidate, state.request, state.base.snapshot.asOf) : state.candidate;
+    const candidate = createdSnapshot ? stampSnapshot(state.candidate, state.request, state.base.snapshot.asOf, state.contract!.targetAsOf) : state.candidate;
     const diff = computeSemanticDiff({
       base: state.base,
       candidate,

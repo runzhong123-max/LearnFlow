@@ -140,6 +140,42 @@ try {
   assert.notEqual(second.packageLineId, prepared.packageLineId);
   status(await api(2, "/api/releases", "PATCH", { action: "publish", releaseId: second.id }), 200, "second owner saves own role package");
   status(await api(1, `/api/releases/${second.id}/export`), 404, "same-role package remains private");
+  // Exercise the same restored options through the real API and persisted job input.
+  const pathGraph = await (await fetch(`${base}/data/learnflow-learning-path.json`)).json();
+  for (const [index, mode] of ["risk_repair", "deep_research", "freshness"].entries()) {
+    const conversationId = `verify-options-${index}`;
+    status(await api(1, "/api/projects/verify-graph-project/conversations", "POST", { id: conversationId, mode: "iteration" }), 201, "option conversation");
+    const current = status(await api(1, `/api/projects/verify-graph-project?conversation=${conversationId}`), 200, "option baseline");
+    const conversation = current.conversations.find((item) => item.id === conversationId);
+    const targetId = current.result.process.nodes[0].id;
+    const iteration = { runId: `verify-options-run-${index}`, projectId: "verify-graph-project", conversationId,
+      snapshotRef: { projectId: "verify-graph-project", versionId: conversation.versionId, snapshotId: conversation.snapshotId },
+      mode, initiativeProfile: ["autonomous", "user_directed", "co_guided"][index], prompt: "", targetIds: index === 1 ? [targetId] : [],
+      ...(index === 2 ? { targetAsOf: "2026-09-07" } : {}), webResearch: false, supplementalSources: [], learningPathGraph: pathGraph };
+    status(await api(1, "/api/snapshot-iterations", "POST", { iteration: { ...iteration, targetIds: ["foreign-node"] } }), 400, "foreign snapshot node rejected");
+    status(await api(1, "/api/snapshot-iterations", "POST", { iteration: { ...iteration, targetAsOf: "2026-02-30" } }), 400, "invalid target date rejected");
+    const response = await fetch(`${base}/api/snapshot-iterations`, { method: "POST", headers: { cookie: "atlas_verify_user=1", "Content-Type": "application/json", origin: base }, body: JSON.stringify({ iteration }), signal: AbortSignal.timeout(60_000) });
+    const output = await response.text();
+    assert.equal(response.status, 200, output.slice(0, 300));
+    const events = output.trim().split("\n").map((line) => JSON.parse(line));
+    assert.ok(!events.some((event) => event.kind === "iteration.run.failed"), "offline execution succeeds without a model");
+    const contract = events.find((event) => event.kind === "iteration.contract.created")?.payload.contract;
+    assert.equal(contract?.mode, mode);
+    assert.equal(contract?.initiativeProfile, iteration.initiativeProfile);
+    assert.deepEqual(contract?.targetIds, iteration.targetIds);
+    assert.equal(contract?.targetAsOf, iteration.targetAsOf || current.result.snapshot.asOf);
+    const completed = events.find((event) => event.kind === "iteration.run.completed")?.payload.result;
+    assert.ok(completed, "iteration completes and returns a result");
+    if (index === 1) assert.ok(events.some((event) => event.kind === "iteration.work.plan.created" && event.payload.workItems.some((item) => item.origin === "user" && item.targetIds.includes(targetId))), "target-only request actually creates research work");
+    const jobs = status(await api(1, `/api/projects/verify-graph-project/jobs?conversationId=${conversationId}`), 200, "saved iteration brief").jobs;
+    const job = jobs.find((item) => item.id === iteration.runId);
+    assert.equal(job?.iterationBrief.mode, mode);
+    assert.equal(job?.iterationBrief.prompt, "");
+    assert.equal(job?.iterationBrief.learningPathProvided, true);
+    assert.equal(job?.iterationBrief.webResearch, false);
+    assert.ok(jobs.every((item) => item.id === iteration.runId), "conversation task settings stay isolated");
+  }
+  console.log("PASS: restored iteration options execute through real routes; invalid nodes/dates rejected; target-only work planned; learning path preserved; task configuration persisted per conversation.");
   console.log("PASS: three-user ownership; private center and exports; same-role independent packages; private publish and retry conflicts; conversation modes; soft delete/restore; expected-HEAD conflicts; public discovery.");
   if (keepOpen) {
     console.log(`Browser entry: ${base}/projects/verify-project-1?conversation=verify-iteration`);

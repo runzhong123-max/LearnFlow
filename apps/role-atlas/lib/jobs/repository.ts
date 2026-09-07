@@ -1,6 +1,7 @@
 import { ensureAppSchema, getD1 } from "@/db";
 import { canonicalStringify } from "@/lib/versioning/canonical";
 import { roleJobClaimStatements } from "./claim-transaction";
+import { iterationRunBrief } from "@/lib/iteration/brief";
 import type { RoleJobCheckpoint, RoleJobDescriptor, RoleJobKind, RoleJobStatus } from "./runtime";
 
 type RoleJobRow = {
@@ -147,6 +148,7 @@ export async function getRoleJob(jobId: string) {
   if (!row) return null;
   return {
     ...descriptor(row),
+    iterationBrief: iterationRunBrief(parseJson<{ iteration?: unknown }>(row.input_json)?.iteration),
     checkpoint: parseJson<RoleJobCheckpoint>(row.checkpoint_json),
     result: parseJson<unknown>(row.result_json),
     leaseExpiresAt: row.lease_expires_at || undefined,

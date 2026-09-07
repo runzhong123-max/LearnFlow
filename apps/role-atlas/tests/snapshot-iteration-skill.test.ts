@@ -132,3 +132,48 @@ test("阶段检查点恢复会从下一节点继续，不重复契约和结构�
   assert.equal(kinds.has("iteration.research.plan.created"), true);
   assert.equal(kinds.has("iteration.run.completed"), true);
 });
+
+
+async function offlineIteration(base: ReturnType<typeof bundledRoleSnapshot>, targetAsOf: string) {
+  const request: SnapshotIterationRequest = {
+    runId: `iteration-date-${targetAsOf}`, snapshotRef: { snapshotId: base.snapshot.id },
+    initiativeProfile: "autonomous", mode: "freshness", prompt: "", targetIds: [],
+    targetAsOf, supplementalSources: [], webResearch: false, maxRounds: 1, sourceLimit: 12, maxWorkItems: 10,
+  };
+  const events: IterationEvent[] = [];
+  const graph = createSnapshotIterationSkill({ model: modelMustNotRun });
+  for await (const raw of await graph.stream({ request, base, candidate: base }, { streamMode: "custom" })) events.push(raw as IterationEvent);
+  return { events, result: events.findLast((event) => event.kind === "iteration.run.completed")!.payload.result as SnapshotIterationResult };
+}
+
+test("目标日期先参与来源核验和修复，再写入快照、brief和manifest", async () => {
+  const base = structuredClone(bundledRoleSnapshot());
+  const originalDate = base.snapshot.asOf;
+  const targetAsOf = new Date(Date.parse(`${originalDate}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+  const source = { ...base.sources.assets[0], id: "source:date-review", title: "必须按目标日核验的来源", publishedAt: originalDate, observedAt: originalDate, contentHash: "date-review-source" };
+  base.sources.assets.push(source);
+  const { result, events } = await offlineIteration(base, targetAsOf);
+  assert.ok(events.some((event) => event.kind === "iteration.finding.discovered" && (event.payload.finding as { code?: string; title?: string })?.code === "FUTURE_SOURCE" && (event.payload.finding as { title: string }).title.includes(source.title)));
+  assert.ok(result.patches.some((patch) => patch.operations.some((operation) => operation.op === "remove_source" && operation.sourceId === source.id)));
+  assert.equal(result.createdSnapshot, true);
+  assert.equal(result.candidate.sources.assets.some((item) => item.id === source.id), false);
+  assert.equal(result.candidate.snapshot.asOf, targetAsOf);
+  assert.equal(result.candidate.brief.snapshotAsOf, targetAsOf);
+  assert.equal(result.candidate.packages.rolePackage.snapshotAsOf, targetAsOf);
+  assert.ok(result.candidate.snapshot.id.includes(`@${targetAsOf}:`));
+  assert.equal(base.snapshot.asOf, originalDate);
+  assert.ok(base.sources.assets.some((item) => item.id === source.id));
+});
+
+test("无新来源和结构变化时只选择目标日期不会制造新版本", async () => {
+  const fixture = structuredClone(bundledRoleSnapshot());
+  const base = (await offlineIteration(fixture, fixture.snapshot.asOf)).result.candidate;
+  const targetAsOf = new Date(Date.parse(`${base.snapshot.asOf}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+  const { result } = await offlineIteration(base, targetAsOf);
+  assert.equal(result.patches.some((patch) => patch.operations.length), false);
+  assert.equal(result.createdSnapshot, false);
+  assert.equal(result.status, "no_change");
+  assert.equal(result.candidate.snapshot.asOf, base.snapshot.asOf);
+  assert.equal(result.candidate.snapshot.id, base.snapshot.id);
+  assert.equal(result.contract.targetAsOf, targetAsOf);
+});

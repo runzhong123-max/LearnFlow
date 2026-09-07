@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { bundledRoleSnapshot } from "@/lib/snapshots/bundled-role-adapter";
 import { inspectSnapshot } from "@/lib/iteration/inspector";
-import { createIterationContract, discoverIterationOpportunities } from "@/lib/iteration/planner";
+import { createIterationContract, discoverIterationOpportunities, planIterationWork, planIterationResearch, evaluateIteration } from "@/lib/iteration/planner";
 import type { IterationFinding, SnapshotIterationRequest } from "@/lib/iteration/types";
 import { createColdStartDeepResearchRequest, createColdStartRiskRepairRequest } from "@/lib/iteration/automatic-followup";
 import { buildEventKindSchema } from "@/lib/build/events";
@@ -112,4 +112,58 @@ test("风险修复模式不会把深度研究工作偷偷混入全量修复", ()
   });
   assert.ok(opportunities.some(item => item.findingIds.includes(automaticRepair.id)));
   assert.equal(opportunities.some(item => item.findingIds.includes(semanticResearch.id)), false);
+});
+
+
+test("只选节点不填提示词且没有现成缺口时仍产生定向工作和可读查询", () => {
+  const result = bundledRoleSnapshot();
+  const target = result.semantic.nodes.find((node) => node.type === "task")!;
+  const input = { ...request("user_directed", [target.id]), mode: "deep_research" as const, prompt: "" };
+  const inspection = { ...inspectSnapshot(result), findings: [], hardBlockers: [] };
+  const contract = createIterationContract(input, result);
+  const opportunities = discoverIterationOpportunities({ request: input, contract, inspection });
+  const workItems = planIterationWork({ runId: input.runId, opportunities, contract });
+  const plan = planIterationResearch({ runId: input.runId, round: 1, result, request: input, contract, workItems });
+  assert.equal(workItems.length, 1);
+  assert.equal(workItems[0].origin, "user");
+  assert.equal(workItems[0].kind, "expand");
+  assert.deepEqual(workItems[0].targetIds, [target.id]);
+  assert.ok(contract.objective.includes(target.label));
+  assert.ok(plan.workItemIds.includes(workItems[0].id));
+  assert.ok(plan.queries.some((query) => query.category === "user_focus"));
+  assert.ok(plan.queries.every((query) => query.query.includes(target.label)));
+  assert.ok(plan.queries.every((query) => !query.query.includes(target.id)), "检索使用节点名称而不是内部ID");
+});
+
+test("显式日期或时效模式在没有旧时效告警时仍产生时点核验工作", () => {
+  const result = bundledRoleSnapshot();
+  const inspection = { ...inspectSnapshot(result), findings: [], hardBlockers: [] };
+  for (const input of [
+    { ...request("co_guided"), mode: "freshness" as const, prompt: "" },
+    { ...request("co_guided"), mode: "auto" as const, prompt: "", targetAsOf: "2026-07-15" },
+  ]) {
+    const contract = createIterationContract(input, result);
+    assert.equal(contract.targetAsOf, input.targetAsOf || new Date().toISOString().slice(0, 10));
+    const opportunities = discoverIterationOpportunities({ request: input, contract, inspection });
+    const workItems = planIterationWork({ runId: input.runId, opportunities, contract });
+    const plan = planIterationResearch({ runId: input.runId, round: 1, result, request: input, contract, workItems });
+    assert.equal(workItems[0]?.kind, "refresh");
+    assert.equal(workItems[0]?.origin, "time_clock");
+    assert.ok(plan.queries.some((query) => query.query.includes(contract.targetAsOf)));
+  }
+});
+
+
+test("其他结构改善不能掩盖目标时点仍存在的未来来源错误", () => {
+  const base = bundledRoleSnapshot();
+  const before = inspectSnapshot(base);
+  const input = { ...request("co_guided"), targetAsOf: "2020-01-01" };
+  const contract = createIterationContract(input, base);
+  const after = { ...before, core: { ...before.core, errorCount: Math.max(0, before.core.errorCount - 1) }, findings: [
+    { id: "finding:future-at-target", layer: "temporal" as const, classification: "core_usability" as const, severity: "error" as const, code: "FUTURE_SOURCE", title: "来源晚于目标时点", detail: "不可改写该时点", impact: "时点失真", targetIds: [], evidenceBindingIds: [], confidence: 1, suggestedAction: "automatic" as const, hardBlocker: false },
+  ] };
+  const evaluation = evaluateIteration({ base, candidate: base, before, after, contract });
+  assert.equal(evaluation.meaningful, false);
+  assert.equal(evaluation.coreRegression, true);
+  assert.ok(evaluation.reasons.some((reason) => reason.includes("目标时点")));
 });

@@ -12,6 +12,7 @@ export type WorkspaceSkillContext = {
   versionId?: string;
   conversationId?: string;
   selectedNodeIds?: string[];
+  availableNodes?: Array<{ id: string; label: string }>;
   roleTitle: string;
   roleDescription?: string;
   market?: string;

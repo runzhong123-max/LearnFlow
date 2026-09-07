@@ -1,4 +1,5 @@
 import { stableHash } from "@/lib/build/compiler";
+import { iterationTargetNodes } from "./targets";
 import type { ColdStartBuildResult, WebSearchCategory } from "@/lib/build/types";
 import type { PlannedQuery } from "@/lib/search/web-research";
 import type {
@@ -40,9 +41,14 @@ export function createIterationContract(request: SnapshotIterationRequest, resul
   const profile = request.initiativeProfile;
   const mode = request.mode || "auto";
   const prompt = request.prompt.trim();
+  const targetNodes = new Map(iterationTargetNodes(result).map((node) => [node.id, node.label]));
+  const selectedLabels = request.targetIds.map((id) => targetNodes.get(id) || id);
+  const targetAsOf = request.targetAsOf || (mode === "freshness" ? new Date().toISOString().slice(0, 10) : result.snapshot.asOf);
   const objective = profile === "autonomous"
     ? `自动发现并迭代“${result.brief.roleTitle}”快照中价值最高的结构、证据、时效、事理与 Agent 可用性问题。`
-    : prompt || `围绕当前岗位重点，自动发现关联问题并提升“${result.brief.roleTitle}”快照。`;
+    : prompt || (selectedLabels.length
+      ? `围绕“${selectedLabels.join("、")}”补充证据、任务关系与能力结构。`
+      : `围绕当前岗位重点，自动发现关联问题并提升“${result.brief.roleTitle}”快照。`);
   const graphRadius = profile === "autonomous" ? "global" as const : profile === "co_guided" ? 2 : 1;
   return {
     id: `iteration-contract:${stableHash(`${request.runId}:${profile}:${objective}`)}`,
@@ -50,7 +56,7 @@ export function createIterationContract(request: SnapshotIterationRequest, resul
     mode,
     objective,
     targetIds: unique(request.targetIds),
-    targetAsOf: request.targetAsOf || result.snapshot.asOf,
+    targetAsOf,
     changeIntents: intentsFromRequest(request),
     evidencePolicy: [
       "事实性新增优先使用可定位的一手、权威或相互独立来源",
@@ -120,16 +126,29 @@ export function discoverIterationOpportunities(input: {
 }): IterationOpportunity[] {
   const targetIds = new Set(input.contract.targetIds);
   const opportunities: IterationOpportunity[] = [];
-  if (input.request.prompt.trim()) {
+  if (input.request.prompt.trim() || input.contract.targetIds.length) {
     opportunities.push({
-      id: `opportunity:${stableHash(`${input.request.runId}:user:${input.request.prompt}`)}`,
+      id: `opportunity:${stableHash(`${input.request.runId}:user:${input.request.prompt}:${input.contract.targetIds.join("|")}`)}`,
       origin: "user",
-      title: "完成用户明确提出的研究目标",
-      detail: input.request.prompt.trim(),
+      title: input.request.prompt.trim() ? "完成用户明确提出的研究目标" : "研究选中节点及其必要关联",
+      detail: input.request.prompt.trim() || input.contract.objective,
       targetIds: input.contract.targetIds,
       findingIds: [],
       intents: input.contract.changeIntents,
       expectedValue: 100,
+      requiresResearch: input.request.webResearch,
+    });
+  }
+  if (input.contract.mode === "freshness" || input.request.targetAsOf) {
+    opportunities.push({
+      id: `opportunity:${stableHash(`${input.request.runId}:time:${input.contract.targetAsOf}`)}`,
+      origin: "time_clock",
+      title: `核验截至 ${input.contract.targetAsOf} 的岗位事实`,
+      detail: `围绕目标时点 ${input.contract.targetAsOf} 核对标准、技术与岗位要求；日期本身不作为证据增量。`,
+      targetIds: input.contract.targetIds,
+      findingIds: [],
+      intents: ["refresh", "verify"],
+      expectedValue: 95,
       requiresResearch: input.request.webResearch,
     });
   }
@@ -212,15 +231,15 @@ function categoryForWorkItem(item: IterationWorkItem): WebSearchCategory[] {
   return ["official_standard", "work_practice"];
 }
 
-function queryText(input: { category: WebSearchCategory; role: string; market: string; asOf: string; item: IterationWorkItem; prompt: string }) {
-  const focus = input.item.targetIds.length ? `${input.item.title} ${input.item.targetIds.slice(0, 3).join(" ")}` : input.item.title;
+function queryText(input: { category: WebSearchCategory; role: string; market: string; asOf: string; item: IterationWorkItem; targetLabels: string[]; prompt: string }) {
+  const focus = input.targetLabels.length ? `${input.item.title} ${input.targetLabels.slice(0, 3).join(" ")}` : input.item.title;
   const templates: Record<WebSearchCategory, string> = {
     official_standard: `${input.market} ${input.role} ${focus} 职业标准 专业标准 官方`,
     job_market: `${input.market} ${input.role} ${focus} 招聘 职责 任职要求 交付物`,
     work_practice: `${input.role} ${focus} 实际工作流程 项目复盘 操作步骤 交付物`,
-    technology: `${input.role} ${focus} 官方文档 最佳实践 版本变化 ${input.asOf.slice(0, 4)}`,
+    technology: `${input.role} ${focus} 官方文档 最佳实践 版本变化 截至 ${input.asOf}`,
     education: `${input.role} ${focus} 实训项目 学习成果 评价标准`,
-    future_signal: `${input.role} ${focus} 行业趋势 技能变化 AI影响 ${input.asOf.slice(0, 4)}`,
+    future_signal: `${input.role} ${focus} 行业趋势 技能变化 AI影响 截至 ${input.asOf}`,
     user_focus: `${input.role} ${input.prompt || focus} ${input.market}`,
   };
   return templates[input.category].replace(/\s+/gu, " ").trim();
@@ -235,6 +254,8 @@ export function planIterationResearch(input: {
   workItems: IterationWorkItem[];
 }): IterationResearchPlan {
   const queries = new Map<string, PlannedQuery>();
+  const nodeLabels = new Map(iterationTargetNodes(input.result).map((node) => [node.id, node.label]));
+  const labelsFor = (item: IterationWorkItem) => item.targetIds.map((id) => nodeLabels.get(id) || id);
   const researchItems = input.workItems.filter((item) => item.requiresResearch).slice(0, 8);
   for (const item of researchItems) {
     const categories = categoryForWorkItem(item).slice(0, input.round > 1 ? 2 : 1);
@@ -245,7 +266,8 @@ export function planIterationResearch(input: {
         market: input.result.brief.market,
         asOf: input.contract.targetAsOf,
         item,
-        prompt: input.request.prompt,
+        targetLabels: labelsFor(item),
+        prompt: input.request.prompt || input.contract.objective,
       });
       const key = `${category}:${query}`;
       queries.set(key, {
@@ -256,7 +278,7 @@ export function planIterationResearch(input: {
       });
     }
   }
-  if (input.request.prompt.trim()) {
+  if (input.request.prompt.trim() || input.contract.targetIds.length) {
     const focusItem = input.workItems.find((item) => item.origin === "user") || input.workItems[0];
     if (focusItem) {
       const category: WebSearchCategory = "user_focus";
@@ -266,7 +288,8 @@ export function planIterationResearch(input: {
         market: input.result.brief.market,
         asOf: input.contract.targetAsOf,
         item: focusItem,
-        prompt: input.request.prompt,
+        targetLabels: labelsFor(focusItem),
+        prompt: input.request.prompt || input.contract.objective,
       });
       queries.set(`${category}:${query}`, {
         id: `iteration-query:${stableHash(`${input.runId}:${input.round}:user:${query}`)}`,
@@ -300,7 +323,9 @@ export function evaluateIteration(input: {
   const afterIds = new Set(input.after.findings.map((finding) => finding.id));
   const resolvedFindings = [...beforeIds].filter((id) => !afterIds.has(id)).length;
   const introducedFindings = [...afterIds].filter((id) => !beforeIds.has(id)).length;
-  const coreRegression = !input.after.protocolValid
+  const targetDateBlocked = input.contract.targetAsOf !== input.base.snapshot.asOf
+    && input.after.findings.some((finding) => finding.layer === "temporal" && finding.severity === "error");
+  const coreRegression = targetDateBlocked || !input.after.protocolValid
     || input.after.core.errorCount > input.before.core.errorCount
     || input.after.core.unsupportedAcceptedCount > input.before.core.unsupportedAcceptedCount
     || input.after.axes.agentUsability + 5 < input.before.axes.agentUsability;
@@ -339,7 +364,7 @@ export function evaluateIteration(input: {
       ? [...objectiveSignals, healthImproved ? "核心健康或风险状态获得改善" : "研究前沿获得有界信息增量"]
       : [
         !input.after.protocolValid ? "候选存在协议不变量错误" : "",
-        coreRegression ? "已接受核心发生回退" : "",
+        targetDateBlocked ? "目标时点仍有来源越界或日期错误，不能写入该时点快照" : coreRegression ? "已接受核心发生回退" : "",
         !healthImproved && informationScore === 0 ? "没有可证明的风险降低或信息增量" : "",
       ].filter(Boolean),
   };

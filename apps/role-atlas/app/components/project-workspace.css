@@ -47,6 +47,18 @@
 .chat-tool-form small { display:block; font-size:10px; line-height:1.7; color:#899288; }
 .chat-tool-form .tool-checkbox { display:flex; align-items:center; font-size:11px; }
 .tool-checkbox input { accent-color:#436a50; }
+.iteration-options fieldset { border:0; padding:0; margin:14px 0; min-width:0; }
+.iteration-options legend { padding:0; margin-bottom:8px; font-size:11px; color:#53675b; }
+.iteration-option-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; margin-bottom:7px; }
+.chat-tool-form .iteration-option-grid label { display:flex; align-items:center; justify-content:center; gap:4px; margin:0; padding:9px 3px; border:1px solid #dce3d8; border-radius:7px; background:#f8faf5; cursor:pointer; font-size:10px; }
+.chat-tool-form .iteration-option-grid label.chosen { border-color:#789c80; background:#eaf2e8; color:#2c5639; }
+.chat-tool-form .iteration-option-grid input { width:12px; height:12px; padding:0; margin:0; accent-color:#426c4c; }
+.iteration-option-grid b { font-weight:500; }
+.iteration-targets { display:flex; flex-wrap:wrap; gap:5px; }
+.iteration-targets button, .iteration-use-selection { border:1px solid #d7e1d2; border-radius:6px; padding:5px 7px; background:#f0f5ec; color:#4b6c4b; font-size:10px; cursor:pointer; max-width:100%; overflow-wrap:anywhere; }
+.iteration-use-selection { margin:8px 0 0; background:transparent; }
+.iteration-options button:disabled { opacity:.45; cursor:default; }
+.iteration-run-brief { overflow-wrap:anywhere; }
 .tool-submit { width:100%; display:flex; justify-content:center; align-items:center; gap:7px; margin-top:14px; padding:11px 14px; border:0; border-radius:8px; color:#fff; background:#315a43; font-size:12px; cursor:pointer; }
 .tool-submit:disabled { opacity:.4; cursor:default; }
 .tool-error { display:flex; align-items:flex-start; gap:6px; color:#a2573f; font-size:11px; line-height:1.7; background:#faf0e9; border-radius:8px; padding:10px; margin:8px 0; }

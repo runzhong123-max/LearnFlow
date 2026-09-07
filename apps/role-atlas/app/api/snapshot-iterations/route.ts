@@ -4,6 +4,8 @@ import { authorizeApiRequest, requestActor } from "@/lib/access";
 import { z } from "zod/v4";
 import { createModelInvoker, type ModelInvoker } from "@/lib/agent/model";
 import { createSnapshotIterationSkill } from "@/lib/iteration/graph";
+import { iterationBriefError } from "@/lib/iteration/brief";
+import { iterationTargetNodes } from "@/lib/iteration/targets";
 import {
   appendIterationEvent,
   attachIterationProjectVersion,
@@ -89,6 +91,10 @@ export async function POST(request: Request) {
 
   const resolved = await resolveSnapshot(parsed.iteration.snapshotRef).catch(() => null);
   if (!resolved) return Response.json({ error: "没有可迭代的岗位快照。" }, { status: 404 });
+  const briefError = iterationBriefError(parsed.iteration);
+  if (briefError) return Response.json({ error: briefError }, { status: 400 });
+  const nodeIds = new Set(iterationTargetNodes(resolved.result).map((node) => node.id));
+  if (parsed.iteration.targetIds.some((id) => !nodeIds.has(id))) return Response.json({ error: "研究节点不属于本对话固定的岗位版本，请重新选择。", code: "ITERATION_TARGET_NOT_FOUND" }, { status: 400 });
   const projectId = resolved.reference.projectId || parsed.iteration.projectId;
   if (!projectId || !parsed.iteration.conversationId) return Response.json({ error: "请选择当前项目的迭代对话。", code: "CONVERSATION_REQUIRED" }, { status: 400 });
   {
@@ -104,6 +110,8 @@ export async function POST(request: Request) {
 
   const iterationRequest = {
     ...parsed.iteration,
+    targetIds: [...new Set(parsed.iteration.targetIds)],
+    targetAsOf: parsed.iteration.targetAsOf || (parsed.iteration.mode === "freshness" ? new Date().toISOString().slice(0, 10) : undefined),
     snapshotRef: resolved.reference,
     projectId,
   };
