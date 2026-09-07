@@ -137,9 +137,10 @@ def browse_works(query='', module_id=None, kind=None, offset=0, limit=16):
             'modules':[{'id':m['id'],'title':m['title']} for m in data['modules']]}
 
 
-def preview_work(work_id, version):
+def preview_work(work_id, version, params=None):
     from .catalog import read_template
     from .engine import compile_visual
+    if params is not None and not isinstance(params,dict):raise ValueError('visual_preview_params_invalid')
     e=read_template(work_id,version)
     if e['builder']=='interactive_html':return {'builder':e['builder'],'title':e['title'],'html':compile_work(e['spec'])['html']}
-    return {'builder':'visual_spec','title':e['title'],'bundle':compile_visual(e['spec'])}
+    return {'builder':'visual_spec','title':e['title'],'bundle':{**compile_visual(e['spec'],params or {}),'owner_scope':'public:maintained'}}

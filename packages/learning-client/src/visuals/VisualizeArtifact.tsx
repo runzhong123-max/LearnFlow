@@ -6,6 +6,7 @@ import {renderView, describeFrame, presentationContext, visualFocusViews} from '
 
 export type VisualViewState = {step: number; speed: number; focus: string}
 type Props = {
+  publicPreview?: boolean;
   secondaryActions?: ReactNode;
   initial: VisualBundle; transport: VisualTransport; onAsk?: (prompt: string) => void;
   storageScope: string; mode?: 'diagram'|'animation'; initialViewState?: Partial<VisualViewState>;
@@ -49,7 +50,7 @@ function saveFile(content: string, type: string, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-export default function VisualizeArtifact({initial, transport, onAsk, storageScope, mode = 'animation', initialViewState, onRun, onViewChange, secondaryActions}: Props) {
+export default function VisualizeArtifact({initial, transport, onAsk, storageScope, mode = 'animation', initialViewState, onRun, onViewChange, secondaryActions, publicPreview = false}: Props) {
   const container = useRef<HTMLElement>(null)
   const [viewport, setViewport] = useState(720)
   const [bundle, setBundle] = useState(initial)
@@ -76,7 +77,7 @@ export default function VisualizeArtifact({initial, transport, onAsk, storageSco
   const restored = useRef(false)
   const key = `learnflow.visualize.${initial.owner_scope}.${storageScope}.${initial.spec_revision}`
   const frame = bundle.frames[step] || bundle.frames[0]
-  const checkpoint = bundle.spec.teaching.checkpoints.find(item => item.at_step === step && bundle.spec.interactions.some(interaction => interaction.kind === 'prediction' && interaction.checkpoint_id === item.id))
+  const checkpoint = publicPreview ? undefined : bundle.spec.teaching.checkpoints.find(item => item.at_step === step && bundle.spec.interactions.some(interaction => interaction.kind === 'prediction' && interaction.checkpoint_id === item.id))
   const choices = checkpoint ? bundle.checkpoint_choices?.[checkpoint.id] || (bundle.spec.model.id === 'optimization.quadratic_gd' ? legacyChoices : []) : []
   const gate = Boolean(mode === 'animation' && checkpoint && choices.length && frame && !answered[frame.snapshot_ref])
   const focusViews = useMemo(() => visualFocusViews(frame), [frame])

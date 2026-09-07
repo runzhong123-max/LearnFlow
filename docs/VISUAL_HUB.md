@@ -48,3 +48,5 @@ Contract impact：新增内部只读 Hub 端点和维护专用 interactive_html 
 Contract impact（本批）：新增 visual_hub 工作台及两个只读 API 绑定，两端 registry 升至 2026-09-07.8。沿用 retrieve_learning_visual 和 learning_design_agent；既有 API、事件、五核语义向后兼容。
 
 Web 独立 Hub 地址为 `/visualize`，侧栏直接跳转，保留 `/visual-hub` 别名；经过现有 AuthGate，未开放匿名 API。桌面继续使用内嵌 `/visual-hub`。Web registry 2026-09-07.9 仅更新页面绑定，无事件或数据迁移。
+
+公共维护库修正（registry 2026-09-07.10）：`/visualize` 与别名无需登录。gallery/preview 仅开放已登记维护作品；preview 允许有界参数重算，拒绝任意 spec，固定 public:maintained 展示 scope。公共播放器不执行个人预测写回或要求完成预测才能播放。生成、私有 workspace、compile/inspect/predict 继续认证，无五核或数据库变更。

@@ -681,3 +681,5 @@ Contract impact（`2026-09-07.6`）：阶段分工与帮助策略登记为 `proj
 Visual Hub 查询展示工作台：Web / 桌面均使用 `/visual-hub`，由 learning_design_agent 所有，复用 retrieve_learning_visual。认证后的 gallery / preview API 只读维护版本；浏览与调参不创建学习证据。registry 2026-09-07.8 登记两个宿主绑定，见 [Visual Hub](VISUAL_HUB.md)。
 
 Web 独立 Hub 地址为 `/visualize`，侧栏直接跳转，保留 `/visual-hub` 别名；经过现有 AuthGate，未开放匿名 API。桌面继续使用内嵌 `/visual-hub`。Web registry 2026-09-07.9 仅更新页面绑定，无事件或数据迁移。
+
+公共维护库修正（registry 2026-09-07.10）：`/visualize` 与别名无需登录。gallery/preview 仅开放已登记维护作品；preview 允许有界参数重算，拒绝任意 spec，固定 public:maintained 展示 scope。公共播放器不执行个人预测写回或要求完成预测才能播放。生成、私有 workspace、compile/inspect/predict 继续认证，无五核或数据库变更。

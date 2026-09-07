@@ -78,7 +78,18 @@ def test_gallery_paging_filter_and_authenticated_preview(monkeypatch):
     with pytest.raises(ValueError):browse_works(module_id={})
     monkeypatch.setattr(settings,'desktop_mode',False);monkeypatch.setattr(settings,'desktop_token','')
     with TestClient(app) as client:
-        assert client.post('/api/visuals/preview',json={'id':'lab2-huffman','version':'1.0.0'}).status_code in (401,403)
+        assert client.post('/api/visuals/preview',json={'id':'lab2-huffman','version':'1.0.0'}).status_code==200
+        assert client.post('/api/visuals/gallery',json={}).json()['total']==70
+        assert client.post('/api/visuals/compile',json={}).status_code in (401,403)
+        assert client.post('/api/visuals/workspace',json={}).status_code in (401,403)
+        for row in browse_works(limit=50)['items']+browse_works(offset=50,limit=50)['items']:
+            response=client.post('/api/visuals/preview',json={'id':row['id'],'version':row['version']})
+            assert response.status_code==200
+            if response.json()['builder']=='visual_spec':
+                bundle=response.json()['bundle'];assert bundle['owner_scope']=='public:maintained'
+                response=client.post('/api/visuals/preview',json={'id':row['id'],'version':row['version'],'params':bundle['params']})
+                assert response.status_code==200 and response.json()['bundle']['owner_scope']==bundle['owner_scope']
+        assert client.post('/api/visuals/preview',json={'id':'deep_learning.cnn.mechanism','version':'1.0.0','spec':{}}).status_code==422
         register(client,'hub_gallery_owner')
         result=client.post('/api/visuals/gallery',json={'query':'哈夫曼'});assert result.status_code==200
         result=client.post('/api/visuals/preview',json={'id':'lab2-huffman','version':'1.0.0'});assert result.status_code==200 and result.json()['builder']=='interactive_html'
