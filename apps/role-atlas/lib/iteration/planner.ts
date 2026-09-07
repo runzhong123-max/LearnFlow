@@ -1,5 +1,6 @@
 import { stableHash } from "@/lib/build/compiler";
 import { iterationTargetNodes } from "./targets";
+import { learningRegressionReasons, sourceFingerprints } from "./preserve-graph";
 import type { ColdStartBuildResult, WebSearchCategory } from "@/lib/build/types";
 import type { PlannedQuery } from "@/lib/search/web-research";
 import type {
@@ -315,8 +316,11 @@ export function evaluateIteration(input: {
   before: SnapshotInspection;
   after: SnapshotInspection;
   contract: IterationContract;
+  migrations?: Record<string, string>;
 }): IterationEvaluation {
-  const newSources = Math.max(0, input.candidate.sources.assets.length - input.base.sources.assets.length);
+  const originalSources = new Set(sourceFingerprints(input.base).values());
+  const candidateSources = sourceFingerprints(input.candidate);
+  const newSources = new Set(input.candidate.sources.assets.filter(s => s.kind !== "user_brief" && !originalSources.has(candidateSources.get(s.id)!)).map(s => candidateSources.get(s.id)!)).size;
   const newSemanticNodes = Math.max(0, input.candidate.semantic.nodes.length - input.base.semantic.nodes.length);
   const newProcessScenarios = Math.max(0, input.candidate.process.scenarios.length - input.base.process.scenarios.length);
   const beforeIds = new Set(input.before.findings.map((finding) => finding.id));
@@ -325,7 +329,11 @@ export function evaluateIteration(input: {
   const introducedFindings = [...afterIds].filter((id) => !beforeIds.has(id)).length;
   const targetDateBlocked = input.contract.targetAsOf !== input.base.snapshot.asOf
     && input.after.findings.some((finding) => finding.layer === "temporal" && finding.severity === "error");
-  const coreRegression = targetDateBlocked || !input.after.protocolValid
+  const learningReasons = learningRegressionReasons(input.base, input.candidate, input.migrations);
+  if (input.after.coverage.tasksWithoutSkills > input.before.coverage.tasksWithoutSkills) {
+    learningReasons.push(`任务缺少知识技能覆盖 ${input.before.coverage.tasksWithoutSkills} → ${input.after.coverage.tasksWithoutSkills}，不能以其他维度增益抵消`);
+  }
+  const coreRegression = learningReasons.length > 0 || targetDateBlocked || !input.after.protocolValid
     || input.after.core.errorCount > input.before.core.errorCount
     || input.after.core.unsupportedAcceptedCount > input.before.core.unsupportedAcceptedCount
     || input.after.axes.agentUsability + 5 < input.before.axes.agentUsability;
@@ -363,6 +371,7 @@ export function evaluateIteration(input: {
     reasons: meaningful
       ? [...objectiveSignals, healthImproved ? "核心健康或风险状态获得改善" : "研究前沿获得有界信息增量"]
       : [
+        ...learningReasons,
         !input.after.protocolValid ? "候选存在协议不变量错误" : "",
         targetDateBlocked ? "目标时点仍有来源越界或日期错误，不能写入该时点快照" : coreRegression ? "已接受核心发生回退" : "",
         !healthImproved && informationScore === 0 ? "没有可证明的风险降低或信息增量" : "",

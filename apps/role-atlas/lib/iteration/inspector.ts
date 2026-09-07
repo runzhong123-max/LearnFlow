@@ -3,6 +3,7 @@ import type { AuditIssue, ColdStartBuildResult, ResearchTopic } from "@/lib/buil
 import { auditRoleSnapshot } from "@/lib/risk/audit";
 import type { RiskIssue, RiskProfile } from "@/lib/risk/types";
 import type { AgentProbe, IterationFinding, IterationFindingLayer, SnapshotInspection } from "./types";
+import { learningCoverage } from "./learning-health";
 
 const HARD_PROTOCOL_CODES = new Set([
   "MISSING_ROLE_ROOT",
@@ -131,17 +132,7 @@ function agentProbes(result: ColdStartBuildResult): AgentProbe[] {
 
 function coverageFindings(result: ColdStartBuildResult) {
   const findings: IterationFinding[] = [];
-  const tasks = result.semantic.nodes.filter((node) => node.type === "task");
-  const skills = result.semantic.nodes.filter((node) => node.type === "knowledge_skill");
-  const skillIds = new Set(skills.map((node) => node.id));
-  const taskSkills = new Map<string, string[]>();
-  for (const task of tasks) {
-    const related = result.semantic.edges
-      .filter((edge) => edge.source === task.id && skillIds.has(edge.target) && /skill|knowledge/u.test(edge.type))
-      .map((edge) => edge.target);
-    taskSkills.set(task.id, unique(related));
-  }
-  const tasksWithoutSkills = tasks.filter((task) => !(taskSkills.get(task.id) || []).length);
+  const { tasks, skills, tasksWithoutSkills } = learningCoverage(result);
   for (const task of tasksWithoutSkills) {
     findings.push(customFinding({
       layer: "coverage",
@@ -346,6 +337,13 @@ export function applyInspectionToSnapshot(result: ColdStartBuildResult, inspecti
   }
   candidate.validation.structural.passed = inspection.protocolValid;
   candidate.validation.structural.issues = inspection.hardBlockers.map((finding) => finding.title);
+  const learningGaps = inspection.findings.filter(f => f.code === "TASK_SKILL_GAP");
+  if (learningGaps.length) {
+    candidate.validation.semantic.passed = false;
+    candidate.validation.semantic.issues = unique([...candidate.validation.semantic.issues, ...learningGaps.map(f => f.title)]);
+    candidate.validation.publishable = false;
+    if (candidate.build?.enrichment) candidate.build.enrichment.status = "degraded";
+  }
   candidate.validation.publishable = candidate.validation.publishable && inspection.protocolValid;
   if (!inspection.protocolValid) {
     candidate.snapshot.status = "candidate";

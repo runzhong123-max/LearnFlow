@@ -26,6 +26,12 @@ function normalize(value: string) {
   return value.toLocaleLowerCase().replace(/[\s\p{P}\p{S}]+/gu, "");
 }
 
+/** Legacy missing learningKind is the same hybrid domain used by the compiler. */
+export function sameSemanticMergeDimension(left: SemanticNode, right: SemanticNode) {
+  return left.type === right.type && (left.type !== "knowledge_skill"
+    || (left.learningKind || "hybrid") === (right.learningKind || "hybrid"));
+}
+
 function grams(value: string) {
   const normalized = normalize(value);
   if (normalized.length < 2) return new Set([normalized]);
@@ -264,6 +270,7 @@ export function auditRoleSnapshot(result: ColdStartBuildResult, options: AuditOp
       for (let rightIndex = leftIndex + 1; rightIndex < nodes.length; rightIndex += 1) {
         const left = nodes[leftIndex];
         const right = nodes[rightIndex];
+        if (!sameSemanticMergeDimension(left, right)) continue;
         const exact = normalize(left.label) === normalize(right.label) || left.aliases.some((alias) => normalize(alias) === normalize(right.label)) || right.aliases.some((alias) => normalize(alias) === normalize(left.label));
         const score = exact ? 1 : similarity(left.label, right.label);
         if (score < 0.72) continue;

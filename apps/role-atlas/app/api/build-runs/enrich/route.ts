@@ -22,6 +22,7 @@ import { resolveProviderConfig, resolveSearchProviderConfig } from "@/lib/server
 import { workerRuntimeBindings } from "@/lib/worker-runtime-bindings";
 import { createColdStartDeepResearchRequest, createColdStartRiskRepairRequest } from "@/lib/iteration/automatic-followup";
 import { runAutomaticSnapshotIteration } from "@/lib/iteration/automatic-runner";
+import { snapshotQualitySummary } from "@/lib/iteration/learning-health";
 
 export const runtime = "edge";
 
@@ -210,8 +211,9 @@ export async function POST(request: Request) {
             modelLabel,
           });
           const finalSnapshotId = repairResult.candidateSnapshotId || repairResult.candidate.snapshot.id;
-          await journal.commit({ ...event, seq: event.seq + 4, time: new Date().toISOString(), kind: "build.followup.risk_repair.completed", profile: "system", payload: { result: repairResult, snapshotId: finalSnapshotId, deepResearchStatus: deepResult ? "completed" : "skipped" } }, async () => {
-            await completeRoleJob({ jobId: parsed.build.runId, owner: jobOwner, phase: deepResult ? "followup.completed" : "followup.degraded", result: { snapshotId: finalSnapshotId, candidateSnapshotId: finalSnapshotId, projectVersionId: repairResult.projectVersionId, ...await projectVersionHeadState(parsed.build.projectId, repairResult.projectVersionId || ""), deepResearchRunId: deepResult?.runId, riskRepairRunId: repairResult.runId } });
+          const quality = snapshotQualitySummary(repairResult.candidate);
+          await journal.commit({ ...event, seq: event.seq + 4, time: new Date().toISOString(), kind: "build.followup.risk_repair.completed", profile: "system", payload: { result: repairResult, snapshotId: finalSnapshotId, quality, deepResearchStatus: deepResult ? deepResult.status : "skipped" } }, async () => {
+            await completeRoleJob({ jobId: parsed.build.runId, owner: jobOwner, phase: deepResult && !quality.needsResearch ? "followup.completed" : "followup.degraded", result: { snapshotId: finalSnapshotId, candidateSnapshotId: finalSnapshotId, quality, projectVersionId: repairResult.projectVersionId, ...await projectVersionHeadState(parsed.build.projectId, repairResult.projectVersionId || ""), deepResearchRunId: deepResult?.runId, riskRepairRunId: repairResult.runId } });
           });
         } catch (followupError) {
           await journal.commit({

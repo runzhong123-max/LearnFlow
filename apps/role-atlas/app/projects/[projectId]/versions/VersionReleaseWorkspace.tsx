@@ -35,6 +35,7 @@ export default function VersionReleaseWorkspace({
   conversationId,
   onAdopted,
   initialSection = "history",
+  initialVersionId,
 }: {
   project: { id: string; title: string; headVersionId: string | null; currentReleaseId: string | null };
   initialVersions: VersionSummary[];
@@ -46,9 +47,10 @@ export default function VersionReleaseWorkspace({
   conversationId?: string;
   onAdopted?: (conversationId?: string) => void;
   initialSection?: "history" | "publish";
+  initialVersionId?: string;
 }) {
   const router = useRouter();
-  const [selectedId, setSelectedId] = useState(project.headVersionId || initialVersions[0]?.id || "");
+  const [selectedId, setSelectedId] = useState(initialVersionId || project.headVersionId || initialVersions[0]?.id || "");
   const [compareFrom, setCompareFrom] = useState(initialVersions.find((item) => item.id === selectedId)?.parentVersionId || initialVersions[1]?.id || "");
   const [tagName, setTagName] = useState("");
   const [packageVersion, setPackageVersion] = useState("1.0.0");

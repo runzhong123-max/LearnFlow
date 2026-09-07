@@ -11,6 +11,7 @@ import { reconstructSourceInputs } from "@/lib/risk/research";
 import { researchRoleSources } from "@/lib/search/web-research";
 import type { SearchProviderConfig } from "@/lib/search/providers";
 import { applyInspectionToSnapshot, inspectSnapshot } from "./inspector";
+import { preserveIterationGraph } from "./preserve-graph";
 import {
   createIterationContract,
   discoverIterationOpportunities,
@@ -110,6 +111,10 @@ function stampSnapshot(candidate: ColdStartBuildResult, request: SnapshotIterati
   result.runId = request.runId;
   result.brief = { ...result.brief, snapshotAsOf: asOf };
   result.snapshot = { ...result.snapshot, id: snapshotId, asOf, status: "candidate" };
+  if (result.semantic.learningPathProjection) {
+    result.semantic.learningPathProjection.generatedFromSnapshotId = snapshotId;
+    result.semantic.learningPathProjection.proposals.forEach(proposal => { proposal.generatedFromSnapshotId = snapshotId; });
+  }
   return refreshRolePackageManifest(result, { packageVersion, status: "candidate" });
 }
 
@@ -284,7 +289,7 @@ export function createSnapshotIterationSkill(input: {
       { request, laneFailures: [] },
       { configurable: { thread_id: `${state.request.snapshotRef.snapshotId}:${state.request.runId}:iteration:${state.round}` }, signal: config.signal },
     );
-    const candidate = built.result || state.candidate;
+    const candidate = built.result ? preserveIterationGraph(state.candidate, built.result, request) : state.candidate;
     emit(state, "iteration.candidate.rebuilt", "rebuild", {
       round: state.round,
       nodes: candidate.semantic.nodes.length,
@@ -339,6 +344,7 @@ export function createSnapshotIterationSkill(input: {
       before: state.inspectionBefore!,
       after: inspectionAfter,
       contract: state.contract!,
+      migrations: state.migrations,
     });
     emit(state, "iteration.evaluation.completed", "evaluate", {
       evaluation,
@@ -370,18 +376,21 @@ export function createSnapshotIterationSkill(input: {
 
   const finalize = async (state: IterationStateType) => {
     const createdSnapshot = Boolean(state.evaluation?.meaningful);
-    const candidate = createdSnapshot ? stampSnapshot(state.candidate, state.request, state.base.snapshot.asOf, state.contract!.targetAsOf) : state.candidate;
+    // A rejected candidate must never leak into callers that use result.candidate
+    // as the base of an automatic follow-up or display it as the current version.
+    const candidate = createdSnapshot ? stampSnapshot(state.candidate, state.request, state.base.snapshot.asOf, state.contract!.targetAsOf) : state.base;
     const diff = computeSemanticDiff({
       base: state.base,
       candidate,
-      patches: state.patches,
+      patches: createdSnapshot ? state.patches : [],
       auditBefore: state.inspectionBefore!.audit,
-      auditAfter: state.inspectionAfter!.audit,
-      migrations: state.migrations,
+      auditAfter: createdSnapshot ? state.inspectionAfter!.audit : state.inspectionBefore!.audit,
+      migrations: createdSnapshot ? state.migrations : {},
     });
     const summary = [
       createdSnapshot ? "本轮产生了可保留的新静态快照。" : "本轮保留诊断与研究记录，当前静态快照保持不变。",
       ...state.evaluation!.reasons,
+      ...(!createdSnapshot ? ["以下指标用于诊断未采用的候选，不表示当前岗位包已发生变化。"] : []),
       `结构有效性 ${state.inspectionBefore!.axes.structuralValidity.toFixed(0)} → ${state.inspectionAfter!.axes.structuralValidity.toFixed(0)}`,
       `证据准备度 ${state.inspectionBefore!.axes.evidenceReadiness.toFixed(0)} → ${state.inspectionAfter!.axes.evidenceReadiness.toFixed(0)}`,
       `任务无技能覆盖 ${state.inspectionBefore!.coverage.tasksWithoutSkills} → ${state.inspectionAfter!.coverage.tasksWithoutSkills}`,
@@ -405,7 +414,7 @@ export function createSnapshotIterationSkill(input: {
       candidate,
       createdSnapshot,
       summary,
-      knownGaps: state.inspectionAfter!.findings.filter((finding) => finding.classification === "research" || finding.suggestedAction === "user" || finding.suggestedAction === "organization_specific"),
+      knownGaps: (createdSnapshot ? state.inspectionAfter! : state.inspectionBefore!).findings.filter((finding) => finding.classification === "research" || finding.suggestedAction === "user" || finding.suggestedAction === "organization_specific"),
     };
     emit(state, "iteration.run.completed", "system", { result, createdSnapshot, diff });
     await checkpoint("completed", state, { result });

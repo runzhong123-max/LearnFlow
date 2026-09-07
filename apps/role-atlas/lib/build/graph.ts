@@ -7,6 +7,7 @@ import { createRoleSearchPlan } from "@/lib/search/query-planner";
 import type { SearchProviderConfig } from "@/lib/search/providers";
 import { researchRoleSources, type PlannedQuery } from "@/lib/search/web-research";
 import { compileProcessDraft, compileRolePackage, compileSemanticDraft, prepareBuildInput } from "./compiler";
+import { inspectKnowledgeDerivation, mergeKnowledgeDerivations } from "./knowledge-quality";
 import type { BuildEvent, BuildEventKind } from "./events";
 import { invokeStructured, normalizeProcessDraft, processDraftSchema, type ProcessDraft, type SemanticDraft } from "./model";
 import type {
@@ -780,7 +781,32 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       const prompt = knowledgeDerivationPrompt({ roleTitle: state.request.roleTitle, group, mentions, segments: segments.map((segment) => ({ id: segment.id, text: segment.text })), mode: "detail" });
       const lane = `knowledge:${group.id}`;
       const draft = await runWorkItem({ request: state.request, workItems, stage: "task-knowledge-derivation", lane, inputRefs: [group.id, ...segments.map((segment) => segment.id)], priority: 7, estimatedInputTokens: estimateTokens(prompt.user), maxOutputTokens: 2_800, cachePayload: prompt.user, profile: "semantic", invoke: (onReasoning) => invokeStructured({ model, ...prompt, schema: knowledgeDerivationSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: 2_800, timeoutMs: 50_000, totalTimeoutMs: 80_000, onReasoning }) });
-      return prefixDerivedDraft(knowledgeToSemanticDraft({ draft, group, mentions }), prefix, stableTaskIds);
+      const checked = inspectKnowledgeDerivation({ draft, group, mentions, segments });
+      let accepted = checked.accepted;
+      let remainingIssues = checked.issues;
+      if (checked.uncoveredTaskIds.length || checked.issues.length) {
+        const repairPrompt = knowledgeDerivationPrompt({ roleTitle: state.request.roleTitle, group, mentions, segments, mode: "detail", repair: {
+          acceptedPoints: accepted.skills.map((point) => ({ label: point.label, taskTempIds: point.taskTempIds })),
+          issues: checked.issues,
+          uncoveredTaskIds: checked.uncoveredTaskIds,
+        } });
+        try {
+          const repaired = await runWorkItem({ request: state.request, workItems, stage: "task-knowledge-derivation", lane: `${lane}:coverage-repair`, inputRefs: [group.id, ...checked.uncoveredTaskIds], priority: 7, estimatedInputTokens: estimateTokens(repairPrompt.user), maxOutputTokens: 2_800, cachePayload: repairPrompt.user, profile: "semantic", invoke: (onReasoning) => invokeStructured({ model, ...repairPrompt, schema: knowledgeDerivationSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: 2_800, timeoutMs: 50_000, totalTimeoutMs: 80_000, onReasoning }) });
+          const repairCheck = inspectKnowledgeDerivation({ draft: repaired, group, mentions, segments });
+          accepted = mergeKnowledgeDerivations(accepted, repairCheck.accepted);
+          remainingIssues = repairCheck.issues;
+        } catch (error) {
+          if (config.signal?.aborted) throw error;
+          failures.push(`任务组 ${group.id} 的知识技能补齐未完成：${error instanceof Error ? error.message : "未知错误"}`);
+        }
+      }
+      for (const gap of accepted.gaps) {
+        const label = group.tasks.find((task) => task.tempId === gap.taskTempId)?.label || gap.taskTempId;
+        failures.push(`知识技能覆盖缺口「${label}」：${gap.reason}`);
+      }
+      for (const issue of remainingIssues) failures.push(`知识技能待拆解或补证：${issue.detail}`);
+      emit(state.request, "build.lane.completed", "semantic", { lane: `${lane}:quality`, acceptedPointCount: accepted.skills.length, uncoveredTaskIds: accepted.gaps.map((gap) => gap.taskTempId), rejectedPointCount: remainingIssues.length, degraded: accepted.gaps.length > 0 || remainingIssues.length > 0 });
+      return prefixDerivedDraft(knowledgeToSemanticDraft({ draft: accepted, group, mentions, segments }), prefix, stableTaskIds);
     };
 
     const knowledgeBranchPromise = (async () => {

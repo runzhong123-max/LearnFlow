@@ -41,7 +41,7 @@ const fakeModel: ModelInvoker = async function* ({ system, user }) {
   if (system.includes("任务导向的知识技能规范化器")) {
     const tasks = payload.tasks as Array<{ id: string }>;
     const mentions = payload.knowledgeMentions as Array<{ id: string }>;
-    yield { type: "text", delta: JSON.stringify({ skills: [{ tempId: "skill-eval", label: "检索质量评测", summary: "设计指标并诊断检索结果。", learningOutcome: "能解释并计算核心检索指标", practiceArtifact: "检索评测报告", assessment: "在给定数据集上诊断误差", taskTempIds: tasks.map((item) => item.id), mentionIds: mentions.map((item) => item.id), confidence: 0.78 }] }) };
+    yield { type: "text", delta: JSON.stringify({ skills: [{ tempId: "skill-eval", label: "检索质量评测", summary: "设计指标并诊断检索结果。", learningKind: "skill", learningDefinition: { scopeNote: "使用给定检索结果评估召回质量，不涉及模型训练。", assessmentCriteria: ["在固定评测集上计算召回指标并定位失败样本"] }, learningOutcome: "能解释并计算核心检索指标", practiceArtifact: "检索评测报告", assessment: "在给定数据集上诊断误差", taskTempIds: tasks.map((item) => item.id), mentionIds: mentions.map((item) => item.id), confidence: 0.78 }] }) };
     return;
   }
   if (system.includes("跨任务能力归纳器")) {
@@ -109,6 +109,46 @@ test("冷启动 Skill 从共享证据编译含三命名空间的统一岗位包"
   assert.ok(result.build?.workItems.some((item) => item.stage === "task-normalization"));
   assert.ok(result.sources.mentions?.some((mention) => mention.evidenceSpan?.quote === "大模型应用工程师负责 RAG 系统构建"));
   assert.equal(result.validation.publishable, false, "只有推断型事理模式时应保持候选状态");
+});
+
+test("知识 Lane 最多补齐一轮，保留已通过点并拒绝综合能力误分类", async () => {
+  let knowledgeCalls = 0;
+  const model: ModelInvoker = async function* (input) {
+    if (!input.system.includes("任务导向的知识技能规范化器")) { yield* fakeModel(input); return; }
+    knowledgeCalls += 1;
+    const payload = JSON.parse(input.user);
+    const segment = payload.evidenceSegments.find((item: { text: string }) => item.text.includes("使用检索质量评测检查效果"));
+    const point = { tempId: "point", label: knowledgeCalls === 1 ? "检索质量评测" : "检索效果判定规则", summary: "使用评测检查检索效果。",
+      learningKind: knowledgeCalls === 1 ? "skill" : "knowledge", learningDefinition: { scopeNote: "评估给定检索结果，不涉及模型训练。", assessmentCriteria: ["在给定评测样本上说明效果判定依据"] },
+      taskTempIds: payload.tasks.map((task: { id: string }) => task.id), evidenceSpans: [{ segmentId: segment.id, quote: "使用检索质量评测检查效果" }], confidence: 0.7 };
+    if (knowledgeCalls === 1) yield { type: "text", delta: JSON.stringify({ skills: [point, { ...point, tempId: "bad-capability", label: "协调与组织能力", learningKind: "hybrid" }] }) };
+    else {
+      assert.equal(payload.repair.acceptedPoints[0].label, "检索质量评测");
+      assert.match(payload.repair.issues[0].detail, /综合能力/u);
+      yield { type: "text", delta: JSON.stringify({ skills: [point] }) };
+    }
+  };
+  const built = await createColdStartSkill(model).invoke({ request: { ...request(), runId: "bounded-knowledge-repair" }, laneFailures: [] });
+  const points = built.result!.semantic.nodes.filter((node) => node.type === "knowledge_skill");
+  assert.equal(knowledgeCalls, 2);
+  assert.deepEqual(new Set(points.map((point) => point.label)), new Set(["检索质量评测", "检索效果判定规则"]));
+  assert.ok(points.every((point) => point.learningDefinition && point.learningKind !== "hybrid"));
+  assert.ok(built.result!.build!.workItems.some((item) => item.lane.endsWith(":coverage-repair")));
+});
+
+test("有限补齐仍无证据时保留显式知识缺口，不制造任务来源支持的伪知识", async () => {
+  let knowledgeCalls = 0;
+  const model: ModelInvoker = async function* (input) {
+    if (!input.system.includes("任务导向的知识技能规范化器")) { yield* fakeModel(input); return; }
+    knowledgeCalls += 1;
+    const payload = JSON.parse(input.user);
+    yield { type: "text", delta: JSON.stringify({ skills: [], gaps: payload.tasks.map((task: { id: string }) => ({ taskTempId: task.id, reason: "来源没有说明可复核的评测方法和评价条件。" })) }) };
+  };
+  const built = await createColdStartSkill(model).invoke({ request: { ...request(), runId: "bounded-knowledge-gap" }, laneFailures: [] });
+  assert.equal(knowledgeCalls, 2);
+  assert.equal(built.result!.semantic.nodes.filter((node) => node.type === "knowledge_skill").length, 0);
+  assert.equal(built.result!.build!.enrichment!.status, "degraded");
+  assert.ok(built.result!.audit.issues.some((issue) => /知识技能覆盖缺口/u.test(issue.detail)));
 });
 
 test("任务屏障后知识技能、能力与事理 Lane 真正并行，而不是按产物串行等待", async () => {

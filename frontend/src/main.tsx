@@ -1,4 +1,5 @@
 import { taskLearningFiles, fileKindForStage, fileProgressMessage } from './learning-file-flow'
+import { ecosystemEntryPath } from './ecosystem-entry.ts'
 import { directVisualWorkflowCall } from '../../packages/learning-client/src/visuals/workflow.ts'
 import { resolveExplicitVisualIntent } from '../server/visual-tool-execution.ts'
 import { FormEvent, Fragment, lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
@@ -882,7 +883,8 @@ function App({ auth }: { auth: AuthGateSession }) {
 
   useEffect(() => {
     if (!activeTab) return
-    window.history.replaceState({ tabId: activeTab.id }, '', pathForTab(activeTab))
+    const path = pathForTab(activeTab)
+    window.history.replaceState({ tabId: activeTab.id }, '', activeTab.kind === 'ecosystem' && window.location.pathname === '/ecosystem' ? ecosystemEntryPath(window.location.search) : path)
     document.title = `${activeTab.title} · LearnFlow`
   }, [activeTab])
 

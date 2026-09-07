@@ -1,4 +1,5 @@
 "use client";
+import { snapshotQualitySummary } from "@/lib/iteration/learning-health";
 
 import {
   AlertTriangle,
@@ -49,6 +50,7 @@ import "@/app/components/project-workspace.css";
 import ModelSettings from "@/app/settings/ModelSettings";
 import InlineRegistryCenter from "@/app/components/InlineRegistryCenter";
 import InlineVersionCenter from "@/app/components/InlineVersionCenter";
+import LearningPathMapping from "@/app/components/LearningPathMapping";
 import ProjectManagement from "@/app/components/ProjectManagement";
 import { toProcessReference, type ProcessReferenceNode, type WorkProcessPayload } from "@/app/components/WorkProcessForestView";
 import type { ColdStartBuildResult, LearningPathGraphInput } from "@/lib/build/types";
@@ -271,6 +273,7 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
   const [projectStatus, setProjectStatus] = useState<"draft" | "building" | "ready" | "failed">("draft");
   const [enrichmentState, setEnrichmentState] = useConversationState<{ running: boolean; label: string; error?: string }>(activeConversationId, { running: false, label: "" });
   const [activeOperation, setActiveOperation] = useState<WorkspaceOperation | null>(initialNewProject ? "new-project" : null);
+  const [learningMountVersionId, setLearningMountVersionId] = useState<string | undefined>();
   const containerRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<G6Graph | null>(null);
   const dropRef = useRef<HTMLElement>(null);
@@ -550,7 +553,8 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
           } else if (event.kind === "build.followup.risk_repair.started") {
             setEnrichmentState({ running: true, label: "正在执行全量风险扫描与可验证修复" });
           } else if (event.kind === "build.followup.risk_repair.completed") {
-            setEnrichmentState({ running: false, label: event.payload.deepResearchStatus === "completed" ? "冷启动、重要问题深研与全量风险修复均已完成" : "冷启动与全量风险修复已完成；重要问题深研仍需补做" });
+            const quality = event.payload.quality as { label?: string } | undefined;
+            setEnrichmentState({ running: false, label: quality?.label || "本轮研究与风险检查已结束，请查看当前快照的待解决问题" });
             await refresh();
           } else if (event.kind === "build.followup.failed") {
             setEnrichmentState({ running: false, label: "完整冷启动版本可用；自动深研或风险修复尚未完成", error: String(event.payload.message || "自动后处理失败") });
@@ -1205,6 +1209,7 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
   }
 
   async function closeWorkspaceOperation() {
+    setLearningMountVersionId(undefined);
     if (activeOperation === "settings") {
       try {
         const config = JSON.parse(sessionStorage.getItem(PROVIDER_SESSION_KEY) || "null") as ProviderConfig | null;
@@ -1351,6 +1356,12 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
           {enrichmentState.error ? <AlertTriangle size={14} /> : enrichmentState.running ? <Sparkles size={14} /> : <Check size={14} />}
           <span><b>{enrichmentState.label}</b><small>{enrichmentState.error || (enrichmentState.running ? "当前岗位结构可立即使用；新节点、依赖和事理场景会按不可变子版本自动并入。" : "节点引用仍固定到具体快照；新会话默认使用最新版本。")}</small></span>
         </div> : null}
+
+        {projectResult && !enrichmentState.running && snapshotQualitySummary(projectResult).needsResearch && <div className="enrichment-banner error" role="status" data-testid="snapshot-quality-status">
+          <AlertTriangle size={14} /><span><b>{snapshotQualitySummary(projectResult).label}</b><small>流程结束不代表知识技能齐全。请在迭代工具中补研缺口；学习路径挂载需另行核对与提交。</small></span>
+        </div>}
+
+        {projectResult && <LearningPathMapping key={projectResult.snapshot.id} result={projectResult} projectId={projectId} projectVersionId={skillContext.versionId} selectedNodeId={selectedId} onPreparePackage={() => { setLearningMountVersionId(skillContext.versionId); setActiveOperation("publish"); }} />}
 
         <div data-testid="workspace-stage" className={`graph-stage ${view === "tasks" ? "tasks-mode" : view === "evidence" ? "evidence-mode" : view === "cards" ? "cards-mode" : ""}`}>
           {projectId && !graphData && !conversationLoading ? <div className="empty-project-stage"><Network size={38} /><h2>{workspaceError ? "暂时无法打开项目" : "岗位图谱将在这里逐步形成"}</h2><p>{workspaceError || "从右侧对话选择冷启动工具。研究、迭代和资料接入的成果都会呈现在这个展示台。"}</p>{workspaceError ? <a href="https://learnflow.club/login">登录 LearnFlow</a> : <button onClick={() => void launchTool("cold-start-role-package")}><Sparkles size={14} />开始岗位研究</button>}</div> : view === "evidence" ? (
@@ -1531,7 +1542,7 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
         {activeOperation === "new-project" ? <NewProjectDialog onClose={() => setActiveOperation(null)} initialTitle={newProjectBrief?.role} initialDescription={newProjectBrief?.description} initialMarket={newProjectBrief?.market} />
         : activeOperation === "settings" ? <ModelSettings embedded onClose={() => void closeWorkspaceOperation()} />
         : activeOperation === "registry" ? <InlineRegistryCenter onClose={() => void closeWorkspaceOperation()} />
-        : projectId ? <InlineVersionCenter project={{ id: projectId, title: workspaceTitle, headVersionId: projects.find((item) => item.id === projectId)?.headVersionId || null, currentReleaseId: projects.find((item) => item.id === projectId)?.currentReleaseId || null }} conversationId={activeConversationId} initialSection={activeOperation === "publish" ? "publish" : "history"} onClose={() => void closeWorkspaceOperation()} onAdopted={(id) => { setActiveOperation(null); void refreshConversationResult(id); }} /> : null}
+        : projectId ? <InlineVersionCenter project={{ id: projectId, title: workspaceTitle, headVersionId: projects.find((item) => item.id === projectId)?.headVersionId || null, currentReleaseId: projects.find((item) => item.id === projectId)?.currentReleaseId || null }} conversationId={activeConversationId} initialVersionId={learningMountVersionId} initialSection={activeOperation === "publish" ? "publish" : "history"} onClose={() => void closeWorkspaceOperation()} onAdopted={(id) => { setActiveOperation(null); void refreshConversationResult(id); }} /> : null}
       </div></div>}
     </main>
   );

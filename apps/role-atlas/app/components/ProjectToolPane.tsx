@@ -5,7 +5,7 @@ import { AlertTriangle, Check, LoaderCircle, Play, Square, Wrench, X } from "luc
 import SourceMaterials from "./SourceMaterials";
 import IterationOptions, { IterationBrief } from "./IterationOptions";
 import { conversationIterationRequest, defaultIterationDraft, iterationBriefError, iterationRunBrief, parseIterationTargets, type IterationDraft, type IterationRunBrief } from "@/lib/iteration/brief";
-import { learningPathGraphInputSchema } from "@/lib/build/types";
+import { readOfficialLearningPath } from "@/lib/learning-path/load";
 import type { ColdStartBuildResult, SourceInput } from "@/lib/build/types";
 import { PROVIDER_SESSION_KEY } from "@/lib/providers";
 import { SEARCH_PROVIDER_SESSION_KEY } from "@/lib/search/providers";
@@ -113,22 +113,21 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
       const common = { providerConfig, searchConfig };
       let endpoint = "/api/snapshot-iterations";
       let body: Record<string, unknown>;
+      let learningPathGraph;
+      if (activeTool !== "workspace-instantiation") {
+        const controller = new AbortController();
+        preparation.current = controller;
+        learningPathGraph = await readOfficialLearningPath(fetch, controller.signal);
+        preparation.current = null;
+      }
       if (activeTool === "cold-start-role-package") {
         endpoint = "/api/build-runs";
-        body = { ...common, conversationId: context.conversationId, webResearch, build: { runId: id, projectId: context.projectId, roleTitle: context.roleTitle, roleDescription: prompt || context.roleDescription || "", market, audience: ["岗位研究者"], snapshotAsOf: new Date().toISOString().slice(0, 10), sources: materials } };
+        body = { ...common, conversationId: context.conversationId, webResearch, build: { runId: id, projectId: context.projectId, roleTitle: context.roleTitle, roleDescription: prompt || context.roleDescription || "", market, audience: ["岗位研究者"], snapshotAsOf: new Date().toISOString().slice(0, 10), sources: materials, learningPathGraph } };
       } else if (activeTool === "workspace-instantiation") {
         endpoint = "/api/workspace-upgrades";
         body = { ...common, snapshotRef, conversationId: context.conversationId, workspace: { runId: id, projectId: context.projectId, connection: { adapterId, payload: parsedWorkspace, roleHint: context.roleTitle, visibility: "project_private", provenance: { capturedAt: new Date().toISOString() } }, maxObservations: 16, redactPersonalData: true }, iteration: { prompt, webResearch, maxRounds: 1, sourceLimit: 8, maxWorkItems: 10 } };
       } else {
-        const controller = new AbortController();
-        preparation.current = controller;
-        const pathResponse = await fetch("/data/learnflow-learning-path.json", { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(10_000)]) });
-        if (!pathResponse.ok) throw new Error("学习路径资料暂时无法读取，请重试；本轮尚未提交。");
-        const learningPath = learningPathGraphInputSchema.safeParse(await pathResponse.json());
-        if (!learningPath.success || !learningPath.data) throw new Error("学习路径资料格式无效，本轮尚未提交。");
-        controller.signal.throwIfAborted();
-        preparation.current = null;
-        const iteration = conversationIterationRequest({ runId: id, context, draft: iterationDraft, prompt, materials, webResearch, learningPathGraph: learningPath.data });
+        const iteration = conversationIterationRequest({ runId: id, context, draft: iterationDraft, prompt, materials, webResearch, learningPathGraph: learningPathGraph! });
         setSubmittedBrief(iterationRunBrief(iteration));
         body = { ...common, iteration };
       }

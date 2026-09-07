@@ -41,7 +41,7 @@ const workspaceUpgradeModel: ModelInvoker = async function* ({ system, user }) {
   if (system.includes("任务导向的知识技能规范化器")) {
     const tasks = payload.tasks as Array<{ id: string }>;
     const mentions = payload.knowledgeMentions as Array<{ id: string }>;
-    yield { type: "text", delta: JSON.stringify({ skills: [{ tempId: "skill-state", label: "LangGraph 状态持久化", summary: "设计 thread 与 checkpoint 命名空间并执行回归验证。", learningOutcome: "解释持久化契约", practiceArtifact: "回归测试", assessment: "复现并修复状态回归", taskTempIds: tasks.map((item) => item.id), mentionIds: mentions.map((item) => item.id), confidence: 0.78 }] }) };
+    yield { type: "text", delta: JSON.stringify({ skills: [{ tempId: "skill-state", label: "LangGraph 状态持久化", summary: "设计 thread 与 checkpoint 命名空间并执行回归验证。", learningKind: "skill", learningDefinition: { scopeNote: "配置 thread 与 checkpoint 命名空间，不涉及无关存储系统。", assessmentCriteria: ["复现状态回归并提供验证结果"] }, learningOutcome: "解释持久化契约", practiceArtifact: "回归测试", assessment: "复现并修复状态回归", taskTempIds: tasks.map((item) => item.id), mentionIds: mentions.map((item) => item.id), confidence: 0.78 }] }) };
     return;
   }
   if (system.includes("跨任务能力归纳器")) {

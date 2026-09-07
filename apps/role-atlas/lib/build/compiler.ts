@@ -307,6 +307,7 @@ function evidenceForTarget(input: {
 
 function sameSemanticConcept(left: SemanticDraft["nodes"][number], right: SemanticDraft["nodes"][number]) {
   if (left.type !== right.type) return false;
+  if (left.type === "knowledge_skill" && (left.learningKind || "hybrid") !== (right.learningKind || "hybrid")) return false;
   const leftKeys = new Set([left.label, ...left.aliases].map(normalizeLabel));
   return [right.label, ...right.aliases].some((label) => leftKeys.has(normalizeLabel(label)));
 }
@@ -343,9 +344,13 @@ export function compileSemanticDraft(input: {
   const bindings: EvidenceBinding[] = [];
   for (const group of groups) {
     const preferred = [...group].sort((a, b) => b.label.length - a.label.length || b.confidence - a.confidence)[0];
-    const id = preferred.type === "market_role"
+    const baseId = preferred.type === "market_role"
       ? `role:${stableHash(input.request.roleTitle)}`
       : `${preferred.type}:${stableHash(`${preferred.type}:${normalizeLabel(preferred.label)}`)}`;
+    // New atomic points have a distinct identity from each other and legacy
+    // hybrid domains. Persisted snapshots keep their original IDs unchanged.
+    const id = preferred.type === "knowledge_skill" && (preferred.learningKind === "knowledge" || preferred.learningKind === "skill")
+      ? `${baseId}:${preferred.learningKind}` : baseId;
     group.forEach((item) => tempToId.set(item.tempId, id));
     const nodeBindings = evidenceForTarget({
       targetId: id,
