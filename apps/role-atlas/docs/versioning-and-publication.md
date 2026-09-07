@@ -363,3 +363,13 @@ Agent 不应把“我保存了一下”同时解释为以上多个动作，也�
 - 研究结果为什么不能被静默覆盖。
 
 因此版本历史本身也是课程和研究材料，不只是工程备份设施。
+
+## 14. 从 Graph Hub 撤回与重新公开
+
+“我的岗位包”对当前所有者完整拥有、且推荐版曾以公开制品发布的岗位包显示“从 Graph Hub 撤回”。确认后将整个岗位包线设为 private；Hub 列表、检索、详情与匿名制品访问均遵循这一可见性。个人内容、推荐版指针、历史 Release、制品哈希均保留，不删除数据。已下载或导入到其他系统的副本无法追回。
+
+撤回后同一入口显示“重新公开到 Graph Hub”，复用原公开推荐版。私有编译制品不能经此入口扩大披露，仍需走正式公开编译发布流程。
+
+`PATCH /api/releases` 新增 `withdraw_from_hub` / `restore_to_hub`，参数为 `packageLineId`、`expectedReleaseId`、`expectedRegistryVersion`。沿用所有者身份和整条包线写权限检查；D1 batch 原子写入可见性及 `release.hub_withdrawn` / `release.hub_restored` 事件，推进 registry_version。重复目标状态不重复写事件；版本冲突返回 409，要求刷新后重试。
+
+Contract impact：新增兼容的 Role Atlas 发布动作和发布事件；不改变不可变岗位包协议、不新增数据库字段，不涉及 LearnFlow 五核或 EvidenceEvent。

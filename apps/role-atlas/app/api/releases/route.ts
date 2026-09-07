@@ -1,3 +1,5 @@
+import { ensureAppSchema, getD1 } from "@/db";
+import { changeHubPublication } from "@/lib/releases/hub-publication";
 import { authorizeApiRequest } from "@/lib/access";
 import { z } from "zod/v4";
 import { deprecateRelease, listProjectReleases, prepareRelease, publishProjectVersionToHub, publishRelease, rollbackRelease } from "@/lib/releases/service";
@@ -38,6 +40,9 @@ const publishToHubSchema = releaseInputSchema.omit({ visibility: true }).extend(
 const createSchema = z.discriminatedUnion("action", [prepareSchema, publishToHubSchema]);
 
 const actionSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("withdraw_from_hub"), packageLineId: z.string().min(4).max(220), expectedReleaseId: z.string().min(4).max(220), expectedRegistryVersion: z.number().int().nonnegative() }),
+  z.object({ action: z.literal("restore_to_hub"), packageLineId: z.string().min(4).max(220), expectedReleaseId: z.string().min(4).max(220), expectedRegistryVersion: z.number().int().nonnegative() }),
+
   z.object({ action: z.literal("publish"), releaseId: z.string().min(4).max(220) }),
   z.object({ action: z.literal("rollback"), packageLineId: z.string().min(4).max(220), targetReleaseId: z.string().min(4).max(220), expectedCurrentReleaseId: z.string().max(220).nullable().optional() }),
   z.object({ action: z.literal("deprecate"), releaseId: z.string().min(4).max(220), reason: z.string().max(1_000).optional() }),
@@ -71,6 +76,10 @@ export async function PATCH(request: Request) {
   if (denied) return denied;
   try {
     const input = actionSchema.parse(await request.json());
+    if (input.action === "withdraw_from_hub" || input.action === "restore_to_hub") {
+      await ensureAppSchema();
+      return Response.json({ publication: await changeHubPublication(getD1(), input) }, { headers: { "Cache-Control": "private, no-store" } });
+    }
     if (input.action === "publish") return Response.json({ release: await publishRelease(input) });
     if (input.action === "rollback") return Response.json({ release: await rollbackRelease(input) });
     return Response.json({ release: await deprecateRelease(input) });
