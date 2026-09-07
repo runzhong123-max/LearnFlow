@@ -12,7 +12,7 @@ from functools import lru_cache
 from pathlib import Path
 from .engine import compile_visual, digest
 
-CATALOG_VERSION = '2026-09-07.1'
+CATALOG_VERSION = '2026-09-07.2'
 PATTERNS = [
     {'id': 'trace', 'goal': '观察并解释一次状态变化', 'controls': ['stepper'], 'stop_rule': '有限步骤结束'},
     {'id': 'decomposition', 'goal': '从总览展开一个机制', 'controls': ['stepper', 'selection'], 'stop_rule': '回到输入输出关系'},
@@ -52,6 +52,7 @@ def _summary(entry: dict, score: float) -> dict:
     return {k: copy.deepcopy(entry[k]) for k in ('id', 'version', 'title', 'description', 'tags', 'kind', 'patterns')} | {
         'score': score, 'source': 'maintained_library', 'spec_digest': digest(entry['spec']),
         'assumptions': entry['spec']['teaching']['assumptions'],
+        'retrieval': copy.deepcopy(entry.get('retrieval', {})),
     }
 
 
@@ -69,11 +70,17 @@ def search_catalog(query: str, kind: str, include_templates: bool = True) -> dic
         aliases = entry.get('aliases', [])
         exact = sum(1 for alias in aliases if alias.casefold() in query.casefold())
         topic = _terms(' '.join([entry['title'], *entry['tags'], *aliases]))
+        retrieval = entry.get('retrieval', {})
+        curriculum_match = sum(1 for n in retrieval.get('learning_path', {}).get('nodes', [])
+                               if n['id'].casefold() in query.casefold() or n['title'] in query)
+        detail = _terms(' '.join([entry['description'], *retrieval.get('questions', []), retrieval.get('use_when', ''),
+                                 *[n['id'] + ' ' + n['title'] for n in retrieval.get('learning_path', {}).get('nodes', [])]]))
         overlap = len(q & topic)
+        detail_overlap = len(q & detail)
         # A candidate is a suggestion, never an automatic substitution of the request.
-        if not exact and overlap < 2:
+        if not exact and not curriculum_match and overlap < 2 and detail_overlap < 3:
             continue
-        score = round(exact * 10 + overlap / max(1, len(topic)), 4)
+        score = round(exact * 10 + curriculum_match * 5 + overlap / max(1, len(topic)) + detail_overlap / max(1, len(detail)), 4)
         hits.append(_summary(entry, score))
     hits.sort(key=lambda e: (-e['score'], e['id'], e['version']))
     return {

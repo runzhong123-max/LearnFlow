@@ -1,0 +1,328 @@
+{
+  "id": "algorithms.binary_search.interval",
+  "version": "1.0.0",
+  "status": "production",
+  "title": "二分查找：闭区间如何缩小",
+  "description": "观察排除区间与目标仍在候选区间的不变量。",
+  "aliases": [
+    "二分查找",
+    "binary search",
+    "左右边界"
+  ],
+  "tags": [
+    "数据结构",
+    "算法设计与分析",
+    "二分查找",
+    "binary search",
+    "左右边界"
+  ],
+  "patterns": [
+    "trace",
+    "linked_views"
+  ],
+  "kind": [
+    "diagram",
+    "animation"
+  ],
+  "spec": {
+    "spec_version": "0.2.0",
+    "id": "algorithms_binary_search_interval",
+    "title": "二分查找：闭区间如何缩小",
+    "domains": [
+      "computer_science"
+    ],
+    "teaching": {
+      "goal": "观察排除区间与目标仍在候选区间的不变量。",
+      "assumptions": [
+        "人工维护的固定教学分镜；运行时只校验结构和绑定，不验证领域过程真值。",
+        "升序无重复数组、闭区间 [lo,hi]；不覆盖 lower_bound 和重复值首位置。"
+      ],
+      "misconceptions": [],
+      "checkpoints": []
+    },
+    "parameters": [],
+    "data": {
+      "columns": [
+        "对象 / 位置",
+        "状态 / 内容"
+      ],
+      "stages": [
+        {
+          "id": "stage_0",
+          "title": "初始区间",
+          "narration": "查找 13，下标从 0 开始。",
+          "content": {
+            "rows": [
+              [
+                "数组",
+                "[1,3,5,7,9,11,13,15]"
+              ],
+              [
+                "lo, hi",
+                "0, 7"
+              ],
+              [
+                "候选下标",
+                "0..7"
+              ]
+            ],
+            "items": [
+              1,
+              3,
+              5,
+              7,
+              9,
+              11,
+              13,
+              15
+            ],
+            "active_indices": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ]
+          }
+        },
+        {
+          "id": "stage_1",
+          "title": "比较中点 3",
+          "narration": "值 7 小于 13；有序性允许排除下标 0..3。",
+          "content": {
+            "rows": [
+              [
+                "mid / 值",
+                "3 / 7"
+              ],
+              [
+                "下一 lo, hi",
+                "4, 7"
+              ],
+              [
+                "候选下标",
+                "4..7"
+              ]
+            ],
+            "items": [
+              1,
+              3,
+              5,
+              7,
+              9,
+              11,
+              13,
+              15
+            ],
+            "active_indices": [
+              4,
+              5,
+              6,
+              7
+            ]
+          }
+        },
+        {
+          "id": "stage_2",
+          "title": "比较中点 5",
+          "narration": "值 11 小于 13，继续排除下标 4..5。",
+          "content": {
+            "rows": [
+              [
+                "mid / 值",
+                "5 / 11"
+              ],
+              [
+                "下一 lo, hi",
+                "6, 7"
+              ],
+              [
+                "候选下标",
+                "6..7"
+              ]
+            ],
+            "items": [
+              1,
+              3,
+              5,
+              7,
+              9,
+              11,
+              13,
+              15
+            ],
+            "active_indices": [
+              6,
+              7
+            ]
+          }
+        },
+        {
+          "id": "stage_3",
+          "title": "命中下标 6",
+          "narration": "值相等立即返回；未命中时只在 lo > hi 后停止。",
+          "content": {
+            "rows": [
+              [
+                "mid / 值",
+                "6 / 13"
+              ],
+              [
+                "返回下标",
+                "6"
+              ]
+            ],
+            "items": [
+              1,
+              3,
+              5,
+              7,
+              9,
+              11,
+              13,
+              15
+            ],
+            "active_indices": [
+              6
+            ]
+          }
+        }
+      ]
+    },
+    "model": {
+      "id": "structure.sequence",
+      "version": "1.0.0",
+      "inputs": {
+        "stages": {
+          "source": "/data/stages"
+        }
+      },
+      "seed": 42,
+      "max_steps": 128
+    },
+    "layout": {
+      "kind": "stack",
+      "view_order": [
+        "mechanism",
+        "state"
+      ]
+    },
+    "views": [
+      {
+        "id": "mechanism",
+        "title": "候选区间与当前中点",
+        "renderer": "svg",
+        "elements": [
+          {
+            "id": "mechanism_object",
+            "kind": "array",
+            "label": "候选区间与当前中点",
+            "inputs": {
+              "items": {
+                "source": "/state/items"
+              },
+              "active_indices": {
+                "source": "/state/active_indices"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "state",
+        "title": "状态对照",
+        "renderer": "svg",
+        "elements": [
+          {
+            "id": "table",
+            "kind": "table",
+            "label": "当前状态",
+            "inputs": {
+              "columns": {
+                "source": "/data/columns"
+              },
+              "rows": {
+                "source": "/state/rows"
+              }
+            }
+          },
+          {
+            "id": "reason",
+            "kind": "text",
+            "label": "变化原因",
+            "inputs": {
+              "value": {
+                "source": "/state/narration"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "playback": {
+      "initial_step": 0,
+      "autoplay": false,
+      "transition": {
+        "kind": "cut",
+        "duration_ms": 0,
+        "easing": "linear"
+      },
+      "reduced_motion": "cut"
+    },
+    "interactions": [
+      {
+        "id": "steps",
+        "kind": "stepper",
+        "target": "trace",
+        "allow_back": true
+      }
+    ],
+    "annotations": [],
+    "validation": {
+      "requested_checks": [
+        {
+          "id": "structure.sequence_bindings",
+          "version": "1.0.0"
+        }
+      ]
+    },
+    "accessibility": {
+      "summary": "观察排除区间与目标仍在候选区间的不变量。",
+      "keyboard": true,
+      "text_alternative": true
+    },
+    "fallback": {
+      "kind": "text",
+      "text": "显示当前参数下的完整状态与步骤说明。"
+    }
+  },
+  "retrieval": {
+    "questions": [
+      "二分查找为什么加一减一",
+      "二分查找为什么不会漏掉目标"
+    ],
+    "prerequisites": [
+      "有序数组",
+      "索引"
+    ],
+    "use_when": "观察排除区间与目标仍在候选区间的不变量。",
+    "not_for": "升序无重复数组、闭区间 [lo,hi]；不覆盖 lower_bound 和重复值首位置。",
+    "learning_path": {
+      "graph_id": "learnflow:computing",
+      "revision": "2026-09-06.1",
+      "nodes": [
+        {
+          "id": "data-structures",
+          "title": "数据结构"
+        },
+        {
+          "id": "algorithms",
+          "title": "算法设计与分析"
+        }
+      ]
+    }
+  }
+}

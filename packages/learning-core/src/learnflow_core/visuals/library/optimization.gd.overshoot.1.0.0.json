@@ -212,5 +212,31 @@
       "kind": "static_sequence",
       "text": "默认 α=0.75：x=-4 → 5 → 0.5，误差 -6 → 3 → -1.5。虽跨过最优点，距离仍减半。"
     }
+  },
+  "retrieval": {
+    "questions": [
+      "梯度下降：步长与过冲如何工作",
+      "能够区分同侧收敛、交替收敛、等幅振荡和发散。"
+    ],
+    "prerequisites": [
+      "优化方法",
+      "机器学习"
+    ],
+    "use_when": "能够区分同侧收敛、交替收敛、等幅振荡和发散。",
+    "not_for": "目标函数 f(x)=(x-2)^2，实数域。；固定步长梯度下降；x0=-4；共计算 12 次更新。；二次型示例的阈值不能推广到任意损失函数。",
+    "learning_path": {
+      "graph_id": "learnflow:computing",
+      "revision": "2026-09-06.1",
+      "nodes": [
+        {
+          "id": "optimization",
+          "title": "优化方法"
+        },
+        {
+          "id": "machine-learning",
+          "title": "机器学习"
+        }
+      ]
+    }
   }
 }

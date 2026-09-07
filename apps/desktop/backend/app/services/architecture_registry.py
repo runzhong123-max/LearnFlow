@@ -44,7 +44,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-07.1-desktop"
+REGISTRY_VERSION = "2026-09-07.2-desktop"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 DATA_CONTRACTS = {
@@ -145,7 +145,7 @@ TOOLS = {
         ToolContract("checkpoint_delivery_readiness", "Teaching Package and Atomic Task Readiness Projection", "learning_design_agent", "learnflow", "projection",
                      (), (), "existing Source/Lecture/Question/Exercise/Assessment -> package readiness; learner-owned LearningTask -> task readiness; optional answer-free Knowledge ContextPacket stays a separate read-only design input; compatibility summary retained and no mastery inference"),
         ToolContract("visual_content_library", "Maintained Visual Recipes and Capability Discovery", "learning_design_agent", "vnext", "harness",
-                     (), (), "authenticated catalog retrieval -> immutable maintained recipe or fresh composition; no automatic publication of generated content; no learner-state write"),
+                     (), (), "authenticated question and curriculum-node retrieval -> immutable maintained recipe with aliases, questions, prerequisites and applicability boundaries or fresh composition; no automatic publication of generated content; no learner-state write"),
         ToolContract("safe_visual_generation", "Shared Learning VisualSpec Runtime", "learning_design_agent", "vnext", "harness",
                      (), (), "independently valid explanation -> VisualSpec 0.1.0/0.2.0 from maintained retrieval or fresh composition -> registered operations or explicitly illustrative authored sequence -> versioned trace and verification scope -> PresentationPlan/SVG interaction; local layout repair/current-state fallback; legacy ASCII reader retained; no mastery inference"),
         ToolContract("learning_diagram_generator", "Learning Diagram Generator", "learning_design_agent", "vnext", "artifact",

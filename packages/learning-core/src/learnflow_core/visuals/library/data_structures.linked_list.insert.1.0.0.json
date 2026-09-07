@@ -1,0 +1,368 @@
+{
+  "id": "data_structures.linked_list.insert",
+  "version": "1.0.0",
+  "status": "production",
+  "title": "单链表插入：为什么先接后断",
+  "description": "用指针关系观察插入节点时如何保留原后继。",
+  "aliases": [
+    "链表插入",
+    "指针",
+    "linked list",
+    "next"
+  ],
+  "tags": [
+    "数据结构",
+    "C 语言与底层程序设计",
+    "链表插入",
+    "指针",
+    "linked list",
+    "next"
+  ],
+  "patterns": [
+    "trace",
+    "linked_views"
+  ],
+  "kind": [
+    "diagram",
+    "animation"
+  ],
+  "spec": {
+    "spec_version": "0.2.0",
+    "id": "data_structures_linked_list_insert",
+    "title": "单链表插入：为什么先接后断",
+    "domains": [
+      "computer_science"
+    ],
+    "teaching": {
+      "goal": "用指针关系观察插入节点时如何保留原后继。",
+      "assumptions": [
+        "人工维护的固定教学分镜；运行时只校验结构和绑定，不验证领域过程真值。",
+        "仅演示 A 后插入 X；不涵盖并发、内存释放或空指针检查。"
+      ],
+      "misconceptions": [],
+      "checkpoints": []
+    },
+    "parameters": [],
+    "data": {
+      "columns": [
+        "对象 / 位置",
+        "状态 / 内容"
+      ],
+      "stages": [
+        {
+          "id": "stage_0",
+          "title": "插入前",
+          "narration": "A 指向 B，X 是新节点。",
+          "content": {
+            "rows": [
+              [
+                "head",
+                "A"
+              ],
+              [
+                "A.next",
+                "B"
+              ],
+              [
+                "X.next",
+                "null"
+              ],
+              [
+                "B.next",
+                "null"
+              ]
+            ],
+            "graph": {
+              "nodes": [
+                "a",
+                "x",
+                "b"
+              ],
+              "labels": {
+                "a": "A",
+                "x": "X",
+                "b": "B"
+              },
+              "edges": [
+                [
+                  "a",
+                  "b"
+                ]
+              ],
+              "directed": true
+            }
+          }
+        },
+        {
+          "id": "stage_1",
+          "title": "保存后继",
+          "narration": "先执行 X.next = A.next，把 B 保存在 X 的后继关系中。",
+          "content": {
+            "rows": [
+              [
+                "head",
+                "A"
+              ],
+              [
+                "A.next",
+                "B"
+              ],
+              [
+                "X.next",
+                "B"
+              ],
+              [
+                "B.next",
+                "null"
+              ]
+            ],
+            "graph": {
+              "nodes": [
+                "a",
+                "x",
+                "b"
+              ],
+              "labels": {
+                "a": "A",
+                "x": "X",
+                "b": "B"
+              },
+              "edges": [
+                [
+                  "a",
+                  "b"
+                ],
+                [
+                  "x",
+                  "b"
+                ]
+              ],
+              "directed": true
+            }
+          }
+        },
+        {
+          "id": "stage_2",
+          "title": "接入新节点",
+          "narration": "再执行 A.next = X，沿 head 能依次访问三个节点。",
+          "content": {
+            "rows": [
+              [
+                "head",
+                "A"
+              ],
+              [
+                "A.next",
+                "X"
+              ],
+              [
+                "X.next",
+                "B"
+              ],
+              [
+                "遍历",
+                "A → X → B"
+              ]
+            ],
+            "graph": {
+              "nodes": [
+                "a",
+                "x",
+                "b"
+              ],
+              "labels": {
+                "a": "A",
+                "x": "X",
+                "b": "B"
+              },
+              "edges": [
+                [
+                  "a",
+                  "x"
+                ],
+                [
+                  "x",
+                  "b"
+                ]
+              ],
+              "directed": true
+            }
+          }
+        },
+        {
+          "id": "stage_3",
+          "title": "反例检查",
+          "narration": "如果先 A.next=X 再 X.next=A.next，X 会指回自己；原 B 可能失去可达路径。",
+          "content": {
+            "rows": [
+              [
+                "错误 X.next",
+                "X"
+              ],
+              [
+                "错误结构",
+                "A → X → X …"
+              ],
+              [
+                "正确原则",
+                "先保留原后继，再重接前驱"
+              ]
+            ],
+            "graph": {
+              "nodes": [
+                "a",
+                "x",
+                "b"
+              ],
+              "labels": {
+                "a": "A",
+                "x": "X",
+                "b": "B"
+              },
+              "edges": [
+                [
+                  "a",
+                  "x"
+                ],
+                [
+                  "x",
+                  "x"
+                ]
+              ],
+              "directed": true
+            }
+          }
+        }
+      ]
+    },
+    "model": {
+      "id": "structure.sequence",
+      "version": "1.0.0",
+      "inputs": {
+        "stages": {
+          "source": "/data/stages"
+        }
+      },
+      "seed": 42,
+      "max_steps": 128
+    },
+    "layout": {
+      "kind": "stack",
+      "view_order": [
+        "mechanism",
+        "state"
+      ]
+    },
+    "views": [
+      {
+        "id": "mechanism",
+        "title": "next 指针方向",
+        "renderer": "svg",
+        "elements": [
+          {
+            "id": "mechanism_object",
+            "kind": "graph",
+            "label": "next 指针方向",
+            "inputs": {
+              "graph": {
+                "source": "/state/graph"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "state",
+        "title": "状态对照",
+        "renderer": "svg",
+        "elements": [
+          {
+            "id": "table",
+            "kind": "table",
+            "label": "当前状态",
+            "inputs": {
+              "columns": {
+                "source": "/data/columns"
+              },
+              "rows": {
+                "source": "/state/rows"
+              }
+            }
+          },
+          {
+            "id": "reason",
+            "kind": "text",
+            "label": "变化原因",
+            "inputs": {
+              "value": {
+                "source": "/state/narration"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "playback": {
+      "initial_step": 0,
+      "autoplay": false,
+      "transition": {
+        "kind": "cut",
+        "duration_ms": 0,
+        "easing": "linear"
+      },
+      "reduced_motion": "cut"
+    },
+    "interactions": [
+      {
+        "id": "steps",
+        "kind": "stepper",
+        "target": "trace",
+        "allow_back": true
+      }
+    ],
+    "annotations": [],
+    "validation": {
+      "requested_checks": [
+        {
+          "id": "structure.sequence_bindings",
+          "version": "1.0.0"
+        }
+      ]
+    },
+    "accessibility": {
+      "summary": "用指针关系观察插入节点时如何保留原后继。",
+      "keyboard": true,
+      "text_alternative": true
+    },
+    "fallback": {
+      "kind": "text",
+      "text": "显示当前参数下的完整状态与步骤说明。"
+    }
+  },
+  "retrieval": {
+    "questions": [
+      "链表插入为什么先修改新节点 next",
+      "指针更新顺序为何重要"
+    ],
+    "prerequisites": [
+      "引用或指针",
+      "单链表"
+    ],
+    "use_when": "用指针关系观察插入节点时如何保留原后继。",
+    "not_for": "仅演示 A 后插入 X；不涵盖并发、内存释放或空指针检查。",
+    "learning_path": {
+      "graph_id": "learnflow:computing",
+      "revision": "2026-09-06.1",
+      "nodes": [
+        {
+          "id": "data-structures",
+          "title": "数据结构"
+        },
+        {
+          "id": "c-programming",
+          "title": "C 语言与底层程序设计"
+        }
+      ]
+    }
+  }
+}

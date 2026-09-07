@@ -1,5 +1,7 @@
 # LearnFlow 智能体架构与协作指南
 
+> 2026-09-07 视觉规划入口与课程图库：registry 2026-09-07.2，隔离 Tutor 正文合同与视觉 JSON 规划合同，15 份维护作品关联正式学习路径并提供问题/别名/适用边界检索。Contract impact：只读元数据增量，稳定工具 ID、五核及事件语义不变，无数据库迁移。见 [实现与验证](design/visualize/CURRICULUM-LIBRARY-2026-09-07.md)。
+
 > 2026-09-07 可组合视觉升级：VisualSpec 0.2.0 在兼容 0.1.0 的同时增加注册运算组合、结构分镜、维护作品检索与从零生成。图解请求先检索能力，Learning Design 一次产出教学计划与候选 Spec，宿主真实编译校验后渲染；原有讲解保持有效，正式 Desktop Tutor 仍先持久化简短交接。
 > Contract impact：registry 2026-09-07.1，新增只读 visual_content_library / retrieve_learning_visual 与 catalog/template API；无主 Agent、五核、事件语义或数据库迁移。当前合同见 [可组合视觉升级](design/visualize/UPGRADE-2026-09-07.md)，以下旧版流程为历史记录。
 

@@ -1,4 +1,4 @@
-import { visualPlanningRequest, assertVisualProviderComplete } from './visualize-authoring.ts'
+import { visualPlanningRequest, assertVisualProviderComplete, VISUAL_PLANNER_INSTRUCTIONS, visualPlannerContext } from './visualize-authoring.ts'
 import { teachingGuidancePrompt } from '../src/teaching-guidance-context.ts'
 import { structurallyCompact } from './context-compaction.ts'
 import type {
@@ -1802,10 +1802,10 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
     request: ReturnType<typeof buildAgentProviderRequest>,
     requestDeadline = deadline,
     streamText = true,
+    includeTeachingGuidance = true,
   ) => {
-    // Append only bounded guidance to dynamic user context for every model
-    // invocation, including visual explanation/Brief and repair paths.
-    const guidance = teachingGuidancePrompt(input.formalLearnerContext)
+    // Tutor guidance belongs to dialogue; artifact planning has its own output contract.
+    const guidance = includeTeachingGuidance ? teachingGuidancePrompt(input.formalLearnerContext) : ''
     const body = request.body as Record<string, unknown>
     const requestWithGuidance = guidance ? {
       ...request,
@@ -1862,10 +1862,10 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
           generate: async prompt => {
             modelRounds += 1
             const payload = await invokeModel(visualPlanningRequest(buildAgentProviderRequest({
-              baseUrl: input.baseUrl, model: input.model, instructions,
-              messages: [...runtimeMessages, {role:'user', content:prompt}],
+              baseUrl: input.baseUrl, model: input.model, instructions: VISUAL_PLANNER_INSTRUCTIONS,
+              messages: [{role:'user', content: `当前会话参考数据：${visualPlannerContext(input.messages)}`}, {role:'user', content:prompt}],
               tools:[], includeTools:false, responseFormat:'json_object', maxOutputTokens:Math.max(budget.maxOutputTokens, 8000),
-            }), input.model), deadline, false)
+            }), input.model), deadline, false, false)
             replyReasoningContent = reasoningContentFromProviderResponse(payload)
             const text = textFromTutorProviderResponse(payload).trim()
             assertVisualProviderComplete(payload, text)

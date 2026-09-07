@@ -420,5 +420,31 @@
       "kind": "text",
       "text": "显示当前参数下的完整状态与步骤说明。"
     }
+  },
+  "retrieval": {
+    "questions": [
+      "CNN：卷积到分类分数如何工作",
+      "逐步追踪局部像素如何变成特征和分类分数，并区分机制演示与训练后的识别。"
+    ],
+    "prerequisites": [
+      "深度学习",
+      "计算机视觉"
+    ],
+    "use_when": "逐步追踪局部像素如何变成特征和分类分数，并区分机制演示与训练后的识别。",
+    "not_for": "6×6 合成数字形状与手工核是机制教学输入，不是 MNIST 数据或训练后的 CNN。；conv2d 使用互相关约定，核不翻转；步长与对称补零可以调整。；池化 size=2、stride=2；尾部按 floor 舍弃。分类头使用单通道全局平均池化和未训练的教学权重，输出仅演示 softmax 运算，不代表识别能力或可信度。",
+    "learning_path": {
+      "graph_id": "learnflow:computing",
+      "revision": "2026-09-06.1",
+      "nodes": [
+        {
+          "id": "deep-learning",
+          "title": "深度学习"
+        },
+        {
+          "id": "computer-vision",
+          "title": "计算机视觉"
+        }
+      ]
+    }
   }
 }

@@ -1,0 +1,422 @@
+{
+  "id": "ai.rag.evidence_flow",
+  "version": "1.0.0",
+  "status": "production",
+  "title": "RAG：检索证据如何进入回答",
+  "description": "区分离线索引、在线检索、重排、上下文装配和有据生成。",
+  "aliases": [
+    "RAG",
+    "检索增强生成",
+    "召回",
+    "rerank",
+    "检索证据"
+  ],
+  "tags": [
+    "信息检索",
+    "检索增强生成（RAG）",
+    "智能体工程",
+    "RAG",
+    "检索增强生成",
+    "召回",
+    "rerank",
+    "检索证据"
+  ],
+  "patterns": [
+    "trace",
+    "linked_views"
+  ],
+  "kind": [
+    "diagram",
+    "animation"
+  ],
+  "spec": {
+    "spec_version": "0.2.0",
+    "id": "ai_rag_evidence_flow",
+    "title": "RAG：检索证据如何进入回答",
+    "domains": [
+      "computer_science"
+    ],
+    "teaching": {
+      "goal": "区分离线索引、在线检索、重排、上下文装配和有据生成。",
+      "assumptions": [
+        "人工维护的固定教学分镜；运行时只校验结构和绑定，不验证领域过程真值。",
+        "结构流程示意，未运行真实搜索；检索命中不保证事实正确，引用需回到实际来源。"
+      ],
+      "misconceptions": [],
+      "checkpoints": []
+    },
+    "parameters": [],
+    "data": {
+      "columns": [
+        "对象 / 位置",
+        "状态 / 内容"
+      ],
+      "stages": [
+        {
+          "id": "stage_0",
+          "title": "离线索引",
+          "narration": "资料分块并保存来源位置，建立词法或向量索引。",
+          "content": {
+            "rows": [
+              [
+                "输入",
+                "有权限的原始资料"
+              ],
+              [
+                "输出",
+                "带来源的 chunk 与索引"
+              ]
+            ],
+            "graph": {
+              "nodes": [
+                "index",
+                "retrieve",
+                "rank",
+                "context",
+                "answer"
+              ],
+              "labels": {
+                "index": "索引",
+                "retrieve": "召回",
+                "rank": "重排",
+                "context": "上下文",
+                "answer": "回答核查"
+              },
+              "edges": [],
+              "directed": true
+            }
+          }
+        },
+        {
+          "id": "stage_1",
+          "title": "在线召回",
+          "narration": "当前问题进入检索；先按用户权限过滤，再形成候选片段。",
+          "content": {
+            "rows": [
+              [
+                "输入",
+                "问题与权限范围"
+              ],
+              [
+                "输出",
+                "候选 chunk"
+              ],
+              [
+                "边界",
+                "不是最终答案"
+              ]
+            ],
+            "graph": {
+              "nodes": [
+                "index",
+                "retrieve",
+                "rank",
+                "context",
+                "answer"
+              ],
+              "labels": {
+                "index": "索引",
+                "retrieve": "召回",
+                "rank": "重排",
+                "context": "上下文",
+                "answer": "回答核查"
+              },
+              "edges": [
+                [
+                  "index",
+                  "retrieve"
+                ]
+              ],
+              "directed": true
+            }
+          }
+        },
+        {
+          "id": "stage_2",
+          "title": "重排与选取",
+          "narration": "对相关性、重复和预算进行选择，保留可回查来源。",
+          "content": {
+            "rows": [
+              [
+                "候选",
+                "多个检索片段"
+              ],
+              [
+                "结果",
+                "有限证据片段及来源引用"
+              ]
+            ],
+            "graph": {
+              "nodes": [
+                "index",
+                "retrieve",
+                "rank",
+                "context",
+                "answer"
+              ],
+              "labels": {
+                "index": "索引",
+                "retrieve": "召回",
+                "rank": "重排",
+                "context": "上下文",
+                "answer": "回答核查"
+              },
+              "edges": [
+                [
+                  "index",
+                  "retrieve"
+                ],
+                [
+                  "retrieve",
+                  "rank"
+                ]
+              ],
+              "directed": true
+            }
+          }
+        },
+        {
+          "id": "stage_3",
+          "title": "装配上下文",
+          "narration": "系统指令与检索资料隔离；资料作为证据，不作为可执行指令。",
+          "content": {
+            "rows": [
+              [
+                "控制层",
+                "系统任务与规则"
+              ],
+              [
+                "数据层",
+                "问题与有来源的证据"
+              ],
+              [
+                "缺口",
+                "未找到支持时显式保留"
+              ]
+            ],
+            "graph": {
+              "nodes": [
+                "index",
+                "retrieve",
+                "rank",
+                "context",
+                "answer"
+              ],
+              "labels": {
+                "index": "索引",
+                "retrieve": "召回",
+                "rank": "重排",
+                "context": "上下文",
+                "answer": "回答核查"
+              },
+              "edges": [
+                [
+                  "index",
+                  "retrieve"
+                ],
+                [
+                  "retrieve",
+                  "rank"
+                ],
+                [
+                  "rank",
+                  "context"
+                ]
+              ],
+              "directed": true
+            }
+          }
+        },
+        {
+          "id": "stage_4",
+          "title": "生成与核查",
+          "narration": "生成回答后核对声明与引用；无证据部分应说明缺口。",
+          "content": {
+            "rows": [
+              [
+                "输出",
+                "回答与对应来源"
+              ],
+              [
+                "检查",
+                "引用是否支持声明"
+              ],
+              [
+                "边界",
+                "生成不等于验证"
+              ]
+            ],
+            "graph": {
+              "nodes": [
+                "index",
+                "retrieve",
+                "rank",
+                "context",
+                "answer"
+              ],
+              "labels": {
+                "index": "索引",
+                "retrieve": "召回",
+                "rank": "重排",
+                "context": "上下文",
+                "answer": "回答核查"
+              },
+              "edges": [
+                [
+                  "index",
+                  "retrieve"
+                ],
+                [
+                  "retrieve",
+                  "rank"
+                ],
+                [
+                  "rank",
+                  "context"
+                ],
+                [
+                  "context",
+                  "answer"
+                ]
+              ],
+              "directed": true
+            }
+          }
+        }
+      ]
+    },
+    "model": {
+      "id": "structure.sequence",
+      "version": "1.0.0",
+      "inputs": {
+        "stages": {
+          "source": "/data/stages"
+        }
+      },
+      "seed": 42,
+      "max_steps": 128
+    },
+    "layout": {
+      "kind": "stack",
+      "view_order": [
+        "mechanism",
+        "state"
+      ]
+    },
+    "views": [
+      {
+        "id": "mechanism",
+        "title": "证据流：索引、召回、选择与生成",
+        "renderer": "svg",
+        "elements": [
+          {
+            "id": "mechanism_object",
+            "kind": "graph",
+            "label": "证据流：索引、召回、选择与生成",
+            "inputs": {
+              "graph": {
+                "source": "/state/graph"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "state",
+        "title": "状态对照",
+        "renderer": "svg",
+        "elements": [
+          {
+            "id": "table",
+            "kind": "table",
+            "label": "当前状态",
+            "inputs": {
+              "columns": {
+                "source": "/data/columns"
+              },
+              "rows": {
+                "source": "/state/rows"
+              }
+            }
+          },
+          {
+            "id": "reason",
+            "kind": "text",
+            "label": "变化原因",
+            "inputs": {
+              "value": {
+                "source": "/state/narration"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "playback": {
+      "initial_step": 0,
+      "autoplay": false,
+      "transition": {
+        "kind": "cut",
+        "duration_ms": 0,
+        "easing": "linear"
+      },
+      "reduced_motion": "cut"
+    },
+    "interactions": [
+      {
+        "id": "steps",
+        "kind": "stepper",
+        "target": "trace",
+        "allow_back": true
+      }
+    ],
+    "annotations": [],
+    "validation": {
+      "requested_checks": [
+        {
+          "id": "structure.sequence_bindings",
+          "version": "1.0.0"
+        }
+      ]
+    },
+    "accessibility": {
+      "summary": "区分离线索引、在线检索、重排、上下文装配和有据生成。",
+      "keyboard": true,
+      "text_alternative": true
+    },
+    "fallback": {
+      "kind": "text",
+      "text": "显示当前参数下的完整状态与步骤说明。"
+    }
+  },
+  "retrieval": {
+    "questions": [
+      "RAG 为什么仍然会幻觉",
+      "检索和重排分别做什么"
+    ],
+    "prerequisites": [
+      "文档分块",
+      "向量或关键词检索"
+    ],
+    "use_when": "区分离线索引、在线检索、重排、上下文装配和有据生成。",
+    "not_for": "结构流程示意，未运行真实搜索；检索命中不保证事实正确，引用需回到实际来源。",
+    "learning_path": {
+      "graph_id": "learnflow:computing",
+      "revision": "2026-09-06.1",
+      "nodes": [
+        {
+          "id": "information-retrieval",
+          "title": "信息检索"
+        },
+        {
+          "id": "retrieval-augmented-generation",
+          "title": "检索增强生成（RAG）"
+        },
+        {
+          "id": "agent-engineering",
+          "title": "智能体工程"
+        }
+      ]
+    }
+  }
+}

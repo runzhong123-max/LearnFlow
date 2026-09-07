@@ -180,5 +180,26 @@
       "kind": "static_plot",
       "text": "width=0.5 时密度为 2；[0.1,0.2] 上面积为 0.1×2=0.2，总面积为 1。"
     }
+  },
+  "retrieval": {
+    "questions": [
+      "概率密度与区间面积如何工作",
+      "能够解释密度大于 1 仍满足总概率为 1。"
+    ],
+    "prerequisites": [
+      "概率论与数理统计"
+    ],
+    "use_when": "能够解释密度大于 1 仍满足总概率为 1。",
+    "not_for": "连续均匀分布 Uniform(0,width)。；区间固定为 [0.1,0.2]，概率由与支持集交集计算。",
+    "learning_path": {
+      "graph_id": "learnflow:computing",
+      "revision": "2026-09-06.1",
+      "nodes": [
+        {
+          "id": "probability-statistics",
+          "title": "概率论与数理统计"
+        }
+      ]
+    }
   }
 }

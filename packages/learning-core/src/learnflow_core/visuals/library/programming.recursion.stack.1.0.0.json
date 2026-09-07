@@ -1,0 +1,327 @@
+{
+  "id": "programming.recursion.stack",
+  "version": "1.0.0",
+  "status": "production",
+  "title": "递归调用栈：阶乘如何返回",
+  "description": "把函数调用、暂停现场和返回值逐层对应起来。",
+  "aliases": [
+    "递归",
+    "调用栈",
+    "阶乘",
+    "recursion",
+    "stack frame"
+  ],
+  "tags": [
+    "程序设计基础",
+    "程序设计语言原理",
+    "递归",
+    "调用栈",
+    "阶乘",
+    "recursion",
+    "stack frame"
+  ],
+  "patterns": [
+    "trace",
+    "linked_views"
+  ],
+  "kind": [
+    "diagram",
+    "animation"
+  ],
+  "spec": {
+    "spec_version": "0.2.0",
+    "id": "programming_recursion_stack",
+    "title": "递归调用栈：阶乘如何返回",
+    "domains": [
+      "computer_science"
+    ],
+    "teaching": {
+      "goal": "把函数调用、暂停现场和返回值逐层对应起来。",
+      "assumptions": [
+        "人工维护的固定教学分镜；运行时只校验结构和绑定，不验证领域过程真值。",
+        "固定 factorial(3) 示例；不表示所有语言都有尾调用优化。"
+      ],
+      "misconceptions": [],
+      "checkpoints": []
+    },
+    "parameters": [],
+    "data": {
+      "columns": [
+        "对象 / 位置",
+        "状态 / 内容"
+      ],
+      "stages": [
+        {
+          "id": "stage_0",
+          "title": "调用 f(3)",
+          "narration": "每次调用保存自己的 n 和返回位置。",
+          "content": {
+            "rows": [
+              [
+                "栈底 → 栈顶",
+                "f(3)"
+              ],
+              [
+                "f(3)",
+                "等待 3 × f(2)"
+              ]
+            ],
+            "items": [
+              "f(3)"
+            ],
+            "active_indices": [
+              0
+            ]
+          }
+        },
+        {
+          "id": "stage_1",
+          "title": "调用 f(2)",
+          "narration": "父调用暂停，新的栈帧拥有自己的局部变量。",
+          "content": {
+            "rows": [
+              [
+                "栈底 → 栈顶",
+                "f(3) → f(2)"
+              ],
+              [
+                "f(2)",
+                "等待 2 × f(1)"
+              ]
+            ],
+            "items": [
+              "f(3)",
+              "f(2)"
+            ],
+            "active_indices": [
+              1
+            ]
+          }
+        },
+        {
+          "id": "stage_2",
+          "title": "到达基例",
+          "narration": "f(1) 直接返回 1，停止继续递归。",
+          "content": {
+            "rows": [
+              [
+                "栈底 → 栈顶",
+                "f(3) → f(2) → f(1)"
+              ],
+              [
+                "f(1)",
+                "返回 1"
+              ]
+            ],
+            "items": [
+              "f(3)",
+              "f(2)",
+              "f(1)"
+            ],
+            "active_indices": [
+              2
+            ]
+          }
+        },
+        {
+          "id": "stage_3",
+          "title": "弹出 f(1)",
+          "narration": "返回值交回最近的调用者。",
+          "content": {
+            "rows": [
+              [
+                "栈底 → 栈顶",
+                "f(3) → f(2)"
+              ],
+              [
+                "f(2)",
+                "2 × 1 = 2"
+              ]
+            ],
+            "items": [
+              "f(3)",
+              "f(2)"
+            ],
+            "active_indices": [
+              1
+            ]
+          }
+        },
+        {
+          "id": "stage_4",
+          "title": "返回到外层",
+          "narration": "f(2) 返回 2，f(3) 完成剩余乘法。",
+          "content": {
+            "rows": [
+              [
+                "栈",
+                "f(3)"
+              ],
+              [
+                "f(3)",
+                "3 × 2 = 6"
+              ]
+            ],
+            "items": [
+              "f(3)"
+            ],
+            "active_indices": [
+              0
+            ]
+          }
+        },
+        {
+          "id": "stage_5",
+          "title": "全部返回",
+          "narration": "调用完成后，这些调用帧均退出栈。",
+          "content": {
+            "rows": [
+              [
+                "栈",
+                "空"
+              ],
+              [
+                "最终返回值",
+                "6"
+              ]
+            ],
+            "items": [],
+            "active_indices": []
+          }
+        }
+      ]
+    },
+    "model": {
+      "id": "structure.sequence",
+      "version": "1.0.0",
+      "inputs": {
+        "stages": {
+          "source": "/data/stages"
+        }
+      },
+      "seed": 42,
+      "max_steps": 128
+    },
+    "layout": {
+      "kind": "stack",
+      "view_order": [
+        "mechanism",
+        "state"
+      ]
+    },
+    "views": [
+      {
+        "id": "mechanism",
+        "title": "调用栈：左为栈底，右为栈顶",
+        "renderer": "svg",
+        "elements": [
+          {
+            "id": "mechanism_object",
+            "kind": "array",
+            "label": "调用栈：左为栈底，右为栈顶",
+            "inputs": {
+              "items": {
+                "source": "/state/items"
+              },
+              "active_indices": {
+                "source": "/state/active_indices"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "state",
+        "title": "状态对照",
+        "renderer": "svg",
+        "elements": [
+          {
+            "id": "table",
+            "kind": "table",
+            "label": "当前状态",
+            "inputs": {
+              "columns": {
+                "source": "/data/columns"
+              },
+              "rows": {
+                "source": "/state/rows"
+              }
+            }
+          },
+          {
+            "id": "reason",
+            "kind": "text",
+            "label": "变化原因",
+            "inputs": {
+              "value": {
+                "source": "/state/narration"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "playback": {
+      "initial_step": 0,
+      "autoplay": false,
+      "transition": {
+        "kind": "cut",
+        "duration_ms": 0,
+        "easing": "linear"
+      },
+      "reduced_motion": "cut"
+    },
+    "interactions": [
+      {
+        "id": "steps",
+        "kind": "stepper",
+        "target": "trace",
+        "allow_back": true
+      }
+    ],
+    "annotations": [],
+    "validation": {
+      "requested_checks": [
+        {
+          "id": "structure.sequence_bindings",
+          "version": "1.0.0"
+        }
+      ]
+    },
+    "accessibility": {
+      "summary": "把函数调用、暂停现场和返回值逐层对应起来。",
+      "keyboard": true,
+      "text_alternative": true
+    },
+    "fallback": {
+      "kind": "text",
+      "text": "显示当前参数下的完整状态与步骤说明。"
+    }
+  },
+  "retrieval": {
+    "questions": [
+      "递归为什么要有终止条件",
+      "函数返回后从哪里继续"
+    ],
+    "prerequisites": [
+      "函数调用",
+      "乘法"
+    ],
+    "use_when": "把函数调用、暂停现场和返回值逐层对应起来。",
+    "not_for": "固定 factorial(3) 示例；不表示所有语言都有尾调用优化。",
+    "learning_path": {
+      "graph_id": "learnflow:computing",
+      "revision": "2026-09-06.1",
+      "nodes": [
+        {
+          "id": "programming-foundations",
+          "title": "程序设计基础"
+        },
+        {
+          "id": "programming-languages",
+          "title": "程序设计语言原理"
+        }
+      ]
+    }
+  }
+}

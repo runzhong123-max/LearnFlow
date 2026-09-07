@@ -178,5 +178,31 @@
       "kind": "static_sequence",
       "text": "队列：[a] → [b,c] → [c,d] → [d] → []。d 在展开 b 时已发现，不应再次入队。"
     }
+  },
+  "retrieval": {
+    "questions": [
+      "BFS：队列与逐层发现如何工作",
+      "预测 BFS 每步的队列变化并解释节点为何只发现一次。"
+    ],
+    "prerequisites": [
+      "数据结构",
+      "算法设计与分析"
+    ],
+    "use_when": "预测 BFS 每步的队列变化并解释节点为何只发现一次。",
+    "not_for": "有限无向无权图。；邻居按 ID 字典序；入队即标记 discovered。；每步展开一个节点，含其所有未发现邻居。",
+    "learning_path": {
+      "graph_id": "learnflow:computing",
+      "revision": "2026-09-06.1",
+      "nodes": [
+        {
+          "id": "data-structures",
+          "title": "数据结构"
+        },
+        {
+          "id": "algorithms",
+          "title": "算法设计与分析"
+        }
+      ]
+    }
   }
 }

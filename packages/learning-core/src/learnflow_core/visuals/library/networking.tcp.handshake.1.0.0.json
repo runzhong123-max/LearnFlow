@@ -339,5 +339,31 @@
       "kind": "text",
       "text": "显示当前参数下的完整状态与步骤说明。"
     }
+  },
+  "retrieval": {
+    "questions": [
+      "TCP 三次握手如何工作",
+      "把三条消息与双方连接状态对应起来。"
+    ],
+    "prerequisites": [
+      "计算机网络基础",
+      "计算机网络"
+    ],
+    "use_when": "把三条消息与双方连接状态对应起来。",
+    "not_for": "正常握手的教学顺序示意；尚未模拟超时、丢包或序列号运算。；第三阶段展示服务端收到 ACK 后的状态，不把发送与接收当成同一时刻。",
+    "learning_path": {
+      "graph_id": "learnflow:computing",
+      "revision": "2026-09-06.1",
+      "nodes": [
+        {
+          "id": "networking-foundations",
+          "title": "计算机网络基础"
+        },
+        {
+          "id": "computer-networks",
+          "title": "计算机网络"
+        }
+      ]
+    }
   }
 }

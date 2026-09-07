@@ -1,0 +1,346 @@
+{
+  "id": "database.transaction.dirty_read",
+  "version": "1.0.0",
+  "status": "production",
+  "title": "事务隔离：脏读如何发生",
+  "description": "对照未提交写入、读取和回滚，解释脏读的含义。",
+  "aliases": [
+    "脏读",
+    "事务隔离",
+    "dirty read",
+    "read committed"
+  ],
+  "tags": [
+    "数据库系统",
+    "脏读",
+    "事务隔离",
+    "dirty read",
+    "read committed"
+  ],
+  "patterns": [
+    "trace",
+    "linked_views"
+  ],
+  "kind": [
+    "diagram",
+    "animation"
+  ],
+  "spec": {
+    "spec_version": "0.2.0",
+    "id": "database_transaction_dirty_read",
+    "title": "事务隔离：脏读如何发生",
+    "domains": [
+      "computer_science"
+    ],
+    "teaching": {
+      "goal": "对照未提交写入、读取和回滚，解释脏读的含义。",
+      "assumptions": [
+        "人工维护的固定教学分镜；运行时只校验结构和绑定，不验证领域过程真值。",
+        "示意允许脏读的调度；不宣称具体数据库默认允许脏读，READ COMMITTED 实现可阻塞或读旧版本。"
+      ],
+      "misconceptions": [],
+      "checkpoints": []
+    },
+    "parameters": [],
+    "data": {
+      "columns": [
+        "对象 / 位置",
+        "状态 / 内容"
+      ],
+      "stages": [
+        {
+          "id": "stage_0",
+          "title": "已提交初值",
+          "narration": "数据库中余额的已提交值为 100。",
+          "content": {
+            "rows": [
+              [
+                "已提交余额",
+                "100"
+              ],
+              [
+                "事务 A",
+                "尚未写入"
+              ],
+              [
+                "事务 B",
+                "尚未读取"
+              ]
+            ],
+            "events": []
+          }
+        },
+        {
+          "id": "stage_1",
+          "title": "A 写入未提交值",
+          "narration": "A 把余额临时写为 0，但尚未提交。",
+          "content": {
+            "rows": [
+              [
+                "已提交值",
+                "100"
+              ],
+              [
+                "A 未提交值",
+                "0"
+              ],
+              [
+                "A 状态",
+                "进行中"
+              ]
+            ],
+            "events": [
+              {
+                "id": "write",
+                "lane": "事务 A",
+                "at": 1,
+                "label": "写入 0，未提交"
+              }
+            ]
+          }
+        },
+        {
+          "id": "stage_2",
+          "title": "B 读到 0",
+          "narration": "在允许脏读的隔离下，B 看到了 A 尚未提交的值。",
+          "content": {
+            "rows": [
+              [
+                "B 读取结果",
+                "0"
+              ],
+              [
+                "来源",
+                "A 的未提交写入"
+              ]
+            ],
+            "events": [
+              {
+                "id": "write",
+                "lane": "事务 A",
+                "at": 1,
+                "label": "写入 0，未提交"
+              },
+              {
+                "id": "read",
+                "lane": "事务 B",
+                "at": 2,
+                "label": "读到 0"
+              }
+            ]
+          }
+        },
+        {
+          "id": "stage_3",
+          "title": "A 回滚",
+          "narration": "A 的写入撤销，B 的读取却已基于从未提交过的值。",
+          "content": {
+            "rows": [
+              [
+                "已提交余额",
+                "100"
+              ],
+              [
+                "B 先前读到",
+                "0"
+              ],
+              [
+                "现象",
+                "脏读"
+              ]
+            ],
+            "events": [
+              {
+                "id": "write",
+                "lane": "事务 A",
+                "at": 1,
+                "label": "写入 0，未提交"
+              },
+              {
+                "id": "read",
+                "lane": "事务 B",
+                "at": 2,
+                "label": "读到 0"
+              },
+              {
+                "id": "rollback",
+                "lane": "事务 A",
+                "at": 3,
+                "label": "回滚"
+              }
+            ]
+          }
+        },
+        {
+          "id": "stage_4",
+          "title": "隔离边界",
+          "narration": "READ COMMITTED 不允许读到该未提交值；等待还是读旧版本取决于实现。",
+          "content": {
+            "rows": [
+              [
+                "保证",
+                "不读取未提交写入"
+              ],
+              [
+                "未保证",
+                "同一事务中两次读取一定相同"
+              ]
+            ],
+            "events": [
+              {
+                "id": "write",
+                "lane": "事务 A",
+                "at": 1,
+                "label": "写入 0，未提交"
+              },
+              {
+                "id": "read",
+                "lane": "事务 B",
+                "at": 2,
+                "label": "读到 0"
+              },
+              {
+                "id": "rollback",
+                "lane": "事务 A",
+                "at": 3,
+                "label": "回滚"
+              }
+            ]
+          }
+        }
+      ],
+      "lanes": [
+        "事务 A",
+        "事务 B"
+      ]
+    },
+    "model": {
+      "id": "structure.sequence",
+      "version": "1.0.0",
+      "inputs": {
+        "stages": {
+          "source": "/data/stages"
+        }
+      },
+      "seed": 42,
+      "max_steps": 128
+    },
+    "layout": {
+      "kind": "stack",
+      "view_order": [
+        "timing",
+        "state"
+      ]
+    },
+    "views": [
+      {
+        "id": "timing",
+        "title": "并发执行顺序",
+        "renderer": "svg",
+        "elements": [
+          {
+            "id": "events",
+            "kind": "timeline",
+            "label": "读写与回滚",
+            "inputs": {
+              "lanes": {
+                "source": "/data/lanes"
+              },
+              "events": {
+                "source": "/state/events"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "state",
+        "title": "状态对照",
+        "renderer": "svg",
+        "elements": [
+          {
+            "id": "table",
+            "kind": "table",
+            "label": "当前状态",
+            "inputs": {
+              "columns": {
+                "source": "/data/columns"
+              },
+              "rows": {
+                "source": "/state/rows"
+              }
+            }
+          },
+          {
+            "id": "reason",
+            "kind": "text",
+            "label": "变化原因",
+            "inputs": {
+              "value": {
+                "source": "/state/narration"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "playback": {
+      "initial_step": 0,
+      "autoplay": false,
+      "transition": {
+        "kind": "cut",
+        "duration_ms": 0,
+        "easing": "linear"
+      },
+      "reduced_motion": "cut"
+    },
+    "interactions": [
+      {
+        "id": "steps",
+        "kind": "stepper",
+        "target": "trace",
+        "allow_back": true
+      }
+    ],
+    "annotations": [],
+    "validation": {
+      "requested_checks": [
+        {
+          "id": "structure.sequence_bindings",
+          "version": "1.0.0"
+        }
+      ]
+    },
+    "accessibility": {
+      "summary": "对照未提交写入、读取和回滚，解释脏读的含义。",
+      "keyboard": true,
+      "text_alternative": true
+    },
+    "fallback": {
+      "kind": "text",
+      "text": "显示当前参数下的完整状态与步骤说明。"
+    }
+  },
+  "retrieval": {
+    "questions": [
+      "脏读和不可重复读有什么区别",
+      "为什么不能读取未提交数据"
+    ],
+    "prerequisites": [
+      "事务",
+      "提交与回滚"
+    ],
+    "use_when": "对照未提交写入、读取和回滚，解释脏读的含义。",
+    "not_for": "示意允许脏读的调度；不宣称具体数据库默认允许脏读，READ COMMITTED 实现可阻塞或读旧版本。",
+    "learning_path": {
+      "graph_id": "learnflow:computing",
+      "revision": "2026-09-06.1",
+      "nodes": [
+        {
+          "id": "database-systems",
+          "title": "数据库系统"
+        }
+      ]
+    }
+  }
+}

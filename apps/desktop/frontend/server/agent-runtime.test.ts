@@ -1730,3 +1730,35 @@ test('project Tutor roadmap revision preserves locked checkpoints and emits a re
   assert.equal(execution.run.projectRoadmapProposal?.expected_revision, 3)
   assert.equal(execution.run.projectRoadmapProposal?.checkpoints[0].id, 31)
 })
+
+test('visual follow-up resolves its topic before the combined plan and brief call', async () => {
+  const prompts: string[] = []
+  const toolQueries: string[] = []
+  await runTutorAgentTurn({
+    baseUrl: 'https://example.com/v1/chat/completions', model: 'test-model', mode: 'simple_explain', toolChoice: 'auto',
+    messages: [{ role: 'user', content: '用动画演示联邦学习聚合过程' },
+      { role: 'assistant', content: '视觉生成失败。' }, { role: 'user', content: '改成图片吧' }],
+    generate: async () => 'unused',
+    invokeProvider: async request => {
+      const body = request.body as any
+      assert.match(body.messages[0].content, /视觉规划器/)
+      assert.equal(body.messages.length, 3)
+      assert.match(body.messages[1].content, /current_conversation/)
+      prompts.push(body.messages[body.messages.length - 1].content)
+      return { choices: [{ message: { content: body.response_format ? visualTeachingPayload('diagram') : visualTeachingExplanation } }] }
+    },
+    executeTool: async (name, args, _options, meta) => {
+      toolQueries.push(String(args.query))
+      assert.equal(name, 'generate_learning_diagram')
+      return { run: { id: String(meta?.callId || name), kind: 'image', toolName: name, status: 'failed', title: name, detail: 'fixture failure', durationMs: 1 },
+        observation: { error: 'fixture failure' } } as any
+    },
+  })
+  assert.equal(prompts.length, 1)
+  for (const prompt of prompts) {
+    assert.match(prompt, /结构化主题锚点/)
+    assert.match(prompt, /联邦学习聚合过程/)
+  }
+  assert.equal(toolQueries.length, 1)
+  assert.match(toolQueries[0], /联邦学习聚合过程/)
+})

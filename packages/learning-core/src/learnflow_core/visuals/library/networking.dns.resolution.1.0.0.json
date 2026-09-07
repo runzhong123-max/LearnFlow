@@ -1,0 +1,409 @@
+{
+  "id": "networking.dns.resolution",
+  "version": "1.0.0",
+  "status": "production",
+  "title": "DNS 解析：缓存未命中的查询路径",
+  "description": "区分客户端、递归解析器和权威服务器的责任。",
+  "aliases": [
+    "DNS",
+    "域名解析",
+    "递归解析器",
+    "recursive resolver"
+  ],
+  "tags": [
+    "计算机网络基础",
+    "计算机网络",
+    "Web 与互联网基础",
+    "DNS",
+    "域名解析",
+    "递归解析器",
+    "recursive resolver"
+  ],
+  "patterns": [
+    "trace",
+    "linked_views"
+  ],
+  "kind": [
+    "diagram",
+    "animation"
+  ],
+  "spec": {
+    "spec_version": "0.2.0",
+    "id": "networking_dns_resolution",
+    "title": "DNS 解析：缓存未命中的查询路径",
+    "domains": [
+      "computer_science"
+    ],
+    "teaching": {
+      "goal": "区分客户端、递归解析器和权威服务器的责任。",
+      "assumptions": [
+        "人工维护的固定教学分镜；运行时只校验结构和绑定，不验证领域过程真值。",
+        "简化 example.com A 记录查询，无缓存、别名、DNSSEC 或传输重试；根服务器不会直接返回所有网站 IP。"
+      ],
+      "misconceptions": [],
+      "checkpoints": []
+    },
+    "parameters": [],
+    "data": {
+      "columns": [
+        "对象 / 位置",
+        "状态 / 内容"
+      ],
+      "stages": [
+        {
+          "id": "stage_0",
+          "title": "客户端请求",
+          "narration": "客户端请递归解析器查询 example.com 的 A 记录。",
+          "content": {
+            "rows": [
+              [
+                "请求方",
+                "客户端"
+              ],
+              [
+                "接收方",
+                "递归解析器"
+              ],
+              [
+                "问题",
+                "example.com A"
+              ]
+            ],
+            "graph": {
+              "nodes": [
+                "client",
+                "resolver",
+                "root",
+                "tld",
+                "auth"
+              ],
+              "labels": {
+                "client": "客户端",
+                "resolver": "递归解析器",
+                "root": "根服务器",
+                "tld": "com 服务器",
+                "auth": "权威服务器"
+              },
+              "edges": [
+                [
+                  "client",
+                  "resolver"
+                ]
+              ],
+              "directed": true
+            }
+          }
+        },
+        {
+          "id": "stage_1",
+          "title": "查询根",
+          "narration": "递归解析器无缓存，根返回 com 的下一步服务器信息。",
+          "content": {
+            "rows": [
+              [
+                "查询方",
+                "递归解析器"
+              ],
+              [
+                "接收方",
+                "根服务器"
+              ],
+              [
+                "回答",
+                "com 的转介"
+              ]
+            ],
+            "graph": {
+              "nodes": [
+                "client",
+                "resolver",
+                "root",
+                "tld",
+                "auth"
+              ],
+              "labels": {
+                "client": "客户端",
+                "resolver": "递归解析器",
+                "root": "根服务器",
+                "tld": "com 服务器",
+                "auth": "权威服务器"
+              },
+              "edges": [
+                [
+                  "resolver",
+                  "root"
+                ]
+              ],
+              "directed": true
+            }
+          }
+        },
+        {
+          "id": "stage_2",
+          "title": "查询顶级域",
+          "narration": "com 服务器返回 example.com 权威服务器的转介。",
+          "content": {
+            "rows": [
+              [
+                "查询方",
+                "递归解析器"
+              ],
+              [
+                "接收方",
+                "com 服务器"
+              ],
+              [
+                "回答",
+                "example.com 权威服务器信息"
+              ]
+            ],
+            "graph": {
+              "nodes": [
+                "client",
+                "resolver",
+                "root",
+                "tld",
+                "auth"
+              ],
+              "labels": {
+                "client": "客户端",
+                "resolver": "递归解析器",
+                "root": "根服务器",
+                "tld": "com 服务器",
+                "auth": "权威服务器"
+              },
+              "edges": [
+                [
+                  "resolver",
+                  "tld"
+                ]
+              ],
+              "directed": true
+            }
+          }
+        },
+        {
+          "id": "stage_3",
+          "title": "查询权威",
+          "narration": "权威服务器回答目标域名的记录。",
+          "content": {
+            "rows": [
+              [
+                "查询方",
+                "递归解析器"
+              ],
+              [
+                "接收方",
+                "权威服务器"
+              ],
+              [
+                "回答",
+                "A 记录和 TTL"
+              ]
+            ],
+            "graph": {
+              "nodes": [
+                "client",
+                "resolver",
+                "root",
+                "tld",
+                "auth"
+              ],
+              "labels": {
+                "client": "客户端",
+                "resolver": "递归解析器",
+                "root": "根服务器",
+                "tld": "com 服务器",
+                "auth": "权威服务器"
+              },
+              "edges": [
+                [
+                  "resolver",
+                  "auth"
+                ]
+              ],
+              "directed": true
+            }
+          }
+        },
+        {
+          "id": "stage_4",
+          "title": "返回与缓存",
+          "narration": "递归解析器把结果返回客户端，并按 TTL 约束使用缓存。",
+          "content": {
+            "rows": [
+              [
+                "客户端获得",
+                "目标记录"
+              ],
+              [
+                "缓存有效期",
+                "受 TTL 约束"
+              ],
+              [
+                "责任区别",
+                "客户端委托递归；解析器逐级迭代"
+              ]
+            ],
+            "graph": {
+              "nodes": [
+                "client",
+                "resolver",
+                "root",
+                "tld",
+                "auth"
+              ],
+              "labels": {
+                "client": "客户端",
+                "resolver": "递归解析器",
+                "root": "根服务器",
+                "tld": "com 服务器",
+                "auth": "权威服务器"
+              },
+              "edges": [
+                [
+                  "resolver",
+                  "client"
+                ]
+              ],
+              "directed": true
+            }
+          }
+        }
+      ]
+    },
+    "model": {
+      "id": "structure.sequence",
+      "version": "1.0.0",
+      "inputs": {
+        "stages": {
+          "source": "/data/stages"
+        }
+      },
+      "seed": 42,
+      "max_steps": 128
+    },
+    "layout": {
+      "kind": "stack",
+      "view_order": [
+        "mechanism",
+        "state"
+      ]
+    },
+    "views": [
+      {
+        "id": "mechanism",
+        "title": "当前查询或结果返回方向",
+        "renderer": "svg",
+        "elements": [
+          {
+            "id": "mechanism_object",
+            "kind": "graph",
+            "label": "当前查询或结果返回方向",
+            "inputs": {
+              "graph": {
+                "source": "/state/graph"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "state",
+        "title": "状态对照",
+        "renderer": "svg",
+        "elements": [
+          {
+            "id": "table",
+            "kind": "table",
+            "label": "当前状态",
+            "inputs": {
+              "columns": {
+                "source": "/data/columns"
+              },
+              "rows": {
+                "source": "/state/rows"
+              }
+            }
+          },
+          {
+            "id": "reason",
+            "kind": "text",
+            "label": "变化原因",
+            "inputs": {
+              "value": {
+                "source": "/state/narration"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "playback": {
+      "initial_step": 0,
+      "autoplay": false,
+      "transition": {
+        "kind": "cut",
+        "duration_ms": 0,
+        "easing": "linear"
+      },
+      "reduced_motion": "cut"
+    },
+    "interactions": [
+      {
+        "id": "steps",
+        "kind": "stepper",
+        "target": "trace",
+        "allow_back": true
+      }
+    ],
+    "annotations": [],
+    "validation": {
+      "requested_checks": [
+        {
+          "id": "structure.sequence_bindings",
+          "version": "1.0.0"
+        }
+      ]
+    },
+    "accessibility": {
+      "summary": "区分客户端、递归解析器和权威服务器的责任。",
+      "keyboard": true,
+      "text_alternative": true
+    },
+    "fallback": {
+      "kind": "text",
+      "text": "显示当前参数下的完整状态与步骤说明。"
+    }
+  },
+  "retrieval": {
+    "questions": [
+      "输入域名后怎样找到服务器",
+      "递归和迭代 DNS 查询的区别"
+    ],
+    "prerequisites": [
+      "域名",
+      "IP 地址"
+    ],
+    "use_when": "区分客户端、递归解析器和权威服务器的责任。",
+    "not_for": "简化 example.com A 记录查询，无缓存、别名、DNSSEC 或传输重试；根服务器不会直接返回所有网站 IP。",
+    "learning_path": {
+      "graph_id": "learnflow:computing",
+      "revision": "2026-09-06.1",
+      "nodes": [
+        {
+          "id": "networking-foundations",
+          "title": "计算机网络基础"
+        },
+        {
+          "id": "computer-networks",
+          "title": "计算机网络"
+        },
+        {
+          "id": "web-foundations",
+          "title": "Web 与互联网基础"
+        }
+      ]
+    }
+  }
+}

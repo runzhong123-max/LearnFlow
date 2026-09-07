@@ -1162,6 +1162,9 @@ test('visual follow-up resolves its topic before the combined plan and brief cal
     generate: async () => 'unused',
     invokeProvider: async request => {
       const body = request.body as any
+      assert.match(body.messages[0].content, /视觉规划器/)
+      assert.equal(body.messages.length, 3)
+      assert.match(body.messages[1].content, /current_conversation/)
       prompts.push(body.messages[body.messages.length - 1].content)
       return { choices: [{ message: { content: body.response_format ? visualTeachingPayload('diagram') : visualTeachingExplanation } }] }
     },

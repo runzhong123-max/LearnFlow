@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import {readFileSync,existsSync} from 'node:fs'
+import {readFileSync,existsSync,readdirSync} from 'node:fs'
 import {dirname,join} from 'node:path'
 import {fileURLToPath} from 'node:url'
 import {spawnSync} from 'node:child_process'
@@ -38,4 +38,17 @@ test('structural diagrams accept one state and escape markup; crowded text wraps
  const r=renderView(b.frames[0].views[0]);assert.match(r.svg,/&lt;script&gt;/);assert.doesNotMatch(r.svg,/<script>/)
  b.frames[0].views[0].elements[0].values.value='长'.repeat(100)
  const wrapped=renderView(b.frames[0].views[0]);assert.deepEqual(wrapped.diagnostics,[]);assert.ok(wrapped.plan.repairs.some(repair=>repair.code==='WRAP_TEXT'))
+})
+
+test('curriculum maintained recipes render every frame at desktop and mobile widths', () => {
+ const folder=join(root,'packages/learning-core/src/learnflow_core/visuals/library')
+ for(const file of readdirSync(folder).filter(f=>f.endsWith('.json'))) {
+  const entry=JSON.parse(readFileSync(join(folder,file),'utf8'))
+  const bundle=compile(entry.spec)
+  for(const frame of bundle.frames) for(const view of frame.views) for(const width of [720,300]) {
+   const rendered=renderView(view,width)
+   assert.deepEqual(rendered.diagnostics,[],file)
+   assert.ok(!rendered.svg.includes('NaN'),file)
+  }
+ }
 })
