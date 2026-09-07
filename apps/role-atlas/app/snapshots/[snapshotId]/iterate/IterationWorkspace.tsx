@@ -27,6 +27,7 @@ import {
   Wrench,
 } from "lucide-react";
 import Link from "next/link";
+import SourceMaterials from "@/app/components/SourceMaterials";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ColdStartBuildResult, LearningPathGraphInput, SourceInput } from "@/lib/build/types";
 import {
@@ -206,9 +207,8 @@ export default function IterationWorkspace({ snapshotId, projectId, versionId, c
   const [targetIds, setTargetIds] = useState(initialTargetIds);
   const [targetAsOf, setTargetAsOf] = useState("");
   const [webResearch, setWebResearch] = useState(true);
-  const [sourceKind, setSourceKind] = useState<SourceInput["kind"]>("private_document");
-  const [sourceTitle, setSourceTitle] = useState("");
-  const [sourceContent, setSourceContent] = useState("");
+  const [materials, setMaterials] = useState<SourceInput[]>([]);
+  const [materialsBusy, setMaterialsBusy] = useState(false);
   const [running, setRunning] = useState(false);
   const [events, setEvents] = useState<IterationEvent[]>([]);
   const [result, setResult] = useState<SnapshotIterationResult | null>(null);
@@ -272,9 +272,9 @@ export default function IterationWorkspace({ snapshotId, projectId, versionId, c
   }
 
   async function start() {
-    if (running || !workspace) return;
+    if (running || materialsBusy || !workspace) return;
     const parsedTargetIds = targetIds.split(/[\s,，]+/u).map((value) => value.trim()).filter(Boolean);
-    setSubmittedBrief({ profile: initiativeProfile, mode, objective: prompt.trim() || (initiativeProfile === "autonomous" ? "自动发现当前快照中信息价值最高的问题并研究" : "围绕选定范围深化岗位快照"), targetCount: parsedTargetIds.length, webResearch, hasSupplement: Boolean(sourceContent.trim()) });
+    setSubmittedBrief({ profile: initiativeProfile, mode, objective: prompt.trim() || (initiativeProfile === "autonomous" ? "自动发现当前快照中信息价值最高的问题并研究" : "围绕选定范围深化岗位快照"), targetCount: parsedTargetIds.length, webResearch, hasSupplement: materials.length > 0 });
     setRunning(true);
     setError("");
     setEvents([]);
@@ -284,7 +284,7 @@ export default function IterationWorkspace({ snapshotId, projectId, versionId, c
     abortRef.current = controller;
     const providerConfig = readSession<ProviderConfig>(PROVIDER_SESSION_KEY) || undefined;
     const searchConfig = webResearch ? readSession<SearchProviderConfig>(SEARCH_PROVIDER_SESSION_KEY) || undefined : undefined;
-    const supplementalSources: SourceInput[] = sourceContent.trim() ? [{ title: sourceTitle.trim() || "本轮附加资料", content: sourceContent.trim(), kind: sourceKind, observedAt: new Date().toISOString() }] : [];
+    const supplementalSources = materials;
     try {
       const learningPathGraph = await fetch("/data/learnflow-learning-path.json", { signal: controller.signal })
         .then(async (pathResponse) => pathResponse.ok ? await pathResponse.json() as LearningPathGraphInput : undefined)
@@ -343,10 +343,10 @@ export default function IterationWorkspace({ snapshotId, projectId, versionId, c
           <label><span>限定节点 ID（可选）</span><textarea value={targetIds} disabled={running} onChange={(event) => setTargetIds(event.target.value)} placeholder="拖入或粘贴节点 ID，逗号分隔" /></label>
           <label><span>更新到目标时点（可选）</span><input type="date" value={targetAsOf} disabled={running} onChange={(event) => setTargetAsOf(event.target.value)} /></label>
           <label className="cold-web-toggle"><span><Globe2 size={13} /><b>自主定向研究</b><small>按工作项并行检索、抽取与去重</small></span><input type="checkbox" checked={webResearch} disabled={running} onChange={(event) => setWebResearch(event.target.checked)} /></label>
-          <details className="iteration-source-input"><summary>添加资料或工作区观察（可选）</summary><label><span>资料类型</span><select value={sourceKind} disabled={running} onChange={(event) => setSourceKind(event.target.value as SourceInput["kind"])}><option value="private_document">私域岗位资料</option><option value="workspace_observation">真实工作区观察</option><option value="public_document">公开资料</option></select></label><label><span>标题</span><input value={sourceTitle} disabled={running} onChange={(event) => setSourceTitle(event.target.value)} /></label><label><span>内容</span><textarea value={sourceContent} disabled={running} onChange={(event) => setSourceContent(event.target.value)} placeholder="粘贴脱敏资料、JD、流程或真实工作事件…" /></label></details>
+          <details className="iteration-source-input"><summary>添加资料（附件、URL、文本）</summary><SourceMaterials value={materials} onChange={setMaterials} disabled={running} onBusyChange={setMaterialsBusy} /></details>
           <div className="risk-baseline"><span><RefreshCw size={13} /><b>当前不可变快照</b></span><small>{workspace?.version ? `${workspace.version.version} · ${workspace.version.snapshotId}` : "正在读取快照…"}</small></div>
           {error ? <div className="cold-error"><AlertTriangle size={13} />{error}{embedded && onSettingsRequest ? <button type="button" onClick={onSettingsRequest}>设置</button> : <Link href="/settings">设置</Link>}</div> : null}
-          {running ? <button className="cold-start stop" onClick={() => abortRef.current?.abort()}><Square size={12} />停止并保留运行记录</button> : <button className="cold-start" disabled={!workspace || (initiativeProfile === "user_directed" && !prompt.trim() && !targetIds.trim())} onClick={() => void start()}><Play size={13} />开始岗位快照迭代</button>}
+          {running ? <button className="cold-start stop" onClick={() => abortRef.current?.abort()}><Square size={12} />停止并保留运行记录</button> : <button className="cold-start" disabled={materialsBusy || !workspace || (initiativeProfile === "user_directed" && !prompt.trim() && !targetIds.trim())} onClick={() => void start()}><Play size={13} />开始岗位快照迭代</button>}
         </section>
       </aside>
 

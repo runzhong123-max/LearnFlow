@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import SourceMaterials from "@/app/components/SourceMaterials";
+import type { SourceInput } from "@/lib/build/types";
 import ResearchAudit from "@/app/components/ResearchAudit";
 import type { BuildEvent } from "@/lib/build/events";
 import type { AuditIssue, BuildWorkItemSummary, ColdStartBuildResult, LearningPathGraphInput, ProcessNode, ProcessScenario, SemanticEdge, SemanticNode, SnapshotSection } from "@/lib/build/types";
@@ -181,9 +183,8 @@ export default function ColdStartWorkspace({ initialQuery, embedded = false, onC
   const [roleTitle, setRoleTitle] = useState(initialQuery.role || "");
   const [roleDescription, setRoleDescription] = useState(initialQuery.description || "");
   const [market, setMarket] = useState(initialQuery.market || "中国大陆");
-  const [sourceTitle, setSourceTitle] = useState("");
-  const [sourceKind, setSourceKind] = useState<"public_document" | "private_document" | "workspace_observation">("public_document");
-  const [sourceContent, setSourceContent] = useState("");
+  const [materials, setMaterials] = useState<SourceInput[]>([]);
+  const [materialsBusy, setMaterialsBusy] = useState(false);
   const [webResearch, setWebResearch] = useState(true);
   const [view, setView] = useState<View>("semantic");
   const [running, setRunning] = useState(false);
@@ -372,7 +373,7 @@ export default function ColdStartWorkspace({ initialQuery, embedded = false, onC
   }
 
   async function startBuild(options?: { reuseProjectSources?: boolean }) {
-    if (running || roleTitle.trim().length < 2) return;
+    if (running || materialsBusy || roleTitle.trim().length < 2) return;
     const rawProvider = sessionStorage.getItem(PROVIDER_SESSION_KEY);
     let providerConfig: ProviderConfig | undefined;
     if (rawProvider) {
@@ -452,7 +453,7 @@ export default function ColdStartWorkspace({ initialQuery, embedded = false, onC
             market: market.trim() || "中国大陆",
             audience: ["高职学生", "教师"],
             snapshotAsOf: new Date().toISOString().slice(0, 10),
-            sources: sourceContent.trim() ? [{ title: sourceTitle.trim() || "用户提供资料", kind: sourceKind, content: sourceContent.trim() }] : [],
+            sources: materials,
             learningPathGraph,
           },
           conversationId: activeConversationId,
@@ -545,11 +546,9 @@ export default function ColdStartWorkspace({ initialQuery, embedded = false, onC
             <span className={!webResearch || configuredRuntime.searchReady ? "ready" : "missing"}><b>联网搜索</b><small>{webResearch ? configuredRuntime.search : "本轮关闭"}</small></span>
             {(!configuredRuntime.modelReady || (webResearch && !configuredRuntime.searchReady)) ? embedded && onSettingsRequest ? <button type="button" onClick={onSettingsRequest}>去配置</button> : <Link href="/settings">去配置</Link> : null}
           </div>
-          <label><span>资料类型</span><select value={sourceKind} disabled={running} onChange={(event) => setSourceKind(event.target.value as typeof sourceKind)}><option value="public_document">公开资料 / JD / 标准</option><option value="private_document">私域岗位资料</option><option value="workspace_observation">真实工作事件观察</option></select></label>
-          <label><span>资料标题</span><input value={sourceTitle} disabled={running} onChange={(event) => setSourceTitle(event.target.value)} placeholder="例如：企业岗位说明" /></label>
-          <label><span>资料内容</span><textarea className="source-input" value={sourceContent} disabled={running} onChange={(event) => setSourceContent(event.target.value)} placeholder="粘贴岗位描述、流程材料或脱敏工作记录…" /></label>
+          <SourceMaterials value={materials} onChange={setMaterials} disabled={running} onBusyChange={setMaterialsBusy} />
           {error ? <div className="cold-error"><AlertTriangle size={13} />{error}{/模型/.test(error) ? embedded && onSettingsRequest ? <button type="button" onClick={onSettingsRequest}>去设置</button> : <Link href="/settings">去设置</Link> : null}</div> : null}
-          {running ? <button className="cold-start stop" onClick={() => abortRef.current?.abort()}><Square size={12} /> 停止本轮构建</button> : <button className="cold-start" disabled={roleTitle.trim().length < 2} onClick={() => void startBuild()}><Play size={13} /> 生成岗位内核并进入工作台</button>}
+          {running ? <button className="cold-start stop" onClick={() => abortRef.current?.abort()}><Square size={12} /> 停止本轮构建</button> : <button className="cold-start" disabled={materialsBusy || roleTitle.trim().length < 2} onClick={() => void startBuild()}><Play size={13} /> 生成岗位内核并进入工作台</button>}
           {result && !running ? <button className="cold-start" onClick={() => void startBuild({ reuseProjectSources: true })}><Layers3 size={13} /> 复用已索引来源重跑抽取</button> : null}
           {result && projectId ? <Link className="cold-open-project" href={skillIntent === "snapshot-iteration" ? `/snapshots/${encodeURIComponent(result.snapshot.id)}/iterate?profile=co_guided&project=${encodeURIComponent(projectId)}&conversation=${encodeURIComponent(conversationId)}` : `/projects/${projectId}?conversation=${conversationId}`}>{skillIntent === "snapshot-iteration" ? "进入岗位快照迭代" : "打开项目工作台"} <ArrowLeft size={12} /></Link> : null}
         </section>

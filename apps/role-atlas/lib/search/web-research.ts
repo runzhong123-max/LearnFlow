@@ -313,7 +313,7 @@ async function searchWithRetry(input: {
   signal?: AbortSignal;
   onProgress?: ResearchProgress;
 }) {
-  const search = input.config.provider === "exa" ? searchExa : input.config.provider === "tavily" ? searchTavily : searchBocha;
+  const search = input.config.provider === "glm" ? searchGlm : input.config.provider === "exa" ? searchExa : input.config.provider === "tavily" ? searchTavily : searchBocha;
   const maxAttempts = 2;
   let lastError: unknown;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -467,6 +467,35 @@ async function extractTavily(
     }
   }
   throw lastError;
+}
+
+export async function searchGlm(config: SearchProviderConfig, query: PlannedQuery, _request: ColdStartRequest, signal?: AbortSignal): Promise<ProviderSearchResponse> {
+  const payload = await providerRequest("https://open.bigmodel.cn/api/paas/v4/web_search", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${config.apiKey}` },
+    body: JSON.stringify({
+      search_query: [...query.query.trim()].slice(0, 70).join(""),
+      search_engine: config.engine || "search_pro",
+      search_intent: false,
+      ...(config.engine === "search_pro_quark" ? {} : { count: 10 }),
+      search_recency_filter: "noLimit",
+      request_id: crypto.randomUUID(),
+    }),
+  }, signal);
+  if (payload.error || !Array.isArray(payload.search_result)) throw new Error("GLM_SEARCH_INVALID_RESPONSE");
+  return {
+    requestId: typeof payload.request_id === "string" ? payload.request_id : typeof payload.id === "string" ? payload.id : undefined,
+    results: (payload.search_result as Array<Record<string, unknown>>).flatMap((item) => {
+      if (!item || typeof item !== "object" || typeof item.link !== "string") return [];
+      const url = canonicalizeUrl(item.link);
+      if (!url || !isPublicUrl(url)) return [];
+      const content = typeof item.content === "string" ? cleanText(item.content) : "";
+      return [{ title: typeof item.title === "string" ? item.title : url, url, content, snippet: content,
+        publishedAt: typeof item.publish_date === "string" ? item.publish_date : undefined,
+        publisher: typeof item.media === "string" ? item.media : undefined,
+        extractionMethod: "search_content" as const }];
+    }),
+  };
 }
 
 async function searchBocha(config: SearchProviderConfig, query: PlannedQuery, _request: ColdStartRequest, signal?: AbortSignal): Promise<ProviderSearchResponse> {
@@ -857,7 +886,7 @@ export async function testSearchProvider(config: SearchProviderConfig, signal?: 
     sources: [],
   };
   const query = planRoleSearchQueries(request)[0];
-  const search = config.provider === "exa" ? searchExa : config.provider === "tavily" ? searchTavily : searchBocha;
+  const search = config.provider === "glm" ? searchGlm : config.provider === "exa" ? searchExa : config.provider === "tavily" ? searchTavily : searchBocha;
   const startedAt = Date.now();
   const response = await search(config, query, request, signal);
   return { resultCount: response.results.length, latencyMs: Date.now() - startedAt };

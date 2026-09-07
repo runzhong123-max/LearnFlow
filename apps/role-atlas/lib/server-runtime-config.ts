@@ -20,7 +20,7 @@ function envProvider(bindings?: ServerRuntimeBindings): ProviderId {
 
 function envSearchProvider(bindings?: ServerRuntimeBindings): SearchProviderId {
   const requested = runtimeValue("ROLE_ATLAS_SEARCH_PROVIDER", bindings);
-  return searchProviderIds.includes(requested as SearchProviderId) ? requested as SearchProviderId : "tavily";
+  return searchProviderIds.includes(requested as SearchProviderId) ? requested as SearchProviderId : "glm";
 }
 
 function providerKey(provider: ProviderId, bindings?: ServerRuntimeBindings) {
@@ -28,6 +28,7 @@ function providerKey(provider: ProviderId, bindings?: ServerRuntimeBindings) {
 }
 
 function searchKey(provider: SearchProviderId, bindings?: ServerRuntimeBindings) {
+  if (provider === "glm") return runtimeValue("GLM_API_KEY", bindings) || runtimeValue("ZHIPU_API_KEY", bindings);
   if (provider === "tavily") return runtimeValue("TAVILY_API_KEY", bindings);
   if (provider === "exa") return runtimeValue("EXA_API_KEY", bindings);
   return runtimeValue("BOCHA_API_KEY", bindings);
@@ -64,5 +65,5 @@ export function resolveSearchProviderConfig(input?: unknown, bindings?: ServerRu
   const provider = envSearchProvider(bindings);
   const apiKey = searchKey(provider, bindings);
   if (!apiKey) throw new Error("SERVER_SEARCH_NOT_CONFIGURED");
-  return searchProviderConfigSchema.parse({ provider, apiKey });
+  return searchProviderConfigSchema.parse({ provider, apiKey, ...(provider === "glm" ? { engine: runtimeValue("ROLE_ATLAS_SEARCH_ENGINE", bindings) || "search_pro" } : {}) });
 }
