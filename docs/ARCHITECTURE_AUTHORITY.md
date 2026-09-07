@@ -679,3 +679,5 @@ Contract impact（`2026-09-07.6`）：阶段分工与帮助策略登记为 `proj
 `visual_content_library` 的共享实现扩展为内部方向/模块/章节/session 目录与版本化维护作品，见 [VISUAL_HUB.md](VISUAL_HUB.md)。新增只读 `/visuals/hub`，维护专用 `interactive_html` 只接收服务器目录中的摘要引用，通过隔离 iframe 展示；生成入口仍为 VisualSpec/SVGStory。两端共享同一实现，不改变五核与 EvidenceEvent 语义。
 
 Visual Hub 查询展示工作台：Web / 桌面均使用 `/visual-hub`，由 learning_design_agent 所有，复用 retrieve_learning_visual。认证后的 gallery / preview API 只读维护版本；浏览与调参不创建学习证据。registry 2026-09-07.8 登记两个宿主绑定，见 [Visual Hub](VISUAL_HUB.md)。
+
+Web 独立 Hub 地址为 `/visualize`，侧栏直接跳转，保留 `/visual-hub` 别名；经过现有 AuthGate，未开放匿名 API。桌面继续使用内嵌 `/visual-hub`。Web registry 2026-09-07.9 仅更新页面绑定，无事件或数据迁移。

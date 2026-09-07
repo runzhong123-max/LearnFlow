@@ -1163,3 +1163,5 @@ Tutor 将用户带入第一关。Lecture Agent 生成来源约束讲义；Concep
 教学设计责任接口通过 visual_content_library 检索 [Visual Hub](VISUAL_HUB.md)：方向引用模块，模块分章与 20–40 分钟 session。planned 选题不是作品；只有 ready 版本可直接复用。维护 HTML 在隔离宿主播放，不能由模型任意改写脚本，也不能把画面操作当作独立掌握。新生成与个性化作品保留既有生成路径，不与 Tutor 争夺对话控制。
 
 Visual Hub 查询展示工作台：Web / 桌面均使用 `/visual-hub`，由 learning_design_agent 所有，复用 retrieve_learning_visual。认证后的 gallery / preview API 只读维护版本；浏览与调参不创建学习证据。registry 2026-09-07.8 登记两个宿主绑定，见 [Visual Hub](VISUAL_HUB.md)。
+
+Web 独立 Hub 地址为 `/visualize`，侧栏直接跳转，保留 `/visual-hub` 别名；经过现有 AuthGate，未开放匿名 API。桌面继续使用内嵌 `/visual-hub`。Web registry 2026-09-07.9 仅更新页面绑定，无事件或数据迁移。

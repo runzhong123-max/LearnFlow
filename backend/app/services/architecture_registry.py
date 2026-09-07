@@ -43,7 +43,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-07.8"
+REGISTRY_VERSION = "2026-09-07.9"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Pure source-data validators/exporters, not Agent-callable tools or learner writers.
@@ -975,7 +975,7 @@ WORKBENCHES = {
                            "read_personal_concept_graph",
                            "record_concept_self_report", "manage_vnext_personal_path_node",
                            "draft_learning_task_candidate"), "vnext"),
-        WorkbenchContract("visual_hub", "Visual Teaching Gallery", "/visual-hub", "learning_design_agent", ("retrieve_learning_visual",), "vnext"),
+        WorkbenchContract("visual_hub", "Visual Teaching Gallery", "/visualize", "learning_design_agent", ("retrieve_learning_visual",), "vnext"),
         WorkbenchContract("vnext_learning_path", "LearnFlow Learning Path Graph", "/learning-path", "tutor_agent",
                           ("lookup_vnext_learning_path_node", "search_vnext_learning_path_graph", "propose_vnext_personal_path_node",
                            "read_vnext_learning_path_graph", "plan_vnext_learning_path",
@@ -1555,7 +1555,7 @@ _FRONTEND_COMPONENT_TARGETS = {
     "workbench:vnext_chat": ("frontend/src/main.tsx", "App", "/chat/"),
     "frontend:plugin.renderer": ("frontend/src/PluginToolResultView.tsx", "PluginToolResultView", "/chat/"),
     "frontend:plugin.picker": ("frontend/src/PluginCapabilityPicker.tsx", "PluginCapabilityPicker", "/chat/"),
-    "workbench:visual_hub": ("frontend/src/VisualHubPage.tsx", "VisualHubPage", "/visual-hub"),
+    "workbench:visual_hub": ("frontend/src/VisualHubPage.tsx", "VisualHubPage", "/visualize"),
     "workbench:vnext_learning_path": ("frontend/src/LearningPathPage.tsx", "LearningPathPage", "/learning-path"),
     "workbench:vnext_profile": ("frontend/src/LearnerProfilePage.tsx", "LearnerProfilePage", "/learner-profile"),
     "workbench:vnext_learning_files": ("frontend/src/LearningFilesPage.tsx", "LearningFilesPage", "/learning-files"),

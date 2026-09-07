@@ -46,3 +46,5 @@ Contract impact：新增内部只读 Hub 端点和维护专用 interactive_html 
 - 第二批源码位于 `hub/authoring/`，`python3 scripts/build_visual_hub_batch2.py` 重建资产与摘要；`node scripts/test_visual_hub_models.cjs` 核对数值。当前脚本用于本批未发布版本，发布后的修订必须使用新版本和文件，不能覆盖既有引用。
 
 Contract impact（本批）：新增 visual_hub 工作台及两个只读 API 绑定，两端 registry 升至 2026-09-07.8。沿用 retrieve_learning_visual 和 learning_design_agent；既有 API、事件、五核语义向后兼容。
+
+Web 独立 Hub 地址为 `/visualize`，侧栏直接跳转，保留 `/visual-hub` 别名；经过现有 AuthGate，未开放匿名 API。桌面继续使用内嵌 `/visual-hub`。Web registry 2026-09-07.9 仅更新页面绑定，无事件或数据迁移。

@@ -467,7 +467,7 @@ function learningFileTab(
 
 function tabFromCurrentPath(conversations: Conversation[]): WorkspaceTab | undefined {
   const path = window.location.pathname
-  if (path === '/visual-hub') return VISUAL_HUB_TAB
+  if (path === '/visual-hub' || path === '/visualize') return VISUAL_HUB_TAB
   if (path === '/settings') return SETTINGS_TAB
   if (path === '/projects') return PROJECTS_TAB
   if (path.startsWith('/projects/')) {
@@ -575,7 +575,7 @@ function restoreState(learnerId: number): PersistedState {
 }
 
 function pathForTab(tab: WorkspaceTab) {
-  if (tab.kind === 'visual-hub') return '/visual-hub'
+  if (tab.kind === 'visual-hub') return '/visualize'
   if (tab.kind === 'settings') return '/settings'
   if (tab.kind === 'projects') return '/projects'
   if (tab.kind === 'project') return `/projects/${tab.projectId}`
@@ -3735,7 +3735,7 @@ function App({ auth }: { auth: AuthGateSession }) {
             <button type="button" onClick={() => openTab(REVIEW_TAB)}><span>↺</span>复习与错题</button>
             <button type="button" onClick={() => openTab(TASKS_TAB)}><span>☷</span>学习任务</button>
             <button type="button" onClick={() => openTab(LEARNING_PATH_TAB)}><span>⌁</span>学习路径</button>
-            <button type="button" onClick={() => openTab(VISUAL_HUB_TAB)}><span>▷</span>图解与动画</button>
+            <button type="button" onClick={() => window.location.assign('/visualize')}><span>▷</span>图解与动画</button>
             <button type="button" onClick={() => window.location.assign('https://graphs.learnflow.club/hub')}><span>◇</span>岗位图谱</button>
           </nav>
           <div className="sidebar-scroll-area">
@@ -4257,6 +4257,6 @@ const root = rootScope.__learnflowRoot || createRoot(rootElement)
 rootScope.__learnflowRoot = root
 void initializeRuntimeClient().then(() => root.render(
   <AuthGate>
-    {auth => <App key={`learner:${auth.account.learner_id}`} auth={auth} />}
+    {auth => ['/visualize', '/visual-hub'].includes(window.location.pathname) ? <><nav style={{padding:'16px 26px'}}><a href="/">← 返回学习空间</a></nav><Suspense fallback={<p>正在载入图解库…</p>}><VisualHubPage/></Suspense></> : <App key={`learner:${auth.account.learner_id}`} auth={auth} />}
   </AuthGate>,
 ))
