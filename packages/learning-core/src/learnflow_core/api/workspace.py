@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timedelta
 import hashlib
 import hmac
@@ -23,6 +24,7 @@ from app.schemas.workspace import (
     WorkspaceFileResponse, WorkspaceFileWriteRequest, WorkspaceLinkRequest,
     WorkspaceLinkResponse, WorkspaceOperationListResponse, WorkspaceOperationRequest,
     WorkspaceOperationResponse, WorkspaceRevealRequest, WorkspaceTreeResponse,
+    WorkspaceRecommendationsRequest,
 )
 from app.services.auth import (
     CurrentLearner, get_current_learner, require_owned_checkpoint, require_owned_project,
@@ -222,6 +224,34 @@ async def workspace_tree(
         root_name=root.name,
         nodes=nodes,
     )
+
+
+@router.post(
+    "/projects/{project_id}/workspace/recommendations",
+    dependencies=[Depends(require_desktop_token)],
+)
+async def workspace_recommendations(
+    project_id: int, data: WorkspaceRecommendationsRequest,
+    current: CurrentLearner = Depends(get_current_learner),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.services.project_workflows import workflow_view
+    from app.services.workspace_recommendations import recommend_files, select_stage
+    workspace = await _owned_workspace(db, current.learner.id, project_id)
+    project = await require_owned_project(db, current.learner.id, project_id)
+    if data.checkpoint_id is not None:
+        checkpoint = await require_owned_checkpoint(db, current.learner.id, data.checkpoint_id)
+        roadmap = await db.get(Roadmap, checkpoint.roadmap_id)
+        if not roadmap or roadmap.project_id != project_id:
+            raise HTTPException(404, "Checkpoint not found in project")
+    workflow = await workflow_view(db, project, checkpoint_id=data.checkpoint_id)
+    try:
+        stage = select_stage(workflow, data.checkpoint_id, project.project_mode or "learning")
+        return await asyncio.to_thread(recommend_files, Path(workspace.root_path), stage,
+                                       project_id=project_id, checkpoint_id=data.checkpoint_id, limit=data.limit,
+                                       project_context={"name": project.name, "objective": (project.description or "").partition("\n\n预期产物：")[0]})
+    except WorkspaceError as exc:
+        _raise_workspace_error(exc)
 
 
 @router.get(

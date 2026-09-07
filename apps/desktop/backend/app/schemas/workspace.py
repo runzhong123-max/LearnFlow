@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+from learnflow_core.workspace_recommendation_schema import WorkspaceRecommendationsRequest
 
 
 WorkspaceKind = Literal[

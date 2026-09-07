@@ -18,7 +18,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from app.core.config import settings
-from app.schemas.workspace import WorkspaceLinkRequest, WorkspaceFileWriteRequest
+from app.schemas.workspace import WorkspaceLinkRequest, WorkspaceFileWriteRequest, WorkspaceRecommendationsRequest
 from app.schemas.experiment import ExperimentRunPreviewRequest, ExperimentRunConfirmRequest
 from app.services.workspace_files import (WorkspaceError, canonical_root, scan_workspace_tree,
     read_workspace_file, build_write_preview, validate_base_hash, resolve_workspace_path)
@@ -55,6 +55,32 @@ async def device_request(session, origin: str, project_id: int, area: str, actio
     metadata = storage / 'binding.json'
     try:
         payload = json.loads(body) if body else {}
+        recommendation = None
+        recommendation_stage = None
+        if area == 'workspace' and action == 'recommendations' and method == 'POST':
+            from app.services.workspace_recommendations import select_stage
+            recommendation = WorkspaceRecommendationsRequest.model_validate(payload)
+            formal = project.json()
+            project_record = formal.get('project', {}) if isinstance(formal, dict) else {}
+            mode = project_record.get('project_mode') or 'learning'
+            if project_record.get('id') != project_id or mode not in {'learning', 'experiment', 'practice'}:
+                return JSONResponse({'detail': '云端项目范围暂不可验证'}, 503)
+            if recommendation.checkpoint_id is not None and not any(
+                item.get('id') == recommendation.checkpoint_id
+                for item in (formal.get('roadmap') or {}).get('checkpoints', []) if isinstance(item, dict)
+            ):
+                return JSONResponse({'detail': '当前项目没有这个阶段'}, 404)
+            # Fetch authority only. Never send local paths, reasons, contents or inventory to the cloud.
+            workflow_response = await session.client.get(f'/api/vnext-projects/{project_id}/workflow')
+            if workflow_response.status_code != 200:
+                if mode != 'learning' or recommendation.checkpoint_id is not None or workflow_response.status_code != 404:
+                    return JSONResponse({'detail': '当前阶段暂不可验证，请刷新后重试'}, 503)
+                workflow = {}
+            else:
+                workflow = workflow_response.json()
+                if not isinstance(workflow, dict):
+                    return JSONResponse({'detail': '当前阶段暂不可验证，请刷新后重试'}, 503)
+            recommendation_stage = select_stage(workflow, recommendation.checkpoint_id, mode)
         report = action.split('/')
         if area == 'experiments' and method == 'POST' and len(report) == 3 and report[0] == 'runs' and report[1].isdigit() and report[2] == 'report':
             from app.services.cloud_device_reports import publish_run_report
@@ -83,6 +109,11 @@ async def device_request(session, origin: str, project_id: int, area: str, actio
                 return JSONResponse({'detail': '此云项目尚未绑定本机目录'}, 404)
             root = canonical_root(state['root'])
             if area == 'workspace':
+                if recommendation is not None:
+                    from app.services.workspace_recommendations import recommend_files
+                    return JSONResponse(await asyncio.to_thread(recommend_files, root, recommendation_stage,
+                        project_id=project_id, checkpoint_id=recommendation.checkpoint_id, limit=recommendation.limit,
+                        project_context=project_record))
                 if action == 'tree' and method == 'GET':
                     return JSONResponse(jsonable_encoder({'workspace_id': project_id, 'project_id': project_id,
                         'root_name': root.name, 'nodes': scan_workspace_tree(root)}))
