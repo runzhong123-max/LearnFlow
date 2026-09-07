@@ -11,7 +11,7 @@ async function listen(server: http.Server) {
   return (server.address() as { port: number }).port;
 }
 
-test("cohost 引用保留内部 Host、验证主体并拒绝目录故障", async (t) => {
+test("cohost 引用按用户或公开范围读取目录、保留 Host 并拒绝目录故障", async (t) => {
   let authStatus = 200;
   let registryStatus = 200;
   let registryCalls = 0;
@@ -24,7 +24,8 @@ test("cohost 引用保留内部 Host、验证主体并拒绝目录故障", async
     registryCalls++;
     // Reproduce Vite's host gate; localhost is the cohost routing contract.
     assert.equal(req.headers.host, "localhost");
-    assert.equal(req.headers.cookie, undefined);
+    assert.ok(["/api/registry", "/api/registry?scope=public"].includes(req.url!));
+    assert.equal(req.headers.cookie, req.url === "/api/registry" ? "session=test-only" : undefined);
     res.writeHead(registryStatus, { "content-type": "application/json" });
     res.end(JSON.stringify({ packages: [{ title: "测试岗位", packageId: "role.test", visibility: "public", releases: [{ id: "release:test", status: "published", packageVersion: "1.0.0", snapshotId: "snapshot:test", artifactRootHash: "a".repeat(64) }] }] }));
   });
@@ -41,7 +42,7 @@ test("cohost 引用保留内部 Host、验证主体并拒绝目录故障", async
   });
   t.after(() => proxy.kill());
   await Promise.race([once(proxy.stdout!, "data"), once(proxy, "exit").then(() => { throw new Error("proxy exited before listening"); })]);
-  const launch = () => fetch(`http://127.0.0.1:${port}/api/integrations/learnflow/launch`, { method: "POST", headers: { cookie: "session=test-only", origin: "https://roles.example.com", "content-type": "application/json" }, body: JSON.stringify({ releaseId: "release:test", source: "role_atlas" }) });
+  const launch = (source = "role_atlas", releaseId = "release:test") => fetch(`http://127.0.0.1:${port}/api/integrations/learnflow/launch`, { method: "POST", headers: { cookie: "session=test-only", origin: "https://roles.example.com", "content-type": "application/json" }, body: JSON.stringify({ releaseId, source }) });
   const success = await launch();
   assert.equal(success.status, 200);
   const { launchUrl } = await success.json() as { launchUrl: string };
@@ -49,6 +50,15 @@ test("cohost 引用保留内部 Host、验证主体并拒绝目录故障", async
   const payload = verifyRolePackageLaunch(token, secret);
   assert.equal(payload.subject, "learnflow:learner:7");
   assert.equal(payload.packageRef.snapshotId, "snapshot:test");
+  const publicLaunch = await launch("graph_hub");
+  assert.equal(publicLaunch.status, 200);
+  const publicToken = (await publicLaunch.json() as { launchUrl: string }).launchUrl.split("/role-package/")[1];
+  assert.equal(verifyRolePackageLaunch(publicToken, secret).source, "graph_hub");
+  for (const source of ["role_atlas", "graph_hub"]) {
+    const inaccessible = await launch(source, "release:another-user-private");
+    assert.equal(inaccessible.status, 404);
+    assert.deepEqual(await inaccessible.json(), { error: "RELEASE_NOT_LAUNCHABLE" });
+  }
   registryStatus = 403;
   const unavailable = await launch();
   assert.equal(unavailable.status, 503);

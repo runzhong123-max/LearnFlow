@@ -97,6 +97,34 @@ test("public immutable artifacts can be read without granting project writes or 
   } finally { h.cleanup(); }
 });
 
+test("Graph Hub launch requires an explicitly public immutable artifact even for its owner", async () => {
+  const h = await policyHarness();
+  const oldSecret = process.env.ROLE_PACKAGE_LAUNCH_SECRET;
+  process.env.ROLE_PACKAGE_LAUNCH_SECRET = "test-only-launch-secret-at-least-32-bytes";
+  try {
+    let source = await readFile(resolve("app/api/integrations/learnflow/launch/route.ts"), "utf8");
+    source = source.replace('"@/lib/access"', JSON.stringify(h.policyUrl));
+    source = source.replace('import { getReleaseWithArtifact } from "@/lib/releases/resolver";', `const getReleaseWithArtifact = async () => ({
+      release: { status: "published", artifactRootHash: "a".repeat(64), packageVersion: "1.0.0", snapshotId: "snapshot:test" },
+      line: { visibility: "public", title: "Test role", packageId: "role.test" },
+      bundle: { manifest: { rootHash: "a".repeat(64) } }
+    });`);
+    source = source.replace(/(["'])@\/([^"']+)\1/gu, (_, _quote, path) => JSON.stringify(pathToFileURL(resolve(`${path}.ts`)).href));
+    const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+    const route = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+    const launch = (releaseId: string, source: string) => route.POST(request("/api/integrations/learnflow/launch", 2, { releaseId, source }));
+    assert.equal((await launch("release-public-private-old", "role_atlas")).status, 200);
+    const privatePublicLaunch = await launch("release-public-private-old", "graph_hub");
+    assert.equal(privatePublicLaunch.status, 401);
+    assert.deepEqual(await privatePublicLaunch.json(), { error: "LOGIN_REQUIRED" });
+    assert.equal((await launch("release-public", "graph_hub")).status, 200);
+  } finally {
+    if (oldSecret === undefined) delete process.env.ROLE_PACKAGE_LAUNCH_SECRET;
+    else process.env.ROLE_PACKAGE_LAUNCH_SECRET = oldSecret;
+    h.cleanup();
+  }
+});
+
 test("mixed resource scopes, replay takeover, and message overwrite are rejected before provider work", async () => {
   const h = await policyHarness();
   try {

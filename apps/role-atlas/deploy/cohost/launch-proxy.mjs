@@ -67,7 +67,8 @@ const server = http.createServer(async (req, res) => {
     if (!auth.response.ok || !auth.data) return json(res, 503, { error: "LEARNFLOW_AUTH_UNAVAILABLE" });
     const learnerId = Number(auth.data.learner_id);
     if (!Number.isInteger(learnerId) || learnerId <= 0) return json(res, 502, { error: "LEARNFLOW_AUTH_RESPONSE_INVALID" });
-    const catalog = await upstream(`${roleAtlasUrl}/api/registry`, { headers: { host: "localhost" } });
+    const catalogPath = source === "graph_hub" ? "/api/registry?scope=public" : "/api/registry";
+    const catalog = await upstream(`${roleAtlasUrl}${catalogPath}`, { headers: { host: "localhost", ...(source === "role_atlas" ? forwarded : {}) } });
     if (!catalog.response.ok || !catalog.data?.packages) return json(res, 503, { error: "ROLE_ATLAS_REGISTRY_UNAVAILABLE" });
     const item = catalog.data.packages.find((pkg) => pkg.releases?.some((release) => release.id === body.releaseId));
     const release = item?.releases?.find((candidate) => candidate.id === body.releaseId);
