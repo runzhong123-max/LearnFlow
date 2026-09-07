@@ -77,3 +77,14 @@ export const loadExperimentRun = (id: number, runId: number) => workbenchRequest
 
 export const validatePracticeCase = (selected: PracticeCaseSummary) => workbenchRequest<{ status: string; candidate: unknown; requires_confirmation: boolean }>(`/api/practice-cases/${encodeURIComponent(selected.id)}/validate`, 'POST', { version: selected.version, root_hash: selected.root_hash })
 export const requestMilestoneHint = (id: number, checkpoint: number, level: 1 | 2) => workbenchRequest<{ hint: { level: number; body: string }; workflow: ProjectWorkflow }>(`${workflowPath(id)}/checkpoints/${checkpoint}/hint`, 'POST', { client_action_id: workbenchActionId('hint'), level })
+
+export const publishExperimentReport = (id: number, runId: number, checkpointId: number) => workbenchRequest<{ artifact_ref: ArtifactReference }>(`${runsPath(id)}/runs/${runId}/report`, 'POST', { checkpoint_id: checkpointId, confirm_share: true, client_action_id: `device-report:${runId}:${checkpointId}` })
+
+export const publishFileReport = async (id: number, file: WorkspaceFile, checkpointId: number) => {
+  const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify([checkpointId, file.path, file.sha256])))
+  const fingerprint = Array.from(new Uint8Array(bytes), value => value.toString(16).padStart(2, '0')).join('')
+  return workbenchRequest<{ artifact_ref: ArtifactReference }>(`${filesPath(id)}/report`, 'POST', {
+    checkpoint_id: checkpointId, files: [{ path: file.path, sha256: file.sha256 }], confirm_share: true,
+    client_action_id: `file-report:${fingerprint}`,
+  })
+}

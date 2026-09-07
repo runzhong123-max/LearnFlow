@@ -44,7 +44,7 @@ def test_registry_has_three_agents_five_kernels_and_no_drift():
     assert set(ACTION_BOARD) == set(CAPABILITY_OWNERS)
     assert validate_registry() == []
     manifest = registry_manifest()
-    assert REGISTRY_VERSION == "2026-09-07.4-desktop"
+    assert REGISTRY_VERSION == "2026-09-07.5-desktop"
     cloud_contract = next(item for item in manifest['data_contracts'] if item['id'] == 'desktop_cloud_connection_v1')
     assert cloud_contract['kernel_write_path'] == 'none'
     assert manifest["schema_valid"] is True
@@ -267,6 +267,7 @@ def test_vnext_tools_use_formal_event_gateway_without_direct_kernel_writes():
     assert WORKBENCHES["vnext_chat"].surface == "/chat/:conversationId"
     assert set(WORKBENCHES["vnext_chat"].capabilities) == {
         "start_skill_verification", "continue_micro_learning", "analyze_teach_back",
+        "prepare_project_guidance", "confirm_project_guidance",
         "manage_visual_workspace",
         "coordinate_vnext_agent_turn",
         "search_computer_knowledge", "read_web_evidence", "search_learning_videos", "inspect_learning_video", "retrieve_learning_visual", "generate_learning_diagram", "generate_learning_animation", "open_selection_followup",
@@ -720,3 +721,33 @@ def test_learner_growth_is_an_additive_read_only_workbench():
     assert {
         tool.id for tool in TOOLS.values() if tool.writes_kernels
     } == {"five_kernel_reducer"}
+
+
+def test_project_guidance_and_report_are_tutor_owned_zero_target_operations():
+    for tool_id in ("project_guidance_gateway", "project_device_report_gateway", "project_workflow_runtime", "local_work_case_catalog"):
+        assert TOOLS[tool_id].owner == "tutor_agent"
+        assert TOOLS[tool_id].writes_kernels == ()
+        assert TOOL_INTERFACE_ROLES[tool_id] == "harness"
+        assert TOOL_MODEL_EXPOSURE[tool_id] == "not_model_callable"
+    for capability in ("prepare_project_guidance", "confirm_project_guidance", "record_project_device_report", "read_project_device_report"):
+        assert CAPABILITY_OWNERS[capability][0] == "tutor_agent"
+        assert ACTION_BOARD[capability].evidence_target == {}
+    assert ACTION_BOARD["prepare_project_guidance"].side_effect == "proposal"
+    assert ACTION_BOARD["confirm_project_guidance"].side_effect == "write"
+    assert ACTION_BOARD["confirm_project_guidance"].confirmation_policy == "explicit"
+    for event in ("project_guidance_prepared", "project_guidance_confirmed", "project_device_report_recorded", "project_delivery_submitted"):
+        assert EVENTS[event].kernel_targets == ()
+        assert EVENTS[event].reducer_binding is None
+    for binding in ("api:project_guidance.prepare", "api:project_guidance.confirm", "api:project_device_report.create", "api:project_device_report.read", "py:project_workflow.tutor_context"):
+        assert binding in IMPLEMENTATION_BINDINGS
+    assert {"project_workflow_runtime", "project_guidance_gateway", "project_device_report_gateway"} <= set(SKILLS["three_mode_project_guidance"].tools)
+
+
+def test_cloud_account_device_execution_uses_python_broker_bindings():
+    broker = IMPLEMENTATION_BINDINGS["py:local_agent.cloud_account_request"]
+    report = IMPLEMENTATION_BINDINGS["py:project_device_report.publish"]
+    assert broker.module == "app.services.cloud_agent_broker"
+    assert broker.symbol == "agent_request"
+    assert report.module == "app.services.cloud_device_reports"
+    assert report.symbol == "publish_run_report"
+    assert not any(binding.module == broker.module and binding.kind == "api_route" for binding in IMPLEMENTATION_BINDINGS.values())

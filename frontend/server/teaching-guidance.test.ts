@@ -4,6 +4,9 @@ import { runTutorAgentTurn } from './agent-runtime.ts'
 import { executeTutorAgentTool } from './tool-runtime.ts'
 import { syncFormalTeachingInput } from '../src/formal-runtime.ts'
 import { compactTeachingGuidance } from '../src/teaching-guidance-context.ts'
+import visualPlugin from '../plugins/educational_visuals/server.ts'
+import { LearnFlowPluginRegistry } from '../src/plugin-api.ts'
+import { OFFLINE_VISUAL_CATALOG } from './visualize-authoring.ts'
 
 const guidance = {
   instruction: '本次只安排十分钟内的一项小练习', kernel: 'human', slot: 'time_budget',
@@ -71,20 +74,86 @@ test('same direct message synchronizes with the same event id and real scope', a
   } finally { globalThis.fetch = originalFetch }
 })
 
-test('visual explanation and repair calls also receive current guidance', async () => {
-  const bodies: any[] = []
-  await runTutorAgentTurn({
+test('visual repair keeps artifact scope; its follow-up explanation and repair receive current guidance', async () => {
+  const plannerBodies: any[] = []
+  const story = {
+    story_version: '1', title: '二分查找的边界与中点', goal: '辨认待搜索区间和中点的关系',
+    nodes: [{ id: 'range', label: '待搜索区间' }, { id: 'middle', label: '中点' }],
+    edges: [{ id: 'contains', from: 'range', to: 'middle', label: '中点位于当前区间内' }],
+    steps: [{ title: '定位中点', note: '先确定边界，再定位中点。', active_nodes: ['range', 'middle'], active_edges: ['contains'] }],
+  }
+  let job: any
+  let published = 0
+  const pluginRegistry = new LearnFlowPluginRegistry([{
+    ...visualPlugin,
+    handlers: { ...visualPlugin.handlers, create: async (input, context) => {
+      assert.ok(context.artifactHost)
+      // Keep the real plugin workflow and model bridge; replace only artifact persistence.
+      return visualPlugin.handlers.create(input, { ...context, artifactHost: {
+        ...context.artifactHost,
+        request: async (operation, payload = {}) => {
+          if (operation === 'start_job') return job = { ...payload, job_id: 'guidance-visual-job', version: 1, status: 'running', stage: 'start' }
+          if (operation === 'catalog') return OFFLINE_VISUAL_CATALOG
+          if (operation === 'checkpoint') {
+            assert.equal(payload.expected_version, job.version)
+            return job = { ...job, ...structuredClone(payload), version: job.version + 1 }
+          }
+          if (operation === 'publish') {
+            assert.equal(payload.expected_version, job.version)
+            assert.deepEqual(payload.source, story)
+            published += 1
+            return { artifact_id: 'guidance-artifact', revision_id: 'guidance-revision', run_id: 'guidance-run',
+              builder: 'svg_story', title: story.title, kind: 'diagram', source_mode: 'fresh',
+              verification: { status: 'illustrative', scope: 'structure' } }
+          }
+          throw new Error(`Unexpected artifact operation: ${operation}`)
+        },
+      } })
+    } },
+  }])
+  const visualRequest = '从零画一张二分查找边界与中点关系的结构图，不要模板'
+  const visual = await runTutorAgentTurn({
     baseUrl: 'https://provider.example/v1/chat/completions', model: 'test-model', mode: 'simple_explain',
-    messages: [{ role: 'user', content: '画一张二分查找的图' }], toolChoice: 'auto',
+    messages: [{ role: 'user', content: visualRequest }], toolChoice: 'auto', pluginRegistry,
+    formalLearnerContext: packet, generate: async () => { throw new Error('legacy visual generator must not run') },
+    invokeProvider: async request => {
+      plannerBodies.push(request.body)
+      return { choices: [{ message: { content: JSON.stringify({ source_mode: 'fresh', builder: 'svg_story',
+        source: plannerBodies.length === 1 ? { ...story, story_version: 'invalid' } : story }) } }] }
+    },
+  })
+  assert.equal(plannerBodies.length, 2)
+  assert.match(JSON.stringify(plannerBodies[1].messages), /visual_builder_source_contract_mismatch/)
+  assert.equal(published, 1)
+  assert.equal(visual.toolRuns[0]?.toolName, 'educational_visuals__create')
+  assert.equal(visual.toolRuns[0]?.status, 'completed')
+  assert.equal((visual.toolRuns[0]?.plugin?.result.payload as any)?.artifact?.revision_id, 'guidance-revision')
+  for (const body of plannerBodies) {
+    assert.equal(body.messages.some((message: any) => message.content.includes(guidance.instruction)), false)
+    assert.doesNotMatch(JSON.stringify(body), /FULL_PACKET_SECRET/)
+  }
+
+  const bodies: any[] = []
+  const explained = await runTutorAgentTurn({
+    baseUrl: 'https://provider.example/v1/chat/completions', model: 'test-model', mode: 'simple_explain',
+    messages: [{ role: 'user', content: visualRequest },
+      { role: 'assistant', content: visual.reply, toolRuns: visual.toolRuns },
+      { role: 'user', content: '请解释刚才作品中的边界与中点。' }], toolChoice: 'auto', pluginRegistry,
     formalLearnerContext: packet, generate: async () => '',
     invokeProvider: async request => {
       bodies.push(request.body)
-      return { choices: [{ message: { content: '过短的讲解' } }] }
+      return { choices: [{ message: { content: bodies.length === 1
+        ? '<tool_call>invalid teaching prose</tool_call>'
+        : '先确定待搜索区间的左右边界，再取中点比较；本次只练习在一个有序数组中标出这三个位置。' } }] }
     },
   })
   assert.ok(bodies.length >= 2)
+  assert.ok(explained.trace.events.some(event => event.phase === 'verify' && event.status === 'failed' && event.detail.includes('display_protocol')))
+  assert.equal(explained.trace.stopReason, 'final_answer')
+  assert.match(explained.reply, /先确定待搜索区间/)
   for (const body of bodies) {
     assert.ok(body.messages.some((message: any) => message.role === 'user' && message.content.includes(guidance.instruction)))
+    assert.doesNotMatch(JSON.stringify(body), /FULL_PACKET_SECRET/)
   }
 })
 

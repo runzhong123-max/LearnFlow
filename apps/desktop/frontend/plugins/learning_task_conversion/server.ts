@@ -1,3 +1,4 @@
+import { projectGuidanceContributions } from '../../../../../packages/learning-client/src/project-guidance/plugin.ts'
 import {
   defineLearnFlowPlugin,
   LEARNFLOW_PLUGIN_API_VERSION,
@@ -93,6 +94,7 @@ const plugin = defineLearnFlowPlugin({
     ...LEARNING_TASK_CONVERSION_PLUGIN,
     defaultEnabled: false,
     objects: [
+      ...projectGuidanceContributions.objects as any,
       {
         type: 'work_case_candidate', title: '本地工作案例候选', description: '完整案例保存在宿主，候选只固定版本与内容哈希，确认后才物化项目路线。',
         schemaVersion: WORK_CASE_CANDIDATE_SCHEMA,
@@ -155,10 +157,11 @@ const plugin = defineLearnFlowPlugin({
       },
     ],
     tools: [
+      ...projectGuidanceContributions.tools as any,
       {
         id: 'list_local_work_cases', title: '查找本地工作案例', description: '读取宿主可用的版本化教学案例目录，不运行外部生成服务。',
         whenToUse: '学生希望体验本地工作案例或开始实践型项目时先查看可用案例。', whenNotToUse: '已经在具体案例阶段中工作时不重复查询目录。',
-        toolClass: 'perception', risk: 'read_only', requiresProject: true,
+        toolClass: 'perception', risk: 'read_only',
         inputSchema: { type: 'object', properties: {}, additionalProperties: false }, outputObjectTypes: [],
         availableInModes: ['free', 'simple_explain', 'guided_learning', 'learning_plan'],
       },
@@ -277,7 +280,7 @@ const plugin = defineLearnFlowPlugin({
         availableInModes: ['free', 'simple_explain', 'guided_learning', 'learning_plan'], timeoutMs: 30_000,
       },
     ],
-    skills: [{
+    skills: [...projectGuidanceContributions.skills as any, {
       id: 'draft_learning_task', title: '真实工作任务转学习任务候选',
       description: '选中插件后，先用准备单收敛并确认单个企业工作任务，再调用讯飞生成候选。',
       whenToUse: '用户要求把具体工作任务转成可执行学习步骤、任务工单或学习型工作任务。',
@@ -299,6 +302,7 @@ const plugin = defineLearnFlowPlugin({
       objectTypes: [...LEARNING_TASK_OBJECT_TYPES],
     }],
     renderers: [
+      ...projectGuidanceContributions.renderers,
       { id: 'work_case_candidate', title: '本地案例候选', description: '显示固定版本与项目确认入口，保留教学模拟来源边界。' },
       { id: LEARNING_TASK_RENDERERS.intake, title: '任务转化准备单', description: '显示输入层级、原文锚点、任务候选和确认前 Plan 状态。' },
       { id: LEARNING_TASK_RENDERERS.candidate, title: '学习任务候选工作台', description: '按先后依赖显示任务步骤、产物、验收和步骤内知识技能。' },
@@ -309,6 +313,7 @@ const plugin = defineLearnFlowPlugin({
     ],
   },
   handlers: {
+    ...projectGuidanceContributions.handlers,
     list_local_work_cases: (_input, context) => listLocalWorkCases(context),
     prepare_local_work_case: (input, context) => prepareLocalWorkCase(input, context),
     prepare_learning_task_intake: input => learningTaskConversionRuntime.prepare(input),

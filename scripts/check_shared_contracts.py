@@ -84,7 +84,7 @@ def check(web_python: str, desktop_python: str) -> None:
                 raise RuntimeError(f'duplicated visual implementation: {path}')
     if (ROOT/'apps/desktop/.git').exists():
         raise RuntimeError('nested desktop Git repository is not allowed')
-    print(f'Shared core {web["version"]}: both hosts use the same 6 Python modules, 22 API modules, 4 TS sources, three agents, five kernels and {len(common_events)} common event contracts.')
+    print(f'Shared core {web["version"]}: both hosts use the same 6 Python modules, {len(web["apiPaths"])} API modules, 4 TS sources, three agents, five kernels and {len(common_events)} common event contracts.')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)

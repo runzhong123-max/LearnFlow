@@ -175,7 +175,10 @@ async def build_checkpoint_tutor_context(
         query=query or str(allowed_surface.get("selected_text") or ""),
     )
 
+    from app.services.project_workflows import tutor_workflow_context
+    project = await db.get(Project, project_id)
     return {
+        **await tutor_workflow_context(db, project, checkpoint_id),
         "scope": {
             "learner_id": learner_id,
             "project_id": project_id,

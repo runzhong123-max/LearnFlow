@@ -45,6 +45,8 @@ async def get_db():
 # explicitly (SQLite ADD COLUMN).
 EXTRA_COLUMNS = {
     "projects": [
+        ("project_mode", "TEXT NOT NULL DEFAULT 'learning'"),
+        ("project_brief", "TEXT NOT NULL DEFAULT '{}'"),
         ("learner_id", "INTEGER"),
         ("project_kind", "TEXT DEFAULT 'apprenticeship'"),
         ("visibility", "TEXT DEFAULT 'visible'"),

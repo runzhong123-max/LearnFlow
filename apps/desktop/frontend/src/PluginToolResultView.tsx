@@ -1,3 +1,4 @@
+import { isDesktopRuntime } from './runtime-client.ts'
 import { useMemo } from 'react'
 import { browserArtifactHost } from './plugin-artifact-host.ts'
 import type { ComponentType, DragEvent } from 'react'
@@ -12,6 +13,10 @@ export type PluginToolRendererProps = {
   objects: readonly LearnFlowPluginObject[]
   onPrompt?: (prompt: string) => void
   onReference?: (object: LearnFlowPluginObject) => void
+  onConfirmProject?: (candidate: { candidateId: string; rootHash: string }) => Promise<{ projectId: number; sessionId?: number }>
+  onOpenProject?: (target: { projectId: number; sessionId?: number }) => void
+  onReferenceObject?: (object: LearnFlowPluginObject, prompt?: string) => void
+  isDesktopRuntime?: boolean
   onOpenLearningTask?: (taskId: number) => void
 }
 
@@ -79,10 +84,14 @@ function GenericPluginObjects({ objects, onReference }: {
   )
 }
 
-export default function PluginToolResultView({ run, onPrompt, onReference, onOpenLearningTask, onOpenPaper }: {
+export default function PluginToolResultView({ run, onPrompt, onReference, onReferenceObject, onOpenProject, onConfirmProject, onOpenLearningTask, onOpenPaper }: {
   run: TutorToolRun
   onPrompt?: (prompt: string) => void
   onReference?: (object: LearnFlowPluginObject) => void
+  onConfirmProject?: (candidate: { candidateId: string; rootHash: string }) => Promise<{ projectId: number; sessionId?: number }>
+  onOpenProject?: (target: { projectId: number; sessionId?: number }) => void
+  onReferenceObject?: (object: LearnFlowPluginObject, prompt?: string) => void
+  isDesktopRuntime?: boolean
   onOpenLearningTask?: (taskId: number) => void
   onOpenPaper?: () => void
 }) {
@@ -105,6 +114,10 @@ export default function PluginToolResultView({ run, onPrompt, onReference, onOpe
         objects={objects}
         onPrompt={onPrompt}
         onReference={onReference}
+        onReferenceObject={onReferenceObject}
+        onOpenProject={onOpenProject}
+        onConfirmProject={onConfirmProject}
+        isDesktopRuntime={isDesktopRuntime()}
         onOpenLearningTask={onOpenLearningTask}
       /> : <div aria-label={`${run.title}插件结果`}>
         <GenericPluginObjects objects={objects} onReference={onReference} />

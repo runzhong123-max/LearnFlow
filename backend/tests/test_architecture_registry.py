@@ -45,7 +45,7 @@ def test_registry_has_three_agents_five_kernels_and_no_drift():
     assert set(ACTION_BOARD) == set(CAPABILITY_OWNERS)
     assert validate_registry() == []
     manifest = registry_manifest()
-    assert REGISTRY_VERSION == "2026-09-07.4"
+    assert REGISTRY_VERSION == "2026-09-07.5"
     assert manifest["schema_valid"] is True
     assert manifest["valid"] is (
         manifest["schema_valid"] and manifest["implementation_valid"]
@@ -101,7 +101,7 @@ def test_learning_path_data_contracts_are_bound_but_never_learner_writers():
     assert {row["id"] for row in manifest["data_contracts"]} == set(DATA_CONTRACTS)
     root = Path(__file__).resolve().parents[2]
     for contract_id, contract in DATA_CONTRACTS.items():
-        assert contract["owner"] == ("tutor_agent" if contract_id in {"ecosystem_gateway_v1", "teaching_response_v1", "golden_role_workspace_v1", "learning_platform_v1"} else "learning_design_agent")
+        assert contract["owner"] == ("tutor_agent" if contract_id in {"ecosystem_gateway_v1", "teaching_response_v1", "golden_role_workspace_v1", "learning_platform_v1", "project_guidance_v1", "project_device_report_v1", "project_workflow_v1"} else "learning_design_agent")
         assert contract["kernel_reads"] == []
         assert contract["kernel_write_path"] == "none"
         assert contract["schema_version"] in (root / contract["authority_path"]).read_text()
@@ -270,6 +270,7 @@ def test_vnext_tools_use_formal_event_gateway_without_direct_kernel_writes():
     assert WORKBENCHES["vnext_chat"].surface == "/chat/:conversationId"
     assert set(WORKBENCHES["vnext_chat"].capabilities) == {
         "start_skill_verification", "continue_micro_learning", "analyze_teach_back",
+        "prepare_project_guidance", "confirm_project_guidance",
         "manage_visual_workspace",
         "coordinate_vnext_agent_turn",
         "search_computer_knowledge", "read_web_evidence", "search_learning_videos", "inspect_learning_video", "retrieve_learning_visual", "generate_learning_diagram", "generate_learning_animation", "open_selection_followup",
@@ -689,3 +690,23 @@ def test_ecosystem_source_commit_remains_zero_target_and_service_owned():
 def test_backend_official_path_asset_matches_role_atlas_export():
     root = Path(__file__).resolve().parents[2]
     assert (root / "backend/app/contracts/official-learning-path.v2.json").read_bytes() == (root / "apps/role-atlas/public/data/learnflow-learning-path.v2.json").read_bytes()
+
+
+def test_project_guidance_and_report_are_tutor_owned_zero_target_operations():
+    for tool_id in ("project_guidance_gateway", "project_device_report_gateway", "project_workflow_runtime", "local_work_case_catalog"):
+        assert TOOLS[tool_id].owner == "tutor_agent"
+        assert TOOLS[tool_id].writes_kernels == ()
+        assert TOOL_INTERFACE_ROLES[tool_id] == "harness"
+        assert TOOL_MODEL_EXPOSURE[tool_id] == "not_model_callable"
+    for capability in ("prepare_project_guidance", "confirm_project_guidance", "record_project_device_report", "read_project_device_report"):
+        assert CAPABILITY_OWNERS[capability][0] == "tutor_agent"
+        assert ACTION_BOARD[capability].evidence_target == {}
+    assert ACTION_BOARD["prepare_project_guidance"].side_effect == "proposal"
+    assert ACTION_BOARD["confirm_project_guidance"].side_effect == "write"
+    assert ACTION_BOARD["confirm_project_guidance"].confirmation_policy == "explicit"
+    for event in ("project_guidance_prepared", "project_guidance_confirmed", "project_device_report_recorded", "project_delivery_submitted"):
+        assert EVENTS[event].kernel_targets == ()
+        assert EVENTS[event].reducer_binding is None
+    for binding in ("api:project_guidance.prepare", "api:project_guidance.confirm", "api:project_device_report.create", "api:project_device_report.read", "py:project_workflow.tutor_context"):
+        assert binding in IMPLEMENTATION_BINDINGS
+    assert {"project_workflow_runtime", "project_guidance_gateway", "project_device_report_gateway"} <= set(SKILLS["three_mode_project_guidance"].tools)

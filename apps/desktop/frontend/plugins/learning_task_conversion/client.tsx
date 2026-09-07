@@ -1,3 +1,4 @@
+import { ProjectGuidanceRenderer } from '../../../../../packages/learning-client/src/project-guidance/ProjectGuidance.tsx'
 import { useMemo, useState } from 'react'
 import {
   defineLearnFlowPluginClient,
@@ -246,6 +247,7 @@ export default defineLearnFlowPluginClient({
   description: LEARNING_TASK_CONVERSION_PLUGIN.description,
   icon: LEARNING_TASK_CONVERSION_PLUGIN.icon,
   renderers: {
+    project_guidance: ProjectGuidanceRenderer,
     work_case_candidate: WorkCaseCandidateRenderer,
     [LEARNING_TASK_RENDERERS.intake]: LearningTaskIntakeRenderer,
     [LEARNING_TASK_RENDERERS.candidate]: CandidateRenderer,

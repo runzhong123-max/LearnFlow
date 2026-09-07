@@ -43,12 +43,30 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-07.4"
+REGISTRY_VERSION = "2026-09-07.5"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Pure source-data validators/exporters, not Agent-callable tools or learner writers.
 # The referenced TypeScript module owns field semantics; this registry owns discovery.
 DATA_CONTRACTS = {
+    "project_guidance_v1": {
+        "schema_version": "learnflow.project-guidance.v1", "owner": "tutor_agent", "origin": "builtin",
+        "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "docs/MONOREPO.md",
+        "binding_ids": ["api:project_guidance.confirm"], "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "additive learner-scoped candidate and explicit promotion; existing Xingchen learning path unchanged",
+    },
+    "project_device_report_v1": {
+        "schema_version": "learnflow.device-report.v1", "owner": "tutor_agent", "origin": "builtin",
+        "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "docs/MONOREPO.md",
+        "binding_ids": ["api:project_device_report.create"], "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "device-reported operation artifact; server checks structure and ownership, never independent execution proof",
+    },
+    "project_workflow_v1": {
+        "schema_version": "learnflow.project-workflow.v1", "owner": "tutor_agent", "origin": "builtin",
+        "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "docs/MONOREPO.md",
+        "binding_ids": ["py:project_workflow.read"], "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "shared existing Project/Roadmap/Checkpoint/LearningTask; project modes and paper tables are additive",
+    },
     "learning_platform_v1": {
         "schema_version": "learnflow-platform/v1", "owner": "tutor_agent",
         "origin": "builtin", "mode": "read_only_runtime_discovery", "lifecycle": "implemented",
@@ -334,6 +352,14 @@ TOOLS = {
         ToolContract("task_runtime", "Idempotent Background Task Runtime", "tutor_agent", "learnflow", "execution"),
         ToolContract("workspace_file_service", "Desktop Workspace File Service", "tutor_agent", "learnflow", "filesystem",
                      (), (), "confirmed WorkspaceOperation only"),
+        ToolContract("project_workflow_runtime", "Three-mode Project Workflow Runtime", "tutor_agent", "learnflow", "execution",
+                     (), (), "explicit project composition and operational delivery; formal Checkpoint and Session authority; answer-free current-stage projection"),
+        ToolContract("local_work_case_catalog", "Versioned Local Work Case Catalog", "tutor_agent", "learnflow", "read",
+                     (), (), "catalog and hash-bound unconfirmed selectors only; no future materials or evaluator disclosure"),
+        ToolContract("project_guidance_gateway", "Confirmed Project Guidance Gateway", "tutor_agent", "learnflow", "artifact",
+                     (), (), "learner-scoped immutable candidate -> explicit hash-bound confirmation -> formal Project, Checkpoint and LearningTask; no mastery inference"),
+        ToolContract("project_device_report_gateway", "Device-reported Project Artifact Gateway", "tutor_agent", "learnflow", "artifact",
+                     (), (), "learner/project/checkpoint-owned reported summaries only; structure and ownership validation is not independent execution or learning proof"),
         ToolContract("managed_artifact_service", "Managed Learning Artifact Service", "tutor_agent", "learnflow", "artifact",
                      (), (), "versioned lecture/draft/annotation domain APIs"),
         ToolContract("local_agent_broker", "Local Agent Broker", "tutor_agent", "learnflow", "isolated_execution",
@@ -365,6 +391,8 @@ TOOL_INTERFACE_ROLES = {
         "learning_task_candidate_gateway",
     }},
     **{tool_id: "harness" for tool_id in {
+        "project_guidance_gateway", "project_device_report_gateway",
+        "project_workflow_runtime", "local_work_case_catalog",
         "tutor_context", "chat_mode_runtime", "vnext_agent_turn_runtime", "vnext_learning_path_graph_reader",
         "visual_artifact_workspace", "safe_visual_generation", "visual_content_library", "selection_followup_context", "vnext_learning_task_runtime",
         "vnext_learning_plan_runtime", "micro_learning_orchestrator",
@@ -867,14 +895,18 @@ SKILLS = {
         SkillContract("external_workflow_rendering", "星辰/Mock 教学内容适配", "learning_design_agent",
                       ("workflow_gateway", "workflow_validator"),
                       "validated content artifact; no direct kernel mutation", "LearnFlow contract", "companion"),
-        SkillContract("learning_task_conversion", "有来源的真实工作任务转化", "tutor_agent",
-                      ("learning_task_candidate_gateway",),
-                      "source-pinned role-learning-task-candidate.v1 artifact + deterministic audit + root-hash-bound learner confirmation + formal LearnFlow LearningTask",
-                      "Xingchen only drafts a candidate; LearnFlow revalidates and creates the formal task after explicit confirmation; scoring, evidence promotion and every kernel write remain under deterministic LearnFlow authority", "learnflow"),
+        SkillContract("learning_task_conversion", "学习、实验与实践项目引导", "tutor_agent",
+                      ("learning_task_candidate_gateway", "project_guidance_gateway", "local_work_case_catalog"),
+                      "source-pinned learning task or project guidance artifact + root-hash-bound learner confirmation + formal LearnFlow task or project",
+                      "Xingchen drafts learning-task candidates; local LearnFlow code prepares experiment briefs and existing versioned practice cases; explicit confirmation creates formal objects; device execution stays desktop-only and cannot imply mastery", "learnflow"),
         SkillContract("workspace_file_management", "受控本地项目文件管理", "tutor_agent",
                       ("workspace_file_service", "evidence_ledger"),
                       "hash-bound diff proposal + explicit confirmation + operational event",
                       "WorkspaceOperation state machine"),
+        SkillContract("three_mode_project_guidance", "资料、实验与案例项目引导", "tutor_agent",
+                      ("project_workflow_runtime", "local_work_case_catalog", "project_guidance_gateway", "project_device_report_gateway", "evidence_ledger"),
+                      "source reading and recall; prediction, implementation and verification; staged apprentice case, delivery and reflection",
+                      "same formal Roadmap, Checkpoint, LearningTask and Session; operational completion never implies knowledge mastery"),
         SkillContract("managed_learning_file_playback", "讲义与练习专用播放器", "tutor_agent",
                       ("managed_artifact_service", "deterministic_assessment", "evidence_ledger"),
                       "versioned lecture, personal draft, annotation and formal assessment",
@@ -912,7 +944,7 @@ WORKBENCHES = {
                            "draft_learning_project", "create_project", "manage_learning_tasks",
                            "plan_learning_task", "run_learning_task", "delete_conversation")),
         WorkbenchContract("vnext_chat", "LearnFlow Chat + Selection Follow-up Desk", "/chat/:conversationId", "tutor_agent",
-                          ("start_skill_verification", "continue_micro_learning", "analyze_teach_back", "manage_visual_workspace", "coordinate_vnext_agent_turn", "search_computer_knowledge", "read_web_evidence", "search_learning_videos", "inspect_learning_video", "retrieve_learning_visual", "generate_learning_diagram", "generate_learning_animation", "open_selection_followup",
+                          ("prepare_project_guidance", "confirm_project_guidance", "start_skill_verification", "continue_micro_learning", "analyze_teach_back", "manage_visual_workspace", "coordinate_vnext_agent_turn", "search_computer_knowledge", "read_web_evidence", "search_learning_videos", "inspect_learning_video", "retrieve_learning_visual", "generate_learning_diagram", "generate_learning_animation", "open_selection_followup",
                            "run_vnext_learning_task", "run_vnext_learning_plan", "read_vnext_five_kernel_profile",
                            "read_vnext_learning_workspace",
                            "manage_domain_knowledge_sources", "read_domain_knowledge", "read_active_learning_file", "recommend_learning_resources",
@@ -947,10 +979,11 @@ WORKBENCHES = {
                            "request_remediation_explanation", "retry_attempt",
                            "evaluate_transfer_variant", "plan_review_queue")),
         WorkbenchContract("project_tutor", "Project Tutor", "/projects/:projectId", "tutor_agent",
-                          ("add_source", "read_project_roadmap", "revise_project_roadmap", "plan_learning_path", "apply_learning_path", "navigate_checkpoint",
+                          ("record_project_device_report", "read_project_device_report", "add_source", "read_project_roadmap", "revise_project_roadmap", "plan_learning_path", "apply_learning_path", "navigate_checkpoint",
                            "manage_project_conversations", "manage_learning_tasks", "plan_learning_task",
                            "run_learning_task", "generate_learning_files", "open_learning_file",
-                           "attach_learning_file_to_chat", "draft_learning_task_candidate", "delete_project"), "vnext"),
+                           "attach_learning_file_to_chat", "draft_learning_task_candidate", "delete_project",
+                           "read_project_workflow", "prepare_local_work_case", "initialize_project_workflow", "save_project_workbench", "submit_project_delivery", "record_project_reading", "request_project_hint"), "vnext"),
         WorkbenchContract("lecture", "Checkpoint Tutor · Lecture", "/projects/:projectId/checkpoints/:checkpointId", "tutor_agent",
                           ("generate_lecture", "explain_selection", "generate_assessment")),
         WorkbenchContract("assessment", "Checkpoint Tutor · Assessment", "/projects/:projectId/checkpoints/:checkpointId/exercises", "tutor_agent",
@@ -977,6 +1010,17 @@ WORKBENCHES = {
 
 
 CAPABILITY_OWNERS = {
+    "prepare_project_guidance": ("tutor_agent", "project_guidance_gateway", "vnext_chat"),
+    "confirm_project_guidance": ("tutor_agent", "project_guidance_gateway", "vnext_chat"),
+    "record_project_device_report": ("tutor_agent", "project_device_report_gateway", "project_tutor"),
+    "read_project_device_report": ("tutor_agent", "project_device_report_gateway", "project_tutor"),
+    "record_project_reading": ("tutor_agent", "project_workflow_runtime", "project_tutor"),
+    "submit_project_delivery": ("tutor_agent", "project_workflow_runtime", "project_tutor"),
+    "save_project_workbench": ("tutor_agent", "project_workflow_runtime", "project_tutor"),
+    "initialize_project_workflow": ("tutor_agent", "project_workflow_runtime", "project_tutor"),
+    "prepare_local_work_case": ("tutor_agent", "local_work_case_catalog", "project_tutor"),
+    "request_project_hint": ("tutor_agent", "project_workflow_runtime", "project_tutor"),
+    "read_project_workflow": ("tutor_agent", "project_workflow_runtime", "project_tutor"),
     "manage_visual_workspace": ("learning_design_agent", "visual_artifact_workspace", "vnext_chat"),
     "query_role_ecosystem": ("tutor_agent", "ecosystem_gateway", "ecosystem"),
     "resolve_role_learning_points": ("learning_design_agent", "curriculum_source_runtime", "ecosystem"),
@@ -1087,6 +1131,14 @@ def _event(event_id: str, capability: str, targets: tuple[str, ...], role: str,
 
 EVENTS = {
     item.id: item for item in (
+        _event("project_guidance_prepared", "prepare_project_guidance", (), "unconfirmed_project_artifact"),
+        _event("project_guidance_confirmed", "confirm_project_guidance", (), "learner_confirmed_project_composition"),
+        _event("project_device_report_recorded", "record_project_device_report", (), "device_reported_operational"),
+        _event("project_reading_recorded", "record_project_reading", (), "local_operational"),
+        _event("project_delivery_submitted", "submit_project_delivery", (), "local_operational"),
+        _event("project_workbench_saved", "save_project_workbench", (), "local_operational"),
+        _event("project_assistance_requested", "request_project_hint", (), "local_support_signal"),
+        _event("project_workflow_initialized", "initialize_project_workflow", (), "local_operational"),
         _event("learning_path_extension_committed", "commit_role_learning_points", (), "source_catalog_operation"),
         _event("vnext_teaching_input_received", "coordinate_vnext_agent_turn", KERNEL_NAMES,
                "explicit_immediate_teaching_context", origin="vnext"),
@@ -1239,6 +1291,18 @@ _REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 
 
 _PYTHON_BINDING_TARGETS = {
+    "py:project_guidance.prepare": ("learnflow_core.project_guidance", "prepare"),
+    "py:project_guidance.confirm": ("learnflow_core.project_guidance", "confirm"),
+    "py:project_device_report.record": ("learnflow_core.project_guidance", "record_device_report"),
+    "py:project_workflow.tutor_context": ("app.services.project_workflows", "tutor_workflow_context"),
+    "py:work_case.validate": ("app.api.project_workflows", "validate_case"),
+    "py:work_case.catalog": ("app.services.practice_cases", "case_catalog"),
+    "py:project_workflow.reading": ("app.services.project_workflows", "record_reading"),
+    "py:project_workflow.deliver": ("app.services.project_workflows", "deliver_checkpoint"),
+    "py:project_workflow.save": ("app.services.project_workflows", "save_workbench"),
+    "py:project_workflow.initialize": ("app.services.project_workflows", "initialize_workflow"),
+    "py:project_workflow.hint": ("app.services.project_workflows", "request_hint"),
+    "py:project_workflow.read": ("app.services.project_workflows", "workflow_view"),
     "py:golden_role.workspace": ("app.services.golden_role_workspace", "GoldenWorkspace"),
     "py:tutor.teaching_response": ("app.services.teaching_response", "teaching_response_prompt"),
     "py:ecosystem.dispatch": ("app.services.ecosystem_gateway", "dispatch"),
@@ -1312,6 +1376,10 @@ _PYTHON_MEMBER_BINDING_TARGETS = {
 
 
 _API_BINDING_TARGETS = {
+    "api:project_guidance.prepare": ("app.api.project_guidance", "/project-guidance/prepare", "POST", "prepare_project"),
+    "api:project_guidance.confirm": ("app.api.project_guidance", "/project-guidance/{candidate_id}/confirm", "POST", "confirm_project"),
+    "api:project_device_report.create": ("app.api.project_guidance", "/vnext-projects/{project_id}/device-reports", "POST", "create_device_report"),
+    "api:project_device_report.read": ("app.api.project_guidance", "/vnext-projects/{project_id}/device-reports/{report_id}", "GET", "get_device_report"),
     "api:platform.manifest": ("app.api.platform", "/platform", "GET", "platform_manifest"),
     "api:platform.readiness": ("app.api.health", "/ready", "GET", "readiness_check"),
     "api:agent.consume_role_package_launch": ("app.api.agent", "/agent/role-package-launches/consume", "POST", "consume_role_package_launch"),
@@ -1520,6 +1588,10 @@ IMPLEMENTATION_BINDINGS = {
 
 
 _TOOL_BINDING_IDS = {
+    "project_guidance_gateway": ("py:project_guidance.prepare", "py:project_guidance.confirm", "api:project_guidance.prepare", "api:project_guidance.confirm"),
+    "project_device_report_gateway": ("py:project_device_report.record", "api:project_device_report.create", "api:project_device_report.read"),
+    "project_workflow_runtime": ("py:project_workflow.tutor_context", "py:project_workflow.read", "py:project_workflow.initialize", "py:project_workflow.save", "py:project_workflow.deliver", "py:project_workflow.reading", "py:project_workflow.hint"),
+    "local_work_case_catalog": ("py:work_case.catalog", "py:work_case.validate"),
     "golden_role_workspace": ("py:golden_role.workspace",),
     "ecosystem_gateway": ("py:ecosystem.dispatch", "api:ecosystem.dispatch"),
     "curriculum_source_runtime": ("py:curriculum.read", "py:curriculum.resolve", "py:curriculum.commit", "api:ecosystem.resolve", "api:ecosystem.commit", "frontend:path.extensions"),
@@ -1630,6 +1702,7 @@ TOOL_PUBLICATIONS = {
 
 
 _SKILL_BINDING_IDS = {
+    "three_mode_project_guidance": ("api:project_guidance.prepare", "api:project_guidance.confirm", "api:project_device_report.create", "py:project_workflow.read", "py:project_workflow.initialize", "py:project_workflow.deliver", "py:work_case.validate"),
     "intent_and_handoff": ("py:tutor.process_turn",),
     **{
         skill_id: (f"py:learning_skill_runtime:{skill_id}",)
@@ -1644,7 +1717,7 @@ _SKILL_BINDING_IDS = {
     "feynman_teach_back": ("py:micro_learning.analyze",),
     "learning_path_planning": ("frontend:path.plan", "py:roadmap.agent"),
     "learning_task_conversion": (
-        "frontend:plugin.learning_task_conversion", "api:learning_task_candidates.create",
+        "frontend:plugin.learning_task_conversion", "api:project_guidance.prepare", "api:project_guidance.confirm", "api:learning_task_candidates.create",
         "api:learning_task_candidates.confirm", "py:learning_task_candidate.validate",
         "py:learning_task_candidate.confirm",
     ),

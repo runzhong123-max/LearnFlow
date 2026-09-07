@@ -125,3 +125,9 @@ app.include_router(platform_router, prefix="/api")
 
 from learnflow_core.api.visuals import router as visuals_router
 app.include_router(visuals_router, prefix="/api")
+
+from app.api.project_workflows import router as project_workflows_router
+app.include_router(project_workflows_router, prefix="/api")
+
+from app.api.project_guidance import router as project_guidance_router
+app.include_router(project_guidance_router, prefix="/api")

@@ -92,3 +92,9 @@ VisualSpec计算与API统一位于learning-core的visuals及api/visuals.py；表
 ### 图解与动画插件（2026-09-07）
 
 `packages/learning-client/src/visuals/workflow.ts` 与 `plugin-package.ts` 是图解插件产品流程的共享源；两端 `plugins/educational_visuals` 为装配入口。`learnflow_core.visuals.workspace` 管理私有作品和任务，`svg_story` 与 `engine` 分别是结构分镜和 VisualSpec 计算构建器。宿主仅装配认证、模型、能力授权与已有纸张入口。详见 [插件工作流](design/visualize/PLUGIN-WORKFLOW.md)。
+
+## 三类项目引导共享实现
+
+工作任务转学习项目的对话引导、候选协议和项目工作流在 shared packages 中复用。云端保存项目、对话、阶段和设备报告参考；桌面 sidecar 执行文件操作和工程子 Agent，按云账号/项目隔离且不镜像云端数据库身份。详见[实现与边界](implementation/DESKTOP_PROJECT_GUIDANCE.md)。
+
+共享协议：`learnflow.project-guidance.v1` 保存候选与显式确认；`learnflow.project-workflow.v1` 投影正式阶段和纸张；`learnflow.device-report.v1` 记录设备报告的运行或文件摘要。全部以既有项目 ownership 为边界，不自动生成掌握证据。

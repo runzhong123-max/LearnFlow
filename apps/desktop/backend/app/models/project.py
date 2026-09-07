@@ -528,3 +528,6 @@ class ProjectWorkflowSubmission(Base):
     payload = Column(JSON, nullable=False, default=dict)
     feedback = Column(JSON, nullable=False, default=dict)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+from learnflow_core.project_guidance_models import ProjectGuidanceCandidate, ProjectDeviceReport  # noqa: E402,F401

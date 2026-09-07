@@ -1,3 +1,4 @@
+import { projectGuidanceContributions } from '../../../packages/learning-client/src/project-guidance/plugin.ts'
 import {
   defineLearnFlowPlugin,
   LEARNFLOW_PLUGIN_API_VERSION,
@@ -92,6 +93,7 @@ const plugin = defineLearnFlowPlugin({
     ...LEARNING_TASK_CONVERSION_PLUGIN,
     defaultEnabled: false,
     objects: [
+      ...projectGuidanceContributions.objects as any,
       {
         type: 'learning_task_intake', title: '学习型任务转化准备单',
         description: '在调用讯飞前完成输入层级判断、原文锚定、任务选择和显式确认。',
@@ -148,6 +150,7 @@ const plugin = defineLearnFlowPlugin({
       },
     ],
     tools: [
+      ...projectGuidanceContributions.tools as any,
       {
         id: 'prepare_learning_task_intake', title: '准备学习型任务转化',
         description: '接收宿主独立语义模型的层级判断，并在本地校验原文锚点，返回待选择或待确认准备单；不调用讯飞。',
@@ -256,13 +259,13 @@ const plugin = defineLearnFlowPlugin({
         availableInModes: ['free', 'simple_explain', 'guided_learning', 'learning_plan'], timeoutMs: 30_000,
       },
     ],
-    skills: [{
+    skills: [...projectGuidanceContributions.skills as any, {
       id: 'draft_learning_task', title: '真实工作任务转学习任务候选',
       description: '选中插件后，先用准备单收敛并确认单个企业工作任务，再调用讯飞生成候选。',
       whenToUse: '用户要求把具体工作任务转成可执行学习步骤、任务工单或学习型工作任务。',
       whenNotToUse: '用户只是问概念、要求评分、修改掌握状态或尚未给出可执行任务时。',
       instructions: [
-        '任何新的转化请求第一步都调用 learning_task_conversion__prepare_learning_task_intake。本工具只返回可检查准备单，不调用讯飞；返回后本轮必须停止工具链并让用户选择或确认，严禁同一轮继续 draft_learning_task。',
+        '明确选择知识学习项目后，任何新的知识转化请求第一步都调用 learning_task_conversion__prepare_learning_task_intake。本工具只返回可检查准备单，不调用讯飞；返回后本轮必须停止工具链并让用户选择或确认，严禁同一轮继续 draft_learning_task。',
         '岗位或职业输入先给出其下的单个企业典型工作任务候选；优先使用已引用岗位包或项目来源，数据库没有时可给 model_proposed 候选，但必须保留用户原始领域词并标明待确认。学习方向和知识主题不得自动替换成相似岗位。',
         '只有准备单为 ready_for_confirmation 且用户在后续一轮明确确认时，才可把准备单的 originalInput、intakeId、intakeRootHash、taskContract 和 source 原样传给 draft_learning_task。不得猜测或重算 intakeRootHash。',
         'taskTitle 保留用户任务对象、动作和交付目标；可从当前项目读取到的来源由服务端固定 SourceVersion 后注入，插件不得自行伪造 sourceVersionIds 或 citations。步骤数量未被用户明确指定时不要虚构固定五步或六步。',
@@ -277,6 +280,7 @@ const plugin = defineLearnFlowPlugin({
       objectTypes: [...LEARNING_TASK_OBJECT_TYPES],
     }],
     renderers: [
+      ...projectGuidanceContributions.renderers,
       { id: LEARNING_TASK_RENDERERS.intake, title: '任务转化准备单', description: '显示输入层级、原文锚点、任务候选和确认前 Plan 状态。' },
       { id: LEARNING_TASK_RENDERERS.candidate, title: '学习任务候选工作台', description: '按先后依赖显示任务步骤、产物、验收和步骤内知识技能。' },
       { id: LEARNING_TASK_RENDERERS.evidence, title: '候选来源证据', description: '显示固定来源、引用、覆盖与事实边界。' },
@@ -286,6 +290,7 @@ const plugin = defineLearnFlowPlugin({
     ],
   },
   handlers: {
+    ...projectGuidanceContributions.handlers,
     prepare_learning_task_intake: input => learningTaskConversionRuntime.prepare(input),
     draft_learning_task: (input, context) => learningTaskConversionRuntime.draft(input, context),
     read_learning_task_candidate: (input, context) => learningTaskConversionRuntime.read(input, context),

@@ -1,3 +1,4 @@
+import { explicitProjectGuidanceMode, hasProjectGuidanceConversation, projectGuidanceDirectRequest, projectGuidanceConfirmation, projectGuidanceObjects } from '../../../../packages/learning-client/src/project-guidance/contract.ts'
 import { VISUAL_PLUGIN_PLANNER_INSTRUCTIONS, visualPluginRequest, visualPluginReferences } from '../../../../packages/learning-client/src/visuals/plugin-host.ts'
 import { serverArtifactHost } from './plugin-artifact-host.ts'
 import { directVisualWorkflowCall } from '../../../../packages/learning-client/src/visuals/workflow.ts'
@@ -200,6 +201,8 @@ function pluginActivation(input: TutorAgentRuntimeInput): PluginActivationContex
 
 const PROJECT_PLUGIN_INTEGRATION_OPERATIONS = {
   learning_task_conversion: {
+    prepare_project_guidance: { method: 'POST', suffix: '', guidance: 'prepare' },
+    confirm_project_guidance: { method: 'POST', suffix: '/confirm', guidance: 'confirm' },
     create_candidate: { method: 'POST', suffix: '' },
     read_candidate: { method: 'GET', suffix: '' },
     inspect_evidence: { method: 'GET', suffix: '/evidence' },
@@ -223,7 +226,7 @@ export function projectPluginIntegrationRequestBody(
   return requestBody
 }
 
-async function requestProjectPluginIntegration(options: {
+export async function requestProjectPluginIntegration(options: {
   input: TutorAgentRuntimeInput
   pluginId: string
   operation: string
@@ -231,18 +234,27 @@ async function requestProjectPluginIntegration(options: {
   signal: AbortSignal
 }) {
   const projectId = options.input.formalProjectContext?.project?.id
-  if (!projectId) throw new Error('plugin_integration_error:project_required:当前插件操作需要项目作用域')
-  if (!options.input.backendBase) throw new Error('plugin_integration_error:backend_unavailable:LearnFlow 后端地址不可用')
   const pluginRoutes = PROJECT_PLUGIN_INTEGRATION_OPERATIONS[
     options.pluginId as keyof typeof PROJECT_PLUGIN_INTEGRATION_OPERATIONS
-  ] as Record<string, { method: 'GET' | 'POST'; suffix: string; localCase?: 'catalog' | 'validate' }> | undefined
+  ] as Record<string, { method: 'GET' | 'POST'; suffix: string; guidance?: 'prepare' | 'confirm'; localCase?: 'catalog' | 'validate' }> | undefined
   const route = pluginRoutes?.[options.operation]
   if (!route) throw new Error('plugin_integration_error:operation_forbidden:插件请求了未授权的项目集成操作')
   const body = options.payload && typeof options.payload === 'object' && !Array.isArray(options.payload)
     ? options.payload as Record<string, unknown> : {}
+  if (!route.guidance && route.localCase !== 'catalog' && !projectId) throw new Error('plugin_integration_error:project_required:当前插件操作需要项目作用域')
+  if (route.guidance === 'confirm') {
+    const latest = [...options.input.messages].reverse().find(message => message.role === 'user')?.content || ''
+    const objects = projectGuidanceObjects(options.input.messages)
+    const confirmation = projectGuidanceConfirmation(latest, objects)
+    if (!confirmation || confirmation.candidateId !== body.candidateId || confirmation.expectedRootHash !== body.expected_root_hash || body.confirmed !== true) throw new Error('plugin_integration_error:explicit_confirmation_required:请先核对当前项目方案并明确确认')
+    // Node may serve a native cloud window or a browser. Only the native host can authorize creation.
+    const candidate = objects.find(object => object.value?.candidate_id === body.candidateId && object.value?.root_hash === body.expected_root_hash)?.value
+    return { requires_desktop_confirmation: true, candidate }
+  }
+  if (!options.input.backendBase) throw new Error('plugin_integration_error:backend_unavailable:LearnFlow 后端地址不可用')
   const candidateId = typeof body.candidateId === 'string' && /^ltc_[A-Za-z0-9_-]{1,72}$/.test(body.candidateId)
     ? body.candidateId : ''
-  if (!route.localCase && (route.method === 'GET' || route.suffix) && !candidateId) {
+  if (!route.guidance && !route.localCase && (route.method === 'GET' || route.suffix) && !candidateId) {
     throw new Error('plugin_integration_error:candidate_id_required:候选操作缺少 candidateId')
   }
   const basePath = `/api/projects/${projectId}/integrations/xingchen/learning-task-candidates`
@@ -256,6 +268,7 @@ async function requestProjectPluginIntegration(options: {
     path = `/api/practice-cases/${encodeURIComponent(body.caseId)}/validate`
     requestBody = { version: body.version, root_hash: body.root_hash }
   }
+  if (route.guidance === 'prepare') path = '/api/project-guidance/prepare'
   let csrfToken = ''
   if (route.method === 'POST') {
     const csrfResponse = await fetch(`${options.input.backendBase}/api/auth/csrf`, {
@@ -752,6 +765,7 @@ export function directLearningTaskIntakeRequest(
   // project here made the explicitly selected plugin silently fall back to
   // Tutor's generic tools in a new/global conversation.
   if (!activePluginIds?.includes('learning_task_conversion')) return undefined
+  if (explicitProjectGuidanceMode(message) !== 'learning' && /project_guidance|实验项目|实验型项目|带教实践|带教项目|实践项目/.test(message)) return undefined
   const referencedTasks = referencedPluginObjects.flatMap(object => {
     const value = object.value && typeof object.value === 'object' && !Array.isArray(object.value)
       ? object.value as Record<string, unknown> : {}
@@ -810,7 +824,8 @@ export function directLearningTaskIntakeRequest(
   // Codex plugin for the next message.  Do not require them to repeat a
   // command such as “生成学习型任务”; plain task/role/topic text goes through
   // the same semantic preflight and confirmation gates.
-  const taskTitle = (quoted || taskAfterIntent || taskBeforeIntent || normalized).slice(0, 300)
+  const selectedOriginal = explicitProjectGuidanceMode(message) === 'learning' ? message.match(/原始工作任务：([\s\S]+)/)?.[1]?.trim() : undefined
+  const taskTitle = (selectedOriginal || quoted || taskAfterIntent || taskBeforeIntent || normalized).slice(0, 300)
   if (taskTitle.length < 2) return undefined
   return {
     rawInput: taskTitle,
@@ -1104,6 +1119,12 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
     const pluginSignal = AbortSignal.timeout(Math.max(1,Math.min(registered.contribution.timeoutMs || 30000,deadline-Date.now())))
     let acceptingPluginStages = true
     try {
+      if (registered.pluginId === 'learning_task_conversion'
+        && ['prepare_learning_task_intake', 'draft_learning_task'].includes(registered.contribution.id)
+        && explicitProjectGuidanceMode(latestMessage) !== 'learning'
+        && (['experiment', 'practice'].includes(explicitProjectGuidanceMode(latestMessage) || '') || hasProjectGuidanceConversation(input.messages))) {
+        throw new Error('plugin_contract_invalid:project_mode_requires_guidance:实验与带教使用 LearnFlow 项目方案，不调用讯飞')
+      }
       const execution = await input.pluginRegistry.execute(call.name, registered.pluginId === 'educational_visuals' && ['create','iterate'].includes(registered.contribution.id) ? {...call.arguments,request_id:`${input.conversationId || input.formalSessionId || 'chat'}:${input.clientTurnId || id}:${registered.contribution.id}`} : call.arguments, {
         ...activation,
         scope: {
@@ -1348,6 +1369,22 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
     }, sources, recordRuntimeMessages, recordRuntimeMessages)
   }
 
+  const directGuidance = projectGuidanceDirectRequest({
+    activePluginIds: input.activePluginIds, message: latestMessage, messages: input.messages,
+    referencedObjects: input.referencedPluginObjects, mode: input.mode,
+  })
+  if (directGuidance && input.pluginRegistry?.resolveTool(directGuidance.name, pluginActivation(input))) {
+    await execute({ id: `direct-project-guidance-${id}`, ...directGuidance })
+    const run = runs[runs.length - 1]
+    const reply = run?.status === 'completed' ? run.detail : `项目方案操作失败：${run?.detail || '没有返回可用结果'}`
+    stopReason = run?.status === 'completed' ? 'final_answer' : 'error'
+    reconcileVisibleDraft(reply)
+    return { reply, toolRuns: runs, trace: {
+      version: 'vnext-agent-trace.v1', turnId: id, modelRounds: 0, toolCalls, stopReason,
+      events: trajectory, decisionSummaries, timings: { totalMs: Date.now() - startedAt },
+    } }
+  }
+
   const directCandidateOperation = directLearningTaskCandidateOperationRequest(
     input.activePluginIds,
     pluginActivation(input).projectId,
@@ -1484,7 +1521,8 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
     }
   }
 
-  const directIntake = directLearningTaskIntakeRequest(
+  const directIntake = hasProjectGuidanceConversation(input.messages) && explicitProjectGuidanceMode(latestMessage) !== 'learning'
+    ? undefined : directLearningTaskIntakeRequest(
     input.activePluginIds,
     pluginActivation(input).projectId,
     latestMessage,

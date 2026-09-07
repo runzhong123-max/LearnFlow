@@ -3338,7 +3338,11 @@ function App({ auth }: { auth: AuthGateSession }) {
                   <MessageList
                     messages={messages}
                     onPluginPrompt={prompt => { void runTutorTurn(conversation.id, prompt, { hideUserMessage: true }) }}
-                    onPluginReference={object => addPluginDraftReference(draftKey, object)}
+                    onPluginReference={(object, prompt) => {
+                      addPluginDraftReference(draftKey, object)
+                      if (prompt) setDrafts(previous => ({ ...previous, [draftKey]: [previous[draftKey]?.trim(), prompt].filter(Boolean).join('\n\n') }))
+                    }}
+                    onOpenProject={target => { void openProjectTutor(target.projectId) }}
                     onOpenLearningTask={taskId => {
                       void (async () => {
                         const snapshot = await refreshFormalSnapshot(true)
@@ -3863,14 +3867,15 @@ function App({ auth }: { auth: AuthGateSession }) {
   )
 }
 
-function ToolRunCard({ run, sourceMessageId, conversationId, compactPluginResult, onPluginPrompt, onPluginReference, onOpenLearningTask, onOpenPluginResult, onOpenLearningFile, onAttachLearningFile, onAcceptPathProposal, onAcceptPathPlan, onAcceptProjectRoadmap, onAcceptProjectLearningFile, activePathPlanId, pathPlanBusyId, pathPlanWriteError, projectBusyKey, projectError, learningFileProposalError }: {
+function ToolRunCard({ run, sourceMessageId, conversationId, compactPluginResult, onPluginPrompt, onPluginReference, onOpenLearningTask, onOpenProject, onOpenPluginResult, onOpenLearningFile, onAttachLearningFile, onAcceptPathProposal, onAcceptPathPlan, onAcceptProjectRoadmap, onAcceptProjectLearningFile, activePathPlanId, pathPlanBusyId, pathPlanWriteError, projectBusyKey, projectError, learningFileProposalError }: {
   run: TutorToolRun
   sourceMessageId: string
   conversationId: string
   compactPluginResult?: boolean
   onPluginPrompt: (prompt: string) => void
-  onPluginReference: (object: LearnFlowPluginObject) => void
+  onPluginReference: (object: LearnFlowPluginObject, prompt?: string) => void
   onOpenLearningTask: (taskId: number) => void
+  onOpenProject: (target: { projectId: number; sessionId?: number }) => void
   onOpenPluginResult: (run: TutorToolRun, sourceMessageId: string) => void
   onOpenLearningFile: (file: { kind: 'lecture' | 'practice'; ref: string; title: string }) => void
   onAttachLearningFile: (file: { kind: 'lecture' | 'practice'; ref: string; title: string }, sourceMessageId: string) => void
@@ -3993,7 +3998,9 @@ function ToolRunCard({ run, sourceMessageId, conversationId, compactPluginResult
             run={run}
             onPrompt={onPluginPrompt}
             onReference={onPluginReference}
+            onReferenceObject={onPluginReference}
             onOpenLearningTask={onOpenLearningTask}
+            onOpenProject={onOpenProject}
             onOpenPaper={() => onOpenPluginResult(run, sourceMessageId)}
           />)}
     </section>
@@ -4058,12 +4065,13 @@ function ToolDecisionBridge({
   )
 }
 
-function MessageList({ messages, conversationId, onPluginPrompt, onPluginReference, onOpenLearningTask, onOpenPluginResult, onQuoteFollowUp, onOpenLearningFile, onAttachLearningFile, onAcceptPathProposal, onAcceptPathPlan, onAcceptProjectRoadmap, onAcceptProjectLearningFile, activePathPlanId, pathPlanBusyId, pathPlanWriteErrors, projectBusyKey, projectError, learningFileProposalErrors }: {
+function MessageList({ messages, conversationId, onPluginPrompt, onPluginReference, onOpenLearningTask, onOpenProject, onOpenPluginResult, onQuoteFollowUp, onOpenLearningFile, onAttachLearningFile, onAcceptPathProposal, onAcceptPathPlan, onAcceptProjectRoadmap, onAcceptProjectLearningFile, activePathPlanId, pathPlanBusyId, pathPlanWriteErrors, projectBusyKey, projectError, learningFileProposalErrors }: {
   messages: Message[]
   conversationId: string
   onPluginPrompt: (prompt: string) => void
-  onPluginReference: (object: LearnFlowPluginObject) => void
+  onPluginReference: (object: LearnFlowPluginObject, prompt?: string) => void
   onOpenLearningTask: (taskId: number) => void
+  onOpenProject: (target: { projectId: number; sessionId?: number }) => void
   onOpenPluginResult: (run: TutorToolRun, sourceMessageId: string) => void
   onQuoteFollowUp: (messageId: string, quote: string) => void
   onOpenLearningFile: (file: { kind: 'lecture' | 'practice'; ref: string; title: string }) => void
@@ -4179,6 +4187,7 @@ function MessageList({ messages, conversationId, onPluginPrompt, onPluginReferen
                       onPluginPrompt={onPluginPrompt}
                       onPluginReference={onPluginReference}
                       onOpenLearningTask={onOpenLearningTask}
+            onOpenProject={onOpenProject}
                       onOpenPluginResult={onOpenPluginResult}
                       onOpenLearningFile={onOpenLearningFile}
                       onAttachLearningFile={onAttachLearningFile}

@@ -55,6 +55,16 @@ async def device_request(session, origin: str, project_id: int, area: str, actio
     metadata = storage / 'binding.json'
     try:
         payload = json.loads(body) if body else {}
+        report = action.split('/')
+        if area == 'experiments' and method == 'POST' and len(report) == 3 and report[0] == 'runs' and report[1].isdigit() and report[2] == 'report':
+            from app.services.cloud_device_reports import publish_run_report
+            return await publish_run_report(session, project_id, storage, int(report[1]), body)
+        if area == 'workspace' and action == 'report' and method == 'POST':
+            from app.services.cloud_device_reports import publish_file_report
+            return await publish_file_report(session, project_id, storage, body)
+        if area == 'local-agent':
+            from app.services.cloud_agent_broker import agent_request
+            return await agent_request(session, project_id, project.json(), storage, action, method, payload)
         async with _lock:
             state = json.loads(metadata.read_text()) if metadata.exists() else {'runs': [], 'operations': {}}
             if area == 'workspace' and action == 'link' and method == 'POST':

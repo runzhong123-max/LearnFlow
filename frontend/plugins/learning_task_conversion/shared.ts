@@ -1,8 +1,8 @@
 export const LEARNING_TASK_CONVERSION_PLUGIN = {
   id: 'learning_task_conversion',
-  name: '学习型任务转化',
-  version: '1.2.0',
-  description: '先用可检查的准备单锁定真实工作任务，再交给固定讯飞工作流生成候选，并在用户明确确认后创建正式学习任务。',
+  name: '工作任务转学习项目',
+  version: '1.3.0',
+  description: '在对话中选择知识学习、实验或带教实践。知识学习沿用讯飞转换；实验与带教由 LearnFlow 设计，在桌面执行。',
   icon: '转',
 } as const
 

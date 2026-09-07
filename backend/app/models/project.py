@@ -13,6 +13,8 @@ class Project(Base):
     description = Column(Text, default="")
     user_level = Column(String(50), default="beginner")
     project_kind = Column(String(30), nullable=False, default="apprenticeship", index=True)
+    project_mode = Column(String(30), nullable=False, default="learning")
+    project_brief = Column(JSON, nullable=False, default=dict)
     visibility = Column(String(20), nullable=False, default="visible", index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -496,3 +498,36 @@ class LocalAgentRunEvent(Base):
     event_type = Column(String(60), nullable=False, index=True)
     payload = Column(JSON, default=dict)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class ProjectWorkflowState(Base):
+    """Project-local paper layout and immutable workflow package binding."""
+    __tablename__ = "project_workflow_states"
+    id = Column(Integer, primary_key=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, unique=True, index=True)
+    learner_id = Column(Integer, ForeignKey("learners.id"), nullable=False, index=True)
+    revision = Column(Integer, nullable=False, default=0)
+    initialized = Column(Boolean, nullable=False, default=False)
+    case_ref = Column(JSON, nullable=True)
+    workbench = Column(JSON, nullable=False, default=dict)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class ProjectWorkflowSubmission(Base):
+    """Append-only operational delivery/read/save audit, never a mastery score."""
+    __tablename__ = "project_workflow_submissions"
+    __table_args__ = (UniqueConstraint("project_id", "client_action_id", name="uq_project_workflow_action"),)
+    id = Column(Integer, primary_key=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, index=True)
+    learner_id = Column(Integer, ForeignKey("learners.id"), nullable=False, index=True)
+    checkpoint_id = Column(Integer, ForeignKey("checkpoints.id"), nullable=True, index=True)
+    kind = Column(String(30), nullable=False)
+    client_action_id = Column(String(120), nullable=False)
+    request_hash = Column(String(64), nullable=False)
+    payload = Column(JSON, nullable=False, default=dict)
+    feedback = Column(JSON, nullable=False, default=dict)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+from learnflow_core.project_guidance_models import ProjectGuidanceCandidate, ProjectDeviceReport  # noqa: E402,F401

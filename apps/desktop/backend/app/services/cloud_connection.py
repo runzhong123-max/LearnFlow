@@ -141,7 +141,7 @@ class CloudConnection:
                     'tasks': task_value if isinstance(task_value, list) else task_value.get('tasks', []),
                     'review': {'due': reviews.json()['due'], 'focus_subjects': [], 'mastery_unchanged': True},
                     'model': {'configured': True, 'status': 'ready'}})
-            device = re.fullmatch(r'projects/(\d+)/(workspace|experiments)/(.*)', path)
+            device = re.fullmatch(r'projects/(\d+)/(workspace|experiments|local-agent)/(.*)', path)
             if device and not pet:
                 from app.services.cloud_device import device_request
                 return await device_request(session, self.origin, int(device[1]), device[2], device[3], request.method, bytes(body))

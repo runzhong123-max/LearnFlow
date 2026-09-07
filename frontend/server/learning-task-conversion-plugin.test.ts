@@ -1,3 +1,5 @@
+import '../../packages/learning-client/src/project-guidance/workflow.test.ts'
+import { explicitProjectGuidanceMode, hasProjectGuidanceConversation, projectGuidanceDirectRequest, projectGuidanceConfirmationPrompt } from '../../packages/learning-client/src/project-guidance/contract.ts'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -8,6 +10,7 @@ import {
   directLearningTaskCandidateSelectionRequest,
   directLearningTaskIntakeRequest,
   projectPluginIntegrationRequestBody,
+  requestProjectPluginIntegration,
   runTutorAgentTurn,
 } from './agent-runtime.ts'
 import { learningTaskDraftConfirmationPrompt } from '../plugins/learning_task_conversion/intake.ts'
@@ -364,6 +367,9 @@ test('learning-task conversion contributes intake, candidate, confirmation and f
   const loaded = await registry()
   const tools = loaded.toolDefinitions(activation).filter(tool => tool.name.startsWith('learning_task_conversion__'))
   assert.deepEqual(tools.map(tool => tool.name), [
+    'learning_task_conversion__list_project_practice_cases',
+    'learning_task_conversion__prepare_project_guidance',
+    'learning_task_conversion__confirm_project_guidance',
     'learning_task_conversion__prepare_learning_task_intake',
     'learning_task_conversion__draft_learning_task',
     'learning_task_conversion__read_learning_task_candidate',
@@ -372,8 +378,8 @@ test('learning-task conversion contributes intake, candidate, confirmation and f
     'learning_task_conversion__prepare_learning_handoff',
     'learning_task_conversion__confirm_learning_task_candidate',
   ])
-  assert.equal(tools.filter(tool => tool.risk === 'artifact').length, 2)
-  assert.equal(tools.filter(tool => tool.risk === 'read_only').length, 5)
+  assert.equal(tools.filter(tool => tool.risk === 'artifact').length, 4)
+  assert.equal(tools.filter(tool => tool.risk === 'read_only').length, 6)
   assert.match(loaded.skillInstructions(activation), /第一步都调用 learning_task_conversion__prepare_learning_task_intake/)
   assert.match(loaded.skillInstructions(activation), /严禁同一轮继续 draft_learning_task/)
   assert.match(loaded.skillInstructions(activation), /不得声称已进入个性化学习或正式发布/)
@@ -564,7 +570,7 @@ test('only local intake is available outside project scope and plugin exposes no
   const noProject = loaded.toolDefinitions({ mode: 'learning_plan', activePluginIds: ['learning_task_conversion'] })
   assert.deepEqual(
     noProject.filter(tool => tool.name.startsWith('learning_task_conversion__')).map(tool => tool.name),
-    ['learning_task_conversion__prepare_learning_task_intake'],
+    ['learning_task_conversion__list_project_practice_cases', 'learning_task_conversion__prepare_project_guidance', 'learning_task_conversion__confirm_project_guidance', 'learning_task_conversion__prepare_learning_task_intake'],
   )
   const sources = [
     readFileSync(resolve(process.cwd(), 'plugins/learning_task_conversion/runtime.ts'), 'utf8'),
@@ -642,4 +648,123 @@ test('explicit confirmation is root-hash bound and returns a formal task without
   assert.equal((execution.result.payload as any).masteryChanged, false)
   assert.equal((execution.result.payload as any).kernelWrites, 0)
   assert.equal(execution.result.presentation?.renderer, 'learning_task_conversion:learning_task_confirmation')
+})
+
+
+test('host keeps project guidance and case listing available before project creation', async () => {
+  const priorFetch = globalThis.fetch
+  const urls: string[] = []
+  globalThis.fetch = (async (input: any) => {
+    const url = String(input); urls.push(url)
+    return new Response(JSON.stringify(url.endsWith('/csrf') ? { csrf_token: 'csrf' } : { ok: true }), { status: 200 })
+  }) as any
+  try {
+    const options = { input: { backendBase: 'https://learnflow.test', requestCookie: 'session=test', messages: [] } as any,
+      pluginId: 'learning_task_conversion', signal: AbortSignal.timeout(3000) }
+    await requestProjectPluginIntegration({ ...options, operation: 'prepare_project_guidance', payload: { project_mode: 'experiment' } })
+    await requestProjectPluginIntegration({ ...options, operation: 'list_work_cases' })
+    assert.deepEqual(urls, ['https://learnflow.test/api/auth/csrf', 'https://learnflow.test/api/project-guidance/prepare', 'https://learnflow.test/api/practice-cases'])
+    await assert.rejects(requestProjectPluginIntegration({ ...options, operation: 'create_candidate' }), /project_required/)
+    await assert.rejects(requestProjectPluginIntegration({ ...options, pluginId: 'unregistered', operation: 'prepare_project_guidance' }), /operation_forbidden/)
+  } finally { globalThis.fetch = priorFetch }
+})
+
+test('both Node hosts require native confirmation and cannot create a project from a chat tool', async () => {
+  const candidate = { status: 'ready_for_confirmation', candidate_id: 'pg_safe', root_hash: 'a'.repeat(64), project_mode: 'experiment' }
+  const messages = [{ role: 'assistant', toolRuns: [{ status: 'completed', plugin: { pluginId: 'learning_task_conversion', result: {
+    objects: [{ pluginId: 'learning_task_conversion', objectType: 'project_guidance', value: candidate }],
+  } } }] }, { role: 'user', content: projectGuidanceConfirmationPrompt('pg_safe', 'a'.repeat(64)) }]
+  const options = { input: { messages } as any, pluginId: 'learning_task_conversion', operation: 'confirm_project_guidance',
+    payload: { candidateId: 'pg_safe', expected_root_hash: 'a'.repeat(64), confirmed: true }, signal: AbortSignal.timeout(3000) }
+  const result = await requestProjectPluginIntegration(options)
+  assert.equal(result.requires_desktop_confirmation, true)
+  assert.deepEqual(result.candidate, candidate)
+  assert.equal(result.project_id, undefined)
+  await assert.rejects(requestProjectPluginIntegration({ ...options, payload: { ...options.payload, expected_root_hash: 'b'.repeat(64) } }), /explicit_confirmation_required/)
+})
+
+test('fresh plugin task asks for a type without semantic preflight or Xingchen', async () => {
+  const loaded = await registry()
+  let modelCalls = 0
+  const result = await runTutorAgentTurn({ baseUrl: 'https://unused.test', model: 'test-model', mode: 'learning_plan',
+    messages: [{ role: 'user', content: '部署Nginx并检查HTTPS' }], toolChoice: 'auto', pluginRegistry: loaded,
+    activePluginIds: ['learning_task_conversion'], generate: async () => { modelCalls += 1; throw new Error('must not preflight') },
+    invokeProvider: async () => { modelCalls += 1; throw new Error('must not invoke provider') },
+  })
+  assert.equal(modelCalls, 0)
+  assert.equal(result.toolRuns[0].plugin?.toolId, 'prepare_project_guidance')
+  assert.equal((result.toolRuns[0].plugin?.result.payload as any).status, 'needs_mode_selection')
+})
+
+
+test('real Vite entry selects credentials consistently for choices, knowledge and experimental follow-up', () => {
+  const source = readFileSync(resolve(process.cwd(), 'vite.config.ts'), 'utf8')
+  const start = source.indexOf('      const directGuidance = projectGuidanceDirectRequest(')
+  const end = source.indexOf('      const configurationIssue =', start)
+  assert.ok(start > 0 && end > start, 'Vite entry must route project guidance before resolving credentials')
+  // Execute the actual entry's pure routing block, without booting Vite or reading account credentials.
+  const classify = new Function(
+    'activePluginIds', 'formalScope', 'latestSubmittedMessage', 'referencedPluginObjects', 'modeValue', 'submittedMessages',
+    'projectGuidanceDirectRequest', 'hasProjectGuidanceConversation', 'explicitProjectGuidanceMode',
+    'directLearningTaskIntakeRequest', 'directLearningTaskDraftConfirmationRequest',
+    'directLearningTaskCandidateOperationRequest', 'directLearningTaskCandidateSelectionRequest',
+    'learningTaskPreflight', 'baseUrl', 'model',
+    source.slice(start, end) + '\nreturn { preflight: Boolean(directIntake), directPluginTurn, providerRequired, runtimeBaseUrl, runtimeModel }',
+  )
+  const route = (message: string, history: any[] = []) => classify(
+    ['learning_task_conversion'], { projectId: 7 }, message, [], 'learning_plan', history,
+    projectGuidanceDirectRequest, hasProjectGuidanceConversation, explicitProjectGuidanceMode,
+    directLearningTaskIntakeRequest, directLearningTaskDraftConfirmationRequest,
+    directLearningTaskCandidateOperationRequest, directLearningTaskCandidateSelectionRequest,
+    { baseUrl: 'https://private-preflight.test', model: 'knowledge-preflight' }, 'https://account-tutor.test', 'account-tutor',
+  )
+  for (const message of ['部署 Nginx 并检查 HTTPS', '我选择实验项目。原始工作任务：部署服务', '我选择带教实践项目。原始工作任务：接手导入工具']) {
+    assert.deepEqual(route(message), { preflight: false, directPluginTurn: true, providerRequired: false,
+      runtimeBaseUrl: 'https://account-tutor.test', runtimeModel: 'account-tutor' })
+  }
+  assert.deepEqual(route('我选择知识学习项目。原始工作任务：部署服务'), {
+    preflight: true, directPluginTurn: true, providerRequired: true,
+    runtimeBaseUrl: 'https://private-preflight.test', runtimeModel: 'knowledge-preflight',
+  })
+  for (const projectMode of ['experiment', 'practice']) {
+    const history = [{ role: 'assistant', content: '请补充交付要求', toolRuns: [{ status: 'completed', plugin: {
+      pluginId: 'learning_task_conversion', result: { objects: [{ objectType: 'project_guidance', value: { project_mode: projectMode } }] },
+    } }] }]
+    assert.deepEqual(route('交付物是校验器和测试报告，验收要求是所有无效数据都要说明原因', history), {
+      preflight: false, directPluginTurn: false, providerRequired: true,
+      runtimeBaseUrl: 'https://account-tutor.test', runtimeModel: 'account-tutor',
+    })
+  }
+  assert.match(source, /configureServer\(server\)\s*\{\s*server\.middlewares\.use\(middleware\)/)
+  assert.match(source, /configurePreviewServer\(server\)\s*\{\s*server\.middlewares\.use\(middleware\)/)
+})
+
+
+test('experimental Tutor follow-up cannot execute the Xingchen draft even when the model requests it', async () => {
+  const loaded = await registry()
+  for (const projectMode of ['experiment', 'practice']) {
+    let providerCalls = 0
+    let preflightCalls = 0
+    const result = await runTutorAgentTurn({
+      baseUrl: 'https://account-tutor.test', model: 'account-tutor', mode: 'learning_plan', toolChoice: 'auto',
+      activePluginIds: ['learning_task_conversion'], pluginRegistry: loaded,
+      formalProjectContext: { project: { id: 7 } } as any,
+      messages: [{ role: 'assistant', content: '请补充交付要求', toolRuns: [{ id: 'prior-guidance', kind: 'plugin', title: '项目方案', detail: '补充交付', durationMs: 1, status: 'completed', plugin: {
+        pluginId: 'learning_task_conversion', result: { summary: '补充交付', objects: [{ pluginId: 'learning_task_conversion', objectType: 'project_guidance', objectId: 'pg_prior', schemaVersion: 'learnflow.project-guidance.v1', label: '项目方案', value: { project_mode: projectMode } }] },
+      } } as any] }, { role: 'user', content: '交付校验器与测试报告' }],
+      generate: async () => { preflightCalls += 1; throw new Error('private knowledge preflight must not run') },
+      invokeProvider: async () => {
+        providerCalls += 1
+        return providerCalls === 1
+          ? { choices: [{ message: { role: 'assistant', content: '', tool_calls: [{ id: 'wrong-lane', type: 'function',
+            function: { name: 'learning_task_conversion__draft_learning_task', arguments: '{}' } }] } }] }
+          : { choices: [{ message: { role: 'assistant', content: '实验与带教继续整理桌面任务书。' } }] }
+      },
+    })
+    assert.equal(preflightCalls, 0)
+    const blocked = result.toolRuns.find(run => run.toolName === 'learning_task_conversion__draft_learning_task')
+    assert.equal(blocked?.status, 'failed')
+    assert.match(blocked?.detail || '', /project_mode_requires_guidance/)
+    assert.equal(blocked?.plugin, undefined)
+  }
 })

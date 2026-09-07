@@ -2015,6 +2015,9 @@ async def _generate_tutor_reply(
                 ],
             } if accepted_proposal else None,
         }
+        if active_project:
+            from app.services.project_workflows import tutor_workflow_context
+            project_workspace.update(await tutor_workflow_context(db, active_project))
     elif session.session_type == "checkpoint" and session.project_id and session.checkpoint_id:
         checkpoint_workspace = await build_checkpoint_tutor_context(
             db,

@@ -1,3 +1,4 @@
+import { explicitProjectGuidanceMode, hasProjectGuidanceConversation, projectGuidanceDirectRequest } from '../../../packages/learning-client/src/project-guidance/contract.ts'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'node:path'
@@ -338,7 +339,16 @@ function tutorProxy(mode: string, backendBase: string): Plugin {
           })
         : []
       const latestSubmittedMessage = [...submittedMessages].reverse().find(message => message.role === 'user')?.content || ''
-      const directIntake = directLearningTaskIntakeRequest(
+      // This decision happens before credential resolution in both development and preview.
+      // It must match the inner runtime so local choice cards never require a model key,
+      // and experiment/practice follow-up uses the account Tutor rather than knowledge preflight.
+      const directGuidance = projectGuidanceDirectRequest({
+        activePluginIds, message: latestSubmittedMessage, messages: submittedMessages,
+        referencedObjects: referencedPluginObjects, mode: modeValue,
+      })
+      const directIntake = directGuidance || (hasProjectGuidanceConversation(submittedMessages)
+        && explicitProjectGuidanceMode(latestSubmittedMessage) !== 'learning')
+        ? undefined : directLearningTaskIntakeRequest(
         activePluginIds,
         formalScope.projectId,
         latestSubmittedMessage,
@@ -357,7 +367,7 @@ function tutorProxy(mode: string, backendBase: string): Plugin {
         latestSubmittedMessage,
         submittedMessages,
       )
-      const directPluginTurn = Boolean(directIntake || directDraft || directCandidateOperation || directCandidateSelection)
+      const directPluginTurn = Boolean(directGuidance || directIntake || directDraft || directCandidateOperation || directCandidateSelection)
       const providerRequired = Boolean(directIntake) || !directPluginTurn
       const runtimeBaseUrl = directIntake ? learningTaskPreflight.baseUrl : baseUrl
       const runtimeModel = directIntake ? learningTaskPreflight.model : model
