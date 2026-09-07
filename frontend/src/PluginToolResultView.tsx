@@ -1,8 +1,11 @@
+import { useMemo } from 'react'
+import { browserArtifactHost } from './plugin-artifact-host.ts'
 import type { ComponentType, DragEvent } from 'react'
 import { PLUGIN_OBJECT_DRAG_TYPE, type LearnFlowPluginObject, type PluginToolResult } from './plugin-api.ts'
 import type { TutorToolRun } from './tooling.ts'
 
 export type PluginToolRendererProps = {
+  artifactHost?: {request: (operation: string, payload?: Record<string, any>) => Promise<any>}
   pluginId: string
   toolId: string
   result: PluginToolResult
@@ -84,6 +87,7 @@ export default function PluginToolResultView({ run, onPrompt, onReference, onOpe
   onOpenPaper?: () => void
 }) {
   const plugin = run.plugin
+  const artifactHost = useMemo(() => plugin?.pluginId === 'educational_visuals' ? browserArtifactHost(plugin.pluginId) : undefined, [plugin?.pluginId])
   if (!plugin) return null
   const objects = plugin.result.objects || []
   const rendererId = plugin.result.presentation?.renderer
@@ -94,6 +98,7 @@ export default function PluginToolResultView({ run, onPrompt, onReference, onOpe
         {onOpenPaper && <button type="button" onClick={onOpenPaper} aria-label="把插件结果展开到新纸" title="展开到新纸">↗</button>}
       </div>
       {Renderer ? <Renderer
+        artifactHost={artifactHost}
         pluginId={plugin.pluginId}
         toolId={plugin.toolId}
         result={plugin.result}

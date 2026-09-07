@@ -7,7 +7,8 @@ import {
 
 test('tool capability catalog exposes broad core functions instead of individual tool ids', () => {
   const capabilities = visibleToolCapabilities([], [])
-  assert.equal(capabilities.length, 6)
+  assert.equal(capabilities.length, 5)
+  assert.ok(!capabilities.some(item => item.id === 'visual-explanation'))
   assert.deepEqual(capabilities.map(item => item.id), CORE_TOOL_CAPABILITIES.map(item => item.id))
   assert.ok(capabilities.every(item => item.source === 'core'))
   assert.ok(capabilities.every(item => !item.label.includes('_') && !item.purpose.includes('__')))

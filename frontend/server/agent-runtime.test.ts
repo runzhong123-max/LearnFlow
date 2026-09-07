@@ -1,3 +1,5 @@
+import visualPlugin from '../plugins/educational_visuals/server.ts'
+import {LearnFlowPluginRegistry} from '../src/plugin-api.ts'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -1053,162 +1055,55 @@ test('learning file study uses a short artifact-first harness instead of resourc
   assert.ok(result.reply.length < 220)
 })
 
-test('explicit visual intent plans the teaching artifact before rendering', async () => {
-  const cases = [
-    { message: '什么是联邦学习', expected: '' },
-    { message: '画一张联邦学习流程图', expected: 'generate_learning_diagram' },
-    { message: '用动画逐步演示联邦学习聚合过程', expected: 'generate_learning_animation' },
-  ]
-  for (const item of cases) {
-    const requests: any[] = []
-    const executions: string[] = []
-    await runTutorAgentTurn({
-      baseUrl: 'https://example.com/v1/chat/completions', model: 'test-model', mode: 'guided_learning',
-      messages: [{ role: 'user', content: item.message }], toolChoice: 'auto',
-      generate: async () => 'unused',
-      executeTool: async (name, _args, _options, meta) => {
-        executions.push(name)
-        return {
-          run: { id: String(meta?.callId || name), kind: name.endsWith('animation') ? 'animation' : 'image', toolName: name, status: 'failed', title: name, detail: 'fixture failure', durationMs: 1 },
-          observation: { error: 'fixture failure' },
-        } as any
-      },
-      invokeProvider: async request => {
-        requests.push(request)
-        return { choices: [{ message: { content: item.expected
-          ? ((request.body as any).response_format
-              ? visualTeachingPayload(item.expected === 'generate_learning_animation' ? 'animation' : 'diagram')
-              : visualTeachingExplanation)
-          : '先用一句话说明核心，再按需要补充学习动作。' } }] }
-      },
+test('explicit visuals enter the enabled package once; ordinary explanation has no core visual tool', async () => {
+  for (const item of [
+    {message:'什么是联邦学习',kind:''},
+    {message:'画一张联邦学习流程图',kind:'diagram'},
+    {message:'用动画演示一下，直接复用合适的维护案例即可',kind:'animation'},
+  ]) {
+    const calls: any[] = [], requests: any[] = []
+    const pluginRegistry=new LearnFlowPluginRegistry([{...visualPlugin,handlers:{...visualPlugin.handlers,create:async(input,context)=>{
+      calls.push(input)
+      assert.match(context.artifactHost!.context,/联邦学习聚合过程/)
+      return {summary:'构建已暂停，草稿已保存，可以继续。',payload:{status:'paused',job_id:'golden-job'}}
+    }}}])
+    const messages:any[]=[{role:'user',content:'讲一下联邦学习聚合过程'},{role:'assistant',content:'客户端保留原始数据。'},{role:'user',content:item.message}]
+    const original=JSON.stringify(messages)
+    const result=await runTutorAgentTurn({baseUrl:'https://example.com/v1',model:'test',mode:'simple_explain',messages,
+      toolChoice:'auto',pluginRegistry,clientTurnId:'golden-visual-turn',generate:async()=>{throw new Error('old brief generator must not run')},
+      invokeProvider:async request=>{requests.push(request);return {choices:[{message:{content:'客户端在本地训练。'}}]}}
     })
-    const visualExecutions = executions.filter(name => /generate_learning_(?:diagram|animation)|search_learning_videos/.test(name))
-      assert.deepEqual(visualExecutions, item.expected ? [item.expected] : [])
-      if (item.expected) {
-        assert.doesNotMatch(JSON.stringify(requests[0].body.tools || []), /generate_learning_diagram|generate_learning_animation|search_learning_videos/)
-      }
+    assert.equal(calls.length,item.kind?1:0)
+    assert.equal(JSON.stringify(messages),original,'a paused build cannot overwrite prior teaching')
+    if(item.kind){
+      assert.equal(calls[0].kind,item.kind)
+      assert.match(calls[0].request,/联邦学习/)
+      assert.match(calls[0].request_id,/golden-visual-turn/)
+      assert.equal(requests.length,0,'the Tutor does not create or validate a second brief')
+      assert.equal(result.toolRuns[0].toolName,'educational_visuals__create')
+      assert.equal(result.toolRuns[0].kind,'plugin')
+      assert.match(result.reply,/已暂停.*已保存/)
+    }else assert.doesNotMatch(JSON.stringify(requests[0].body),/generate_learning_diagram|generate_learning_animation|educational_visuals__/)
   }
 })
 
-test('a failed animation preserves the committed explanation and cannot drift', async () => {
-  const executions: string[] = []
-  const events: any[] = []
-  const result = await runTutorAgentTurn({
-    baseUrl: 'https://example.com/v1/chat/completions', model: 'test-model', mode: 'simple_explain',
-    messages: [
-      { role: 'user', content: '讲一下 CNN 手写数字识别' },
-      { role: 'assistant', content: 'CNN 会通过卷积核提取局部特征。' },
-      { role: 'user', content: '用动画演示一下' },
-    ],
-    toolChoice: 'auto', generate: async () => 'unused',
-    observe: event => events.push(event),
-    executeTool: async (name, _args, _options, meta) => {
-      executions.push(name)
-      return {
-        run: { id: String(meta?.callId || name), kind: 'animation', toolName: name, status: 'failed', title: '生成学习动画', detail: 'planner failed', durationMs: 1 },
-        observation: { error: 'planner failed' },
-      } as any
-    },
-    invokeProvider: async request => ({ choices: [{ message: { content: (request.body as any).response_format
-      ? visualTeachingPayload('animation', 'CNN 卷积过程')
-      : visualTeachingExplanation } }] }),
-  })
-  assert.deepEqual(executions, ['generate_learning_animation'])
-  assert.equal(result.toolRuns.some(run => run.kind === 'video' || run.kind === 'image'), false)
-  assert.equal(result.visualTeaching?.terminalState, 'explanation_only')
-  assert.equal(result.visualTeaching?.explanationPreserved, true)
-  assert.match(result.reply, /^联邦学习由多个客户端/)
-  const committed = events.findIndex(event => event.type === 'teaching_segment_committed')
-  const toolStarted = events.findIndex(event => event.type === 'tool_started')
-  assert.ok(toolStarted >= 0 && committed > toolStarted)
-  assert.ok(events.findIndex(event => event.type === 'tool_completed') > committed)
-  assert.equal(events.slice(committed + 1).some(event => event.type === 'text_reset'), false)
-})
-
-test('a thrown visual error closes the running tool and ignores late stage callbacks', async () => {
-  const events: any[] = []
-  let lateStage: (() => void) | undefined
-  const result = await runTutorAgentTurn({
-    baseUrl: 'https://example.com/v1/chat/completions', model: 'test-model', mode: 'simple_explain',
-    messages: [{ role: 'user', content: '用动画演示联邦学习聚合过程' }], toolChoice: 'auto',
-    generate: async () => 'unused', observe: event => events.push(event),
-    executeTool: async (_name, _args, options) => {
-      lateStage = () => options.onVisualStage?.('planner_received')
-      throw new Error('renderer disconnected')
-    },
-    invokeProvider: async request => ({ choices: [{ message: { content: (request.body as any).response_format
-      ? visualTeachingPayload('animation') : visualTeachingExplanation } }] }),
-  })
-  const started = events.find(event => event.type === 'tool_started')
-  const completed = events.filter(event => event.type === 'tool_completed')
-  assert.equal(completed.length, 1)
-  assert.equal(completed[0].run.toolCallId, started.toolCallId)
-  assert.equal(completed[0].run.status, 'failed')
-  assert.equal(result.toolRuns[0].status, 'failed')
-  assert.equal(result.visualTeaching?.terminalState, 'explanation_only')
-  assert.equal(result.visualTeaching?.explanationPreserved, true)
-  const eventCount = events.length
-  lateStage?.()
-  assert.equal(events.length, eventCount)
-})
-
-test('visual follow-up resolves its topic before the combined plan and brief call', async () => {
-  const prompts: string[] = []
-  const toolQueries: string[] = []
-  await runTutorAgentTurn({
-    baseUrl: 'https://example.com/v1/chat/completions', model: 'test-model', mode: 'simple_explain', toolChoice: 'auto',
-    messages: [{ role: 'user', content: '用动画演示联邦学习聚合过程' },
-      { role: 'assistant', content: '视觉生成失败。' }, { role: 'user', content: '改成图片吧' }],
-    generate: async () => 'unused',
-    invokeProvider: async request => {
-      const body = request.body as any
-      assert.match(body.messages[0].content, /视觉规划器/)
-      assert.equal(body.messages.length, 3)
-      assert.match(body.messages[1].content, /current_conversation/)
-      prompts.push(body.messages[body.messages.length - 1].content)
-      return { choices: [{ message: { content: body.response_format ? visualTeachingPayload('diagram') : visualTeachingExplanation } }] }
-    },
-    executeTool: async (name, args, _options, meta) => {
-      toolQueries.push(String(args.query))
-      assert.equal(name, 'generate_learning_diagram')
-      return { run: { id: String(meta?.callId || name), kind: 'image', toolName: name, status: 'failed', title: name, detail: 'fixture failure', durationMs: 1 },
-        observation: { error: 'fixture failure' } } as any
-    },
-  })
-  assert.equal(prompts.length, 1)
-  for (const prompt of prompts) {
-    assert.match(prompt, /结构化主题锚点/)
-    assert.match(prompt, /联邦学习聚合过程/)
-  }
-  assert.equal(toolQueries.length, 1)
-  assert.match(toolQueries[0], /联邦学习聚合过程/)
-})
-
-test('a brief failure closes a visible tool without generating placeholder prose or invoking the renderer', async () => {
-  const executions: string[] = []
-  const events: any[] = []
-  let calls = 0
-  const result = await runTutorAgentTurn({
-    baseUrl: 'https://example.com/v1/chat/completions', model: 'test-model', mode: 'simple_explain',
-    messages: [{ role: 'user', content: '用动画演示联邦学习聚合过程' }],
-    toolChoice: 'auto', generate: async () => 'unused', observe: event => events.push(event),
-    executeTool: async name => {
-      executions.push(name)
-      throw new Error('renderer must not run')
-    },
-    invokeProvider: async request => {
-      calls += 1
-      return { choices: [{ message: { content: (request.body as any).response_format ? '{"topic":"broken"}' : visualTeachingExplanation } }] }
-    },
-  })
-  assert.equal(calls, 2)
-  assert.deepEqual(executions, [])
-  assert.equal(result.visualTeaching?.terminalState, 'explanation_only')
-  assert.match(result.reply, /图解构建失败/)
-  assert.equal(events.some(event => event.type === 'teaching_segment_committed'), false)
-  assert.ok(events.some(event => event.type === 'tool_started'))
-  assert.ok(events.some(event => event.type === 'tool_completed' && event.run.status === 'failed'))
-  assert.equal(result.trace.toolCalls, 1)
+test('plugin failure closes the visible run and ignores late stages without fabricated prose', async () => {
+  const events:any[]=[],messages:any[]=[{role:'user',content:'画一张联邦学习流程图'}]
+  let lateStage:(()=>void)|undefined
+  const pluginRegistry=new LearnFlowPluginRegistry([{...visualPlugin,handlers:{...visualPlugin.handlers,create:async(_input,context)=>{
+    lateStage=()=>context.artifactHost?.onStage?.('build','late')
+    throw new Error('visual_auth_required')
+  }}}])
+  const result=await runTutorAgentTurn({baseUrl:'https://example.com/v1',model:'test',mode:'simple_explain',messages,
+    toolChoice:'auto',pluginRegistry,generate:async()=>{throw new Error('legacy generator forbidden')},
+    invokeProvider:async()=>{throw new Error('no invented placeholder lesson')},observe:event=>events.push(event)})
+  const started=events.find(event=>event.type==='tool_started'),completed=events.filter(event=>event.type==='tool_completed')
+  assert.equal(completed.length,1)
+  assert.equal(completed[0].run.toolCallId,started.toolCallId)
+  assert.equal(result.toolRuns[0].status,'failed')
+  assert.equal(result.trace.toolCalls,1)
+  assert.equal(events.some(event=>event.type==='teaching_segment_committed'),false)
+  const count=events.length;lateStage?.();assert.equal(events.length,count)
 })
 
 test('visual tool observations expose bounded frame grounding for truthful Tutor narration', async () => {

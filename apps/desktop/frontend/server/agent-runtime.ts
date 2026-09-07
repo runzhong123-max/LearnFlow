@@ -1,4 +1,7 @@
-import { visualPlanningRequest, assertVisualProviderComplete, VISUAL_PLANNER_INSTRUCTIONS, visualPlannerContext } from './visualize-authoring.ts'
+import { VISUAL_PLUGIN_PLANNER_INSTRUCTIONS, visualPluginRequest, visualPluginReferences } from '../../../../packages/learning-client/src/visuals/plugin-host.ts'
+import { serverArtifactHost } from './plugin-artifact-host.ts'
+import { directVisualWorkflowCall } from '../../../../packages/learning-client/src/visuals/workflow.ts'
+import { visualPlanningRequest, assertVisualProviderComplete, visualPlannerContext } from './visualize-authoring.ts'
 import { teachingGuidancePrompt } from '../src/teaching-guidance-context.ts'
 import { structurallyCompact } from './context-compaction.ts'
 import type {
@@ -28,7 +31,6 @@ import type { LearningPlanTutorContext } from '../src/planning.ts'
 import type { LearnerPathState } from '../src/learning-path-graph.ts'
 import {
   executeTutorAgentTool,
-  createVisualHostTransport,
   TUTOR_AGENT_TOOL_DEFINITIONS,
   type TutorAgentToolExecution,
   type TutorAgentToolRuntimeOptions,
@@ -45,18 +47,6 @@ import {
   type PluginActivationContext,
 } from '../src/plugin-api.ts'
 import { stickyConversationPluginIds, lockedConversationPluginIds } from '../src/conversation-plugin-state.ts'
-import {
-  completeVisualTeachingBundle,
-  explanationOnlyVisualTeachingBundle,
-  prepareVisualTeachingBrief,
-  visualTeachingReply,
-} from './visual-teaching-skill.ts'
-import {
-  VISUAL_TEACHING_BRIEF_VERSION,
-  VISUAL_TEACHING_SKILL_ID,
-  type VisualTeachingBrief,
-  type VisualTeachingBundle,
-} from '../src/visual-teaching.ts'
 import { parseLearningTaskDraftConfirmation } from '../plugins/learning_task_conversion/intake.ts'
 import {
   learningTaskPreflightInput,
@@ -140,6 +130,7 @@ export type TutorAgentRuntimeInput = {
   formalReviewContext?: unknown
   formalProjectContext?: AgentProjectContext
   conversationId?: string
+  clientTurnId?: string
   sheetId?: string
   formalSessionId?: number
   referencedPluginObjects?: LearnFlowPluginObject[]
@@ -199,7 +190,7 @@ function pluginActivation(input: TutorAgentRuntimeInput): PluginActivationContex
   return {
     mode: input.mode,
     activePluginIds: stickyConversationPluginIds(
-      input.activePluginIds,
+      [...(input.activePluginIds || []), ...(resolveExplicitVisualIntent(input.toolChoice, [...input.messages].reverse().find(item => item.role === 'user')?.content || '') !== 'none' ? ['educational_visuals'] : [])],
       lockedConversationPluginIds({ messages: input.messages }),
     ),
     projectId: input.formalProjectContext?.project?.id,
@@ -693,14 +684,12 @@ function availableTools(input: TutorAgentRuntimeInput) {
     && (!['design_assessment_blueprint', 'generate_dynamic_practice', 'generate_similar_practice'].includes(tool.name)
       || Boolean(input.formalProjectContext?.checkpoint_id) && input.mode === 'guided_learning' && Boolean(input.learningTaskContext))
     && (tool.name !== 'inspect_practice_quality' || Boolean(input.formalProjectContext) && input.mode === 'guided_learning')
-    && (tool.name !== 'generate_learning_diagram' || visualIntent === 'diagram')
-    && (tool.name !== 'generate_learning_animation' || visualIntent === 'animation')
+    && !['generate_learning_diagram', 'generate_learning_animation', 'retrieve_learning_visual'].includes(tool.name)
   ))
   const pluginTools = input.pluginRegistry?.toolDefinitions(pluginActivation(input)) || []
   const tools = [...pluginTools, ...coreTools]
   if (visualIntent !== 'none') {
-    const visualToolName = visualIntent === 'animation' ? 'generate_learning_animation' : 'generate_learning_diagram'
-    return tools.filter(tool => tool.name === visualToolName)
+    return tools.filter(tool => tool.name.startsWith('educational_visuals__'))
   }
   const fileStudy = input.mode === 'guided_learning' && input.learningTaskContext?.skillId === 'learning_file_study'
   if (!fileStudy || hasExplicitExternalResourceRequest(input)) return tools
@@ -740,11 +729,7 @@ function explicitToolCall(choice: TutorToolChoice, message: string, projectScope
       ? { target: message, platforms: /b站|bilibili/i.test(message) ? ['bilibili'] : /youtube/i.test(message) ? ['youtube'] : ['bilibili', 'youtube'], max_results: 6 }
       : { query: message, depth: /深度研究|系统调研|文献综述|研究综述|多来源|全面研究|deep research/i.test(message) ? 'deep' : 'standard' },
   }
-  return {
-    id: `explicit-visual-${Date.now()}`,
-    name: choice === 'animation' ? 'generate_learning_animation' : 'generate_learning_diagram',
-    arguments: { query: message },
-  }
+  return undefined
 }
 
 export function directLearningTaskIntakeRequest(
@@ -1026,7 +1011,6 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
   let fallbackReply = ''
   let committedText = ''
   let visibleDraft = ''
-  let visualTeaching: VisualTeachingBundle | undefined
   let replyReasoningContent = ''
   let firstTextDeltaAt: number | undefined
   let pathGapPending = false
@@ -1062,19 +1046,6 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
     }
     resetVisibleDraft('reconcile')
     emitTextDelta(mutableCandidate)
-  }
-  const commitTeachingSegment = (explanation: string, modality: 'diagram' | 'animation') => {
-    if (!firstTextDeltaAt) firstTextDeltaAt = Date.now()
-    committedText = explanation
-    visibleDraft = ''
-    input.observe?.({
-      type: 'teaching_segment_committed',
-      segmentId: `visual-teaching-${id}`,
-      skillId: VISUAL_TEACHING_SKILL_ID,
-      briefVersion: VISUAL_TEACHING_BRIEF_VERSION,
-      modality,
-      content: explanation,
-    })
   }
   const toolOptions: TutorAgentToolRuntimeOptions = {
     message: latestMessage,
@@ -1125,8 +1096,10 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
       })
     }
     const pluginStartedAt = Date.now()
+    const pluginSignal = AbortSignal.timeout(Math.max(1,Math.min(registered.contribution.timeoutMs || 30000,deadline-Date.now())))
+    let acceptingPluginStages = true
     try {
-      const execution = await input.pluginRegistry.execute(call.name, call.arguments, {
+      const execution = await input.pluginRegistry.execute(call.name, registered.pluginId === 'educational_visuals' && ['create','iterate'].includes(registered.contribution.id) ? {...call.arguments,request_id:`${input.conversationId || input.formalSessionId || 'chat'}:${input.clientTurnId || id}:${registered.contribution.id}`} : call.arguments, {
         ...activation,
         scope: {
           mode: input.mode,
@@ -1137,7 +1110,25 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
           projectId: activation.projectId,
           checkpointId: activation.checkpointId,
         },
-        signal: AbortSignal.timeout(registered.contribution.timeoutMs || 30_000),
+        signal: pluginSignal,
+        ...(registered.pluginId === 'educational_visuals' ? {artifactHost: serverArtifactHost({
+          pluginId:registered.pluginId, backendBase:input.backendBase, cookie:input.requestCookie,
+          projectId:activation.projectId, sessionId:input.formalSessionId,
+          signal:pluginSignal,
+          context:`${visualPlannerContext(input.messages)}\n<recent_visual_references>${JSON.stringify(visualPluginReferences(input.messages))}</recent_visual_references>`,
+          onStage:(_stage,detail) => {if (acceptingPluginStages) record({phase:'act',detail,toolCallId:call.id,toolName:call.name,status:'started'})},
+          generate:async prompt => {
+            modelRounds += 1
+            const payload = await invokeModel(visualPlanningRequest(buildAgentProviderRequest({
+              baseUrl:input.baseUrl, model:input.model, instructions:VISUAL_PLUGIN_PLANNER_INSTRUCTIONS,
+              messages:[{role:'user',content:prompt}], tools:[],includeTools:false,
+              responseFormat:'json_object',maxOutputTokens:Math.max(budget.maxOutputTokens,8000),
+            }), input.model), deadline, false, false)
+            const text=textFromTutorProviderResponse(payload).trim()
+            assertVisualProviderComplete(payload,text)
+            return text
+          },
+        })} : {}),
         projectIntegration: {
           request: (operation, payload) => requestProjectPluginIntegration({
             input,
@@ -1195,7 +1186,7 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
         },
         observation: { error: message, recoverableByModel: false },
       }
-    }
+    } finally { acceptingPluginStages = false }
   }
 
   const prestartedVisualTools = new Map<string, number>()
@@ -1620,15 +1611,15 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
   if (input.formalReviewContext && /复习|错题|遗忘|记不住|熟练度|掌握度|记忆曲线|间隔|回忆|薄弱/i.test(latestMessage)) {
     await execute({ id: `observe-review-${id}`, name: 'read_review_context', arguments: { query: latestMessage } }, [], false, false)
   }
-  const explicit = explicitToolCall(input.toolChoice, latestMessage, Boolean(input.formalProjectContext))
-    || (visualIntent === 'none' ? undefined : {
-      id: `explicit-visual-intent-${Date.now()}`,
-      name: visualIntent === 'animation' ? 'generate_learning_animation' : 'generate_learning_diagram',
-      arguments: { query: latestMessage },
+  const packageCall = directVisualWorkflowCall({
+    message:visualIntent === 'none' ? latestMessage : visualPluginRequest(latestMessage,resolveVisualRequest(latestMessage,input.messages)),
+    kind:visualIntent, context:`${visualPlannerContext(input.messages)}\n<recent_visual_references>${JSON.stringify(visualPluginReferences(input.messages))}</recent_visual_references>`,
+    requestId:`${input.conversationId || input.formalSessionId || 'chat'}:${input.clientTurnId || id}`,
   })
-  // Both visual modalities are deferred to visual_teaching_composition. The
-  // Skill commits an independent explanation before either renderer runs.
-  if (explicit && !['generate_learning_diagram', 'generate_learning_animation'].includes(explicit.name)) {
+  const explicit = packageCall && input.pluginRegistry?.resolveTool(packageCall.name,pluginActivation(input))
+    ? {...packageCall,id:`explicit-plugin-${id}`}
+    : explicitToolCall(input.toolChoice, latestMessage, Boolean(input.formalProjectContext))
+  if (explicit && !explicit.name.startsWith('educational_visuals__')) {
     const sources = await execute(explicit, [], false, false)
     if (explicit.name === 'search_computer_knowledge') await refreshPathAfterSearch(sources, false)
   }
@@ -1679,7 +1670,6 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
 
   let reply = ''
   let continuationPrefix = ''
-  let visualBrief: VisualTeachingBrief | undefined
   let searchSources: SearchSource[] = runs.flatMap(run => run.sources || [])
   const invokeModel = async (
     request: ReturnType<typeof buildAgentProviderRequest>,
@@ -1720,72 +1710,12 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
     throw lastError
   }
   try {
-    if (explicit && ['generate_learning_diagram', 'generate_learning_animation'].includes(explicit.name)) {
-      const modality = explicit.name === 'generate_learning_animation' ? 'animation' as const : 'diagram' as const
-      const visualRequest = resolveVisualRequest(latestMessage, input.messages)
-      const visualQuery = visualRequest.effectiveRequest
-      explicit.arguments = { ...explicit.arguments, query: visualQuery }
-      if (visualRequest.contextEnriched) record({ phase: 'observe', detail: `视觉主题已从${visualRequest.topicAnchor?.source === 'prior_user' ? '前文用户请求' : '同主题已完成产物'}恢复`, status: 'completed' })
-      const startedAt = Date.now()
-      const toolCallsBeforePlanning = toolCalls
-      prestartedVisualTools.set(explicit.id, startedAt)
-      input.observe?.({type:'tool_started', toolCallId:explicit.id, toolName:explicit.name,
-        title: modality === 'animation' ? '构建教学动画' : '构建教学图解', startedAt})
-      let planningStage = 'catalog'
-      let explanation = ''
-      try {
-        visualBrief = await prepareVisualTeachingBrief({
-          modality, request: visualQuery, transport: createVisualHostTransport(toolOptions),
-          onStage: (stage, detail) => {
-            planningStage = stage
-            record({phase:'act', detail, toolCallId:explicit.id, toolName:explicit.name, status: stage === 'repair' ? 'retrying' : 'started'})
-          },
-          generate: async prompt => {
-            modelRounds += 1
-            const payload = await invokeModel(visualPlanningRequest(buildAgentProviderRequest({
-              baseUrl: input.baseUrl, model: input.model, instructions: VISUAL_PLANNER_INSTRUCTIONS,
-              messages: [{role:'user', content: `当前会话参考数据：${visualPlannerContext(input.messages)}`}, {role:'user', content:prompt}],
-              tools:[], includeTools:false, responseFormat:'json_object', maxOutputTokens:Math.max(budget.maxOutputTokens, 8000),
-            }), input.model), deadline, false, false)
-            replyReasoningContent = reasoningContentFromProviderResponse(payload)
-            const text = textFromTutorProviderResponse(payload).trim()
-            assertVisualProviderComplete(payload, text)
-            return text
-          },
-        })
-        explanation = visualBrief.explanation
-        if (explanation) commitTeachingSegment(explanation, modality)
-        toolOptions.visualTeachingBrief = visualBrief
-        await execute(explicit)
-        const run = [...runs].reverse().find(item => item.toolName === explicit.name)
-        visualTeaching = completeVisualTeachingBundle(visualBrief, run)
-      } catch (error) {
-        const detail = (error instanceof Error ? error.message : String(error)).slice(0, 1200)
-        const existing = runs.some(item => item.toolCallId === explicit.id)
-        if (!existing) {
-          if (toolCalls === toolCallsBeforePlanning) toolCalls += 1
-          const run: TutorToolRun = {
-            id:explicit.id, toolCallId:explicit.id, toolName:explicit.name,
-            kind:modality === 'animation' ? 'animation' : 'image', status:'failed',
-            title: modality === 'animation' ? '构建教学动画' : '构建教学图解', detail,
-            observationSummary:`${planningStage}: ${detail}`, startedAt, durationMs:Date.now()-startedAt, sequence:toolCalls,
-            inputSummary: visualQuery.slice(0, 500),
-            errorType:/unsupported|clarification|needs_input/.test(detail) ? 'user_fixable' : /timeout|network|fetch/.test(detail) ? 'transient' : 'model_recoverable',
-            visualMeta:{requestedKind:modality,effectiveKind:modality,contextEnriched:visualRequest.contextEnriched,
-              generationSource:'model_plan',compileStatus:'invalid',plannerAttempts:modelRounds,
-              outcomeStage:planningStage === 'validation' ? 'validation' : 'planner',
-              skillId:VISUAL_TEACHING_SKILL_ID,briefVersion:VISUAL_TEACHING_BRIEF_VERSION,explanationPreserved:true},
-          }
-          runs.push(run)
-          input.observe?.({type:'tool_completed',run})
-        }
-        visualTeaching = explanationOnlyVisualTeachingBundle(explanation, modality, error)
-        record({phase:'act',detail:`视觉构建停止（${planningStage}）：${detail}`,toolCallId:explicit.id,toolName:explicit.name,status:'failed'})
-      }
-      reply = visualTeachingReply(visualTeaching)
+    if (explicit?.name.startsWith('educational_visuals__')) {
+      await execute(explicit, [], false, false)
+      const run = [...runs].reverse().find(item => item.toolCallId === explicit.id)
+      reply = run?.plugin?.result.summary || (run?.status === 'failed' ? `图解插件暂时无法完成：${/auth_required/.test(run.detail) ? '作品服务认证失效，请重新登录后继续。' : run.detail}` : run?.detail) || '图解插件暂时未能完成，请查看工具记录。'
       stopReason = 'final_answer'
       reconcileVisibleDraft(reply)
-      record({phase:'verify',detail:visualTeaching.terminalState === 'bundle_ready' ? '图解教学对象已生成并通过终态检查' : '未发布未经验证的产物；具体原因已保存在工具记录中',status:'completed'})
     }
     for (let round = 0; !reply && round < budget.maxModelRounds && Date.now() < deadline; round += 1) {
       modelRounds += 1
@@ -1993,7 +1923,6 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
     reply,
     ...(replyReasoningContent ? { reasoningContent: replyReasoningContent } : {}),
     toolRuns: runs,
-    ...(visualTeaching ? { visualTeaching } : {}),
     trace: {
       version: 'vnext-agent-trace.v1',
       turnId: id,

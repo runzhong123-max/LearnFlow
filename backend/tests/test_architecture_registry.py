@@ -45,7 +45,7 @@ def test_registry_has_three_agents_five_kernels_and_no_drift():
     assert set(ACTION_BOARD) == set(CAPABILITY_OWNERS)
     assert validate_registry() == []
     manifest = registry_manifest()
-    assert REGISTRY_VERSION == "2026-09-07.2"
+    assert REGISTRY_VERSION == "2026-09-07.3"
     assert manifest["schema_valid"] is True
     assert manifest["valid"] is (
         manifest["schema_valid"] and manifest["implementation_valid"]
@@ -269,6 +269,7 @@ def test_vnext_tools_use_formal_event_gateway_without_direct_kernel_writes():
     assert TOOLS["vnext_chat_session_store"].writes_kernels == ()
     assert WORKBENCHES["vnext_chat"].surface == "/chat/:conversationId"
     assert set(WORKBENCHES["vnext_chat"].capabilities) == {
+        "manage_visual_workspace",
         "coordinate_vnext_agent_turn",
         "search_computer_knowledge", "read_web_evidence", "search_learning_videos", "inspect_learning_video", "retrieve_learning_visual", "generate_learning_diagram", "generate_learning_animation", "open_selection_followup",
         "run_vnext_learning_task", "run_vnext_learning_plan", "read_vnext_five_kernel_profile",
@@ -461,23 +462,21 @@ def test_agent_interface_ontology_separates_tools_harness_and_skills():
     assert guided["skill_kind"] == "pedagogical_method"
 
 
-def test_visual_generation_is_owned_by_a_registered_composition_skill():
+def test_visual_generation_is_owned_by_a_registered_plugin_workflow():
     skill = SKILLS["visual_teaching_composition"]
     assert SKILL_KINDS[skill.id] == "playbook"
     assert skill.owner_agent == "learning_design_agent"
     assert skill.learner_selectable is False
-    assert {"safe_visual_generation", "learning_diagram_generator", "learning_animation_generator"} <= set(skill.tools)
+    assert {"educational_visual_plugin", "visual_artifact_workspace", "safe_visual_generation"} <= set(skill.tools)
     runtime = skill.runtime
-    assert runtime is not None
-    assert runtime.version == "visual-teaching-skill-runtime-v2"
-    assert [state.id for state in runtime.states] == [
-        "catalog", "plan_and_build", "validate_and_simulate", "commit_explanation",
-        "render_visual", "bundle_ready_or_explanation_only",
-    ]
-    assert "VisualTeachingBundle" in runtime.output_objects
-    assert "explanation_only" in runtime.failure_policy
-    assert "no mastery inference" in runtime.evidence_policy
-    assert "independently valid explanation" in TOOLS["safe_visual_generation"].write_path
+    assert runtime is not None and runtime.version == "visual-plugin-workflow-v1"
+    assert [state.id for state in runtime.states] == ["catalog", "build", "verify", "ready_or_paused"]
+    assert "VisualWorkRef" in runtime.output_objects
+    assert "pause with candidate" in runtime.failure_policy
+    assert EVENTS["visual_workspace_changed"].kernel_targets == ()
+    assert "host_private_artifact_grants_only" in PLUGIN_EXTENSION_POINTS["tool"].restrictions
+    assert "owned_artifact_host_grants_only" in PLUGIN_EXTENSION_POINTS["tool_renderer"].restrictions
+    assert CAPABILITY_OWNERS["manage_visual_workspace"] == ("learning_design_agent", "visual_artifact_workspace", "vnext_chat")
     assert "ASCII" in TOOLS["safe_visual_generation"].write_path
 
 

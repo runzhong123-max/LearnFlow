@@ -1,3 +1,5 @@
+import { directVisualWorkflowCall } from '../../../../packages/learning-client/src/visuals/workflow.ts'
+import { resolveExplicitVisualIntent } from '../server/visual-tool-execution.ts'
 import { FormEvent, Fragment, lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import {
@@ -1987,6 +1989,8 @@ function App({ auth }: { auth: AuthGateSession }) {
       }
     }
 
+    const visualPluginTurn = resolveExplicitVisualIntent(toolChoices[draftKey] || 'auto',content) !== 'none'
+      || activeConversationPluginIds(conversation).includes('educational_visuals') && Boolean(directVisualWorkflowCall({message:content,kind:'none',requestId:'detect'}))
     const learningTaskConversionActive = activeConversationPluginIds(conversation)
       .includes('learning_task_conversion')
     if (!replayInterruptedTurn && mode === 'learning_plan' && !learningTaskConversionActive) {
@@ -2029,7 +2033,7 @@ function App({ auth }: { auth: AuthGateSession }) {
         const firstStudentMessage = !hasVisibleStudentMessage(item.messages)
         const userMessage: Message = {
           id: userMessageId, role: 'user', content, createdAt: now, tutorMode: mode,
-          persistedByTutor: isLocalLearningRuntime(),
+          persistedByTutor: isLocalLearningRuntime() && !visualPluginTurn,
           hiddenFromTranscript: Boolean(options.hideUserMessage),
           directUserText: directUserText || undefined,
           learningSkillId: learningProjection?.skillId,
@@ -2309,6 +2313,7 @@ function App({ auth }: { auth: AuthGateSession }) {
       conversations: previous.conversations.map(item => item.id === conversationId ? {
         ...item,
         formalSessionId,
+        pluginIds: stickyConversationPluginIds(activeConversationPluginIds(item),visualPluginTurn ? ['educational_visuals'] : []),
         learningTasks,
         learningEvents,
         learningPlans,
@@ -2401,13 +2406,13 @@ function App({ auth }: { auth: AuthGateSession }) {
         domainSourceIds: conversation.projectId ? [] : conversation.domainSources.map(source => source.id),
         conversationId,
         sheetId,
-        activePluginIds: activeConversationPluginIds(conversation),
+        activePluginIds: stickyConversationPluginIds(activeConversationPluginIds(conversation),visualPluginTurn ? ['educational_visuals'] : []),
         referencedPluginObjects: options.referencedPluginObjects,
         onEvent: event => updateLiveTurn(conversationId, event),
       })
       const finishedMessage = finishTurn(conversationId, sheetId, mode, {
         role: 'assistant', content: reply.reply, reasoningContent: reply.reasoningContent, toolRuns: reply.toolRuns, agentTrace: reply.trace,
-        persistedByTutor: isLocalLearningRuntime(),
+        persistedByTutor: isLocalLearningRuntime() && !visualPluginTurn,
         learningSkillId: learningProjection?.skillId,
         learningSubstateId: turnStep?.substateId,
         learningSubstateLabel: turnStep?.substateLabel,

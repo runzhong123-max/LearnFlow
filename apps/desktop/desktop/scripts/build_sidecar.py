@@ -102,14 +102,16 @@ def main() -> None:
     # Registry drift checks inspect exact frontend binding sources. Bundle those
     # source assets without env files, dependencies or arbitrary runtime data.
     probe = (
-        "import json; from app.services.architecture_registry import IMPLEMENTATION_BINDINGS; "
-        "print(json.dumps(sorted({b.path for b in IMPLEMENTATION_BINDINGS.values() "
-        "if b.kind in {'frontend_handler', 'frontend_component'}} | {'frontend/src/main.tsx'})))"
+        "import json; from app.services.architecture_registry import IMPLEMENTATION_BINDINGS, resolve_frontend_binding_path; "
+        "paths = sorted({b.path for b in IMPLEMENTATION_BINDINGS.values() "
+        "if b.kind in {'frontend_handler', 'frontend_component'}} | {'frontend/src/main.tsx'}); "
+        "print(json.dumps({p: str(resolve_frontend_binding_path(p).resolve()) for p in paths}))"
     )
     bound_paths = json.loads(subprocess.check_output([python, "-c", probe], cwd=BACKEND_ROOT, text=True))
-    for relative in bound_paths:
-        source = (REPO_ROOT / relative).resolve()
-        if not source.is_relative_to(REPO_ROOT) or source.suffix not in {".ts", ".tsx"} or not source.is_file():
+    for relative, source_path in bound_paths.items():
+        source = Path(source_path)
+        allowed_source = source.is_relative_to(REPO_ROOT) or source.is_relative_to(MONOREPO_ROOT / "packages" / "learning-client" / "src")
+        if not allowed_source or Path(relative).is_absolute() or ".." in Path(relative).parts or source.suffix not in {".ts", ".tsx"} or not source.is_file():
             raise RuntimeError(f"Invalid registry source asset: {relative}")
         pyinstaller_args.extend(["--add-data", f"{source}{data_separator}{Path(relative).parent.as_posix()}"])
     plugin_dist = REPO_ROOT / "plugins" / "dist"

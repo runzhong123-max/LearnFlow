@@ -113,3 +113,18 @@ async def template(request: Request, current: CurrentLearner = Depends(get_curre
     except ValueError as exc:
         detail = str(exc)[:180]
         raise HTTPException(404 if detail == 'visual_template_not_found' else 422, detail)
+
+
+@router.post('/workspace')
+async def workspace(request: Request, current: CurrentLearner = Depends(get_current_learner)):
+    """Private authoring progress and immutable artifact revisions, learner-bound."""
+    from learnflow_core.visuals.workspace import workspace_operation, WorkspaceError
+    data = await body(request)
+    if set(data) != {'operation', 'payload'}:
+        raise HTTPException(422, 'visual_workspace:invalid_envelope')
+    try:
+        return await workspace_operation(current.learner.id, data['operation'], data['payload'])
+    except WorkspaceError as exc:
+        raise HTTPException(exc.status, str(exc)[:1800])
+    except (ValueError, TypeError, KeyError, RecursionError) as exc:
+        raise HTTPException(422, str(exc)[:1800] if isinstance(exc, ValueError) else 'visual_workspace:invalid_payload')

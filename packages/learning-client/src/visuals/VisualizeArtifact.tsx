@@ -2,7 +2,13 @@ import {useEffect, useMemo, useRef, useState} from 'react'
 import type {VisualBundle, VisualTransport} from './types'
 import {renderView, describeFrame, presentationContext} from './presentation'
 
-type Props = {initial: VisualBundle; transport: VisualTransport; onAsk?: (prompt: string) => void; storageScope: string; mode?: 'diagram'|'animation'}
+export type VisualViewState = {step: number; speed: number; focus: string}
+type Props = {
+  initial: VisualBundle; transport: VisualTransport; onAsk?: (prompt: string) => void;
+  storageScope: string; mode?: 'diagram'|'animation'; initialViewState?: Partial<VisualViewState>;
+  onRun?: (params: Record<string, number>, purpose: 'primary'|'comparison') => Promise<VisualBundle>;
+  onViewChange?: (state: VisualViewState, bundle: VisualBundle) => void;
+}
 type ParameterSet = Record<string, number>
 const same = (a: ParameterSet, b: ParameterSet) => Object.keys(a).length === Object.keys(b).length && Object.keys(a).every(key => a[key] === b[key])
 const parameterLabel = (bundle: VisualBundle, params: ParameterSet) => Object.entries(params).map(([key, value]) => `${bundle.spec.parameters.find(parameter => parameter.id === key)?.label || key}=${value}`).join('，') || '默认条件'
@@ -40,12 +46,13 @@ function saveFile(content: string, type: string, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-export default function VisualizeArtifact({initial, transport, onAsk, storageScope, mode = 'animation'}: Props) {
+export default function VisualizeArtifact({initial, transport, onAsk, storageScope, mode = 'animation', initialViewState, onRun, onViewChange}: Props) {
   const container = useRef<HTMLElement>(null)
   const [viewport, setViewport] = useState(720)
   const [bundle, setBundle] = useState(initial)
   const [step, setStep] = useState(initial.spec.playback.initial_step)
   const [playing, setPlaying] = useState(false)
+  const [speed, setSpeed] = useState([0.5, 1, 1.5, 2].includes(initialViewState?.speed || 0) ? initialViewState!.speed! : 1)
   const [draft, setDraft] = useState(initial.params)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -103,7 +110,7 @@ export default function VisualizeArtifact({initial, transport, onAsk, storageSco
     const ticket = ++sequence.current; ++compareSequence.current
     setBusy(true); setComparisonBusy(false); setPlaying(false); setError(''); setComparison(null)
     try {
-      const next = checkedBundle(await transport('compile', compilePayload(params)), initial.owner_scope)
+      const next = checkedBundle(await (onRun ? onRun(params, 'primary') : transport('compile', compilePayload(params))), initial.owner_scope)
       if (!mounted.current || ticket !== sequence.current) return
       setScopeInvalid(false); setBundle(next); setDraft(next.params)
       setStep(Math.max(0, Math.min(next.frames.length - 1, targetStep)))
@@ -119,6 +126,15 @@ export default function VisualizeArtifact({initial, transport, onAsk, storageSco
   useEffect(() => {
     mounted.current = true; restored.current = false; setScopeInvalid(false)
     setBundle(initial); setDraft(initial.params); setHistory([initial.params]); setComparison(null)
+    // An independently stored artwork already has a validated run. Opening it must
+    // not create a fresh run or let stale browser parameters override that run.
+    if (onRun) {
+      setStep(Math.max(0, Math.min(initial.frames.length - 1, initialViewState?.step ?? initial.spec.playback.initial_step)))
+      setSelected(initialViewState?.focus || ''); setSelectedLink('')
+      setSpeed([0.5, 1, 1.5, 2].includes(initialViewState?.speed || 0) ? initialViewState!.speed! : 1)
+      restored.current = true
+      return () => {mounted.current = false; ++sequence.current; ++compareSequence.current}
+    }
     let saved: {params?: unknown; step?: unknown; history?: unknown} | null = null
     try {saved = JSON.parse(sessionStorage.getItem(key) || 'null')} catch {/* Session persistence is optional. */}
     const params = validParams(saved?.params, initial) ? saved.params : initial.params
@@ -131,11 +147,17 @@ export default function VisualizeArtifact({initial, transport, onAsk, storageSco
     if (!restored.current || busy || scopeInvalid) return
     try {sessionStorage.setItem(key, JSON.stringify({params: bundle.params, step, history}))} catch {/* Playback remains usable without storage. */}
   }, [bundle, step, history, busy, scopeInvalid, key])
+  const onViewChangeRef = useRef(onViewChange)
+  onViewChangeRef.current = onViewChange
+  useEffect(() => {
+    if (!restored.current || busy || scopeInvalid) return
+    onViewChangeRef.current?.({step, speed, focus: selected}, bundle)
+  }, [step, speed, selected, bundle, busy, scopeInvalid])
   useEffect(() => {
     if (!playing || busy || gate || reduced) return
-    const timer = setTimeout(() => {if (step >= bundle.frames.length - 1) setPlaying(false); else setStep(value => value + 1)}, 1300)
+    const timer = setTimeout(() => {if (step >= bundle.frames.length - 1) setPlaying(false); else setStep(value => value + 1)}, 1300 / speed)
     return () => clearTimeout(timer)
-  }, [playing, step, bundle.frames.length, busy, gate, reduced])
+  }, [playing, step, bundle.frames.length, busy, gate, reduced, speed])
   function move(next: number) {setPlaying(false); setFeedback(''); setStep(Math.max(0, Math.min(bundle.frames.length - 1, next)))}
   function chooseObject(id: string, link = '') {setSelected(id); setSelectedLink(link)}
   async function ask() {
@@ -169,7 +191,7 @@ export default function VisualizeArtifact({initial, transport, onAsk, storageSco
     setComparison(null); setComparisonBusy(Boolean(params))
     if (!params) return
     try {
-      const next = checkedBundle(await transport('compile', compilePayload(params)), initial.owner_scope)
+      const next = checkedBundle(await (onRun ? onRun(params, 'comparison') : transport('compile', compilePayload(params))), initial.owner_scope)
       if (mounted.current && ticket === compareSequence.current && mainTicket === sequence.current) setComparison(next)
     } catch (cause) {if (mounted.current && ticket === compareSequence.current) setError(errorMessage(cause))}
     finally {if (mounted.current && ticket === compareSequence.current) setComparisonBusy(false)}
@@ -225,7 +247,7 @@ export default function VisualizeArtifact({initial, transport, onAsk, storageSco
       {renderViews(views)}
       <p className="visualize-caption" role="status" aria-live={playing ? 'off' : 'polite'}>{describeFrame(bundle, step)}</p>
       {mode === 'animation' && checkpoint && <section className="visualize-prediction" aria-label="预测下一步"><strong>{checkpoint.prompt}</strong>{choices.length > 0 ? <div>{choices.map(choice => <button key={choice.id} disabled={busy || Boolean(answered[frame.snapshot_ref])} onClick={() => void predict(choice.id)}>{choice.label}</button>)}</div> : <p>先想一想，再单步观察；可以把你的解释交给 Tutor 讨论。</p>}<p role="status">{feedback}</p><small>探索反馈，不计入掌握度。</small></section>}
-      {bundle.frames.length > 1 && <div className="visualize-playback"><nav aria-label="过程播放"><button disabled={busy || step === 0} onClick={() => move(step - 1)}>上一步</button>{mode === 'animation' && <button disabled={busy || gate || reduced || step === bundle.frames.length - 1} onClick={() => setPlaying(value => !value)}>{playing ? '暂停' : '播放'}</button>}<output>{step + 1} / {bundle.frames.length}</output><button disabled={busy || gate || step === bundle.frames.length - 1} onClick={() => move(step + 1)}>下一步</button><button disabled={busy} onClick={() => {move(0); setAnswered({})}}>重播</button></nav><input type="range" aria-label="当前步骤" min={0} max={bundle.frames.length - 1} step={1} value={step} disabled={busy} onChange={event => move(gate ? Math.min(step, Number(event.target.value)) : Number(event.target.value))}/></div>}
+      {bundle.frames.length > 1 && <div className="visualize-playback"><nav aria-label="过程播放"><button disabled={busy || step === 0} onClick={() => move(step - 1)}>上一步</button>{mode === 'animation' && <button disabled={busy || gate || reduced || step === bundle.frames.length - 1} onClick={() => setPlaying(value => !value)}>{playing ? '暂停' : '播放'}</button>}{mode === 'animation' && <label>播放速度<select aria-label="播放速度" value={speed} onChange={event => setSpeed(Number(event.target.value))}>{[0.5, 1, 1.5, 2].map(value => <option key={value} value={value}>{value}×</option>)}</select></label>}<output>{step + 1} / {bundle.frames.length}</output><button disabled={busy || gate || step === bundle.frames.length - 1} onClick={() => move(step + 1)}>下一步</button><button disabled={busy} onClick={() => {move(0); setAnswered({})}}>重播</button></nav><input type="range" aria-label="当前步骤" min={0} max={bundle.frames.length - 1} step={1} value={step} disabled={busy} onChange={event => move(gate ? Math.min(step, Number(event.target.value)) : Number(event.target.value))}/></div>}
       {reduced && mode === 'animation' && <p className="visualize-notice">已减少动态效果，可逐步查看。</p>}
       {history.length > 1 && <div className="visualize-comparison"><label>比较先前参数组 <select disabled={busy || comparisonBusy} value={comparison ? JSON.stringify(comparison.params) : ''} onChange={event => void compare(event.target.value ? JSON.parse(event.target.value) : null)}><option value="">选择对照条件</option>{history.filter(params => !same(params, bundle.params)).map((params, i) => <option key={i} value={JSON.stringify(params)}>{parameterLabel(bundle, params)}</option>)}</select></label>{comparisonBusy && <p role="status">正在计算对照状态…</p>}{comparison && <><h4>对照 · {parameterLabel(comparison, comparison.params)} · 第 {comparisonStep + 1} 个状态</h4>{renderViews(comparisonViews, false)}<p>{describeFrame(comparison, comparisonStep)}</p><small>{comparisonAlignment.note}</small></>}</div>}
       <div className="visualize-ask"><label>关注对象<select value={selected} onChange={event => {const object = objects.find(item => item.id === event.target.value); chooseObject(event.target.value, object?.linkId)}}><option value="">整张图</option>{objects.filter((object, index) => objects.findIndex(item => item.id === object.id) === index).map(object => <option key={object.id} value={object.id}>{object.label || object.id}</option>)}</select></label><label>围绕当前状态追问<input value={question} maxLength={1000} onChange={event => setQuestion(event.target.value)} placeholder="为什么这一步会发生这样的变化？" onKeyDown={event => {if (event.key === 'Enter' && !busy) void ask()}}/></label><button disabled={busy || !onAsk} onClick={() => void ask()}>问 Tutor</button></div>

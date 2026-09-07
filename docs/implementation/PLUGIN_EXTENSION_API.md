@@ -1,5 +1,11 @@
 # LearnFlow 插件扩展 API v1
 
+## 2026-09-07：受限私有作品宿主服务
+
+`educational_visuals` 把图解/动画产品作为现有 Tool、Skill、Object、Renderer 四个扩展点的插件实现，具体见 [工作流与数据协议](../design/visualize/PLUGIN-WORKFLOW.md)。以下是第一版无持久化描述的明确扩展：宿主可向已登记插件提供 `PluginToolContext.artifactHost`，包含绑定学习者/会话的操作请求、隔离角色的模型调用及有界参考上下文；不提供凭据、任意 fetch 或数据库。候选由宿主重新校验后保存到独立私有作品表，只返回小引用；保存私有生成结果沿用用户生成请求授权，不新增形式化确认。共享库发布和核心学习对象确认仍不由插件决定。
+
+Renderer 获得宿主 allowlist 中的读取、运行参数、显示状态、反馈和取消操作；对象 ID 只是引用，宿主重新校验 ownership。Renderer 无模型调用、候选发布、共享库写入或学习证据权威。重要持久化行为由宿主 `record_event()` 审计，事件零 Kernel target。下文“仅候选”“无数据库”“只读纸张”约束继续适用于没有这项显式 grant 的其他插件。
+
 LearnFlow 第一版插件不是独立应用、工作台、进程或数据库。它是随 LearnFlow 一起加载的受信 Agent 工程包，
 只向现有 Tutor 对话贡献四类能力：Tool、Agent Skill、Plugin Object 和 Tool Renderer。
 

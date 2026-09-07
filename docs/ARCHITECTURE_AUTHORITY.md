@@ -1,5 +1,7 @@
 # LearnFlow 架构权威与维护边界
 
+Contract impact（`2026-09-07.3`）：图解与动画产品迁入 `educational_visuals` 插件，Learning Design 内部的统一工作流负责检索、两种构建器、改编和有限修复；宿主新增受限 artifact grant 与私有作品/版本/运行/检查点服务，重要操作统一发出零 target `visual_workspace_changed`。预算失败暂停并保留候选，旧版本不覆盖。四个扩展点、三类主 Agent、五核与掌握语义不变。Web/Desktop 使用同一个工作流，旧视觉聊天仍可读。详见 [插件工作流](design/visualize/PLUGIN-WORKFLOW.md)。本条取代此前把所有新图解限定为主 Tutor VisualBrief 分支和无独立作品存储的产品描述。
+
 > 2026-09-07 视觉规划入口与课程图库：registry 2026-09-07.2，隔离 Tutor 正文合同与视觉 JSON 规划合同，15 份维护作品关联正式学习路径并提供问题/别名/适用边界检索。Contract impact：只读元数据增量，稳定工具 ID、五核及事件语义不变，无数据库迁移。见 [实现与验证](design/visualize/CURRICULUM-LIBRARY-2026-09-07.md)。
 
 > 2026-09-07 可组合视觉升级：VisualSpec 0.2.0 在兼容 0.1.0 的同时增加注册运算组合、结构分镜、维护作品检索与从零生成。图解请求先检索能力，Learning Design 一次产出教学计划与候选 Spec，宿主真实编译校验后渲染；原有讲解保持有效，正式 Desktop Tutor 仍先持久化简短交接。

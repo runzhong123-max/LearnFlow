@@ -2,7 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 
-SHARED_CORE_VERSION = "0.2.0"
+SHARED_CORE_VERSION = "0.2.1"
 
 EVENT_SCHEMA_VERSION = "learnflow.evidence.v1"
 
@@ -218,10 +218,10 @@ PLUGIN_EXTENSION_POINTS = {
     for item in (
         PluginExtensionPointContract(
             "tool", "versioned model-callable schema + trusted in-process handler", "tutor_agent",
-            "plugin_id__tool_id", "plugin handler may return observations or uncommitted candidate artifacts only",
+            "plugin_id__tool_id", "plugin handler returns observations/candidates or references saved by explicitly granted, scope-checked host artifact services",
             (
                 "read_only_or_artifact", "bounded_json_input_output", "no_kernel_write",
-                "no_core_object_write", "candidate_cannot_self_approve_or_publish", "conversation_sticky_after_first_tool_run",
+                "no_core_object_write", "candidate_cannot_self_approve_or_publish", "host_private_artifact_grants_only", "conversation_sticky_after_first_tool_run",
             ),
             ("frontend:plugin.registry", "frontend:plugin.loader", "frontend:plugin.picker", "frontend:agent_runtime.run"),
         ),
@@ -239,8 +239,8 @@ PLUGIN_EXTENSION_POINTS = {
         ),
         PluginExtensionPointContract(
             "tool_renderer", "trusted client component selected by a declared renderer id", "tutor_agent",
-            "plugin_id:renderer_id", "renderer receives the validated tool result and can only request draft references or a read-only paper projection",
-            ("no_html_injection", "no_script_payload", "generic_fallback_required", "conversation_output_only", "prompt_reference_only", "paper_projection_only"),
+            "plugin_id:renderer_id", "renderer receives validated refs and draft/paper callbacks; explicit host grants allow owned work reads, parameter runs and private view/feedback persistence",
+            ("no_html_injection", "no_script_payload", "generic_fallback_required", "conversation_output_only", "prompt_reference_only", "paper_projection_only", "owned_artifact_host_grants_only"),
             ("frontend:plugin.renderer", "frontend:plugin.picker"),
         ),
     )

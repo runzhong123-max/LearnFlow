@@ -399,6 +399,7 @@ export const OFFLINE_VISUAL_CATALOG: VisualCatalog = {
     ],
     "bindings": "RFC6901 source pointers. Model inputs read data/params. Pipeline args recursively accept literals or {source}; state references read completed state/results only, never future operations.",
     "pipeline": {
+      "binding_notes": {"values": "One current array slot, not separate input/output vectors. Display it once with array_visible; its role follows the current operation (working array, queue, or probability).", "result": "The initial 0 is a placeholder, not a computed scalar. There is no result_visible field; omit this generic metric unless the display explicitly limits it to valid completed states.", "matrices": "Bind input_matrix/output_matrix/kernel_matrix to their own *_visible flags; output computed_cells distinguishes pending cells. Never rename the same active slot as different fixed results."},
       "program": {
         "steps": [
           {

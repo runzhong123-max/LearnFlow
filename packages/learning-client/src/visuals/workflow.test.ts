@@ -1,0 +1,100 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+import {createVisualWork,resumeVisualWork,cancelVisualWork,parseVisualWorkflowCandidate,directVisualWorkflowCall,type VisualWorkflowContext} from './workflow.ts'
+import {OFFLINE_VISUAL_CATALOG} from './authoring.ts'
+import {createEducationalVisualsPlugin} from './plugin-package.ts'
+import * as webAPI from '../../../../frontend/src/plugin-api.ts'
+
+const story={story_version:'1',title:'自定义消息传递',goal:'观察消息先后',nodes:[{id:'sender',label:'发送端'},{id:'receiver',label:'接收端'}],edges:[{id:'message',from:'sender',to:'receiver',label:'消息'}],steps:[{title:'发送',note:'消息从发送端开始',active_nodes:['sender'],active_edges:[]},{title:'接收',note:'沿连接到达接收端',active_nodes:['receiver'],active_edges:['message']}]}
+const fresh={source_mode:'fresh',builder:'svg_story',source:story}
+const maintained={spec_version:'0.2.0',title:story.title,data:{stages:story.steps},model:{id:'structure.sequence',version:'1.0.0'}}
+const template={id:'maintained.message',version:'1.0.0',title:story.title,description:'消息关系',tags:['消息'],kind:'animation'}
+function harness(responses:unknown[],options:{templates?:boolean;publishErrors?:string[];resumeRaw?:boolean}={}){
+  let job:any;let generation=0,publishCount=0
+  const calls:Array<{operation:string,payload:any}>=[],prompts:string[]=[]
+  const context:VisualWorkflowContext={signal:new AbortController().signal,scope:{mode:'free',learnerId:9,conversationId:'synthetic-test'},artifactHost:{context:'这是合成图解请求。',generate:async prompt=>{prompts.push(prompt);const next=responses[generation++];if(next instanceof Error)throw next;return typeof next==='string'?next:JSON.stringify(next)},request:async(operation,payload={})=>{
+    calls.push({operation,payload:structuredClone(payload)})
+    if(operation==='start_job')return job ||= {...payload,job_id:'job-golden',version:1,status:'running',stage:'start'}
+    if(operation==='get_job')return structuredClone(job)
+    if(operation==='cancel_job'){assert.deepEqual(Object.keys(payload),['job_id']);job={...job,status:'cancelled',stage:'cancelled',version:job.version+1};return structuredClone(job)}
+    if(operation==='checkpoint'){
+      assert.equal(payload.expected_version,job.version)
+      assert.ok(JSON.stringify(payload.route||{}).length<32_000,'route remains thin metadata')
+      assert.ok(JSON.stringify(payload.candidate||{}).length<150_000,'candidate bounded')
+      job={...job,...structuredClone(payload),version:job.version+1};delete job.expected_version;return structuredClone(job)
+    }
+    if(operation==='catalog')return {...OFFLINE_VISUAL_CATALOG,templates:options.templates&&payload.templates!==false?[template]:[]}
+    if(operation==='search')return {items:[]}
+    if(operation==='template')return {...template,builder:'visual_spec',source:maintained}
+    if(operation==='publish'){
+      assert.equal(payload.expected_version,job.version)
+      const error=options.publishErrors?.[publishCount++];if(error)throw new Error(error)
+      const artifact={artifact_id:'artifact-golden',revision_id:'revision-golden',run_id:'run-golden',builder:payload.builder,title:(payload.source as any).title,kind:job.kind,verification:{status:'illustrative',scope:'structure'},source_mode:job.route.source_mode,...(payload.parent_revision_id?{parent_revision_id:payload.parent_revision_id}:{})}
+      job={...job,artifact,status:'ready',version:job.version+1};return artifact
+    }
+    throw new Error('Unexpected operation '+operation)
+  }}}
+  return {context,calls,prompts,get generations(){return generation},get job(){return job},setRawCandidate(raw:string){job.candidate={raw,parsed:false};job.status='paused'}}
+}
+
+test('golden routing: maintained exact reuse and fresh request both reach persisted references',async()=>{
+  const reused=harness([{source_mode:'reuse',source_ref:{kind:'template',id:template.id,version:template.version},builder:'visual_spec'}],{templates:true})
+  const reuse=await createVisualWork({request:'演示消息传递',kind:'animation',request_id:'reuse-golden'},reused.context)
+  assert.equal(reuse.status,'ready');assert.equal(reuse.artifact?.source_mode,'reuse');assert.equal(reused.generations,1)
+  assert.deepEqual(reused.calls.find(c=>c.operation==='publish')?.payload.source,maintained)
+  assert.equal(reused.job.route.source,undefined,'source is not stored in 32KB route')
+  const generated=harness([fresh],{templates:true})
+  const result=await createVisualWork({request:'从零制作我的发送端到接收端动画，不要模板',kind:'animation',request_id:'fresh-golden'},generated.context)
+  assert.equal(result.status,'ready');assert.equal(result.artifact?.source_mode,'fresh')
+  assert.equal(generated.calls.some(c=>c.operation==='search'||c.operation==='template'),false)
+  assert.equal(generated.calls.find(c=>c.operation==='catalog')?.payload.templates,false)
+  const miss=harness([fresh])
+  assert.equal((await createVisualWork({request:'自定义消息结构',kind:'diagram',request_id:'miss-golden'},miss.context)).status,'ready')
+})
+
+test('golden resume: persisted valid source and unparsed response skip repeated retrieval or generation',async()=>{
+  const fixture=harness([fresh],{publishErrors:['network timeout']})
+  const paused=await createVisualWork({request:'从零演示消息',kind:'animation',request_id:'resume-golden'},fixture.context)
+  assert.equal(paused.status,'paused');assert.ok(fixture.job.candidate.source)
+  const before=fixture.calls.filter(c=>['catalog','search','template'].includes(c.operation)).length
+  const resumed=await resumeVisualWork(paused.job_id!,fixture.context)
+  assert.equal(resumed.status,'ready');assert.equal(fixture.generations,1)
+  assert.equal(fixture.calls.filter(c=>['catalog','search','template'].includes(c.operation)).length,before)
+  const pending=harness([fresh],{publishErrors:['network timeout']})
+  const pendingJob=await createVisualWork({request:'从零演示消息',kind:'animation',request_id:'raw-golden'},pending.context)
+  pending.setRawCandidate(JSON.stringify(fresh))
+  assert.equal((await resumeVisualWork(pendingJob.job_id!,pending.context)).status,'ready')
+  assert.equal(pending.generations,1)
+})
+
+test('golden repair: exact errors, explicit compatible SVG fallback, and numeric failures stay blocked',async()=>{
+  const spec={spec_version:'0.2.0',title:'消息结构'}
+  const initial={source_mode:'fresh',builder:'visual_spec',source:spec}
+  const fallback={...fresh,fallback:{from:'visual_spec',to:'svg_story',kind:'animation',scope:'illustrative_structure',reason:'表达目标是消息关系，无需计算'}}
+  const fixed=harness([initial,fallback],{publishErrors:['visual_spec_schema_invalid /views/0/primitives/0 [required]']})
+  assert.equal((await createVisualWork({request:'从零描述消息过程',kind:'animation',request_id:'repair-golden'},fixed.context)).status,'ready')
+  assert.ok(fixed.prompts[1].includes('/views/0/primitives/0'))
+  assert.equal(fixed.generations,2)
+  const blocked=harness([initial,fresh],{publishErrors:['numeric_oracle_failed /frames/2/result']})
+  assert.equal((await createVisualWork({request:'从零计算自定义矩阵',kind:'animation',request_id:'numeric-golden'},blocked.context)).status,'paused')
+  assert.equal(blocked.generations,2);assert.equal(blocked.job.diagnostics[0].code,'verification_blocked')
+  assert.ok(blocked.prompts[1].includes('禁止换成SVGStory'))
+  const implicit=harness([initial,fresh],{publishErrors:['schema_invalid /views']})
+  assert.equal((await createVisualWork({request:'从零描述消息过程',kind:'animation',request_id:'implicit-golden'},implicit.context)).status,'paused')
+  assert.ok(implicit.job.diagnostics[0].detail.includes('visual_builder_switch_requires_explicit_plan'))
+})
+
+test('plugin contract and local JSON repair keep data and explicit control routing intact',async()=>{
+  const plugin=createEducationalVisualsPlugin(webAPI)
+  assert.equal(plugin.manifest.defaultEnabled,false)
+  assert.deepEqual(plugin.manifest.tools.map(t=>t.id),['create','search','open','iterate','resume','cancel'])
+  assert.deepEqual(parseVisualWorkflowCandidate('{"label":"literal, }", "steps":[1,2,],}'),{label:'literal, }',steps:[1,2]})
+  assert.equal(directVisualWorkflowCall({message:'继续图解任务 job_id=job-123',kind:'none',requestId:'test'})?.name,'educational_visuals__resume')
+  assert.equal(directVisualWorkflowCall({message:'修改作品 revision_id=revision-123\n增加接收端',kind:'animation',requestId:'test'})?.name,'educational_visuals__iterate')
+  assert.equal(directVisualWorkflowCall({message:'解释什么是动画',kind:'none',requestId:'test'}),undefined)
+  assert.equal(directVisualWorkflowCall({message:'打开作品库',kind:'none',requestId:'test'})?.name,'educational_visuals__search')
+  assert.equal(directVisualWorkflowCall({message:'复用维护图解 template_id=sample.case template_version=1.0.0 kind=animation',kind:'diagram',requestId:'test'})?.arguments.kind,'animation')
+  const fixture=harness([new Error('provider timeout')])
+  const paused=await createVisualWork({request:'从零演示消息',kind:'animation',request_id:'cancel-golden'},fixture.context)
+  assert.equal((await cancelVisualWork(paused.job_id!,fixture.context)).status,'cancelled')
+})

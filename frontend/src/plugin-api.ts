@@ -146,6 +146,9 @@ export type PluginToolResult = {
 }
 
 export type PluginToolContext = {
+  /** Host-granted private artifact services; no credentials or direct learner-state writes. */
+  artifactHost?: import('../../packages/learning-client/src/visuals/plugin-host.ts').ArtifactHost
+
   scope: {
     mode: TutorMode
     learnerId?: number

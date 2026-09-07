@@ -55,14 +55,7 @@ export const CORE_TOOL_CAPABILITIES: readonly ToolCapabilitySummary[] = Object.f
     status: '带领学习时',
     source: 'core',
   },
-  {
-    id: 'visual-explanation',
-    label: '图解与动画',
-    purpose: '把已形成的教学讲解转换为可检查的静态图解或分步动画。',
-    glyph: '视',
-    status: '明确请求时',
-    source: 'core',
-  },
+
 ] satisfies ToolCapabilitySummary[])
 
 export function visibleToolCapabilities(

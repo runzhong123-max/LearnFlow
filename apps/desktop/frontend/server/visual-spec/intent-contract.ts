@@ -2,6 +2,9 @@ import type { LearningVisualSpec } from './types.ts'
 
 const STRUCTURED_TOPIC_ANCHOR = /【结构化主题锚点】(\{[^\n]+\})/u
 const VISUAL_INSTRUCTION_WORDS = /(?:改成|换成|改为|换为|做成|它|该过程|这种变化|图片|张图|我希望你|我想要|我想|希望|想要|请|帮我|给我|可以|能否|能不能|来|用|做|生成|制作|画|展示|演示|播放|看|讲解|讲|解释|说明|一下|一张|一个|这个|那个|上面|刚才|前面|逐帧|逐步|动态|动画|动图|图解|流程图|时序图|结构图|关系图|示意图|概念图|知识图|可视化|示例|例子|过程|流程|步骤|变化|出来|如何|怎么|的)/gu
+// Source and presentation preferences are controls, not a new subject. Strip them
+// before shorter visual verbs (e.g. 用) can split a phrase such as 复用.
+const VISUAL_CONTROL_WORDS = /(?:从零开始|从零|重新生成|直接复用|优先复用|仅复用|只复用|复用|改编|合适的|适合的|现成的|已有的|做好的|维护案例|维护模板|维护作品|经典案例|现成案例|现成模板|已有作品|作品库|模板库|即可|就可以|就行|就好|不需要模板|不要模板)/gu
 const GENERIC_VISUAL_TERMS = new Set([
   'input', 'output', 'process', 'step', 'state', 'example', 'diagram', 'animation',
   '输入', '输出', '处理', '阶段', '状态', '示例', '过程', '流程', '步骤', '变化',
@@ -29,7 +32,7 @@ function anchoredTopic(request: string) {
  * subject matter.
  */
 export function extractVisualTopicTerms(request: string): string[] {
-  const source = anchoredTopic(request) || request.replace(STRUCTURED_TOPIC_ANCHOR, ' ')
+  const source = anchoredTopic(request) || request.replace(STRUCTURED_TOPIC_ANCHOR, ' ').replace(VISUAL_CONTROL_WORDS, ' ')
   const latin = source.toLowerCase().match(/[a-z][a-z0-9+.#_-]{2,}/g) || []
   const cleaned = source
     .replace(/[a-z][a-z0-9+.#_-]*/gi, ' ')

@@ -1583,6 +1583,7 @@ async def init_db():
     _backup_before_auth_phase_a_migration()
     async with engine.begin() as conn:
         from app.models import project, learning  # noqa: F401
+        from learnflow_core.visuals import workspace  # noqa: F401; additive private visual tables
         await conn.run_sync(Base.metadata.create_all)
     await _ensure_columns()
     await _backfill_five_kernel()

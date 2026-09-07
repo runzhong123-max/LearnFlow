@@ -428,6 +428,7 @@ function tutorProxy(mode: string, backendBase: string): Plugin {
 
       console.info('[tutor] turn started', {
         requestId,
+        clientTurnId: typeof input.clientTurnId === 'string' ? input.clientTurnId.slice(0,160) : undefined,
         conversationId: typeof input.conversationId === 'string' ? input.conversationId.slice(0, 160) : undefined,
         sheetId: typeof input.sheetId === 'string' ? input.sheetId.slice(0, 160) : undefined,
         formalSessionId: formalScope.sessionId,
@@ -587,6 +588,8 @@ function tutorProxy(mode: string, backendBase: string): Plugin {
         formalProjectContext: formalProjectContext as any,
         backendBase,
         requestCookie: typeof request.headers.cookie === 'string' ? request.headers.cookie : undefined,
+        clientTurnId: typeof input.clientTurnId === 'string' ? input.clientTurnId.slice(0,160) : undefined,
+        formalSessionId: formalScope.sessionId,
         conversationId: typeof input.conversationId === 'string' ? input.conversationId.slice(0, 160) : undefined,
         sheetId: typeof input.sheetId === 'string' ? input.sheetId.slice(0, 160) : undefined,
         pluginRegistry,

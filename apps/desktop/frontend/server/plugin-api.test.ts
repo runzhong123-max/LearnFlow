@@ -1,3 +1,4 @@
+import {artifactHostRequest,visualPluginRequest} from '../../../../packages/learning-client/src/visuals/plugin-host.ts'
 import assert from 'node:assert/strict'
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -276,4 +277,15 @@ test('Tutor keeps bounded plugin snapshot state and object references for the ne
   assert.match(body, /snapshot:fixture/)
   assert.match(body, /node:1/)
   assert.match(body, /fixture_graph/)
+})
+
+test('private artifact host grants keep credentials, scope and publication out of renderers', () => {
+  assert.throws(()=>artifactHostRequest('other_plugin','read',{revision_id:'r'}),/forbidden/)
+  assert.throws(()=>artifactHostRequest('educational_visuals','publish',{}, {}, true),/forbidden/)
+  assert.throws(()=>artifactHostRequest('educational_visuals','https://external.invalid',{}),/forbidden/)
+  const scoped=artifactHostRequest('educational_visuals','start_job',{learner_id:99,project_id:99,session_id:99,request:'original'}, {projectId:3,sessionId:4})
+  assert.deepEqual(scoped.body,{operation:'start_job',payload:{request:'original',project_id:3,session_id:4}})
+  const userInput='保留输入矩阵\n'+ '1 2 3\n'.repeat(500)
+  assert.equal(visualPluginRequest(userInput,{contextEnriched:false}),userInput)
+  assert.ok(visualPluginRequest(userInput,{contextEnriched:true,topicAnchor:{topic:'矩阵乘法'}}).startsWith(userInput))
 })

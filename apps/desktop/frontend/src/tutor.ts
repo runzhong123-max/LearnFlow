@@ -1,3 +1,4 @@
+import { VISUAL_PLUGIN_PLANNER_INSTRUCTIONS, visualPluginRequest, visualPluginReferences } from '../../../../packages/learning-client/src/visuals/plugin-host.ts'
 import { requestFormalTutorTurn } from './formal-runtime.ts'
 import type { TutorToolChoice, TutorToolRun } from './tooling.ts'
 import {
@@ -12,16 +13,15 @@ import type { LearnerPathState } from './learning-path-graph.ts'
 import type { AgentFormalScope, AgentKnowledgeDomain, AgentTaskQueueItem, AgentTurnResponse, AgentTurnStreamEvent, AgentTurnTrace } from './agent-contracts.ts'
 import { isLocalLearningRuntime as isDesktopRuntime, runtimeFetch } from './runtime-client.ts'
 import {
-  executeLearningVisual,
   resolveExplicitVisualIntent,
   resolveVisualRequest,
 } from '../server/visual-tool-execution.ts'
 import { AI_LATENCY_BUDGETS } from './latency-budgets.ts'
-import {
-  prepareVisualTeachingBrief,
-} from '../server/visual-teaching-skill.ts'
-import { VISUAL_TEACHING_BRIEF_VERSION, VISUAL_TEACHING_SKILL_ID } from './visual-teaching.ts'
-import type { LearnFlowPluginObject } from './plugin-api.ts'
+import { LearnFlowPluginRegistry, type LearnFlowPluginObject } from './plugin-api.ts'
+import visualPlugin from '../plugins/educational_visuals/server.ts'
+import { browserArtifactHost } from './plugin-artifact-host.ts'
+import { directVisualWorkflowCall } from '../../../../packages/learning-client/src/visuals/workflow.ts'
+import { visualPlannerContext } from '../server/visualize-authoring.ts'
 
 export type TutorMode = 'free' | 'simple_explain' | 'guided_learning' | 'learning_plan'
 
@@ -345,102 +345,32 @@ export function guidedLearningRecoveryReply(context: LearningTaskTutorContext, e
   return `${transparentNote}\n\n我们先继续「${context.objective}」的“${context.stepTitle}”：${directive}`
 }
 
-async function executeDesktopVisualTool(options: {
-  sessionId: number
-  kind: 'diagram' | 'animation'
-  query: string
-  teachingExplanation: string
-  messages: TutorContextMessage[]
-  signal: AbortSignal
+/** Desktop uses the identical package/graph; only its authenticated host services differ. */
+export async function executeDesktopVisualPlugin(options: {
+  sessionId:number; projectId?:number; mode:TutorMode; clientTurnId:string;
+  messages:TutorContextMessage[]; onModelCall?:()=>void; call:{name:string;arguments:Record<string,unknown>}; signal:AbortSignal;
 }): Promise<TutorToolRun> {
-  const startedAt = Date.now()
-  const toolName = options.kind === 'animation' ? 'generate_learning_animation' : 'generate_learning_diagram'
-  const title = options.kind === 'animation' ? '生成过程动画' : '生成知识图解'
-  const request = resolveVisualRequest(options.query, options.messages)
-  try {
-    const transport: import('../server/visualize-authoring.ts').VisualAuthoringTransport = async (action, payload) => {
-      const response = await runtimeFetch(`/api/visuals/${action}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:options.signal})
-      const result = await response.json()
-      if (!response.ok) throw new Error(`${response.status === 401 || response.status === 403 ? 'visual_auth_required:' : ''}${typeof result.detail === 'string' ? result.detail : JSON.stringify(result.detail || result)}`)
-      return result
-    }
-    const generate: import('../server/learning-visual-spec.ts').GenerateText = async (instructions, input, timeoutMs = 90_000, maxTokens = 10_000, generationOptions) => {
-      const response = await runtimeFetch(`/api/agent/sessions/${options.sessionId}/visual-plans`, {
+  const startedAt=Date.now()
+  const registry=new LearnFlowPluginRegistry([visualPlugin])
+  const requestHost=browserArtifactHost('educational_visuals',{sessionId:options.sessionId,projectId:options.projectId,renderer:false,signal:options.signal})
+  const execution=await registry.execute(options.call.name,options.call.arguments,{
+    mode:options.mode,activePluginIds:['educational_visuals'],projectId:options.projectId,
+    scope:{mode:options.mode,sessionId:options.sessionId,projectId:options.projectId},signal:options.signal,
+    artifactHost:{...requestHost, context:`${visualPlannerContext(options.messages)}\n<recent_visual_references>${JSON.stringify(visualPluginReferences(options.messages))}</recent_visual_references>`,generate:async prompt => {
+      options.onModelCall?.()
+      const response=await runtimeFetch(`/api/agent/sessions/${options.sessionId}/visual-plans`,{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({instructions,input,timeout_ms:timeoutMs,max_tokens:maxTokens,response_format:generationOptions?.responseFormat}),signal:options.signal,
+        body:JSON.stringify({instructions:VISUAL_PLUGIN_PLANNER_INSTRUCTIONS,input:prompt,timeout_ms:90000,max_tokens:10000,response_format:'json_object'}),signal:options.signal,
       })
-      const payload = await response.json().catch(() => null) as {text?:unknown;detail?:unknown}|null
-      if (!response.ok) throw new Error(typeof payload?.detail === 'string' ? payload.detail : `视觉规划返回 HTTP ${response.status}`)
-      if (typeof payload?.text !== 'string' || !payload.text.trim()) throw new Error('视觉规划没有返回可验证的 JSON')
+      const payload=await response.json()
+      if (!response.ok || typeof payload.text !== 'string') throw new Error(typeof payload.detail === 'string' ? payload.detail : 'visual_planner_unavailable')
       return payload.text
-    }
-    const visualBrief = await prepareVisualTeachingBrief({
-      modality:options.kind, request:request.effectiveRequest, explanation:options.teachingExplanation,
-      transport, generate:prompt => generate('执行 Visual Planner 与 Spec Builder，只输出完整 JSON。',prompt,90_000,10_000,{responseFormat:'json_object'}),
-    })
-    const execution = await executeLearningVisual(options.kind, request.effectiveRequest, options.messages, generate, undefined, visualBrief, transport)
-    const visual = execution.generated
-    const effectiveKind = visual.artifact.kind === 'animation' ? 'animation' : 'diagram'
-    if (effectiveKind !== options.kind) {
-      throw new Error(`visual_modality_mismatch:requested_${options.kind}:produced_${effectiveKind}:需要学习者明确同意后才能改用另一视觉形式`)
-    }
-    return {
-      id: `desktop-visual-${startedAt}`,
-      toolCallId: `desktop-visual-${startedAt}`,
-      toolName,
-      kind: effectiveKind === 'animation' ? 'animation' : 'image',
-      status: 'completed',
-      title,
-      detail: visual.artifact.visualize ? '交互图已生成；可调参、回放并追问当前状态。' : '兼容视觉产物已生成。',
-      durationMs: Date.now() - startedAt,
-      startedAt,
-      inputSummary: request.effectiveRequest.slice(0, 240),
-      observationSummary: visual.artifact.title,
-      artifact: visual.artifact,
-      visualMeta: {
-        requestedKind: options.kind,
-        effectiveKind,
-        contextEnriched: execution.request.contextEnriched,
-        generationSource: visual.generation.source,
-        compileStatus: visual.generation.compileStatus,
-        plannerAttempts: visual.generation.plannerAttempts,
-        syntaxRepairApplied: visual.generation.syntaxRepairApplied,
-        plannerDiagnostics: visual.generation.attempts,
-        outcomeStage: 'rendered',
-        skillId: VISUAL_TEACHING_SKILL_ID,
-        briefVersion: visualBrief.version,
-        explanationPreserved: true,
-      },
-    }
-  } catch (error) {
-    const message = error instanceof Error ? error.message.slice(0, 300) : '视觉生成失败'
-    return {
-      id: `desktop-visual-${startedAt}`,
-      toolCallId: `desktop-visual-${startedAt}`,
-      toolName,
-      kind: options.kind === 'animation' ? 'animation' : 'image',
-      status: 'failed',
-      title,
-      detail: message,
-      durationMs: Date.now() - startedAt,
-      startedAt,
-      inputSummary: request.effectiveRequest.slice(0, 240),
-      observationSummary: '视觉工具失败，未产生可信产物',
-      errorType: /超时|timeout|abort/i.test(message) ? 'transient' : /needs_input|ambiguous|请提供/i.test(message) ? 'user_fixable' : 'model_recoverable',
-      visualMeta: {
-        requestedKind: options.kind,
-        effectiveKind: options.kind,
-        contextEnriched: request.contextEnriched,
-        generationSource: 'model_plan',
-        compileStatus: /needs_input|ambiguous/i.test(message) ? 'ambiguous' : 'invalid',
-        plannerAttempts: /after_2_attempts/i.test(message) ? 2 : 1,
-        outcomeStage: /layout|collision|route/i.test(message) ? 'layout' : /spec|json|validation|quality/i.test(message) ? 'validation' : 'planner',
-        skillId: VISUAL_TEACHING_SKILL_ID,
-        briefVersion: VISUAL_TEACHING_BRIEF_VERSION,
-        explanationPreserved: true,
-      },
-    }
-  }
+    }},
+  })
+  return {id:`visual-plugin-${options.clientTurnId}`,toolCallId:`visual-plugin-${options.clientTurnId}`,
+    toolName:options.call.name,kind:'plugin',status:'completed',title:execution.contribution.title,
+    detail:execution.result.summary,observationSummary:execution.result.summary.slice(0,500),startedAt,durationMs:Date.now()-startedAt,
+    plugin:{pluginId:execution.pluginId,toolId:execution.contribution.id,result:execution.result}}
 }
 
 export async function requestTutorReply(options: {
@@ -491,6 +421,18 @@ export async function requestTutorReply(options: {
     if (isDesktopRuntime()) {
       if (!options.formalScope?.sessionId) throw new Error('桌面 Tutor 尚未取得正式会话，请重试本轮')
       if (!options.clientTurnId) throw new Error('桌面 Tutor 缺少稳定消息标识，请重试本轮')
+      const pluginCall=directVisualWorkflowCall({
+        message:visualIntent === 'none' ? latestUserMessage : visualPluginRequest(latestUserMessage,resolveVisualRequest(latestUserMessage,options.messages)),
+        kind:visualIntent,context:`${visualPlannerContext(options.messages)}\n<recent_visual_references>${JSON.stringify(visualPluginReferences(options.messages))}</recent_visual_references>`,requestId:`desktop:${options.formalScope.sessionId}:${options.clientTurnId}`,
+      })
+      if (pluginCall && (visualIntent !== 'none' || options.activePluginIds?.includes('educational_visuals'))) {
+        let pluginModelRounds=0
+        const run=await executeDesktopVisualPlugin({sessionId:options.formalScope.sessionId,projectId:options.formalScope.projectId,
+          mode:options.mode,clientTurnId:options.clientTurnId,messages:options.messages,call:pluginCall,signal:controller.signal,onModelCall:()=>{pluginModelRounds+=1}})
+        options.onEvent?.({type:'tool_completed',run})
+        return {reply:run.detail,toolRuns:[run],trace:{version:'vnext-agent-trace.v1',turnId:`desktop-${options.clientTurnId}`,
+          modelRounds:pluginModelRounds,toolCalls:1,stopReason:'final_answer',events:[{sequence:1,phase:'finalize',detail:run.detail,at:Date.now()}]}}
+      }
       const payload = await requestFormalTutorTurn(options.formalScope.sessionId, {
         message: latestUserMessage,
         // Explicit empty is intentional; never substitute enriched message text.
@@ -508,26 +450,15 @@ export async function requestTutorReply(options: {
         },
       }, controller.signal)
       if (typeof payload?.message !== 'string' || !payload.message.trim()) throw new Error('桌面 Tutor 没有返回可显示的文本')
-      // The formal Tutor reply is persisted before visual_teaching_composition
-      // starts. A renderer timeout can therefore never invalidate the lesson.
-      const visualRun = visualIntent === 'none' ? undefined : await executeDesktopVisualTool({
-        sessionId: options.formalScope.sessionId,
-        kind: visualIntent,
-        query: latestUserMessage,
-        teachingExplanation: payload.message.trim(),
-        messages: options.messages,
-        signal: controller.signal,
-      })
       const at = Date.now()
       return {
         reply: payload.message.trim(),
-        toolRuns: visualRun ? [visualRun] : [],
+        toolRuns: [],
         trace: {
           version: 'vnext-agent-trace.v1', turnId: `desktop-${at}`,
-          modelRounds: 1, toolCalls: visualRun ? 1 : 0, stopReason: 'final_answer',
+          modelRounds: 1, toolCalls: 0, stopReason: 'final_answer',
           events: [
-            ...(visualRun ? [{ sequence: 1, phase: 'verify' as const, detail: visualRun.detail, at, toolCallId: visualRun.toolCallId, toolName: visualRun.toolName, status: visualRun.status === 'completed' ? 'completed' as const : 'failed' as const }] : []),
-            { sequence: visualRun ? 2 : 1, phase: 'finalize', detail: '正式 Tutor 完成桌面回合', at },
+            { sequence: 1, phase: 'finalize', detail: '正式 Tutor 完成桌面回合', at },
           ],
         } satisfies AgentTurnTrace,
       }

@@ -88,3 +88,7 @@ Web 基线 3738ea2d8ba21f0997c6d612f3a595775f7586ff；桌面基线 cd88a355e72db
 ## 视觉共享运行时
 
 VisualSpec计算与API统一位于learning-core的visuals及api/visuals.py；表现、作者上下文与交互组件统一位于learning-client/src/visuals。两端src/visualize和server/visualize-*只作重导出，认证transport保留端侧边界。详见[设计与验收](design/visualize/README.md)。
+
+### 图解与动画插件（2026-09-07）
+
+`packages/learning-client/src/visuals/workflow.ts` 与 `plugin-package.ts` 是图解插件产品流程的共享源；两端 `plugins/educational_visuals` 为装配入口。`learnflow_core.visuals.workspace` 管理私有作品和任务，`svg_story` 与 `engine` 分别是结构分镜和 VisualSpec 计算构建器。宿主仅装配认证、模型、能力授权与已有纸张入口。详见 [插件工作流](design/visualize/PLUGIN-WORKFLOW.md)。
