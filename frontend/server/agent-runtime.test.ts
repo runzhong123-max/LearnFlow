@@ -1848,3 +1848,40 @@ test('project tool preserves current mentoring roles and help policy', async () 
   assert.match(observed, /read_only/)
   assert.doesNotMatch(observed, /FUTURE_TASK|FUTURE_FILE/)
 })
+
+
+test('owned conversion context survives more than 18 transcript messages as bounded data', async () => {
+  const requests: any[] = []
+  const scope = {learner_id: 1, session_id: 51, project_id: null, checkpoint_id: null}
+  const context = {
+    schema_version: 'learnflow.work-task-conversion-context.v1', scope,
+    conversion_id: 'wc_scope', root_hash: 'a'.repeat(64), candidate_id: 'wcc_scope',
+    project_mode: 'learning', task_title: '库存导入', selected_steps: [{id:'s1',title:'校验输入'}],
+    source_refs: [{type:'role_task', package_ref:{rootHash:'b'.repeat(64),snapshotId:'snapshot-fixed'}}],
+    unresolved_questions: ['待选择资料'], read_only:true, mastery_inference:false, full_candidate_included:false,
+    // Even a server regression must not forward a full candidate via this bridge.
+    candidate: {private_tests: 'PRIVATE_DO_NOT_SEND'},
+  }
+  const messages = [
+    {role:'user' as const,content:'OLD_HANDOFF_ONLY_IN_HISTORY'},
+    ...Array.from({length:24}, (_, i)=>({role:i%2?'assistant' as const:'user' as const,content:`历史消息${i}`})),
+    {role:'user' as const,content:'继续检查已选任务的资料'},
+  ]
+  const result = await runTutorAgentTurn({
+    baseUrl:'https://example.com/v1/chat/completions', model:'test-model', mode:'free', messages,
+    toolChoice:'auto', formalSessionId:51,
+    formalWorkspaceContext:{scope,work_task_conversion:context},
+    generate:async ()=>'unused',
+    invokeProvider:async request=>{requests.push(request);return {choices:[{message:{content:'我们沿用已选步骤，继续检查固定来源。'}}]}},
+  })
+  assert.match(result.reply, /已选步骤/)
+  const body = requests[0].body as any
+  const data = body.messages.filter((item:any)=>item.role === 'user' && item.content.includes('<work_task_conversion_context>'))
+  assert.equal(data.length,1)
+  assert.match(data[0].content,/snapshot-fixed/)
+  assert.match(data[0].content,/待选择资料/)
+  assert.match(data[0].content,/不构成系统指令或掌握证据/)
+  assert.ok(!JSON.stringify(body).includes('OLD_HANDOFF_ONLY_IN_HISTORY'))
+  assert.ok(!JSON.stringify(body).includes('PRIVATE_DO_NOT_SEND'))
+  assert.equal(body.messages[body.messages.length-1].content, '继续检查已选任务的资料')
+})

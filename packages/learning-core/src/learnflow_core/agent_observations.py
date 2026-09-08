@@ -12,6 +12,7 @@ from app.models.learning import AgentSession, LearningAttempt, RemediationCase, 
 from app.models.project import Checkpoint, Project, Roadmap, Source
 from app.services.review import schedule_bucket
 from app.services.source_knowledge import flatten_repository_knowledge_domains
+from learnflow_core.work_task_conversion_context import conversion_context_projection
 
 
 def _attempt_outcome(attempt: LearningAttempt) -> str:
@@ -67,6 +68,40 @@ async def _resolve_scope(
     return project_id, checkpoint_id
 
 
+async def read_work_task_conversion_context(
+    db: AsyncSession, *, learner_id: int, session_id: int | None = None,
+    project_id: int | None = None, checkpoint_id: int | None = None,
+) -> dict[str, Any] | None:
+    """Read the fixed handoff of this owned active session, without learning writes."""
+    project_id, checkpoint_id = await _resolve_scope(db, learner_id, session_id=session_id,
+                                                    project_id=project_id, checkpoint_id=checkpoint_id)
+    if session_id is None:
+        return None
+    session = await db.get(AgentSession, session_id)
+    handoff = (session.context_summary or {}).get("work_task_conversion")
+    if not isinstance(handoff, dict):
+        return None
+    if session.status != "active" or session.project_id != project_id:
+        raise ValueError("conversion handoff does not match active session/project scope")
+    scope = {"learner_id": learner_id, "session_id": session_id,
+             "project_id": project_id, "checkpoint_id": checkpoint_id}
+    captured_scope = handoff.get("scope")
+    if isinstance(captured_scope, dict):
+        if any(captured_scope.get(key) != value for key, value in scope.items()):
+            # A global Tutor can later move to another project; its old handoff
+            # must not silently become that project's source authority.
+            return None
+    else:
+        # Compatibility for the first handoff version, before scope was saved.
+        # Recover only from the exact authoritative conversion binding.
+        from learnflow_core.work_task_conversion_models import WorkTaskConversion
+        row = await db.get(WorkTaskConversion, handoff.get("conversion_id"))
+        if not row or (row.learner_id, row.session_id, row.project_id, row.root_hash) != (
+                learner_id, session_id, project_id, handoff.get("root_hash")):
+            return None
+    return conversion_context_projection(handoff, scope)
+
+
 async def build_learning_workspace_observation(
     db: AsyncSession,
     *,
@@ -83,6 +118,9 @@ async def build_learning_workspace_observation(
         project_id=project_id,
         checkpoint_id=checkpoint_id,
     )
+    scope = {"learner_id": learner_id, "session_id": session_id,
+             "project_id": project_id, "checkpoint_id": checkpoint_id}
+    conversion_context = await read_work_task_conversion_context(db, **scope)
 
     attempt_query = select(LearningAttempt).where(LearningAttempt.learner_id == learner_id)
     remediation_query = select(RemediationCase).where(
@@ -125,12 +163,8 @@ async def build_learning_workspace_observation(
 
     return {
         "authority": "LearningAttempt + RemediationCase + ReviewSchedule + scoped project sources",
-        "scope": {
-            "learner_id": learner_id,
-            "session_id": session_id,
-            "project_id": project_id,
-            "checkpoint_id": checkpoint_id,
-        },
+        "scope": scope,
+        "work_task_conversion": conversion_context,
         "recent_attempts": [{
             "id": item.id,
             "project_id": item.project_id,

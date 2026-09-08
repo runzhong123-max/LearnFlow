@@ -1,3 +1,4 @@
+import { conversionContextReference } from '../../packages/learning-client/src/work-task-conversion/context.ts'
 import { compactProjectWorkflow } from '../../packages/learning-client/src/project-guidance/workflow-context.ts'
 import type { VisualAuthoringTransport } from './visualize-authoring.ts'
 import { compactTeachingGuidance } from '../src/teaching-guidance-context.ts'
@@ -635,6 +636,7 @@ function compactFormalWorkspaceContext(value: unknown) {
   return {
     authority: compactText(packet.authority, 240),
     scope: packet.scope || {},
+    work_task_conversion: conversionContextReference(packet, packet.scope?.session_id),
     recent_attempts: (Array.isArray(packet.recent_attempts) ? packet.recent_attempts : []).slice(0, 12),
     open_remediations: (Array.isArray(packet.open_remediations) ? packet.open_remediations : []).slice(0, 8),
     review: {

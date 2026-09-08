@@ -1,3 +1,4 @@
+import { conversionContextMessage } from '../../packages/learning-client/src/work-task-conversion/context.ts'
 import { explicitProjectGuidanceMode, hasProjectGuidanceConversation, projectGuidanceDirectRequest, projectGuidanceConfirmation, projectGuidanceObjects } from '../../packages/learning-client/src/project-guidance/contract.ts'
 import { VISUAL_PLUGIN_PLANNER_INSTRUCTIONS, visualPluginRequest, visualPluginReferences } from '../../packages/learning-client/src/visuals/plugin-host.ts'
 import { serverArtifactHost } from './plugin-artifact-host.ts'
@@ -1106,6 +1107,13 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
     content: message.content,
     ...(message.reasoningContent ? { reasoningContent: message.reasoningContent } : {}),
     }))
+  const conversionHandoff = conversionContextMessage(input.formalWorkspaceContext, input.formalSessionId)
+  if (conversionHandoff) {
+    // Keep the real latest user turn last. This owned projection is rebuilt on
+    // every request, so dropping old transcript messages cannot lose the handoff.
+    const latestUserIndex = runtimeMessages.map(message => message.role).lastIndexOf('user')
+    runtimeMessages.splice(latestUserIndex < 0 ? runtimeMessages.length : latestUserIndex, 0, conversionHandoff)
+  }
   const observations: AgentContextEnvelope['observations'] = []
   const signatures = new Set<string>()
   let modelRounds = 0
