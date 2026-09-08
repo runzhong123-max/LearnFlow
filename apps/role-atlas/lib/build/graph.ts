@@ -109,6 +109,9 @@ type SkillOptions = {
   emitEvents?: boolean;
   cache?: Map<string, unknown>;
   execution?: "full" | "kernel" | "enrichment";
+  /** Existing immutable task IDs, used only when enriching an iteration base. */
+  knowledgeTargetIds?: string[];
+  iterationObjective?: string;
 };
 
 const fallbackSemanticDraft: SemanticDraft = { roleSummary: "", nodes: [], edges: [] };
@@ -711,7 +714,8 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     return {
       activeRequest: state.request,
       runStartedAt: Date.now(),
-      researchReport: base.sources.research,
+      researchReport: options?.existingResearchReport
+        ? mergeResearchReports(base.sources.research, options.existingResearchReport) : base.sources.research,
       prepared,
       shards: [],
       mentions: base.sources.mentions || [],
@@ -779,12 +783,14 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
 
     // Presentation folding is not a research boundary: hidden detail tasks need
     // their own learning support too. Two tasks share a bounded context/output.
-    const knowledgeGroups = groupTasks(state.taskDraft?.nodes || [], 2);
+    const focusIds = options?.execution === "enrichment" && options.knowledgeTargetIds?.length
+      ? new Set(options.knowledgeTargetIds) : undefined;
+    const knowledgeGroups = groupTasks((state.taskDraft?.nodes || []).filter(node => !focusIds || focusIds.has(node.tempId)), 2);
     const targetedPromise = targetedKnowledgeResearch(state, config, knowledgeGroups);
     const invokeKnowledgeGroup = async (group: TaskGroup, prefix: string, prepared: PreparedBuild) => {
       const segments = selectKnowledgeContext({ group, segments: prepared.segments, mentions: state.mentions, assets: prepared.assets, maxTokens: 4_800 });
       const mentions = mentionsForSegments(state.mentions, segments.map((segment) => segment.id));
-      const prompt = knowledgeDerivationPrompt({ roleTitle: state.request.roleTitle, group, mentions, segments, assets: prepared.assets, mode: "detail" });
+      const prompt = knowledgeDerivationPrompt({ roleTitle: state.request.roleTitle, group, mentions, segments, assets: prepared.assets, mode: "detail", iterationObjective: options?.iterationObjective });
       const lane = `knowledge:${group.id}`;
       const outputBudget = group.tasks.length > 1 ? 5_600 : 3_600;
       const draft = await runWorkItem({ request: state.request, workItems, stage: "task-knowledge-derivation", lane, inputRefs: [group.id, ...group.tasks.map(task => task.tempId), ...segments.map((segment) => segment.id)], priority: 7, estimatedInputTokens: estimateTokens(prompt.user), maxOutputTokens: outputBudget, cachePayload: JSON.stringify(prompt), profile: "semantic", invoke: (onReasoning) => invokeStructured({ model, ...prompt, schema: knowledgeDerivationSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: outputBudget, timeoutMs: 65_000, totalTimeoutMs: 95_000, onReasoning }) });
@@ -793,7 +799,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       let quality = checked;
       let remainingIssues = checked.issues;
       if (checked.incompleteTaskIds.length || checked.issues.length) {
-        const repairPrompt = knowledgeDerivationPrompt({ roleTitle: state.request.roleTitle, group, mentions, segments, assets: prepared.assets, mode: "detail", repair: {
+        const repairPrompt = knowledgeDerivationPrompt({ roleTitle: state.request.roleTitle, group, mentions, segments, assets: prepared.assets, mode: "detail", iterationObjective: options?.iterationObjective, repair: {
           acceptedPoints: accepted.skills.map((point) => ({ label: point.label, learningKind: point.learningKind, scopeNote: point.learningDefinition?.scopeNote, taskTempIds: point.taskTempIds })),
           issues: checked.issues,
           uncoveredTaskIds: checked.uncoveredTaskIds,

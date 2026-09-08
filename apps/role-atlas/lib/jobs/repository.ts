@@ -4,6 +4,7 @@ import { ensureAppSchema, getD1 } from "@/db";
 import { canonicalStringify } from "@/lib/versioning/canonical";
 import { roleJobClaimStatements } from "./claim-transaction";
 import { iterationRunBrief } from "@/lib/iteration/brief";
+import { loadIterationOutcome, type IterationOutcome } from "./iteration-outcome";
 import type { RoleJobCheckpoint, RoleJobDescriptor, RoleJobKind, RoleJobStatus } from "./runtime";
 
 type RoleJobRow = {
@@ -155,12 +156,16 @@ export async function getRoleJob(jobId: string) {
   if (!row) return null;
   await getD1().prepare(dispatchSchema).run();
   const recovery = await getD1().prepare("SELECT state,deliveries FROM role_job_dispatch WHERE job_id=?").bind(jobId).first<{ state: string; deliveries: number }>();
+  const result = parseJson<{ outcome?: IterationOutcome }>(row.result_json);
+  const outcome = result?.outcome || await loadIterationOutcome({ id: row.id, projectId: row.project_id, kind: row.kind, status: row.status },
+    (id, projectId) => getD1().prepare("SELECT id,project_id,result_json FROM snapshot_iteration_runs WHERE id=? AND project_id=?")
+      .bind(id, projectId).first<{ id: string; project_id: string | null; result_json: string | null }>());
   return {
     recovery: recovery || undefined,
     ...descriptor(row),
     iterationBrief: iterationRunBrief(parseJson<{ iteration?: unknown }>(row.input_json)?.iteration),
     checkpoint: parseJson<RoleJobCheckpoint>(row.checkpoint_json),
-    result: parseJson<unknown>(row.result_json),
+    result: outcome ? { ...result, outcome } : result,
     leaseExpiresAt: row.lease_expires_at || undefined,
     error: row.error || undefined,
     completedAt: row.completed_at || undefined,

@@ -1,4 +1,5 @@
 import { enqueueRoleJob } from "@/lib/jobs/dispatch";
+import { iterationOutcome } from "@/lib/jobs/iteration-outcome";
 import { rememberResearchRequester } from "@/lib/research-collection/store";
 import { startRoleJobExecution } from "@/lib/jobs/execution";
 import { projectVersionHeadState } from "@/lib/versioning/commit";
@@ -258,7 +259,7 @@ export async function POST(request: Request) {
       } else {
         await journal.commit({ ...event, payload: { ...event.payload, result, projectVersionId } });
       }
-      await completeRoleJob({ jobId: iterationRequest.runId, owner: jobOwner, phase: "completed", result: { candidateSnapshotId, projectVersionId, ...headState } });
+      await completeRoleJob({ jobId: iterationRequest.runId, owner: jobOwner, phase: "completed", result: { candidateSnapshotId, projectVersionId, ...headState, outcome: iterationOutcome(result) } });
     },
     onFailure: async (error, journal) => {
       const event = failureEvent(iterationRequest, error);

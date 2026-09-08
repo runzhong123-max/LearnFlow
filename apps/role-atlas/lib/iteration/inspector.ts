@@ -13,6 +13,18 @@ const HARD_PROTOCOL_CODES = new Set([
   "INVALID_SNAPSHOT_TIME",
 ]);
 
+const INSPECTION_CODES = new Set([
+  "TASK_SKILL_GAP", "SKILL_COVERAGE_SPARSE", "CAPABILITY_NOT_CROSS_TASK",
+  "CAPABILITY_UNIT_CULTIVATION_GAP", "LEARNING_PATH_AMBIGUOUS", "LEARNING_PATH_GRAPH_GAP",
+  "AGENT_ROLE_ROOT", "AGENT_GRAPH_TRAVERSAL", "AGENT_EVIDENCE_RESOLUTION", "AGENT_SNAPSHOT_CONTEXT",
+]);
+
+/** Stable defect identity; labels and imported projection IDs may change. */
+export function findingIdentity(finding: Pick<IterationFinding, "code" | "targetIds" | "detail" | "title">) {
+  return JSON.stringify([finding.code, [...new Set(finding.targetIds)].sort(),
+    finding.code === "LANE_FALLBACK" ? finding.detail : !finding.targetIds.length ? finding.title : ""]);
+}
+
 const LAYER_BY_PROFILE: Record<RiskProfile, IterationFindingLayer> = {
   structural: "protocol",
   semantic: "semantic",
@@ -212,12 +224,14 @@ function pedagogyFindings(result: ColdStartBuildResult) {
  * visible and become iteration work instead of deleting the candidate.
  */
 export function inspectSnapshot(result: ColdStartBuildResult, options?: { targetIds?: string[]; now?: string }): SnapshotInspection {
-  const audit = auditRoleSnapshot(result, { targetIds: options?.targetIds, now: options?.now });
+  const audit = auditRoleSnapshot({ ...result, audit: { ...result.audit,
+    issues: result.audit.issues.filter(issue => !INSPECTION_CODES.has(issue.code)),
+  } }, { targetIds: options?.targetIds, now: options?.now });
   const findings = audit.issues.map(findingFromRisk);
   const coverage = coverageFindings(result);
   findings.push(...coverage.findings);
   findings.push(...pedagogyFindings(result));
-  const deduplicated = [...new Map(findings.map((finding) => [finding.id, finding])).values()];
+  const deduplicated = [...new Map(findings.map((finding) => [findingIdentity(finding), finding])).values()];
   const probes = agentProbes(result);
   for (const probe of probes.filter((item) => item.status === "failed")) {
     const existing = deduplicated.some((finding) => finding.targetIds.some((id) => probe.targetIds.includes(id)) && finding.layer === "protocol");
@@ -313,6 +327,7 @@ export function inspectionToBuildAudit(inspection: SnapshotInspection): { issues
 /** Re-materialize the snapshot-facing audit projection after graph changes. */
 export function applyInspectionToSnapshot(result: ColdStartBuildResult, inspection: SnapshotInspection): ColdStartBuildResult {
   const candidate = structuredClone(result);
+  const oldLearningMessages = new Set(candidate.audit.issues.filter(i => i.code === "TASK_SKILL_GAP").map(i => i.title));
   const inspected = inspectionToBuildAudit(inspection);
   // Iteration findings describe the current candidate. Keeping compiler issues
   // that have already been resolved would make the next snapshot self-contradictory.
@@ -338,13 +353,17 @@ export function applyInspectionToSnapshot(result: ColdStartBuildResult, inspecti
   candidate.validation.structural.passed = inspection.protocolValid;
   candidate.validation.structural.issues = inspection.hardBlockers.map((finding) => finding.title);
   const learningGaps = inspection.findings.filter(f => f.code === "TASK_SKILL_GAP");
+  candidate.validation.semantic.issues = unique([
+    ...candidate.validation.semantic.issues.filter(message => !oldLearningMessages.has(message)),
+    ...learningGaps.map(f => f.title),
+  ]);
+  candidate.validation.semantic.passed = candidate.validation.semantic.issues.length === 0;
   if (learningGaps.length) {
-    candidate.validation.semantic.passed = false;
-    candidate.validation.semantic.issues = unique([...candidate.validation.semantic.issues, ...learningGaps.map(f => f.title)]);
-    candidate.validation.publishable = false;
     if (candidate.build?.enrichment) candidate.build.enrichment.status = "degraded";
   }
-  candidate.validation.publishable = candidate.validation.publishable && inspection.protocolValid;
+  candidate.validation.publishable = inspection.protocolValid
+    && [candidate.validation.structural, candidate.validation.semantic, candidate.validation.evidence, candidate.validation.temporal, candidate.validation.process].every(report => report.passed)
+    && inspection.findings.every(finding => finding.severity !== "error");
   if (!inspection.protocolValid) {
     candidate.snapshot.status = "candidate";
     candidate.packages.rolePackage.status = "candidate";

@@ -1,6 +1,7 @@
 import { stableHash } from "@/lib/build/compiler";
 import { iterationTargetNodes } from "./targets";
 import { learningRegressionReasons, sourceFingerprints } from "./preserve-graph";
+import { findingIdentity } from "./inspector";
 import type { ColdStartBuildResult, WebSearchCategory } from "@/lib/build/types";
 import type { PlannedQuery } from "@/lib/search/web-research";
 import type {
@@ -46,7 +47,7 @@ export function createIterationContract(request: SnapshotIterationRequest, resul
   const selectedLabels = request.targetIds.map((id) => targetNodes.get(id) || id);
   const targetAsOf = request.targetAsOf || (mode === "freshness" ? new Date().toISOString().slice(0, 10) : result.snapshot.asOf);
   const objective = profile === "autonomous"
-    ? `自动发现并迭代“${result.brief.roleTitle}”快照中价值最高的结构、证据、时效、事理与 Agent 可用性问题。`
+    ? `自动发现并迭代“${result.brief.roleTitle}”快照中价值最高的结构、证据、时效、事理与 Agent 可用性问题。${prompt ? `优先关注用户目标：${prompt}` : ""}`
     : prompt || (selectedLabels.length
       ? `围绕“${selectedLabels.join("、")}”补充证据、任务关系与能力结构。`
       : `围绕当前岗位重点，自动发现关联问题并提升“${result.brief.roleTitle}”快照。`);
@@ -93,7 +94,19 @@ export function createIterationContract(request: SnapshotIterationRequest, resul
   };
 }
 
-function findingIntent(finding: IterationFinding): IterationIntent {
+// These are diagnosed defects of existing objects, not open-ended expansion.
+// They may require evidence and model work even though the mutation is a repair.
+const RESEARCH_REPAIR_CODES = new Set([
+  "TASK_SKILL_GAP", "SKILL_COVERAGE_SPARSE", "SKILL_NOT_LEARNABLE",
+  "LEARNING_PATH_AMBIGUOUS", "LEARNING_PATH_GRAPH_GAP", "CAPABILITY_UNIT_CULTIVATION_GAP",
+  "MISSING_TASK_LAYER", "ORPHAN_CORE_NODE", "SEMANTIC_OVERLAP", "TASK_NOT_DELIVERABLE",
+  "CAPABILITY_DIMENSION_POLLUTION", "CAPABILITY_NOT_CROSS_TASK",
+  "TASK_PROCESS_GAP", "NO_PROCESS_SCENARIOS", "SCENARIO_WITHOUT_EVENT", "SCENARIO_WITHOUT_ARTIFACT",
+]);
+
+function findingIntent(finding: IterationFinding, mode?: IterationContract["mode"]): IterationIntent {
+  if (mode === "risk_repair" && finding.suggestedAction === "research"
+    && RESEARCH_REPAIR_CODES.has(finding.code)) return "repair";
   if (finding.layer === "temporal") return "refresh";
   if (finding.suggestedAction === "automatic" || finding.classification === "invariant") return "repair";
   if (finding.layer === "evidence") return "verify";
@@ -104,7 +117,8 @@ function findingValue(finding: IterationFinding) {
   const severity = { error: 40, warning: 24, info: 10 }[finding.severity];
   const classification = { invariant: 20, core_usability: 14, research: 8 }[finding.classification];
   const unlock = finding.layer === "protocol" ? 18 : finding.layer === "process" || finding.layer === "coverage" ? 10 : 4;
-  return Math.min(100, severity + classification + unlock + finding.confidence * 12);
+  const blockingLearning = finding.code === "TASK_SKILL_GAP" ? 22 : 0;
+  return Math.min(100, severity + classification + unlock + finding.confidence * 12 + blockingLearning);
 }
 
 function isFindingInScope(
@@ -155,12 +169,19 @@ export function discoverIterationOpportunities(input: {
   }
   const selectedFindings = input.inspection.findings
     .filter((finding) => isFindingInScope(finding, input.contract.initiativeProfile, targetIds))
-    .filter((finding) => finding.hardBlocker || input.contract.changeIntents.includes(findingIntent(finding)))
+    // Human observations and developer interventions cannot be obtained by web research.
+    .filter((finding) => finding.hardBlocker || ["automatic", "research"].includes(finding.suggestedAction))
+    .filter((finding) => finding.hardBlocker || input.contract.changeIntents.includes(findingIntent(finding, input.contract.mode)))
+    // Individual task gaps already carry the work; do not spend another slot on their aggregate.
+    .filter((finding, _, findings) => finding.code !== "SKILL_COVERAGE_SPARSE"
+      || !findings.some(other => other.code === "TASK_SKILL_GAP"))
     .sort((left, right) => findingValue(right) - findingValue(left));
   const groups = new Map<string, IterationFinding[]>();
   for (const finding of selectedFindings) {
-    const intent = findingIntent(finding);
-    const key = `${intent}:${finding.layer}:${finding.classification}`;
+    const intent = findingIntent(finding, input.contract.mode);
+    // Keep task-specific defects separate, so four uncovered tasks do not share
+    // a single query containing only the first three labels.
+    const key = `${intent}:${finding.layer}:${finding.classification}:${input.contract.mode === "risk_repair" && finding.suggestedAction === "research" && RESEARCH_REPAIR_CODES.has(finding.code) ? `${finding.code}:${[...finding.targetIds].sort().join("|")}` : "group"}`;
     groups.set(key, [...(groups.get(key) || []), finding]);
   }
   for (const [key, findings] of groups) {
@@ -228,7 +249,8 @@ function categoryForWorkItem(item: IterationWorkItem): WebSearchCategory[] {
   if (item.kind === "refresh") return ["technology", "future_signal"];
   if (item.kind === "instantiate") return ["work_practice"];
   if (item.kind === "expand") return ["work_practice", "education"];
-  if (item.kind === "repair") return ["official_standard", "job_market"];
+  if (item.kind === "repair" && /知识|技能|学习|部署|SQL|调试/u.test(`${item.title} ${item.detail}`)) return ["technology", "work_practice"];
+  if (item.kind === "repair") return ["official_standard", "work_practice"];
   return ["official_standard", "work_practice"];
 }
 
@@ -255,11 +277,15 @@ export function planIterationResearch(input: {
   workItems: IterationWorkItem[];
 }): IterationResearchPlan {
   const queries = new Map<string, PlannedQuery>();
-  const nodeLabels = new Map(iterationTargetNodes(input.result).map((node) => [node.id, node.label]));
+  const nodeLabels = new Map(iterationTargetNodes(input.result).map((node) => {
+    const task = input.result.semantic.nodes.find(candidate => candidate.id === node.id && candidate.type === "task");
+    return [node.id, `${node.label}${task ? ` ${task.summary.slice(0, 160)}` : ""}`];
+  }));
   const labelsFor = (item: IterationWorkItem) => item.targetIds.map((id) => nodeLabels.get(id) || id);
-  const researchItems = input.workItems.filter((item) => item.requiresResearch).slice(0, 8);
+  const researchItems = input.workItems.filter((item) => item.requiresResearch && item.status !== "completed" && item.status !== "skipped").slice(0, 8);
   for (const item of researchItems) {
-    const categories = categoryForWorkItem(item).slice(0, input.round > 1 ? 2 : 1);
+    // Follow-up searches change the evidence category instead of repeating round one.
+    const categories = [categoryForWorkItem(item)[input.round > 1 ? 1 : 0]];
     for (const category of categories) {
       const query = queryText({
         category,
@@ -317,19 +343,31 @@ export function evaluateIteration(input: {
   after: SnapshotInspection;
   contract: IterationContract;
   migrations?: Record<string, string>;
+  workItems?: IterationWorkItem[];
+  previousAccepted?: { candidate: ColdStartBuildResult; inspection: SnapshotInspection };
 }): IterationEvaluation {
   const originalSources = new Set(sourceFingerprints(input.base).values());
   const candidateSources = sourceFingerprints(input.candidate);
   const newSources = new Set(input.candidate.sources.assets.filter(s => s.kind !== "user_brief" && !originalSources.has(candidateSources.get(s.id)!)).map(s => candidateSources.get(s.id)!)).size;
   const newSemanticNodes = Math.max(0, input.candidate.semantic.nodes.length - input.base.semantic.nodes.length);
   const newProcessScenarios = Math.max(0, input.candidate.process.scenarios.length - input.base.process.scenarios.length);
-  const beforeIds = new Set(input.before.findings.map((finding) => finding.id));
-  const afterIds = new Set(input.after.findings.map((finding) => finding.id));
+  const beforeIds = new Set(input.before.findings.map(findingIdentity));
+  const afterIds = new Set(input.after.findings.map(findingIdentity));
   const resolvedFindings = [...beforeIds].filter((id) => !afterIds.has(id)).length;
   const introducedFindings = [...afterIds].filter((id) => !beforeIds.has(id)).length;
   const targetDateBlocked = input.contract.targetAsOf !== input.base.snapshot.asOf
     && input.after.findings.some((finding) => finding.layer === "temporal" && finding.severity === "error");
   const learningReasons = learningRegressionReasons(input.base, input.candidate, input.migrations);
+  if (input.previousAccepted) {
+    const prior = input.previousAccepted;
+    const priorLosses = learningRegressionReasons(prior.candidate, input.candidate, input.migrations);
+    if (priorLosses.length || input.after.core.errorCount > prior.inspection.core.errorCount
+      || input.after.core.unsupportedAcceptedCount > prior.inspection.core.unsupportedAcceptedCount
+      || input.after.coverage.tasksWithoutSkills > prior.inspection.coverage.tasksWithoutSkills
+      || input.after.axes.agentUsability + 5 < prior.inspection.axes.agentUsability) {
+      learningReasons.push("后续候选相对本轮已验证成果发生回退，保留前一轮改进", ...priorLosses);
+    }
+  }
   if (input.after.coverage.tasksWithoutSkills > input.before.coverage.tasksWithoutSkills) {
     learningReasons.push(`任务缺少知识技能覆盖 ${input.before.coverage.tasksWithoutSkills} → ${input.after.coverage.tasksWithoutSkills}，不能以其他维度增益抵消`);
   }
@@ -353,7 +391,17 @@ export function evaluateIteration(input: {
     newProcessScenarios ? `新增 ${newProcessScenarios} 个事理场景` : "",
     resolvedFindings ? `解决 ${resolvedFindings} 项发现` : "",
   ].filter(Boolean);
-  const meaningful = input.after.protocolValid && !coreRegression && (healthImproved || informationScore > 0);
+  const selectedFindingIds = new Set(input.workItems?.flatMap(item => item.findingIds)
+    ?? input.before.findings.map(finding => finding.id));
+  const selectedFindings = input.before.findings.filter(f => selectedFindingIds.has(f.id));
+  const selectedResolved = selectedFindings.some(f => !afterIds.has(findingIdentity(f)));
+  const coverageImproved = selectedFindings.some(f => f.code === "TASK_SKILL_GAP" || f.code === "SKILL_COVERAGE_SPARSE")
+    && input.after.coverage.tasksWithoutSkills < input.before.coverage.tasksWithoutSkills;
+  const evidenceImproved = selectedFindings.some(f => f.layer === "evidence")
+    && input.after.coverage.directEvidenceCoverage > input.before.coverage.directEvidenceCoverage;
+  const repairProgress = selectedResolved || coverageImproved || evidenceImproved;
+  const meaningful = input.after.protocolValid && !coreRegression
+    && (input.contract.mode === "risk_repair" ? repairProgress : healthImproved || informationScore > 0);
   return {
     meaningful,
     coreRegression,
@@ -375,6 +423,7 @@ export function evaluateIteration(input: {
         !input.after.protocolValid ? "候选存在协议不变量错误" : "",
         targetDateBlocked ? "目标时点仍有来源越界或日期错误，不能写入该时点快照" : coreRegression ? "已接受核心发生回退" : "",
         !healthImproved && informationScore === 0 ? "没有可证明的风险降低或信息增量" : "",
+        input.contract.mode === "risk_repair" && !repairProgress ? "选中的修复问题尚未改善；新增来源或无关节点不等于修复完成" : "",
       ].filter(Boolean),
   };
 }

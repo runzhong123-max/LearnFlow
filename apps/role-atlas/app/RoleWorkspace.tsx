@@ -1523,7 +1523,7 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
             return <div key={conversation.id} hidden={conversation.id !== activeConversationId}><ProjectToolPane context={context} currentSelectedNodeIds={conversation.id === activeConversationId ? skillContext.selectedNodeIds : undefined} activeTool={instance?.tool || null} promptSeed={instance?.promptSeed} targetSeed={instance?.targetSeed} onClose={() => setToolInstances((current) => current[conversation.id] ? { ...current, [conversation.id]: { ...current[conversation.id], tool: null } } : current)} onBusyChange={(busy) => setToolBusy((current) => current[conversation.id] === busy ? current : { ...current, [conversation.id]: busy })} onPreview={(result) => {
               if (activeConversationRef.current !== conversation.id) return;
               applyProjectWorkspace({ project: { title: result.brief.roleTitle, status: "building" }, conversations, result });
-            }} onComplete={(id) => void refreshConversationResult(id)} /></div>;
+            }} onComplete={(id) => void refreshConversationResult(id)} onViewVersion={(versionId) => { setLearningMountVersionId(versionId); setActiveOperation("versions"); }} /></div>;
           })}
           {messages.map((message) => message.role === "user" ? (
             <div className="message user" key={message.id}>

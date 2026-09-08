@@ -14,6 +14,8 @@ Contract impact: role-job-delivery/v1，registry 2026-09-08.2。既有 Role Atla
 
 迭代阶段检查点保存 candidate、来源、计划、迁移、评估与已完成阶段，恢复从下一阶段开始；事件编号接续已有日志，失败事件不占用永久最大序号。冷启动未完成的计算阶段可重做，已保存产物保持不可变。增量阶段已改变对话基线时停止旧任务恢复，避免重复覆写。迭代版本已写入但 job 未完成时按 source_run_id 对账，避免再次生成版本。
 
+迭代检查点还可保存已验证候选与发现历史，用于有界第二轮失败后的回退。`role_jobs.result_json.outcome` 是有界结果摘要，执行 `completed` 与领域 `no_change` 分开。旧任务没有摘要时，只从相同 jobId、projectId 的 `snapshot_iteration_runs` 回读；不暴露候选全文、附件正文或模型响应，不改变历史任务数据。未采用候选的覆盖指标使用原快照检查结果。
+
 ## 身份与凭据
 
 内部 API 只接受专用域 HMAC 签名（绑定方法、路径和 60 秒时间窗）；没有浏览器可传入的身份绕过首部。消费者请求只含任务 ID；服务端从已验证提交身份恢复 actor，并再次执行原 ownership、对话、版本与运行作用域校验。固定四个执行端点，不支持任意 URL。`ROLE_ATLAS_GATEWAY_SECRET` 至少 32 字符；签名和 AES-GCM 使用不同派生域。信封以 jobId 为附加认证数据，不存会话 cookie。
