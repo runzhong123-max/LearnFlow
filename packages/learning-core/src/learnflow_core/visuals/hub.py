@@ -26,19 +26,24 @@ def reference(work):
 
 
 def entries():
-    sessions = {s['id']: s for m in curriculum()['modules'] for c in m['chapters'] for s in c['sessions']}
+    data = curriculum()
+    sessions = {s['id']: s for m in data['modules'] for c in m['chapters'] for s in c['sessions']}
+    modules = {m['id']: m for m in data['modules']}
+    owners = {s['id']: m for m in data['modules'] for c in m['chapters'] for s in c['sessions']}
     result = []
     for w in works():
         if w['status'] != 'ready':
             continue
         result.append({'id': w['id'], 'version': w['version'], 'title': w['title'],
-            'description': w['scope'], 'builder': 'interactive_html', 'spec': reference(w),
+            'description': w.get('description', w['scope']), 'builder': 'interactive_html', 'spec': reference(w),
             'kind': w['kind'], 'patterns': ['linked_views', 'parameter_sweep'],
             'tags': [sessions[s]['title'] for s in w['session_ids']],
             'aliases': w['questions'] + [w['title'], w['id']] + w.get('aliases', []),
             'assumptions': [w['scope']],
-            'retrieval': {'questions': w['questions'], 'use_when': w['scope'],
-                'learning_path': {'nodes': [{'id': s, 'title': sessions[s]['title']} for s in w['session_ids']]}}})
+            'retrieval': w.get('retrieval', {'questions': w['questions'], 'use_when': w.get('description', w['scope']),
+                'not_for': ['超出该作品声明的输入范围与模型假设；不要据此推断真实系统性能或学习者掌握。'],
+                'prerequisites': list(dict.fromkeys(modules[p]['title'] for s in w['session_ids'] for p in owners[s]['prerequisite_module_ids'])),
+                'learning_path': {'graph_id': 'visual-hub-curriculum/v1', 'nodes': [{'id': s, 'title': sessions[s]['title']} for s in w['session_ids']]}})})
     return result
 
 
@@ -135,7 +140,11 @@ def browse_works(query='', module_id=None, kind=None, offset=0, limit=16):
         score=len(terms&_terms(text))
         if query and query.casefold() not in text.casefold() and score<2:continue
         rows.append({**_summary(e,score),'curriculum':related})
-    if query:rows.sort(key=lambda r:-r['score'])
+    session_order={s['id']:i for i,s in enumerate(s for m in data['modules'] for ch in m['chapters'] for s in ch['sessions'])}
+    if query:
+        rows.sort(key=lambda r:-r['score'])  # Preserve maintained tie order for existing queries.
+    else:
+        rows.sort(key=lambda r:(min((session_order.get(c['session_id'],10000) for c in r['curriculum']),default=10000),r['id']))
     return {'items':rows[offset:offset+limit],'total':len(rows),'offset':offset,
             'next_offset':offset+limit if offset+limit<len(rows) else None,
             'modules':[{'id':m['id'],'title':m['title']} for m in data['modules']]}

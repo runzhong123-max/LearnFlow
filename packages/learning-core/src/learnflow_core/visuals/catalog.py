@@ -12,7 +12,7 @@ from functools import lru_cache
 from pathlib import Path
 from .engine import compile_visual, digest
 
-CATALOG_VERSION = '2026-09-07.3'
+CATALOG_VERSION = '2026-09-08.1'
 PATTERNS = [
     {'id': 'trace', 'goal': '观察并解释一次状态变化', 'controls': ['stepper'], 'stop_rule': '有限步骤结束'},
     {'id': 'decomposition', 'goal': '从总览展开一个机制', 'controls': ['stepper', 'selection'], 'stop_rule': '回到输入输出关系'},
@@ -67,7 +67,12 @@ def search_catalog(query: str, kind: str, include_templates: bool = True) -> dic
     from .engine import capability_manifest
     q = _terms(query)
     hits = []
+    latest = {}
     for entry in (_entries() if include_templates else ()):
+        old = latest.get(entry['id'])
+        if old is None or tuple(map(int, entry['version'].split('.'))) > tuple(map(int, old['version'].split('.'))):
+            latest[entry['id']] = entry
+    for entry in latest.values():
         if kind not in entry['kind']:
             continue
         aliases = entry.get('aliases', [])

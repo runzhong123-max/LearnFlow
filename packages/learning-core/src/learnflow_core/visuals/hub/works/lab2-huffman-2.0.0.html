@@ -1,0 +1,294 @@
+<section data-course="lab2-huffman"></section><style>[data-course]{max-width:760px;margin:0 auto;color:var(--foreground,#193630);font-size:14px}
+[data-course] header{margin-bottom:16px}[data-course] h2{font-size:20px;letter-spacing:-.4px;line-height:1.4;margin:4px 0 6px}[data-course] p{margin:0;line-height:1.65}
+.course-eyebrow{font-size:10px;font-weight:700;letter-spacing:1px;color:#34806e}.course-question{color:var(--muted-foreground,#59726a);font-size:13px}
+.course-inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px 20px;margin-bottom:12px}.course-inputs label>span{display:flex;justify-content:space-between;gap:6px;font-size:12px;margin-bottom:5px}.course-inputs output{font-weight:700;color:#087f8c;font-variant-numeric:tabular-nums}.course-inputs input{display:block;width:100%;accent-color:#087f8c}.course-inputs select{width:100%;font-size:12px;padding:6px}
+.course-scene{border-block:1px solid var(--border,#d7e3dc);padding:14px 0;min-height:130px;overflow:auto}.course-scene>svg,.scene-graph>svg{display:block;width:100%;max-height:300px;margin:auto}.scene-graph{overflow:auto}.scene-graph>svg{min-width:0;max-height:none}.is-zoomed .scene-graph>svg{width:150%;max-width:none;min-width:var(--graph-min,500px)}.scene-legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:11px;justify-content:center;margin-top:3px}.scene-legend span{display:flex;gap:5px;align-items:center}.scene-legend i{width:14px;height:3px;border-radius:2px}
+[data-course] .course-note{font-size:13px;min-height:3.3em;margin:12px 0 8px}.course-buttons{display:flex;gap:6px;align-items:center}.course-buttons button{min-width:34px;padding:6px 10px}.course-buttons .course-primary{background:#087f6a;border-color:#087f6a;color:#fff;padding:7px 20px;font-weight:600}.course-buttons output{margin-left:auto;font-size:11px;color:var(--muted-foreground)}.course-buttons select{padding:4px;border:0;font-size:11px}.course-playback>input{width:100%;accent-color:#087f6a;margin:10px 0 0;height:12px}.course-bottom{display:flex;gap:15px;align-items:center;margin-top:10px}.course-bottom button{font-size:11px;padding:4px 9px;white-space:nowrap}.course-bottom .course-takeaway{font-size:12px;color:var(--muted-foreground);flex:1}.course-details{margin-top:12px;font-size:11px;color:var(--muted-foreground)}.course-details summary{cursor:pointer}.course-details dl{display:grid;grid-template-columns:minmax(100px,1fr) 3fr;gap:6px 12px;padding:10px;background:var(--muted)}.course-details dd{margin:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}.course-error{color:#a43c27;padding:10px}
+.scene-cells{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:18px 0}.scene-cell{border:1px solid #a3c2b6;background:#edf4f1;border-radius:7px;min-width:44px;padding:10px 8px;text-align:center;color:#193630}.scene-cell strong{font-size:15px;font-weight:600}.scene-cell small{display:block;font-size:10px;margin-top:6px;color:#617970}.is-active{background:#fae8cf!important;border-color:#d57a19!important;box-shadow:inset 0 0 0 1px #d57a19}
+.scene-matrix-wrap{overflow:auto;max-width:620px;margin:0 auto}.scene-matrix{display:grid;gap:3px;margin:8px 0}.scene-matrix span{font-size:11px;text-align:center;border:1px solid #d4e3dc;background:#edf4f1;color:#193630;padding:7px 3px;min-width:34px}.scene-caption{font-size:12px;font-weight:600}.scene-flow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;padding:28px 0}.scene-flow-node{max-width:155px;padding:12px;border:1px solid #a3c2b6;background:#edf4f1;color:#193630;border-radius:7px;font-size:12px;text-align:center}
+[data-course] [hidden]{display:none!important}@media(max-width:450px){[data-course] h2{font-size:18px}.course-inputs{gap:8px 12px;grid-template-columns:1fr 1fr}.course-scene>svg{min-width:430px}.course-note{min-height:0!important}.course-inputs label>span{font-size:11px}.course-bottom{align-items:start}}
+@media(prefers-reduced-motion:reduce){[data-course] *{animation:none!important;transition:none!important}}
+
+.course-scene,[data-baseline]{background:#fff;color:#193630;border-radius:5px}[data-baseline]{padding:12px 0;overflow:auto}[data-baseline]>svg{display:block;width:100%;max-height:340px}.course-comparison{font-size:11px;margin-top:12px;color:var(--muted-foreground)}.course-comparison summary{cursor:pointer}[data-baseline-note]{font-size:12px;margin-top:8px!important}
+
+.course-view-tools{display:flex;justify-content:flex-end;align-items:center;gap:12px;font-size:10px;color:var(--muted-foreground);margin-top:4px}.course-view-tools button{font-size:10px;padding:3px 7px}.course-view-tools [data-pan-hint]{margin-right:auto}
+</style><script>/* Pure ordered forest layout. Cross-links remain the renderer's responsibility. */
+function layoutTeachingTree(nodes, edges) {
+  const gap = 28, forestGap = 44, margin = 24;
+  const byId = new Map(nodes.map(node => [String(node.id), {
+    id: String(node.id),
+    w: Number.isFinite(node.w) && node.w > 0 ? node.w : 64,
+    h: Number.isFinite(node.h) && node.h > 0 ? node.h : 38,
+  }]));
+  if (!byId.size) return { positions: new Map(), width: 600, height: 200 };
+  const outgoing = new Map([...byId.keys()].map(id => [id, []]));
+  const incoming = new Map([...byId.keys()].map(id => [id, 0]));
+  edges.forEach((edge, order) => {
+    const from = String(edge.from), to = String(edge.to);
+    if (from === to || !byId.has(from) || !byId.has(to)) return;
+    outgoing.get(from).push({ to, label: String(edge.label ?? ''), order });
+    incoming.set(to, incoming.get(to) + 1);
+  });
+  // Binary prefix trees must preserve the semantic 0/1 order even when their
+  // nodes or edges were registered in another order. Other edges retain order.
+  for (const list of outgoing.values()) list.sort((a, b) => {
+    const rank = edge => edge.label === '0' ? 0 : edge.label === '1' ? 1 : 2;
+    return rank(a) - rank(b) || a.order - b.order;
+  });
+  const children = new Map([...byId.keys()].map(id => [id, []]));
+  const roots = [], discovered = new Set(), queue = [], depth = new Map();
+  const addRoot = id => {
+    roots.push(id); discovered.add(id); queue.push(id); depth.set(id, 0);
+  };
+  for (const [id, count] of incoming) if (count === 0) addRoot(id);
+  let cursor = 0;
+  const discover = () => {
+    for (; cursor < queue.length; cursor++) {
+      const id = queue[cursor];
+      for (const edge of outgoing.get(id)) {
+        if (discovered.has(edge.to)) continue;
+        discovered.add(edge.to);
+        children.get(id).push(edge.to);
+        depth.set(edge.to, depth.get(id) + 1);
+        queue.push(edge.to);
+      }
+    }
+  };
+  discover();
+  // Breadth-first discovery fixes the parent before following B+ leaf links.
+  // A rootless cycle gets a finite spanning tree; its remaining links, including
+  // self-loops, can still be drawn by the caller without recursive layout loops.
+  for (const id of byId.keys()) if (!discovered.has(id)) { addRoot(id); discover(); }
+  const subtreeWidth = new Map(), levelHeights = [];
+  for (const [id, node] of byId) {
+    const level = depth.get(id);
+    levelHeights[level] = Math.max(levelHeights[level] || 0, node.h);
+  }
+  const measure = id => {
+    const list = children.get(id);
+    const contentWidth = list.reduce((sum, child) => sum + measure(child), 0) + Math.max(0, list.length - 1) * gap;
+    const width = Math.max(byId.get(id).w, contentWidth);
+    subtreeWidth.set(id, width);
+    return width;
+  };
+  const contentWidth = roots.reduce((sum, id) => sum + measure(id), 0) + Math.max(0, roots.length - 1) * forestGap;
+  const width = Math.max(600, contentWidth + margin * 2), levelY = [];
+  let y = 46;
+  for (const height of levelHeights) { levelY.push(y + height / 2); y += height + 64; }
+  const height = Math.max(200, y - 64 + 28), positions = new Map();
+  const place = (id, left) => {
+    const span = subtreeWidth.get(id), list = children.get(id);
+    positions.set(id, { x: left + span / 2, y: levelY[depth.get(id)], depth: depth.get(id) });
+    const childWidth = list.reduce((sum, child) => sum + subtreeWidth.get(child), 0) + Math.max(0, list.length - 1) * gap;
+    let childLeft = left + (span - childWidth) / 2;
+    for (const child of list) { place(child, childLeft); childLeft += subtreeWidth.get(child) + gap; }
+  };
+  let left = (width - contentWidth) / 2;
+  for (const id of roots) { place(id, left); left += subtreeWidth.get(id) + forestGap; }
+  return { positions, width, height };
+}
+
+/* Shared drawing primitives for maintained lessons. Pure, offline, deterministic. */
+const Viz = (() => {
+  const colors=['#087f8c','#d57a19','#7250a3','#2d8a61','#bf5364'];
+  const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const n=x=>Number.isFinite(Number(x))?Number(x):0;
+  const fmt=x=>Math.abs(x)>=10000||Math.abs(x)>0&&Math.abs(x)<.001?x.toExponential(2):String(+x.toFixed(3));
+  const text=(x,y,s,size=15,anchor='middle')=>`<text x="${n(x)}" y="${n(y)}" font-size="${size}" text-anchor="${anchor}" fill="currentColor">${escape(s)}</text>`;
+  const line=(x1,y1,x2,y2,color='#82969c')=>`<line x1="${n(x1)}" y1="${n(y1)}" x2="${n(x2)}" y2="${n(y2)}" stroke="${color}" stroke-width="1.8"/>`;
+  const rect=(x,y,w,h,fill='#edf4f1',stroke='#90aca0')=>`<rect x="${n(x)}" y="${n(y)}" width="${Math.max(0,n(w))}" height="${Math.max(0,n(h))}" rx="4" fill="${fill}" stroke="${stroke}"/>`;
+  const svg=(body,width=600,height=320)=>`<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="当前输入的机制图" viewBox="0 0 ${width} ${height}" style="--scene-width:${width}px" preserveAspectRatio="xMidYMid meet">${body}</svg>`;
+  function plot({series=[],points=[],openPoints=[],crosses=[],segments=[],xLabel='x',yLabel='y',xDomain,yDomain,equalAspect=false}={}) {
+    const all=[...series.flatMap(s=>s.points||[]),...points,...openPoints,...crosses,...segments.flatMap(s=>[[s[0],s[1]],[s[2],s[3]]])].filter(p=>p.every(Number.isFinite));
+    const domain=(axis,d)=>{if(d)return d; const vals=all.map(p=>p[axis]);let a=Math.min(0,...vals),b=vals.length?Math.max(0,...vals):1;if(a===b)b=a+1;return[a-(b-a)*.05,b+(b-a)*.05];};
+    let [xa,xb]=domain(0,xDomain),[ya,yb]=domain(1,yDomain);if(equalAspect){const units=Math.max((xb-xa)/510,(yb-ya)/226),cx=(xa+xb)/2,cy=(ya+yb)/2;xa=cx-units*255;xb=cx+units*255;ya=cy-units*113;yb=cy+units*113;}const X=x=>55+(x-xa)/(xb-xa||1)*510,Y=y=>266-(y-ya)/(yb-ya||1)*226;
+    let body='';
+    for(let i=0;i<=4;i++){const x=xa+(xb-xa)*i/4,y=ya+(yb-ya)*i/4;body+=line(X(x),40,X(x),266,'#e2eae7')+line(55,Y(y),565,Y(y),'#e2eae7')+text(X(x),285,fmt(x),11)+text(46,Y(y)+4,fmt(y),11,'end');}
+    body+=text(565,307,xLabel,12,'end')+text(55,24,yLabel,12,'start');
+    body+='<svg x="55" y="40" width="510" height="226" viewBox="55 40 510 226">';
+    series.forEach((s,i)=>{if(s.scatter){for(const [x,y] of s.points||[])body+=`<circle cx="${X(x)}" cy="${Y(y)}" r="4.5" fill="${s.color||colors[i%5]}"/>`;return;}let d='';let open=false;for(const p of s.points||[]){if(!p.every(Number.isFinite)){open=false;continue;}d+=(open?'L':'M')+X(p[0])+','+Y(p[1]);open=true;}body+=`<path d="${d}" fill="none" stroke="${s.color||colors[i%5]}" stroke-width="2.6"/>`;});
+    segments.forEach((s,i)=>body+=line(X(s[0]),Y(s[1]),X(s[2]),Y(s[3]),colors[i%5]));
+    points.forEach(([x,y],i)=>{if(Number.isFinite(x)&&Number.isFinite(y))body+=`<circle cx="${X(x)}" cy="${Y(y)}" r="4.5" fill="${colors[i%5]}" stroke="white" stroke-width="1.5"/>`;});
+    openPoints.forEach(([x,y])=>{if(Number.isFinite(x)&&Number.isFinite(y))body+=`<circle cx="${X(x)}" cy="${Y(y)}" r="5" fill="white" stroke="${colors[0]}" stroke-width="2"/>`;});
+    crosses.forEach(([x,y])=>{body+=line(X(x)-6,Y(y),X(x)+6,Y(y),'#25392f')+line(X(x),Y(y)-6,X(x),Y(y)+6,'#25392f');});body+='</svg>';
+    const legend=series.filter(s=>s.label).map((s,i)=>`<span><i style="background:${s.color||colors[i%5]}"></i>${escape(s.label)}</span>`).join('');
+    return svg(body)+ (legend?`<div class="scene-legend">${legend}</div>`:'');
+  }
+  function bars(values,labels=[],active=[]) {
+    const a=Math.min(0,...values),b=Math.max(1e-9,...values),Y=x=>252-(x-a)/(b-a)*205,w=500/Math.max(1,values.length);
+    let body=line(48,Y(0),558,Y(0));
+    values.forEach((v,i)=>{const y=Y(v),h=Math.max(1,Math.abs(y-Y(0)));body+=rect(50+i*w,Math.min(y,Y(0)),Math.max(1,w-5),h,active.includes(i)?colors[1]:colors[0],'none');if(values.length<=24)body+=text(50+(i+.5)*w,y+(v<0?15:-7),fmt(v),11);if(values.length<=32||i%Math.ceil(values.length/16)===0)body+=text(50+(i+.5)*w,278,labels[i]??i,11);});
+    return svg(body,600,302);
+  }
+  function cells(values,{active=[],labels=[]}={}) {
+    return `<div class="scene-cells">${values.map((v,i)=>`<div class="scene-cell${active.includes(i)?' is-active':''}"><strong>${escape(v)}</strong><small>${escape(labels[i]??i)}</small></div>`).join('')}</div>`;
+  }
+  function matrix(rows,{active=[],title=''}={}) {
+    const columns=Math.max(1,...rows.map(r=>r.length));
+    return `<div class="scene-matrix-wrap">${title?`<p class="scene-caption">${escape(title)}</p>`:''}<div class="scene-matrix" style="grid-template-columns:repeat(${columns},minmax(34px,1fr))">${rows.flatMap((row,r)=>row.map((v,c)=>`<span class="${active.includes(r*columns+c)?'is-active':''}">${escape(typeof v==='number'?fmt(v):v)}</span>`)).join('')}</div></div>`;
+  }
+  function graph({nodes,edges,directed=true,layout='circle'}) {
+    const byId=new Map(nodes.map((v,i)=>[String(v.id),{...v,id:String(v.id),i}]));
+    const es=edges.filter(e=>byId.has(String(e.from))&&byId.has(String(e.to))).map(e=>({...e,from:String(e.from),to:String(e.to)}));
+    const labelLines=s=>String(s).match(/.{1,12}/gu)||[''];
+    nodes.forEach(v=>{const t=byId.get(String(v.id));t.lines=labelLines(v.label);t.w=Math.min(148,Math.max(64,...t.lines.map(s=>Array.from(s).reduce((a,c)=>a+(/[^\x00-\xff]/.test(c)?12:7),0)+20)));t.h=Math.max(38,t.lines.length*17+16);});
+    let width=600,height=300;
+    if(layout==='tree'){const layout=layoutTeachingTree([...byId.values()],es);width=layout.width;height=layout.height;for(const [id,pos]of layout.positions)Object.assign(byId.get(id),pos);
+    } else if(layout==='flow') {
+      const indegree=new Map(nodes.map(v=>[String(v.id),0]));es.forEach(e=>indegree.set(e.to,indegree.get(e.to)+1));
+      const roots=[...indegree].filter(([,d])=>d===0).map(([id])=>id),levels=new Map(),queue=roots.length?roots:[String(nodes[0]?.id)];queue.forEach(id=>levels.set(id,0));
+      for(let i=0;i<queue.length;i++){const id=queue[i];es.filter(e=>e.from===id).forEach(e=>{if(!levels.has(e.to)){levels.set(e.to,levels.get(id)+1);queue.push(e.to);}});}
+      for(const v of byId.values())if(!levels.has(v.id))levels.set(v.id,0);
+      const rows=[];for(const v of byId.values()){const l=levels.get(v.id);(rows[l]??=[]).push(v);}
+      width=Math.max(600,...rows.map(row=>row.reduce((s,v)=>s+v.w+28,16)));height=Math.max(200,rows.length*102+45);
+      rows.forEach((row,l)=>{let x=(width-row.reduce((s,v)=>s+v.w,0)-(row.length-1)*28)/2;row.forEach(v=>{v.x=x+v.w/2;v.y=65+l*102; x+=v.w+28;});});
+    } else {
+      width=Math.max(600,nodes.length*54);height=Math.max(300,Math.min(490,nodes.length*39));
+      [...byId.values()].forEach((v,i)=>{const a=-Math.PI/2+i/Math.max(1,nodes.length)*Math.PI*2;v.x=width/2+Math.cos(a)*(width/2-88);v.y=height/2+Math.sin(a)*(height/2-78);});
+    }
+    // Reserve actual loop bounds in the viewBox, including pointer loops on trees.
+    const loopNodes=es.filter(e=>e.from===e.to).map(e=>byId.get(e.from));
+    for(const v of loopNodes)v.loopSide=v.y<height/2?-1:1;
+    const top=Math.min(0,...loopNodes.filter(v=>v.loopSide<0).map(v=>v.y-v.h/2-44));
+    if(top<12&&loopNodes.some(v=>v.loopSide<0)){const shift=12-top;for(const v of byId.values())v.y+=shift;height+=shift;}
+    height=Math.max(height,...loopNodes.filter(v=>v.loopSide>0).map(v=>v.y+v.h/2+50));
+    let body='<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9" fill="none" stroke="context-stroke" stroke-width="1.5"/></marker></defs>';
+    es.forEach(e=>{const a=byId.get(e.from),b=byId.get(e.to);if(e.from===e.to){const side=a.loopSide,base=a.y+side*a.h/2,tip=base+side*38;body+=`<path d="M${a.x-14},${base} C${a.x-46},${tip} ${a.x+46},${tip} ${a.x+14},${base}" fill="none" stroke="#82969c"${directed?' marker-end="url(#arrow)"':''}/>`+text(a.x,base+side*25+(side>0?7:0),e.label||'',11);return;}let dx=b.x-a.x,dy=b.y-a.y;const clip=(v)=>{const f=1/Math.max(Math.abs(dx)/(v.w/2+3),Math.abs(dy)/(v.h/2+3),.0001);return f;};const ca=clip(a),cb=clip(b),x1=a.x+dx*ca,y1=a.y+dy*ca,x2=b.x-dx*cb,y2=b.y-dy*cb;const reciprocal=es.some(o=>o!==e&&o.from===e.to&&o.to===e.from);const d=reciprocal?`M${x1},${y1} Q${(x1+x2)/2-dy*.15},${(y1+y2)/2+dx*.15} ${x2},${y2}`:`M${x1},${y1} L${x2},${y2}`;
+      body+=`<path d="${d}" fill="none" stroke="${e.active?colors[1]:'#82969c'}" stroke-width="${e.active?3:1.5}"${directed?' marker-end="url(#arrow)"':''}/>`;
+      if(e.label){const x=(a.x+b.x)/2+(reciprocal?-dy*.075:0),y=(a.y+b.y)/2+(reciprocal?dx*.075:0)-7;body+=`<text x="${x}" y="${y}" text-anchor="middle" font-size="11" fill="currentColor" stroke="var(--background,#fff)" stroke-width="5" paint-order="stroke">${escape(e.label)}</text>`;}
+    });
+    for(const v of byId.values()){body+=rect(v.x-v.w/2,v.y-v.h/2,v.w,v.h,v.active?'#f9e8cf':'#eef5f2',v.active?colors[1]:'#9eb9af');v.lines.forEach((s,i)=>body+=text(v.x,v.y-(v.lines.length-1)*8.5+i*17+4,s,12));}
+    return `<div class="scene-graph" style="--graph-min:${Math.min(width,560)}px">${svg(body,width,height)}</div>`;
+  }
+  const flow=(labels,active=[])=>`<div class="scene-flow">${labels.map((s,i)=>`${i?'<span aria-hidden="true">→</span>':''}<span class="scene-flow-node${active.includes(i)?' is-active':''}">${escape(s)}</span>`).join('')}</div>`;
+  return {colors,escape,text,line,rect,svg,plot,bars,matrix,cells,graph,flow};
+})();
+
+/* Host only supplies a fixed maintained lesson; no generated scripts enter here. */
+function mountLesson(lesson) {
+  const root=document.querySelector('[data-course]');
+  const $=s=>root.querySelector(s),params={},defaults={};let frames=[],index=0,timer=null,zoomed=false;
+  const esc=Viz.escape;
+  root.innerHTML=`<header><p class="course-eyebrow">动手看机制</p><h2>${esc(lesson.title)}</h2><p class="course-question">${esc(lesson.question)}</p></header><div class="course-inputs"></div><div class="course-scene"></div><div class="course-view-tools"><span data-pan-hint hidden>左右滑动查看完整图形</span><button data-zoom hidden>放大图形</button></div><p class="course-note" aria-live="polite"></p><div class="course-playback"><div class="course-buttons"><button data-prev aria-label="上一步">‹</button><button data-play class="course-primary">▶ 播放</button><button data-next aria-label="下一步">›</button><output data-progress></output><select data-speed aria-label="播放速度"><option value="1400">1×</option><option value="2200">0.6×</option><option value="700">2×</option></select></div><input data-seek type="range" min="0" value="0" aria-label="当前步骤"/></div><div class="course-bottom"><p class="course-takeaway">${esc(lesson.takeaway)}</p><button data-reset>重置</button></div><details class="course-comparison"><summary>比较不同输入的最终结果</summary><div data-baseline></div><p data-baseline-note></p></details><details class="course-details"><summary>数据与演示范围</summary><dl data-values></dl><p>${esc(lesson.scope)}</p></details><p class="course-error" role="alert" hidden></p>`;
+  function stop(){if(timer)clearInterval(timer);timer=null;$('[data-play]').textContent=index===frames.length-1?'↻ 重播':'▶ 播放';}
+  function compare(){if(!$('.course-comparison').open)return;const initial=lesson.compute({...defaults}).frames.at(-1),current=frames.at(-1);$('[data-baseline]').innerHTML='<p class="scene-caption">当前输入 · 最终结果</p>'+current.svg+'<p>'+esc(current.note)+'</p><p class="scene-caption">初始输入 · 最终结果</p>'+initial.svg;$('[data-baseline-note]').textContent=lesson.controls.map(c=>c.label+'='+(c.type==='select'?c.options.find(o=>o.value===c.value)?.label:c.value)).join('，')+'。'+initial.note;}
+
+  function sizeHint(){const scene=$('.course-scene');$('[data-pan-hint]').hidden=![scene,...scene.querySelectorAll('div')].some(e=>e.scrollWidth>e.clientWidth+3);$('[data-zoom]').hidden=!scene.querySelector('.scene-graph');}
+  function paint(){
+    const f=frames[index];$('.course-scene').innerHTML=f.svg;$('.course-note').textContent=f.note;
+    $('[data-progress]').textContent=`${index+1} / ${frames.length}`;$('[data-seek]').value=String(index);
+    $('[data-prev]').disabled=index===0;$('[data-next]').disabled=index===frames.length-1;
+    const format=v=>typeof v==='number'?(Number.isInteger(v)?String(v):String(+v.toPrecision(6))):typeof v==='object'?JSON.stringify(v):String(v);
+    $('[data-values]').innerHTML=Object.entries(f.values||{}).map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(format(v))}</dd>`).join('');
+    $('.course-scene').classList.toggle('is-zoomed',zoomed);$('[data-play]').textContent=timer?'Ⅱ 暂停':index===frames.length-1?'↻ 重播':'▶ 播放';sizeHint();compare();root.dataset.frame=String(index);root.dataset.frames=String(frames.length);
+  }
+  function recompute(){stop();try{const r=lesson.compute({...params});if(!r||!Array.isArray(r.frames)||!r.frames.length||r.frames.length>200)throw Error('步骤数量异常');frames=r.frames;index=0;const widths=$('.course-scene').clientWidth||600;const heights=frames.map(f=>{const box=/viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(f.svg);return box?widths*Number(box[2])/Number(box[1]):170;});$('.course-scene').style.minHeight=frames.length>1?Math.max(180,Math.min(340,Math.max(...heights)+28))+'px':'auto';$('.course-playback').hidden=frames.length===1;$('[data-seek]').max=String(frames.length-1);$('.course-error').hidden=true;paint();root.dataset.ready='true';}catch(e){root.dataset.ready='false';$('.course-error').hidden=false;$('.course-error').textContent='这个输入暂时无法计算，请重置后重试。';console.error(e);}}
+  for(const c of lesson.controls){
+    params[c.id]=defaults[c.id]=c.type==='select'?String(c.value):Number(c.value);
+    const label=document.createElement('label');label.innerHTML=`<span>${esc(c.label)} <output></output></span>`;
+    const input=document.createElement(c.type==='select'?'select':'input');input.setAttribute('aria-label',c.label);input.dataset.param=c.id;
+    if(c.type==='select'){input.innerHTML=c.options.map(o=>`<option value="${esc(o.value)}">${esc(o.label)}</option>`).join('');}else{input.type='range';input.min=c.min;input.max=c.max;input.step=c.step||1;}
+    input.value=String(c.value);label.querySelector('output').textContent=c.type==='range'?input.value:'';
+    input.addEventListener('input',()=>{params[c.id]=c.type==='select'?input.value:Math.min(c.max,Math.max(c.min,Number(input.value)));label.querySelector('output').textContent=c.type==='range'?input.value:'';recompute();});label.append(input);$('.course-inputs').append(label);
+  }
+  $('[data-prev]').onclick=()=>{stop();index=Math.max(0,index-1);paint();};$('[data-next]').onclick=()=>{stop();index=Math.min(frames.length-1,index+1);paint();};
+  $('[data-seek]').oninput=e=>{stop();index=Number(e.target.value);paint();};
+  function play(){if(timer){stop();return;}if(index===frames.length-1)index=0;timer=setInterval(()=>{index++;paint();if(index===frames.length-1)stop();},Number($('[data-speed]').value));paint();}
+  $('[data-play]').onclick=play;$('[data-speed]').onchange=()=>{if(timer){stop();play();}};
+  $('[data-reset]').onclick=()=>{for(const c of lesson.controls){params[c.id]=defaults[c.id];const input=root.querySelector(`[data-param="${c.id}"]`);input.value=String(c.value);input.parentElement.querySelector('output').textContent=c.type==='range'?input.value:'';}recompute();};
+  $('[data-zoom]').onclick=()=>{zoomed=!zoomed;$('.course-scene').classList.toggle('is-zoomed',zoomed);$('[data-zoom]').textContent=zoomed?'适合窗口':'放大图形';sizeHint();};
+  new ResizeObserver(sizeHint).observe($('.course-scene'));
+  $('.course-comparison').ontoggle=compare;
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
+  recompute();
+}
+
+let selectedLesson;function register(lesson){if(lesson.id==="lab2-huffman")selectedLesson=lesson;}
+/* Pure teaching models. No DOM, network, generated scripts, or learner state. */
+const buildReviewedModel=(id,p)=>{
+ const frames=[],f=(note,view={})=>frames.push({note,...JSON.parse(JSON.stringify(view))}),sum=a=>a.reduce((s,x)=>s+x,0),range=n=>Array.from({length:n},(_,i)=>i),soft=a=>{let m=Math.max(...a),e=a.map(x=>Math.exp(x-m));return e.map(x=>x/sum(e))},fmt=x=>Number(x.toFixed(4));
+ const curve=(fn,a,b,n=60)=>range(n+1).map(i=>[a+(b-a)*i/n,fn(a+(b-a)*i/n)]);
+ const bars=(a,labels)=>({bars:a,labels:labels||a.map((_,i)=>String(i))});
+ const points=(pts,extra={})=>({points:pts,...extra});
+ const es=[[0,1,4],[0,2,2],[1,2,1],[1,3,5],[2,3,p],[2,4,10],[3,4,2],[3,5,6],[4,5,3]],graph=(active=[],edges=es)=>({graph:{nodes:range(6).map(i=>({id:i,label:'ABCDEF'[i]})),edges:edges.map(([a,b,w])=>({a,b,label:String(w)})),active}});
+ const arr=[p,3,12,5,8,1,10];
+ if(id==='riemann'){let total=0;for(let i=0;i<p;i++){total+=(i/p)**2/p;f(`加入第 ${i+1} 个左端点矩形；面积和 ${fmt(total)}，精确面积 1/3`,{...bars(range(p).map(j=>j<=i?(j/p)**2:0)),metric:total,formula:'Σ (i/n)² · 1/n'})}}
+ else if(id==='chain'){let u=2*p+1;f(`内层 u=2x+1=${fmt(u)}，du/dx=2`,{chain:['x='+p,'u='+fmt(u),'y='+fmt(u*u)],active:1});f(`外层 dy/du=2u=${fmt(2*u)}，相乘 dy/dx=${fmt(4*u)}`,{chain:['x='+p,'×2','u='+fmt(u),'×'+fmt(2*u),'y='+fmt(u*u)],metric:4*u})}
+ else if(id==='projection'||id==='eigen'){let t=p*Math.PI/180,x=Math.cos(t),y=Math.sin(t);if(id==='projection'){let d=3*x+2*y;f(`投影长度 v·u=${fmt(d)}；残差与方向正交`,points([[3,2],[d*x,d*y]],{segments:[[0,0,3,2],[0,0,d*x,d*y],[3,2,d*x,d*y]],metric:d,residual:[3-d*x,2-d*y]}))}else f(`v=(${fmt(x)},${fmt(y)}) → Av=(${fmt(2*x)},${fmt(y)})；只有坐标轴方向不变`,points([[x,y],[2*x,y]],{segments:[[0,0,x,y],[0,0,2*x,y]],metric:Math.abs(x*y)}))}
+ else if(id==='svd'){let a=[5,3,1].map((s,i)=>i<p?s:0);f(`保留前 ${p} 个奇异值，误差 √Σ未保留σ²=${fmt(Math.sqrt(sum([5,3,1].slice(p).map(x=>x*x))))}`,{matrix:[[a[0],0,0],[0,a[1],0],[0,0,a[2]]],metric:Math.sqrt(sum([5,3,1].slice(p).map(x=>x*x))),formula:'A = diag(5,3,1)，σ₁ ≥ σ₂ ≥ σ₃'})}
+ else if(id==='binomial'){let q=p/100,a=range(11).map(k=>{let c=1;for(let i=1;i<=k;i++)c=c*(11-i)/i;return c*q**k*(1-q)**(10-k)});f(`十次独立试验，期望成功 ${fmt(10*q)} 次；总概率 ${fmt(sum(a))}`,{...bars(a),metric:sum(a)})}
+ else if(id==='normal')f(`σ=${p}；峰值 ${fmt(1/(p*Math.sqrt(2*Math.PI)))}。横轴为数值，纵轴为概率密度`,{plot:curve(x=>Math.exp(-x*x/(2*p*p))/(p*Math.sqrt(2*Math.PI)),-6,6),metric:1/(p*Math.sqrt(2*Math.PI))});
+ else if(id==='clt'){let a=[1];for(let n=1;n<=p;n++){let b=Array(a.length+6).fill(0);a.forEach((v,i)=>{for(let j=1;j<=6;j++)b[i+j]+=v/6});a=b;f(`${n} 个公平骰子的点数和，期望 ${3.5*n}；分布逐渐呈钟形；这里显示未标准化点数和`,{...bars(a),metric:sum(a)})}}
+ else if(id==='entropy'){let q=p/100,h=-q*Math.log2(q)-(1-q)*Math.log2(1-q);f(`H=${fmt(h)} bit；p=0.5 时最大为 1 bit`,{plot:curve(x=>-x*Math.log2(x)-(1-x)*Math.log2(1-x),.001,.999),points:[[q,h]],metric:h})}
+ else if(id==='descent'){let x=3,history=[];for(let n=0;n<=12;n++){history.push([n,x]);f(`第 ${n} 步 x=${fmt(x)}，损失 x²=${fmt(x*x)}；x ← (1−2α)x`,{plot:history,metric:x});x*=1-2*p}}
+ else if(['quicksort','merge','heap'].includes(id)){
+  const a=arr.slice(),snap=(note,active=[])=>f(note,{...bars(a),active});snap('初始数组');
+  if(id==='quicksort'){const sort=(lo,hi)=>{if(lo>=hi)return;let pivot=a[hi],i=lo;for(let j=lo;j<hi;j++){snap(`比较 ${a[j]} 与枢轴 ${pivot}`,[j,hi]);if(a[j]<=pivot){[a[i],a[j]]=[a[j],a[i]];snap('小元素移入左区间',[i,j]);i++}}[a[i],a[hi]]=[a[hi],a[i]];snap(`枢轴归位到 ${i}`,[i]);sort(lo,i-1);sort(i+1,hi)};sort(0,a.length-1)}
+  if(id==='merge'){for(let w=1;w<a.length;w*=2)for(let l=0;l<a.length;l+=2*w){let x=a.slice(l,l+w),y=a.slice(l+w,l+2*w),out=[];while(x.length||y.length)out.push(!y.length||x.length&&x[0]<=y[0]?x.shift():y.shift());a.splice(l,out.length,...out);snap(`合并长度至多 ${w} 的两个有序段`,range(out.length).map(i=>l+i))}}
+  if(id==='heap'){const down=(i,n)=>{while(true){let m=i,l=i*2+1,r=l+1;if(l<n&&a[l]>a[m])m=l;if(r<n&&a[r]>a[m])m=r;if(m===i)break;[a[m],a[i]]=[a[i],a[m]];snap('较大子节点上移',[i,m]);i=m}};for(let i=Math.floor(a.length/2)-1;i>=0;i--)down(i,a.length);for(let n=a.length-1;n>0;n--){[a[0],a[n]]=[a[n],a[0]];snap('最大值进入有序后缀',[n]);down(0,n)}}snap('排序完成');
+ }
+ else if(id==='binary'){let a=[1,3,5,7,9,11,13,15],l=0,r=7,found=-1;while(l<=r){let m=(l+r)>>1;f(`区间 [${l},${r}]，中点 ${m} 的值为 ${a[m]}`,{...bars(a),active:[m],range:[l,r]});if(a[m]===p){found=m;break}if(a[m]<p)l=m+1;else r=m-1}f(found<0?'区间为空，目标不存在':`找到目标，下标 ${found}`,{...bars(a),active:found<0?[]:[found],metric:found})}
+ else if(id==='huffman'){
+  let serial=0,forest=[p,9,12,13,16,20].map((w,i)=>({id:serial++,w,label:'ABCDEF'[i]}));const all=forest.slice(),edges=[];
+  const snap=note=>f(note,{graph:{nodes:all.map(n=>({id:n.id,label:n.label+':'+n.w})),edges:edges.slice()},labels:forest.map(n=>String(n.w))});snap('每个符号是一棵叶子树');
+  while(forest.length>1){forest.sort((a,b)=>a.w-b.w||a.id-b.id);let a=forest.shift(),b=forest.shift(),n={id:serial++,w:a.w+b.w,label:'Σ'};all.push(n);edges.push({a:n.id,b:a.id,label:'0'},{a:n.id,b:b.id,label:'1'});forest.push(n);snap(`合并最小权重 ${a.w} 与 ${b.w} → ${n.w}`)}
+  const depth=(id,d)=>edges.filter(e=>e.a===id).length?sum(edges.filter(e=>e.a===id).map(e=>depth(e.b,d+1))):all[id].w*d;frames.at(-1).metric=depth(forest[0].id,0);frames.at(-1).note+='；加权路径长度 '+frames.at(-1).metric;
+ }
+ else if(id==='bfs'||id==='dfs'){let todo=[p],seen=new Set(id==='bfs'?[p]:[]),order=[],distance=Array(6).fill(null);distance[p]=0;while(todo.length){let u=id==='bfs'?todo.shift():todo.pop();if(id==='dfs'&&seen.has(u))continue;seen.add(u);order.push(u);const next=es.flatMap(([a,b])=>a===u?[b]:b===u?[a]:[]).filter(v=>!seen.has(v));if(id==='bfs')next.forEach(v=>{seen.add(v);distance[v]=distance[u]+1});todo.push(...(id==='dfs'?next.reverse():next));f(`展开 ${'ABCDEF'[u]}；${id==='bfs'?'队列':'栈'}：${todo.map(i=>'ABCDEF'[i]).join(' ')||'空'}${id==='bfs'?'；距离 '+distance.map(d=>d===null?'∞':d).join(', '):''}`,{...graph(order,es.map(([a,b])=>[a,b,''])),metric:order.slice(),distance:distance.slice(),frontier:todo.slice()})}}
+ else if(id==='prim'||id==='kruskal'){let chosen=[],cost=0,seen=new Set([0]),parent=range(6),find=x=>parent[x]===x?x:find(parent[x]);const list=es.slice().sort((a,b)=>a[2]-b[2]);while(chosen.length<5){let e=id==='prim'?list.find(([a,b])=>seen.has(a)!==seen.has(b)):list.shift();if(!e)break;let[a,b,w]=e;if(id==='kruskal'&&find(a)===find(b)){f(`跳过 ${'ABCDEF'[a]}—${'ABCDEF'[b]}：会形成环`,graph([...seen],chosen));continue}chosen.push(e);cost+=w;seen.add(a);seen.add(b);parent[find(a)]=find(b);f(`选择 ${'ABCDEF'[a]}—${'ABCDEF'[b]}，累计权重 ${cost}`,{...graph([...seen],chosen),metric:cost})}}
+ else if(id==='knapsack'){let ws=[2,3,4,5],vs=[3,4,5,8],d=Array(p+1).fill(0);f('容量 0 到 '+p+'，尚未选择物品',bars(d));ws.forEach((w,i)=>{for(let c=p;c>=w;c--)d[c]=Math.max(d[c],d[c-w]+vs[i]);f(`处理重量 ${w}、价值 ${vs[i]}；倒序更新保证每件最多一次`,{...bars(d),metric:d[p]})})}
+ else if(['cache','lru','fifo'].includes(id)){let seq=id==='cache'?[0,1,4,0,5,1,4,0]:[1,2,3,4,1,2,5,1,2,3,4,5],slots=Array(p).fill(null),age=[],miss=0;seq.forEach((x,i)=>{let hit=slots.includes(x),pos=slots.indexOf(x);if(id==='cache'){pos=x%p;hit=slots[pos]===x;if(!hit)slots[pos]=x}else if(!hit){pos=slots.indexOf(null);if(pos<0){const victim=age.shift();pos=slots.indexOf(victim)}slots[pos]=x;age.push(x)}if(id==='lru'&&hit){age=age.filter(y=>y!==x);age.push(x)}if(!hit)miss++;f(`访问 ${x}：${hit?'命中':'缺失'}；累计缺失 ${miss}`,{cells:slots.map(v=>v===null?'空':v),active:[pos],metric:miss,formula:id==='cache'?'缓存行 = 块号 mod 行数':'访问前缀：'+seq.slice(0,i+1).join(' → ')})})}
+ else if(id==='paging'){let table=[3,7,1,6,0,4,2,5],page=Math.floor(p/16),off=p%16;f(`虚拟地址 ${p} = 页号 ${page} × 16 + 偏移 ${off}`,{cells:table.map((v,i)=>i+'→'+v),active:[page]});f(`物理地址 = 帧号 ${table[page]} × 16 + ${off} = ${table[page]*16+off}`,{chain:['VA '+p,'页 '+page,'帧 '+table[page],'PA '+(table[page]*16+off)],metric:table[page]*16+off})}
+ else if(id==='roundrobin'){let left=[5,3,7],t=0,segments=[],completion=[0,0,0];while(left.some(x=>x>0))left.forEach((v,i)=>{if(v>0){let dt=Math.min(p,v);segments.push({label:'P'+i,start:t,end:t+dt});t+=dt;left[i]-=dt;if(left[i]===0)completion[i]=t;f(`P${i} 执行 ${dt} 单位；剩余 ${left.join(', ')}`,{timeline:segments,metric:t})}});frames.at(-1).note+='；周转时间 '+completion.join(', ')+'，等待时间 '+completion.map((v,i)=>v-[5,3,7][i]).join(', ')}
+ else if(id==='deadlock'){let edges=range(p).map(i=>({a:i,b:(i+1)%3,label:'等待',directed:true}));f(p===3?'形成 P0→P1→P2→P0 环；在本例互斥且不可抢占的条件下死锁':'等待图无环，本例尚未死锁',{graph:{nodes:range(3).map(i=>({id:i,label:'P'+i})),edges},metric:p===3})}
+ else if(id==='subnet'){let size=2**(32-p),net=Math.floor(130/size)*size;f(`地址 192.168.1.130/${p}：末字节前 ${p-24} 位属于网络`,{cells:(130).toString(2).padStart(8,'0').split(''),active:range(p-24),metric:net,formula:`网络 192.168.1.${net} · 广播 192.168.1.${net+size-1} · 常规可用主机 ${size-2}`})}
+ else if(id==='window'){for(let ack=0;ack<=10;ack++)f(`已确认 ${ack} 个分组，最多再保持 ${Math.min(p,10-ack)} 个在途`,{cells:range(10).map(i=>i<ack?'已确认':i<ack+p?'在途':'等待'),active:range(Math.min(p,10-ack)).map(i=>ack+i),metric:Math.min(p,10-ack)})}
+ else if(id==='aimd'){let w=1,history=[];for(let n=0;n<20;n++){history.push([n,w]);f(`轮次 ${n}：窗口 ${w}；${w>=p?'遇到阈值，下一轮减半':'下一轮加一'}`,{plot:history,metric:w});w=w>=p?Math.max(1,Math.floor(w/2)):w+1}}
+ else if(id==='bloom'){let bits=Array(p).fill(0),keys=[3,7,11],h=x=>[x%p,(x*3+1)%p];for(const x of keys){h(x).forEach(i=>bits[i]=1);f(`插入 ${x}，置位 ${h(x).join('、')}`,{cells:bits,active:h(x)})}let falsePos=range(20).filter(x=>!keys.includes(x)&&h(x).every(i=>bits[i]));f(`查询 0..19，未插入但误报的键：${falsePos.join('、')||'无'}；查询阳性只表示可能存在`,{cells:bits,metric:falsePos.length})}
+ else if(id==='perceptron'){let pts=[[-2,-1],[-1,2],[1,1],[2,-2],[2,2]];f(`分类条件 x+y+${p}≥0；点标签由当前边界重算`,points(pts,{classes:pts.map(([x,y])=>x+y+p>=0?1:0),segments:[[-3,3-p,3,-3-p]],metric:pts.filter(([x,y])=>x+y+p>=0).length}))}
+ else if(id==='logistic')f(`σ(${p}x)=1/(1+e^(−${p}x))；中心导数 ${fmt(p/4)}`,{plot:curve(x=>1/(1+Math.exp(-p*x)),-6,6),metric:p/4});
+ else if(id==='softmax'){let a=soft([1,2,3].map(x=>x/p));f(`温度 ${p}；概率和 ${fmt(sum(a))}。低温更集中，高温更平缓`,{...bars(a,['类0','类1','类2']),metric:sum(a)})}
+ else if(id==='crossentropy'){let q=p/100;f(`正确类概率 ${q}，损失 −ln(p)=${fmt(-Math.log(q))}`,{plot:curve(x=>-Math.log(x),.01,.99),points:[[q,-Math.log(q)]],metric:-Math.log(q)})}
+ else if(id==='backprop'){let y=2*p+1,e=y-5;f(`前向 y=${fmt(y)}，误差 y−t=${fmt(e)}，L=${fmt(e*e/2)}`,{chain:['x=2','w='+p,'y='+fmt(y),'L='+fmt(e*e/2)]});f(`反向 dL/dy=${fmt(e)}，dy/dw=2，所以 dL/dw=${fmt(e*2)}`,{chain:['L','×'+fmt(e),'y','×2','w'],metric:e*2})}
+ else if(id==='conv'||id==='pool'){let a=[[1,2,0,1],[0,p,3,2],[1,0,2,1],[2,1,0,3]],out=Array.from({length:id==='conv'?3:2},()=>Array(id==='conv'?3:2).fill(null)),step=id==='conv'?1:2;for(let r=0;r<3;r+=step)for(let c=0;c<3;c+=step){let vals=[a[r][c],a[r][c+1],a[r+1][c],a[r+1][c+1]],v=id==='conv'?vals[0]-vals[3]:Math.max(...vals);out[r/step][c/step]=v;f(`${id==='conv'?'核 [[1,0],[0,−1]]，对应相乘求和':'取当前 2×2 区域最大值'} → ${v}`,{matrix:a,active:[r*4+c,r*4+c+1,(r+1)*4+c,(r+1)*4+c+1],output:out,metric:out})}}
+ else if(id==='kmeans'){let pts=[[-2,-1],[-1,-2],[-2,-2],[1+p,1],[2+p,2],[1+p,2]],centers=[[-2,-1],[-1,-2]],previous=[];f('初始中心故意都放在左侧；十字是中心，圆点是样本',points(pts,{centers,metric:centers}));for(let n=0;n<8;n++){const cls=pts.map(v=>centers.map(c=>(v[0]-c[0])**2+(v[1]-c[1])**2)).map(d=>d[0]<=d[1]?0:1);f(`第 ${n+1} 轮：固定中心，把每个样本分到最近中心`,points(pts,{classes:cls,centers,metric:centers}));const updated=centers.map((c,k)=>{const g=pts.filter((_,i)=>cls[i]===k);return g.length?[sum(g.map(x=>x[0]))/g.length,sum(g.map(x=>x[1]))/g.length]:c});const stable=updated.every((c,i)=>c.every((v,j)=>Math.abs(v-centers[i][j])<1e-10));centers=updated;f(stable?'中心与分配均不再改变，本例收敛':'固定分组，将中心移到各组均值；下一轮重新分配',points(pts,{classes:cls,centers,metric:centers}));if(stable)break;previous=cls;}}
+ else if(id==='pca'){let pts=[[-2,-2+p],[-1,-1-p],[0,p],[1,1-p],[2,2+p]],mean=[0,p/5],a=pts.map(([x,y])=>[x,y-mean[1]]),xx=sum(a.map(v=>v[0]**2))/5,yy=sum(a.map(v=>v[1]**2))/5,xy=sum(a.map(v=>v[0]*v[1]))/5,t=.5*Math.atan2(2*xy,xx-yy),u=[Math.cos(t),Math.sin(t)];f(`最大方差方向角 ${fmt(t*180/Math.PI)}°；直线经过样本均值`,points(pts,{segments:[[-3*u[0],mean[1]-3*u[1],3*u[0],mean[1]+3*u[1]]],metric:((xx+yy)+Math.hypot(xx-yy,2*xy))/2}))}
+ else if(id==='attention'){let t=p*Math.PI/180,q=[Math.cos(t),Math.sin(t)],ks=[[1,0],[0,1],[-1,0]],scores=ks.map(k=>(k[0]*q[0]+k[1]*q[1])/Math.sqrt(2)),weights=soft(scores),vs=[2,5,-1];f(`Q=(${fmt(q[0])},${fmt(q[1])})；计算 QKᵀ/√2`,{...bars(scores,['K0','K1','K2'])});f(`Softmax 后加权 V=[2,5,−1]，输出 ${fmt(sum(weights.map((w,i)=>w*vs[i])))}`,{...bars(weights,['K0','K1','K2']),metric:sum(weights.map((w,i)=>w*vs[i]))})}
+ else if(id==='bplus'){let leaves=[[1,3,5],[7,9,11],[13,15,17]],i=p<7?0:p<13?1:2,g={nodes:[{id:0,label:'7 | 13'},...leaves.map((v,j)=>({id:j+1,label:v.join(' | ')}))],edges:leaves.map((_,j)=>({a:0,b:j+1,label:j===0?'<7':j===1?'[7,13)':'≥13'}))};f(`比较分隔键，进入第 ${i+1} 个叶子`,{graph:{...g,active:[i+1]}});f(leaves[i].includes(p)?`叶子内找到 ${p}`:`叶子内没有 ${p}，查找失败`,{graph:{...g,active:[i+1]},metric:leaves[i].includes(p)})}
+ else if(id==='hash'){let slots=Array(p).fill(null);for(let key of [10,18,26,5,13]){let i=key%p;while(slots[i]!==null){f(`键 ${key} 在槽 ${i} 冲突，向后探测`,{cells:slots.map(v=>v??'空'),active:[i]});i=(i+1)%p}slots[i]=key;f(`键 ${key} 放入槽 ${i}`,{cells:slots.map(v=>v??'空'),active:[i],metric:slots})}}
+ else if(id==='bst'){let nodes=[],edges=[],root=null;for(let key of [7,3,11,1,5,9,13,p]){let cur=root,parent=null,side='';while(cur){parent=cur;if(key===cur.key)break;side=key<cur.key?'left':'right';cur=cur[side]}if(cur){f(`键 ${key} 已存在，不插入`,{graph:{nodes,edges,active:[cur.id]}});continue}let n={key,id:nodes.length};if(parent){parent[side]=n;edges.push({a:parent.id,b:n.id,label:side==='left'?'<':'>'})}else root=n;nodes.push({id:n.id,label:String(key)});f(`插入 ${key}，保持左小右大`,{graph:{nodes,edges,active:[n.id]},metric:nodes.length})}}
+ else if(id==='stack'){let s=[];for(let n=p;n>=1;n--){s.push('fact('+n+')');f(`调用 fact(${n})，栈增长`,{cells:s.slice(),active:[s.length-1]})}let v=1;for(let n=1;n<=p;n++){v*=n;s.pop();f(`fact(${n}) 返回 ${v}`,{cells:s.length?s.slice():['空栈'],metric:v})}}
+ else if(id==='queue'){let slots=Array(p).fill(null),head=0,tail=0,count=0;for(let op of [1,2,3,'out',4,5,'out',6,7]){let note='';if(op==='out'){note=count?`出队 ${slots[head]}`:'队列空';if(count){slots[head]=null;head=(head+1)%p;count--}}else if(count===p)note=`队列满，拒绝 ${op}`;else{slots[tail]=op;tail=(tail+1)%p;count++;note=`入队 ${op}`}f(note+`；head=${head}，tail=${tail}，count=${count}`,{cells:slots.map(v=>v??'空'),active:[head],metric:count})}}
+ else if(id==='raft'){for(let n=1;n<=p;n++)f(`当前任期条目已复制到 ${n}/5 节点；${n>=3?'达到多数，允许提交':'未达多数，尚不可提交'}`,{graph:{nodes:range(5).map(i=>({id:i,label:(i?'F':'L')+i})),edges:range(n-1).map(i=>({a:0,b:i+1,label:'复制'})),active:range(n)},metric:n>=3})}
+ else if(id==='vectorclock'){let a=[p,0],b=[0,p];f('两个进程各自产生本地事件，当前互相并发',{cells:['A ['+a+']','B ['+b+']'],metric:[a,b]});a[0]++;f('A 发送消息，递增自己的分量',{chain:['A ['+a+']','发送','B ['+b+']']});b=b.map((x,i)=>Math.max(x,a[i]));b[1]++;f('B 接收，逐项取最大值后递增 B 分量',{cells:['A ['+a+']','B ['+b+']'],metric:[a,b]})}
+ else if(id==='tokenbucket'){let tokens=5,accepted=0;[4,3,1,5,2,4,1,3].forEach((request,i)=>{tokens=Math.min(5,tokens+(i?p:0));let ok=tokens>=request;if(ok){tokens-=request;accepted++}f(`第 ${i} 轮请求 ${request}：${ok?'接受':'拒绝'}；余 ${tokens} 令牌`,{cells:range(5).map(j=>j<tokens?'●':'○'),metric:accepted})})}
+ else if(id==='consistenthash'){const keys=[3,15,25,40,55,70,85,97],old=[20,60,90],nodes=[...new Set([...old,p])].sort((a,b)=>a-b),owner=(k,ns)=>ns.find(n=>n>=k)??ns[0],changed=keys.filter(k=>owner(k,old)!==owner(k,nodes));f(`原节点 20、60、90，加入 ${p} 后 ${changed.length}/${keys.length} 个键迁移`,{ring:nodes,keys,assignments:keys.map(k=>owner(k,nodes)),metric:changed.length,formula:keys.map(k=>k+'→'+owner(k,nodes)+(changed.includes(k)?' *':'')).join('；')})}
+ else if(id==='rag'){const docs=[['卷积 核 滑动 图像','卷积核在局部窗口共享权重'],['图像 分类 概率','分类头把特征映射为类别得分'],['事务 日志 恢复','WAL 记录恢复所需信息'],['卷积 图像 池化','池化压缩特征图空间尺寸']],query=['卷积','图像'],rank=docs.map((d,i)=>({i,score:query.filter(t=>d[0].split(' ').includes(t)).length,text:d[1]})).sort((a,b)=>b.score-a.score||a.i-b.i);f('问题：卷积怎样处理图像？按词项重叠分数检索',{...bars(rank.map(d=>d.score),rank.map(d=>'文档'+d.i))});f(`选择前 ${p} 篇，把证据连同来源送入回答上下文`,{chain:rank.slice(0,p).map(d=>'文档'+d.i+': '+d.text),metric:rank.slice(0,p).map(d=>d.i)})}
+ else throw Error('unknown model '+id);
+ return frames;
+};
+
+const reviewedConfigs=[["riemann", "积分：矩形怎样逼近面积", "math-calculus.c2.s1", "矩形数", 2, 30, 1, 6, "比较左端点矩形和 x² 在 [0,1] 上的精确积分 1/3"], ["chain", "链式法则：两段变化相乘", "math-calculus.c3.s2", "输入 x", -3, 3, 0.1, 1, "复合函数 y=(2x+1)² 的局部导数"], ["projection", "向量投影：保留哪个方向", "math-linear.c1.s1", "方向角 °", 0, 180, 5, 30, "向量 (3,2) 在单位方向上的正交投影"], ["eigen", "特征向量：方向不变", "math-linear.c3.s1", "向量角 °", 0, 180, 5, 30, "对角矩阵 diag(2,1) 如何改变向量"], ["svd", "低秩近似：逐项恢复矩阵", "math-linear.c3.s2", "保留秩", 1, 3, 1, 1, "正交基上的奇异值截断；Frobenius 误差"], ["binomial", "二项分布：成功次数", "math-probability.c2.s1", "成功率 %", 5, 95, 5, 50, "十次独立伯努利试验的精确分布"], ["normal", "正态分布：尺度与密度", "math-probability.c2.s1", "标准差", 0.5, 2, 0.1, 1, "标准差改变密度高度而不改变总面积"], ["clt", "中心极限定理：求和的形状", "math-probability.c2.s2", "骰子个数", 1, 6, 1, 2, "公平骰子点数和的精确离散卷积分布"], ["entropy", "熵：什么时候最不确定", "math-probability.c2.s1", "事件概率 %", 1, 99, 1, 50, "二元分布的香农熵，以 bit 为单位"], ["descent", "梯度下降：收敛与振荡", "math-optimization.c1.s1", "学习率", 0.1, 1.1, 0.1, 0.3, "对 x² 执行 12 次梯度更新"], ["huffman", "哈夫曼树：合并最轻的两棵树", "data-structures.c3.s2", "A 的频率", 1, 20, 1, 5, "每步合并最小权重；最终展示前缀树与加权路径长度"], ["binary", "二分查找：保持搜索区间", "algorithms.c1.s2", "目标值", 1, 16, 1, 11, "有序数组上的闭区间二分，包含未找到分支"], ["quicksort", "快速排序：分区与递归", "algorithms.c2.s1", "首元素", 1, 15, 1, 9, "Lomuto 分区；显示每次比较与交换"], ["merge", "归并排序：两个有序段合并", "algorithms.c2.s2", "首元素", 1, 15, 1, 9, "自底向上归并；每次合并后段内有序"], ["heap", "堆排序：最大值走到末尾", "algorithms.c2.s2", "首元素", 1, 15, 1, 9, "最大堆下沉与有序后缀"], ["bfs", "广度优先：队列怎样分层", "ai-foundations.c1.s1", "起点编号", 0, 5, 1, 0, "六节点无向图上的队列与发现顺序"], ["dfs", "深度优先：沿分支前进", "ai-foundations.c1.s1", "起点编号", 0, 5, 1, 0, "六节点无向图上的显式栈与访问顺序"], ["prim", "Prim：从一棵树向外生长", "algorithms.c3.s1", "C-D 权重", 1, 12, 1, 8, "正权无向图的最小生成树，显示跨越割的最轻边"], ["kruskal", "Kruskal：便宜的边先选", "algorithms.c3.s1", "C-D 权重", 1, 12, 1, 8, "按边权排序，只有连接不同分量才合并"], ["knapsack", "背包：容量与最优价值", "algorithms.c3.s2", "背包容量", 1, 10, 1, 7, "0/1 背包动态规划；每件物品只能选一次"], ["cache", "直接映射缓存：冲突从哪里来", "architecture.c2.s1", "缓存行数", 2, 6, 1, 4, "按块号取模映射，观察访问序列中的命中与冲突"], ["paging", "地址翻译：页号与偏移", "operating-systems.c2.s1", "虚拟地址", 0, 127, 1, 42, "页大小 16，固定页表，物理地址由帧号和偏移拼接"], ["lru", "LRU：最近没用的先换出", "operating-systems.c2.s1", "物理帧数", 2, 5, 1, 3, "固定访问流，精确比较最近使用时间"], ["fifo", "FIFO：最早进入的先换出", "operating-systems.c2.s1", "物理帧数", 2, 5, 1, 3, "经典 Belady 序列，观察增加帧数未必减少缺页"], ["roundrobin", "时间片轮转：公平与等待", "operating-systems.c1.s2", "时间片", 1, 5, 1, 2, "三个同时到达的任务，无切换成本，显示执行时间线"], ["deadlock", "死锁：等待环怎样形成", "operating-systems.c3.s1", "等待边数量", 0, 3, 1, 3, "三个进程的等待图；出现有向环时构成本示例死锁"], ["subnet", "子网：哪些位属于网络", "networks.c1.s2", "前缀长度", 24, 30, 1, 26, "IPv4 192.168.1.130 的网络地址与广播地址"], ["window", "滑动窗口：允许多少在途数据", "networks.c2.s2", "窗口大小", 1, 6, 1, 3, "无丢包的简化逐 ACK 发送模型，不是完整 TCP"], ["aimd", "拥塞控制：增长与减半", "networks.c2.s2", "丢包阈值", 4, 12, 1, 8, "教学用 AIMD：每轮加一，到阈值减半；不含慢启动"], ["bloom", "布隆过滤器：可能存在", "databases.c3.s2", "位数组长度", 8, 24, 1, 12, "两个固定哈希函数；没有假阴性但可能误报"], ["perceptron", "感知机：移动分类边界", "machine-learning.c1.s2", "偏置", -3, 3, 0.2, 0, "固定权重 (1,1)，观察平面中样本的分类"], ["logistic", "Sigmoid：分数变成概率", "machine-learning.c1.s2", "斜率", 0.5, 3, 0.1, 1, "逻辑函数的饱和与斜率，不表示模型已训练"], ["softmax", "Softmax：温度改变分布", "nlp.c2.s2", "温度", 0.2, 3, 0.1, 1, "固定 logits [1,2,3] 的稳定 Softmax"], ["crossentropy", "交叉熵：自信地错代价更大", "deep-learning.c1.s1", "正确类概率 %", 1, 99, 1, 70, "单样本负对数似然 -ln(p)，自然对数"], ["backprop", "反向传播：局部梯度连起来", "deep-learning.c1.s1", "权重 w", -2, 3, 0.1, 1, "y=wx+b，L=(y-t)²/2，固定 x=2,b=1,t=5"], ["conv", "卷积：窗口怎样产生输出", "deep-learning.c2.s1", "中心像素", 0, 9, 1, 5, "4×4 输入和 2×2 核逐元素相乘求和，步长一，无填充"], ["pool", "最大池化：保留局部最强响应", "deep-learning.c2.s1", "中心像素", 0, 12, 1, 5, "4×4 输入，2×2 不重叠最大池化"], ["kmeans", "K均值：分配与重心交替", "machine-learning.c3.s1", "右簇水平偏移", 0, 3, 0.2, 1, "二维固定点集，k=2，确定性初始中心"], ["pca", "PCA：寻找最大方差方向", "machine-learning.c3.s2", "竖直扰动", 0.1, 2, 0.1, 0.5, "中心化二维样本协方差矩阵的主特征向量"], ["attention", "注意力：查询怎样选择信息", "deep-learning.c3.s2", "查询角 °", 0, 180, 5, 30, "二维 Q 和三个 K，点积除 sqrt(2) 后 Softmax，再加权 V"], ["bplus", "B+树：从索引走到叶子", "data-structures.c3.s1", "查找键", 1, 18, 1, 11, "固定三叶索引，分隔键采用右侧子树最小键"], ["hash", "哈希表：线性探测解决冲突", "data-structures.c2.s2", "桶数", 7, 13, 1, 8, "逐个插入五个键；冲突向后探测，负载未满"], ["bst", "二叉搜索树：插入保持顺序", "data-structures.c2.s1", "新增键", 1, 15, 1, 8, "固定插入序列后的新键路径，重复键不重复插入"], ["stack", "调用栈：递归怎样返回", "programming.c1.s2", "阶乘 n", 1, 7, 1, 4, "递归阶乘的调用与返回栈帧"], ["queue", "环形队列：下标怎样绕回", "data-structures.c1.s2", "队列容量", 3, 7, 1, 4, "固定入队出队操作，满队列拒绝入队，显示头尾与元素数"], ["raft", "Raft：多数派确认日志", "distributed-systems.c2.s1", "在线节点数", 1, 5, 1, 3, "五节点复制示意；当前任期日志获多数确认才提交，不覆盖选举细节"], ["vectorclock", "向量时钟：识别因果与并发", "distributed-systems.c1.s1", "本地事件数", 1, 4, 1, 2, "两个进程发送接收；接收取逐项最大值后递增自身分量"], ["tokenbucket", "令牌桶：限制突发流量", "cloud.c2.s1", "每轮补充令牌", 1, 4, 1, 2, "容量为五，离散轮次补充后处理请求；未满足请求被拒绝"], ["consistenthash", "一致性哈希：节点变化影响谁", "databases.c3.s2", "新增节点位置", 5, 95, 5, 50, "0..99 环，键映射到顺时针首节点，不使用虚拟节点"], ["rag", "RAG：为什么要先检索再回答", "ai-engineering.c1.s2", "返回文档数", 1, 4, 1, 2, "固定示例语料的词项重叠排序与上下文拼接；不是语义向量检索"]];
+const reviewedTeaching={"riemann": ["矩形加多以后，低估还会存在吗？", "矩形宽度也在变化；累加高度不等于累加面积。"], "chain": ["内层变化率和外层变化率为什么相乘？", "负的局部导数会反转变化方向；整体变化率取决于整条路径。"], "projection": ["投影变成零时，原向量也为零吗？", "正交方向上的信息被投影丢弃；零投影并不代表原向量为零。"], "eigen": ["哪些方向只伸缩、不转向？", "特征向量强调方向保持，不要求长度保持。"], "svd": ["多保留一个方向，究竟减少多少误差？", "截去的奇异值平方之和决定 Frobenius 误差；秩和误差可以量化权衡。"], "binomial": ["单次成功率变化，会只移动最高的一根柱子吗？", "参数影响整个计数分布；期望是分布中心的指标，不是每次必然的结果。"], "normal": ["峰值变低，为什么总概率仍是1？", "密度的高度必须乘区间宽度才贡献概率。"], "clt": ["骰子和变得像钟形，方差也消失了吗？", "未标准化的和同时变宽；均值才因平均而更集中。"], "entropy": ["为什么均衡的二元事件最难预测？", "熵度量分布的不确定性；接近必然的事件信息量小。"], "descent": ["朝负梯度走，为什么仍可能越走越远？", "方向正确不保证步长合适；对 x²，0<学习率<1 才收敛。"], "huffman": ["提高一个符号的频率，它的编码一定变长吗？", "每次合并最轻的两棵树；高频符号倾向于较短编码，具体码字受平局次序影响。"], "binary": ["找不到目标时，算法凭什么停止？", "每次比较排除一个确定不含目标的区间；空区间是合法结果。"], "quicksort": ["一次分区完成，整个数组就有序了吗？", "枢轴归位只确定一个位置；两侧仍需要分别排序。"], "merge": ["合并时为什么只比较两个段的头部？", "已排序的子段使剩余最小值只可能在两个段首。"], "heap": ["最大堆为什么不等于一个有序数组？", "堆只保证父子大小关系；根与末尾交换后需要恢复局部不变量。"], "bfs": ["为什么第一次发现就可以确定无权最短距离？", "先进先出让更浅的一层先展开；入队时标记避免重复发现。"], "dfs": ["沿一条分支前进，什么时候回头？", "栈保留尚未展开的分支；DFS 访问顺序不保证最短路径。"], "prim": ["最轻的边可以从图上任意挑吗？", "Prim 只在当前树跨向外部的边中选最轻者，保持一棵连通树。"], "kruskal": ["最便宜的边为什么有时必须跳过？", "边若连接同一分量就形成环；最低边权仍需要配合无环条件。"], "knapsack": ["容量足够时，为什么还要倒序更新？", "倒序保持读到上一轮状态，防止一件物品在同一轮被重复使用。"], "cache": ["缓存还有别的空行，为什么仍会冲突？", "直接映射把块限制在唯一位置；冲突与总容量不是同一个问题。"], "paging": ["页号变成帧号以后，偏移为什么保持不变？", "页表重定位整页，页内位置沿用原偏移。"], "lru": ["命中一次旧页面，会影响下次淘汰谁吗？", "命中会更新最近使用顺序；LRU 关心最后一次访问。"], "fifo": ["把物理帧从3增加到4，缺页一定减少吗？", "FIFO 只记录进入次序；经典序列可出现更多内存反而更多缺页的 Belady 异常。"], "roundrobin": ["时间片更小，总完成时间会变短吗？", "本例没有切换成本，总服务时间固定；时间片改变响应与等待的分配。"], "deadlock": ["只删除一条等待边，环还存在吗？", "本例单实例资源的等待环代表无法推进；多实例资源不能直接套用同一判据。"], "subnet": ["前缀每加一位，子网范围如何变化？", "网络位增加一位，地址块大小减半；并非只改变地址的文字表示。"], "window": ["收到确认以后，为什么窗口可以向前滑？", "确认释放在途预算；窗口控制的是同时未确认的数据量。"], "aimd": ["为什么增加和减少使用不同尺度？", "缓慢增长探索容量，乘法下降较快释放拥塞压力；此处阈值是教学设定。"], "bloom": ["多个键共享同一位，会造成什么误判？", "所有位为1只能说明可能存在；任何所需位为0则可确定未插入。"], "perceptron": ["只改偏置，分类边界如何移动？", "权重方向不变，偏置平移边界；分类标签必须随分数符号变化。"], "logistic": ["分数变大时，概率还会按同样速度增加吗？", "Sigmoid 在两端饱和；中间斜率大，极端分数处导数小。"], "softmax": ["温度改变以后，最大得分类会换吗？", "正温度改变集中程度，同时保持 logits 的大小顺序。"], "crossentropy": ["正确类从10%降到1%，损失增加多少？", "自然对数损失对倍率敏感；概率每缩小十倍，损失增加 ln(10)。"], "backprop": ["误差通过乘法节点，怎样影响权重？", "局部梯度相乘传递敏感度；梯度指明微小参数变化对损失的影响。"], "conv": ["改动一个输入像素，会影响哪些输出？", "只有覆盖该像素的窗口响应改变；同一组权重在各位置复用。"], "pool": ["把一个非最大像素调高一点，输出一定改变吗？", "最大池化对未超过当前最大值的变化不响应，但跨越最大值后输出会变。"], "kmeans": ["重分配与移动中心为什么要交替进行？", "分配固定中心，更新固定分组；局部收敛不代表全局最优。"], "pca": ["扰动改变以后，最大方差方向还沿原直线吗？", "主成分由中心化协方差决定；最大方差不等于最有分类价值。"], "attention": ["查询方向改变，会怎样重新分配信息权重？", "相关分数先归一化，再加权值向量；键和值承担不同作用。"], "bplus": ["内部节点选对孩子，就已经找到数据了吗？", "分隔键负责导航，是否存在仍由叶子匹配确定。"], "hash": ["两个键落在同一个桶，后来的键放在哪里？", "线性探测顺着槽位寻找空位，查询也必须沿相同探测链检查。"], "bst": ["插入前的每次比较，排除了哪一边？", "有序关系决定插入路径；重复键策略在本例是保留一个节点。"], "stack": ["递归调用返回时，谁接着计算？", "每个栈帧保存暂停现场；返回值沿后进先出顺序组合。"], "queue": ["读写下标相同，一定表示队列空吗？", "显式元素数区分空与满；绕回不是覆盖未读数据的许可。"], "raft": ["一个副本收到日志，为什么仍不能提交？", "五节点需要三份确认；本例只讨论当前任期条目的提交条件。"], "vectorclock": ["两个时钟大小不一，为什么可能谁也不先于谁？", "逐分量偏序保留因果；某些分量更大另一些更小表示并发。"], "tokenbucket": ["平均补充速度不变，为什么仍允许突发？", "积存令牌允许短时突发；桶容量限制最大可积存预算。"], "consistenthash": ["加入节点后，为什么只有一段键需要迁移？", "顺时针继任规则只改变新节点接管的区间；小样本不保证均匀负载。"], "rag": ["检索更多文档，会让证据更相关吗？", "数量增加可能带入低相关内容；回答上下文需要来源与相关性约束。"]};
+
+function reviewedScene(s,id,p){
+ if(id==='riemann'){let body='';for(let i=0;i<p;i++){const h=s.bars[i];body+=Viz.rect(45+i*500/p,265-h*220,500/p,Math.max(.1,h*220),'#b5dcd7','#fff');}const path=Array.from({length:101},(_,i)=>(i?'L':'M')+(45+i*5)+','+(265-(i/100)**2*220)).join(' ');return Viz.svg(body+`<path d="${path}" fill="none" stroke="#087f8c" stroke-width="2"/>`+Viz.line(45,265,550,265)+Viz.text(45,288,'0',11)+Viz.text(545,288,'1',11)+Viz.text(300,310,'每个矩形宽 1/'+p+'；曲线 y=x²，坐标固定',12));}
+
+ if(s.graph){let edges=s.graph.edges.map(e=>({from:String(e.a),to:String(e.b),label:e.label||'',active:!!e.active}));
+  if(id==='prim'||id==='kruskal'){const selected=new Set(edges.map(e=>e.from+'-'+e.to));edges=[[0,1,4],[0,2,2],[1,2,1],[1,3,5],[2,3,p],[2,4,10],[3,4,2],[3,5,6],[4,5,3]].map(([a,b,w])=>({from:String(a),to:String(b),label:String(w),active:selected.has(a+'-'+b)}));}
+  if(id==='bplus')edges.push({from:'1',to:'2',label:'后继叶'},{from:'2',to:'3',label:'后继叶'});
+  return Viz.graph({nodes:s.graph.nodes.map(n=>({id:String(n.id),label:n.label,active:(s.graph.active||[]).includes(n.id)})),edges,directed:['huffman','bst','bplus','deadlock','raft'].includes(id),layout:['huffman','bst','bplus'].includes(id)?'tree':'circle'});
+ }
+ if(s.plot||s.points){const series=s.plot?[{points:s.plot,label:'当前计算曲线'}]:[];if(s.classes){for(let i=0;i<2;i++)series.push({points:s.points.filter((_,j)=>s.classes[j]===i),scatter:true,label:'类 '+i,color:Viz.colors[i]});}return Viz.plot({equalAspect:['projection','eigen','perceptron','kmeans','pca'].includes(id),series,points:s.classes?[]:(s.points||[]),crosses:s.centers||[],segments:s.segments||[]});}
+ if(s.bars)return Viz.bars(s.bars,s.labels,s.active);
+ if(s.matrix)return Viz.matrix(s.matrix,{active:s.active,title:'输入 / 当前矩阵'})+(s.output?Viz.matrix(s.output,{title:'输出（空格尚未计算）'}):'');
+ if(s.timeline){const total=s.timeline.at(-1).end;return Viz.svg(s.timeline.map(t=>{const x=30+t.start/total*540,w=(t.end-t.start)/total*540;return Viz.rect(x,55,w,40,Viz.colors[+t.label.slice(1)%5],'white')+Viz.text(x+w/2,79,t.label,11)+Viz.text(x,116,t.start,10)}).join('')+Viz.text(570,116,total,10)+Viz.text(300,150,'时间 →',12),600,180);}
+ if(s.ring){const pos=n=>[300+105*Math.cos(n*Math.PI/50-Math.PI/2),145+105*Math.sin(n*Math.PI/50-Math.PI/2)];let body='<circle cx="300" cy="145" r="105" fill="none" stroke="#9eb9af"/>';s.keys.forEach((k,i)=>{const [x,y]=pos(k),[a,b]=pos(s.assignments[i]);body+=Viz.line(x,y,a,b,'#b9d3cc')+`<circle cx="${x}" cy="${y}" r="4" fill="#d57a19"/>`+Viz.text(x+(x<300?-12:12),y,k,10)});s.ring.forEach(n=>{const[x,y]=pos(n);body+=Viz.rect(x-14,y-12,28,24,'#d9eeea')+Viz.text(x,y+4,n,11)});return Viz.svg(body+Viz.text(300,288,'橙色：键 · 方框：节点 · 线：归属',12));}
+ if(s.chain)return Viz.flow(s.chain,s.active===undefined?[]:[s.active]);
+ if(s.cells)return Viz.cells(s.cells,{active:s.active});
+ throw Error('missing reviewed renderer '+id);
+}
+const legacyAliases={descent:'optimization.gd.overshoot',stack:'programming.recursion.stack',bplus:'database.bplus_tree.lookup',binary:'algorithms.binary_search.interval',quicksort:'algorithms.quicksort.partition',paging:'systems.virtual_memory.translation',deadlock:'systems.deadlock.wait_cycle',bfs:'algorithms.bfs.diamond',rag:'ai.rag.evidence_flow'};
+for(const cfg of reviewedConfigs){const[id,title,session,label,min,max,step,value,scope]=cfg,[question,takeaway]=reviewedTeaching[id];const lesson={id:'lab2-'+id,version:'2.0.0',session,title,question,description:question,controls:[{id:'input',label,type:'range',min,max,step,value}],scope,takeaway,examples:true,compute(p){return{frames:buildReviewedModel(id,p.input).map(s=>({svg:reviewedScene(s,id,p.input),note:s.note+(s.formula?'；'+s.formula:''),values:{result:s.metric??s.bars??s.cells??s.matrix??s.graph?.active??s.graph?.nodes.map(n=>n.label)??s.chain??null,...(s.distance?{distance:s.distance,frontier:s.frontier}: {})}}))}}};register(lesson);if(legacyAliases[id])register({...lesson,id:legacyAliases[id]});}
+
+mountLesson(selectedLesson);</script>

@@ -1,4 +1,6 @@
-# 教学可视化 Hub v2
+# 教学可视化 Hub
+
+> 当前状态（2026-09-08）：当前地图全部 226 个待做条目已补齐；69 个已有作品升级，迪杰斯特拉保留并复核，共 296 个可交互作品。完整范围、验收和维护命令见 [全量补齐记录](VISUAL_HUB_COMPLETION.md)。下文保留初版及接口演进记录。
 
 Hub 是 learning_design_agent 所有的维护内容目录，复用现有 visual_content_library / retrieve_learning_visual，不增加第四类 Agent，通过 Web 与桌面 `/visual-hub` 提供轻量查询与展示页面。
 

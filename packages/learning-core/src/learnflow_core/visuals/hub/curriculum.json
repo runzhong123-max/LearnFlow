@@ -302,8 +302,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-functions-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -327,8 +332,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-functions-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -357,8 +367,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-functions-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -386,7 +401,7 @@
                   "work_refs": [
                     {
                       "id": "hub-functions",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -417,8 +432,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-functions-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -441,8 +461,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-functions-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -481,8 +506,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-calculus-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -509,7 +539,7 @@
                   "work_refs": [
                     {
                       "id": "hub-derivative",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -540,8 +570,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-calculus-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "math-calculus.c2.s1.lab2-riemann",
@@ -556,7 +591,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-riemann",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -580,8 +615,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-calculus-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -610,8 +650,13 @@
                   "representation": "linked_geometry",
                   "interaction": "调整参数或选择向量，联动更新几何图形和公式中的对应项。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-calculus-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -634,8 +679,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-calculus-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "math-calculus.c3.s2.lab2-chain",
@@ -650,7 +700,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-chain",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -695,8 +745,13 @@
                   "representation": "linked_geometry",
                   "interaction": "调整参数或选择向量，联动更新几何图形和公式中的对应项。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-linear-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "math-linear.c1.s1.lab2-projection",
@@ -711,7 +766,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-projection",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -737,8 +792,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-linear-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -770,7 +830,7 @@
                   "work_refs": [
                     {
                       "id": "hub-linear",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -796,8 +856,13 @@
                   "representation": "linked_geometry",
                   "interaction": "调整参数或选择向量，联动更新几何图形和公式中的对应项。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-linear-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -826,8 +891,13 @@
                   "representation": "linked_geometry",
                   "interaction": "调整参数或选择向量，联动更新几何图形和公式中的对应项。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-linear-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "math-linear.c3.s1.lab2-eigen",
@@ -842,7 +912,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-eigen",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -867,8 +937,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-linear-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "math-linear.c3.s2.lab2-svd",
@@ -883,7 +958,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-svd",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -928,8 +1003,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-discrete-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -952,8 +1032,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-discrete-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -982,8 +1067,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-discrete-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -1006,8 +1096,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-discrete-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -1036,8 +1131,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-discrete-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -1061,8 +1161,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-discrete-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -1101,8 +1206,13 @@
                   "representation": "distribution_comparison",
                   "interaction": "固定随机种子，调整一个参数，对比图形和定量结果。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-probability-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -1129,7 +1239,7 @@
                   "work_refs": [
                     {
                       "id": "hub-bayes",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -1164,7 +1274,7 @@
                   "work_refs": [
                     {
                       "id": "probability.density.area",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -1181,7 +1291,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-binomial",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -1198,7 +1308,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-normal",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -1215,7 +1325,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-entropy",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -1240,8 +1350,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-probability-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "math-probability.c2.s2.lab2-clt",
@@ -1256,7 +1371,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-clt",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -1287,8 +1402,13 @@
                   "representation": "distribution_comparison",
                   "interaction": "固定随机种子，调整一个参数，对比图形和定量结果。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-probability-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -1312,8 +1432,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-probability-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -1361,7 +1486,7 @@
                   "work_refs": [
                     {
                       "id": "optimization.gd.overshoot",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -1378,7 +1503,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-descent",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -1404,8 +1529,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-optimization-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -1433,8 +1563,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-optimization-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -1457,8 +1592,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-optimization-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -1487,8 +1627,13 @@
                   "representation": "distribution_comparison",
                   "interaction": "固定随机种子，调整一个参数，对比图形和定量结果。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-optimization-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -1511,8 +1656,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-math-optimization-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -1557,8 +1707,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-programming-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -1585,7 +1740,7 @@
                   "work_refs": [
                     {
                       "id": "programming.recursion.stack",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -1602,7 +1757,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-stack",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -1634,8 +1789,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-programming-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -1659,8 +1819,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-programming-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -1689,8 +1854,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-programming-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -1713,8 +1883,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-programming-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -1759,7 +1934,7 @@
                   "work_refs": [
                     {
                       "id": "data_structures.linked_list.insert",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -1785,8 +1960,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-data-structures-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "data-structures.c1.s2.lab2-queue",
@@ -1801,7 +1981,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-queue",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -1832,8 +2012,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-data-structures-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "data-structures.c2.s1.lab2-bst",
@@ -1848,7 +2033,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-bst",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -1873,8 +2058,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-data-structures-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "data-structures.c2.s2.lab2-hash",
@@ -1889,7 +2079,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-hash",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -1924,7 +2114,7 @@
                   "work_refs": [
                     {
                       "id": "database.bplus_tree.lookup",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -1941,7 +2131,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-bplus",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -1966,8 +2156,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-data-structures-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "data-structures.c3.s2.lab2-huffman",
@@ -1982,7 +2177,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-huffman",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -2028,8 +2223,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-algorithms-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -2056,7 +2256,7 @@
                   "work_refs": [
                     {
                       "id": "algorithms.binary_search.interval",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -2073,7 +2273,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-binary",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -2107,7 +2307,7 @@
                   "work_refs": [
                     {
                       "id": "algorithms.quicksort.partition",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -2124,7 +2324,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-quicksort",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -2149,8 +2349,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-algorithms-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "algorithms.c2.s2.lab2-merge",
@@ -2165,7 +2370,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-merge",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -2182,7 +2387,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-heap",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -2234,7 +2439,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-prim",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -2251,7 +2456,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-kruskal",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -2276,8 +2481,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-algorithms-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "algorithms.c3.s2.lab2-knapsack",
@@ -2292,7 +2502,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-knapsack",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -2337,8 +2547,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-digital-logic-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -2361,8 +2576,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-digital-logic-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -2391,8 +2611,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-digital-logic-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -2415,8 +2640,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-digital-logic-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -2445,8 +2675,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-digital-logic-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -2470,8 +2705,13 @@
                   "representation": "distribution_comparison",
                   "interaction": "固定随机种子，调整一个参数，对比图形和定量结果。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-digital-logic-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -2512,8 +2752,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-architecture-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -2536,8 +2781,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-architecture-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -2566,8 +2816,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-architecture-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "architecture.c2.s1.lab2-cache",
@@ -2582,7 +2837,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-cache",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -2607,8 +2862,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-architecture-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -2637,8 +2897,13 @@
                   "representation": "linked_geometry",
                   "interaction": "调整参数或选择向量，联动更新几何图形和公式中的对应项。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-architecture-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -2662,8 +2927,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-architecture-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -2707,8 +2977,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-operating-systems-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -2731,8 +3006,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-operating-systems-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "operating-systems.c1.s2.lab2-roundrobin",
@@ -2747,7 +3027,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-roundrobin",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -2783,7 +3063,7 @@
                   "work_refs": [
                     {
                       "id": "systems.virtual_memory.translation",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -2800,7 +3080,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-paging",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -2817,7 +3097,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-lru",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -2834,7 +3114,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-fifo",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -2859,8 +3139,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-operating-systems-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -2894,7 +3179,7 @@
                   "work_refs": [
                     {
                       "id": "systems.deadlock.wait_cycle",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -2911,7 +3196,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-deadlock",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -2936,8 +3221,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-operating-systems-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -2982,8 +3272,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-networks-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -3006,8 +3301,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-networks-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "networks.c1.s2.lab2-subnet",
@@ -3022,7 +3322,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-subnet",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -3057,7 +3357,7 @@
                   "work_refs": [
                     {
                       "id": "networking.tcp.handshake",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -3083,8 +3383,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-networks-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "networks.c2.s2.lab2-window",
@@ -3099,7 +3404,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-window",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -3116,7 +3421,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-aimd",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -3151,7 +3456,7 @@
                   "work_refs": [
                     {
                       "id": "networking.dns.resolution",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -3176,8 +3481,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-networks-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -3220,8 +3530,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-databases-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -3244,8 +3559,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-databases-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -3278,7 +3598,7 @@
                   "work_refs": [
                     {
                       "id": "database.transaction.dirty_read",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -3303,8 +3623,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-databases-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -3333,8 +3658,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-databases-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -3358,8 +3688,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-databases-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "databases.c3.s2.lab2-bloom",
@@ -3374,7 +3709,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-bloom",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -3391,7 +3726,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-consistenthash",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -3436,8 +3771,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-theory-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -3460,8 +3800,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-theory-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -3490,8 +3835,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-theory-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -3514,8 +3864,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-theory-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -3545,8 +3900,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-theory-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -3569,8 +3929,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-theory-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -3613,8 +3978,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-compilers-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -3637,8 +4007,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-compilers-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -3667,8 +4042,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-compilers-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -3691,8 +4071,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-compilers-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -3721,8 +4106,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-compilers-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -3745,8 +4135,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-compilers-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -3791,8 +4186,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-software-engineering-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -3815,8 +4215,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-software-engineering-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -3845,8 +4250,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-software-engineering-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -3869,8 +4279,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-software-engineering-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -3899,8 +4314,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-software-engineering-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -3924,8 +4344,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-software-engineering-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -3966,8 +4391,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-security-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -3991,8 +4421,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-security-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -4021,8 +4456,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-security-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -4046,8 +4486,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-security-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -4076,8 +4521,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-security-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -4101,8 +4551,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-security-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -4148,7 +4603,7 @@
                   "work_refs": [
                     {
                       "id": "algorithms.bfs.diamond",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -4165,7 +4620,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-bfs",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -4182,7 +4637,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-dfs",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -4207,8 +4662,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-ai-foundations-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -4237,8 +4697,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-ai-foundations-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -4261,8 +4726,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-ai-foundations-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -4290,8 +4760,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-ai-foundations-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -4315,8 +4790,13 @@
                   "representation": "distribution_comparison",
                   "interaction": "固定随机种子，调整一个参数，对比图形和定量结果。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-ai-foundations-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -4357,8 +4837,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-machine-learning-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -4381,8 +4866,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-machine-learning-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "machine-learning.c1.s2.lab2-perceptron",
@@ -4397,7 +4887,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-perceptron",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -4414,7 +4904,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-logistic",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -4445,8 +4935,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-machine-learning-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -4469,8 +4964,13 @@
                   "representation": "linked_geometry",
                   "interaction": "调整参数或选择向量，联动更新几何图形和公式中的对应项。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-machine-learning-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -4498,8 +4998,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-machine-learning-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "machine-learning.c3.s1.lab2-kmeans",
@@ -4514,7 +5019,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-kmeans",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -4539,8 +5044,13 @@
                   "representation": "distribution_comparison",
                   "interaction": "固定随机种子，调整一个参数，对比图形和定量结果。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-machine-learning-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "machine-learning.c3.s2.lab2-pca",
@@ -4555,7 +5065,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-pca",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -4602,8 +5112,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-deep-learning-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "deep-learning.c1.s1.lab2-crossentropy",
@@ -4618,7 +5133,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-crossentropy",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -4635,7 +5150,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-backprop",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -4661,8 +5176,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-deep-learning-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -4696,7 +5216,7 @@
                   "work_refs": [
                     {
                       "id": "deep_learning.cnn.mechanism",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -4713,7 +5233,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-conv",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -4730,7 +5250,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-pool",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -4755,8 +5275,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-deep-learning-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -4785,8 +5310,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-deep-learning-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -4809,8 +5339,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-deep-learning-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "deep-learning.c3.s2.lab2-attention",
@@ -4825,7 +5360,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-attention",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -4870,8 +5405,13 @@
                   "representation": "linked_geometry",
                   "interaction": "调整参数或选择向量，联动更新几何图形和公式中的对应项。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-graphics-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -4894,8 +5434,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-graphics-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -4924,8 +5469,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-graphics-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -4948,8 +5498,13 @@
                   "representation": "distribution_comparison",
                   "interaction": "固定随机种子，调整一个参数，对比图形和定量结果。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-graphics-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -4977,8 +5532,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-graphics-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -5001,8 +5561,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-graphics-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -5043,8 +5608,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-hci-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -5067,8 +5637,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-hci-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -5098,8 +5673,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-hci-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -5122,8 +5702,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-hci-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -5152,8 +5737,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-hci-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -5176,8 +5766,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-hci-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -5217,8 +5812,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-web-engineering-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -5241,8 +5841,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-web-engineering-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -5272,8 +5877,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-web-engineering-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -5297,8 +5907,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-web-engineering-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -5327,8 +5942,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-web-engineering-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -5352,8 +5972,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-web-engineering-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -5395,8 +6020,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-mobile-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -5419,8 +6049,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-mobile-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -5449,8 +6084,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-mobile-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -5474,8 +6114,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-mobile-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -5504,8 +6149,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-mobile-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -5528,8 +6178,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-mobile-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -5571,8 +6226,13 @@
                   "representation": "linked_geometry",
                   "interaction": "调整参数或选择向量，联动更新几何图形和公式中的对应项。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-cloud-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -5595,8 +6255,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-cloud-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -5625,8 +6290,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-cloud-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "cloud.c2.s1.lab2-tokenbucket",
@@ -5641,7 +6311,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-tokenbucket",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -5666,8 +6336,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-cloud-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -5696,8 +6371,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-cloud-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -5721,8 +6401,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-cloud-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -5765,8 +6450,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-data-engineering-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -5789,8 +6479,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-data-engineering-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -5820,8 +6515,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-data-engineering-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -5844,8 +6544,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-data-engineering-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -5874,8 +6579,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-data-engineering-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -5898,8 +6608,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-data-engineering-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -5941,8 +6656,13 @@
                   "representation": "linked_geometry",
                   "interaction": "调整参数或选择向量，联动更新几何图形和公式中的对应项。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-ai-engineering-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -5969,7 +6689,7 @@
                   "work_refs": [
                     {
                       "id": "ai.rag.evidence_flow",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 },
@@ -5986,7 +6706,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-rag",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -6018,8 +6738,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-ai-engineering-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -6043,8 +6768,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-ai-engineering-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -6073,8 +6803,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-ai-engineering-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -6098,8 +6833,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-ai-engineering-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -6141,8 +6881,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-testing-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -6165,8 +6910,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-testing-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -6195,8 +6945,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-testing-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -6219,8 +6974,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-testing-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -6250,8 +7010,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-testing-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -6274,8 +7039,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-testing-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -6317,8 +7087,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-embedded-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -6342,8 +7117,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-embedded-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -6372,8 +7152,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-embedded-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -6396,8 +7181,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-embedded-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -6426,8 +7216,13 @@
                   "representation": "distribution_comparison",
                   "interaction": "固定随机种子，调整一个参数，对比图形和定量结果。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-embedded-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -6450,8 +7245,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-embedded-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -6493,8 +7293,13 @@
                   "representation": "linked_geometry",
                   "interaction": "调整参数或选择向量，联动更新几何图形和公式中的对应项。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-computer-vision-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -6517,8 +7322,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-computer-vision-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -6547,8 +7357,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-computer-vision-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -6570,8 +7385,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-computer-vision-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -6600,8 +7420,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-computer-vision-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -6625,8 +7450,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-computer-vision-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -6669,8 +7499,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-nlp-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -6693,8 +7528,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-nlp-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -6723,8 +7563,13 @@
                   "representation": "linked_geometry",
                   "interaction": "调整参数或选择向量，联动更新几何图形和公式中的对应项。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-nlp-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -6748,8 +7593,13 @@
                   "representation": "distribution_comparison",
                   "interaction": "固定随机种子，调整一个参数，对比图形和定量结果。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-nlp-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "nlp.c2.s2.lab2-softmax",
@@ -6764,7 +7614,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-softmax",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -6794,8 +7644,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-nlp-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -6819,8 +7674,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-nlp-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -6862,8 +7722,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-reinforcement-learning-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -6886,8 +7751,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-reinforcement-learning-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -6916,8 +7786,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-reinforcement-learning-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -6940,8 +7815,13 @@
                   "representation": "linked_geometry",
                   "interaction": "调整参数或选择向量，联动更新几何图形和公式中的对应项。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-reinforcement-learning-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -6970,8 +7850,13 @@
                   "representation": "distribution_comparison",
                   "interaction": "固定随机种子，调整一个参数，对比图形和定量结果。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-reinforcement-learning-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -6994,8 +7879,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-reinforcement-learning-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -7036,8 +7926,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-distributed-systems-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "distributed-systems.c1.s1.lab2-vectorclock",
@@ -7052,7 +7947,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-vectorclock",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -7077,8 +7972,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-distributed-systems-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -7107,8 +8007,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-distributed-systems-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 },
                 {
                   "id": "distributed-systems.c2.s1.lab2-raft",
@@ -7123,7 +8028,7 @@
                   "work_refs": [
                     {
                       "id": "lab2-raft",
-                      "version": "1.0.0"
+                      "version": "2.0.0"
                     }
                   ]
                 }
@@ -7148,8 +8053,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-distributed-systems-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -7178,8 +8088,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-distributed-systems-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -7202,8 +8117,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-distributed-systems-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -7246,8 +8166,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-formal-methods-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -7270,8 +8195,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-formal-methods-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -7300,8 +8230,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-formal-methods-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -7324,8 +8259,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-formal-methods-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -7354,8 +8294,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-formal-methods-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -7378,8 +8323,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-formal-methods-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -7421,8 +8371,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-advanced-algorithms-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -7445,8 +8400,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-advanced-algorithms-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -7475,8 +8435,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-advanced-algorithms-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -7499,8 +8464,13 @@
                   "representation": "distribution_comparison",
                   "interaction": "固定随机种子，调整一个参数，对比图形和定量结果。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-advanced-algorithms-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -7528,8 +8498,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-advanced-algorithms-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -7552,8 +8527,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-advanced-algorithms-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -7594,8 +8574,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-robotics-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -7618,8 +8603,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-robotics-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -7648,8 +8638,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-robotics-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -7673,8 +8668,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-robotics-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -7702,8 +8702,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-robotics-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -7726,8 +8731,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-robotics-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -7770,8 +8780,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-retrieval-mining-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -7794,8 +8809,13 @@
                   "representation": "linked_geometry",
                   "interaction": "调整参数或选择向量，联动更新几何图形和公式中的对应项。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-retrieval-mining-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -7824,8 +8844,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-retrieval-mining-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -7848,8 +8873,13 @@
                   "representation": "state_trace",
                   "interaction": "单步推进并高亮本步变化；改变一个输入条件后重算轨迹。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-retrieval-mining-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -7877,8 +8907,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-retrieval-mining-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -7901,8 +8936,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-retrieval-mining-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -7944,8 +8984,13 @@
                   "representation": "distribution_comparison",
                   "interaction": "固定随机种子，调整一个参数，对比图形和定量结果。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-privacy-crypto-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -7967,8 +9012,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-privacy-crypto-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -7997,8 +9047,13 @@
                   "representation": "distribution_comparison",
                   "interaction": "固定随机种子，调整一个参数，对比图形和定量结果。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-privacy-crypto-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -8021,8 +9076,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-privacy-crypto-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -8051,8 +9111,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-privacy-crypto-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -8075,8 +9140,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-privacy-crypto-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -8119,8 +9189,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-quantum-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -8143,8 +9218,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-quantum-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -8172,8 +9252,13 @@
                   "representation": "linked_geometry",
                   "interaction": "调整参数或选择向量，联动更新几何图形和公式中的对应项。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-quantum-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -8195,8 +9280,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-quantum-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -8225,8 +9315,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-quantum-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -8249,8 +9344,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-quantum-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -8291,8 +9391,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-bioinformatics-c1-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -8315,8 +9420,13 @@
                   "representation": "graph_trace",
                   "interaction": "选择起点或对象，逐步突出被访问的节点、边与对应理由。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-bioinformatics-c1-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -8345,8 +9455,13 @@
                   "representation": "distribution_comparison",
                   "interaction": "固定随机种子，调整一个参数，对比图形和定量结果。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-bioinformatics-c2-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -8368,8 +9483,13 @@
                   "representation": "linked_geometry",
                   "interaction": "调整参数或选择向量，联动更新几何图形和公式中的对应项。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-bioinformatics-c2-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }
@@ -8397,8 +9517,13 @@
                   "representation": "linked_views",
                   "interaction": "在两个对照实例之间切换，突出机制、适用条件和反例边界。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-bioinformatics-c3-s1",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             },
@@ -8421,8 +9546,13 @@
                   "representation": "distribution_comparison",
                   "interaction": "固定随机种子，调整一个参数，对比图形和定量结果。",
                   "acceptance": "用独立计算或反例核对关键状态；实际操作主控件并检查窄屏。",
-                  "status": "planned",
-                  "work_refs": []
+                  "status": "ready",
+                  "work_refs": [
+                    {
+                      "id": "course-bioinformatics-c3-s2",
+                      "version": "1.0.0"
+                    }
+                  ]
                 }
               ]
             }

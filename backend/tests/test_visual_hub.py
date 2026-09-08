@@ -32,12 +32,16 @@ def test_curriculum_ready_references_and_dependency_graph():
                         for ref in candidate['work_refs']:
                             entry=read_template(ref['id'],ref['version']);assert entry['builder'] in ('interactive_html','visual_spec');ready.add(ref['id'])
                     else:assert candidate['status']=='planned' and not candidate['work_refs']
-    assert len(ids)==len(set(ids)) and len(modules)>=40
+    assert len(ids)==len(set(ids)) == 246 and len(modules)==41
+    assert all(v['status']=='ready' and v['work_refs'] for m in modules.values() for c in m['chapters'] for s in c['sessions'] for v in s['visual_candidates'])
+    latest = search_catalog('哈夫曼 编码', 'animation')['templates']
+    assert len({r['id'] for r in latest}) == len(latest)
+    assert not any(r['id']=='lab2-huffman' and r['version']!='2.0.0' for r in latest)
     assert {w['id'] for w in works()} <= ready
     result=query_hub(module_id='math-calculus',limit=2)
     assert result['total']==6 and result['next_offset']==2
     assert query_hub(module_id='math-calculus',offset=2,limit=2)['sessions'][0]['id']!=result['sessions'][0]['id']
-    assert any(t['id']=='hub-derivative' for t in search_catalog('割线 导数','animation')['templates'])
+    assert any(t['id']=='hub-derivative' for t in search_catalog('割线 导数','diagram')['templates'])
     assert not search_catalog('割线 导数','animation',False)['templates']
     for w in works():
         bundle=compile_work(reference(w));assert "connect-src 'none'" in bundle['html']
@@ -68,8 +72,8 @@ def test_hub_publish_read_and_isolation(monkeypatch):
 def test_gallery_paging_filter_and_authenticated_preview(monkeypatch):
     from learnflow_core.visuals.hub import browse_works
     all_rows=browse_works(limit=50)
-    assert all_rows['total']==70 and all_rows['next_offset']==50
-    assert len(browse_works(offset=50,limit=50)['items'])==20
+    assert all_rows['total']==296 and all_rows['next_offset']==50
+    assert len(browse_works(offset=250,limit=50)['items'])==46
     huffman=browse_works(query='哈夫曼')['items']
     assert huffman and huffman[0]['id']=='lab2-huffman'
     assert all('animation' in row['kind'] for row in browse_works(kind='animation',limit=50)['items'])
@@ -79,10 +83,10 @@ def test_gallery_paging_filter_and_authenticated_preview(monkeypatch):
     monkeypatch.setattr(settings,'desktop_mode',False);monkeypatch.setattr(settings,'desktop_token','')
     with TestClient(app) as client:
         assert client.post('/api/visuals/preview',json={'id':'lab2-huffman','version':'1.0.0'}).status_code==200
-        assert client.post('/api/visuals/gallery',json={}).json()['total']==70
+        assert client.post('/api/visuals/gallery',json={}).json()['total']==296
         assert client.post('/api/visuals/compile',json={}).status_code in (401,403)
         assert client.post('/api/visuals/workspace',json={}).status_code in (401,403)
-        for row in browse_works(limit=50)['items']+browse_works(offset=50,limit=50)['items']:
+        for row in [r for offset in range(0,296,50) for r in browse_works(offset=offset,limit=50)['items']]:
             response=client.post('/api/visuals/preview',json={'id':row['id'],'version':row['version']})
             assert response.status_code==200
             if response.json()['builder']=='visual_spec':
