@@ -537,11 +537,11 @@ async def attach_context(db, row, session):
 
 async def materialize(db, row, selection):
     candidate = checked_candidate(row)
-    if row.selection and row.selection != selection and row.selection.get("action") != "discuss":
+    action = selection["action"]
+    if row.selection and row.selection != selection and (row.selection.get("action") != "discuss" or action == "discuss"):
         fail(409, "handoff_selection_conflict", "该候选已按另一选择交接，请继续原项目或创建新草稿")
     mode = candidate["project_mode"]
-    action = selection["action"]
-    if row.project_id and (row.selection or {}).get("action") != "discuss":
+    if row.project_id and ((row.selection or {}).get("action") != "discuss" or action == "discuss"):
         project = await require_owned_project(db, row.learner_id, row.project_id)
         session = await db.get(AgentSession, row.session_id)
         if not session or session.status != "active":

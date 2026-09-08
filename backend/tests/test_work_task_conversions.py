@@ -264,3 +264,39 @@ def test_llm_grounding_and_access_log_redaction(monkeypatch):
     monkeypatch.setattr(service.httpx,'AsyncClient',Client)
     fields,mode,_=asyncio.run(service.propose_brief([{'role':'user','content':'仓库测试'}],service.Brief().model_dump()))
     assert fields=={'work_context':'仓库测试'} and mode=='online'
+
+
+def test_discuss_existing_project_replay_preserves_project_scope(client):
+    original=client.post('/api/vnext-projects',json={'name':'已有学习项目','objective':'任务定义'}).json()
+    project_id=original['project']['id']
+    draft,_=create(client);draft=brief(client,draft);draft,_=generate(client,draft,recipe='domain-draft')
+    # Domain authoring proposal is experiment mode, use a matching project.
+    async def mode():
+        async with async_session() as db:
+            project=await db.get(Project,project_id);project.project_mode='experiment';await db.commit()
+    asyncio.run(mode())
+    first,request=handoff(client,draft,'discuss',project_id=project_id)
+    assert first['project_id']==project_id
+    response=client.post(f"/api/work-task-conversions/{draft['id']}/handoff",json={**request,'client_action_id':key()})
+    assert response.status_code==200,response.text
+    assert response.json()['project_id']==project_id and response.json()['session_id']==first['session_id']
+    assert client.post(f"/api/work-task-conversions/{draft['id']}/handoff",json={**request,'client_action_id':key(),'project_id':None}).status_code==409
+
+
+def test_concurrent_ticket_consumption_creates_one_project(client,monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    monkeypatch.setattr(settings,'role_package_launch_secret','test-handoff-secret-'*3)
+    draft,_=create(client);draft=brief(client,draft);draft,_=generate(client,draft)
+    handoff_data,_=handoff(client,draft);token=handoff_data['desktop_url'].split('ticket=')[1]
+    def consume(_):
+        response=client.post('/api/work-task-conversions/handoff/'+token,json={
+            'client_action_id':key(),'expected_root_hash':draft['root_hash'],'confirmed':True})
+        assert response.status_code==200,response.text
+        return response.json()['project_id']
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        ids=list(pool.map(consume,range(2)))
+    assert ids[0]==ids[1]
+    async def count():
+        async with async_session() as db:
+            return await db.scalar(select(func.count(Project.id)).where(Project.id==ids[0]))
+    assert asyncio.run(count())==1
