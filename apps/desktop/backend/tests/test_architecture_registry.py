@@ -768,6 +768,9 @@ def test_stage_support_and_file_navigation_are_registered_without_learner_writes
 def test_work_task_conversion_is_bound_and_never_mastery_evidence():
     assert DATA_CONTRACTS["work_task_design_v1"]["schema_version"] == "learnflow.work-task-design.v1"
     assert DATA_CONTRACTS["work_task_conversion_v1"]["owner"] == "tutor_agent"
+    context = DATA_CONTRACTS["work_task_conversion_context_v1"]
+    assert context["owner"] == "tutor_agent" and context["kernel_write_path"] == "none"
+    assert "api:learner_state.workspace" in context["binding_ids"]
     assert {event.id for event in EVENTS.values() if event.id.startswith("work_task_conversion_")} == {
         "work_task_conversion_created", "work_task_conversion_brief_updated",
         "work_task_conversion_generation_changed", "work_task_conversion_handoff_created",

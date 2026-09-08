@@ -48,6 +48,13 @@ REGISTRY_VERSION = "2026-09-08.3-desktop"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 DATA_CONTRACTS = {
+    "work_task_conversion_context_v1": {
+        "schema_version": "learnflow.work-task-conversion-context.v1", "owner": "tutor_agent", "origin": "builtin",
+        "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "docs/implementation/WORK_TASK_CONVERSION_CONTEXT.md",
+        "binding_ids": ["py:work_task_conversion.context", "py:work_task_conversion.projection", "frontend:work_task_conversion.context", "api:learner_state.workspace"],
+        "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "additive bounded read-only session handoff projection; owner and captured scope required, user-data messages outside history window, no source promotion or learner evidence",
+    },
     "work_task_conversion_v1": {
         "schema_version": "learnflow.work-task-conversion.v1", "owner": "tutor_agent", "origin": "builtin",
         "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "docs/implementation/WORK_TASK_CONVERSION.md",
@@ -1304,6 +1311,8 @@ _REPOSITORY_ROOT = Path(sys._MEIPASS) if getattr(sys, "frozen", False) else Path
 
 _PYTHON_BINDING_TARGETS = {
     "py:desktop.conversion_import": ("app.services.cloud_conversion_import", "import_handoff"),
+    "py:work_task_conversion.context": ("learnflow_core.agent_observations", "read_work_task_conversion_context"),
+    "py:work_task_conversion.projection": ("learnflow_core.work_task_conversion_context", "conversion_context_projection"),
     "py:work_task_conversion.create": ("learnflow_core.work_task_conversions", "create"),
     "py:work_task_conversion.clarify": ("learnflow_core.work_task_conversions", "add_message"),
     "py:work_task_conversion.brief": ("learnflow_core.work_task_conversions", "update_brief"),
@@ -1526,6 +1535,7 @@ _FRONTEND_HANDLER_TARGETS = {
     "native:desktop.conversion_handoff": ("desktop/src-tauri/src/conversion_handoff.rs", "parse_conversion_ticket", ""),
     "frontend:platform.open": ("frontend/src/runtime-client.ts", "openPlatformWorkspace", ""),
     "frontend:cloud.identity": ("frontend/src/runtime-client.ts", "isCloudDesktopRuntime", ""),
+    "frontend:work_task_conversion.context": ("packages/learning-client/src/work-task-conversion/context.ts", "conversionContextMessage", ""),
     "frontend:agent_runtime.run": ("frontend/server/agent-runtime.ts", "runTutorAgentTurn", ""),
     "frontend:plugin.educational_visuals": ("frontend/plugins/educational_visuals/server.ts", "plugin", ""),
     "frontend:visual_workflow.run": ("packages/learning-client/src/visuals/workflow.ts", "runVisualWorkflow", ""),
