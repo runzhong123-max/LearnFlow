@@ -73,6 +73,7 @@ import {
 import ComposerCapabilityPicker from './ComposerCapabilityPicker'
 import AuthGate, { type AuthGateSession } from './AuthGate'
 import DesktopPet from './DesktopPet.tsx'
+import DesktopConversionImport from './DesktopConversionImport.tsx'
 import AccountModelSettings from './AccountModelSettings'
 import {
   activeLearningPlanProjection,
@@ -3939,6 +3940,10 @@ function App({ auth }: { auth: AuthGateSession }) {
 
   return (
     <div className="app-shell">
+      <DesktopConversionImport learnerId={auth.account.learner_id} onImported={(projectId, title) => {
+        refreshFormalProjects()
+        openTab({ id: `project:${projectId}`, kind: 'project', title, projectId })
+      }} />
       <div className="workspace">
         <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
           <button className="sidebar-brand" type="button" onClick={newConversation} aria-label="新建 LearnFlow 对话">
