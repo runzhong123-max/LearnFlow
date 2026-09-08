@@ -1,4 +1,5 @@
 import { serverMayReadProject } from "@/lib/access-server";
+import { publicationBlockers, validateBuildResult } from "@/lib/packages/validator";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProjectWorkspace } from "@/lib/projects/repository";
@@ -29,7 +30,7 @@ export default async function VersionPage({ params }: { params: Promise<{ projec
     initialVersions={versions.map((version) => {
       const summary: Partial<typeof version> = { ...version };
       delete summary.result;
-      return summary as Omit<typeof version, "result">;
+      return { ...summary, publicationBlockers: [...validateBuildResult(version.result).hardErrors, ...publicationBlockers(version.result)] } as Omit<typeof version, "result"> & { publicationBlockers: string[] };
     })}
     initialTags={tags}
     initialReleases={releases}

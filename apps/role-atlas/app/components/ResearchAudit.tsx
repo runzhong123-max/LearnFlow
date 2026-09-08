@@ -11,7 +11,7 @@ const categoryLabels: Record<WebSearchCategory, string> = {
 };
 
 const dispositionLabels: Record<WebResearchReport["candidates"][number]["disposition"], string> = {
-  selected: "已入选",
+  selected: "已选入研究，非结论采纳",
   duplicate_content: "正文重复",
   low_relevance: "岗位相关性不足",
   domain_limit: "同域名配额",
@@ -32,7 +32,8 @@ export default function ResearchAudit({ report }: { report: WebResearchReport })
         </span>)}
       </div> : null}
       <details className="research-trace">
-        <summary>查询与候选审计 <small>{report.queries.length} 查询 · {selected}/{report.candidateCount} 入选 · {report.failures.length} 失败</small></summary>
+        <summary>搜索候选与筛选记录（含未采用资料） <small>{report.queries.length} 查询 · {selected}/{report.candidateCount} 进入研究 · {report.failures.length} 失败</small></summary>
+        <p>本列表记录搜索候选和筛选过程。未入选的结果不属于已采纳证据；入选结果是否实际支持岗位结论，以证据绑定为准。</p>
         <div className="research-query-list">
           {report.queries.map((query) => <article key={query.id}>
             <span><b>{categoryLabels[query.category]}</b><small>{query.query}</small></span>

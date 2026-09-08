@@ -1,3 +1,6 @@
+import type { StaticRolePackageBundle } from "@/lib/packages/types";
+import { assertReleaseQuality, validateReleaseArtifact } from "./quality";
+
 /** Mutable publication policy; immutable releases and their content hashes stay intact. */
 export async function changeHubPublication(d1: D1Database, input: {
   packageLineId: string; action: "withdraw_from_hub" | "restore_to_hub";
@@ -12,11 +15,15 @@ export async function changeHubPublication(d1: D1Database, input: {
   if (line.visibility === visibility) return { ...line, changed: false };
   if (line.registry_version !== input.expectedRegistryVersion) throw new Error("PUBLICATION_CONFLICT");
   const release = await d1.prepare(`SELECT r.project_id, r.status, r.published_at,
-    json_extract(a.content, '$.manifest.visibility') AS artifact_visibility
+    json_extract(a.content, '$.manifest.visibility') AS artifact_visibility, a.content AS artifact_content
     FROM package_releases r JOIN package_artifacts a ON a.root_hash=r.artifact_root_hash
     WHERE r.id=? AND r.package_line_id=?`).bind(input.expectedReleaseId, line.id)
-    .first<{ project_id: string | null; status: string; published_at: string | null; artifact_visibility: string }>();
+    .first<{ project_id: string | null; status: string; published_at: string | null; artifact_visibility: string; artifact_content: string }>();
   if (!release || release.status !== "published" || !release.published_at || release.artifact_visibility !== "public") throw new Error("PUBLIC_RELEASE_REQUIRED");
+  if (input.action === "restore_to_hub") {
+    const bundle = JSON.parse(release.artifact_content) as StaticRolePackageBundle;
+    assertReleaseQuality(await validateReleaseArtifact(bundle));
+  }
   const now = new Date().toISOString();
   const guard = `id=? AND registry_version=? AND recommended_release_id=? AND visibility=?`;
   const args = [line.id, line.registry_version, input.expectedReleaseId, line.visibility];

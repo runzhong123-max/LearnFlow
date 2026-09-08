@@ -8,6 +8,9 @@ export type PackageValidationReport = {
   valid: boolean;
   hardErrors: string[];
   warnings: string[];
+  /** File integrity and content readiness are separate checks. */
+  publishable?: boolean;
+  publicationBlockers?: string[];
   stats: Record<string, number | string>;
 };
 

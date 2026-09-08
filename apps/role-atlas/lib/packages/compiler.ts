@@ -2,7 +2,7 @@ import type { ColdStartBuildResult, SourceAsset, SourceSegment } from "@/lib/bui
 import { canonicalStringify, sha256Hex } from "@/lib/versioning/canonical";
 import type { CompiledRolePackage, EvidencePolicy, PackageValidationReport, PackageVisibility, StaticRolePackageBundle, StaticRolePackageManifest } from "./types";
 import { normalizeRolePackage, refreshRolePackageManifest } from "./role-package-manifest";
-import { validateBuildResult, validatePackageBundle } from "./validator";
+import { publicationBlockers, validateBuildResult, validatePackageBundle } from "./validator";
 
 const entrypoints = {
   snapshot: "snapshot.json",
@@ -19,6 +19,7 @@ const entrypoints = {
 function projectSources(input: ColdStartBuildResult, visibility: PackageVisibility, policy: EvidencePolicy) {
   if (visibility !== "public" || policy === "full") return input.sources;
   const privateSourceIds = new Set(input.sources.assets.filter((asset) => asset.visibility === "project_private").map((asset) => asset.id));
+  const privateSegmentIds = new Set(input.sources.segments.filter((segment) => privateSourceIds.has(segment.sourceId)).map((segment) => segment.id));
   const assets: SourceAsset[] = input.sources.assets.map((asset) => privateSourceIds.has(asset.id)
     ? {
       ...asset,
@@ -26,12 +27,27 @@ function projectSources(input: ColdStartBuildResult, visibility: PackageVisibili
       locator: undefined,
       publisher: policy === "redacted" ? undefined : asset.publisher,
       domain: undefined,
+      workspaceEvidence: undefined,
     }
     : asset);
   const segments: SourceSegment[] = input.sources.segments.map((segment) => privateSourceIds.has(segment.sourceId)
-    ? { ...segment, text: "[非公开证据内容未随公开岗位包分发]" }
+    ? { ...segment, text: "[非公开证据内容未随公开岗位包分发]", locator: undefined, section: undefined, paragraph: undefined }
     : segment);
-  return { ...input.sources, assets, segments };
+  return { ...input.sources, assets, segments,
+    mentions: input.sources.mentions?.filter((mention) => !privateSegmentIds.has(mention.sourceSegmentId)),
+    relationPropositions: input.sources.relationPropositions?.filter((proposition) => !privateSegmentIds.has(proposition.sourceSegmentId)),
+  };
+}
+
+function redactPrivateQuotes(value: unknown, privateSegmentIds: Set<string>): void {
+  if (!value || typeof value !== "object") return;
+  if (Array.isArray(value)) { value.forEach((item) => redactPrivateQuotes(item, privateSegmentIds)); return; }
+  const item = value as Record<string, unknown>;
+  if (typeof item.segmentId === "string" && privateSegmentIds.has(item.segmentId) && typeof item.quote === "string") {
+    item.quote = "[非公开证据原文未随公开岗位包分发]";
+    delete item.start; delete item.end;
+  }
+  Object.values(item).forEach((child) => redactPrivateQuotes(child, privateSegmentIds));
 }
 
 function objectIndex(result: ColdStartBuildResult) {
@@ -61,17 +77,26 @@ export async function compileStaticRolePackage(input: {
 }): Promise<CompiledRolePackage> {
   const result = normalizeRolePackage(structuredClone(input.result));
   result.sources = projectSources(result, input.visibility, input.evidencePolicy);
-  refreshRolePackageManifest(result, { packageId: input.packageId, packageVersion: input.packageVersion, status: "ready" });
+  if (input.visibility === "public" && input.evidencePolicy !== "full") {
+    const privateSources = new Set(result.sources.assets.filter((source) => source.visibility === "project_private").map((source) => source.id));
+    redactPrivateQuotes(result, new Set(result.sources.segments.filter((segment) => privateSources.has(segment.sourceId)).map((segment) => segment.id)));
+  }
+  refreshRolePackageManifest(result, { packageId: input.packageId, packageVersion: input.packageVersion });
 
   const buildValidation = validateBuildResult(result);
   if (input.visibility === "public" && input.evidencePolicy === "full" && result.sources.assets.some((asset) => asset.visibility === "project_private")) {
     buildValidation.hardErrors.push("公开岗位包不能以 full 策略分发私有工作区证据。 ");
   }
+  const blockers = publicationBlockers(result);
+  const publishable = buildValidation.hardErrors.length === 0 && blockers.length === 0;
+  refreshRolePackageManifest(result, { status: publishable ? "ready" : "candidate" });
   const preliminaryReport: PackageValidationReport = {
     protocolVersion: "3.0.0",
     valid: buildValidation.hardErrors.length === 0,
     hardErrors: buildValidation.hardErrors,
     warnings: buildValidation.warnings,
+    publishable,
+    publicationBlockers: blockers,
     stats: {
       semanticNodes: result.semantic.nodes.length,
       semanticEdges: result.semantic.edges.length,
@@ -119,6 +144,7 @@ export async function compileStaticRolePackage(input: {
     stats: { ...preliminaryReport.stats, ...bundleValidation.stats },
   };
   validation.valid = validation.hardErrors.length === 0;
+  validation.publishable = validation.valid && publishable;
   return { bundle, result, validation };
 }
 

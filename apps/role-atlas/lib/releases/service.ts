@@ -1,4 +1,5 @@
 import { projectReleasePackageId } from "./package-identity";
+import { assertReleaseQuality, validateReleaseArtifact } from "./quality";
 import { and, desc, eq } from "drizzle-orm";
 import { ensureAppSchema, getD1, getDb } from "@/db";
 import { packageLines, packageReleases, releaseEvents } from "@/db/schema";
@@ -15,7 +16,15 @@ const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:
 
 export async function listProjectReleases(projectId: string) {
   await ensureAppSchema();
-  return getDb().select().from(packageReleases).where(eq(packageReleases.projectId, projectId)).orderBy(desc(packageReleases.createdAt));
+  const releases = await getDb().select().from(packageReleases).where(eq(packageReleases.projectId, projectId)).orderBy(desc(packageReleases.createdAt));
+  return Promise.all(releases.map(describeRelease));
+}
+
+export async function describeRelease(release: typeof packageReleases.$inferSelect) {
+  const artifact = release.artifactRootHash ? await getPackageArtifact(release.artifactRootHash) : null;
+  const validation = artifact ? await validateReleaseArtifact(artifact.bundle) : null;
+  return { ...release, visibility: artifact?.bundle.manifest.visibility ?? null, evidencePolicy: artifact?.bundle.manifest.evidencePolicy ?? null,
+    validation, canPublish: release.status === "ready" && validation?.publishable === true };
 }
 
 export async function prepareRelease(input: {
@@ -90,12 +99,12 @@ export async function prepareRelease(input: {
     });
     await putPackageArtifact(compiled.bundle);
     const validationReportHash = await sha256Hex(canonicalStringify(compiled.validation));
-    if (!compiled.validation.valid) {
+    if (!compiled.validation.valid || !compiled.validation.publishable) {
       await db.update(packageReleases).set({
         status: "failed",
         artifactRootHash: compiled.bundle.manifest.rootHash,
         validationReportHash,
-        error: compiled.validation.hardErrors.join("\n"),
+        error: [...compiled.validation.hardErrors, ...(compiled.validation.publicationBlockers || [])].join("\n"),
       }).where(eq(packageReleases.id, id));
     } else {
       await db.update(packageReleases).set({
@@ -111,19 +120,22 @@ export async function prepareRelease(input: {
   return release;
 }
 
-export async function publishRelease(input: { releaseId: string; actorKind?: "user" | "agent" | "system" }) {
+export async function publishRelease(input: { releaseId: string; expectedVisibility?: PackageVisibility; actorKind?: "user" | "agent" | "system" }) {
   await ensureAppSchema();
   const db = getDb();
   const [release] = await db.select().from(packageReleases).where(eq(packageReleases.id, input.releaseId)).limit(1);
   if (!release) throw new Error("RELEASE_NOT_FOUND");
   const [line] = await db.select().from(packageLines).where(eq(packageLines.id, release.packageLineId)).limit(1);
   if (!line) throw new Error("PACKAGE_LINE_NOT_FOUND");
-  if (release.status === "published" && line.recommendedReleaseId === release.id) return release;
-  if (release.status !== "ready") throw new Error("RELEASE_NOT_READY");
+  const completed = release.status === "published" && line.recommendedReleaseId === release.id;
+  if (release.status !== "ready" && !completed) throw new Error("RELEASE_NOT_READY");
   const artifact = release.artifactRootHash ? await getPackageArtifact(release.artifactRootHash) : null;
   if (!artifact) throw new Error("RELEASE_ARTIFACT_NOT_FOUND");
   const visibility = artifact.bundle.manifest.visibility;
   const evidencePolicy = artifact.bundle.manifest.evidencePolicy;
+  if (input.expectedVisibility && input.expectedVisibility !== visibility) throw new Error("RELEASE_VISIBILITY_CONFLICT");
+  assertReleaseQuality(await validateReleaseArtifact(artifact.bundle));
+  if (completed) return release;
   const now = new Date().toISOString();
   const expected = line.recommendedReleaseId || "";
   const d1 = getD1();
@@ -175,7 +187,12 @@ export async function publishProjectVersionToHub(input: {
     },
   });
   if (release.status === "failed") return release;
-  if (release.status === "published") return release;
+  if (release.status === "published") {
+    const artifact = release.artifactRootHash ? await getPackageArtifact(release.artifactRootHash) : null;
+    if (!artifact) throw new Error("RELEASE_ARTIFACT_NOT_FOUND");
+    assertReleaseQuality(await validateReleaseArtifact(artifact.bundle));
+    return release;
+  }
   if (release.status !== "ready") throw new Error("RELEASE_NOT_READY");
   return publishRelease({ releaseId: release.id, actorKind: "user" });
 }
@@ -192,18 +209,26 @@ export async function rollbackRelease(input: {
   const [target] = await db.select().from(packageReleases).where(and(eq(packageReleases.id, input.targetReleaseId), eq(packageReleases.packageLineId, input.packageLineId))).limit(1);
   if (!line || !target) throw new Error("RELEASE_NOT_FOUND");
   if (target.status !== "published") throw new Error("TARGET_RELEASE_NOT_PUBLISHED");
+  const artifact = target.artifactRootHash ? await getPackageArtifact(target.artifactRootHash) : null;
+  if (!artifact) throw new Error("RELEASE_ARTIFACT_NOT_FOUND");
+  assertReleaseQuality(await validateReleaseArtifact(artifact.bundle));
+  // Changing the recommended version must not undo an owner's withdrawal.
+  const visibilityRank = { private: 0, unlisted: 1, public: 2 } as const;
+  const rollbackVisibility = visibilityRank[line.visibility] < visibilityRank[artifact.bundle.manifest.visibility]
+    ? line.visibility : artifact.bundle.manifest.visibility;
   const expected = input.expectedCurrentReleaseId === undefined ? line.recommendedReleaseId || "" : input.expectedCurrentReleaseId || "";
   const now = new Date().toISOString();
   const d1 = getD1();
   const results = await d1.batch([
-    d1.prepare(`UPDATE package_lines SET recommended_release_id=?, registry_version=registry_version+1, updated_at=?
-      WHERE id=? AND COALESCE(recommended_release_id, '')=?`).bind(target.id, now, line.id, expected),
-    d1.prepare(`UPDATE projects SET current_release_id=?, updated_at=? WHERE id=?`)
-      .bind(target.id, now, target.projectId),
+    d1.prepare(`UPDATE package_lines SET recommended_release_id=?, visibility=?, evidence_policy=?, registry_version=registry_version+1, updated_at=?
+      WHERE id=? AND COALESCE(recommended_release_id, '')=?`).bind(target.id, rollbackVisibility, artifact.bundle.manifest.evidencePolicy, now, line.id, expected),
+    d1.prepare(`UPDATE projects SET current_release_id=?, updated_at=? WHERE id=? AND EXISTS (
+      SELECT 1 FROM package_lines WHERE id=? AND recommended_release_id=? AND updated_at=?
+    )`).bind(target.id, now, target.projectId, line.id, target.id, now),
     d1.prepare(`INSERT INTO release_events (release_id, package_line_id, project_id, action, actor_kind, detail_json, created_at)
       SELECT ?, ?, ?, 'release.rolled_back', ?, ?, ? WHERE EXISTS (
-        SELECT 1 FROM package_lines WHERE id=? AND recommended_release_id=?
-      )`).bind(target.id, line.id, target.projectId, input.actorKind || "user", JSON.stringify({ previousReleaseId: line.recommendedReleaseId }), now, line.id, target.id),
+        SELECT 1 FROM package_lines WHERE id=? AND recommended_release_id=? AND updated_at=?
+      )`).bind(target.id, line.id, target.projectId, input.actorKind || "user", JSON.stringify({ previousReleaseId: line.recommendedReleaseId }), now, line.id, target.id, now),
   ]);
   if ((results[0].meta.changes || 0) === 0) throw new Error("ROLLBACK_CONFLICT");
   return target;

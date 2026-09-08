@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { SemanticDiff } from "@/lib/versioning/types";
+import type { PackageValidationReport, PackageVisibility } from "@/lib/packages/types";
+import { releaseAction, releaseStatusLabel } from "@/lib/releases/presentation";
 import "./version-adoption.css";
 
 export type VersionSummary = {
@@ -19,10 +21,11 @@ export type VersionSummary = {
   message: string;
   authorKind: string;
   createdAt: string;
+  publicationBlockers?: string[];
 };
 
 export type TagRow = { id: string; name: string; targetVersionId: string; description: string; createdAt: string };
-export type ReleaseRow = { id: string; packageLineId: string; sourceProjectVersionId: string | null; packageVersion: string; status: string; artifactRootHash: string | null; error: string | null; publishedAt: string | null; createdAt: string };
+export type ReleaseRow = { id: string; packageLineId: string; sourceProjectVersionId: string | null; packageVersion: string; status: string; artifactRootHash: string | null; error: string | null; publishedAt: string | null; createdAt: string; visibility?: PackageVisibility | null; evidencePolicy?: string | null; validation?: PackageValidationReport | null; canPublish?: boolean };
 
 export default function VersionReleaseWorkspace({
   project,
@@ -117,9 +120,11 @@ export default function VersionReleaseWorkspace({
     setBusy(key); setNotice("");
     try {
       const response = await request;
-      const payload = await response.json() as { error?: string };
+      const payload = await response.json() as { error?: string; release?: ReleaseRow };
+      if (payload.release) rememberRelease(payload.release);
+      if (payload.release?.status === "failed") throw new Error(payload.release.error || "岗位包尚未通过校验；项目中的候选成果仍保留，可继续迭代。");
       if (!response.ok) throw new Error(payload.error || "操作失败");
-      setNotice("操作已完成，版本与发布记录已更新。");
+      setNotice(payload.release ? payload.release.status === "ready" ? "编译完成且通过质量校验。请按此产物的可见范围完成保存或发布。" : payload.release.visibility === "public" ? "岗位包已发布到公开图谱市场。" : "已保存到我的岗位包，仅自己可见。" : "操作已完成，版本记录已更新。");
       if (onChanged) onChanged(); else router.refresh();
       return payload;
     } catch (error) {
@@ -138,11 +143,13 @@ export default function VersionReleaseWorkspace({
         const payload = await prepared.json() as { release?: ReleaseRow; error?: string };
         if (payload.release) rememberRelease(payload.release);
         if (!prepared.ok || !payload.release?.id) throw new Error(payload.error || payload.release?.error || "岗位包编译未完成，请查看保留的编译记录。");
+        if (payload.release.validation?.publishable !== true || !["ready", "published"].includes(payload.release.status)) throw new Error(payload.release.error || "质量校验未通过，请继续迭代当前项目版本。");
+        if (payload.release.visibility !== visibility) throw new Error("编译产物的可见范围与当前选择不一致，请重新编译。");
         if (payload.release.sourceProjectVersionId !== selected.id) throw new Error("此岗位包版本号已对应其他项目版本，请修改版本号后重新保存。");
         preparedId = payload.release.id;
         setPendingPublish({ releaseId: preparedId, key: publishKey });
       }
-      const published = await fetch("/api/releases", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "publish", releaseId: preparedId }) });
+      const published = await fetch("/api/releases", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: visibility === "private" ? "save_private" : "publish", expectedVisibility: visibility, releaseId: preparedId }) });
       const payload = await published.json() as { release?: ReleaseRow; error?: string };
       if (payload.release) rememberRelease(payload.release);
       if (!published.ok) throw new Error(payload.error || "岗位包编译已保存，发布步骤暂未完成。");
@@ -223,21 +230,24 @@ export default function VersionReleaseWorkspace({
             <header><PackageCheck size={15} /><span><b>保存与发布岗位包</b><small>固定选中版本，按你选择的可见范围保存成果</small></span></header>
             <div className="release-form"><label>岗位包版本号<input disabled={Boolean(busy)} value={packageVersion} onChange={(event) => setPackageVersion(event.target.value)} /></label><label>可见范围<select disabled={Boolean(busy)} value={visibility} onChange={(event) => setVisibility(event.target.value as typeof visibility)}><option value="private">仅自己可见</option><option value="public">公开图谱市场</option></select></label><label>证据策略<select disabled={Boolean(busy)} value={evidencePolicy} onChange={(event) => setEvidencePolicy(event.target.value as typeof evidencePolicy)}><option value="metadata">只公开元数据</option><option value="redacted">脱敏</option><option value="full">完整</option></select></label></div>
             <p className="release-visibility-note">{visibility === "private" ? "仅自己可见：成果保存到个人岗位包中心，不进入公开市场。" : "公开发布：此岗位包将可被其他用户发现；原始证据按所选策略处理。"}</p>
+            {selected.publicationBlockers?.length ? <div role="status"><b>此版本仍需完善，暂不能保存为正式岗位包或公开发布</b><ul>{selected.publicationBlockers.map((message) => <li key={message}>{message}</li>)}</ul><p>候选成果已保留在项目历史中，可返回对话继续迭代。</p></div> : null}
             <div className="release-publish-actions">
               <button className="secondary" disabled={Boolean(busy)} onClick={() => void action("prepare", fetch("/api/releases", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "prepare", projectId: project.id, projectVersionId: selected.id, packageVersion, visibility, evidencePolicy }) }))}>仅编译并校验</button>
-              <button data-testid="save-or-publish-package" disabled={Boolean(busy)} onClick={() => void publishSelected()}><Rocket size={13} />{busy === "save-release" ? "正在保存…" : pendingPublish?.key === publishKey ? visibility === "private" ? "继续保存到我的岗位包" : "继续发布到公开图谱市场" : visibility === "private" ? "保存到我的岗位包" : "发布到公开图谱市场"}</button>
+              <button data-testid="save-or-publish-package" disabled={Boolean(busy) || Boolean(selected.publicationBlockers?.length)} onClick={() => void publishSelected()}><Rocket size={13} />{busy === "save-release" ? "正在保存…" : pendingPublish?.key === publishKey ? visibility === "private" ? "继续保存到我的岗位包" : "继续发布到公开图谱市场" : visibility === "private" ? "保存到我的岗位包" : "发布到公开图谱市场"}</button>
             </div>
           </article>
         </> : <p>项目尚无不可变版本。</p>}
       </section>
       <aside className="release-list">
-        <header><PackageCheck size={15} /><span><b>Release</b><small>发布失败不会改变当前推荐版本</small></span></header>
+        <header><PackageCheck size={15} /><span><b>岗位包记录</b><small>私有保存和公开发布按编译时的范围执行；未通过校验的成果保留在项目中</small></span></header>
         {releases.map((release) => <article key={release.id} className={release.id === project.currentReleaseId ? "current" : ""}>
-          <span><b>v{release.packageVersion}</b><i>{release.status}</i></span>
+          <span><b>v{release.packageVersion}</b><i>{releaseStatusLabel(release.status, release.visibility)}</i></span>
+          <small>{release.visibility === "public" ? "公开图谱市场" : release.visibility === "private" ? "仅自己可见" : release.visibility === "unlisted" ? "不公开列出" : "尚未生成可校验产物"}</small>
           <small>{new Date(release.createdAt).toLocaleString("zh-CN")}</small>
           {release.error ? <p>{release.error}</p> : null}
+          {release.status === "ready" && !release.canPublish ? <p role="status">当前内容未通过发布质量校验，请返回项目继续完善。{release.validation?.publicationBlockers?.join(" ")}</p> : null}
           <div>
-            {release.status === "ready" ? <button disabled={busy === release.id} onClick={() => void action(release.id, fetch("/api/releases", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "publish", releaseId: release.id }) }))}><CheckCircle2 size={12} /> 发布</button> : null}
+            {release.status === "ready" && releaseAction(release.visibility) ? <button disabled={Boolean(busy) || !release.canPublish} onClick={() => void action(release.id, fetch("/api/releases", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: releaseAction(release.visibility)!.action, expectedVisibility: release.visibility, releaseId: release.id }) }))}><CheckCircle2 size={12} /> {releaseAction(release.visibility)!.label}</button> : null}
             {release.status === "published" && release.id !== project.currentReleaseId ? <button disabled={busy === `rollback:${release.id}`} onClick={() => void action(`rollback:${release.id}`, fetch("/api/releases", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "rollback", packageLineId: release.packageLineId, targetReleaseId: release.id, expectedCurrentReleaseId: project.currentReleaseId }) }))}><RotateCcw size={12} /> 回滚到此版</button> : null}
             {release.artifactRootHash && ["ready", "published", "deprecated"].includes(release.status) ? <a href={`/api/releases/${release.id}/export`}><Download size={12} /> 导出</a> : null}
           </div>

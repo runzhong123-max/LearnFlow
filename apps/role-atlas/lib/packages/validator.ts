@@ -9,6 +9,27 @@ function duplicates(values: string[]) {
   return [...new Set(values.filter((value) => seen.has(value) || !seen.add(value)))];
 }
 
+/** A syntactically valid candidate is not necessarily a complete role package. */
+export function publicationBlockers(result: ColdStartBuildResult): string[] {
+  const blockers: string[] = [];
+  const nodes = result.semantic.nodes.filter((node) => node.lifecycle !== "rejected");
+  const required = [["market_role", "岗位定义"], ["task", "典型任务"], ["capability", "能力"], ["knowledge_skill", "知识技能"]] as const;
+  for (const [type, label] of required) if (!nodes.some((node) => node.type === type)) blockers.push(`缺少${label}，请先继续完善岗位包。`);
+  if (!result.semantic.edges.length) blockers.push("缺少岗位结构关系。");
+  if (!result.process.scenarios.length || !result.process.nodes.length || !result.process.bridges.length) blockers.push("缺少完整工作场景及任务关联。");
+  if (!result.sources.evidenceBindings.length) blockers.push("缺少实际绑定的来源证据。");
+  for (const [key, label] of [["structural", "结构"], ["semantic", "语义"], ["evidence", "证据"], ["temporal", "时间边界"], ["process", "工作过程"]] as const) {
+    const report = result.validation?.[key];
+    if (!report?.passed) blockers.push(...(report?.issues.length ? report.issues : [`${label}校验尚未通过。`]));
+  }
+  if (!result.validation?.publishable) blockers.push("当前项目版本尚未通过发布质量校验，请先迭代解决阻塞问题。");
+  blockers.push(...result.audit.issues.filter((issue) => issue.severity === "error").map((issue) => `${issue.title}：${issue.detail}`));
+  if (result.audit.inspection && (!result.audit.inspection.protocolValid || result.audit.inspection.hardBlockerIds.length)) blockers.push("岗位包检查仍存在阻塞问题。");
+  const excluded = new Set(result.sources.assets.filter((source) => ["quarantined", "rejected"].includes(source.qualification?.status || "")).map((source) => source.id));
+  if (result.sources.evidenceBindings.some((binding) => excluded.has(binding.sourceId))) blockers.push("已排除的来源仍被用作证据，请先修复证据绑定。");
+  return [...new Set(blockers)];
+}
+
 export function validateBuildResult(result: ColdStartBuildResult) {
   const hardErrors: string[] = [];
   const warnings: string[] = [];
