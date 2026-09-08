@@ -1,3 +1,4 @@
+import { readTabLayout, saveTabLayout, consumeLayoutReset, withoutTabLayout } from './workspace-layout.ts'
 import { conversionMessagePresentation } from '../../packages/learning-client/src/work-task-conversion/presentation.ts'
 import { taskLearningFiles, fileKindForStage, fileProgressMessage } from './learning-file-flow'
 import { ecosystemEntryPath } from './ecosystem-entry.ts'
@@ -521,9 +522,12 @@ function initialState(): PersistedState {
 function restoreState(learnerId: number): PersistedState {
   try {
     isolateLegacyWorkspaceCache(localStorage)
-    const value = JSON.parse(localStorage.getItem(learnerWorkspaceStorageKey(learnerId)) || 'null') as Partial<PersistedState> | null
+    const cached = JSON.parse(localStorage.getItem(learnerWorkspaceStorageKey(learnerId)) || 'null') as Partial<PersistedState> | null
+    const resetLayout = consumeLayoutReset(sessionStorage, learnerId)
+    const layout = readTabLayout(sessionStorage, learnerId)
+    const value = cached ? { ...cached, tabs: (layout?.tabs || []) as WorkspaceTab[], activeTabId: layout?.activeTabId, splitTabId: layout?.splitTabId } : null
     if (!value || !Array.isArray(value.conversations) || value.conversations.length === 0) return initialState()
-    const conversations = value.conversations.map(conversation => {
+    const conversations: Conversation[] = value.conversations.map(conversation => {
       const sheets = sanitizePaperSheets<Message>(conversation.sheets)
       const restored = {
         ...conversation,
@@ -553,8 +557,19 @@ function restoreState(learnerId: number): PersistedState {
     const tabs = Array.isArray(value.tabs)
       ? value.tabs.filter(tab => ['visual-hub', 'settings', 'projects', 'project', 'learning-path', 'ecosystem', 'profile', 'tasks', 'review', 'learning-files', 'lecture-file', 'practice-file'].includes(tab?.kind) || (tab?.kind === 'chat' && tab?.conversationId && conversationIds.has(tab.conversationId)))
       : []
-    let safeTabs = tabs.length > 0 ? tabs.slice(-12) : [chatTab(conversations[0])]
-    const routeTab = tabFromCurrentPath(conversations)
+    const currentPages = [VISUAL_HUB_TAB, SETTINGS_TAB, PROJECTS_TAB, LEARNING_PATH_TAB, ECOSYSTEM_TAB, PROFILE_TAB, TASKS_TAB, REVIEW_TAB, LEARNING_FILES_TAB]
+    const validTabs = tabs.filter(tab => !['lecture-file', 'practice-file'].includes(tab.kind) || Boolean(tab.fileRef))
+      .map(tab => currentPages.find(page => page.kind === tab.kind) || (tab.kind === 'chat' ? chatTab(conversations.find(item => item.id === tab.conversationId)!) : tab))
+    const routeTab = resetLayout ? undefined : tabFromCurrentPath(conversations)
+    let safeTabs = validTabs.slice(-12)
+    if (!safeTabs.length) {
+      if (routeTab) safeTabs = [routeTab]
+      else {
+        const fresh = createConversation()
+        conversations.unshift(fresh)
+        safeTabs = [chatTab(fresh)]
+      }
+    }
     if (routeTab && !safeTabs.some(tab => tab.id === routeTab.id)) safeTabs = [...safeTabs, routeTab].slice(-12)
     const activeTabId = routeTab?.id || (safeTabs.some(tab => tab.id === value.activeTabId)
       ? String(value.activeTabId)
@@ -654,7 +669,7 @@ function WorkspaceIcon({ kind }: { kind: WorkspaceTab['kind'] }) {
 
 function App({ auth }: { auth: AuthGateSession }) {
   const [workspace, setWorkspace] = useState<PersistedState>(() => restoreState(auth.account.learner_id))
-  const [drafts, setDrafts] = useState<Record<string, string>>({})
+  const [drafts, setDrafts] = useState<Record<string, string>>(() => readTabLayout(sessionStorage, auth.account.learner_id)?.drafts || {})
   const [pluginDraftReferences, setPluginDraftReferences] = useState<Record<string, LearnFlowPluginObject[]>>({})
   const [toolChoices, setToolChoices] = useState<Record<string, TutorToolChoice>>({})
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -701,12 +716,16 @@ function App({ auth }: { auth: AuthGateSession }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem(learnerWorkspaceStorageKey(auth.account.learner_id), JSON.stringify(workspace))
+      localStorage.setItem(learnerWorkspaceStorageKey(auth.account.learner_id), JSON.stringify(withoutTabLayout(workspace)))
     } catch {
       // The formal backend remains authoritative when browser storage is
       // unavailable or over quota.
     }
   }, [auth.account.learner_id, workspace])
+
+  useEffect(() => {
+    saveTabLayout(sessionStorage, auth.account.learner_id, { tabs: workspace.tabs, activeTabId: workspace.activeTabId, splitTabId: workspace.splitTabId, drafts })
+  }, [auth.account.learner_id, workspace.tabs, workspace.activeTabId, workspace.splitTabId, drafts])
 
   const refreshFormalProjects = () => {
     void listFormalProjects()
