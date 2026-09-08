@@ -30,6 +30,8 @@ Tutor 负责澄清意图与接续控制，`learning_design_agent` 负责候选�
 
 ## API 与状态
 
+Role Atlas 的「典型任务」详情标题区在关系雷达和事理流程视角均提供「转为学习任务」入口，与总雷达节点卡片复用同一交接函数。私有项目按当前对话的固定 projectVersionId 与 snapshotId 查找 ready/published 制品，不依赖推荐发布版本；没有可用制品时复用现有 prepare API 编译私有、metadata 制品，以源版本 SHA-256 形成稳定版本号，重试复用，不调用 publish 或更改市场可见性。编译失败阻止跳转，切换任务/对话/版本取消旧交接；服务端仍校验 ownership、节点及签名来源。Contract impact：仅补齐既有岗位准备与转换能力的 UI 接线，无 API/schema、注册表版本、主 Agent 或五核语义变化。
+
 所有 `/api/work-task-conversions` 路由要求当前 learner 身份与现有 CSRF/来源校验。列表和详情只能看到自己的草稿。修改传 `expected_revision`，生成和接续传 `expected_root_hash` 与 `confirmed: true`；`client_action_id` 幂等键防止重复操作。岗位包同一签名 launchId 在同一 learner 下也幂等。
 
 | 路由 | 用途 |

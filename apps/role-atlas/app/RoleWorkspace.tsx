@@ -61,6 +61,7 @@ import { SEARCH_PROVIDER_SESSION_KEY, type SearchProviderConfig } from "@/lib/se
 import type { RoleSkillId, WorkspaceSkillId } from "@/lib/skills/workspace";
 import { graphFocusStates } from "@/lib/hub/graph-focus";
 import { readLearnFlowLaunchResponse } from "@/lib/integrations/learnflow/launch-response";
+import { prepareTaskRelease } from "@/lib/integrations/learnflow/prepare-task-release";
 
 type RoleNode = RoleCardNode;
 
@@ -262,6 +263,7 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
   const [launchReleaseId, setLaunchReleaseId] = useState("");
   const [launchingLearnFlow, setLaunchingLearnFlow] = useState(false);
   const [learnFlowLaunchError, setLearnFlowLaunchError] = useState("");
+  const launchController = useRef<AbortController | null>(null);
   const [workspaceError, setWorkspaceError] = useState("");
   const [modelSummary, setModelSummary] = useState<{ configured: boolean; label: string }>({ configured: false, label: "未配置模型" });
   const [isRunning, setIsRunning] = useConversationState(activeConversationId, false);
@@ -404,6 +406,7 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
   }, [applyProjectWorkspace, initialConversationId, projectId]);
 
   useEffect(() => {
+    setLaunchReleaseId("");
     if (!packageStatus?.snapshotId) return;
     const controller = new AbortController();
     fetch("/api/registry", { signal: controller.signal })
@@ -416,31 +419,56 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
           release.id === item.recommendedReleaseId && release.snapshotId === packageStatus.snapshotId
         )));
         const release = line?.releases.find((item) => item.id === line.recommendedReleaseId);
-        setLaunchReleaseId(release?.id || "");
+        if (!controller.signal.aborted) setLaunchReleaseId(release?.id || "");
       })
       .catch((error) => { if (error instanceof Error && error.name !== "AbortError") setLaunchReleaseId(""); });
     return () => controller.abort();
   }, [packageStatus?.snapshotId]);
 
+  const conversionVersionId = projectId ? conversations.find((conversation) => conversation.id === activeConversationId)?.versionId : undefined;
+  useEffect(() => {
+    launchController.current?.abort();
+    launchController.current = null;
+    setLaunchingLearnFlow(false);
+    setLearnFlowLaunchError("");
+    return () => { launchController.current?.abort(); };
+  }, [projectId, conversionVersionId, packageStatus?.snapshotId, activeTaskId, activeConversationId]);
+
   const launchInLearnFlow = async (taskNodeId?: string) => {
-    if (!launchReleaseId || launchingLearnFlow) return;
+    if (launchController.current) return;
+    const controller = new AbortController();
+    launchController.current = controller;
+    const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(60_000)]);
     setLearnFlowLaunchError("");
     setLaunchingLearnFlow(true);
     try {
+      let releaseId = launchReleaseId;
+      if (taskNodeId && projectId) {
+        if (!conversionVersionId || !packageStatus?.snapshotId) throw new Error("当前任务版本尚未载入，请等待岗位快照载入后重试。");
+        releaseId = await prepareTaskRelease({ projectId, projectVersionId: conversionVersionId, snapshotId: packageStatus.snapshotId, signal });
+      }
+      if (!releaseId) throw new Error("当前岗位包还没有可引用的固定版本，请先在岗位包中心准备版本。");
+      signal.throwIfAborted();
       const response = await fetch("/api/integrations/learnflow/launch", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ releaseId: launchReleaseId, source: "role_atlas", ...(taskNodeId ? { intent: "work_task_conversion", taskNodeId } : {}) }),
-        signal: AbortSignal.timeout(15_000),
+        body: JSON.stringify({ releaseId, source: "role_atlas", ...(taskNodeId ? { intent: "work_task_conversion", taskNodeId } : {}) }),
+        signal,
       });
-      window.location.assign(await readLearnFlowLaunchResponse(response));
+      const url = await readLearnFlowLaunchResponse(response);
+      signal.throwIfAborted();
+      window.location.assign(url);
     } catch (error) {
+      if (controller.signal.aborted) return;
       setLearnFlowLaunchError(error instanceof Error && error.name === "TimeoutError"
         ? "连接 LearnFlow 超时，请稍后重试。"
         : error instanceof TypeError ? "无法连接 LearnFlow，请检查网络后重试。"
         : error instanceof Error ? error.message : "无法进入 LearnFlow，请稍后重试。");
     } finally {
-      setLaunchingLearnFlow(false);
+      if (launchController.current === controller) {
+        launchController.current = null;
+        setLaunchingLearnFlow(false);
+      }
     }
   };
 
@@ -1403,6 +1431,9 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
                 onDragStart={startCardDrag}
                 onDragEnd={endCardDrag}
                 onOpenEvidence={openEvidenceFor}
+                onConvert={(task) => void launchInLearnFlow(task.id)}
+                converting={launchingLearnFlow}
+                conversionHint="带入当前任务，再选择学习型、实验型或实践型；未打包的版本会保存为私有岗位包。"
               />
             ) : <div className={`graph-loading ${workspaceError ? "error" : ""}`}>{workspaceError ? <AlertTriangle size={14} /> : <span />} {workspaceError || "正在装载典型工作任务…"}</div>
           ) : view === "cards" ? (
@@ -1437,7 +1468,7 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
                   {detailRows.length > 0 && <details className="node-technical"><summary>结构化详情</summary><dl>{detailRows.map(([key, value]) => <div key={key}><dt>{key.replaceAll("_", " ")}</dt><dd>{value}</dd></div>)}</dl></details>}
                   {projectId && <button type="button" className="deepen-node" onClick={() => void launchTool("node-deepening")}><Sparkles size={13} />完善此节点</button>}
                   <div className="node-card-actions">
-                    {launchReleaseId && ["task", "typical_task"].includes(selectedNode.type) ? <button type="button" disabled={launchingLearnFlow} onClick={() => void launchInLearnFlow(selectedNode.id)}>转为学习、实验或实践项目</button> : null}
+                    {(launchReleaseId || projectId) && ["task", "typical_task"].includes(selectedNode.type) ? <button type="button" disabled={launchingLearnFlow} onClick={() => void launchInLearnFlow(selectedNode.id)}>转为学习、实验或实践项目</button> : null}
                     <button className="source-node" onClick={() => openEvidenceFor([selectedNode])}><BookOpenCheck size={14} /> 查看证据</button>
                     <button className="quote-node" draggable onDragStart={() => { draggedRef.current = selectedNode; setDraggingNode(selectedNode); }} onClick={() => addReference(selectedNode)}>
                       <Plus size={14} /> 引用到对话
