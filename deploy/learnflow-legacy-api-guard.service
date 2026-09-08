@@ -1,0 +1,11 @@
+[Unit]
+Description=Prevent public access to legacy LearnFlow HTTP API
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/learnflow-legacy-api-guard
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

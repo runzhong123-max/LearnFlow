@@ -28,3 +28,11 @@ ECS `i-n4a084s5nh57syfytgfe` 的发布目录为 `/opt/ceg/releases/site-auth-202
 发布采用先复制新 hash assets、再替换 HTML，保留旧 assets 供已有标签页加载；Atlas 更新布局，Caddy 热加载。没有停止容器或改动数据卷。现有最后一层 `/opt/ceg/releases/learnflow-hub-6c90452/visual.override.json` 已更新镜像指向，使后续重建保持新版本。运行容器的原始 image 标签仍反映创建时基线，当前内容通过热更新生效。
 
 回退时恢复备份的 HTML/布局/Caddyfile 与 override，再校验和热加载 Caddy；不要删除账号、数据库或学习记录。域名变更时同时更新前端站点 allow-list 与 Caddy 环境配置，不扩大到任意子域。
+
+## 公网入口补充检查
+
+2026-09-08 再次从无 Cookie 请求确认：Role Atlas 首页及 `/projects`、Graph Hub `/hub` 和 `/registry`、学习站与根站都重定向中央登录页。新增 HTTP 80 catch-all，将公网 IP 与未匹配 HTTP Host 重定向同一登录页；不为未配置的 HTTPS 域名或 IP 伪造证书。
+
+发现历史 `/opt/backend` 的独立 `backend.service` 监听 `0.0.0.0:8000`，没有经过网关。已安装 `deploy/guard-legacy-http-port.sh` 为 `/usr/local/sbin/learnflow-legacy-api-guard`，由同名 systemd oneshot 在启动时幂等应用 IPv4/IPv6 INPUT 规则：拒绝非 loopback 接口进入 8000。旧服务和数据保留，SSH、正式 80/443 及 Docker 内部服务不改变。规则由 comment `learnflow-legacy-api-guard` 标识，不覆盖已有防火墙配置；回退需先撤销该 oneshot 的开机启用，再逐条删除此 comment 对应规则。
+
+已校验 Caddy 配置并热加载；公网 IP HTTP 返回 302；端口保护和旧服务均 active，本机 127.0.0.1:8000 仍正常响应。旧端口拒绝连接而不展示登录页面。登录资源和认证接口仍是必要例外，普通匿名 API 保持 401，签名机器网关继续使用自身认证。

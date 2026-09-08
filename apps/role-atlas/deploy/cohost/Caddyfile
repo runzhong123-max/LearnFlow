@@ -100,3 +100,8 @@ http://:8081 {
     header_up Host api.deepseek.com
   }
 }
+
+# Unknown HTTP hosts and direct-IP requests must not bypass the login entry.
+http://:80 {
+  redir https://{$LEARNFLOW_HOST}/login 302
+}
