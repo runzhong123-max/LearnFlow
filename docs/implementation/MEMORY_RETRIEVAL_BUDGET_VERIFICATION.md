@@ -1,5 +1,7 @@
 # 完整记忆检索升级验收
 
+> 历史固定回归记录。后续已完成推送、部署与 35 类扩展实验；当前比赛展示请优先引用[扩展消融报告](../competition/MEMORY_ABLATION_REPORT.md)。下文 100% 仅适用于原 14 类固定回归，不能代表扩展场景。原始运行数字和当时未部署状态保留供追溯。
+
 日期：2026-09-08。共享核心 `0.2.2`；策略 `relevance-budget.v1`；Web / Desktop registry `2026-09-08.5` / `2026-09-08.5-desktop`。实现与兼容性见 [升级说明](MEMORY_RETRIEVAL_BUDGET_UPGRADE.md)。
 
 ## 固定回归实验
