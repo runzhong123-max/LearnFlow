@@ -90,8 +90,13 @@ export function createDurableJobStream<TEvent extends JournalEvent>(input: {
 }) {
   const encoder = new TextEncoder();
   let connected = true;
+  let heartbeat: ReturnType<typeof setInterval> | undefined;
   return new ReadableStream<Uint8Array>({
     start(controller) {
+      // NDJSON whitespace keeps intermediary/consumer idle timers alive during silent model calls.
+      heartbeat = setInterval(() => {
+        if (connected) try { controller.enqueue(encoder.encode("\n")); } catch { connected = false; }
+      }, 10_000);
       const journal = new DurableJobJournal<TEvent>(
         input.persist,
         (event) => {
@@ -108,6 +113,7 @@ export function createDurableJobStream<TEvent extends JournalEvent>(input: {
           await journal.flush().catch(() => undefined);
           await input.onFailure(error, journal);
         } finally {
+          clearInterval(heartbeat);
           await journal.flush().catch(() => undefined);
           await input.onFinally?.();
           if (connected) {
@@ -120,6 +126,7 @@ export function createDurableJobStream<TEvent extends JournalEvent>(input: {
       void execution;
     },
     cancel() {
+      clearInterval(heartbeat);
       connected = false;
       // Detaching a view does not cancel its job. Explicit cancellation and lease loss
       // abort the independent execution signal owned by the server.

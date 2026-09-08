@@ -480,7 +480,7 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
           .catch(() => undefined);
         const response = await fetch("/api/build-runs/enrich", {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers: { "content-type": "application/json", prefer: "respond-async" },
           body: JSON.stringify({
             build: {
               runId,
@@ -500,9 +500,9 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
             webResearch: pending.webResearch ?? Boolean(projectResult.sources.research),
           }),
         });
-        if (!response.ok || !response.body) {
+        if (response.status === 202 || !response.ok || !response.body) {
           const payload = await response.json().catch(() => ({})) as { error?: string; code?: string };
-          if (response.status === 409 && (payload.code === "ENRICHMENT_ALREADY_RUNNING" || payload.code === "ENRICHMENT_ALREADY_COMPLETED")) {
+          if (response.status === 202 || response.status === 409 && (payload.code === "ENRICHMENT_ALREADY_RUNNING" || payload.code === "ENRICHMENT_ALREADY_COMPLETED")) {
             setEnrichmentState({ running: true, label: payload.code === "ENRICHMENT_ALREADY_RUNNING" ? "后台增量仍在运行，正在重新接入版本进度" : "后台增量已完成，正在载入最新版本" });
             for (let attempt = 0; attempt < 180; attempt += 1) {
               const workspaceResponse = await fetch(`/api/projects/${encodeURIComponent(projectId)}?conversation=${encodeURIComponent(conversationId)}`);

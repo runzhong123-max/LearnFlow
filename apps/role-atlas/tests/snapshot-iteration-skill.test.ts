@@ -108,7 +108,7 @@ test("阶段检查点恢复会从下一节点继续，不重复契约和结构�
   }, { configurable: { thread_id: "iteration-resume-seed" } });
   assert.ok(discovery);
 
-  const resumed = createSnapshotIterationSkill({ model: modelMustNotRun });
+  const resumed = createSnapshotIterationSkill({ model: modelMustNotRun, initialSeq: 52 });
   const events: IterationEvent[] = [];
   const stream = await resumed.stream({
     round: 1,
@@ -126,6 +126,9 @@ test("阶段检查点恢复会从下一节点继续，不重复契约和结构�
     resumeFrom: "discovery",
   }, { configurable: { thread_id: "iteration-resume-run" }, streamMode: "custom" });
   for await (const event of stream) events.push(event as IterationEvent);
+  assert.ok(events.every(event => event.seq > 52));
+  assert.ok(discovery.candidate, "完整候选快照必须跨阶段保留");
+  assert.ok(Array.isArray(discovery.researchedSources));
   const kinds = new Set(events.map((event) => event.kind));
   assert.equal(kinds.has("iteration.contract.created"), false);
   assert.equal(kinds.has("iteration.inspection.started"), false);

@@ -1,3 +1,4 @@
+import { enqueueRoleJob } from "@/lib/jobs/dispatch";
 import { rememberResearchRequester } from "@/lib/research-collection/store";
 import { startRoleJobExecution } from "@/lib/jobs/execution";
 import { projectVersionHeadState } from "@/lib/versioning/commit";
@@ -11,7 +12,7 @@ import { resolveProviderConfig, resolveSearchProviderConfig } from "@/lib/server
 import { workerRuntimeBindings } from "@/lib/worker-runtime-bindings";
 import { appendBuildEvent, completeBuildStageRun, completeFastBuildSnapshot, failBuildRun, getConversation, getProjectWorkspace, startBuildRun } from "@/lib/projects/repository";
 import { createDurableJobStream, durableJobResponse } from "@/lib/jobs/runtime";
-import { appendRoleJobEvent, assertRoleJobLease, checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob } from "@/lib/jobs/repository";
+import { lastRoleEventSequence, appendRoleJobEvent, assertRoleJobLease, checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob } from "@/lib/jobs/repository";
 
 export const runtime = "edge";
 
@@ -141,17 +142,20 @@ export async function POST(request: Request) {
   if (buildConversation.conversation.mode !== "iteration") return Response.json({ error: "请先切换到迭代态再运行工具。", code: "ITERATION_MODE_REQUIRED" }, { status: 409 });
 
   const jobOwner = crypto.randomUUID();
-  const job = await claimRoleJob({
+  const claimInput = {
     conversationId: parsed.conversationId,
     baseVersionId: buildConversation.conversation.versionId || undefined,
     id: buildRequest.runId,
-    kind: "cold_start",
+    kind: "cold_start" as const,
     threadId: `${buildRequest.projectId}:${buildRequest.runId}`,
     projectId: buildRequest.projectId,
     phase: "kernel",
     owner: jobOwner,
     payload: { build: buildRequest, conversationId: parsed.conversationId, webResearch: parsed.webResearch },
-  }).catch(() => null);
+  };
+  const queued = await enqueueRoleJob(request, claimInput, { ...parsed, build: buildRequest });
+  if (queued) return queued;
+  const job = await claimRoleJob(claimInput).catch(() => null);
   if (!job?.claimed) return Response.json({ ok: false, code: "JOB_LEASE_HELD", error: "同一冷启动仍由另一个执行器处理。" }, { status: 409 });
 
   try {
@@ -165,7 +169,8 @@ export async function POST(request: Request) {
   const execution = startRoleJobExecution(buildRequest.runId, jobOwner);
 
   pruneWorkItemCache();
-  const graph = createColdStartSkill(createRecordedModelInvoker(providerConfig, {projectId:buildRequest.projectId,runId:buildRequest.runId}), {
+  const graph = createColdStartSkill(createRecordedModelInvoker(providerConfig, {
+    initialSeq: await lastRoleEventSequence(buildRequest.runId),projectId:buildRequest.projectId,runId:buildRequest.runId}), {
     searchConfig,
     sourceLimit: 16,
     existingResearchReport,

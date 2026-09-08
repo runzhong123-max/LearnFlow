@@ -43,7 +43,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-08.2"
+REGISTRY_VERSION = "2026-09-08.3"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Pure source-data validators/exporters, not Agent-callable tools or learner writers.
@@ -60,6 +60,14 @@ DATA_CONTRACTS = {
         "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "docs/implementation/WORK_TASK_CONVERSION.md",
         "binding_ids": ["py:work_task_design.compile", "py:work_task_design.validate"], "kernel_reads": [], "kernel_write_path": "none",
         "compatibility": "compiler 1.0.0; authored analogues and review-only long-tail proposals; pinned materials and deterministic validation; old work case hash retained",
+    },
+    "role_job_delivery_v1": {
+        "schema_version": "role-job-delivery/v1", "owner": "tutor_agent", "origin": "builtin",
+        "mode": "operational_artifact", "lifecycle": "implemented",
+        "authority_path": "apps/role-atlas/docs/JOB_RECOVERY.md",
+        "binding_ids": ["frontend:role_jobs.enqueue", "frontend:role_jobs.dispatch", "frontend:role_jobs.resume"],
+        "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "opt-in 202 delivery of existing role production APIs; encrypted scoped envelopes, bounded recovery and cursor replay; no new Agent tool, publication or learner evidence",
     },
     "role_research_archive_v1": {
         "schema_version": "role-research-archive/v1", "owner": "tutor_agent", "origin": "builtin",
@@ -1562,6 +1570,9 @@ _API_BINDING_TARGETS = {
 
 
 _FRONTEND_HANDLER_TARGETS = {
+    "frontend:role_jobs.enqueue": ("apps/role-atlas/lib/jobs/dispatch.ts", "enqueueRoleJob", ""),
+    "frontend:role_jobs.dispatch": ("apps/role-atlas/app/api/internal/role-jobs/[jobId]/route.ts", "POST", ""),
+    "frontend:role_jobs.resume": ("apps/role-atlas/app/api/projects/[projectId]/jobs/[jobId]/resume/route.ts", "POST", ""),
     "frontend:role_research.collect": ("apps/role-atlas/lib/research-collection/record-model.ts", "recordModel", ""),
     "frontend:role_research.admin": ("apps/role-atlas/app/api/admin/research/route.ts", "GET", ""),
     "frontend:role_research.export": ("apps/role-atlas/app/api/admin/research/export/route.ts", "GET", ""),

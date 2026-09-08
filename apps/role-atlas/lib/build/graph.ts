@@ -101,6 +101,7 @@ const BuildState = new StateSchema({
 });
 
 type SkillOptions = {
+  initialSeq?: number;
   searchConfig?: SearchProviderConfig;
   sourceLimit?: number;
   existingResearchReport?: WebResearchReport;
@@ -289,7 +290,7 @@ function markRecoveredWorkItem(workItems: BuildWorkItemSummary[], stage: string,
 }
 
 export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions) {
-  let seq = 0;
+  let seq = options?.initialSeq || 0;
   const cache = options?.cache || new Map<string, unknown>();
 
   function emit(request: ColdStartRequest, kind: BuildEventKind, profile: BuildEvent["profile"], payload: Record<string, unknown>) {

@@ -8,6 +8,7 @@ const executions = new Map<string, AbortController>();
 export function startRoleJobExecution(jobId: string, owner: string) {
   const controller = new AbortController();
   executions.set(jobId, controller);
+  const deadline = setTimeout(() => controller.abort(new Error("任务达到一小时执行上限，检查点已保留。")), 60 * 60_000);
   // Capture the request context now, before execution leaves its async scope.
   const context = getRequestExecutionContext();
   const stopHeartbeat = startRoleJobHeartbeat({
@@ -18,6 +19,7 @@ export function startRoleJobExecution(jobId: string, owner: string) {
     signal: controller.signal,
     keepAlive: (execution: Promise<void>) => { context?.waitUntil(execution); },
     async stop() {
+      clearTimeout(deadline);
       await stopHeartbeat();
       if (executions.get(jobId) === controller) executions.delete(jobId);
     },

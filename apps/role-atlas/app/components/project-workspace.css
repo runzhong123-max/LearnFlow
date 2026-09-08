@@ -68,7 +68,7 @@
 .chat-job-card header span { margin-left:auto; font-size:9px; color:#8b998d; }
 .chat-job-card p { font-size:10px; line-height:1.7; margin:8px 0; }
 .chat-job-card button { display:inline-flex; align-items:center; gap:4px; border:0; padding:4px 0; background:transparent; color:#476753; cursor:pointer; font-size:10px; }
-.chat-job-card.failed { color:#955842; border-color:#e8d9cd; background:#fcf4ee; }
+.chat-job-card.failed, .chat-job-card.interrupted { color:#955842; border-color:#e8d9cd; background:#fcf4ee; }
 .chat-job-card details { font-size:10px; margin-top:8px; }
 .deepen-node { display:flex; align-items:center; justify-content:center; gap:5px; width:100%; margin:10px 0; padding:8px; color:#5d745f; background:#f0f5ec; border:1px solid #dbe5d5; border-radius:7px; font-size:10px; cursor:pointer; }
 .node-technical summary { color:#8b938b; font-size:9px; cursor:pointer; margin-top:10px; }
@@ -110,3 +110,6 @@
 @media (max-width:1150px) { .workspace-shell { grid-template-columns:190px minmax(280px,1fr) 340px; } .workspace-shell.chat-collapsed { grid-template-columns:190px minmax(280px,1fr) 48px; } .pane-header { flex-wrap:wrap; gap:8px; padding:16px; } .package-header-actions { justify-content:flex-start; } .package-header-actions .status-chip { width:auto; } }
 @media (max-width:900px) { .workspace-shell { grid-template-columns:60px minmax(220px,1fr) 320px; } .workspace-shell.chat-collapsed { grid-template-columns:60px minmax(220px,1fr) 48px; } .sidebar > .project-management { display:none; } .conversation-controls { gap:5px; padding-inline:10px; } .chat-skill-launcher { padding-inline:10px; } .conversation-baseline { padding-inline:10px; } .conversation-baseline small { width:100%; margin-left:15px; } }
 @media (max-width:650px) { .workspace-shell { grid-template-columns:48px minmax(0,1fr); grid-template-rows:42dvh minmax(350px,58dvh); height:100dvh; min-width:0; overflow:auto; } .sidebar { grid-row:1/-1; } .graph-pane { grid-column:2; grid-row:1; border-bottom:1px solid #dce3d8; } .chat-pane { grid-column:2; grid-row:2; } .workspace-shell.chat-collapsed { grid-template-columns:48px minmax(0,1fr); grid-template-rows:minmax(0,1fr) 48px; } .chat-pane.collapsed .chat-collapse-rail { flex-direction:row; padding:0 20px; } .chat-pane.collapsed .chat-collapse-rail > span { writing-mode:horizontal-tb; } .empty-project-stage { padding:20px; } .empty-project-stage h2 { font-size:18px; margin:10px 0 0; } .empty-project-stage > svg { display:none; } .empty-project-stage p { font-size:10px; } .workspace-modal-backdrop { padding:12px; } .new-project-dialog { padding:26px; } .personal-assets-center { padding:20px; } .pane-header h1 { font-size:18px; } .graph-hint { display:none; } }
+
+.chat-job-card.cancelled { color:#69706b; background:#f2f3f1; border-color:#dfe2dc; }
+.chat-job-card.recovering { color:#866627; background:#fff9ed; border-color:#e8d9b9; }

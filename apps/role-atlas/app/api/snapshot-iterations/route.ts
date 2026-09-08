@@ -1,3 +1,4 @@
+import { enqueueRoleJob } from "@/lib/jobs/dispatch";
 import { rememberResearchRequester } from "@/lib/research-collection/store";
 import { startRoleJobExecution } from "@/lib/jobs/execution";
 import { projectVersionHeadState } from "@/lib/versioning/commit";
@@ -27,7 +28,7 @@ import { resolveProviderConfig, resolveSearchProviderConfig } from "@/lib/server
 import { resolveSnapshot } from "@/lib/snapshots/resolver";
 import { workerRuntimeBindings } from "@/lib/worker-runtime-bindings";
 import { createDurableJobStream, durableJobResponse } from "@/lib/jobs/runtime";
-import { appendRoleJobEvent, assertRoleJobLease, checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob } from "@/lib/jobs/repository";
+import { lastRoleEventSequence, appendRoleJobEvent, assertRoleJobLease, checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob } from "@/lib/jobs/repository";
 
 export const runtime = "edge";
 
@@ -143,7 +144,7 @@ export async function POST(request: Request) {
   const jobKind = iterationRequest.initiativeProfile === "user_directed" && iterationRequest.targetIds.length > 0
     ? "node_deepening" as const
     : "snapshot_iteration" as const;
-  const job = await claimRoleJob({
+  const claimInput = {
     conversationId: iterationRequest.conversationId,
     baseVersionId: resolved.reference.versionId,
     id: iterationRequest.runId,
@@ -154,7 +155,10 @@ export async function POST(request: Request) {
     phase: "contract",
     owner: jobOwner,
     payload: { iteration: iterationRequest },
-  }).catch(() => null);
+  };
+  const queued = await enqueueRoleJob(request, claimInput, { ...parsed, iteration: iterationRequest });
+  if (queued) return queued;
+  const job = await claimRoleJob(claimInput).catch(() => null);
   if (!job?.claimed) return Response.json({ error: "同一岗位快照迭代仍由另一个执行器处理。", code: "JOB_LEASE_HELD" }, { status: 409 });
 
   try {
@@ -169,12 +173,12 @@ export async function POST(request: Request) {
   const graph = createSnapshotIterationSkill({
     model,
     modelLabel,
+    initialSeq: await lastRoleEventSequence(iterationRequest.runId),
     searchConfig,
     onCheckpoint: async (phase, state) => {
-      await Promise.all([
-        saveIterationCheckpoint(iterationRequest.runId, phase, state),
-        checkpointRoleJob({ jobId: iterationRequest.runId, owner: jobOwner, kind: jobKind, phase, state }),
-      ]);
+      await assertRoleJobLease(iterationRequest.runId, jobOwner);
+      if (!await checkpointRoleJob({ jobId: iterationRequest.runId, owner: jobOwner, kind: jobKind, phase, state })) throw new Error("JOB_LEASE_LOST");
+      await saveIterationCheckpoint(iterationRequest.runId, phase, state);
     },
   });
   const recovered = (job.job?.attempt || 1) > 1 && job.checkpoint?.state && typeof job.checkpoint.state === "object"
@@ -210,6 +214,7 @@ export async function POST(request: Request) {
     ),
     persist: async (event) => { await appendIterationEvent(event); await appendRoleJobEvent(iterationRequest.runId, event); },
     handle: async (raw, journal) => {
+      await assertRoleJobLease(iterationRequest.runId, jobOwner);
       const event = raw as IterationEvent;
       if (event.kind !== "iteration.run.completed" || !event.payload.result) {
         journal.publish(event);
@@ -257,6 +262,7 @@ export async function POST(request: Request) {
     },
     onFailure: async (error, journal) => {
       const event = failureEvent(iterationRequest, error);
+      event.seq = await lastRoleEventSequence(iterationRequest.runId) + 1;
       await journal.commit(event, () => failSnapshotIteration(
         iterationRequest.runId,
         String(event.payload.message || "迭代失败"),
