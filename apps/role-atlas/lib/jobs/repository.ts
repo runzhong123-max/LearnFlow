@@ -1,3 +1,4 @@
+import { linkRunAttachments, archiveJobAttempt } from "@/lib/research-collection/store";
 import { ensureAppSchema, getD1 } from "@/db";
 import { canonicalStringify } from "@/lib/versioning/canonical";
 import { roleJobClaimStatements } from "./claim-transaction";
@@ -70,6 +71,8 @@ export async function claimRoleJob(input: {
   const d1 = getD1();
   const now = new Date().toISOString();
   const expiresAt = isoAfter(input.leaseMs || 45_000);
+  if(input.projectId)await linkRunAttachments(input.projectId,input.id,input.payload,true);
+  await archiveJobAttempt(input.id,input.projectId);
   await d1.batch(roleJobClaimStatements(d1, {
     ...input, now, expiresAt, payloadJson: canonicalStringify(input.payload || {}),
   }));
@@ -79,6 +82,7 @@ export async function claimRoleJob(input: {
     && row.base_snapshot_id === (input.baseSnapshotId || null) && row.base_version_id === (input.baseVersionId || null);
   if (row && !sameScope) throw new Error("JOB_SCOPE_CONFLICT");
   const claimed = Boolean(row && row.status === "running" && row.lease_owner === input.owner);
+  if(claimed&&input.projectId){await linkRunAttachments(input.projectId,input.id,input.payload);await archiveJobAttempt(input.id,input.projectId);}
   return {
     claimed,
     job: row ? descriptor(row) : undefined,
@@ -132,6 +136,7 @@ export async function completeRoleJob(input: { jobId: string; owner: string; pha
     lease_expires_at=NULL, error=NULL, completed_at=?, updated_at=?
     WHERE id=? AND lease_owner=? AND status='running'`)
     .bind(input.phase, JSON.stringify(input.result || {}), now, now, input.jobId, input.owner).run();
+  await archiveJobAttempt(input.jobId);
 }
 
 export async function failRoleJob(input: { jobId: string; owner: string; error: string; retryable: boolean }) {
@@ -140,6 +145,7 @@ export async function failRoleJob(input: { jobId: string; owner: string; error: 
   await getD1().prepare(`UPDATE role_jobs SET status=?, lease_owner=NULL, lease_expires_at=NULL, error=?,
     completed_at=?, updated_at=? WHERE id=? AND lease_owner=? AND status='running'`)
     .bind("failed", input.error, now, now, input.jobId, input.owner).run();
+  await archiveJobAttempt(input.jobId);
 }
 
 export async function getRoleJob(jobId: string) {
@@ -187,6 +193,7 @@ export async function cancelRoleJob(jobId: string, projectId: string) {
   await getD1().prepare(`UPDATE role_jobs SET status='cancelled', lease_owner=NULL, lease_expires_at=NULL,
     completed_at=?, updated_at=? WHERE id=? AND project_id=? AND status IN ('queued','running','waiting_user','failed')`)
     .bind(now, now, jobId, projectId).run();
+  await archiveJobAttempt(jobId,projectId);
   return getRoleJob(jobId);
 }
 

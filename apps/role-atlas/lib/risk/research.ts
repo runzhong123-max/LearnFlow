@@ -146,6 +146,7 @@ export function reconstructSourceInputs(result: ColdStartBuildResult): SourceInp
         .join("\n\n") || `来源元数据：${asset.title}`,
       kind: asset.kind,
       locator: asset.locator,
+      attachmentId: asset.attachmentId,
       observedAt: asset.observedAt,
       publisher: asset.publisher,
       domain: asset.domain,

@@ -43,12 +43,20 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-07.10"
+REGISTRY_VERSION = "2026-09-08.1"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Pure source-data validators/exporters, not Agent-callable tools or learner writers.
 # The referenced TypeScript module owns field semantics; this registry owns discovery.
 DATA_CONTRACTS = {
+    "role_research_archive_v1": {
+        "schema_version": "role-research-archive/v1", "owner": "tutor_agent", "origin": "builtin",
+        "mode": "operational_artifact", "lifecycle": "implemented",
+        "authority_path": "apps/role-atlas/docs/RESEARCH_COLLECTION.md",
+        "binding_ids": ["frontend:role_research.collect", "frontend:role_research.admin", "frontend:role_research.export"],
+        "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "additive admin-only operational archive; user-owned originals and actual model calls; historical gaps explicit; no learner evidence or public publication",
+    },
     "engineering_provenance_v1": {
         "schema_version": "learnflow.engineering-provenance.v1", "owner": "tutor_agent", "origin": "builtin",
         "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "docs/implementation/DESKTOP_PROJECT_GUIDANCE.md",
@@ -955,6 +963,7 @@ SKILL_KINDS = {
 
 WORKBENCHES = {
     item.id: item for item in (
+        WorkbenchContract("role_research_admin", "岗位研究测试数据中心", "/admin/research", "tutor_agent", ()),
         WorkbenchContract("ecosystem", "岗位图谱工作台", "/ecosystem", "tutor_agent",
                           ("query_role_ecosystem", "resolve_role_learning_points", "commit_role_learning_points")),
         WorkbenchContract("global_tutor", "Chat Tutor + Lightweight Workbench", "/agent/:sessionId", "tutor_agent",
@@ -1501,6 +1510,9 @@ _API_BINDING_TARGETS = {
 
 
 _FRONTEND_HANDLER_TARGETS = {
+    "frontend:role_research.collect": ("apps/role-atlas/lib/research-collection/record-model.ts", "recordModel", ""),
+    "frontend:role_research.admin": ("apps/role-atlas/app/api/admin/research/route.ts", "GET", ""),
+    "frontend:role_research.export": ("apps/role-atlas/app/api/admin/research/export/route.ts", "GET", ""),
     "frontend:tutor.teaching_response": ("frontend/src/teaching-response.ts", "teachingResponsePrompt", ""),
     "frontend:agent_runtime.run": ("frontend/server/agent-runtime.ts", "runTutorAgentTurn", ""),
     "frontend:plugin.educational_visuals": ("frontend/plugins/educational_visuals/server.ts", "plugin", ""),
@@ -1548,6 +1560,7 @@ _FRONTEND_HANDLER_TARGETS = {
 
 
 _FRONTEND_COMPONENT_TARGETS = {
+    "workbench:role_research_admin": ("apps/role-atlas/app/admin/research/page.tsx", "ResearchAdminPage", "/admin/research"),
     "frontend:learning.verification": ("frontend/src/LearningVerificationPanel.tsx", "LearningVerificationPanel", "/chat/"),
     "frontend:learning.remediation": ("frontend/src/RemediationPanel.tsx", "RemediationPanel", "/files/practice/"),
     "frontend:path.extensions": ("frontend/src/PathSourceExtensions.tsx", "PathSourceExtensions", "/learning-path"),

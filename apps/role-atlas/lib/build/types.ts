@@ -26,6 +26,7 @@ export const workspaceEvidenceSchema = z.object({
 });
 
 export const sourceInputSchema = z.object({
+  attachmentId: z.string().regex(/^[a-f0-9]{64}$/).optional(),
   title: z.string().min(1).max(240),
   content: z.string().min(1).max(60_000),
   kind: sourceKindSchema.default("private_document"),
@@ -164,6 +165,7 @@ export type ProjectBrief = {
 };
 
 export type SourceAsset = {
+  attachmentId?: string;
   id: string;
   title: string;
   kind: SourceKind;

@@ -19,3 +19,9 @@
 **/outputs
 **/*.db
 **/*.sqlite*
+
+# These research routes are production source, not research output directories.
+!apps/role-atlas/app/admin/research
+!apps/role-atlas/app/admin/research/**
+!apps/role-atlas/app/api/admin/research
+!apps/role-atlas/app/api/admin/research/**

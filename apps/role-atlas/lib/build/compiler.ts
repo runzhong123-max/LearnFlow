@@ -132,6 +132,7 @@ export function prepareBuildInput(request: ColdStartRequest) {
     title: source.title,
     kind: source.kind,
     locator: source.locator,
+    attachmentId: source.attachmentId,
     observedAt: source.observedAt,
     publisher: source.publisher,
     domain: source.domain,

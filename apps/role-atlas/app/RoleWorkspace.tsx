@@ -233,6 +233,8 @@ function toReadableValue(value: unknown) {
 }
 
 export default function RoleWorkspace({ projectId, initialConversationId, initialNewProject = false, newProjectBrief }: { projectId?: string; initialConversationId?: string; initialNewProject?: boolean; newProjectBrief?: { role?: string; description?: string; market?: string } }) {
+  const [researchAdmin,setResearchAdmin]=useState(false);
+  useEffect(()=>{const controller=new AbortController();void fetch("/api/admin/research?view=access",{signal:controller.signal,cache:"no-store"}).then(r=>{if(!controller.signal.aborted)setResearchAdmin(r.ok);}).catch(()=>{});return()=>controller.abort();},[]);
   const [activeConversationId, setActiveConversationId] = useState(initialConversationId || "");
   const activeConversationRef = useRef(activeConversationId);
   activeConversationRef.current = activeConversationId;
@@ -1316,6 +1318,7 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
           </Link>
         </div>
 
+        {researchAdmin?<a className="account-row" href="/admin/research" target="_blank" rel="noopener noreferrer"><Layers3 size={18}/><span><b>测试数据中心</b><small>管理员 · 研究历史与导出</small></span></a>:null}
         <ProjectManagement title={workspaceTitle} variant="trash" />
         <button type="button" className="account-row" onClick={() => setActiveOperation("settings")}><CircleUserRound size={18} /><span><b>模型与设置</b><small>{modelSummary.label}</small></span><Settings size={15} /></button>
       </aside>

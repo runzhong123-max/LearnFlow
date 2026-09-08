@@ -683,3 +683,6 @@ Visual Hub 查询展示工作台：Web / 桌面均使用 `/visual-hub`，由 lea
 Web 独立 Hub 地址为 `/visualize`，侧栏直接跳转，保留 `/visual-hub` 别名；经过现有 AuthGate，未开放匿名 API。桌面继续使用内嵌 `/visual-hub`。Web registry 2026-09-07.9 仅更新页面绑定，无事件或数据迁移。
 
 公共维护库修正（registry 2026-09-07.10）：`/visualize` 与别名无需登录。gallery/preview 仅开放已登记维护作品；preview 允许有界参数重算，拒绝任意 spec，固定 public:maintained 展示 scope。公共播放器不执行个人预测写回或要求完成预测才能播放。生成、私有 workspace、compile/inspect/predict 继续认证，无五核或数据库变更。
+
+
+Contract impact（2026-09-08.1）：登记 Role Atlas `role_research_archive_v1` 与管理员独立工作台 `/admin/research`。用户输入、附件原件、模型调用和运行/版本/发布记录作为 operational artifact 保存；访问与导出使用服务端验证的 admin 身份，普通用户的岗位包 ownership 不变。无 Agent 跨用户读取工具，无 EvidenceEvent 或五核变更。仅新增 Role Atlas 审计表，旧历史缺口不回填伪造。详见 [测试数据采集契约](../apps/role-atlas/docs/RESEARCH_COLLECTION.md)。

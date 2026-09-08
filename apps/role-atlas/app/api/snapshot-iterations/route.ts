@@ -1,8 +1,10 @@
+import { rememberResearchRequester } from "@/lib/research-collection/store";
 import { startRoleJobExecution } from "@/lib/jobs/execution";
 import { projectVersionHeadState } from "@/lib/versioning/commit";
 import { authorizeApiRequest, requestActor } from "@/lib/access";
 import { z } from "zod/v4";
-import { createModelInvoker, type ModelInvoker } from "@/lib/agent/model";
+import type { ModelInvoker } from "@/lib/agent/model";
+import { createRecordedModelInvoker } from "@/lib/research-collection/model";
 import { createSnapshotIterationSkill } from "@/lib/iteration/graph";
 import { iterationBriefError } from "@/lib/iteration/brief";
 import { iterationTargetNodes } from "@/lib/iteration/targets";
@@ -70,6 +72,7 @@ function inactiveModel(): ModelInvoker {
 export async function GET(request: Request) {
   const denied = await authorizeApiRequest(request);
   if (denied) return denied;
+  await rememberResearchRequester(request);
   const snapshotId = new URL(request.url).searchParams.get("snapshotId");
   if (!snapshotId) return Response.json({ error: "缺少 snapshotId。" }, { status: 400 });
   try {
@@ -123,7 +126,7 @@ export async function POST(request: Request) {
     const bindings = workerRuntimeBindings();
     if (mayRebuild) {
       const modelConfig = resolveProviderConfig(parsed.providerConfig, bindings);
-      model = createModelInvoker(modelConfig);
+      model = createRecordedModelInvoker(modelConfig,{projectId,runId:iterationRequest.runId});
       modelLabel = `${modelConfig.provider}/${modelConfig.model}`;
     }
     if (iterationRequest.webResearch) searchConfig = resolveSearchProviderConfig(parsed.searchConfig, bindings);

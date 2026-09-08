@@ -29,3 +29,11 @@ apps/desktop
 labs/golden-role/workspaces
 apps/desktop/backend/runtime
 apps/desktop/backend/data
+
+# Source-only bindings for the Role Atlas admin archive registry.
+!apps/role-atlas/lib/research-collection
+!apps/role-atlas/lib/research-collection/**
+!apps/role-atlas/app/admin/research
+!apps/role-atlas/app/admin/research/**
+!apps/role-atlas/app/api/admin/research
+!apps/role-atlas/app/api/admin/research/**

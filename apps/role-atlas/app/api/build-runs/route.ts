@@ -1,8 +1,9 @@
+import { rememberResearchRequester } from "@/lib/research-collection/store";
 import { startRoleJobExecution } from "@/lib/jobs/execution";
 import { projectVersionHeadState } from "@/lib/versioning/commit";
 import { authorizeApiRequest } from "@/lib/access";
 import { z } from "zod/v4";
-import { createModelInvoker } from "@/lib/agent/model";
+import { createRecordedModelInvoker } from "@/lib/research-collection/model";
 import { createColdStartSkill } from "@/lib/build/graph";
 import type { BuildEvent } from "@/lib/build/events";
 import { coldStartRequestSchema, type ColdStartBuildResult } from "@/lib/build/types";
@@ -61,6 +62,7 @@ function failureEvent(input: { runId?: string; projectId?: string }, error: unkn
 export async function POST(request: Request) {
   const denied = await authorizeApiRequest(request);
   if (denied) return denied;
+  await rememberResearchRequester(request);
   const contentLength = Number(request.headers.get("content-length") || 0);
   if (contentLength > 800_000) return Response.json({ ok: false, error: "冷启动请求体过大。" }, { status: 413 });
 
@@ -95,6 +97,7 @@ export async function POST(request: Request) {
           content,
           kind: asset.kind,
           locator: asset.locator,
+          attachmentId: asset.attachmentId,
           observedAt: asset.observedAt,
           publisher: asset.publisher,
           domain: asset.domain,
@@ -162,7 +165,7 @@ export async function POST(request: Request) {
   const execution = startRoleJobExecution(buildRequest.runId, jobOwner);
 
   pruneWorkItemCache();
-  const graph = createColdStartSkill(createModelInvoker(providerConfig), {
+  const graph = createColdStartSkill(createRecordedModelInvoker(providerConfig, {projectId:buildRequest.projectId,runId:buildRequest.runId}), {
     searchConfig,
     sourceLimit: 16,
     existingResearchReport,

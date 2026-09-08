@@ -1,8 +1,9 @@
+import { rememberResearchRequester } from "@/lib/research-collection/store";
 import { startRoleJobExecution } from "@/lib/jobs/execution";
 import { projectVersionHeadState } from "@/lib/versioning/commit";
 import { authorizeApiRequest } from "@/lib/access";
 import { z } from "zod/v4";
-import { createModelInvoker } from "@/lib/agent/model";
+import { createRecordedModelInvoker } from "@/lib/research-collection/model";
 import { createColdStartSkill } from "@/lib/build/graph";
 import type { BuildEvent } from "@/lib/build/events";
 import { coldStartRequestSchema, type ColdStartBuildResult } from "@/lib/build/types";
@@ -58,6 +59,7 @@ function failureEvent(input: { runId: string; projectId: string }, error: unknow
 export async function POST(request: Request) {
   const denied = await authorizeApiRequest(request);
   if (denied) return denied;
+  await rememberResearchRequester(request);
   let parsed: z.infer<typeof requestSchema>;
   try {
     parsed = requestSchema.parse(await request.json());
@@ -125,7 +127,7 @@ export async function POST(request: Request) {
   }
   const execution = startRoleJobExecution(parsed.build.runId, jobOwner);
   const commitExecution = { jobId: parsed.build.runId, jobOwner };
-  const model = createModelInvoker(providerConfig);
+  const model = createRecordedModelInvoker(providerConfig,{projectId:parsed.build.projectId,runId:parsed.build.runId});
   const modelLabel = `${providerConfig.provider}/${providerConfig.model}`;
   const graph = createColdStartSkill(model, {
     execution: "enrichment",
@@ -182,7 +184,7 @@ export async function POST(request: Request) {
                 execution: commitExecution,
                 signal: execution.signal,
                 base: result,
-                model,
+                model: createRecordedModelInvoker(providerConfig,{projectId:parsed.build.projectId,runId:`${parsed.build.runId.slice(0,94)}:deep`}),
                 modelLabel,
                 searchConfig,
               });
@@ -207,7 +209,7 @@ export async function POST(request: Request) {
             execution: commitExecution,
             signal: execution.signal,
             base: deepResult?.candidate || result,
-            model,
+            model: createRecordedModelInvoker(providerConfig,{projectId:parsed.build.projectId,runId:`${parsed.build.runId.slice(0,92)}:repair`}),
             modelLabel,
           });
           const finalSnapshotId = repairResult.candidateSnapshotId || repairResult.candidate.snapshot.id;

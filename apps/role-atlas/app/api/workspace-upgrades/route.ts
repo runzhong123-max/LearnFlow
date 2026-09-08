@@ -1,8 +1,9 @@
+import { rememberResearchRequester } from "@/lib/research-collection/store";
 import { startRoleJobExecution } from "@/lib/jobs/execution";
 import { projectVersionHeadState } from "@/lib/versioning/commit";
 import { authorizeApiRequest } from "@/lib/access";
 import { z } from "zod/v4";
-import { createModelInvoker } from "@/lib/agent/model";
+import { createRecordedModelInvoker } from "@/lib/research-collection/model";
 import { stableHash } from "@/lib/build/compiler";
 import { createSnapshotIterationSkill } from "@/lib/iteration/graph";
 import {
@@ -79,6 +80,7 @@ function iterationFailureEvent(input: { runId: string; snapshotId: string; proje
 export async function POST(request: Request) {
   const denied = await authorizeApiRequest(request);
   if (denied) return denied;
+  await rememberResearchRequester(request);
   let parsed: z.infer<typeof postSchema>;
   try {
     parsed = postSchema.parse(await request.json());
@@ -201,7 +203,7 @@ export async function POST(request: Request) {
     const modelConfig = resolveProviderConfig(parsed.providerConfig, bindings);
     const searchConfig = parsed.iteration.webResearch ? resolveSearchProviderConfig(parsed.searchConfig, bindings) : undefined;
     const iterationGraph = createSnapshotIterationSkill({
-      model: createModelInvoker(modelConfig),
+      model: createRecordedModelInvoker(modelConfig,{projectId:workspaceRequest.projectId,runId:iterationRunId}),
       modelLabel: `${modelConfig.provider}/${modelConfig.model}`,
       searchConfig,
       onCheckpoint: async (phase, state) => {
