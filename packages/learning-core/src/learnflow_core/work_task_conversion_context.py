@@ -27,15 +27,17 @@ def conversion_context_projection(value: Any, scope: dict) -> dict | None:
     mode = candidate.get("project_mode")
     if mode not in {"learning", "experiment", "practice"}:
         return None
-    omitted = {"text_characters": 0, "steps": 0, "sources": 0, "unresolved_questions": 0}
+    omitted = {"text_characters": 0, "steps": 0, "sources": 0, "unresolved_questions": 0,
+               "acceptance_criteria": 0, "constraints": 0}
     remaining = 3500
 
     def text(item, limit=240):
         nonlocal remaining
         if not isinstance(item, str):
             return ""
-        result = item[:min(limit, remaining)]
-        while len(_json(result)) - 2 > remaining:
+        available = min(limit, remaining)
+        result = item[:available]
+        while len(_json(result)) - 2 > available:
             result = result[:len(result) // 2]
         remaining -= len(_json(result)) - 2
         omitted["text_characters"] += len(item) - len(result)
@@ -45,21 +47,42 @@ def conversion_context_projection(value: Any, scope: dict) -> dict | None:
         # Never shorten an identity/hash into a different source version.
         return item if isinstance(item, str) and 0 < len(item) <= limit and len(_json(item)) <= limit + 2 else ""
 
-    overview = {"task_title": text(brief.get("task_title"), 200),
-                "work_context": text(brief.get("work_context"), 240),
-                "deliverable": text(brief.get("deliverable"), 240)}
+    # User requirements consume the prose budget before generated step text.
+    overview = {"task_title": text(brief.get("task_title"), 160)}
+    for field in ("acceptance_criteria", "constraints"):
+        items = brief.get(field)
+        items = [item for item in items if isinstance(item, str)] if isinstance(items, list) else []
+        overview[field] = [text(item, 80) for item in items[:12]]
+        omitted[field] = max(0, len(items) - 12)
+    overview.update({"task_description": text(brief.get("task_description"), 320),
+                     "work_context": text(brief.get("work_context"), 160),
+                     "deliverable": text(brief.get("deliverable"), 160)})
 
     content = candidate.get("learning_candidate") or {}
     task = content.get("task") if isinstance(content, dict) else {}
     task = task if isinstance(task, dict) else {}
     design = candidate.get("design") or {}
     design = design if isinstance(design, dict) else {}
+    unresolved = value.get("unresolved_questions") or []
+    unresolved = [item for item in unresolved if isinstance(item, str)] if isinstance(unresolved, list) else []
+    if isinstance(design.get("missing_validation"), list):
+        unresolved += [item for item in design["missing_validation"] if isinstance(item, str)]
+    for field in ("acceptance_review", "constraint_review"):
+        reviews = design.get(field)
+        if isinstance(reviews, list):
+            for item in reviews:
+                if isinstance(item, dict) and item.get("status") != "applied":
+                    requirement = item.get("input_text") or item.get("requirement")
+                    if isinstance(requirement, str):
+                        unresolved.append(requirement)
+    unresolved_text = [text(item, 60) for item in unresolved[:12]]
+    omitted["unresolved_questions"] = max(0, len(unresolved) - 12)
     raw_steps = task.get("steps", []) if mode == "learning" else design.get("stages", design.get("proposed_phases", []))
     raw_steps = [item for item in raw_steps if isinstance(item, dict)] if isinstance(raw_steps, list) else []
     selected_ids = value.get("selected_step_ids")
     if mode == "learning" and isinstance(selected_ids, list):
         raw_steps = [item for item in raw_steps if item.get("id") in selected_ids]
-    steps = [{"id": identity(item.get("id")), "title": text(item.get("title"), 120),
+    steps = [{"id": identity(item.get("id") or item.get("key")), "title": text(item.get("title"), 120),
               "objective": text(item.get("action") or item.get("objective") or item.get("target_deliverable"), 180)}
              for item in raw_steps[:12]]
     omitted["steps"] = max(0, len(raw_steps) - len(steps))
@@ -80,13 +103,6 @@ def conversion_context_projection(value: Any, scope: dict) -> dict | None:
                 item[group] = {key: source[key] for key in fields if identity(source.get(key))}
         sources.append(item)
     omitted["sources"] = max(0, len(raw_sources) - len(sources))
-    unresolved = value.get("unresolved_questions") or []
-    unresolved = [item for item in unresolved if isinstance(item, str)] if isinstance(unresolved, list) else []
-    if isinstance(design.get("missing_validation"), list):
-        unresolved += [item for item in design["missing_validation"] if isinstance(item, str)]
-    if isinstance(design.get("constraint_review"), list):
-        unresolved += [item["requirement"] for item in design["constraint_review"]
-                       if isinstance(item, dict) and item.get("status") != "applied" and isinstance(item.get("requirement"), str)]
     result = {
         "schema_version": SCHEMA_VERSION, "scope": scope,
         "conversion_id": conversion_id, "root_hash": root_hash,
@@ -95,13 +111,12 @@ def conversion_context_projection(value: Any, scope: dict) -> dict | None:
         "design_readiness": identity(design.get("readiness"), 80) or None,
         **overview,
         "selected_steps": steps, "source_refs": sources,
-        "unresolved_questions": [text(item, 160) for item in unresolved[:12]],
+        "unresolved_questions": unresolved_text,
         "omitted": omitted, "read_only": True, "mastery_inference": False,
         "full_candidate_included": False, "trust_boundary": TRUST_BOUNDARY,
         "detail_ref": {"path": f"/api/work-task-conversions/{conversion_id}", "expected_root_hash": root_hash,
                        "usage": "按当前账号读取完整候选；版本必须匹配，缺失细节不能自行补写。"},
     }
-    omitted["unresolved_questions"] = max(0, len(unresolved) - 12)
     # Metadata identities are bounded independently of prose; omit whole source
     # records if necessary, preserving every retained version anchor verbatim.
     while len(_json(result)) > MAX_CONTEXT_CHARS and sources:

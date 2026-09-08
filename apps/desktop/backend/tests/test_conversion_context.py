@@ -18,7 +18,9 @@ from learnflow_core.work_task_conversion_context import MAX_CONTEXT_CHARS, conve
 def handoff(scope):
     return {"schema_version": "learnflow.work-task-conversion.v1", "conversion_id": "wc_contexttest",
         "root_hash": "a" * 64, "scope": scope,
-        "brief": {"task_title": "库存数据导入", "work_context": "同一固定客户数据版本", "deliverable": "导入验收报告"},
+        "brief": {"task_title": "库存数据导入", "task_description": "解析SKU与数量并生成导入报告",
+            "acceptance_criteria": ["重复记录保留首条", "负数不得入库"], "constraints": ["只使用授权数据"],
+            "work_context": "同一固定客户数据版本", "deliverable": "导入验收报告"},
         "candidate": {"candidate_id": "wcc_contexttest", "root_hash": "b" * 64, "project_mode": "learning",
             "learning_candidate": {"task": {"steps": [
                 {"id": "s1", "title": "校验数据", "action": "检查输入"},
@@ -144,6 +146,8 @@ def test_native_provider_receives_bounded_handoff_after_18_messages(setup, monke
     assert 'UNSELECTED_STEP' not in all_content
     assert 'PRIVATE_TESTS_DO_NOT_SEND' not in all_content
     assert 'snapshot-fixed' in all_content and 'a' * 64 in all_content
+    for requirement in ('解析SKU与数量并生成导入报告', '重复记录保留首条', '负数不得入库', '只使用授权数据'):
+        assert requirement in all_content
     assert any(item.type == 'human' and '<work_task_conversion_context>' in str(item.content) for item in calls[0])
 
 
@@ -190,3 +194,44 @@ def test_domain_draft_retains_its_unresolved_authoring_boundary():
     assert '独立验收器' in projected['unresolved_questions']
     assert '生产环境约束尚未核对' in projected['unresolved_questions']
     assert 'PRIVATE_DO_NOT_SEND' not in json.dumps(projected)
+
+
+def test_maintained_reviews_and_user_requirements_precede_generated_step_budget():
+    scope = dict(learner_id=1, session_id=3, project_id=None, checkpoint_id=None)
+    value = handoff(scope)
+    # Shape produced by the maintained compiler's _parameters() review records.
+    value['candidate'] = {'candidate_id':'wcc_maintained', 'root_hash':'b'*64, 'project_mode':'practice',
+        'design': {'readiness':'ready', 'stages':[
+            {'key':f's{i}', 'title':'阶段说明'*1000, 'objective':'生成说明'*1000} for i in range(12)],
+            'acceptance_review':[
+                {'input_field':'acceptance_criteria','input_index':0,'input_text':'重复记录保留首条','status':'applied'},
+                {'input_field':'acceptance_criteria','input_index':1,'input_text':'验收报告必须由业务人员复核',
+                 'status':'requires_domain_review','clauses':[{'text':'不应重复完整审核对象','status':'requires_domain_review'}]}],
+            'constraint_review':[
+                {'input_field':'constraints','input_index':0,'input_text':'生产环境需要变更窗口','status':'requires_domain_review'},
+                {'requirement':'旧草案还需补充领域素材','status':'needs_domain_review'}]}}
+    projected = conversion_context_projection(value, scope)
+    assert projected['task_description'] == value['brief']['task_description']
+    assert projected['acceptance_criteria'] == value['brief']['acceptance_criteria']
+    assert projected['constraints'] == value['brief']['constraints']
+    assert '验收报告必须由业务人员复核' in projected['unresolved_questions']
+    assert '生产环境需要变更窗口' in projected['unresolved_questions']
+    assert '旧草案还需补充领域素材' in projected['unresolved_questions']
+    assert '重复记录保留首条' not in projected['unresolved_questions']
+    assert [step['id'] for step in projected['selected_steps']] == [f's{i}' for i in range(12)]
+    assert projected['omitted']['text_characters'] > 0
+    assert len(json.dumps(projected, ensure_ascii=False, separators=(',', ':'))) <= MAX_CONTEXT_CHARS
+    assert '不应重复完整审核对象' not in json.dumps(projected, ensure_ascii=False)
+
+
+def test_escaped_requirements_cannot_spend_the_reserved_overview_budget():
+    scope = dict(learner_id=1, session_id=3, project_id=None, checkpoint_id=None)
+    value = handoff(scope)
+    value['brief']['acceptance_criteria'] = ['<'*1000]*12
+    value['brief']['constraints'] = [chr(92)*1000]*12
+    projected = conversion_context_projection(value, scope)
+    assert projected['task_description'] == value['brief']['task_description']
+    assert projected['work_context'] == value['brief']['work_context']
+    assert projected['deliverable'] == value['brief']['deliverable']
+    assert projected['omitted']['text_characters'] > 0
+    assert len(json.dumps(projected, ensure_ascii=False, separators=(',', ':'))) <= MAX_CONTEXT_CHARS

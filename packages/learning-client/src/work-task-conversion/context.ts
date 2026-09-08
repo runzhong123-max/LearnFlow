@@ -2,7 +2,8 @@
 export const CONVERSION_CONTEXT_SCHEMA = 'learnflow.work-task-conversion-context.v1'
 const MAX_CONTEXT_CHARS = 10_000
 const CONTEXT_FIELDS = ['schema_version', 'scope', 'conversion_id', 'root_hash', 'candidate_id',
-  'candidate_root_hash', 'project_mode', 'design_readiness', 'task_title', 'work_context', 'deliverable', 'selected_steps',
+  'candidate_root_hash', 'project_mode', 'design_readiness', 'task_title', 'task_description', 'acceptance_criteria',
+  'constraints', 'work_context', 'deliverable', 'selected_steps',
   'source_refs', 'unresolved_questions', 'omitted', 'read_only', 'mastery_inference',
   'full_candidate_included', 'trust_boundary', 'detail_ref'] as const
 

@@ -25,3 +25,17 @@ test('large projections fail closed and data cannot close its delimiter',()=>{
   assert.ok(message.content.includes('\\u003c/work_task_conversion_context>'))
   assert.equal(conversionContextMessage({scope,work_task_conversion:{...context,task_title:'x'.repeat(10001)}},7),undefined)
 })
+
+test('the provider receives task description, user requirements and unresolved maintained reviews',()=>{
+  const expected = {...context, task_description:'解析SKU与数量并生成导入报告',
+    acceptance_criteria:['重复记录保留首条','负数不得入库'], constraints:['只使用授权数据'],
+    unresolved_questions:['验收报告必须由业务人员复核','生产环境需要变更窗口']}
+  const projected = conversionContextFromWorkspace({scope,work_task_conversion:expected},7)!
+  assert.equal(projected.task_description,expected.task_description)
+  assert.deepEqual(projected.acceptance_criteria,expected.acceptance_criteria)
+  assert.deepEqual(projected.constraints,expected.constraints)
+  const message = conversionContextMessage({scope,work_task_conversion:expected},7)!
+  for (const requirement of [...expected.acceptance_criteria,...expected.constraints,...expected.unresolved_questions]) {
+    assert.ok(message.content.includes(requirement))
+  }
+})
