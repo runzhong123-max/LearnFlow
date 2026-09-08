@@ -1,3 +1,4 @@
+import { clearTabLayout } from './workspace-layout.ts'
 /// <reference types="vite/client" />
 
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
@@ -199,6 +200,7 @@ export default function AuthGate({ children }: AuthGateProps) {
 
   const signOut = async () => {
     await logoutFormalAccount()
+    if (account) clearTabLayout(sessionStorage, account.learner_id)
     setAccount(undefined)
     setDevLoginEnabled(false)
     setMode('login')
