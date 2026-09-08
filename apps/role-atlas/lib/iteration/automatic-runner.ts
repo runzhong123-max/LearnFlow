@@ -24,14 +24,14 @@ export async function runAutomaticSnapshotIteration(input: {
   signal?: AbortSignal;
 }) {
   await startSnapshotIteration(input.request);
-  const graph = createSnapshotIterationSkill({
-    model: input.model,
-    modelLabel: input.modelLabel,
-    searchConfig: input.searchConfig,
-    onCheckpoint: (phase, state) => saveIterationCheckpoint(input.request.runId, phase, state),
-  });
-  let completed: SnapshotIterationResult | undefined;
   try {
+    const graph = createSnapshotIterationSkill({
+      model: input.model,
+      modelLabel: input.modelLabel,
+      searchConfig: input.searchConfig,
+      onCheckpoint: (phase, state) => saveIterationCheckpoint(input.request.runId, phase, state),
+    });
+    let completed: SnapshotIterationResult | undefined;
     const events = await graph.stream({
       request: input.request,
       base: input.base,
@@ -72,10 +72,16 @@ export async function runAutomaticSnapshotIteration(input: {
       });
       completed = result;
     }
+    if (!completed) throw new Error("自动迭代结束但没有形成可核验结果");
+    return completed;
   } catch (error) {
-    await failSnapshotIteration(input.request.runId, error instanceof Error ? error.message : "自动迭代失败", false).catch(() => undefined);
+    const message = error instanceof Error ? error.message : "自动迭代失败";
+    try {
+      await failSnapshotIteration(input.request.runId, message, false);
+    } catch (persistenceError) {
+      const persistenceMessage = persistenceError instanceof Error ? persistenceError.message : String(persistenceError);
+      throw new AggregateError([error, persistenceError], `自动迭代失败，且未能保存失败状态：${message}；${persistenceMessage}`, { cause: error });
+    }
     throw error;
   }
-  if (!completed) throw new Error("自动迭代结束但没有形成可核验结果");
-  return completed;
 }
