@@ -5,11 +5,9 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import {
   activateFormalIdentity,
   getFormalAuthStatus,
-  getFormalDemoStatus,
   invalidateFormalIdentity,
   listFormalDevAccounts,
   loginFormalAccount,
-  loginFormalDemoAccount,
   loginFormalDevAccount,
   logoutFormalAccount,
   registerFormalAccount,
@@ -18,6 +16,7 @@ import {
   type FormalRegistrationInput,
 } from './formal-runtime.ts'
 import styles from './AuthGate.module.css'
+import { loginDestination, safeReturnTo, isUnifiedSite, returnToFromSearch } from './site-auth.ts'
 import { PASSWORD_MIN_LENGTH, PASSWORD_POLICY_MESSAGE, passwordPolicyError } from './password-policy.ts'
 
 export type AuthGateSession = {
@@ -58,6 +57,10 @@ export default function AuthGate({ children }: AuthGateProps) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
+  useEffect(() => {
+    if (window.location.pathname === '/login') document.title = '岗课评教 比赛成果展示 · 登录'
+  }, [])
+
   const probeSession = async () => {
     setChecking(true)
     setError('')
@@ -68,16 +71,6 @@ export default function AuthGate({ children }: AuthGateProps) {
         setAccount(status)
         setDevLoginEnabled(status.dev_test_login_enabled === true)
       } else {
-        const isReviewEntry = typeof window !== 'undefined' && window.location.pathname === '/review'
-        if (isReviewEntry) {
-          const demo = await getFormalDemoStatus()
-          if (demo.enabled) {
-            const demoAccount = await loginFormalDemoAccount()
-            setAccount(demoAccount)
-            setDevLoginEnabled(false)
-            return
-          }
-        }
         invalidateFormalIdentity()
         setAccount(undefined)
         setDevLoginEnabled(status.dev_test_login_enabled === true)
@@ -85,7 +78,7 @@ export default function AuthGate({ children }: AuthGateProps) {
     } catch (probeError) {
       invalidateFormalIdentity()
       setAccount(undefined)
-      setError(errorMessage(probeError, '无法连接 LearnFlow 认证服务'))
+      setError(errorMessage(probeError, '暂时无法连接认证服务'))
     } finally {
       setChecking(false)
     }
@@ -213,28 +206,40 @@ export default function AuthGate({ children }: AuthGateProps) {
     await probeSession()
   }
 
+  useEffect(() => {
+    if (checking || !isUnifiedSite(window.location.hostname)) return
+    if (account && window.location.pathname === '/login') {
+      window.location.replace(safeReturnTo(returnToFromSearch(window.location.search)))
+    } else if (!account && window.location.pathname !== '/login') {
+      window.location.replace(loginDestination(window.location.href))
+    }
+  }, [checking, account])
+
   if (checking) {
     return (
       <main className={styles.shell} aria-busy="true">
         <section className={styles.loadingCard}>
-          <span className={styles.brandMark}>LF</span>
-          <h1>正在确认你的学习空间</h1>
-          <p>身份确认后才会读取对应 learner 的本地缓存与正式学习状态。</p>
+          <h1>正在检查登录状态</h1>
+          <p>请稍候。</p>
         </section>
       </main>
     )
   }
 
+  if (account && isUnifiedSite(window.location.hostname) && window.location.pathname === '/login') {
+    return null
+  }
   if (account) return children({ account, signOut })
+  if (isUnifiedSite(window.location.hostname) && window.location.pathname !== '/login') {
+    return null
+  }
 
   return (
     <main className={styles.shell}>
       <section className={styles.hero}>
-        <div className={styles.brand}><span className={styles.brandMark}>LF</span><strong>LearnFlow</strong></div>
-        <p className={styles.eyebrow}>你的专属学习空间</p>
-        <h1>每个账号，一段独立的学习旅程。</h1>
-        <p className={styles.heroCopy}>从一次提问到一段长期计划，LearnFlow 会陪你延续理解、练习与成长。</p>
-        <div className={styles.securityNote}><span>↗</span><p><strong>学习记录只属于你</strong><small>登录后继续上一次学习，不同账号彼此独立。</small></p></div>
+        <h1>岗课评教 比赛成果展示</h1>
+        <p className={styles.heroCopy}>登录后查看比赛成果。</p>
+        <div className={styles.securityNote}><span>↗</span><p><strong>统一账号登录</strong><small>一次登录，访问全部成果页面。</small></p></div>
       </section>
 
       <section className={styles.card} aria-labelledby="auth-title">
@@ -245,11 +250,11 @@ export default function AuthGate({ children }: AuthGateProps) {
 
         {mode === 'login' ? (
           <form className={styles.form} onSubmit={submitLogin}>
-            <header><p className={styles.eyebrow}>WELCOME BACK</p><h2 id="auth-title">继续你的学习</h2><span>输入账号与密码。LearnFlow 不再自动选择开发学习者。</span></header>
+            <header><h2 id="auth-title">统一登录</h2><span>使用同一账号访问所有比赛成果页面。</span></header>
             <label><span>用户名</span><input name="username" autoComplete="username" required maxLength={32} autoFocus /></label>
             <label><span>密码</span><input name="password" type="password" autoComplete="current-password" required maxLength={128} /></label>
             {error ? <p className={styles.error} role="alert">{error}</p> : null}
-            <button className={styles.primary} type="submit" disabled={busy}>{busy ? '正在登录…' : '登录 LearnFlow'}</button>
+            <button className={styles.primary} type="submit" disabled={busy}>{busy ? '正在登录…' : '登录'}</button>
           </form>
         ) : (
           <form className={styles.form} onSubmit={submitRegistration}>

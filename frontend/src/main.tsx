@@ -4258,7 +4258,8 @@ const rootScope = globalThis as typeof globalThis & { __learnflowRoot?: Root }
 const root = rootScope.__learnflowRoot || createRoot(rootElement)
 rootScope.__learnflowRoot = root
 const publicVisualHub = ['/visualize', '/visual-hub'].includes(window.location.pathname)
-if (publicVisualHub) root.render(<><nav style={{padding:'16px 26px'}}><a href="/">← 返回学习空间</a></nav><Suspense fallback={<p>正在载入图解库…</p>}><VisualHubPage/></Suspense></>)
-else void initializeRuntimeClient().then(() => root.render(
-  <AuthGate>{auth => <App key={`learner:${auth.account.learner_id}`} auth={auth} />}</AuthGate>,
+void initializeRuntimeClient().then(() => root.render(
+  <AuthGate>{auth => publicVisualHub
+    ? <><nav style={{padding:'16px 26px'}}><a href="/">← 返回学习空间</a></nav><Suspense fallback={<p>正在载入图解库…</p>}><VisualHubPage/></Suspense></>
+    : <App key={`learner:${auth.account.learner_id}`} auth={auth} />}</AuthGate>,
 ))
