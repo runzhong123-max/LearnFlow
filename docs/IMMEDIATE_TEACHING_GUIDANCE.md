@@ -1,5 +1,7 @@
 # 五核即时教学指导
 
+Contract impact（`2026-09-08.8`）：共享核心 0.2.4 收紧普通概念评分，取消多题 ID 直接升级稳定掌握；既有间隔复习与显式迁移门保留。双端规划确定性消费带来源的当前时间、困难和受助指导，约束离线与模型最终输出。事件/计划 v1 增量兼容，不回填历史画像、不迁移数据库。实现与限制见 [教育记忆策略](implementation/EDUCATION_MEMORY_POLICY.md)。
+
 > 来源版本说明：下文记录 LearnFlow app 分支的升级设计与历史验收，不代表当前仓库的测试结果。本仓库迁移版本为 `2026-09-06.2`，实际验证与兼容边界见 [迁移记录](MEMORY_UPGRADE_MIGRATION.md)。
 
 Contract impact：registry `2026-09-05.3`，新增 `teaching-guidance.v1` 控制投影。保留五核与三类主 Agent，没有数据库结构迁移。

@@ -1625,10 +1625,9 @@ async def _reduce_event(db: AsyncSession, event: EvidenceEvent):
 
     if et == "concept_attempt_evaluated":
         correct = bool(p.get("correct"))
-        independent = bool(p.get("independent", True))
-        allows_same_session_stability = (
-            p.get("assessment_mode") != "verified_micro_learning"
-        )
+        assisted = p.get("independent") is False or p.get("assistance_level") not in {None, "none"}
+        independent = not assisted and (p.get("independent") is True or p.get("assistance_level") == "none")
+        from .registry_core import CONCEPT_EVIDENCE_POLICY_VERSION
         knowledge_state = await _kernel(db, event.learner_id, "knowledge")
         concept_understanding = dict(
             (knowledge_state.short_term or {}).get("concept_understanding") or {}
@@ -1637,7 +1636,8 @@ async def _reduce_event(db: AsyncSession, event: EvidenceEvent):
         concept_understanding[item_key] = {
             "status": (
                 "verified_once" if correct and independent
-                else "correct_with_support" if correct
+                else "correct_with_support" if correct and assisted
+                else "correct_assistance_unknown" if correct
                 else "needs_review"
             ),
             "question": p.get("question", ""),
@@ -1657,23 +1657,11 @@ async def _reduce_event(db: AsyncSession, event: EvidenceEvent):
         if not correct:
             patch["pending_question"] = p.get("question", "概念题答错")
         long_patch = None
-        if correct and independent and allows_same_session_stability:
-            rows = (await db.execute(select(EvidenceEvent).where(
-                EvidenceEvent.learner_id == event.learner_id,
-                EvidenceEvent.checkpoint_id == event.checkpoint_id,
-                EvidenceEvent.event_type == "concept_attempt_evaluated",
-            ))).scalars().all()
-            distinct_items = {
-                (row.payload or {}).get("item_id") for row in rows
-                if (row.payload or {}).get("correct") and (row.payload or {}).get("independent", True)
-            }
-            if len({x for x in distinct_items if x is not None}) >= 2:
-                mastery = dict((knowledge_state.long_term or {}).get("mastery") or {})
-                mastery[f"checkpoint:{event.checkpoint_id}"] = {
-                    "level": "stable", "evidence_ids": [row.id for row in rows[-10:]],
-                }
-                concept_understanding[item_key]["status"] = "stable"
-                long_patch = {"mastery": mastery}
+        # Different item IDs, content fingerprints, or repeated original
+        # successes do not establish durable mastery. Spaced validated review
+        # and explicit transfer keep their own existing evidence gates.
+        concept_understanding[item_key]["policy_version"] = CONCEPT_EVIDENCE_POLICY_VERSION
+        concept_understanding[item_key]["mastery_inference"] = False
         await _apply_patch(db, event, "knowledge", patch, "概念评估结果", long_patch=long_patch)
         await _apply_patch(
             db, event, "practice",

@@ -2,7 +2,9 @@
 from __future__ import annotations
 from dataclasses import dataclass
 
-SHARED_CORE_VERSION = "0.2.3"
+SHARED_CORE_VERSION = "0.2.4"
+CONCEPT_EVIDENCE_POLICY_VERSION = "concept-evidence.v2"
+PLANNING_GUIDANCE_POLICY_VERSION = "learning-plan-guidance.v1"
 MEMORY_RETRIEVAL_VERSION = "relevance-budget.v2"
 
 EVENT_SCHEMA_VERSION = "learnflow.evidence.v1"
@@ -15,6 +17,23 @@ FRONTEND_SKILL_MANIFEST_REGISTRY_VERSION = "2026-09-07.4"
 
 
 KERNEL_NAMES = ("structure", "knowledge", "human", "value", "practice")
+
+# These are learner policies, not source-data import contracts or new tools.
+EDUCATION_MEMORY_POLICIES = {
+    "ordinary_concept": {
+        "version": CONCEPT_EVIDENCE_POLICY_VERSION, "owner": "practice_agent",
+        "event": "concept_attempt_evaluated", "ordinary_success_is_stable": False,
+        "stable_review_policy": "review-policy-v1", "historical_backfill": False,
+        "write_path": "EvidenceEvent -> reducer -> KernelMutation -> KernelState",
+    },
+    "planning_guidance": {
+        "version": PLANNING_GUIDANCE_POLICY_VERSION, "owner": "learning_design_agent",
+        "tool": "learning_task_planner", "kernel_reads": KERNEL_NAMES,
+        "kernel_write_path": "none", "enforce_after_model": True,
+        "authority_path": "docs/implementation/EDUCATION_MEMORY_POLICY.md",
+    },
+}
+
 
 
 LIFECYCLE_STATES = ("implemented", "optional_unimplemented", "deprecated")
