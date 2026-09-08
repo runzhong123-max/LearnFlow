@@ -1,3 +1,4 @@
+import { encodeLaunchPayload, MAX_LAUNCH_TOKEN_LENGTH, type LaunchTaskReference } from "./task-launch";
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 
 export const ROLE_PACKAGE_LAUNCH_PROTOCOL = "role-package-launch.v1" as const;
@@ -10,6 +11,8 @@ export type RolePackageLaunchPayload = {
   expiresAt: number;
   source: "graph_hub" | "role_atlas";
   roleTitle: string;
+  intent?: "work_task_conversion";
+  taskRef?: LaunchTaskReference;
   packageRef: {
     packageId: string;
     packageVersion: string;
@@ -17,10 +20,6 @@ export type RolePackageLaunchPayload = {
     rootHash: string;
   };
 };
-
-function encoded(value: string) {
-  return Buffer.from(value, "utf8").toString("base64url");
-}
 
 function secretValue(secret: string) {
   const value = secret.trim();
@@ -34,6 +33,8 @@ export function signRolePackageLaunch(input: {
   source: RolePackageLaunchPayload["source"];
   roleTitle: string;
   packageRef: RolePackageLaunchPayload["packageRef"];
+  intent?: "work_task_conversion";
+  taskRef?: LaunchTaskReference;
   now?: number;
   ttlSeconds?: number;
   launchId?: string;
@@ -49,13 +50,13 @@ export function signRolePackageLaunch(input: {
     source: input.source,
     roleTitle: input.roleTitle,
     packageRef: input.packageRef,
+    ...(input.intent ? { intent: input.intent, taskRef: input.taskRef } : {}),
   };
-  const body = encoded(JSON.stringify(payload));
-  const signature = createHmac("sha256", secretValue(input.secret)).update(body).digest("base64url");
-  return `${body}.${signature}`;
+  return encodeLaunchPayload(payload, input.secret);
 }
 
 export function verifyRolePackageLaunch(token: string, secret: string, now = Math.floor(Date.now() / 1000)) {
+  if (token.length > MAX_LAUNCH_TOKEN_LENGTH) throw new Error("ROLE_PACKAGE_LAUNCH_TOKEN_INVALID");
   const [body, supplied, extra] = token.split(".");
   if (!body || !supplied || extra) throw new Error("ROLE_PACKAGE_LAUNCH_TOKEN_INVALID");
   const expected = createHmac("sha256", secretValue(secret)).update(body).digest();
@@ -74,5 +75,9 @@ export function verifyRolePackageLaunch(token: string, secret: string, now = Mat
     || !/^[0-9a-f]{64}$/u.test(payload.packageRef.rootHash)) {
     throw new Error("ROLE_PACKAGE_LAUNCH_TOKEN_INVALID");
   }
+  if ((payload.intent || payload.taskRef) && (payload.intent !== "work_task_conversion"
+    || typeof payload.taskRef?.nodeId !== "string" || !payload.taskRef.nodeId || payload.taskRef.nodeId.length > 240
+    || typeof payload.taskRef.label !== "string" || !payload.taskRef.label.trim() || payload.taskRef.label.length > 300
+    || typeof payload.taskRef.summary !== "string" || payload.taskRef.summary.length > 2000)) throw new Error("ROLE_PACKAGE_LAUNCH_TASK_INVALID");
   return payload;
 }

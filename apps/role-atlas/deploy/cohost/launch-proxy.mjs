@@ -1,4 +1,5 @@
-import { createHmac, randomUUID } from "node:crypto";
+import { selectedLaunchTask, conversionLaunchUrl, encodeLaunchPayload } from "./task-launch-core.mjs";
+import { randomUUID } from "node:crypto";
 import http from "node:http";
 import https from "node:https";
 
@@ -11,7 +12,6 @@ const publicGraphHubUrl = process.env.GRAPH_HUB_PUBLIC_URL;
 const allowedOrigins = new Set([publicRoleAtlasUrl, publicGraphHubUrl].filter(Boolean).map(value => new URL(value).origin));
 const secret = (process.env.ROLE_PACKAGE_LAUNCH_SECRET || "").trim();
 
-function b64(value) { return Buffer.from(value, "utf8").toString("base64url"); }
 function json(res, status, value) {
   const body = JSON.stringify(value);
   res.writeHead(status, { "content-type": "application/json", "cache-control": "no-store" });
@@ -41,9 +41,7 @@ async function upstream(url, options = {}) {
   return { response: { status, ok: status >= 200 && status < 300 }, data };
 }
 function sign(payload) {
-  const body = b64(JSON.stringify(payload));
-  const signature = createHmac("sha256", secret).update(body).digest("base64url");
-  return `${body}.${signature}`;
+  return encodeLaunchPayload(payload, secret);
 }
 
 const server = http.createServer(async (req, res) => {
@@ -74,8 +72,16 @@ const server = http.createServer(async (req, res) => {
     const release = item?.releases?.find((candidate) => candidate.id === body.releaseId);
     if (!item || !release || !["ready", "published", "deprecated"].includes(release.status) || !release.artifactRootHash) return json(res, 404, { error: "RELEASE_NOT_LAUNCHABLE" });
     if (source === "graph_hub" && item.visibility !== "public") return json(res, 403, { error: "RELEASE_NOT_VISIBLE" });
-    const token = sign({ protocol: "role-package-launch.v1", launchId: randomUUID(), subject: `learnflow:learner:${learnerId}`, issuedAt: Math.floor(Date.now() / 1000), expiresAt: Math.floor(Date.now() / 1000) + 300, source, roleTitle: item.title, packageRef: { packageId: item.packageId, packageVersion: release.packageVersion, snapshotId: release.snapshotId, rootHash: release.artifactRootHash } });
-    return json(res, 200, { launchUrl: `${publicLearnFlowUrl.replace(/\/$/u, "")}/launch/role-package/${token}` });
+    const converting = body.intent === "work_task_conversion";
+    let taskRef;
+    if (converting) {
+      const artifact = await upstream(`${roleAtlasUrl}/api/releases/${encodeURIComponent(body.releaseId)}/export?format=json`, { headers: { host: "localhost", ...forwarded } });
+      if (!artifact.response.ok || artifact.data?.manifest?.rootHash !== release.artifactRootHash) return json(res, 409, { error: "RELEASE_ARTIFACT_IDENTITY_MISMATCH" });
+      try { taskRef = selectedLaunchTask(artifact.data, body.taskNodeId, { packageId: item.packageId, packageVersion: release.packageVersion, snapshotId: release.snapshotId, rootHash: release.artifactRootHash }); }
+      catch (error) { return json(res, 422, { error: error.message }); }
+    }
+    const token = sign({ ...(converting ? { intent: "work_task_conversion", taskRef } : {}), protocol: "role-package-launch.v1", launchId: randomUUID(), subject: `learnflow:learner:${learnerId}`, issuedAt: Math.floor(Date.now() / 1000), expiresAt: Math.floor(Date.now() / 1000) + 300, source, roleTitle: item.title, packageRef: { packageId: item.packageId, packageVersion: release.packageVersion, snapshotId: release.snapshotId, rootHash: release.artifactRootHash } });
+    return json(res, 200, { launchUrl: converting ? conversionLaunchUrl(process.env.WORK_TASK_PUBLIC_URL || publicLearnFlowUrl, token) : `${publicLearnFlowUrl.replace(/\/$/u, "")}/launch/role-package/${token}` });
   } catch (error) {
     return json(res, 500, { error: error instanceof Error ? error.message : "LEARNFLOW_LAUNCH_FAILED" });
   }
