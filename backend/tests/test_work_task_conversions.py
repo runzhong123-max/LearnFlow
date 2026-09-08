@@ -302,7 +302,8 @@ def test_concurrent_ticket_consumption_creates_one_project(client,monkeypatch):
     assert asyncio.run(count())==1
 
 
-def test_selected_learning_steps_survive_tutor_context_and_resume(client, monkeypatch):
+@pytest.mark.parametrize('action', ['discuss', 'create_project'])
+def test_selected_learning_steps_survive_tutor_context_and_resume(client, monkeypatch, action):
     from copy import deepcopy
     from app.services import xingchen_learning_task_candidates as x
     class Client:
@@ -321,7 +322,7 @@ def test_selected_learning_steps_survive_tutor_context_and_resume(client, monkey
     original_steps = draft["candidate"]["learning_candidate"]["task"]["steps"]
     assert len(original_steps) == 4
     ids = [step["id"] for step in original_steps[:3]]
-    result, _ = handoff(client, draft, "discuss", selected_step_ids=ids)
+    result, _ = handoff(client, draft, action, selected_step_ids=ids)
     resumed = client.get(f"/api/work-task-conversions/{draft['id']}").json()
     assert resumed["selection"]["selected_step_ids"] == ids
     async def check():
@@ -329,8 +330,76 @@ def test_selected_learning_steps_survive_tutor_context_and_resume(client, monkey
             session = await db.get(AgentSession, result["session_id"])
             context = session.context_summary["work_task_conversion"]
             assert context["scope"] == {"learner_id": session.learner_id, "session_id": session.id,
-                                        "project_id": None, "checkpoint_id": None}
+                                        "project_id": result['project_id'], "checkpoint_id": session.checkpoint_id}
             assert context["selected_step_ids"] == ids
             assert len(context["candidate"]["learning_candidate"]["task"]["steps"]) == 4
-            assert [step["id"] for step in context["selected_learning_candidate"]["task"]["steps"]] == ids
+            selected = context["selected_learning_candidate"]
+            assert [step["id"] for step in selected["task"]["steps"]] == ids
+            assert {item['id'] for item in selected['mappings']['knowledgeTargets']} == {'kp_1', 'kp_2', 'kp_3'}
+            assert {item['id'] for item in selected['mappings']['skillTargets']} == {'sp_1', 'sp_2', 'sp_3'}
+            assert {item['id'] for item in selected['mappings']['capabilityTargets']} == {f'capability_{step_id}' for step_id in ids}
+            for mapping in selected['mappings'].values():
+                assert all(set(item['derivedFromObjectIds']) <= set(ids) for item in mapping)
+            if action == 'create_project':
+                tasks = list(await db.scalars(select(LearningTask).where(LearningTask.project_id == result['project_id'])))
+                assert len(tasks) == 1
+                assert tasks[0].plan['mappings'] == selected['mappings']
+                assert [step['id'] for step in tasks[0].plan['work_steps']] == ids
     asyncio.run(check())
+
+
+def selection_candidate():
+    from copy import deepcopy
+    from app.services.xingchen_learning_task_candidates import SourceSnapshot, bundle_to_candidate
+    bundle = _bundle('selection-unit')
+    steps = bundle['task']['work_task']['task_steps']
+    fourth = deepcopy(steps[-1])
+    fourth.update(step_id='step_4', name='归档审计副本')
+    steps.append(fourth)
+    snapshot = SourceSnapshot(package_id='selection-package', package_version='1', snapshot_id='selection-snapshot',
+        root_hash='a' * 64, bindings=[], citations=[], segments=[], coverage={}, warnings=[])
+    content = bundle_to_candidate(bundle, candidate_id='selection-candidate', request_id='selection-request',
+        task_title='Nginx 部署与验收', source_snapshot=snapshot, provider_run={}, target_step_count=4)
+    return {'learning_candidate': content}
+
+
+def test_learning_selection_closes_shared_targets_and_trims_multi_step_sources():
+    from copy import deepcopy
+    candidate = selection_candidate()
+    content = candidate['learning_candidate']
+    content['task']['steps'][1]['knowledgeTargetIds'].append('kp_3')
+    content['mappings']['knowledgeTargets'][0]['derivedFromObjectIds'] = ['step_1', 'step_4']
+    content['assessment']['rubric'][0]['derivedFromObjectIds'] = ['step_1', 'step_4']
+    original = deepcopy(candidate)
+    selected = service.selected_learning(candidate, ['step_1', 'step_2', 'step_3'])
+    knowledge = {item['id']: item for item in selected['mappings']['knowledgeTargets']}
+    assert knowledge['kp_1']['derivedFromObjectIds'] == ['step_1']
+    assert knowledge['kp_3']['derivedFromObjectIds'] == ['step_2', 'step_3']
+    assert selected['assessment']['rubric'][0]['derivedFromObjectIds'] == ['step_1']
+    assert selected['coverage']['task']['knowledgeTargetCount'] == 3
+    assert selected['coverage']['task']['skillTargetCount'] == 3
+    assert selected['coverage']['task']['capabilityTargetCount'] == 3
+    assert selected['sourceSnapshot'] == content['sourceSnapshot']
+    assert selected['validation']['valid'] and selected['validation']['kernelWrites'] == 0
+    assert candidate == original  # The immutable full candidate remains available for provenance.
+    assert service.selected_learning(candidate, ['step_1', 'step_2', 'step_3']) == selected
+
+
+@pytest.mark.parametrize('reference_field', ['knowledgeTargetIds', 'skillTargetIds', 'capabilityTargetIds'])
+@pytest.mark.parametrize('selected_ids', [None, ['step_1', 'step_2', 'step_3']])
+def test_learning_selection_rejects_unresolved_targets(reference_field, selected_ids):
+    from fastapi import HTTPException
+    candidate = selection_candidate()
+    candidate['learning_candidate']['task']['steps'][2][reference_field].append('missing-target')
+    with pytest.raises(HTTPException) as error:
+        service.selected_learning(candidate, selected_ids)
+    assert error.value.status_code == 422
+    assert error.value.detail['code'] == 'invalid_learning_target_reference'
+
+
+def test_learning_selection_still_requires_dependency_closure():
+    from fastapi import HTTPException
+    with pytest.raises(HTTPException) as error:
+        service.selected_learning(selection_candidate(), ['step_1', 'step_3', 'step_4'])
+    assert error.value.status_code == 422
+    assert error.value.detail['code'] == 'missing_prerequisite'

@@ -435,14 +435,50 @@ def selected_learning(candidate, ids):
         fail(422, "minimum_learning_steps", "学习任务至少选择 3 个步骤，并保留所需的先修步骤")
     if any(set(step.get("prerequisiteStepIds") or []) - selected for step in chosen):
         fail(422, "missing_prerequisite", "选择的任务缺少先修步骤，请一起选择")
+    # Validate the original before projecting it: selection must not hide broken
+    # source links, duplicate targets or other invalid candidate structure.
+    validate_candidate(content)
+    mappings = content.get("mappings", {})
+    target_groups = (
+        ("knowledgeTargets", "knowledgeTargetIds", "knowledgeTargetCount"),
+        ("skillTargets", "skillTargetIds", "skillTargetCount"),
+        ("capabilityTargets", "capabilityTargetIds", "capabilityTargetCount"),
+    )
+    referenced_by = {}
+    for group, reference_field, _ in target_groups:
+        targets = {item["id"]: item for item in mappings.get(group, [])}
+        references = {}
+        for step in chosen:
+            target_ids = step.get(reference_field) or []
+            if not isinstance(target_ids, list) or any(
+                not isinstance(target_id, str) or target_id not in targets for target_id in target_ids
+            ):
+                fail(422, "invalid_learning_target_reference", "所选步骤的知识、技能或能力目标引用不完整，请重新生成候选")
+            for target_id in target_ids:
+                references.setdefault(target_id, set()).add(step["id"])
+        referenced_by[group] = references
     if len(chosen) != len(steps):
         content["candidateId"] += "_" + canonical_hash(sorted(selected))[:8]
         content["task"]["steps"] = chosen
-        for mapping in content.get("mappings", {}).values():
-            if isinstance(mapping, list):
-                mapping[:] = [item for item in mapping if set(item.get("derivedFromObjectIds") or []) & selected]
-        content["assessment"]["rubric"] = [item for item in content["assessment"].get("rubric", [])
-            if set(item.get("derivedFromObjectIds") or []) & selected]
+        for group, _, count_field in target_groups:
+            retained = []
+            for item in mappings.get(group, []):
+                # A shared target can have a lossy reverse link from the provider
+                # normalizer. Explicit forward links on retained steps also keep
+                # it in the projection; never fabricate missing target content.
+                sources = set(item.get("derivedFromObjectIds") or []) | referenced_by[group].get(item["id"], set())
+                item["derivedFromObjectIds"] = [step["id"] for step in chosen if step["id"] in sources]
+                if item["derivedFromObjectIds"]:
+                    retained.append(item)
+            mappings[group] = retained
+            content["coverage"]["task"][count_field] = len(retained)
+        rubric = []
+        for item in content["assessment"].get("rubric", []):
+            item["derivedFromObjectIds"] = [step["id"] for step in chosen
+                if step["id"] in (item.get("derivedFromObjectIds") or [])]
+            if item["derivedFromObjectIds"]:
+                rubric.append(item)
+        content["assessment"]["rubric"] = rubric
         content["task"]["deliverables"] = list(dict.fromkeys(item for step in chosen for item in step.get("deliverables", [])))
         content["task"]["successCriteria"] = list(dict.fromkeys(item for step in chosen for item in step.get("successCriteria", [])))
         content["assessment"]["evidenceRequired"] = content["task"]["deliverables"]
