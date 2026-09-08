@@ -3940,7 +3940,7 @@ function App({ auth }: { auth: AuthGateSession }) {
 
   return (
     <div className="app-shell">
-      <DesktopConversionImport learnerId={auth.account.learner_id} onImported={(projectId, title) => {
+      <DesktopConversionImport learnerId={auth.account.learner_id} onSwitchAccount={auth.signOut} onImported={(projectId, title) => {
         refreshFormalProjects()
         openTab({ id: `project:${projectId}`, kind: 'project', title, projectId })
       }} />

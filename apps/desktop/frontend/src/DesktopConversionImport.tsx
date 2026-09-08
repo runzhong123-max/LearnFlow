@@ -16,9 +16,10 @@ async function readResponse(response: Response) {
   return value
 }
 
-export default function DesktopConversionImport({ learnerId, onImported }: {
+export default function DesktopConversionImport({ learnerId, onImported, onSwitchAccount }: {
   learnerId: number
   onImported: (projectId: number, title: string) => void
+  onSwitchAccount: () => Promise<void>
 }) {
   const [ticket, setTicket] = useState('')
   const [preview, setPreview] = useState<ConversionPreview>()
@@ -74,6 +75,17 @@ export default function DesktopConversionImport({ learnerId, onImported }: {
     const pending = await invoke<unknown>('desktop_pending_conversion')
     setTicket(validConversionTicket(pending) ? pending : '')
   }
+  const switchAccount = async () => {
+    setBusy(true)
+    setError('')
+    try {
+      // AuthGate returns to login; the ticket stays only in the native queue.
+      // Do not dismiss, persist the ticket or select a replacement identity.
+      await onSwitchAccount()
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : '退出账号失败。交接已保留，请重试。')
+    } finally { setBusy(false) }
+  }
   const chooseParent = async () => {
     setError('')
     try {
@@ -107,7 +119,7 @@ export default function DesktopConversionImport({ learnerId, onImported }: {
     if (event.shiftKey && (document.activeElement === first || document.activeElement === event.currentTarget)) { event.preventDefault(); last?.focus() }
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus() }
   }}>
-    <header><span>网页 → 本机项目</span><button type="button" disabled={busy} onClick={() => void dismiss()}>取消交接</button></header>
+    <header><span>网页 → 本机项目</span><div>{isCloudDesktopRuntime() && <button type="button" disabled={busy} onClick={() => void switchAccount()}>更换账号并保留交接</button>}<button type="button" disabled={busy} onClick={() => void dismiss()}>取消交接</button></div></header>
     <h2 id="conversion-import-title">{preview?.candidate.title || '接续工作任务方案'}</h2>
     {!isCloudDesktopRuntime() ? <><p>此方案归属于你的云端账号。切换后使用网页同一账号登录，交接会继续保留。</p><button type="button" onClick={() => switchDesktopWorkspace(true)}>切换到云端账号</button></> : <>
       {preview && <>
