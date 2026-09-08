@@ -33,7 +33,10 @@
       authenticated = account.authenticated === true;
       status.textContent = authenticated ? `已登录 · ${account.display_name || account.username}` : '未登录';
       action.textContent = authenticated ? '退出登录' : '登录';
-      if (!authenticated && location.pathname !== '/login') location.replace(login());
+      if (!authenticated && location.pathname !== '/login') {
+        const expiry = new CustomEvent('learnflow:session-expired', {cancelable:true, detail:{loginUrl:login()}});
+        if (window.dispatchEvent(expiry)) location.replace(login());
+      }
     } catch {
       status.textContent = '连接暂不可用，正在重试';
       // An outage is not evidence that a session has been revoked.
