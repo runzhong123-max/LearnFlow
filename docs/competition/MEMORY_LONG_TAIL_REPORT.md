@@ -118,4 +118,4 @@ v2 场景已被用于诊断并指导本轮优化，因此属于**已知回归集
 
 复现采用隔离工作树中 b610538 基础上的未提交实现，因此 `code_commit=b610538` 不能单独代表新产品。实验依靠完整源码 hash 与保存的源码快照标识；发布版本另记录并核对相同生产检索 hash。没有测试真实学生学习效果、在线 LLM 回答质量、桌面安装包安装或生产库里的学习事件写入。
 
-隔离副本的 `start.sh demo` 实际启动成功：`/demo` HTTP 200、`/api/demo/status` enabled=true、`/api/architecture/validate` valid=true。没有使用日常数据库。云端发布版本另见后续发布记录。
+隔离副本的 `start.sh demo` 实际启动成功：`/demo` HTTP 200、`/api/demo/status` enabled=true、`/api/architecture/validate` valid=true。没有使用日常数据库。产品提交 `7276b1b` 已推送 main，并成功部署云端 backend 与 memory-worker；实际版本、镜像、数据备份、公共入口与部署限制见[发布记录](../validation/2026-09-08-memory-long-tail-release.md)。本地证据 ZIP 为 15,720,433 字节、102 个文件，SHA256 `abeebd5702fcd79c555a5c8f200100c762764b62042a0cd1a1baedd519ed0739`。
