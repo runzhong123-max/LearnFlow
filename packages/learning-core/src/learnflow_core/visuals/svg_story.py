@@ -8,7 +8,7 @@ import math
 import re
 from .engine import digest
 
-STORY_RUNTIME = 'learnflow.svg-story.1.0.1'
+STORY_RUNTIME = 'learnflow.svg-story.1.0.2'
 ID = re.compile(r'^[a-z][a-z0-9_.-]{0,63}$')
 
 
@@ -22,9 +22,15 @@ def text(value, name, limit):
     require(not any(ord(c) < 32 and c not in '\n\t' for c in value), name + ': control characters prohibited')
 
 
+def fields(value, required, optional, path):
+    require(isinstance(value, dict), path + ': object required')
+    missing, unknown = required - set(value), set(value) - required - optional
+    require(not missing and not unknown, path + ': missing fields ' + str(sorted(missing)) + '; unknown fields ' + str(sorted(unknown)))
+
+
 def compile_svg_story(source, kind='diagram'):
     require(kind in ('diagram', 'animation'), 'invalid kind')
-    require(isinstance(source, dict) and set(source) == {'story_version', 'title', 'goal', 'nodes', 'edges', 'steps'}, 'root fields')
+    fields(source, {'story_version', 'title', 'goal', 'nodes', 'edges', 'steps'}, set(), '/')
     require(len(json.dumps(source, ensure_ascii=False, allow_nan=False).encode()) <= 131072, 'source budget')
     require(source['story_version'] == '1', 'unsupported version')
     text(source['title'], '/title', 240); text(source['goal'], '/goal', 2000)
@@ -44,12 +50,17 @@ def compile_svg_story(source, kind='diagram'):
         require(isinstance(edge['from'], str) and isinstance(edge['to'], str) and edge['from'] in ids and edge['to'] in ids, 'edge endpoint missing')
         edge_ids.add(edge['id'])
         if 'label' in edge: text(edge['label'], '/edges/label', 100)
-    for step in steps:
-        require(isinstance(step, dict) and set(step) == {'title', 'note', 'active_nodes', 'active_edges'}, 'step fields')
-        text(step['title'], '/steps/title', 240); text(step['note'], '/steps/note', 2000)
+    step_ids = set()
+    for index, step in enumerate(steps):
+        path = f'/steps/{index}'
+        fields(step, {'title', 'note', 'active_nodes', 'active_edges'}, {'id'}, path)
+        if 'id' in step:
+            require(isinstance(step['id'], str) and ID.fullmatch(step['id']) and step['id'] not in step_ids, path + '/id: invalid or duplicate identifier')
+            step_ids.add(step['id'])
+        text(step['title'], path + '/title', 240); text(step['note'], path + '/note', 2000)
         for key, available in (('active_nodes', ids), ('active_edges', edge_ids)):
             selected = step[key]
-            require(isinstance(selected, list) and all(isinstance(i, str) and i in available for i in selected) and len(selected) == len(set(selected)), '/steps/' + key + ': references invalid')
+            require(isinstance(selected, list) and all(isinstance(i, str) and i in available for i in selected) and len(selected) == len(set(selected)), path + '/' + key + ': references invalid; expected unique IDs from ' + str(sorted(available)))
     if kind == 'animation':
         signatures = {(tuple(sorted(s['active_nodes'])), tuple(sorted(s['active_edges']))) for s in steps}
         require(len(steps) >= 2 and len(signatures) >= 2, 'animation requires two meaningfully different structural states')

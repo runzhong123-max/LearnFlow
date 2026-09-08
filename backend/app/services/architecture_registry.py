@@ -43,7 +43,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-08.6"
+REGISTRY_VERSION = "2026-09-08.7"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Pure source-data validators/exporters, not Agent-callable tools or learner writers.
