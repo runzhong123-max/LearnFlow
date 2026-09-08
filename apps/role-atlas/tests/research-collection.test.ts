@@ -33,3 +33,14 @@ test("record creation failure prevents an unrecorded model call",async()=>{
 test("archive paths distinguish legacy IDs without directory traversal",()=>{assert.notEqual(pathToken("a:b"),pathToken("a_b"));assert.equal(pathToken("../x"),"%2E%2E%2Fx");});
 
 test("known provider credentials are removed even when echoed without Bearer prefix",()=>{assert.deepEqual(removeCredential({error:"invalid abc-key",text:["abc-key"]},"abc-key"),{error:"invalid [REDACTED]",text:["[REDACTED]"]});});
+
+import { ownerId, ownerName, matchesOwner } from "../lib/research-collection/owners";
+test("admin owner filters use exact verified IDs and retain unassigned historical records",()=>{
+ const rows=[{owner_subject_id:"learnflow:learner:1",owner_name:"同名测试员"},{owner_subject_id:"learnflow:learner:10",owner_name:"同名测试员"},{owner_subject_id:null}];
+ assert.equal(rows.filter(r=>matchesOwner(r,"")).length,3);
+ assert.deepEqual(rows.filter(r=>matchesOwner(r,"learnflow:learner:1")),[rows[0]]);
+ assert.deepEqual(rows.filter(r=>matchesOwner(r,"unassigned")),[rows[2]]);
+ assert.equal(ownerId(rows[2]),"");assert.equal(ownerName(rows[2]),"历史未归属");
+ assert.equal(ownerName({owner_subject_id:"learnflow:learner:1",owner_name:"learnflow:learner:1",owner_username:"tester1"}),"tester1");
+ assert.equal(ownerName({owner_subject_id:"learnflow:learner:1"}),"未记录名称");
+});
