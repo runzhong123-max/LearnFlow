@@ -523,7 +523,7 @@ function restoreState(learnerId: number): PersistedState {
     const layout = readTabLayout(sessionStorage, learnerId)
     const value = cached ? { ...cached, tabs: (layout?.tabs || []) as WorkspaceTab[], activeTabId: layout?.activeTabId, splitTabId: layout?.splitTabId } : null
     if (!value || !Array.isArray(value.conversations) || value.conversations.length === 0) return initialState()
-    const conversations = value.conversations.map(conversation => {
+    const conversations: Conversation[] = value.conversations.map(conversation => {
       const sheets = sanitizePaperSheets<Message>(conversation.sheets)
       const restored = {
         ...conversation,
