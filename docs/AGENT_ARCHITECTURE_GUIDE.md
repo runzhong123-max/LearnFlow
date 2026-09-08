@@ -1,5 +1,7 @@
 # LearnFlow 智能体架构与协作指南
 
+Contract impact（`2026-09-08.3`）：Visual Hub 增加用户自带模型的创作入口，复用 Learning Design 的 educational_visuals 工作流与私有作品服务。`/api/visuals/user-model` 仅接受当次用户配置，公网 HTTPS / DNS 固定连接、无重定向、无平台模型密钥回退；凭据不进入作品、检查点或持久化。既有聊天后台模型策略不变。工作台复用现有生成与工作区能力，无新主 Agent、五核事件或数据库迁移。见 [Hub 自带模型创作](implementation/VISUAL_HUB_BYOK.md)。
+
 Contract impact（`2026-09-07.5`）：三类项目对话引导与工作流改为跨端共享，知识转换保留讯飞，实验和带教操作在桌面执行。新增项目候选确认及 device_reported 交付参考，工程子 Agent 继续由 Tutor 的 local_agent_broker 所有。新增事件均零 kernel targets，旧 learning 项目与稳定插件 ID 兼容。详见[工作任务到三类学习项目](implementation/DESKTOP_PROJECT_GUIDANCE.md)。
 
 Contract impact（`2026-09-07.4`）：学习方法主入口收敛为清晰讲解、费曼复述、讲义与练习共学；其余稳定 ID 保留旧运行兼容。Skill runtime v7 以真实文件/已读/Attempt 同步文件学习阶段，生成与验证解耦且保留任务原 scope。多节讲义、配对练习、失败缺口和重复/受助提交投影向后兼容；无新表、主 Agent 或五核 reducer 改动。当前合同优先见[学习方法与文件闭环 v2](implementation/LEARNING_METHODS_AND_FILES_V2.md)。

@@ -18,3 +18,5 @@
 .visual-plugin-work .visual-player-playback .visual-player-primary:hover:not(:disabled) { background: #0c6042; }
 .visual-plugin-work .visual-player-more-content > details { border: 0; padding: 0; }
 @media(max-width:560px) { .visual-plugin-work .visual-plugin-story { padding: 12px; } }
+
+.visual-story-viewport{overflow-x:auto;min-width:0}.visual-story-viewport .visual-plugin-image{display:block;min-width:460px}@media(max-width:600px){.visual-story-viewport:after{content:"画面可左右滑动";display:block;font-size:11px;color:#69817d;padding:4px}}

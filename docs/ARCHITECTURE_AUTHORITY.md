@@ -1,5 +1,7 @@
 # LearnFlow 架构权威与维护边界
 
+Contract impact（`2026-09-08.3`）：Visual Hub 增加用户自带模型的创作入口，复用 Learning Design 的 educational_visuals 工作流与私有作品服务。`/api/visuals/user-model` 仅接受当次用户配置，公网 HTTPS / DNS 固定连接、无重定向、无平台模型密钥回退；凭据不进入作品、检查点或持久化。既有聊天后台模型策略不变。工作台复用现有生成与工作区能力，无新主 Agent、五核事件或数据库迁移。见 [Hub 自带模型创作](implementation/VISUAL_HUB_BYOK.md)。
+
 Contract impact（`2026-09-08.2`）：Role Atlas 既有岗位生产任务增加持久队列投递、后台消费者、有界失联恢复和游标重放。任务身份、owner、对话版本基线与发布门保持不变；不新增 LearnFlow Agent 工具或学习事件，不读写五核。详见 [岗位任务恢复](../apps/role-atlas/docs/JOB_RECOVERY.md)。
 
 Contract impact（`2026-09-07.5`）：三类项目对话引导与工作流改为跨端共享，知识转换保留讯飞，实验和带教操作在桌面执行。新增项目候选确认及 device_reported 交付参考，工程子 Agent 继续由 Tutor 的 local_agent_broker 所有。新增事件均零 kernel targets，旧 learning 项目与稳定插件 ID 兼容。详见[工作任务到三类学习项目](implementation/DESKTOP_PROJECT_GUIDANCE.md)。

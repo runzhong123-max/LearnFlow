@@ -44,7 +44,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-07.10-desktop"
+REGISTRY_VERSION = "2026-09-08.3-desktop"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 DATA_CONTRACTS = {
@@ -182,7 +182,7 @@ TOOLS = {
         ToolContract("checkpoint_delivery_readiness", "Teaching Package and Atomic Task Readiness Projection", "learning_design_agent", "learnflow", "projection",
                      (), (), "existing Source/Lecture/Question/Exercise/Assessment -> package readiness; learner-owned LearningTask -> task readiness; optional answer-free Knowledge ContextPacket stays a separate read-only design input; compatibility summary retained and no mastery inference"),
         ToolContract("educational_visual_plugin", "Educational Visuals Plugin", "learning_design_agent", "vnext", "artifact",
-                     (), (), "namespaced plugin tools -> resumable source/builder graph -> host-validated private work references; no core learner object or kernel writes"),
+                     (), (), "namespaced plugin tools or visual_hub BYOK studio -> resumable source/builder graph -> host-validated private work references; Hub model credentials are request-only with public HTTPS pinned egress, no platform-key fallback; no core learner object or kernel writes"),
         ToolContract("visual_artifact_workspace", "Private Visual Works and Workflow Checkpoints", "learning_design_agent", "learnflow", "harness",
                      (), (), "authenticated owned jobs -> immutable source revisions and parameter runs + view state; optimistic version checks, bounded JSON, event audit; generated works never enter public library automatically"),
         ToolContract("visual_content_library", "Maintained Visual Recipes and Capability Discovery", "learning_design_agent", "vnext", "harness",
@@ -925,7 +925,7 @@ WORKBENCHES = {
                            "read_personal_concept_graph",
                            "record_concept_self_report", "manage_vnext_personal_path_node",
                            "draft_learning_task_candidate"), "vnext"),
-        WorkbenchContract("visual_hub", "Visual Teaching Gallery", "/visual-hub", "learning_design_agent", ("retrieve_learning_visual",), "vnext"),
+        WorkbenchContract("visual_hub", "Visual Teaching Gallery", "/visual-hub", "learning_design_agent", ("retrieve_learning_visual", "manage_visual_workspace", "generate_learning_diagram", "generate_learning_animation"), "vnext"),
         WorkbenchContract("vnext_learning_path", "LearnFlow Learning Path Graph", "/learning-path", "tutor_agent",
                           ("lookup_vnext_learning_path_node", "search_vnext_learning_path_graph", "propose_vnext_personal_path_node",
                            "read_vnext_learning_path_graph", "plan_vnext_learning_path",
@@ -1374,6 +1374,7 @@ _API_BINDING_TARGETS = {
     "api:agent.advance_skill_turn": ("app.api.agent", "/agent/sessions/{session_id}/skill-runs/{run_id}/turns", "POST", "advance_learning_skill_turn"),
     "api:agent.skill_action": ("app.api.agent", "/agent/sessions/{session_id}/skill-runs/{run_id}/actions", "POST", "update_learning_skill_run"),
     "api:agent.tutor_turn": ("app.api.agent", "/agent/sessions/{session_id}/turns", "POST", "tutor_turn"),
+    "api:visuals.user_model": ("learnflow_core.api.visuals", "/visuals/user-model", "POST", "user_model"),
     "api:visuals.workspace": ("learnflow_core.api.visuals", "/visuals/workspace", "POST", "workspace"),
     "api:visuals.gallery": ("learnflow_core.api.visuals", "/visuals/gallery", "POST", "gallery"),
     "api:visuals.preview": ("learnflow_core.api.visuals", "/visuals/preview", "POST", "preview"),
@@ -1592,7 +1593,7 @@ _TOOL_BINDING_IDS = {
     "domain_knowledge_packet_compiler": ("py:domain_packet.compile", "api:knowledge_library.web_evidence"),
     "source_integrity_monitor": ("py:source_integrity.inspect", "api:vnext_projects.source_health"),
     "checkpoint_delivery_readiness": ("py:delivery_readiness.read",),
-    "educational_visual_plugin": ("frontend:plugin.educational_visuals", "frontend:visual_workflow.run"),
+    "educational_visual_plugin": ("frontend:plugin.educational_visuals", "frontend:visual_workflow.run", "api:visuals.user_model"),
     "visual_artifact_workspace": ("api:visuals.workspace",),
     "visual_content_library": ("api:visuals.catalog", "api:visuals.template", "api:visuals.hub", "api:visuals.gallery", "api:visuals.preview"),
     "safe_visual_generation": ("api:visuals.compile", "api:visuals.inspect", "frontend:visual_storyboard.compile", "frontend:visual_storyboard.design_ascii", "frontend:visual.generate", "api:agent.visual_plan"),
