@@ -782,13 +782,14 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
 
   useEffect(() => {
     const currentData = filteredData;
+    setHoveredNodeId("");
     if (view !== "semantic") return;
     if (!currentData || !containerRef.current) return;
     let disposed = false;
     let resizeObserver: ResizeObserver | null = null;
 
     async function renderGraph(currentData: NonNullable<typeof filteredData>) {
-      const { Graph, NodeEvent } = await import("@antv/g6");
+      const { Graph, NodeEvent, CanvasEvent } = await import("@antv/g6");
       if (disposed || !containerRef.current) return;
 
       graphRef.current?.destroy?.();
@@ -820,6 +821,8 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
             stroke: node.lifecycle === "candidate" ? "#a97959" : palette.stroke,
             lineWidth: node.ring === 0 ? 4 : 1.5,
             lineDash: node.lifecycle === "candidate" ? [4, 3] : undefined,
+            opacity: 1,
+            halo: false,
             cursor: "grab" as const,
             labelText: node.ring === 0 ? workspaceTitle : shortLabel(node.label, node.ring),
             labelPlacement: (node.ring === 0 ? "center" : "bottom") as "center" | "bottom",
@@ -887,6 +890,8 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
       });
       graph.on(NodeEvent.POINTER_ENTER, (event: IElementEvent) => setHoveredNodeId(String(event.target?.id || "")));
       graph.on(NodeEvent.POINTER_LEAVE, () => setHoveredNodeId(""));
+      // Canvas movement covers missed node-leave events after dragging or overlays.
+      graph.on(CanvasEvent.POINTER_MOVE, () => setHoveredNodeId(""));
       graph.on(NodeEvent.DRAG_END, () => {
         window.setTimeout(() => {
           draggedRef.current = null;
@@ -918,10 +923,15 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
   useEffect(() => {
     const graph = graphRef.current;
     if (!graph || !filteredData) return;
-    const focusId = hoveredNodeId || (nodeMap.get(selectedId)?.type === "market_role" ? "" : selectedId);
-    const states = graphFocusStates(filteredData.nodes, filteredData.edges, focusId);
+    const states = graphFocusStates(filteredData.nodes, filteredData.edges, hoveredNodeId, detailOpen ? selectedId : "");
     graph.setElementState(states, false).catch(() => undefined);
-  }, [filteredData, selectedId, hoveredNodeId, nodeMap]);
+  }, [filteredData, selectedId, hoveredNodeId, detailOpen]);
+
+  useEffect(() => {
+    const clearHover = () => setHoveredNodeId("");
+    window.addEventListener("blur", clearHover);
+    return () => window.removeEventListener("blur", clearHover);
+  }, []);
 
   function selectAndFocus(node: RoleNode) {
     if (node.type === "task") {
@@ -1410,7 +1420,7 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
             ) : <div className={`graph-loading ${workspaceError ? "error" : ""}`}>{workspaceError ? <AlertTriangle size={14} /> : <span />} {workspaceError || "正在装载岗位卡片…"}</div>
           ) : (
             <>
-              <div className="graph-canvas" ref={containerRef} aria-label="可交互岗位知识图谱" />
+              <div className="graph-canvas" ref={containerRef} onPointerLeave={() => setHoveredNodeId("")} aria-label="可交互岗位知识图谱" />
               {!graphData && <div className={`graph-loading ${workspaceError ? "error" : ""}`}>{workspaceError ? <AlertTriangle size={14} /> : <span />} {workspaceError || "正在装载岗位快照…"}</div>}
               <div className="graph-hint"><GripVertical size={13} /> 悬停高亮一跳关系 · 滚轮缩放 · 拖入右侧对话即可引用 <button type="button" onClick={() => { setSelectedId(""); setHoveredNodeId(""); setDetailOpen(false); }}>清除聚焦</button></div>
               {detailOpen && selectedNode && (
