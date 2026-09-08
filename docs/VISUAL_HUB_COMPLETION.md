@@ -2,9 +2,9 @@
 
 ## 本次完成范围
 
-现有课程地图的 **226 个 planned 候选全部实现**，覆盖 41 模块、123 章、246 个 20–40 分钟 session。原有 70 份中，69 份升为 v2.0.0；迪杰斯特拉保留已维护的 v1.0.0 并重新验收。公开 Hub 现在提供 **296 个独立作品 ID**：154 份可逐步播放，142 份为改变输入即重算的交互图解。单状态图解不显示假播放按钮。
+现有课程地图的 **226 个 planned 候选全部实现**，覆盖 41 模块、123 章、246 个 20–40 分钟 session。原有 70 份中，69 份升为 v2.0.0；迪杰斯特拉保留已维护的 v1.0.0 并重新验收。Hub 现在提供 **296 个独立作品 ID**：154 份可逐步播放，142 份为改变输入即重算的交互图解。单状态图解不显示假播放按钮。
 
-这是当前自编课程地图的完成状态，不是穷尽所有院校课程、就业岗位或研究课题。查看入口为 `/visualize`（公开）与桌面 `/visual-hub`；无查询时按课程章节顺序展示，搜索时先按匹配度。Agent 检索只返回各 ID 的最新版本，仍能用精确 id/version 读取历史版本。
+这是当前自编课程地图的完成状态，不是穷尽所有院校课程、就业岗位或研究课题。查看入口为 `/visualize`（沿用网站统一登录，所有登录用户可查看维护作品）与桌面 `/visual-hub`；无查询时按课程章节顺序展示，搜索时先按匹配度。Agent 检索只返回各 ID 的最新版本，仍能用精确 id/version 读取历史版本。
 
 ## 内容和交互标准
 
@@ -55,7 +55,7 @@ npm run build
 
 历史第二批构建器只验证并跳过已发布 v1，不会再删除 v2 manifest 或把课程引用降回 v1。新旧 source 引用可并存。当前 HTML manifest 为 359 个版本，另外保留原 15 份 VisualSpec 历史模板；默认检索去重为 296 个作品。
 
-Contract impact：既有 `visual_content_library` / `retrieve_learning_visual`、公共 gallery/preview 与 private workspace 边界不变；没有新主 Agent、API、EventContract 或五核写入。课程内容补齐，目录版本升为 `2026-09-08.1`，检索默认选最新兼容版本，精确历史引用仍可读取。无需数据库迁移。
+Contract impact：既有 `visual_content_library` / `retrieve_learning_visual`、维护 gallery/preview 与 private workspace 边界不变；没有新主 Agent、API、EventContract 或五核写入。课程内容补齐，目录版本升为 `2026-09-08.1`，检索默认选最新兼容版本，精确历史引用仍可读取。无需数据库迁移。
 
 ## 模块清单
 
@@ -104,3 +104,9 @@ Contract impact：既有 `visual_content_library` / `retrieve_learning_visual`�
 | 密码与隐私计算研究 | 6 | 6 | 6 |
 | 量子计算入门研究 | 6 | 6 | 6 |
 | 生物信息与科学计算研究 | 6 | 6 | 6 |
+
+## 线上发布复核
+
+内容提交 `63e36a2` 已发布，三个 LearnFlow 服务健康，新镜像内296份预览全部通过。当前网站在本批之前已采用统一登录入口策略（见 `UNIFIED_SITE_LOGIN.md`），不在本批改变该策略。维护作品没有个人 ownership 门槛，所有登录用户均可查看。
+
+线上未登录请求按网关策略返回401。进一步用现有 Safari 会话发现 Web Hub 旧 transport 仍设置 `credentials: omit`，导致已登录页面也无法取目录；修正为与桌面及其他 Web 页面相同的 `runtimeFetch`，携带现有会话与 CSRF。没有放宽认证、导出用户 Cookie 或创建测试账号。
