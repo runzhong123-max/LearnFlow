@@ -18,7 +18,8 @@ bash start.sh demo
 
 ## 文档索引
 
-- [记忆系统扩展消融实验报告](MEMORY_ABLATION_REPORT.md)：35 类场景、新旧同数据对照、失败边界与复现证据。
+- [教育学习者画像与记忆消融实验](EDUCATION_MEMORY_ABLATION_REPORT.md)：数学、物理、编程、生物的真实服务链路，双端 9,184 次读取/规划调用；分别报告画像形成、信息交付和规划采用，保留失败。
+- [记忆系统扩展消融实验报告](MEMORY_ABLATION_REPORT.md)：35 类读取场景、新旧同数据对照、失败边界与复现证据；不代表教育画像效果。
 
 - `DEMO_RUNBOOK.md`：3–5 分钟讲解和故障切换。
 - `SUBMISSION_CHECKLIST.md`：按比赛材料编号维护交付物。
