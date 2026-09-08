@@ -45,7 +45,7 @@ def test_registry_has_three_agents_five_kernels_and_no_drift():
     assert set(ACTION_BOARD) == set(CAPABILITY_OWNERS)
     assert validate_registry() == []
     manifest = registry_manifest()
-    assert REGISTRY_VERSION == "2026-09-08.5"
+    assert REGISTRY_VERSION == "2026-09-08.6"
     assert manifest["schema_valid"] is True
     assert manifest["valid"] is (
         manifest["schema_valid"] and manifest["implementation_valid"]
@@ -745,3 +745,15 @@ def test_work_task_conversion_is_bound_and_never_mastery_evidence():
         if event.id.startswith("work_task_conversion_"):
             assert event.kernel_targets == ()
             assert event.reducer_binding is None
+
+
+def test_memory_read_contract_versions_and_helpers_are_shared():
+    import learnflow_core
+    from learnflow_core.registry_core import SHARED_CORE_VERSION, MEMORY_RETRIEVAL_VERSION
+    from learnflow_core.five_kernel_context import RETRIEVAL_VERSION, CONTEXT_PACKET_VERSION, ContextPolicy
+    from learnflow_core.memory_query import QUERY_PLAN_VERSION
+    assert learnflow_core.__version__ == SHARED_CORE_VERSION == "0.2.3"
+    assert RETRIEVAL_VERSION == MEMORY_RETRIEVAL_VERSION == "relevance-budget.v2"
+    assert CONTEXT_PACKET_VERSION == "five-kernel-context.v2"
+    assert QUERY_PLAN_VERSION == "memory-query.v1"
+    assert ContextPolicy.__dataclass_fields__["max_hops"].default == 2

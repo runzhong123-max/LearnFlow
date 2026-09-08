@@ -1,5 +1,7 @@
 # LearnFlow 智能体架构与协作指南
 
+Contract impact（`2026-09-08.6`）：共享核心 0.2.3 / `relevance-budget.v2` 增加可审计查询归一、保留限定的原文片段、时间候选配额、最多两跳的因果依赖与按任务选择摘要。ContextPacket v2 增量增加来源 hash/偏移、查询计划、证据缺口和有界图统计；三类 Agent、稳定工具 ID、事件 schema、五核写入与证据等级保持兼容，无数据库迁移。见 [长尾检索升级](implementation/MEMORY_LONG_TAIL_RETRIEVAL.md)。
+
 Contract impact（`2026-09-08.5`）：完整记忆读取采用 `relevance-budget.v1`，相关性分层、同版本摘要去重、节点与一跳语义关系共同预算；ContextPacket 附带概念图复用相同 scope/归档/敏感过滤。共享核心 0.2.2，保留 ContextPacket v2 与 EvidenceEvent/五核写入链，无数据库迁移。实现、限制与验证见 [记忆检索预算升级](implementation/MEMORY_RETRIEVAL_BUDGET_UPGRADE.md)。
 
 Contract impact（`2026-09-08.3`）：Visual Hub 增加用户自带模型的创作入口，复用 Learning Design 的 educational_visuals 工作流与私有作品服务。`/api/visuals/user-model` 仅接受当次用户配置，公网 HTTPS / DNS 固定连接、无重定向、无平台模型密钥回退；凭据不进入作品、检查点或持久化。既有聊天后台模型策略不变。工作台复用现有生成与工作区能力，无新主 Agent、五核事件或数据库迁移。见 [Hub 自带模型创作](implementation/VISUAL_HUB_BYOK.md)。
@@ -846,8 +848,8 @@ EvidenceEvent
 每个 capability 先选择 `ContextPolicy`，再经过 `FiveKernelRetriever` 按顺序执行：
 
 1. learner ownership 与 project/checkpoint/session 精确过滤；
-2. subject key 精确召回，再用本地词项匹配和 salience 排序；
-3. 只展开白名单内的一跳稀疏关系；
+2. subject key 精确召回，合并显式术语归一、受限错拼及时间候选后按相关性分层排序；
+3. 白名单关系读取一跳，仅 BLOCKS/ENABLES 可在每跳 scope 过滤下扩展至两跳；
 4. 按 item、path、个人概念图与统一 token 预算生成 answer-free `ContextPacket`。接入个人概念图后，各策略预算增加 700 个估算 token，保留原有五核召回能力；超限时按确定性顺序裁剪，而不是在 API 层无预算追加。
 
 `ContextPacket` 包含五核热头部、召回项、关系路径、冲突、缺失 facet、省略统计和

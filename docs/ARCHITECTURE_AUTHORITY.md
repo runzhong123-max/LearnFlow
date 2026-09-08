@@ -1,5 +1,7 @@
 # LearnFlow 架构权威与维护边界
 
+Contract impact（`2026-09-08.6`）：共享核心 0.2.3 / `relevance-budget.v2` 增加可审计查询归一、保留限定的原文片段、时间候选配额、最多两跳的因果依赖与按任务选择摘要。ContextPacket v2 增量增加来源 hash/偏移、查询计划、证据缺口和有界图统计；三类 Agent、稳定工具 ID、事件 schema、五核写入与证据等级保持兼容，无数据库迁移。见 [长尾检索升级](implementation/MEMORY_LONG_TAIL_RETRIEVAL.md)。
+
 Contract impact（`2026-09-08.5`）：完整记忆读取采用 `relevance-budget.v1`，相关性分层、同版本摘要去重、节点与一跳语义关系共同预算；ContextPacket 附带概念图复用相同 scope/归档/敏感过滤。共享核心 0.2.2，保留 ContextPacket v2 与 EvidenceEvent/五核写入链，无数据库迁移。实现、限制与验证见 [记忆检索预算升级](implementation/MEMORY_RETRIEVAL_BUDGET_UPGRADE.md)。
 
 Contract impact（`2026-09-08.3`）：Visual Hub 增加用户自带模型的创作入口，复用 Learning Design 的 educational_visuals 工作流与私有作品服务。`/api/visuals/user-model` 仅接受当次用户配置，公网 HTTPS / DNS 固定连接、无重定向、无平台模型密钥回退；凭据不进入作品、检查点或持久化。既有聊天后台模型策略不变。工作台复用现有生成与工作区能力，无新主 Agent、五核事件或数据库迁移。见 [Hub 自带模型创作](implementation/VISUAL_HUB_BYOK.md)。

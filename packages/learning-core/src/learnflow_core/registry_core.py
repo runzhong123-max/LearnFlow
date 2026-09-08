@@ -2,8 +2,8 @@
 from __future__ import annotations
 from dataclasses import dataclass
 
-SHARED_CORE_VERSION = "0.2.2"
-MEMORY_RETRIEVAL_VERSION = "relevance-budget.v1"
+SHARED_CORE_VERSION = "0.2.3"
+MEMORY_RETRIEVAL_VERSION = "relevance-budget.v2"
 
 EVENT_SCHEMA_VERSION = "learnflow.evidence.v1"
 

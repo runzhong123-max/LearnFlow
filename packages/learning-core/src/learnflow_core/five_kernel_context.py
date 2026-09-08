@@ -14,7 +14,7 @@ import math
 import re
 from typing import Any, Iterable
 
-from sqlalchemy import and_, case, or_, select
+from sqlalchemy import Integer, and_, case, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.learning import (
@@ -29,6 +29,9 @@ from app.models.learning import (
 )
 from app.services.architecture_registry import KERNEL_NAMES
 from learnflow_core.registry_core import MEMORY_RETRIEVAL_VERSION
+from learnflow_core.memory_query import plan_query, tokenize, fuzzy_probes, resolve_fuzzy
+from learnflow_core.memory_excerpt import excerpt
+from learnflow_core.memory_paths import collect_path_bundles
 from app.services.personal_concept_graph import build_personal_concept_context
 from app.services.teaching_guidance import GUIDANCE_VERSION, select_teaching_guidance
 
@@ -67,6 +70,7 @@ class ContextPolicy:
     token_budget: int
     scope_mode: str
     relations: tuple[str, ...] = DEFAULT_RELATIONS
+    max_hops: int = 2
 
 
 CONTEXT_POLICIES = {
@@ -514,15 +518,7 @@ def _safe_payload(value: Any) -> Any:
 
 
 def _search_terms(text: str) -> set[str]:
-    lowered = str(text or "").casefold()
-    latin = set(re.findall(r"[a-z0-9_\-]{2,}", lowered))
-    han_runs = re.findall(r"[\u4e00-\u9fff]+", lowered)
-    han = {
-        run[index:index + 2]
-        for run in han_runs for index in range(max(1, len(run) - 1))
-        if run[index:index + 2]
-    }
-    return latin | han
+    return tokenize(text)
 
 
 def _in_scope(
@@ -552,24 +548,24 @@ def _in_scope(
     return True
 
 
-def _scope_filters(policy: ContextPolicy, project_id, checkpoint_id, session_id):
+def _scope_filters(policy: ContextPolicy, project_id, checkpoint_id, session_id, *, model=MemoryNode, history=False):
     """Apply scope before bounding candidates; old relevant memories stay reachable."""
     filters = [
-        MemoryNode.status.in_(("active", "transient", "legacy")),
-        or_(MemoryNode.valid_to.is_(None), MemoryNode.valid_to > datetime.utcnow()),
-        or_(MemoryNode.status != "transient", MemoryNode.session_id == session_id)
-        if session_id is not None else MemoryNode.status != "transient",
+        model.status.in_(("active", "transient", "legacy", "superseded") if history else ("active", "transient", "legacy")),
+        or_(model.valid_to.is_(None), model.valid_to > datetime.utcnow()),
+        or_(model.status != "transient", model.session_id == session_id)
+        if session_id is not None else model.status != "transient",
     ]
     if policy.scope_mode == "portfolio_reference":
-        filters.append(or_(MemoryNode.node_type == "claim", MemoryNode.project_id.is_(None)))
+        filters.append(or_(model.node_type == "claim", model.project_id.is_(None)))
     else:
         if project_id is not None:
             filters.extend([
-                or_(MemoryNode.project_id.is_(None), MemoryNode.project_id == project_id),
-                or_(MemoryNode.status != "legacy", MemoryNode.project_id.is_not(None)),
+                or_(model.project_id.is_(None), model.project_id == project_id),
+                or_(model.status != "legacy", model.project_id.is_not(None)),
             ])
         if checkpoint_id is not None:
-            filters.append(or_(MemoryNode.checkpoint_id.is_(None), MemoryNode.checkpoint_id == checkpoint_id))
+            filters.append(or_(model.checkpoint_id.is_(None), model.checkpoint_id == checkpoint_id))
     return filters
 
 
@@ -647,6 +643,7 @@ def _sensitive_node(node: MemoryNode, fact: MemoryFact | None) -> bool:
 def _serialize_item(
     node: MemoryNode, *, score: float, reasons: list[str],
     fact: MemoryFact | None, claim: MemoryClaim | None, module: MemoryModule | None,
+    terms: Iterable[str] = (),
 ) -> dict[str, Any]:
     evidence_refs = [fact.source_event_id] if fact else []
     detail: dict[str, Any] = {}
@@ -670,6 +667,8 @@ def _serialize_item(
             "revision_kind": module.revision_kind,
             "policy_version": module.policy_version,
         }
+    rendered, source_text = excerpt(node.text, terms, limit=640)
+    detail["source_text"] = source_text
     return {
         "id": node.id,
         "kernel": node.kernel_name,
@@ -685,7 +684,7 @@ def _serialize_item(
             "checkpoint_id": node.checkpoint_id,
             "session_id": node.session_id,
         },
-        "text": node.text[:900],
+        "text": rendered,
         "status": node.status,
         "confidence": round(float(node.confidence or 0), 3),
         "salience": round(float(node.salience or 0), 3),
@@ -700,7 +699,7 @@ def _serialize_item(
 
 def _query_relevance(node: MemoryNode, subjects: set[str], terms: set[str]) -> tuple[int, float]:
     """Scope and cache membership are not evidence of topical relevance."""
-    overlap = len(terms & _search_terms(f"{node.subject_key} {node.memory_kind} {node.text}"))
+    overlap = len(terms & _search_terms(f"{node.subject_id or node.subject_key.split(':', 1)[-1]} {node.text}"))
     return (2 if node.subject_key in subjects else 1 if overlap else 0,
             overlap / max(1, len(terms)))
 
@@ -737,8 +736,16 @@ async def build_five_kernel_context(
     if isinstance(policy, str):
         policy = CONTEXT_POLICIES[policy]
     explicit_subjects = {str(item) for item in subject_keys if str(item)}
-    query_terms = _search_terms(query)
-    focused = bool(explicit_subjects or query_terms)
+    query_plan = plan_query(query)
+    query_terms = set(query_plan.terms)
+    focused = bool(explicit_subjects or str(query).strip())
+    document_terms: dict[int, set[str]] = {}
+    def node_relevance(node):
+        if node.id not in document_terms:
+            document_terms[node.id] = _search_terms(f"{node.subject_id or node.subject_key.split(':', 1)[-1]} {node.text}")
+        overlap = len(query_terms & document_terms[node.id])
+        return (2 if node.subject_key in explicit_subjects else 1 if overlap else 0,
+                overlap / max(1, len(query_terms)))
     archives = list((await db.execute(select(MemoryArchive).where(
         MemoryArchive.learner_id == learner_id, MemoryArchive.status == "archived",
     ))).scalars().all())
@@ -785,9 +792,7 @@ async def build_five_kernel_context(
             return [
                 int(ref) for ref in refs
                 if int(ref) not in hidden_refs and int(ref) in referenced_map
-                and (not focused or _query_relevance(
-                    referenced_map[int(ref)], explicit_subjects, query_terms,
-                )[0] > 0)
+                and (not focused or node_relevance(referenced_map[int(ref)])[0] > 0)
             ][:limit]
 
         focus_refs = visible(head.focus_refs or [], HEAD_LIMITS["focus"])
@@ -877,8 +882,44 @@ async def build_five_kernel_context(
         order = candidate_order if channel is not None else recent_order
         for node in (await db.execute(statement.order_by(*order).limit(240))).scalars():
             nodes_by_id[node.id] = node
+    # History requests reserve oldest/middle/latest FACT candidates per subject,
+    # after the same SQL scope filter. No generated summary becomes an event.
+    temporal_slots: dict[int, str] = {}
+    if query_plan.temporal != "current" and (query_terms or explicit_subjects):
+        matched = or_(MemoryNode.subject_key.in_(explicit_subjects or {"__none__"}),
+                      *(MemoryNode.text.icontains(t, autoescape=True) for t in sorted(query_terms)))
+        partition = (MemoryNode.kernel_name, MemoryNode.subject_key)
+        history_window = base.where(matched, MemoryNode.node_type == "fact").with_only_columns(
+            MemoryNode.id.label("id"),
+            func.row_number().over(partition_by=partition,
+                order_by=(MemoryNode.occurred_at, MemoryNode.id)).label("position"),
+            func.count().over(partition_by=partition).label("total"),
+        ).subquery()
+        slots = list((await db.execute(select(history_window).where(or_(
+            history_window.c.position == 1,
+            history_window.c.position == history_window.c.total,
+            history_window.c.position == cast((history_window.c.total + 1) / 2, Integer),
+        )).order_by(history_window.c.position, history_window.c.id).limit(48))).mappings())
+        temporal_slots = {r["id"]: "earliest" if r["position"] == 1 else
+                          "latest" if r["position"] == r["total"] else "middle" for r in slots}
+        for node in (await db.execute(base.where(MemoryNode.id.in_(temporal_slots or {-1})))).scalars():
+            nodes_by_id[node.id] = node
+    probes = fuzzy_probes(query_plan)
+    if probes:
+        # Probes only find a scoped vocabulary. They never qualify an item as relevant.
+        fuzzy_filter = or_(*(MemoryNode.text.icontains(t, autoescape=True) for t in probes))
+        for node in (await db.execute(base.where(fuzzy_filter).order_by(*recent_order).limit(240))).scalars():
+            nodes_by_id[node.id] = node
     nodes = list(nodes_by_id.values())
     facts, claims, modules = await _node_metadata(db, [node.id for node in nodes])
+    def permitted(node, fact, history=False):
+        return (node.learner_id == learner_id and node.kernel_name in policy.deep_kernels
+                and node.kernel_name != "human" and node.id not in archived_ids
+                and not _sensitive_node(node, fact)
+                and _in_scope(node, policy, project_id=project_id, checkpoint_id=checkpoint_id,
+                              session_id=session_id, allow_superseded=history))
+    query_plan = resolve_fuzzy(query_plan, [n.text for n in nodes if permitted(n, facts.get(n.id))])
+    query_terms = set(query_plan.terms)
     concept_context = await build_personal_concept_context(
         db,
         learner_id,
@@ -891,9 +932,27 @@ async def build_five_kernel_context(
             and node.kernel_name != "human" and not _sensitive_node(node, fact)
             and _in_scope(node, policy, project_id=project_id,
                           checkpoint_id=checkpoint_id, session_id=session_id)
-            and (not focused or _query_relevance(node, explicit_subjects, query_terms)[0] > 0)
+            and (not focused or node_relevance(node)[0] > 0)
         ),
     )
+    # Ranking must not observe a hidden historical endpoint either. Apply the
+    # same graph scope and Python metadata filter before treating an update as
+    # a current correction anchor. The extra ranking channel is also bounded.
+    update_rows = list((await db.execute(select(MemoryEdge.source_node_id, MemoryNode)
+        .join(MemoryNode, MemoryNode.id == MemoryEdge.target_node_id).where(
+            MemoryEdge.learner_id == learner_id,
+            MemoryEdge.source_node_id.in_(nodes_by_id or {-1}),
+            MemoryEdge.relation_type.in_(("SUPERSEDES", "CONTRADICTS")),
+            MemoryNode.learner_id == learner_id,
+            MemoryNode.kernel_name.in_(policy.deep_kernels), MemoryNode.kernel_name != "human",
+            MemoryNode.id.not_in(archived_ids or {-1}),
+            *_scope_filters(policy, project_id, checkpoint_id, session_id, history=True),
+        ).order_by(MemoryEdge.id.desc()).limit(769))).all())
+    update_ranking_truncated = len(update_rows) > 768
+    update_rows = update_rows[:768]
+    update_facts, _, _ = await _node_metadata(db, [n.id for _, n in update_rows])
+    current_update_ids = {source for source, target in update_rows
+                          if permitted(target, update_facts.get(target.id), history=True)}
     now = datetime.utcnow()
     ranked: list[tuple[float, int, MemoryNode, list[str]]] = []
     excluded_sensitive = 0
@@ -915,7 +974,7 @@ async def build_five_kernel_context(
         if _sensitive_node(node, fact):
             excluded_sensitive += 1
             continue
-        tier, lexical = _query_relevance(node, explicit_subjects, query_terms)
+        tier, lexical = node_relevance(node)
         if focused and tier == 0:
             excluded_irrelevant += 1
             continue
@@ -938,9 +997,25 @@ async def build_five_kernel_context(
         if session_id is not None and node.session_id == session_id:
             score += 0.2
             reasons.append("session_scope")
-        if node.node_type == "claim" and node.status == "active" and (tier or not focused):
-            score += 0.75
-            reasons.append("relevant_active_claim")
+        if query_plan.intent == "summary" or not focused:
+            if node.node_type in {"module", "claim"} and node.status == "active":
+                score += 1.25
+                reasons.append("summary_query")
+        elif node.node_type == "fact":
+            score += 0.85
+            reasons.append("original_fact_for_detail")
+        if node.id in current_update_ids:
+            score += 1.2
+            reasons.append("current_correction_anchor")
+        if node.id in temporal_slots:
+            slot = temporal_slots[node.id]
+            boost = (3.0 if slot == "earliest" else 0.0) if query_plan.temporal == "earliest" else {
+                "earliest": 2.0, "middle": 1.5, "latest": 1.0,
+            }[slot]
+            score += boost
+            reasons.append("temporal_" + slot)
+        if lexical and query_terms != set(query_plan.literal_terms):
+            reasons.append("audited_query_expansion")
         age_days = max(0.0, (now - node.occurred_at).total_seconds() / 86400) if node.occurred_at else 999
         score += 0.5 / (1.0 + age_days)
         ranked.append((score, node.id, node, reasons))
@@ -956,55 +1031,26 @@ async def build_five_kernel_context(
     serialized = {
         node.id: _serialize_item(node, score=score, reasons=reasons,
                                 fact=facts.get(node.id), claim=claims.get(node.id),
-                                module=modules.get(node.id))
+                                module=modules.get(node.id), terms=query_terms)
         for score, _, node, reasons in ranked
     }
-    # Discover bounded one-hop candidates before spending the item budget.
-    # Semantic/correction edges precede bookkeeping links, which otherwise
-    # crowd out a single old dependency behind a large consolidation fan-out.
-    anchors = {row[1] for row in ranked[:max(1, policy.max_items * 3)]}
-    paths_by_anchor: dict[int, list[dict[str, Any]]] = {}
-    if anchors and policy.max_paths > 0:
-        relation_priority = case(
-            (MemoryEdge.relation_type.in_(("CONTRADICTS", "SUPERSEDES")), 0),
-            (MemoryEdge.relation_type.in_(("BLOCKS", "ENABLES", "ADDRESSES", "MOTIVATES")), 1),
-            else_=2,
-        )
-        edges = list((await db.execute(select(MemoryEdge).where(
-            MemoryEdge.learner_id == learner_id,
-            MemoryEdge.relation_type.in_(policy.relations),
-            or_(MemoryEdge.source_node_id.in_(anchors), MemoryEdge.target_node_id.in_(anchors)),
-        ).order_by(relation_priority, MemoryEdge.created_at.desc(), MemoryEdge.id.desc())
-            .limit(80))).scalars())
-        endpoint_ids = {identifier for edge in edges
-                        for identifier in (edge.source_node_id, edge.target_node_id)}
-        endpoint_nodes = list((await db.execute(select(MemoryNode).where(
-            MemoryNode.learner_id == learner_id,
-            MemoryNode.id.in_(endpoint_ids or {-1}),
-        ))).scalars())
-        endpoint_map = {node.id: node for node in endpoint_nodes}
-        endpoint_facts, _, _ = await _node_metadata(db, endpoint_ids)
-        for edge in edges:
-            endpoints = [endpoint_map.get(edge.source_node_id), endpoint_map.get(edge.target_node_id)]
-            if any(node is None or node.id in archived_ids or node.kernel_name == "human"
-                   or _sensitive_node(node, endpoint_facts.get(node.id))
-                   or not _in_scope(node, policy, project_id=project_id,
-                                    checkpoint_id=checkpoint_id, session_id=session_id,
-                                    allow_superseded=edge.relation_type in {"CONTRADICTS", "SUPERSEDES"})
-                   for node in endpoints):
-                continue
-            def endpoint(node: MemoryNode) -> dict[str, Any]:
-                fact = endpoint_facts.get(node.id)
-                return {"id": node.id, "kernel": node.kernel_name, "text": node.text[:240],
-                        "status": node.status,
-                        "evidence_grade": fact.evidence_grade if fact else None,
-                        "source_event_id": fact.source_event_id if fact else None,
-                        "occurred_at": node.occurred_at.isoformat() if node.occurred_at else None}
-            path = {"relation": edge.relation_type, "source": endpoint(endpoints[0]),
-                    "target": endpoint(endpoints[1]), "evidence_event_id": edge.evidence_event_id}
-            for identifier in (edge.source_node_id, edge.target_node_id):
-                if identifier in anchors:
-                    paths_by_anchor.setdefault(identifier, []).append(path)
+    def graph_scope(model):
+        return [model.kernel_name.in_(policy.deep_kernels), model.kernel_name != "human",
+                model.id.not_in(archived_ids or {-1}),
+                *_scope_filters(policy, project_id, checkpoint_id, session_id, model=model, history=True)]
+    def endpoint(node, fact):
+        body, source = excerpt(node.text, query_terms, limit=240)
+        return {"id": node.id, "kernel": node.kernel_name, "text": body,
+                "status": node.status, "evidence_grade": fact.evidence_grade if fact else None,
+                "source_event_id": fact.source_event_id if fact else None,
+                "occurred_at": node.occurred_at.isoformat() if node.occurred_at else None,
+                "source_text": source}
+    bundles_by_anchor, graph_stats = await collect_path_bundles(
+        db, learner_id=learner_id, anchors=[row[2] for row in ranked[:max(1, policy.max_items * 3)]],
+        relations=policy.relations, max_hops=policy.max_hops if policy.max_paths else 0,
+        node_allowed=permitted, scope_predicates=graph_scope, endpoint=endpoint,
+        relevance=lambda node: sum(node_relevance(node)),
+    )
 
     def current_packet_tokens() -> int:
         return _token_estimate({
@@ -1031,8 +1077,21 @@ async def build_five_kernel_context(
 
     duplicate_count = 0
     selected_path_keys: set[tuple] = set()
-    # Each ranked anchor competes as a node + best useful semantic path bundle.
-    # We never append an unbudgeted path and then discard all paths first.
+    def path_key(path):
+        return path["source"]["id"], path["relation"], path["target"]["id"]
+    def add_bundle(bundle):
+        # A second hop can only travel together with its complete stored prefix.
+        fresh = [p for p in bundle if path_key(p) not in selected_path_keys]
+        if not fresh or len(relation_paths) + len(fresh) > policy.max_paths:
+            return False
+        relation_paths.extend(fresh)
+        if current_packet_tokens() > policy.token_budget:
+            del relation_paths[-len(fresh):]
+            return False
+        selected_path_keys.update(path_key(p) for p in fresh)
+        return True
+    # Each anchor initially receives an update and a dependency chain; space is shared
+    # round-robin rather than consumed by the first high-degree anchor.
     for _, identifier, _, _ in ranked:
         if len(items) >= policy.max_items:
             break
@@ -1044,38 +1103,28 @@ async def build_five_kernel_context(
         if current_packet_tokens() > policy.token_budget:
             items.pop()
             continue
-        for path in paths_by_anchor.get(identifier, []):
-            key = (path["source"]["id"], path["relation"], path["target"]["id"])
-            if key in selected_path_keys or len(relation_paths) >= policy.max_paths:
+        groups_used = set()
+        for bundle in bundles_by_anchor.get(identifier, []):
+            relation = bundle[0]["relation"]
+            if relation in {"SAME_SUBJECT", "CONSOLIDATED_INTO", "SUPPORTS", "REFINES"}:
                 continue
-            # Version/causal links carry new meaning; repetitive membership
-            # edges remain available in the graph inspector, not the prompt.
-            if path["relation"] in {"SAME_SUBJECT", "CONSOLIDATED_INTO", "SUPPORTS", "REFINES"}:
-                continue
-            relation_paths.append(path)
-            if current_packet_tokens() > policy.token_budget:
-                relation_paths.pop()
-                continue
-            selected_path_keys.add(key)
-    # Lower-priority provenance/membership links use remaining space only.
-    # Keep links that add an unrepresented endpoint, or meaningful additional
-    # causal/version context; avoid repeating text already shown in items.
-    selected_ids = {item["id"] for item in items}
-    for identifier in [item["id"] for item in items]:
-        for path in paths_by_anchor.get(identifier, []):
-            key = (path["source"]["id"], path["relation"], path["target"]["id"])
-            if key in selected_path_keys or len(relation_paths) >= policy.max_paths:
-                continue
-            if path["relation"] in {"SAME_SUBJECT", "CONSOLIDATED_INTO", "SUPPORTS", "REFINES"}:
-                if all(endpoint["id"] in selected_ids or any(
-                        endpoint["text"] in item["text"] for item in items)
-                       for endpoint in (path["source"], path["target"])):
+            group = "update" if relation in {"SUPERSEDES", "CONTRADICTS"} else "dependency"
+            if group not in groups_used and add_bundle(bundle):
+                groups_used.add(group)
+    for membership in (False, True):
+        pending = []
+        for item in items:
+            pending.append([bundle for bundle in bundles_by_anchor.get(item["id"], [])
+                if (bundle[0]["relation"] in {"SAME_SUBJECT", "CONSOLIDATED_INTO", "SUPPORTS", "REFINES"}) == membership])
+        for index in range(max((len(v) for v in pending), default=0)):
+            for candidates in pending:
+                if index >= len(candidates):
                     continue
-            relation_paths.append(path)
-            if current_packet_tokens() > policy.token_budget:
-                relation_paths.pop()
-                continue
-            selected_path_keys.add(key)
+                bundle = candidates[index]
+                if membership and all(any(ep["id"] == item["id"] or ep["text"] in item["text"] for item in items)
+                                      for p in bundle for ep in (p["source"], p["target"])):
+                    continue
+                add_bundle(bundle)
     # If even the fixed envelope cannot fit, reject an impossible policy rather
     # than label an over-budget packet as valid. Built-in policies fit easily.
     if current_packet_tokens() > policy.token_budget:
@@ -1100,6 +1149,8 @@ async def build_five_kernel_context(
         "version": CONTEXT_PACKET_VERSION,
         "retrieval_version": RETRIEVAL_VERSION,
         "policy": policy.id,
+        "query_plan": {"terms": sorted(query_terms), "intent": query_plan.intent, "temporal": query_plan.temporal, "audit": query_plan.audit},
+        "source_ranges": [[i["id"], i["detail"]["source_text"]] for i in items],
         "learner_id": learner_id,
         "project_id": project_id,
         "checkpoint_id": checkpoint_id,
@@ -1111,7 +1162,7 @@ async def build_five_kernel_context(
         "teaching_guidance": teaching_guidance,
         "item_ids": [item["id"] for item in items],
         "path_keys": [
-            [path["source"]["id"], path["relation"], path["target"]["id"]]
+            [path["source"]["id"], path["relation"], path["target"]["id"], path.get("hop"), path.get("via_node_ids")]
             for path in relation_paths
         ],
         "concept_keys": [
@@ -1148,7 +1199,11 @@ async def build_five_kernel_context(
             "teaching_guidance_budget_filtered": guidance_omitted,
             "candidate_count": len(nodes),
             "candidate_limit_per_channel": 240,
-            "candidate_channels": len(channels) + 1,
+            "candidate_channels": len(channels) + 1 + bool(probes) + bool(temporal_slots),
+            "temporal_candidates": len(temporal_slots),
+            "update_ranking_candidates": len(update_rows),
+            "update_ranking_truncated": update_ranking_truncated,
+            "graph": graph_stats,
             "candidate_window_may_be_truncated": len(nodes) >= 240,
             "selected_count": len(items),
             "scope_filtered": excluded_scope,
@@ -1172,7 +1227,12 @@ async def build_five_kernel_context(
             }),
             "answer_free": True,
             "retrieval_version": RETRIEVAL_VERSION,
-            "retrieval_order": ["exact_scope", "relevance_tiers", "one_hop_candidates", "deduplicated_joint_budget"],
+            "retrieval_order": ["exact_scope", "audited_query_normalization", "temporal_candidates",
+                                "relevance_tiers", "bounded_two_hop_bundles", "original_excerpts_joint_budget"],
+            "query_plan": {"intent": query_plan.intent, "temporal": query_plan.temporal, **query_plan.audit},
+            "direct_memory_evidence": bool(items),
+            "evidence_gap": None if items else "no_direct_memory_for_query",
+            "graph": graph_stats,
             "authority": "read_only_projection_from_evidence_and_memory_graph",
             "personal_concept_graph": (
                 "read-only Knowledge node history + Structure relations "

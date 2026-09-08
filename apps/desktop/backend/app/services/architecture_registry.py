@@ -44,7 +44,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-08.5-desktop"
+REGISTRY_VERSION = "2026-09-08.6-desktop"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 DATA_CONTRACTS = {
@@ -326,9 +326,9 @@ TOOLS = {
         ToolContract("kernel_head_projector", "Bounded Kernel Head Projector", "tutor_agent", "learnflow", "projection",
                      KERNEL_NAMES, (), "KernelState/Memory Graph -> rebuildable KernelHead"),
         ToolContract("five_kernel_retriever", "Scoped Five-kernel Retriever", "tutor_agent", "learnflow", "read",
-                     KERNEL_NAMES, (), "exact scope -> relevance tiers -> bounded one-hop candidates -> relevance-budget.v1"),
+                     KERNEL_NAMES, (), "exact scope -> audited query normalization and temporal candidates -> bounded two-hop causal paths -> relevance-budget.v2"),
         ToolContract("context_packet_assembler", "Capability ContextPacket Assembler", "tutor_agent", "learnflow", "read",
-                     KERNEL_NAMES, (), "ContextPolicy -> deduplicated joint item/path budget -> answer-free ContextPacket v2"),
+                     KERNEL_NAMES, (), "ContextPolicy -> conditional summaries and attributed qualifier excerpts -> deduplicated joint item/path budget -> answer-free ContextPacket v2"),
         ToolContract("workflow_gateway", "Mock / Xingchen Workflow Gateway", "learning_design_agent", "companion", "optional_adapter",
                      KERNEL_NAMES, (), "validated artifact or EvidenceEvent only"),
         ToolContract("workflow_validator", "Workflow Builder + Validator", "learning_design_agent", "companion", "maintenance"),
