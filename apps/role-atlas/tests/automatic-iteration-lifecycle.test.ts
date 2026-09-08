@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import ts from "typescript";
+import { bundledRoleSnapshot } from "@/lib/snapshots/bundled-role-adapter";
 import type { runAutomaticSnapshotIteration } from "@/lib/iteration/automatic-runner";
 import type { IterationEvent, SnapshotIterationResult } from "@/lib/iteration/types";
 
@@ -39,11 +40,11 @@ function fixture(options: { constructError?: Error; persistenceError?: Error; ev
     assert.ok(id in dependencies, `Unexpected production dependency: ${id}`);
     return dependencies[id];
   }, module, module.exports);
-  const input = {
+  const input: Parameters<typeof runAutomaticSnapshotIteration>[0] = {
     request: { runId: "synthetic:enrichment:deep", snapshotRef: { snapshotId: "snapshot:fixture" }, initiativeProfile: "autonomous", prompt: "", targetIds: [], supplementalSources: [], webResearch: false, maxRounds: 1, sourceLimit: 4, maxWorkItems: 4 },
-    base: { snapshot: { id: "snapshot:fixture" } },
+    base: bundledRoleSnapshot(),
     model: async function* () { throw new Error("unexpected model request"); },
-  } as Parameters<typeof runAutomaticSnapshotIteration>[0];
+  };
   return { execute: () => module.exports.runAutomaticSnapshotIteration(input), trace, failures, status: () => status };
 }
 
