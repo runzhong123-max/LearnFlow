@@ -186,3 +186,12 @@ def test_assisted_final_never_becomes_independent_on_retry(client):
     retry = delivery(client, pid, cp, stage, assistance="independent")
     assert retry.json()["milestones"][-1]["status"] == "available"
     assert retry.json()["milestones"][-1]["submission"]["assistance_level"] == "together"
+
+
+def test_numeric_json_equivalence_preserves_boolean_type_boundary():
+    incident = compile_design(brief("故障排查"), "practice", "incident-investigation")["stages"][-1]
+    actual = deepcopy(incident["assessment"]["expected"])
+    actual["control_error_rate"] = 0
+    assert evaluate_design_stage(incident, {"result": json.dumps(actual)})[0]["passed"]
+    actual["control_error_rate"] = False
+    assert not evaluate_design_stage(incident, {"result": json.dumps(actual)})[0]["passed"]

@@ -347,11 +347,25 @@ def public_design(design: dict) -> dict:
     return public
 
 
+def _same_json_result(actual: object, expected: object) -> bool:
+    if isinstance(expected, bool) or isinstance(actual, bool):
+        return type(actual) is type(expected) and actual == expected
+    if isinstance(expected, (int, float)):
+        return isinstance(actual, (int, float)) and actual == expected
+    if isinstance(expected, dict):
+        return isinstance(actual, dict) and set(actual) == set(expected) and all(
+            _same_json_result(actual[key], value) for key, value in expected.items())
+    if isinstance(expected, list):
+        return isinstance(actual, list) and len(actual) == len(expected) and all(
+            _same_json_result(a, e) for a, e in zip(actual, expected))
+    return type(actual) is type(expected) and actual == expected
+
+
 def evaluate_design_stage(stage: dict, answers: dict) -> list[dict]:
     try:
         result = json.loads(answers.get("result", ""))
-        # JSON type fidelity: Python considers True == 1, but the contract does not.
-        passed = digest(result) == digest(stage["assessment"]["expected"])
+        # JSON booleans are not numbers; numerically equal 0 and 0.0 are valid.
+        passed = _same_json_result(result, stage["assessment"]["expected"])
     except (ValueError, TypeError):
         passed = False
     return [{"key": "authored_contract", "label": "当前教学材料的结构化输出", "passed": passed,
