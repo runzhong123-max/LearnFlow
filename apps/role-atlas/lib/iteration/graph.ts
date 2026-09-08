@@ -326,8 +326,11 @@ export function createSnapshotIterationSkill(input: {
     const sources = mergeIterationSources(currentSources, incoming, currentSources.length + incoming.length);
     const request = coldStartRequest({ state, sources });
     const hasTaskRepair = state.contract?.mode === "risk_repair" && activeItems.some(item => item.findingIds.some(id =>
-      [...state.inspectionBefore!.findings, ...state.findingHistory].some(finding => finding.id === id && finding.code === "TASK_SKILL_GAP")));
-    const anchored = reuseEvidence || hasTaskRepair;
+      [...state.inspectionBefore!.findings, ...state.findingHistory].some(finding => finding.id === id && ["TASK_SKILL_GAP", "TASK_CAPABILITY_GAP", "TASK_CAPABILITY_UNIT_GAP"].includes(finding.code))));
+    const hasExistingTasks = state.candidate.semantic.nodes.some(node => node.type === "task" && node.lifecycle !== "rejected");
+    // Enrichment hydrates tasks from the base and cannot invent that missing
+    // layer. A role-only legacy snapshot must re-run source/task extraction.
+    const anchored = hasExistingTasks && (reuseEvidence || hasTaskRepair);
     emit(state, "iteration.candidate.rebuild.started", "rebuild", {
       round: state.round,
       tool: "snapshot.rebuild",
@@ -335,6 +338,7 @@ export function createSnapshotIterationSkill(input: {
       sourceCount: sources.length,
       incomingSourceCount: incoming.length,
       reusedExistingEvidence: reuseEvidence,
+      execution: anchored ? "enrichment" : "full",
       workItemIds: activeItems.map(item => item.id),
     });
     const skill = createColdStartSkill(input.model, {

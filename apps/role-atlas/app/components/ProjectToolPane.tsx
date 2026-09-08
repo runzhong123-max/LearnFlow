@@ -110,7 +110,12 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
     const result = event.payload.result as ColdStartBuildResult | undefined;
     if (result?.semantic && result?.snapshot && result?.packages) callbacks.current.onPreview(result);
     if (event.kind.endsWith("run.completed") || event.kind === "build.kernel.completed") callbacks.current.onComplete(context.conversationId!);
-    if (event.kind.endsWith("run.failed")) setError(summary || "任务未完成，已有结果和记录已保留。");
+    if (event.kind.endsWith("run.failed")) {
+      setError(summary || "任务未完成，已有结果和记录已保留。");
+      // A failed build may have streamed a provisional preview. Reload the
+      // conversation's committed baseline instead of leaving that preview up.
+      callbacks.current.onComplete(context.conversationId!);
+    }
   }
 
   async function start() {
@@ -120,6 +125,9 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
     let parsedWorkspace: unknown;
     if (activeTool === "workspace-instantiation") {
       try { parsedWorkspace = JSON.parse(workspaceJson); } catch { setError("请添加有效的工作区 JSON 文件或粘贴导出内容。"); return; }
+      if (!parsedWorkspace || typeof parsedWorkspace !== "object" || Array.isArray(parsedWorkspace) || Object.keys(parsedWorkspace).length === 0) {
+        setError("工作区 JSON 需要包含真实事件或交付物，不能是空对象或数组。"); return;
+      }
     }
     const id = crypto.randomUUID();
     submittedId.current = id;
@@ -131,19 +139,16 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
       const common = { providerConfig, searchConfig };
       let endpoint = "/api/snapshot-iterations";
       let body: Record<string, unknown>;
-      let learningPathGraph;
-      if (activeTool !== "workspace-instantiation") {
-        const controller = new AbortController();
-        preparation.current = controller;
-        learningPathGraph = await readOfficialLearningPath(fetch, controller.signal);
-        preparation.current = null;
-      }
+      const controller = new AbortController();
+      preparation.current = controller;
+      const learningPathGraph = await readOfficialLearningPath(fetch, controller.signal);
+      preparation.current = null;
       if (activeTool === "cold-start-role-package") {
         endpoint = "/api/build-runs";
         body = { ...common, conversationId: context.conversationId, webResearch, build: { runId: id, projectId: context.projectId, roleTitle: context.roleTitle, roleDescription: prompt || context.roleDescription || "", market, audience: ["岗位研究者"], snapshotAsOf: new Date().toISOString().slice(0, 10), sources: materials, learningPathGraph } };
       } else if (activeTool === "workspace-instantiation") {
         endpoint = "/api/workspace-upgrades";
-        body = { ...common, snapshotRef, conversationId: context.conversationId, workspace: { runId: id, projectId: context.projectId, connection: { adapterId, payload: parsedWorkspace, roleHint: context.roleTitle, visibility: "project_private", provenance: { capturedAt: new Date().toISOString() } }, maxObservations: 16, redactPersonalData: true }, iteration: { prompt, webResearch, maxRounds: 1, sourceLimit: 8, maxWorkItems: 10 } };
+        body = { ...common, snapshotRef, conversationId: context.conversationId, workspace: { runId: id, projectId: context.projectId, connection: { adapterId, payload: parsedWorkspace, roleHint: context.roleTitle, visibility: "project_private", provenance: { capturedAt: new Date().toISOString() } }, maxObservations: 16, redactPersonalData: true }, iteration: { prompt, webResearch, learningPathGraph, maxRounds: 1, sourceLimit: 8, maxWorkItems: 10 } };
       } else {
         const iteration = conversationIterationRequest({ runId: id, context, draft: iterationDraft, prompt, materials, webResearch, learningPathGraph: learningPathGraph! });
         setSubmittedBrief(iterationRunBrief(iteration));
@@ -201,7 +206,8 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
         <label>工作资料类型<select value={adapterId} disabled={blocked} onChange={(e) => setAdapterId(e.target.value)}>{[["event_log", "工单与过程日志"], ["github_trace", "GitHub 工作链"], ["telemetry_case", "可观测性案例"], ["soc_case", "安全运营案例"], ["generic_package", "标准工作区包"], ["devgpt", "AI 开发会话"], ["swebench", "SWE-bench 案例"], ["bug_benchmark", "缺陷基准案例"]].map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
         <label>导入脱敏的 JSON 文件<input type="file" accept=".json,application/json" disabled={blocked} onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; if (file.size > 5_000_000) { setError("文件不能超过 5 MB。"); return; } setWorkspaceJson(await file.text()); }} /></label>
         <details><summary>{workspaceJson ? "已添加资料 · 查看内容" : "或粘贴工作区导出内容"}</summary><textarea value={workspaceJson} onChange={(e) => setWorkspaceJson(e.target.value)} disabled={blocked} spellCheck={false} /></details>
-        <small>原始资料保留为项目私有，仅提取可追溯的工作观察。</small>
+        {(adapterId === "event_log" || adapterId === "soc_case") && <small>日志需包含 datasetId、title 和 events；每条事件填写 id、caseId、activity 与 detail（处理经过），可附 timestamp、status。</small>}
+        <small>原始资料保留为项目私有。请包含事件经过、处理结果或交付物正文；只有标题的资料不会生成岗位更新。重建时会对齐 LearnFlow 学习路径。</small>
       </> : <details><summary>添加资料（可选） · {materials.length} 份</summary><SourceMaterials value={materials} onChange={setMaterials} disabled={blocked} onBusyChange={setMaterialsBusy} /></details>}
       <label className="tool-checkbox"><input type="checkbox" checked={webResearch} disabled={blocked} onChange={(e) => setWebResearch(e.target.checked)} />联网研究与来源核对</label>
       {isIteration && <small>重建时会带入 LearnFlow 学习路径进行对齐。关闭联网且无附加资料时，仅做确定性检查与修复。</small>}

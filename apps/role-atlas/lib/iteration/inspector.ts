@@ -4,6 +4,7 @@ import { auditRoleSnapshot } from "@/lib/risk/audit";
 import type { RiskIssue, RiskProfile } from "@/lib/risk/types";
 import type { AgentProbe, IterationFinding, IterationFindingLayer, SnapshotInspection } from "./types";
 import { learningCoverage } from "./learning-health";
+import { capabilityCoverage } from "@/lib/build/capability-coverage";
 
 const HARD_PROTOCOL_CODES = new Set([
   "MISSING_ROLE_ROOT",
@@ -15,6 +16,7 @@ const HARD_PROTOCOL_CODES = new Set([
 
 const INSPECTION_CODES = new Set([
   "TASK_SKILL_GAP", "SKILL_COVERAGE_SPARSE", "CAPABILITY_NOT_CROSS_TASK",
+  "TASK_CAPABILITY_GAP", "TASK_CAPABILITY_UNIT_GAP",
   "CAPABILITY_UNIT_CULTIVATION_GAP", "LEARNING_PATH_AMBIGUOUS", "LEARNING_PATH_GRAPH_GAP",
   "AGENT_ROLE_ROOT", "AGENT_GRAPH_TRAVERSAL", "AGENT_EVIDENCE_RESOLUTION", "AGENT_SNAPSHOT_CONTEXT",
 ]);
@@ -182,11 +184,30 @@ function coverageFindings(result: ColdStartBuildResult) {
 
 function pedagogyFindings(result: ColdStartBuildResult) {
   const findings: IterationFinding[] = [];
-  const taskIds = new Set(result.semantic.nodes.filter((node) => node.type === "task").map((node) => node.id));
-  const capabilities = result.semantic.nodes.filter((node) => node.type === "capability");
-  const units = result.semantic.nodes.filter((node) => node.type === "capability_unit");
+  const activeNodes = result.semantic.nodes.filter(node => node.lifecycle !== "rejected");
+  const activeEdges = result.semantic.edges.filter(edge => edge.lifecycle !== "rejected");
+  const taskIds = new Set(activeNodes.filter((node) => node.type === "task").map((node) => node.id));
+  const capabilities = activeNodes.filter((node) => node.type === "capability");
+  const units = activeNodes.filter((node) => node.type === "capability_unit");
+  const coverage = capabilityCoverage({ roleSummary: result.brief.roleTitle,
+    nodes: activeNodes.map(node => ({ ...node, tempId: node.id })),
+    edges: activeEdges.map(edge => ({ ...edge, sourceTempId: edge.source, targetTempId: edge.target })),
+  });
+  const linkedTasks = new Set(activeEdges.filter(edge => edge.type === "requires_capability" && capabilities.some(capability => capability.id === edge.target)).map(edge => edge.source));
+  for (const task of activeNodes.filter(node => coverage.uncoveredTaskIds.includes(node.id))) {
+    const hasCapability = linkedTasks.has(task.id);
+    findings.push(customFinding({
+      layer: "coverage", classification: "research", severity: "warning",
+      code: hasCapability ? "TASK_CAPABILITY_UNIT_GAP" : "TASK_CAPABILITY_GAP",
+      title: hasCapability ? `任务能力链缺少可观察单元：${task.label}` : `任务缺少岗位能力支撑：${task.label}`,
+      detail: hasCapability ? "任务已关联岗位能力，但该能力尚未连接到可训练、可观察、可评价的能力单元。" : "任务尚未通过 requires_capability 关联到岗位能力，已有其他任务的能力不能替代本任务的支撑关系。",
+      impact: "岗位包无法解释完成该任务需要的综合能力及其培养与评价入口。",
+      targetIds: [task.id], evidenceBindingIds: task.evidenceBindingIds,
+      confidence: 0.95, suggestedAction: "research", hardBlocker: false,
+    }));
+  }
   for (const capability of capabilities) {
-    const supportedTasks = new Set(result.semantic.edges
+    const supportedTasks = new Set(activeEdges
       .filter((edge) => edge.target === capability.id && taskIds.has(edge.source) && edge.type === "requires_capability")
       .map((edge) => edge.source));
     if (taskIds.size > 1 && supportedTasks.size < 2) findings.push(customFinding({

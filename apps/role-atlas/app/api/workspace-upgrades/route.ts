@@ -1,4 +1,7 @@
 import { enqueueRoleJob } from "@/lib/jobs/dispatch";
+import { iterationOutcome } from "@/lib/jobs/iteration-outcome";
+import { emptyWorkspaceUpgradeOutcome, usableWorkspaceObservations, workspaceIterationRequest, workspaceUpgradeIterationSchema } from "@/lib/skills/workspace-upgrade";
+import { normalizeWorkspaceConnection } from "@/lib/workspaces/adapters";
 import { rememberResearchRequester } from "@/lib/research-collection/store";
 import { startRoleJobExecution } from "@/lib/jobs/execution";
 import { projectVersionHeadState } from "@/lib/versioning/commit";
@@ -40,14 +43,7 @@ const postSchema = z.object({
   snapshotRef: snapshotReferenceSchema,
   workspace: workspaceIngestionRequestSchema,
   conversationId: z.string().min(4).max(100).optional(),
-  iteration: z.object({
-    prompt: z.string().max(4_000).default(""),
-    targetAsOf: z.string().max(40).optional(),
-    webResearch: z.boolean().default(true),
-    maxRounds: z.number().int().min(1).max(2).default(1),
-    sourceLimit: z.number().int().min(4).max(20).default(8),
-    maxWorkItems: z.number().int().min(3).max(16).default(10),
-  }).default({ prompt: "", webResearch: true, maxRounds: 1, sourceLimit: 8, maxWorkItems: 10 }),
+  iteration: workspaceUpgradeIterationSchema.default({ prompt: "", webResearch: true, maxRounds: 1, sourceLimit: 8, maxWorkItems: 10 }),
   providerConfig: z.unknown().optional(),
   searchConfig: z.unknown().optional(),
 });
@@ -87,6 +83,14 @@ export async function POST(request: Request) {
     parsed = postSchema.parse(await request.json());
   } catch (error) {
     return Response.json({ error: "工作区升级范围或运行配置无效。", detail: error instanceof Error ? error.message : undefined }, { status: 400 });
+  }
+  // Adapter shape errors should be an actionable input error, not a queued
+  // job that reports a failed model run after the user has already waited.
+  try {
+    normalizeWorkspaceConnection(parsed.workspace.connection);
+  } catch (error) {
+    const fields = error instanceof z.ZodError ? [...new Set(error.issues.map(issue => issue.path.join(".")).filter(Boolean))].slice(0, 4) : [];
+    return Response.json({ error: `工作资料不符合所选类型${fields.length ? `，请检查 ${fields.join("、")}` : "，请检查事件或交付物结构"}。`, code: "WORKSPACE_ADAPTER_INPUT_INVALID" }, { status: 400 });
   }
   const resolved = await resolveSnapshot(parsed.snapshotRef).catch(() => null);
   if (!resolved) return Response.json({ error: "没有可升级的岗位快照。" }, { status: 404 });
@@ -169,39 +173,16 @@ export async function POST(request: Request) {
         runId: workspaceRequest.runId,
         result: workspaceResult,
         alignment,
-        iterationRunId: workspaceResult.observations.length ? iterationRunId : undefined,
+        iterationRunId: usableWorkspaceObservations(workspaceResult).length ? iterationRunId : undefined,
       });
     }
-    if (!workspaceResult.observations.length) {
-      if (recovered?.workspaceResult) {
-        await completeRoleJob({ jobId: workspaceRequest.runId, owner: jobOwner, phase: "completed.no_observations", result: { packageId: workspaceResult.package.id, observationCount: 0 } });
-      }
+    if (!usableWorkspaceObservations(workspaceResult).length) {
+      await completeRoleJob({ jobId: workspaceRequest.runId, owner: jobOwner, phase: "completed.no_observations", result: { packageId: workspaceResult.package.id, observationCount: 0, outcome: emptyWorkspaceUpgradeOutcome(workspaceResult) } });
       return;
     }
 
-    const alignedTaskIds = [...new Set(alignment?.alignments.flatMap((item) => item.taskId ? [item.taskId] : []) || [])].slice(0, 60);
-    const evidenceClasses = [...new Set(workspaceResult.observations.map((item) => item.source.workspaceEvidence?.evidenceClass).filter(Boolean))];
-    const prompt = parsed.iteration.prompt.trim() || [
-      `依据“${workspaceResult.package.title}”中的真实工作事件、对象与交付物实例化当前岗位快照。`,
-      "把能由资料直接支持的组织实例写入事理森林与证据层；只有得到岗位级证据时才提升为岗位共性。",
-      "检查现有典型任务与实例事件是否对齐，保留冲突、未覆盖任务和候选新任务，不用单个工作区代表整个行业。",
-      `资料真实性等级：${evidenceClasses.join("、") || workspaceResult.package.evidenceClass}。`,
-    ].join("\n");
-    const iterationRequest = {
-      runId: iterationRunId,
-      snapshotRef: resolvedSnapshot.reference,
-      projectId,
-      conversationId: parsed.conversationId,
-      initiativeProfile: "co_guided" as const,
-      prompt,
-      targetIds: alignedTaskIds,
-      targetAsOf: parsed.iteration.targetAsOf,
-      supplementalSources: workspaceResult.observations.map((observation) => observation.source).slice(0, 20),
-      webResearch: parsed.iteration.webResearch,
-      maxRounds: parsed.iteration.maxRounds,
-      sourceLimit: parsed.iteration.sourceLimit,
-      maxWorkItems: parsed.iteration.maxWorkItems,
-    };
+    const iterationRequest = workspaceIterationRequest({ runId: iterationRunId, snapshotRef: resolvedSnapshot.reference,
+      projectId: projectId!, conversationId: parsed.conversationId!, result: workspaceResult, alignment, iteration: parsed.iteration });
     await startSnapshotIteration(iterationRequest);
     const bindings = workerRuntimeBindings();
     const modelConfig = resolveProviderConfig(parsed.providerConfig, bindings);
@@ -262,10 +243,7 @@ export async function POST(request: Request) {
           await journal.commit(workspaceEvent, async () => {
             await checkpointRoleJob({ jobId: workspaceRequest.runId, owner: jobOwner, kind: "workspace_instantiation", phase: "workspace.completed", state: { workspaceResult, alignment } });
             if (workspaceResult) {
-              await completeWorkspaceIngestion({ runId: workspaceRequest.runId, result: workspaceResult, alignment, iterationRunId: workspaceResult.observations.length ? iterationRunId : undefined });
-            }
-            if (workspaceResult?.observations.length === 0) {
-              await completeRoleJob({ jobId: workspaceRequest.runId, owner: jobOwner, phase: "completed.no_observations", result: { packageId: workspaceResult.package.id, observationCount: 0 } });
+              await completeWorkspaceIngestion({ runId: workspaceRequest.runId, result: workspaceResult, alignment, iterationRunId: usableWorkspaceObservations(workspaceResult).length ? iterationRunId : undefined });
             }
           });
         } else journal.publish(workspaceEvent);
@@ -312,7 +290,7 @@ export async function POST(request: Request) {
       } else {
         await journal.commit({ ...iterationEvent, payload: { ...iterationEvent.payload, result, projectVersionId, workspaceRunId: workspaceRequest.runId } });
       }
-      await completeRoleJob({ jobId: workspaceRequest.runId, owner: jobOwner, phase: "completed", result: { candidateSnapshotId, projectVersionId, ...headState, workspacePackageId: workspaceResult?.package.id } });
+      await completeRoleJob({ jobId: workspaceRequest.runId, owner: jobOwner, phase: "completed", result: { candidateSnapshotId, projectVersionId, ...headState, workspacePackageId: workspaceResult?.package.id, outcome: iterationOutcome(result) } });
     },
     onFailure: async (error, journal) => {
       if (!workspaceResult) {
