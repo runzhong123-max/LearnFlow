@@ -169,8 +169,8 @@ export async function POST(request: Request) {
   const execution = startRoleJobExecution(buildRequest.runId, jobOwner);
 
   pruneWorkItemCache();
-  const graph = createColdStartSkill(createRecordedModelInvoker(providerConfig, {
-    initialSeq: await lastRoleEventSequence(buildRequest.runId),projectId:buildRequest.projectId,runId:buildRequest.runId}), {
+  const graph = createColdStartSkill(createRecordedModelInvoker(providerConfig, { projectId: buildRequest.projectId, runId: buildRequest.runId }), {
+    initialSeq: await lastRoleEventSequence(buildRequest.runId),
     searchConfig,
     sourceLimit: 16,
     existingResearchReport,
