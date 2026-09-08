@@ -110,3 +110,5 @@ Contract impact：既有 `visual_content_library` / `retrieve_learning_visual`�
 内容提交 `63e36a2` 已发布，三个 LearnFlow 服务健康，新镜像内296份预览全部通过。当前网站在本批之前已采用统一登录入口策略（见 `UNIFIED_SITE_LOGIN.md`），不在本批改变该策略。维护作品没有个人 ownership 门槛，所有登录用户均可查看。
 
 线上未登录请求按网关策略返回401。进一步用现有 Safari 会话发现 Web Hub 旧 transport 仍设置 `credentials: omit`，导致已登录页面也无法取目录；修正为与桌面及其他 Web 页面相同的 `runtimeFetch`，携带现有会话与 CSRF。没有放宽认证、导出用户 Cookie 或创建测试账号。
+
+前端修复 `6cd7764` 已发布，认证回归 19 条与 Web build 通过。现有 Safari 登录会话实测目录显示 296 份、哈夫曼检索返回两份作品；动画播放至 6/6，修改频率后重算并回到 1/6；CNN 正常打开，单步进入卷积窗口，图形、数值说明与 2/21 进度同步。线上截图确认哈夫曼整棵树与 CNN 输入/卷积核/特征图布局完整。此线上抽查补充前述本地全量检查，不等同于线上逐一操作全部 296 份。
