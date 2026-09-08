@@ -11,3 +11,5 @@
 验证：`node --experimental-strip-types --test frontend/server/workspace-layout.test.ts`、前端 `test:auth` 与 `build`。
 
 Contract impact：仅浏览器界面缓存，无五核、EvidenceEvent、API 或数据库契约变化。
+
+2026-09-08 补充：会话布局同时保存已打开对话的身份、追问纸张与选中纸张。即使共享聊天缓存不可用，也先恢复页面，再由正式对话同步补齐主对话内容。纸张目前仍为浏览器会话保存，不宣称跨设备同步。侧栏按最后一条可见用户/助手消息时间降序显示，避免全量同步的 updated_at 改变顺序；默认“新对话”使用首条可见用户消息生成标题，显式标题保留。

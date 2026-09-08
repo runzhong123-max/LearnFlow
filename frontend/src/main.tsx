@@ -1,3 +1,4 @@
+import { conversationTitle, recentConversations } from './conversation-display.ts'
 import { readTabLayout, saveTabLayout, consumeLayoutReset, withoutTabLayout } from './workspace-layout.ts'
 import { conversionMessagePresentation } from '../../packages/learning-client/src/work-task-conversion/presentation.ts'
 import { taskLearningFiles, fileKindForStage, fileProgressMessage } from './learning-file-flow'
@@ -411,7 +412,7 @@ function conversationFromFormal(session: FormalTutorSession, existing?: Conversa
   const conversation = {
     ...base,
     id: session.client_conversation_id || base.id,
-    title: session.title || base.title,
+    title: conversationTitle(session.title && session.title !== '新对话' ? session.title : base.title, messages.length ? messages : base.messages),
     mode: tutorModeFromFormal(session),
     messages: messages.length > 0 ? messages : base.messages,
     formalSessionId: session.id,
@@ -525,12 +526,23 @@ function restoreState(learnerId: number): PersistedState {
     const cached = JSON.parse(localStorage.getItem(learnerWorkspaceStorageKey(learnerId)) || 'null') as Partial<PersistedState> | null
     const resetLayout = consumeLayoutReset(sessionStorage, learnerId)
     const layout = readTabLayout(sessionStorage, learnerId)
-    const value = cached ? { ...cached, tabs: (layout?.tabs || []) as WorkspaceTab[], activeTabId: layout?.activeTabId, splitTabId: layout?.splitTabId } : null
+    const savedConversations = Array.isArray(cached?.conversations) ? [...cached.conversations] : []
+    for (const tab of (layout?.tabs || []) as WorkspaceTab[]) {
+      if (tab.kind !== 'chat' || !tab.conversationId) continue
+      const page = layout?.pages?.[tab.conversationId] as Partial<Conversation> | undefined
+      const index = savedConversations.findIndex(item => item.id === tab.conversationId)
+      const base = index >= 0 ? savedConversations[index] : { ...createConversation(), id: tab.conversationId, title: tab.title }
+      const restoredPage = { ...base, ...(page || {}), id: tab.conversationId }
+      if (index >= 0) savedConversations[index] = restoredPage
+      else savedConversations.push(restoredPage)
+    }
+    const value = { ...cached, conversations: savedConversations, tabs: (layout?.tabs || []) as WorkspaceTab[], activeTabId: layout?.activeTabId, splitTabId: layout?.splitTabId }
     if (!value || !Array.isArray(value.conversations) || value.conversations.length === 0) return initialState()
     const conversations: Conversation[] = value.conversations.map(conversation => {
       const sheets = sanitizePaperSheets<Message>(conversation.sheets)
       const restored = {
         ...conversation,
+        title: conversationTitle(conversation.title, conversation.messages || []),
         mode: isTutorMode(conversation.mode) ? conversation.mode : 'free' as const,
         sheets,
         learningTasks: Array.isArray(conversation.learningTasks)
@@ -724,8 +736,8 @@ function App({ auth }: { auth: AuthGateSession }) {
   }, [auth.account.learner_id, workspace])
 
   useEffect(() => {
-    saveTabLayout(sessionStorage, auth.account.learner_id, { tabs: workspace.tabs, activeTabId: workspace.activeTabId, splitTabId: workspace.splitTabId, drafts })
-  }, [auth.account.learner_id, workspace.tabs, workspace.activeTabId, workspace.splitTabId, drafts])
+    saveTabLayout(sessionStorage, auth.account.learner_id, { tabs: workspace.tabs, activeTabId: workspace.activeTabId, splitTabId: workspace.splitTabId, drafts, pages: Object.fromEntries(workspace.conversations.filter(item => workspace.tabs.some(tab => tab.conversationId === item.id)).map(item => [item.id, { title: item.title, formalSessionId: item.formalSessionId, projectId: item.projectId, checkpointId: item.checkpointId, projectRole: item.projectRole, sheets: item.sheets, activeSheetId: item.activeSheetId }])) })
+  }, [auth.account.learner_id, workspace.tabs, workspace.activeTabId, workspace.splitTabId, drafts, workspace.conversations])
 
   const refreshFormalProjects = () => {
     void listFormalProjects()
@@ -3807,7 +3819,7 @@ function App({ auth }: { auth: AuthGateSession }) {
             <section className="sidebar-section sidebar-conversations">
               <header><strong>对话</strong><button type="button" onClick={newConversation} aria-label="新建对话">＋</button></header>
               <nav className="conversation-list" aria-label="对话列表">
-            {workspace.conversations.filter(conversation => !conversation.projectId).map(conversation => (
+            {recentConversations(workspace.conversations.filter(conversation => !conversation.projectId)).map(conversation => (
               <div
                 key={conversation.id}
                 className={`conversation-row ${activeConversation?.id === conversation.id ? 'conversation-active' : ''} ${splitConversation?.id === conversation.id ? 'conversation-secondary' : ''}`}
