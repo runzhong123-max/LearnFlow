@@ -81,7 +81,7 @@ def view(row):
         "brief": row.brief, "source_refs": row.source_refs, "messages": row.messages,
         "missing_fields": fields, "question": QUESTIONS[fields[0]] if fields and remaining else None,
         "question_budget_remaining": remaining, "candidate": public_candidate(row.candidate),
-        "generation": row.generation, "design_recipes": design_catalog(row.brief),
+        "generation": row.generation, "selection": row.selection, "design_recipes": design_catalog(row.brief),
         "project_id": row.project_id, "created_at": iso(row.created_at), "updated_at": iso(row.updated_at),
         "mastery_inference": False}
 
@@ -506,11 +506,16 @@ async def preview_ticket(db, learner_id, token):
         "project_id": (ticket.result or {}).get("project_id")}
 
 
-async def attach_context(db, row, session):
+async def attach_context(db, row, session, selection):
     brief = row.brief
     context = {"schema_version": SCHEMA_VERSION, "conversion_id": row.id, "root_hash": row.root_hash,
         "brief": brief, "source_refs": row.source_refs, "candidate": public_candidate(row.candidate),
         "unresolved_questions": missing(brief), "mastery_inference": False}
+    if row.candidate.get("learning_candidate"):
+        chosen = selected_learning(row.candidate, selection.get("selected_step_ids"))
+        context["selected_step_ids"] = [step["id"] for step in chosen["task"]["steps"]]
+        context["selected_learning_candidate"] = chosen
+        context["selection_note"] = "仅按 selected_learning_candidate 中的已选步骤继续；candidate 保留完整原方案用于来源追溯。"
     session.context_summary = {**dict(session.context_summary or {}), "work_task_conversion": context}
     readable = {**context, "user_messages": [{"content": item["content"][:1000],
         "content_hash": canonical_hash(item["content"]), "truncated": len(item["content"]) > 1000}
@@ -603,7 +608,7 @@ async def materialize(db, row, selection):
             for task in tasks:
                 task.source_refs = [*list(task.source_refs or []), *row.source_refs,
                                    {"type": "work_task_conversion", "id": row.id, "root_hash": row.root_hash}]
-    await attach_context(db, row, session)
+    await attach_context(db, row, session, selection)
     row.selection = selection
     row.session_id = session.id
     row.project_id = project.id if project else None

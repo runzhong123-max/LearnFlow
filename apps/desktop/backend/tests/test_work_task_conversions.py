@@ -300,3 +300,35 @@ def test_concurrent_ticket_consumption_creates_one_project(client,monkeypatch):
         async with async_session() as db:
             return await db.scalar(select(func.count(Project.id)).where(Project.id==ids[0]))
     assert asyncio.run(count())==1
+
+
+def test_selected_learning_steps_survive_tutor_context_and_resume(client, monkeypatch):
+    from copy import deepcopy
+    from app.services import xingchen_learning_task_candidates as x
+    class Client:
+        async def run(self, request, uid):
+            bundle = _bundle("selected-test")
+            work = bundle["task"]["work_task"]
+            extra = deepcopy(work["task_steps"][-1])
+            extra.update(step_id="step_4", name="额外归档", action="保存审计副本", deliverable="审计副本", check="副本完整")
+            work["task_steps"].append(extra)
+            return {"content": json.dumps(bundle), "runId": "selected-run"}
+    monkeypatch.setattr(x, "XingchenWorkflowClient", Client)
+    draft, _ = create(client)
+    draft = brief(client, draft)
+    draft, _ = generate(client, draft, mode="learning")
+    assert draft["state"] == "generated", draft
+    original_steps = draft["candidate"]["learning_candidate"]["task"]["steps"]
+    assert len(original_steps) == 4
+    ids = [step["id"] for step in original_steps[:3]]
+    result, _ = handoff(client, draft, "discuss", selected_step_ids=ids)
+    resumed = client.get(f"/api/work-task-conversions/{draft['id']}").json()
+    assert resumed["selection"]["selected_step_ids"] == ids
+    async def check():
+        async with async_session() as db:
+            session = await db.get(AgentSession, result["session_id"])
+            context = session.context_summary["work_task_conversion"]
+            assert context["selected_step_ids"] == ids
+            assert len(context["candidate"]["learning_candidate"]["task"]["steps"]) == 4
+            assert [step["id"] for step in context["selected_learning_candidate"]["task"]["steps"]] == ids
+    asyncio.run(check())

@@ -57,4 +57,11 @@ def verify_role_package_launch(token: str, secret: str, *, now: int | None = Non
     )
     if not valid:
         raise RolePackageLaunchError("role_package_launch_invalid")
+    task = payload.get("taskRef")
+    if payload.get("intent") or task is not None:
+        if not (payload.get("intent") == "work_task_conversion" and isinstance(task, dict)
+                and isinstance(task.get("nodeId"), str) and 0 < len(task["nodeId"]) <= 240
+                and isinstance(task.get("label"), str) and 0 < len(task["label"].strip()) <= 300
+                and isinstance(task.get("summary"), str) and len(task["summary"]) <= 2000):
+            raise RolePackageLaunchError("role_package_launch_task_invalid")
     return payload

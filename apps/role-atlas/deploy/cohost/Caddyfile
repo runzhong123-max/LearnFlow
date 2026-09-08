@@ -105,3 +105,24 @@ http://:8081 {
 http://:80 {
   redir https://{$LEARNFLOW_HOST}/login 302
 }
+
+# Dedicated work-task conversion surface; account and API authority stay in LearnFlow.
+{$WORK_TASK_HOST:w2ltask.learnflow.club} {
+  encode zstd gzip
+  header Referrer-Policy "no-referrer"
+  route {
+    import site_auth_api
+    handle /assets/* {
+      reverse_proxy learnflow-frontend:4174
+    }
+    handle /api/* {
+      import api_gate
+      reverse_proxy learnflow-backend:8010
+    }
+    handle {
+      import browser_gate
+      rewrite * /convert
+      reverse_proxy learnflow-frontend:4174
+    }
+  }
+}

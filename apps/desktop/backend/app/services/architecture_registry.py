@@ -44,10 +44,22 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-07.10-desktop"
+REGISTRY_VERSION = "2026-09-08.2-desktop"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 DATA_CONTRACTS = {
+    "work_task_conversion_v1": {
+        "schema_version": "learnflow.work-task-conversion.v1", "owner": "tutor_agent", "origin": "builtin",
+        "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "docs/implementation/WORK_TASK_CONVERSION.md",
+        "binding_ids": ["api:work_task_conversion.create", "api:work_task_conversion.handoff"], "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "additive learner-owned pre-project drafts, revision and hash binding, signed source and confirmed promotion; legacy project APIs retained",
+    },
+    "work_task_design_v1": {
+        "schema_version": "learnflow.work-task-design.v1", "owner": "learning_design_agent", "origin": "builtin",
+        "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "docs/implementation/WORK_TASK_CONVERSION.md",
+        "binding_ids": ["py:work_task_design.compile", "py:work_task_design.validate"], "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "compiler 1.0.0; authored analogues and review-only long-tail proposals; pinned materials and deterministic validation; old work case hash retained",
+    },
     "engineering_provenance_v1": {
         "schema_version": "learnflow.engineering-provenance.v1", "owner": "tutor_agent", "origin": "builtin",
         "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "docs/implementation/DESKTOP_PROJECT_GUIDANCE.md",
@@ -323,6 +335,12 @@ TOOLS = {
                      (), (), "explicit project composition and operational delivery; formal Checkpoint and Session authority; answer-free current-stage projection"),
         ToolContract("local_work_case_catalog", "Versioned Local Work Case Catalog", "tutor_agent", "learnflow", "read",
                      (), (), "catalog and hash-bound unconfirmed selectors only; no future materials or evaluator disclosure"),
+        ToolContract("desktop_conversion_import", "Desktop Conversion Import Adapter", "tutor_agent", "learnflow", "filesystem",
+                     (), (), "authenticated cloud preview -> explicit chosen parent directory -> hash checked atomic initial files; no execution or evidence promotion"),
+        ToolContract("work_task_conversion_gateway", "Pre-project Work Task Conversion", "tutor_agent", "learnflow", "artifact",
+                     (), (), "learner-owned brief and source revisions -> hash-bound explicit generation or handoff; zero-target operational events only"),
+        ToolContract("work_task_design_compiler", "Versioned Professional Task Design", "learning_design_agent", "learnflow", "artifact",
+                     (), (), "explicit authored analogue selection or review-only domain draft; validated pinned fixtures and deterministic gates; no mastery inference"),
         ToolContract("project_guidance_gateway", "Confirmed Project Guidance Gateway", "tutor_agent", "learnflow", "artifact",
                      (), (), "learner-scoped immutable candidate -> explicit hash-bound confirmation -> formal Project, Checkpoint and LearningTask; no mastery inference"),
         ToolContract("project_device_report_gateway", "Device-reported Project Artifact Gateway", "tutor_agent", "learnflow", "artifact",
@@ -358,7 +376,7 @@ TOOL_INTERFACE_ROLES = {
         "learning_task_candidate_gateway",
     }},
     **{tool_id: "harness" for tool_id in {
-        "project_guidance_gateway", "project_device_report_gateway",
+        "work_task_conversion_gateway", "work_task_design_compiler", "project_guidance_gateway", "project_device_report_gateway",
         "tutor_context", "chat_mode_runtime", "vnext_agent_turn_runtime", "vnext_learning_path_graph_reader",
         "visual_artifact_workspace", "safe_visual_generation", "visual_content_library", "selection_followup_context", "vnext_learning_task_runtime",
         "vnext_learning_plan_runtime", "micro_learning_orchestrator",
@@ -377,6 +395,7 @@ TOOL_INTERFACE_ROLES = {
     "vnext_chat_session_store": "adapter",
     "desktop_pet_gateway": "adapter",
     "desktop_pet_vision_observer": "adapter",
+    "desktop_conversion_import": "adapter",
     "workflow_gateway": "adapter",
     "workflow_validator": "adapter",
 }
@@ -874,6 +893,10 @@ SKILLS = {
                       ("desktop_experiment_runner", "workspace_file_service", "evidence_ledger"),
                       "immutable source snapshot + real build/run output + bounded comparison + learner explanation",
                       "fixed c11 profile; explicit user confirmation; no shell, no grading or kernel writes"),
+        SkillContract("work_task_conversion", "典型工作任务澄清与三类项目转换", "tutor_agent",
+                      ("work_task_conversion_gateway", "work_task_design_compiler", "evidence_ledger"),
+                      "project-free bounded interview, exact signed task source, generation, review and explicit handoff",
+                      "versioned artifact only; no learner-state inference; unsupported domains require authoring"),
         SkillContract("three_mode_project_guidance", "资料、实验与案例项目引导", "tutor_agent",
                       ("project_workflow_runtime", "local_work_case_catalog", "project_guidance_gateway", "project_device_report_gateway", "evidence_ledger"),
                       "source reading and recall; prediction, implementation and verification; staged apprentice case, delivery and reflection",
@@ -971,6 +994,8 @@ WORKBENCHES = {
                           ("plan_review_queue", "evaluate_review_attempt", "manage_review_item",
                            "evaluate_attempt", "request_remediation_explanation", "retry_attempt",
                            "evaluate_transfer_variant"), "fused"),
+        WorkbenchContract("work_task_conversion", "Work Task Conversion", "/convert", "tutor_agent",
+                          ("prepare_work_task_conversion", "generate_work_task_conversion", "handoff_work_task_conversion", "import_work_task_conversion")),
         WorkbenchContract("desktop_workspace", "Desktop File Workspace", "tauri://workspace", "tutor_agent",
                           ("link_project_workspace", "inspect_workspace_files", "propose_workspace_change", "apply_workspace_change", "open_managed_learning_artifact", "edit_managed_lecture", "annotate_learning_artifact", "delegate_local_agent_task", "inspect_local_agent_run", "cancel_local_agent_run", "apply_local_agent_result", "inspect_experiment_environment", "propose_experiment_run", "execute_experiment_run", "inspect_experiment_run")),
         WorkbenchContract("desktop_pet", "Desktop Pet Companion", "tauri://pet", "tutor_agent",
@@ -983,6 +1008,10 @@ WORKBENCHES = {
 
 
 CAPABILITY_OWNERS = {
+    "import_work_task_conversion": ("tutor_agent", "desktop_conversion_import", "work_task_conversion"),
+    "prepare_work_task_conversion": ("tutor_agent", "work_task_conversion_gateway", "work_task_conversion"),
+    "generate_work_task_conversion": ("learning_design_agent", "work_task_design_compiler", "work_task_conversion"),
+    "handoff_work_task_conversion": ("tutor_agent", "work_task_conversion_gateway", "work_task_conversion"),
     "prepare_project_guidance": ("tutor_agent", "project_guidance_gateway", "vnext_chat"),
     "confirm_project_guidance": ("tutor_agent", "project_guidance_gateway", "vnext_chat"),
     "record_project_device_report": ("tutor_agent", "project_device_report_gateway", "project_tutor"),
@@ -1109,6 +1138,10 @@ def _event(event_id: str, capability: str, targets: tuple[str, ...], role: str,
 
 EVENTS = {
     item.id: item for item in (
+        _event("work_task_conversion_created", "prepare_work_task_conversion", (), "unconfirmed_work_artifact"),
+        _event("work_task_conversion_brief_updated", "prepare_work_task_conversion", (), "unconfirmed_work_artifact"),
+        _event("work_task_conversion_generation_changed", "generate_work_task_conversion", (), "generated_artifact_status"),
+        _event("work_task_conversion_handoff_created", "handoff_work_task_conversion", (), "confirmed_artifact_handoff"),
         _event("project_guidance_prepared", "prepare_project_guidance", (), "unconfirmed_project_artifact"),
         _event("project_guidance_confirmed", "confirm_project_guidance", (), "learner_confirmed_project_composition"),
         _event("project_device_report_recorded", "record_project_device_report", (), "device_reported_operational"),
@@ -1270,6 +1303,20 @@ _REPOSITORY_ROOT = Path(sys._MEIPASS) if getattr(sys, "frozen", False) else Path
 
 
 _PYTHON_BINDING_TARGETS = {
+    "py:desktop.conversion_import": ("app.services.cloud_conversion_import", "import_handoff"),
+    "py:work_task_conversion.create": ("learnflow_core.work_task_conversions", "create"),
+    "py:work_task_conversion.clarify": ("learnflow_core.work_task_conversions", "add_message"),
+    "py:work_task_conversion.brief": ("learnflow_core.work_task_conversions", "update_brief"),
+    "py:work_task_conversion.generate": ("learnflow_core.work_task_conversions", "prepare_generation"),
+    "py:work_task_conversion.handoff": ("learnflow_core.work_task_conversions", "handoff"),
+    "py:work_task_conversion.preview": ("learnflow_core.work_task_conversions", "preview_ticket"),
+    "py:work_task_conversion.consume": ("learnflow_core.work_task_conversions", "consume_ticket"),
+    "py:work_task_design.catalog": ("learnflow_core.work_task_designs", "design_catalog"),
+    "py:work_task_design.compile": ("learnflow_core.work_task_designs", "compile_design"),
+    "py:work_task_design.validate": ("learnflow_core.work_task_designs", "validate_design"),
+    "py:work_task_design.draft": ("learnflow_core.work_task_designs", "long_tail_draft"),
+    "py:work_task_design.materialize": ("learnflow_core.project_workflows", "materialize_design"),
+
     "py:project_guidance.prepare": ("learnflow_core.project_guidance", "prepare"),
     "py:project_guidance.confirm": ("learnflow_core.project_guidance", "confirm"),
     "py:project_device_report.record": ("learnflow_core.project_guidance", "record_device_report"),
@@ -1362,6 +1409,16 @@ _PYTHON_MEMBER_BINDING_TARGETS = {
 
 
 _API_BINDING_TARGETS = {
+    "api:work_task_conversion.create": ("app.api.work_task_conversions", "/work-task-conversions", "POST", "create_conversion"),
+    "api:work_task_conversion.list": ("app.api.work_task_conversions", "/work-task-conversions", "GET", "list_conversions"),
+    "api:work_task_conversion.read": ("app.api.work_task_conversions", "/work-task-conversions/{conversion_id}", "GET", "get_conversion"),
+    "api:work_task_conversion.clarify": ("app.api.work_task_conversions", "/work-task-conversions/{conversion_id}/messages", "POST", "clarify_conversion"),
+    "api:work_task_conversion.brief": ("app.api.work_task_conversions", "/work-task-conversions/{conversion_id}/brief", "POST", "edit_conversion_brief"),
+    "api:work_task_conversion.generate": ("app.api.work_task_conversions", "/work-task-conversions/{conversion_id}/generate", "POST", "generate_conversion"),
+    "api:work_task_conversion.handoff": ("app.api.work_task_conversions", "/work-task-conversions/{conversion_id}/handoff", "POST", "handoff_conversion"),
+    "api:work_task_conversion.preview": ("app.api.work_task_conversions", "/work-task-conversions/handoff/{ticket}", "GET", "preview_handoff"),
+    "api:work_task_conversion.consume": ("app.api.work_task_conversions", "/work-task-conversions/handoff/{ticket}", "POST", "consume_handoff"),
+
     "api:project_guidance.prepare": ("app.api.project_guidance", "/project-guidance/prepare", "POST", "prepare_project"),
     "api:project_guidance.confirm": ("app.api.project_guidance", "/project-guidance/{candidate_id}/confirm", "POST", "confirm_project"),
     "api:project_device_report.create": ("app.api.project_guidance", "/vnext-projects/{project_id}/device-reports", "POST", "create_device_report"),
@@ -1466,6 +1523,7 @@ _API_BINDING_TARGETS = {
 
 
 _FRONTEND_HANDLER_TARGETS = {
+    "native:desktop.conversion_handoff": ("desktop/src-tauri/src/conversion_handoff.rs", "parse_conversion_ticket", ""),
     "frontend:platform.open": ("frontend/src/runtime-client.ts", "openPlatformWorkspace", ""),
     "frontend:cloud.identity": ("frontend/src/runtime-client.ts", "isCloudDesktopRuntime", ""),
     "frontend:agent_runtime.run": ("frontend/server/agent-runtime.ts", "runTutorAgentTurn", ""),
@@ -1510,6 +1568,7 @@ _FRONTEND_HANDLER_TARGETS = {
 
 
 _FRONTEND_COMPONENT_TARGETS = {
+    "workbench:work_task_conversion": ("frontend/src/DesktopConversionImport.tsx", "DesktopConversionImport", ""),
     "frontend:learning.verification": ("frontend/src/LearningVerificationPanel.tsx", "LearningVerificationPanel", "/chat/"),
     "frontend:learning.remediation": ("frontend/src/RemediationPanel.tsx", "RemediationPanel", "/files/practice/"),
     "workbench:vnext_chat": ("frontend/src/main.tsx", "App", "/chat/"),
@@ -1576,6 +1635,9 @@ IMPLEMENTATION_BINDINGS = {
 
 
 _TOOL_BINDING_IDS = {
+    "desktop_conversion_import": ("py:desktop.conversion_import", "workbench:work_task_conversion", "native:desktop.conversion_handoff"),
+    "work_task_conversion_gateway": ("py:work_task_conversion.create", "py:work_task_conversion.clarify", "py:work_task_conversion.brief", "py:work_task_conversion.handoff", "api:work_task_conversion.create", "api:work_task_conversion.list", "api:work_task_conversion.read", "api:work_task_conversion.clarify", "api:work_task_conversion.brief", "api:work_task_conversion.handoff", "api:work_task_conversion.preview", "api:work_task_conversion.consume"),
+    "work_task_design_compiler": ("py:work_task_design.catalog", "py:work_task_design.compile", "py:work_task_design.validate", "py:work_task_design.draft", "py:work_task_design.materialize", "api:work_task_conversion.generate"),
     "project_guidance_gateway": ("py:project_guidance.prepare", "py:project_guidance.confirm", "api:project_guidance.prepare", "api:project_guidance.confirm"),
     "project_device_report_gateway": ("py:cloud.device_file_report", "py:project_device_report.publish", "py:project_device_report.record", "api:project_device_report.create", "api:project_device_report.read"),
     "action_board": ("py:action_board.execute",),
@@ -1690,6 +1752,7 @@ TOOL_PUBLICATIONS = {
 
 
 _SKILL_BINDING_IDS = {
+    "work_task_conversion": ("api:work_task_conversion.create", "api:work_task_conversion.generate", "api:work_task_conversion.handoff", "py:work_task_design.compile"),
     "intent_and_handoff": ("py:tutor.process_turn",),
     **{
         skill_id: (f"py:learning_skill_runtime:{skill_id}",)
@@ -1810,7 +1873,7 @@ def _frontend_symbol_pattern(symbol: str) -> re.Pattern[str]:
     escaped = re.escape(symbol)
     return re.compile(
         rf"\b(?:export\s+)?(?:default\s+)?(?:async\s+)?"
-        rf"(?:function|class|const)\s+{escaped}\b"
+        rf"(?:function|class|const|fn)\s+{escaped}\b"
     )
 
 

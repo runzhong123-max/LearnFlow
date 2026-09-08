@@ -1167,3 +1167,8 @@ Visual Hub 查询展示工作台：Web / 桌面均使用 `/visual-hub`，由 lea
 Web 独立 Hub 地址为 `/visualize`，侧栏直接跳转，保留 `/visual-hub` 别名；经过现有 AuthGate，未开放匿名 API。桌面继续使用内嵌 `/visual-hub`。Web registry 2026-09-07.9 仅更新页面绑定，无事件或数据迁移。
 
 公共维护库修正（registry 2026-09-07.10）：`/visualize` 与别名无需登录。gallery/preview 仅开放已登记维护作品；preview 允许有界参数重算，拒绝任意 spec，固定 public:maintained 展示 scope。公共播放器不执行个人预测写回或要求完成预测才能播放。生成、私有 workspace、compile/inspect/predict 继续认证，无五核或数据库变更。
+
+
+## 典型工作任务转换（2026-09-08）
+
+项目创建前的转换工作台复用三类主 Agent 和共享事件权威。`work_task_conversion_gateway` 管理 learner 所有的任务说明、版本、来源与确认接续；`work_task_design_compiler` 提供固定版本专业设计与待审核长尾方案。新增操作事件均为零核目标，生成与设备执行结果不等于掌握证据。运行与兼容性详见 [工作任务转换](implementation/WORK_TASK_CONVERSION.md)。

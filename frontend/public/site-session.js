@@ -1,8 +1,14 @@
 /* Shared presentation only. Caddy and the existing auth API enforce access. */
 (() => {
-  const hosts = ['learnflow.club', 'learn.learnflow.club', 'roles.learnflow.club', 'graphs.learnflow.club'];
+  const hosts = ['learnflow.club', 'learn.learnflow.club', 'roles.learnflow.club', 'graphs.learnflow.club', 'w2ltask.learnflow.club'];
   if (!hosts.includes(location.hostname) || document.getElementById('site-account-status')) return;
-  const login = () => 'https://learn.learnflow.club/login?return_to=' + encodeURIComponent(location.href);
+  const login = () => {
+    const destination = new URL(location.href);
+    const token = new URLSearchParams(destination.hash.slice(1)).get('role_token') || '';
+    const carry = token.length <= 8192 && /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token);
+    if (carry) destination.hash = '';
+    return 'https://learn.learnflow.club/login?return_to=' + encodeURIComponent(destination.href) + (carry ? '#' + new URLSearchParams({role_token:token}) : '');
+  };
   const bar = document.createElement('nav');
   bar.id = 'site-account-status';
   bar.setAttribute('aria-label', '统一账号状态');

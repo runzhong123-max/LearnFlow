@@ -45,7 +45,7 @@ def test_registry_has_three_agents_five_kernels_and_no_drift():
     assert set(ACTION_BOARD) == set(CAPABILITY_OWNERS)
     assert validate_registry() == []
     manifest = registry_manifest()
-    assert REGISTRY_VERSION == "2026-09-08.1"
+    assert REGISTRY_VERSION == "2026-09-08.2"
     assert manifest["schema_valid"] is True
     assert manifest["valid"] is (
         manifest["schema_valid"] and manifest["implementation_valid"]
@@ -101,7 +101,7 @@ def test_learning_path_data_contracts_are_bound_but_never_learner_writers():
     assert {row["id"] for row in manifest["data_contracts"]} == set(DATA_CONTRACTS)
     root = Path(__file__).resolve().parents[2]
     for contract_id, contract in DATA_CONTRACTS.items():
-        assert contract["owner"] == ("tutor_agent" if contract_id in {"ecosystem_gateway_v1", "teaching_response_v1", "golden_role_workspace_v1", "learning_platform_v1", "project_guidance_v1", "project_device_report_v1", "project_workflow_v1", "project_stage_support_v1", "workspace_recommendations_v1", "engineering_provenance_v1", "role_research_archive_v1"} else "learning_design_agent")
+        assert contract["owner"] == ("tutor_agent" if contract_id in {"work_task_conversion_v1", "ecosystem_gateway_v1", "teaching_response_v1", "golden_role_workspace_v1", "learning_platform_v1", "project_guidance_v1", "project_device_report_v1", "project_workflow_v1", "project_stage_support_v1", "workspace_recommendations_v1", "engineering_provenance_v1", "role_research_archive_v1"} else "learning_design_agent")
         assert contract["kernel_reads"] == []
         assert contract["kernel_write_path"] == "none"
         assert contract["schema_version"] in (root / contract["authority_path"]).read_text()
@@ -729,3 +729,16 @@ def test_role_research_archive_is_admin_operational_data():
     assert contract["kernel_reads"] == []
     assert contract["kernel_write_path"] == "none"
     assert WORKBENCHES["role_research_admin"].capabilities == ()
+
+
+def test_work_task_conversion_is_bound_and_never_mastery_evidence():
+    assert DATA_CONTRACTS["work_task_design_v1"]["schema_version"] == "learnflow.work-task-design.v1"
+    assert DATA_CONTRACTS["work_task_conversion_v1"]["owner"] == "tutor_agent"
+    assert {event.id for event in EVENTS.values() if event.id.startswith("work_task_conversion_")} == {
+        "work_task_conversion_created", "work_task_conversion_brief_updated",
+        "work_task_conversion_generation_changed", "work_task_conversion_handoff_created",
+    }
+    for event in EVENTS.values():
+        if event.id.startswith("work_task_conversion_"):
+            assert event.kernel_targets == ()
+            assert event.reducer_binding is None

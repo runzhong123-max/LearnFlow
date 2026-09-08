@@ -686,3 +686,8 @@ Web 独立 Hub 地址为 `/visualize`，侧栏直接跳转，保留 `/visual-hub
 
 
 Contract impact（2026-09-08.1）：登记 Role Atlas `role_research_archive_v1` 与管理员独立工作台 `/admin/research`。用户输入、附件原件、模型调用和运行/版本/发布记录作为 operational artifact 保存；访问与导出使用服务端验证的 admin 身份，普通用户的岗位包 ownership 不变。无 Agent 跨用户读取工具，无 EvidenceEvent 或五核变更。仅新增 Role Atlas 审计表，旧历史缺口不回填伪造。详见 [测试数据采集契约](../apps/role-atlas/docs/RESEARCH_COLLECTION.md)。
+
+
+## 典型工作任务转换（2026-09-08）
+
+项目创建前的转换工作台复用三类主 Agent 和共享事件权威。`work_task_conversion_gateway` 管理 learner 所有的任务说明、版本、来源与确认接续；`work_task_design_compiler` 提供固定版本专业设计与待审核长尾方案。新增操作事件均为零核目标，生成与设备执行结果不等于掌握证据。运行与兼容性详见 [工作任务转换](implementation/WORK_TASK_CONVERSION.md)。

@@ -422,7 +422,7 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
     return () => controller.abort();
   }, [packageStatus?.snapshotId]);
 
-  const launchInLearnFlow = async () => {
+  const launchInLearnFlow = async (taskNodeId?: string) => {
     if (!launchReleaseId || launchingLearnFlow) return;
     setLearnFlowLaunchError("");
     setLaunchingLearnFlow(true);
@@ -430,7 +430,7 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
       const response = await fetch("/api/integrations/learnflow/launch", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ releaseId: launchReleaseId, source: "role_atlas" }),
+        body: JSON.stringify({ releaseId: launchReleaseId, source: "role_atlas", ...(taskNodeId ? { intent: "work_task_conversion", taskNodeId } : {}) }),
         signal: AbortSignal.timeout(15_000),
       });
       window.location.assign(await readLearnFlowLaunchResponse(response));
@@ -1427,6 +1427,7 @@ export default function RoleWorkspace({ projectId, initialConversationId, initia
                   {detailRows.length > 0 && <details className="node-technical"><summary>结构化详情</summary><dl>{detailRows.map(([key, value]) => <div key={key}><dt>{key.replaceAll("_", " ")}</dt><dd>{value}</dd></div>)}</dl></details>}
                   {projectId && <button type="button" className="deepen-node" onClick={() => void launchTool("node-deepening")}><Sparkles size={13} />完善此节点</button>}
                   <div className="node-card-actions">
+                    {launchReleaseId && ["task", "typical_task"].includes(selectedNode.type) ? <button type="button" disabled={launchingLearnFlow} onClick={() => void launchInLearnFlow(selectedNode.id)}>转为学习、实验或实践项目</button> : null}
                     <button className="source-node" onClick={() => openEvidenceFor([selectedNode])}><BookOpenCheck size={14} /> 查看证据</button>
                     <button className="quote-node" draggable onDragStart={() => { draggedRef.current = selectedNode; setDraggingNode(selectedNode); }} onClick={() => addReference(selectedNode)}>
                       <Plus size={14} /> 引用到对话

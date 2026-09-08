@@ -1,3 +1,4 @@
+import { conversionMessagePresentation } from '../../../../packages/learning-client/src/work-task-conversion/presentation.ts'
 import { taskLearningFiles, fileKindForStage, fileProgressMessage } from './learning-file-flow'
 import { directVisualWorkflowCall } from '../../../../packages/learning-client/src/visuals/workflow.ts'
 import { resolveExplicitVisualIntent } from '../server/visual-tool-execution.ts'
@@ -178,6 +179,7 @@ import {
 import './styles.css'
 
 type Message = {
+  displayContent?: string
   id: string
   role: 'assistant' | 'user' | 'system'
   content: string
@@ -358,6 +360,7 @@ function messageFromFormal(message: FormalTutorMessage): Message {
     id: String(message.meta_data?.client_message_id || `formal-message-${message.id}`),
     role: message.role,
     content: message.content,
+    displayContent: conversionMessagePresentation(message.meta_data?.work_task_conversion) || (typeof vnext.displayContent === 'string' ? vnext.displayContent : undefined),
     createdAt: message.created_at ? Date.parse(message.created_at) || Date.now() : Date.now(),
     tutorMode,
     toolRuns: Array.isArray(vnext.toolRuns) ? vnext.toolRuns as TutorToolRun[] : undefined,
@@ -386,6 +389,7 @@ function messageFromFormal(message: FormalTutorMessage): Message {
 
 function syncMessageMetaData(message: Message): Record<string, unknown> {
   return {
+    displayContent: message.displayContent,
     tutorMode: message.tutorMode,
     toolRuns: message.toolRuns,
     reasoningContent: message.reasoningContent,
@@ -692,7 +696,7 @@ function humanizeTutorMessageContent(message: Message) {
     const mode = message.content.match(/^“([^”]+)”/)?.[1] || 'Tutor'
     return `“${mode}”续接失败：模型上下文中的思考数据不完整，本轮没有执行。请重新发送本轮消息。`
   }
-  return message.content
+  return message.displayContent || message.content
 }
 
 function inheritedContextMessages(conversation: Conversation) {
@@ -3407,7 +3411,7 @@ function App({ auth }: { auth: AuthGateSession }) {
                       <li key={message.id}>
                         <button type="button" onClick={() => focusMainMessage(message.id)}>
                           <span>{message.role === 'user' ? '你' : message.role === 'assistant' ? 'Tutor' : '系统'} · {String(index + 1).padStart(2, '0')}</span>
-                          <p>{message.content.replace(/\s+/g, ' ').trim().slice(0, 150) || '空内容'}</p>
+                          <p>{(message.displayContent || message.content).replace(/\s+/g, ' ').trim().slice(0, 150) || '空内容'}</p>
                           <small>{topLevelPages.filter(page => page.sourceMessageId === message.id).length} 个分支</small>
                         </button>
                       </li>
@@ -4391,7 +4395,7 @@ function MessageList({ messages, conversationId, onPluginPrompt, onPluginReferen
                       const anchor = selection?.anchorNode
                       const quote = selectedQuote && anchor && article?.contains(anchor)
                         ? selectedQuote
-                        : message.content.replace(/\s+/g, ' ').trim().slice(0, 600)
+                        : (message.displayContent || message.content).replace(/\s+/g, ' ').trim().slice(0, 600)
                       if (!quote) return
                       onQuoteFollowUp(message.id, quote)
                       selection?.removeAllRanges()
