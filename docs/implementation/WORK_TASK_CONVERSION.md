@@ -73,3 +73,5 @@ DNS 添加 A 记录 `w2ltask` 指向现有实例公网 IP。cohost Compose 的 `
 2026-09-08：浏览器使用独立临时数据库真实调用已配置讯飞工作流，40.5 秒返回 3 个学习步骤；生成后 KernelMutation 数量仍为 0。随后成功接续新的 Tutor 对话并确认创建正式学习项目。实验方案的网页生成、390px 移动端排版（无横向溢出）及云端票据到桌面原子导入已执行验证。macOS 0.3.0 调试应用已构建并验证 URL scheme，未安装用户应用；Windows/Linux 原生运行尚未验证。
 
 当前统一域名集固定为 learnflow.club 下各站点；修改 WORK_TASK_HOST 为其他域名时，还需同步身份返回白名单与学习空间跳转映射。
+
+前端 Vite preview 的 `allowedHosts` 从 `frontend/src/site-auth.ts` 的统一站点列表派生，仅允许明确登记的主机。发布验收除了匿名登录跳转，还必须向前端携带真实 `Host: w2ltask.learnflow.club` 请求 `/convert` 及页面引用的 JS/CSS，检查页面与资源均成功返回；未知主机仍应返回 403。匿名 302 只验证登录网关，不能证明登录后的页面可用。
