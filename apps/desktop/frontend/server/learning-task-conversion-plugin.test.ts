@@ -714,6 +714,30 @@ test('fresh plugin task asks for a type without semantic preflight or Xingchen',
   assert.equal((result.toolRuns[0].plugin?.result.payload as any).status, 'needs_mode_selection')
 })
 
+test('knowledge project keeps an intake card when semantic preflight returns no usable content', async () => {
+  const loaded = await registry()
+  let preflightCalls = 0
+  const result = await runTutorAgentTurn({
+    baseUrl: 'https://private-preflight.test', model: 'knowledge-preflight', mode: 'learning_plan',
+    messages: [{ role: 'user', content: '我选择知识学习项目。原始工作任务：云计算' }],
+    toolChoice: 'auto', pluginRegistry: loaded, activePluginIds: ['learning_task_conversion'],
+    generate: async () => {
+      preflightCalls += 1
+      throw new Error('模型没有返回可用的生成内容：响应格式中没有可识别的正文')
+    },
+    invokeProvider: async () => { throw new Error('ordinary Tutor provider must not run') },
+  })
+  assert.equal(preflightCalls, 1)
+  assert.equal(result.trace.modelRounds, 1)
+  assert.equal(result.trace.stopReason, 'final_answer')
+  assert.equal(result.toolRuns[0].plugin?.toolId, 'prepare_learning_task_intake')
+  assert.equal((result.toolRuns[0].plugin?.result.payload as any).originalInput, '云计算')
+  assert.equal((result.toolRuns[0].plugin?.result.payload as any).preflight.method, 'deterministic_guard')
+  assert.match(result.reply, /语义预检暂时不可用，已改用本地规则保留原始任务/)
+  assert.doesNotMatch(result.reply, /“学习规划态”请求失败/)
+  assert.ok(result.trace.events.some(event => event.status === 'retrying' && /本地规则/.test(event.detail)))
+})
+
 
 test('real Vite entry selects credentials consistently for choices, knowledge and experimental follow-up', () => {
   const source = readFileSync(resolve(process.cwd(), 'vite.config.ts'), 'utf8')

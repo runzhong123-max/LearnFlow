@@ -1542,35 +1542,48 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
     pluginActivation(input),
   )) {
     record({ phase: 'observe', detail: '已识别学习型任务转化请求，先调用独立语义模型预检', status: 'completed' })
-    const preflightText = await input.generate(
-      learningTaskPreflightInstructions(),
-      learningTaskPreflightInput(directIntake.rawInput, directIntake.taskDescription),
-      30_000,
-      1_400,
-      { responseFormat: 'json_object' },
-    )
-    const preflight = parseLearningTaskPreflightResult(preflightText, directIntake.rawInput)
-    const preparedInput = {
-      ...preflightResultToIntakeInput(preflight, directIntake.taskDescription, input.model),
-      ...(directIntake.candidateTasks ? {
-        candidateTasks: directIntake.candidateTasks,
-        selectedTaskTitle: directIntake.selectedTaskTitle,
-        selectedTaskDescription: directIntake.selectedTaskDescription,
-      } : {}),
+    let preparedInput: Record<string, unknown>
+    let preflightFallbackReason = ''
+    try {
+      const preflightText = await input.generate(
+        learningTaskPreflightInstructions(),
+        learningTaskPreflightInput(directIntake.rawInput, directIntake.taskDescription),
+        30_000,
+        1_400,
+        { responseFormat: 'json_object' },
+      )
+      const preflight = parseLearningTaskPreflightResult(preflightText, directIntake.rawInput)
+      preparedInput = { ...preflightResultToIntakeInput(preflight, directIntake.taskDescription, input.model) }
+      record({
+        phase: 'reason',
+        detail: `独立语义模型判定为 ${preflight.input_kind}，置信度 ${Math.round(preflight.confidence * 100)}%`,
+        status: 'completed',
+      })
+    } catch (error) {
+      // Semantic preflight is an enhancement. The deterministic intake
+      // contract remains authoritative, so an empty/invalid provider reply
+      // must not turn the whole planning turn into an opaque failure.
+      preflightFallbackReason = error instanceof Error ? error.message : String(error || '语义预检不可用')
+      preparedInput = { rawInput: directIntake.rawInput, taskDescription: directIntake.taskDescription }
+      record({
+        phase: 'observe',
+        detail: `语义预检不可用，已切换本地规则（${preflightFallbackReason.slice(0, 160)}）`,
+        status: 'retrying',
+      })
     }
-    record({
-      phase: 'reason',
-      detail: `独立语义模型判定为 ${preflight.input_kind}，置信度 ${Math.round(preflight.confidence * 100)}%`,
-      status: 'completed',
+    if (directIntake.candidateTasks) Object.assign(preparedInput, {
+      candidateTasks: directIntake.candidateTasks,
+      selectedTaskTitle: directIntake.selectedTaskTitle,
+      selectedTaskDescription: directIntake.selectedTaskDescription,
     })
     await execute({
       id: `direct-learning-task-intake-${id}`,
       name: 'learning_task_conversion__prepare_learning_task_intake',
-      arguments: preparedInput as unknown as Record<string, unknown>,
+      arguments: preparedInput,
     })
     const run = runs[runs.length - 1]
     const reply = run?.status === 'completed'
-      ? `${run.detail}\n\n独立语义模型已完成一次真实预检；这仍只是任务转化准备单，你确认前不会调用讯飞，也不会创建候选或正式任务。`
+      ? `${run.detail}\n\n${preflightFallbackReason ? '语义预检暂时不可用，已改用本地规则保留原始任务；' : '独立语义模型已完成一次真实预检；'}这仍只是任务转化准备单，你确认前不会调用讯飞，也不会创建候选或正式任务。`
       : `任务转化准备失败：${run?.detail || '插件没有返回可用观察'} `
     stopReason = run?.status === 'completed' ? 'final_answer' : 'error'
     record({
