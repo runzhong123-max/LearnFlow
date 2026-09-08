@@ -8,6 +8,7 @@ import type { SearchProviderConfig } from "@/lib/search/providers";
 import { researchRoleSources, type PlannedQuery } from "@/lib/search/web-research";
 import { compileProcessDraft, compileRolePackage, compileSemanticDraft, prepareBuildInput } from "./compiler";
 import { inspectKnowledgeDerivation, mergeKnowledgeDerivations } from "./knowledge-quality";
+import { selectKnowledgeContext } from "./knowledge-context";
 import type { BuildEvent, BuildEventKind } from "./events";
 import { invokeStructured, normalizeProcessDraft, processDraftSchema, type ProcessDraft, type SemanticDraft } from "./model";
 import type {
@@ -726,9 +727,9 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     };
   };
 
-  const targetedKnowledgeResearch = async (state: typeof BuildState.State, config: { signal?: AbortSignal }) => {
-    if (!options?.searchConfig || !state.taskGroups.length) return {};
-    const needy = state.taskGroups.filter((group) => taskGroupNeedsKnowledgeResearch(group, state.mentions, state.prepared!.assets, state.prepared!.segments)).slice(0, 3);
+  const targetedKnowledgeResearch = async (state: typeof BuildState.State, config: { signal?: AbortSignal }, knowledgeGroups: TaskGroup[]) => {
+    if (!options?.searchConfig || !knowledgeGroups.length) return {};
+    const needy = knowledgeGroups.filter((group) => taskGroupNeedsKnowledgeResearch(group, state.mentions, state.prepared!.assets, state.prepared!.segments)).slice(0, 3);
     if (!needy.length) return {};
     const queries: PlannedQuery[] = needy.map((group, index) => ({ id: `targeted:${state.request.runId}:${index + 1}`, category: "technology", query: `${state.request.roleTitle} ${group.tasks.map((task) => task.label).join(" ")} 官方文档 工程实践 知识技能`, priority: 9 - index * 0.1 }));
     emit(state.request, "build.targeted_research.started", "evidence", { queryCount: queries.length, taskGroupIds: needy.map((group) => group.id) });
@@ -764,6 +765,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       emit(state.request, "build.targeted_research.completed", "evidence", { queryCount: queries.length, selectedSourceCount: researched.sources.length, newMentionCount: 0, directToKnowledgeLane: true });
       return { prepared, shards: [...state.shards, ...shards], targetedResearchQueries: queries.length, researchReport: mergeResearchReports(state.researchReport, researched.report) };
     } catch (error) {
+      if (config.signal?.aborted) throw error;
       const detail = error instanceof Error ? error.message : "定点补研失败";
       emit(state.request, "build.targeted_research.completed", "evidence", { queryCount: queries.length, degraded: true, detail });
       return { targetedResearchQueries: queries.length, laneFailures: [...state.laneFailures, `知识技能定点补研失败：${detail}`] };
@@ -775,26 +777,33 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     const failures = [...state.laneFailures];
     const stableTaskIds = new Set((state.taskDraft?.nodes || []).filter((node) => node.type === "task").map((node) => node.tempId));
 
-    const targetedPromise = targetedKnowledgeResearch(state, config);
+    // Presentation folding is not a research boundary: hidden detail tasks need
+    // their own learning support too. Two tasks share a bounded context/output.
+    const knowledgeGroups = groupTasks(state.taskDraft?.nodes || [], 2);
+    const targetedPromise = targetedKnowledgeResearch(state, config, knowledgeGroups);
     const invokeKnowledgeGroup = async (group: TaskGroup, prefix: string, prepared: PreparedBuild) => {
-      const segments = selectSegmentsForTaskGroup({ group, segments: prepared.segments, mentions: state.mentions, assets: prepared.assets, purpose: "knowledge", maxTokens: 3_200 });
+      const segments = selectKnowledgeContext({ group, segments: prepared.segments, mentions: state.mentions, assets: prepared.assets, maxTokens: 4_800 });
       const mentions = mentionsForSegments(state.mentions, segments.map((segment) => segment.id));
-      const prompt = knowledgeDerivationPrompt({ roleTitle: state.request.roleTitle, group, mentions, segments: segments.map((segment) => ({ id: segment.id, text: segment.text })), mode: "detail" });
+      const prompt = knowledgeDerivationPrompt({ roleTitle: state.request.roleTitle, group, mentions, segments, assets: prepared.assets, mode: "detail" });
       const lane = `knowledge:${group.id}`;
-      const draft = await runWorkItem({ request: state.request, workItems, stage: "task-knowledge-derivation", lane, inputRefs: [group.id, ...segments.map((segment) => segment.id)], priority: 7, estimatedInputTokens: estimateTokens(prompt.user), maxOutputTokens: 2_800, cachePayload: prompt.user, profile: "semantic", invoke: (onReasoning) => invokeStructured({ model, ...prompt, schema: knowledgeDerivationSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: 2_800, timeoutMs: 50_000, totalTimeoutMs: 80_000, onReasoning }) });
+      const outputBudget = group.tasks.length > 1 ? 5_600 : 3_600;
+      const draft = await runWorkItem({ request: state.request, workItems, stage: "task-knowledge-derivation", lane, inputRefs: [group.id, ...group.tasks.map(task => task.tempId), ...segments.map((segment) => segment.id)], priority: 7, estimatedInputTokens: estimateTokens(prompt.user), maxOutputTokens: outputBudget, cachePayload: JSON.stringify(prompt), profile: "semantic", invoke: (onReasoning) => invokeStructured({ model, ...prompt, schema: knowledgeDerivationSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: outputBudget, timeoutMs: 65_000, totalTimeoutMs: 95_000, onReasoning }) });
       const checked = inspectKnowledgeDerivation({ draft, group, mentions, segments });
       let accepted = checked.accepted;
+      let quality = checked;
       let remainingIssues = checked.issues;
-      if (checked.uncoveredTaskIds.length || checked.issues.length) {
-        const repairPrompt = knowledgeDerivationPrompt({ roleTitle: state.request.roleTitle, group, mentions, segments, mode: "detail", repair: {
-          acceptedPoints: accepted.skills.map((point) => ({ label: point.label, taskTempIds: point.taskTempIds })),
+      if (checked.incompleteTaskIds.length || checked.issues.length) {
+        const repairPrompt = knowledgeDerivationPrompt({ roleTitle: state.request.roleTitle, group, mentions, segments, assets: prepared.assets, mode: "detail", repair: {
+          acceptedPoints: accepted.skills.map((point) => ({ label: point.label, learningKind: point.learningKind, scopeNote: point.learningDefinition?.scopeNote, taskTempIds: point.taskTempIds })),
           issues: checked.issues,
           uncoveredTaskIds: checked.uncoveredTaskIds,
+          coverage: checked.coverage,
         } });
         try {
-          const repaired = await runWorkItem({ request: state.request, workItems, stage: "task-knowledge-derivation", lane: `${lane}:coverage-repair`, inputRefs: [group.id, ...checked.uncoveredTaskIds], priority: 7, estimatedInputTokens: estimateTokens(repairPrompt.user), maxOutputTokens: 2_800, cachePayload: repairPrompt.user, profile: "semantic", invoke: (onReasoning) => invokeStructured({ model, ...repairPrompt, schema: knowledgeDerivationSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: 2_800, timeoutMs: 50_000, totalTimeoutMs: 80_000, onReasoning }) });
+          const repaired = await runWorkItem({ request: state.request, workItems, stage: "task-knowledge-derivation", lane: `${lane}:coverage-repair`, inputRefs: [group.id, ...checked.incompleteTaskIds], priority: 7, estimatedInputTokens: estimateTokens(repairPrompt.user), maxOutputTokens: outputBudget, cachePayload: JSON.stringify(repairPrompt), profile: "semantic", invoke: (onReasoning) => invokeStructured({ model, ...repairPrompt, schema: knowledgeDerivationSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: outputBudget, timeoutMs: 65_000, totalTimeoutMs: 95_000, onReasoning }) });
           const repairCheck = inspectKnowledgeDerivation({ draft: repaired, group, mentions, segments });
-          accepted = mergeKnowledgeDerivations(accepted, repairCheck.accepted);
+          quality = inspectKnowledgeDerivation({ draft: mergeKnowledgeDerivations(accepted, repairCheck.accepted), group, mentions, segments });
+          accepted = quality.accepted;
           remainingIssues = repairCheck.issues;
         } catch (error) {
           if (config.signal?.aborted) throw error;
@@ -806,17 +815,18 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
         failures.push(`知识技能覆盖缺口「${label}」：${gap.reason}`);
       }
       for (const issue of remainingIssues) failures.push(`知识技能待拆解或补证：${issue.detail}`);
-      emit(state.request, "build.lane.completed", "semantic", { lane: `${lane}:quality`, acceptedPointCount: accepted.skills.length, uncoveredTaskIds: accepted.gaps.map((gap) => gap.taskTempId), rejectedPointCount: remainingIssues.length, degraded: accepted.gaps.length > 0 || remainingIssues.length > 0 });
+      emit(state.request, "build.lane.completed", "semantic", { lane: `${lane}:quality`, acceptedPointCount: accepted.skills.length, coverage: quality.coverage, uncoveredTaskIds: quality.uncoveredTaskIds, incompleteTaskIds: quality.incompleteTaskIds, gaps: accepted.gaps, rejectedPointCount: remainingIssues.length, degraded: accepted.gaps.length > 0 || remainingIssues.length > 0 });
       return prefixDerivedDraft(knowledgeToSemanticDraft({ draft: accepted, group, mentions, segments }), prefix, stableTaskIds);
     };
 
     const knowledgeBranchPromise = (async () => {
       const targeted = await targetedPromise;
       const prepared = targeted.prepared || state.prepared!;
-      const partsNested = await mapWithConcurrency(state.taskGroups, 2, async (group, index) => {
+      const partsNested = await mapWithConcurrency(knowledgeGroups, 2, async (group, index) => {
       try {
         return [await invokeKnowledgeGroup(group, `g${index + 1}:`, prepared)];
       } catch (error) {
+        if (config.signal?.aborted) throw error;
         const children = splitTaskGroup(group);
         if (children.length === 1) {
           failures.push(`任务组 ${group.id} 的知识技能派生失败：${error instanceof Error ? error.message : "未知错误"}`);
@@ -826,6 +836,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
           try {
             return { ok: true as const, draft: await invokeKnowledgeGroup(child, `g${index + 1}r${childIndex + 1}:`, prepared) };
           } catch (childError) {
+            if (config.signal?.aborted) throw childError;
             failures.push(`任务子组 ${child.id} 的知识技能派生失败：${childError instanceof Error ? childError.message : "未知错误"}`);
             return { ok: false as const, draft: fallbackSemanticDraft };
           }

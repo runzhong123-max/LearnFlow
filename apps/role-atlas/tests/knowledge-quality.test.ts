@@ -36,6 +36,8 @@ test("软件实施任务保留不同原子知识与技能并绑定真实来源�
   ]);
   assert.equal(quality.accepted.skills.length, 4);
   assert.deepEqual(quality.uncoveredTaskIds, []);
+  assert.deepEqual(quality.incompleteTaskIds, ["deploy-task", "docs-task"], "有技能仍应核对缺少的知识维度");
+  assert.deepEqual(quality.coverage[1].missingKinds, ["knowledge"]);
   const semantic = knowledgeToSemanticDraft({ draft: quality.accepted, group, mentions: [], segments });
   assert.deepEqual(new Set(semantic.nodes.map((node) => node.learningKind)), new Set(["knowledge", "skill"]));
   assert.equal(semantic.edges.length, 4);
@@ -43,6 +45,18 @@ test("软件实施任务保留不同原子知识与技能并绑定真实来源�
     assert.ok(node.learningDefinition);
     assert.ok(node.evidenceSpans?.every((span) => segments.some((segment) => segment.id === span.segmentId && segment.text.includes(span.quote))));
   }
+});
+
+test("同段多个上下文窗口均可引用，但跨窗口拼接或空引用不能通过", () => {
+  const windows = [{ id: "sql-source", text: "SQL 多表关联查询" }, { id: "sql-source", text: "按主键校验数据一致性" }];
+  const valid = point("多表关联规则", "knowledge", "sql-task", 0);
+  const quality = inspectKnowledgeDerivation({ group, segments: windows, mentions: [], draft: knowledgeDerivationSchema.parse({ skills: [
+    { ...valid, tempId: "first", evidenceSpans: [{ segmentId: "sql-source", quote: windows[0].text }] },
+    { ...valid, tempId: "second", evidenceSpans: [{ segmentId: "sql-source", quote: windows[1].text }] },
+    { ...valid, tempId: "fabricated", evidenceSpans: [{ segmentId: "sql-source", quote: windows.map(window => window.text).join("") }] },
+  ] }) });
+  assert.equal(quality.accepted.skills.length, 2);
+  assert.equal(quality.issues.length, 1);
 });
 
 test("综合能力、hybrid、伪造引用和未知任务不会通过原子知识质量检查", () => {
@@ -67,8 +81,8 @@ test("补齐只增加未覆盖项，保留已验证点；资料不足可明确�
   ]);
   const merged = mergeKnowledgeDerivations(initial.accepted, repair.accepted);
   assert.equal(merged.skills.length, 2);
-  assert.deepEqual(merged.gaps.map((gap) => gap.taskTempId), ["docs-task"]);
-  assert.match(merged.gaps[0].reason, /手册样例/u);
+  assert.deepEqual(new Set(merged.gaps.map((gap) => gap.taskTempId)), new Set(["sql-task", "deploy-task", "docs-task"]));
+  assert.match(merged.gaps.find(gap => gap.taskTempId === "docs-task")!.reason, /手册样例/u);
   const absent = check([], group.tasks.map((task) => ({ taskTempId: task.tempId, reason: "资料只列岗位名称，没有支持此任务的技术或方法描述。" })));
   assert.equal(absent.accepted.skills.length, 0);
   assert.equal(absent.accepted.gaps.length, 3);

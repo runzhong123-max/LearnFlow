@@ -1,3 +1,4 @@
+import { COLD_START_WORKFLOW_VERSION } from "./workflow-version";
 import type { ProcessDraft, SemanticDraft } from "./model";
 import type {
   AuditIssue,
@@ -851,7 +852,7 @@ export function compileRolePackage(input: {
     packages: { rolePackage: undefined as never },
     validation,
     build: input.workItems ? {
-      workflowVersion: "4.2",
+      workflowVersion: COLD_START_WORKFLOW_VERSION,
       workItems: input.workItems,
       metrics: input.buildMetrics || {
         estimatedInputTokens: input.workItems.reduce((sum, item) => sum + item.estimatedInputTokens, 0),

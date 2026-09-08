@@ -1,4 +1,6 @@
 import { stableHash } from "./compiler";
+import { COLD_START_WORKFLOW_VERSION } from "./workflow-version";
+export { COLD_START_WORKFLOW_VERSION } from "./workflow-version";
 import type {
   BuildWorkItemSummary,
   ConceptMention,
@@ -8,8 +10,6 @@ import type {
   SourceSegment,
 } from "./types";
 import type { SemanticDraft } from "./model";
-
-export const COLD_START_WORKFLOW_VERSION = "4.2" as const;
 
 /**
  * Only evidence roles that can describe current work are allowed onto the
@@ -278,7 +278,7 @@ export function createWorkItem(input: {
     estimatedInputTokens: input.estimatedInputTokens,
     maxOutputTokens: input.maxOutputTokens,
     outputRefs: [],
-    cacheKey: `cache:${stableHash(`cold-start-v3:${input.stage}:${input.cachePayload}`)}`,
+    cacheKey: `cache:${stableHash(`cold-start-${COLD_START_WORKFLOW_VERSION}:${input.stage}:${input.cachePayload}`)}`,
   };
 }
 

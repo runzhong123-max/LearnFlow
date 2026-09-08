@@ -194,7 +194,10 @@ export function semanticDraftFromKernel(result: ColdStartBuildResult): SemanticD
     summary: node.summary,
     aliases: node.aliases,
     evidenceSegmentIds: node.evidenceSegmentIds,
-    evidenceSpans: [],
+    evidenceSpans: result.sources.evidenceBindings.filter(binding => node.evidenceBindingIds.includes(binding.id))
+      .flatMap(binding => binding.evidenceSpan ? [binding.evidenceSpan] : []),
+    learningKind: node.learningKind,
+    learningDefinition: node.learningDefinition,
     mentionIds: result.sources.mentions?.filter((mention) => node.evidenceSegmentIds.includes(mention.sourceSegmentId)).map((mention) => mention.id).slice(0, 40) || [],
     confidence: node.confidence,
   }));
