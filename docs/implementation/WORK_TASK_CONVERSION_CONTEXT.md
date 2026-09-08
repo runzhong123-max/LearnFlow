@@ -1,6 +1,6 @@
 # 工作任务转换的持续对话上下文
 
-Contract impact：`learnflow.work-task-conversion-context.v1` 是现有已确认交接的只读投影。增量扩展 `/api/learner-state/agent-workspace-context`，不新增学习者权威、事件写入、Kernel 或数据库表；旧客户端可以忽略 `work_task_conversion` 字段。两端注册表以 2026-09-08.3 版本登记 reader、投影、前端消息适配器和既有工作区 API 绑定。
+Contract impact：`learnflow.work-task-conversion-context.v1` 是现有已确认交接的只读投影。增量扩展 `/api/learner-state/agent-workspace-context`，不新增学习者权威、事件写入、Kernel 或数据库表；旧客户端可以忽略 `work_task_conversion` 字段。两端注册表以 2026-09-08.4 版本登记 reader、投影、前端消息适配器和既有工作区 API 绑定。
 
 转换接续的首条消息会随历史窗口退出，不能承担长期固定来源的职责。共享 `agent_observations.read_work_task_conversion_context()` 在每轮读取正式 `AgentSession.context_summary.work_task_conversion`，首先验证 learner/session/project/checkpoint 的归属和固定交接范围。没有 session 不读取转换，另一个会话不借用它；会话后来移入别的项目时不重新解释旧交接。新交接保存创建时的 `scope`；旧交接只在转换表的 learner/session/project/root_hash 均匹配时恢复，否则不注入。
 

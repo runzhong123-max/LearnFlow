@@ -4274,6 +4274,6 @@ void initializeRuntimeClient().then(() => root.render(
   <AuthGate>{auth => isConversionPage
     ? <Suspense fallback={<p>正在载入工作任务转换…</p>}><ConversionPage key={`conversion:${auth.account.learner_id}`} auth={auth}/></Suspense>
     : publicVisualHub
-    ? <><nav style={{padding:'16px 26px'}}><a href="/">← 返回学习空间</a></nav><Suspense fallback={<p>正在载入图解库…</p>}><VisualHubPage/></Suspense></>
+    ? <><nav style={{padding:'16px 26px'}}><a href="/">← 返回学习空间</a></nav><Suspense fallback={<p>正在载入图解库…</p>}><VisualHubPage key={`visual-hub:${auth.account.learner_id}`}/></Suspense></>
     : <App key={`learner:${auth.account.learner_id}`} auth={auth} />}</AuthGate>,
 ))

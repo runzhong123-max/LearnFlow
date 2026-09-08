@@ -86,6 +86,7 @@ export function parseVisualWorkflowCandidate(raw:string):Record<string,any> {
 
 function conciseFailure(error:unknown) {
   const message=clean(error instanceof Error?error.message:error,1600)
+  if(message.startsWith('visual_user_model:'))return {code:'user_model_failed',message:message.replace(/^visual_user_model:[a-z_]+:\s*/,''),detail:message}
   if(/abort|timeout|deadline|network|fetch|provider_incomplete|provider_empty|429|503/i.test(message))return {code:'interrupted',message:'构建暂时中断，已保存当前进度；可以继续。',detail:message}
   if(message.startsWith('visual_needs_clarification:'))return {code:'needs_input',message:message.slice('visual_needs_clarification:'.length,300),detail:message}
   if(/unsupported|missing_capabilit|needs_clarification|needs_input/i.test(message))return {code:'needs_input',message:'当前表达条件不足，草稿已保留；请补充要求或选择适合的表达范围。',detail:message}
@@ -94,7 +95,7 @@ function conciseFailure(error:unknown) {
 }
 function canRepair(error:unknown) {
   const detail=clean(error instanceof Error?error.message:error,2000)
-  return !/abort|timeout|deadline|network|fetch|provider_|401|403|auth_required|scope_not_found|ownership|forbidden|cancel|conflict|unsupported|needs_clarification|needs_input/i.test(detail)
+  return !/abort|timeout|deadline|network|fetch|provider_|visual_user_model:|401|403|auth_required|scope_not_found|ownership|forbidden|cancel|conflict|unsupported|needs_clarification|needs_input/i.test(detail)
 }
 function boundedReference(value:unknown):VisualWorkRef {
   const row=object(value)||{}

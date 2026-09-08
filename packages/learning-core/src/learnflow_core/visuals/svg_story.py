@@ -8,7 +8,7 @@ import math
 import re
 from .engine import digest
 
-STORY_RUNTIME = 'learnflow.svg-story.1.0.0'
+STORY_RUNTIME = 'learnflow.svg-story.1.0.1'
 ID = re.compile(r'^[a-z][a-z0-9_.-]{0,63}$')
 
 
@@ -67,16 +67,18 @@ def compile_svg_story(source, kind='diagram'):
             x1,y1 = positions[edge['from']]; x2,y2 = positions[edge['to']]
             active = edge['id'] in step['active_edges']; color = '#0369a1' if active else '#94a3b8'
             if edge['from'] == edge['to']:
+                label_x,label_y = x1+65,y1-85
                 path = f'M {x1+90} {y1-25} C {x1+160} {y1-110}, {x1-20} {y1-110}, {x1+20} {y1-42}'
             else:
                 dx,dy = x2-x1,y2-y1; length = math.hypot(dx,dy)
+                label_x,label_y = (x1+x2)/2+dy/length*25,(y1+y2)/2-dx/length*25
                 boundary = min(119/abs(dx) if dx else math.inf, 53/abs(dy) if dy else math.inf)
                 sx,sy = x1+dx*boundary,y1+dy*boundary
                 ex,ey = x2-dx*boundary,y2-dy*boundary
                 path = f'M {sx:g} {sy:g} Q {(sx+ex)/2+dy/length*28:g} {(sy+ey)/2-dx/length*28:g} {ex:g} {ey:g}'
             parts.append(f'<g id="edge-{edge["id"]}"><title>{escape(edge.get("label", edge["from"]+" → "+edge["to"]))}</title><path d="{path}" fill="none" stroke="{color}" stroke-width="{3 if active else 1.5}" marker-end="url(#arrow)"/>')
             if edge.get('label'):
-                parts.append(f'<text x="{(x1+x2)/2:g}" y="{(y1+y2)/2-14:g}" text-anchor="middle" font-size="12" fill="#334155">{escape(edge["label"][:24])}</text>')
+                parts.append(f'<text x="{label_x:g}" y="{label_y+4:g}" text-anchor="middle" font-size="12" fill="#334155">{escape(edge["label"][:24])}</text>')
             parts.append('</g>')
         for node in nodes:
             x,y = positions[node['id']]; active = node['id'] in step['active_nodes']
