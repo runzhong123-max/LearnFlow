@@ -682,7 +682,7 @@ export type ColdStartBuildResult = {
   };
   validation: ValidationReport;
   build?: {
-    workflowVersion: "3.3" | "4.0" | "4.1" | "4.2" | "4.3";
+    workflowVersion: "3.3" | "4.0" | "4.1" | "4.2" | "4.3" | "4.4";
     stage?: "kernel" | "semantic_enrichment" | "full_enrichment";
     enrichment?: {
       baseSnapshotId?: string;

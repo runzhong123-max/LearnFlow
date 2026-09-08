@@ -6,9 +6,11 @@ import { refreshRolePackageManifest } from "@/lib/packages/role-package-manifest
 import { createRoleSearchPlan } from "@/lib/search/query-planner";
 import type { SearchProviderConfig } from "@/lib/search/providers";
 import { researchRoleSources, type PlannedQuery } from "@/lib/search/web-research";
-import { compileProcessDraft, compileRolePackage, compileSemanticDraft, prepareBuildInput } from "./compiler";
+import { researchRoleTitle } from "@/lib/search/role-query";
+import { compileProcessDraft, compileRolePackage, compileSemanticDraft, prepareBuildInput, stableHash } from "./compiler";
 import { inspectKnowledgeDerivation, mergeKnowledgeDerivations } from "./knowledge-quality";
 import { selectKnowledgeContext } from "./knowledge-context";
+import { capabilityCoverage } from "./capability-coverage";
 import type { BuildEvent, BuildEventKind } from "./events";
 import { invokeStructured, normalizeProcessDraft, processDraftSchema, type ProcessDraft, type SemanticDraft } from "./model";
 import type {
@@ -97,6 +99,7 @@ const BuildState = new StateSchema({
   process: z.custom<ProcessMaterialization>().optional(),
   workItems: z.array(z.custom<BuildWorkItemSummary>()).default(() => []),
   targetedResearchQueries: z.number().default(0),
+  taskRecoveryRound: z.number().default(0),
   laneFailures: z.array(z.string()).default(() => []),
   result: z.custom<ColdStartBuildResult>().optional(),
 });
@@ -195,6 +198,9 @@ function batchMentionsForTaskBarrier(mentions: ConceptMention[], tokenBudget = 6
 
 function mergeResearchReports(base: WebResearchReport | undefined, next: WebResearchReport) {
   if (!base) return next;
+  // Enrichment often receives the identical report already embedded in the
+  // kernel. Rehydration is not another search or another billed request.
+  if (JSON.stringify(base) === JSON.stringify(next)) return base;
   const coverage = new Map(base.categoryCoverage.map((item) => [item.category, item]));
   for (const item of next.categoryCoverage) {
     const current = coverage.get(item.category);
@@ -229,6 +235,21 @@ function mergeResearchReports(base: WebResearchReport | undefined, next: WebRese
       totalCredits: (base.usage?.totalCredits || 0) + (next.usage?.totalCredits || 0),
     },
   } satisfies WebResearchReport;
+}
+
+function mergeResearchSources(existing: ColdStartRequest["sources"], incoming: ColdStartRequest["sources"]) {
+  const merged = existing.map(source => ({ ...source }));
+  const byContent = new Map(merged.map((source, index) => [`${source.locator || source.title}:${stableHash(source.content)}`, index]));
+  for (const source of incoming) {
+    const key = `${source.locator || source.title}:${stableHash(source.content)}`;
+    const index = byContent.get(key);
+    if (index === undefined) { byContent.set(key, merged.length); merged.push({ ...source }); }
+    else {
+      const previous = merged[index];
+      merged[index] = { ...previous, queryIds: unique([...(previous.queryIds || []), ...(source.queryIds || [])]), searchCategories: unique([...(previous.searchCategories || []), ...(source.searchCategories || [])]) };
+    }
+  }
+  return merged;
 }
 
 function prefixDerivedDraft(draft: SemanticDraft, prefix: string, stableTaskIds: Set<string>) {
@@ -510,7 +531,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       },
     });
     emit(state.request, "build.research.completed", "evidence", { queryCount: researched.report.queries.length, selectedSourceCount: researched.report.selectedSourceCount, failureCount: researched.report.failures.length, totalCredits: researched.report.usage?.totalCredits });
-    return { activeRequest: { ...state.request, sources: [...state.request.sources, ...researched.sources] }, researchReport: researched.report, runStartedAt };
+    return { activeRequest: { ...state.request, sources: mergeResearchSources(state.request.sources, researched.sources) }, researchReport: mergeResearchReports(options.existingResearchReport, researched.report), runStartedAt };
   };
 
   const prepareSources = async (state: typeof BuildState.State) => {
@@ -643,7 +664,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       maxOutputTokens: workItems.reduce((sum, item) => sum + item.maxOutputTokens, 0),
       cacheHits: workItems.filter((item) => item.cacheHit).length,
       failedWorkItems: workItems.filter((item) => item.status === "failed").length,
-      targetedResearchQueries: 0,
+      targetedResearchQueries: state.targetedResearchQueries,
     };
     const kernelResult = compileRolePackage({
       request: kernelRequest,
@@ -695,6 +716,46 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       relationPropositions: linked.propositions,
       laneFailures: kernelFailures,
     };
+  };
+
+  const needsTaskRecovery = (state: typeof BuildState.State) => {
+    if (state.taskDraft?.nodes.some(node => node.type === "task")) return "build_kernel";
+    if (state.taskRecoveryRound >= 2) return "build_kernel";
+    const allShards = createSourceShards({ assets: state.prepared!.assets, segments: state.prepared!.segments });
+    const unexamined = allShards.some(shard => !state.shards.some(existing => existing.id === shard.id)
+      && state.prepared!.assets.find(asset => asset.id === shard.sourceId)?.kind !== "user_brief");
+    return options?.searchConfig || unexamined ? "recover_task_evidence" : "build_kernel";
+  };
+
+  const recoverTaskEvidence = async (state: typeof BuildState.State, config: { signal?: AbortSignal }) => {
+    const round = state.taskRecoveryRound + 1;
+    const role = researchRoleTitle(state.request.roleTitle);
+    let activeRequest = state.activeRequest || state.request;
+    let report = state.researchReport;
+    const failures = [...state.laneFailures];
+    const queries: PlannedQuery[] = (round === 1
+      ? [{ category: "job_market" as const, query: `${role} 岗位职责 任职要求` }, { category: "work_practice" as const, query: `${role} 项目交付 工作流程` }]
+      : [{ category: "job_market" as const, query: `${role} 招聘 职位描述` }, { category: "work_practice" as const, query: `${role} 项目案例 实施过程` }]
+    ).map((query, i) => ({ ...query, id: `task-recovery:${state.request.runId}:${round}:${i}`, priority: 10 - i }));
+    emit(state.request, "build.targeted_research.started", "evidence", { reason: "missing_task_layer", round, queryCount: options?.searchConfig ? queries.length : 0, message: "尚未找到可支撑岗位任务的证据，正在补充招聘职责和真实工作实践。" });
+    if (options?.searchConfig) {
+      try {
+        const researched = await researchRoleSources({ request: { ...state.request, roleTitle: role }, config: options.searchConfig, queries, sourceLimit: 6, signal: config.signal });
+        activeRequest = { ...activeRequest, sources: mergeResearchSources(activeRequest.sources, researched.sources) };
+        report = mergeResearchReports(report, researched.report);
+      } catch (error) {
+        if (config.signal?.aborted) throw error;
+        failures.push(`任务证据补研未完成：${error instanceof Error ? error.message : "检索失败"}`);
+      }
+    }
+    const raw = prepareBuildInput(activeRequest);
+    const assets = qualifySources(raw.assets, raw.segments);
+    const prepared = { ...raw, assets };
+    const examined = new Set(state.shards.map(shard => shard.id));
+    const routed = selectKernelSourceShards({ shards: createSourceShards({ assets, segments: raw.segments }).filter(shard => !examined.has(shard.id)), assets, roleTitle: role, maxPublicShards: 8 });
+    const shards = [...state.shards, ...routed.selected];
+    emit(state.request, "build.targeted_research.completed", "evidence", { reason: "missing_task_layer", round, addedSourceShards: routed.selected.length, report });
+    return { activeRequest, prepared, researchReport: report, shards, taskRecoveryRound: round, targetedResearchQueries: state.targetedResearchQueries + (options?.searchConfig ? queries.length : 0), laneFailures: failures };
   };
 
   const hydrateKernel = async (state: typeof BuildState.State) => {
@@ -882,21 +943,34 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
         dependencyPart,
         prepared,
         researchReport: targeted.researchReport || state.researchReport,
-        targetedResearchQueries: targeted.targetedResearchQueries || 0,
+        targetedResearchQueries: state.targetedResearchQueries + (targeted.targetedResearchQueries || 0),
         laneFailures: targeted.laneFailures || [],
       };
     })();
     const capabilityPartPromise = (async () => {
-      if (state.kernelResult?.semantic.nodes.some((node) => node.type === "capability" || node.type === "capability_unit")) return fallbackSemanticDraft;
       if ((state.taskDraft?.nodes.filter((node) => node.type === "task").length || 0) < 2) return fallbackSemanticDraft;
-      const prompt = capabilityDerivationPrompt({ roleTitle: state.request.roleTitle, tasks: state.taskDraft!.nodes, mentions: state.mentions });
-      try {
-        const draft = await runWorkItem({ request: state.request, workItems, stage: "cross-task-capability-derivation", lane: "capability:cross-task", inputRefs: [...stableTaskIds], priority: 8, estimatedInputTokens: estimateTokens(prompt.user), maxOutputTokens: 2_800, cachePayload: prompt.user, profile: "semantic", invoke: (onReasoning) => invokeStructured({ model, ...prompt, schema: capabilityDerivationSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: 2_800, timeoutMs: 50_000, totalTimeoutMs: 80_000, onReasoning }) });
-        return prefixDerivedDraft(capabilityToSemanticDraft({ draft, tasks: state.taskDraft!.nodes, mentions: state.mentions }), "cross:", stableTaskIds);
-      } catch (error) {
-        failures.push(`跨任务能力归纳失败：${error instanceof Error ? error.message : "未知错误"}`);
-        return fallbackSemanticDraft;
+      const base = state.semanticDraft || state.taskDraft!;
+      let combined = base;
+      let output = fallbackSemanticDraft;
+      // A single existing capability must not suppress research of uncovered
+      // tasks. Keep accepted material and retry only the remaining gaps once.
+      for (let round = 0; round < 2; round += 1) {
+        const coverage = capabilityCoverage(combined);
+        if (!coverage.uncoveredTaskIds.length && !coverage.capabilitiesWithoutUnits.length) break;
+        const prompt = capabilityDerivationPrompt({ roleTitle: state.request.roleTitle, tasks: state.taskDraft!.nodes, mentions: state.mentions, coverage, repairAttempt: round > 0, existing: combined.nodes.filter(node => ["capability", "capability_unit"].includes(node.type)).map(node => ({ id: node.tempId, label: node.label, summary: node.summary })) });
+        try {
+          const draft = await runWorkItem({ request: state.request, workItems, stage: "cross-task-capability-derivation", lane: round ? "capability:coverage-repair" : "capability:cross-task", inputRefs: [...stableTaskIds], priority: 8, estimatedInputTokens: estimateTokens(prompt.user), maxOutputTokens: 4_800, cachePayload: prompt.user, profile: "semantic", invoke: (onReasoning) => invokeStructured({ model, ...prompt, schema: capabilityDerivationSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: 4_800, timeoutMs: 65_000, totalTimeoutMs: 95_000, onReasoning }) });
+          const part = prefixDerivedDraft(capabilityToSemanticDraft({ draft, tasks: state.taskDraft!.nodes, mentions: state.mentions }), `cross${round}:`, stableTaskIds);
+          output = mergeDerivedSemanticDrafts(output, [part]);
+          combined = mergeDerivedSemanticDrafts(base, [output]);
+        } catch (error) {
+          if (config.signal?.aborted) throw error;
+          failures.push(`跨任务能力归纳失败：${error instanceof Error ? error.message : "未知错误"}`);
+        }
       }
+      const remaining = capabilityCoverage(combined);
+      if (remaining.uncoveredTaskIds.length) failures.push(`岗位能力仍缺少任务支撑：${remaining.uncoveredTaskIds.map(id => state.taskDraft!.nodes.find(node => node.tempId === id)?.label || id).join("、")}`);
+      return output;
     })();
     const invokeProcessGroup = async (group: TaskGroup, prefix: string) => {
       const segments = selectSegmentsForTaskGroup({ group, segments: state.prepared!.segments, mentions: state.mentions, assets: state.prepared!.assets, purpose: "process", maxTokens: 2_800 });
@@ -1038,7 +1112,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     };
     const result = compileRolePackage({ request: state.request, brief: prepared.brief, assets: prepared.assets, segments: prepared.segments, semantic: state.semantic!, process: state.process!, laneFailures: state.laneFailures, research: state.researchReport, mentions: state.mentions, relationPropositions: state.relationPropositions, workItems: state.workItems, buildMetrics: metrics });
     result.process.capsules = completeProcessCapsules(state.kernelResult?.process.capsules || createProcessCapsules(result.semantic.nodes, state.mentions), result);
-    const degraded = state.laneFailures.length > 0 || result.process.capsules.some((capsule) => capsule.expansionStatus === "degraded");
+    const degraded = !result.semantic.nodes.some(node => node.type === "task") || state.laneFailures.length > 0 || result.process.capsules.some((capsule) => capsule.expansionStatus === "degraded");
     result.build = {
       ...result.build!,
       stage: "full_enrichment",
@@ -1100,11 +1174,13 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       .addNode("extract_mentions", extractMentions)
       .addNode("converge_tasks", convergeTasks)
       .addNode("build_kernel", buildKernel)
+      .addNode("recover_task_evidence", recoverTaskEvidence)
       .addEdge(START, "research_sources")
       .addEdge("research_sources", "prepare_sources")
       .addEdge("prepare_sources", "extract_mentions")
       .addEdge("extract_mentions", "converge_tasks")
-      .addEdge("converge_tasks", "build_kernel")
+      .addConditionalEdges("converge_tasks", needsTaskRecovery, ["build_kernel", "recover_task_evidence"])
+      .addEdge("recover_task_evidence", "extract_mentions")
       .addEdge("build_kernel", END)
       .compile({ checkpointer: false });
   }
@@ -1114,6 +1190,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     .addNode("extract_mentions", extractMentions)
     .addNode("converge_tasks", convergeTasks)
     .addNode("build_kernel", buildKernel)
+    .addNode("recover_task_evidence", recoverTaskEvidence)
     .addNode("derive_layers", deriveLayers)
     .addNode("materialize_dual_graph", materializeDualGraph)
     .addNode("audit_and_compile", auditAndCompile)
@@ -1121,7 +1198,8 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     .addEdge("research_sources", "prepare_sources")
     .addEdge("prepare_sources", "extract_mentions")
     .addEdge("extract_mentions", "converge_tasks")
-    .addEdge("converge_tasks", "build_kernel")
+    .addConditionalEdges("converge_tasks", needsTaskRecovery, ["build_kernel", "recover_task_evidence"])
+    .addEdge("recover_task_evidence", "extract_mentions")
     .addEdge("build_kernel", "derive_layers")
     .addEdge("derive_layers", "materialize_dual_graph")
     .addEdge("materialize_dual_graph", "audit_and_compile")

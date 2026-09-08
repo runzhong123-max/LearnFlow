@@ -105,7 +105,7 @@ test("冷启动 Skill 从共享证据编译含三命名空间的统一岗位包"
   assert.match(result.snapshot.id, /^snapshot:[a-z0-9]+@2026-08-21:[a-z0-9]+$/);
   assert.ok(result.audit.inspection, "冷启动完成后应保留非阻断结构检查结果");
   assert.equal(result.audit.inspection?.protocolValid, true);
-  assert.equal(result.build?.workflowVersion, "4.3");
+  assert.equal(result.build?.workflowVersion, "4.4");
   assert.ok(result.build?.workItems.some((item) => item.stage === "task-normalization"));
   assert.ok(result.sources.mentions?.some((mention) => mention.evidenceSpan?.quote === "大模型应用工程师负责 RAG 系统构建"));
   assert.equal(result.validation.publishable, false, "只有推断型事理模式时应保持候选状态");

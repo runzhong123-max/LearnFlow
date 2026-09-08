@@ -6,6 +6,7 @@ import { authorizeApiRequest } from "@/lib/access";
 import { z } from "zod/v4";
 import { createRecordedModelInvoker } from "@/lib/research-collection/model";
 import { createColdStartSkill } from "@/lib/build/graph";
+import { assertTaskKernel } from "@/lib/build/completion";
 import type { BuildEvent } from "@/lib/build/events";
 import { coldStartRequestSchema, type ColdStartBuildResult } from "@/lib/build/types";
 import {
@@ -70,6 +71,8 @@ export async function POST(request: Request) {
   const workspace = await getProjectWorkspace(parsed.build.projectId, parsed.baseSnapshotId).catch(() => null);
   if (!workspace?.result) return Response.json({ ok: false, error: "岗位内核快照不存在。" }, { status: 404 });
   const baseResult = workspace.result;
+  try { assertTaskKernel(baseResult); }
+  catch (error) { return Response.json({ ok: false, code: "TASK_EVIDENCE_MISSING", error: (error as Error).message }, { status: 422 }); }
   const conversation = await getConversation(parsed.conversationId).catch(() => null);
   if (!conversation || conversation.conversation.projectId !== parsed.build.projectId) {
     return Response.json({ ok: false, error: "构建会话不存在或不属于当前项目。" }, { status: 404 });
@@ -96,7 +99,7 @@ export async function POST(request: Request) {
       : "模型配置无效。";
     return Response.json({ ok: false, error: message }, { status: 400 });
   }
-  try { searchConfig = resolveSearchProviderConfig(parsed.searchConfig, bindings); }
+  try { searchConfig = parsed.webResearch ? resolveSearchProviderConfig(parsed.searchConfig, bindings) : undefined; }
   catch (error) {
     if (parsed.webResearch) {
       const message = error instanceof Error && error.message === "SERVER_SEARCH_NOT_CONFIGURED"
@@ -198,7 +201,7 @@ export async function POST(request: Request) {
               journal.publish({ ...event, seq: event.seq + 2, time: new Date().toISOString(), kind: "build.followup.deep_research.skipped", profile: "system", payload: { message: deepError instanceof Error ? deepError.message : "重要问题深研失败", baseSnapshotId: result.snapshot.id } });
             }
           } else {
-            journal.publish({ ...event, seq: event.seq + 2, time: new Date().toISOString(), kind: "build.followup.deep_research.skipped", profile: "system", payload: { message: "未配置搜索供应商，重要问题深研未执行。", baseSnapshotId: result.snapshot.id } });
+            journal.publish({ ...event, seq: event.seq + 2, time: new Date().toISOString(), kind: "build.followup.deep_research.skipped", profile: "system", payload: { message: parsed.webResearch ? "未配置搜索供应商，重要问题深研未执行。" : "本轮已关闭联网，保留资料内分析与检查；未执行联网深研。", baseSnapshotId: result.snapshot.id } });
           }
           const researchedSnapshotId = deepResult?.candidateSnapshotId || deepResult?.candidate.snapshot.id || result.snapshot.id;
           journal.publish({ ...event, seq: event.seq + 3, time: new Date().toISOString(), kind: "build.followup.risk_repair.started", profile: "system", payload: { baseSnapshotId: researchedSnapshotId, scope: "global" } });
@@ -230,7 +233,7 @@ export async function POST(request: Request) {
             kind: "build.followup.failed",
             profile: "system",
             payload: { message: followupError instanceof Error ? followupError.message : "自动深研或风险修复失败", coldStartSnapshotId: result.snapshot.id },
-          }, () => completeRoleJob({ jobId: parsed.build.runId, owner: jobOwner, phase: "followup.degraded", result: { snapshotId: result.snapshot.id } }));
+          }, () => completeRoleJob({ jobId: parsed.build.runId, owner: jobOwner, phase: "followup.degraded", result: { snapshotId: result.snapshot.id, quality: snapshotQualitySummary(result), followupError: followupError instanceof Error ? followupError.message : "自动深研或风险修复失败" } }));
         }
         return;
       }

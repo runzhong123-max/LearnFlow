@@ -705,7 +705,7 @@ export function skillDependenciesToSemanticDraft(input: {
   return { roleSummary: "", nodes: [], edges };
 }
 
-export function capabilityDerivationPrompt(input: { roleTitle: string; tasks: SemanticDraft["nodes"]; mentions: ConceptMention[] }) {
+export function capabilityDerivationPrompt(input: { roleTitle: string; tasks: SemanticDraft["nodes"]; mentions: ConceptMention[]; coverage?: { uncoveredTaskIds: string[]; capabilitiesWithoutUnits: string[] }; existing?: Array<{ id: string; label: string; summary: string }>; repairAttempt?: boolean }) {
   const taskSegmentIds = new Set(input.tasks.filter((task) => task.type === "task").flatMap((task) => task.evidenceSegmentIds));
   const signals = input.mentions.filter((mention) => mention.kind === "capability_signal").sort((left, right) => {
     const leftRelevant = taskSegmentIds.has(left.sourceSegmentId) ? 1 : 0;
@@ -716,6 +716,10 @@ export function capabilityDerivationPrompt(input: { roleTitle: string; tasks: Se
     system: `你是跨任务能力归纳器。只返回紧凑 JSON。能力必须概括两个或以上任务中反复出现的情境—可观察行为—质量标准，不能是工具名、知识点、单个任务或抽象口号。能力单元必须能被学生在日常学习中反复练习、留下作品并接受反馈，而不是给能力换一个近义词。每个能力单元都要写明练习情境、一次可完成的微练习、练习频率、反馈信号、证据作品、从模仿到迁移的递进和独立完成标准。所有说明字段各写一条不超过 60 个汉字的短句；observableBehaviors 最多 3 条。只能引用给定任务 ID 与 mention ID；证据不足时少返回。岗位内核最多保留 4 个区分度高的能力，每个能力最多 3 个可培养能力单元。`,
     user: JSON.stringify({
       roleTitle: input.roleTitle,
+      coverage: input.coverage,
+      repairInstruction: input.repairAttempt ? "上一轮未覆盖以下任务或缺少可观察单元。请重新检查任务摘要中的共同行为与验收标准，仅补齐缺口；无法证实的内容不要生成。" : undefined,
+      acceptedCapabilitiesAndUnits: input.existing,
+      requirement: "逐个检查未覆盖任务，补充有任务依据的不同能力与可观察单元。保留已有成果，勿重复同义能力，也勿用一个抽象能力覆盖无关任务。允许为补齐单元重述同名能力，但须保留其任务依据。不能因已有一个能力就停止，也不能为凑数编造。",
       tasks: input.tasks.filter((task) => task.type === "task").map((task) => ({ id: task.tempId, label: task.label, summary: task.summary.slice(0, 360) })),
       capabilitySignals: signals.map((mention) => ({ id: mention.id, label: mention.surfaceForm, definition: mention.definitionHint.slice(0, 280) })),
       output: {
@@ -755,7 +759,10 @@ export function mergeDerivedSemanticDrafts(base: SemanticDraft, derived: Semanti
     nodes.push(...draft.nodes);
     edges.push(...draft.edges);
   }
-  return { roleSummary: base.roleSummary, nodes: nodes.slice(0, 80), edges: edges.slice(0, 180) };
+  // Each derivation call already has a schema/output budget. Truncating the
+  // combined graph by arrival order silently deletes later dimensions and can
+  // even remove previously accepted nodes during iteration.
+  return { roleSummary: base.roleSummary, nodes, edges };
 }
 
 export function materializeRelationPropositions(input: {

@@ -6,6 +6,7 @@ import { authorizeApiRequest } from "@/lib/access";
 import { z } from "zod/v4";
 import { createRecordedModelInvoker } from "@/lib/research-collection/model";
 import { createColdStartSkill } from "@/lib/build/graph";
+import { assertTaskKernel } from "@/lib/build/completion";
 import type { BuildEvent } from "@/lib/build/events";
 import { coldStartRequestSchema, type ColdStartBuildResult } from "@/lib/build/types";
 import { resolveProviderConfig, resolveSearchProviderConfig } from "@/lib/server-runtime-config";
@@ -122,7 +123,7 @@ export async function POST(request: Request) {
   try {
     const bindings = workerRuntimeBindings();
     providerConfig = resolveProviderConfig(parsed.providerConfig, bindings);
-    searchConfig = parsed.reuseProjectSources || !parsed.webResearch
+    searchConfig = !parsed.webResearch
       ? undefined
       : resolveSearchProviderConfig(parsed.searchConfig, bindings);
   } catch (error) {
@@ -199,6 +200,7 @@ export async function POST(request: Request) {
       }
       await assertRoleJobLease(buildRequest.runId, jobOwner);
       const kernel = buildEvent.payload.result as ColdStartBuildResult;
+      assertTaskKernel(kernel);
       await journal.commit(buildEvent, async () => {
         try {
           await checkpointRoleJob({ jobId: buildRequest.runId, owner: jobOwner, kind: "cold_start", phase: "kernel.commit", state: { snapshotId: kernel.snapshot.id, eventSeq: buildEvent.seq } });

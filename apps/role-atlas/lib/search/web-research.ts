@@ -1,6 +1,7 @@
 import { stableHash } from "@/lib/build/compiler";
 import type { ColdStartRequest, SourceInput, WebResearchReport, WebSearchCategory } from "@/lib/build/types";
 import { SEARCH_PROVIDERS, type SearchProviderConfig } from "./providers";
+import { researchRoleTitle } from "./role-query";
 
 export type ResearchProgress = (event: {
   kind: "plan" | "search-started" | "search-retrying" | "search-completed" | "search-failed" | "source-fetched" | "source-deduplicated";
@@ -52,7 +53,7 @@ class ProviderHttpError extends Error {
 const TRACKING_PARAMS = [/^utm_/i, /^spm$/i, /^from$/i, /^source$/i, /^ref$/i, /^referrer$/i];
 
 export function planRoleSearchQueries(request: ColdStartRequest): PlannedQuery[] {
-  const role = request.roleTitle.trim();
+  const role = researchRoleTitle(request.roleTitle);
   const market = request.market.trim() || "中国大陆";
   const focus = request.roleDescription.trim().slice(0, 180);
   const snapshotYear = Number(request.snapshotAsOf.slice(0, 4));
@@ -61,9 +62,9 @@ export function planRoleSearchQueries(request: ColdStartRequest): PlannedQuery[]
     : new Date().getUTCFullYear();
   const recentYears = `${currentYear - 1} ${currentYear}`;
   const specs: Array<[WebSearchCategory, string, number]> = [
-    ["official_standard", `${market} ${role} 国家职业标准 专业教学标准 职业分类 产业政策`, 10],
-    ["job_market", `${market} ${role} 招聘 职责 任职要求 交付物`, 9],
-    ["work_practice", `${role} 实际工作流程 项目复盘 典型任务 交付`, 8],
+    ["official_standard", `${market} ${role} 职业标准`, 10],
+    ["job_market", `${market} ${role} 招聘 岗位职责`, 9],
+    ["work_practice", `${role} 项目实践 工作流程 交付`, 8],
     ["technology", `${role} 官方技术文档 工具链 最佳实践 ${recentYears}`, 8],
     ["education", `${role} 课程标准 实训项目 学习路径 技能评价`, 7],
     ["future_signal", `${role} 行业趋势 技能变化 AI影响 ${recentYears}`, 6],
@@ -189,9 +190,9 @@ function categoryFit(result: RawSearchResult, category: WebSearchCategory) {
   const text = cleanText(`${result.title}\n${result.content.slice(0, 4_000)}`);
   const patterns: Record<WebSearchCategory, RegExp> = {
     official_standard: /职业标准|专业教学标准|国家标准|行业标准|职业分类|产业政策|规范/u,
-    job_market: /招聘|岗位职责|任职要求|职位描述|工作职责|招聘职位/u,
+    job_market: /招聘|岗位职责|任职要求|职位描述|工作职责|招聘职位|\bresponsibilities\b|\bjob description\b|\bqualifications\b/iu,
     work_practice: /项目复盘|工作流程|典型任务|交付物|上线|部署|验收|故障|运维|研发流程/u,
-    technology: /官方文档|技术文档|架构|接口|API|SDK|框架|模型|算法|工程实践/iu,
+    technology: /官方文档|技术文档|架构|接口|API|SDK|框架|模型|算法|工程实践|\breference\b|\bdocumentation\b/iu,
     education: /课程|实训|教学|学习路径|技能评价|人才培养/u,
     future_signal: /趋势|变化|影响|演进|未来|增长|替代|自动化/u,
     user_focus: /任务|能力|技能|交付|岗位|工作/u,
@@ -210,7 +211,7 @@ function contentNoisePenalty(result: RawSearchResult) {
 }
 
 function roleRelevance(result: RawSearchResult, roleTitle: string) {
-  const target = cleanText(roleTitle).replace(/[^\p{Script=Han}\p{L}\p{N}]/gu, "").toLowerCase();
+  const target = cleanText(researchRoleTitle(roleTitle)).replace(/[^\p{Script=Han}\p{L}\p{N}]/gu, "").toLowerCase();
   const haystack = cleanText(`${result.title}\n${result.content.slice(0, 3_000)}`).replace(/[^\p{Script=Han}\p{L}\p{N}]/gu, "").toLowerCase();
   if (!target || !haystack) return 0;
   if (haystack.includes(target)) return 1;
@@ -218,6 +219,14 @@ function roleRelevance(result: RawSearchResult, roleTitle: string) {
   for (let index = 0; index <= target.length - 3; index += 1) grams.add(target.slice(index, index + 3));
   if (grams.size === 0) return haystack.includes(target) ? 1 : 0;
   const matched = [...grams].filter((gram) => haystack.includes(gram)).length;
+  const core = target.replace(/(?:工程师|架构师|分析师|设计师|管理员|顾问|经理|engineer|developer|architect|analyst)$/iu, "");
+  if (core.length >= 2 && core !== target) {
+    const coreGrams = new Set<string>();
+    const width = Math.min(3, core.length);
+    for (let i = 0; i <= core.length - width; i++) coreGrams.add(core.slice(i, i + width));
+    const coreMatch = [...coreGrams].filter(gram => haystack.includes(gram)).length / coreGrams.size;
+    return coreMatch * 0.8 + matched / grams.size * 0.2;
+  }
   return matched / grams.size;
 }
 
@@ -228,6 +237,21 @@ function qualityScore(result: RawSearchResult, category: WebSearchCategory, role
   const providerScore = Math.max(0, Math.min(result.score || 0.5, 1)) * 0.12;
   return Math.max(0, Math.min(1, tierScore * 0.45 + contentScore + providerScore
     + roleRelevance(result, roleTitle) * 0.2 + categoryFit(result, category) * 0.12 - contentNoisePenalty(result)));
+}
+
+function researchRelevance(result: RawSearchResult, roleTitle: string, queries: PlannedQuery[]) {
+  const occupational = roleRelevance(result, roleTitle);
+  // Official method documentation often never names the Chinese occupation.
+  // Admit it only through distinctive technical terms in its actual query;
+  // generic "API/docs/engineer" matches cannot admit an unrelated product page.
+  if (qualityTier(result.url, "technology", result) !== "primary") return occupational;
+  const haystack = `${result.title}\n${result.content.slice(0, 4_000)}`.toLowerCase();
+  const generic = /^(?:official|documentation|docs?|reference|api|sdk|framework|engineer|engineering|developer|development|software|hardware|best|practice|practices|guide|tutorial|and|the|for|with|site|https?|www|com)$/;
+  const focused = queries.filter(query => query.category === "technology").some(query => {
+    const terms = [...new Set((query.query.toLowerCase().match(/\b[a-z][a-z0-9+#.-]{2,}\b/g) || []).filter(term => !generic.test(term)))];
+    return terms.length > 0 && terms.filter(term => haystack.includes(term)).length / terms.length >= 0.6;
+  });
+  return focused ? Math.max(occupational, 0.65) : occupational;
 }
 
 function minimumRoleRelevance(categories: WebSearchCategory[]) {
@@ -661,7 +685,7 @@ export async function researchRoleSources(input: {
   const ranked = [...contentDeduped.values()]
     .map((item) => ({
       ...item,
-      relevance: roleRelevance(item.result, input.request.roleTitle),
+      relevance: researchRelevance(item.result, input.request.roleTitle, queries.filter(query => item.queryIds.includes(query.id))),
       score: qualityScore(item.result, item.query.category, input.request.roleTitle) + item.query.priority / 100,
     }))
     .sort((left, right) => right.score - left.score);
