@@ -1,0 +1,29 @@
+{
+  "evidence_bundle": "/Users/a1-6/.codex/visualizations/2026/09/08/01a07e9d-d1e0-7572-bb54-94a2cf9ba37d/education-memory-v3-evidence.zip",
+  "bundle_bytes": 12906523,
+  "bundle_sha256": "759741da454319bbd1b739cb9d5166b3609ed654184a1ee0d0a590b9c1e9882e",
+  "frozen_source_revision": "30ed063ae23f88b211ddf05bc1cb1b80d0d3f7e3",
+  "reproduction_base": "410e94e",
+  "file_sha256": {
+    "web/manifest.json": "f7209cb9c48eb1694a5f6afdc488bbf6d884c2a87d5c34f576fe57f1e8724385",
+    "web/operations.json": "601c93882ef6b2b40e94d07c70782ab4f6d95ec0b139efb1afefdbfc829f3773",
+    "web/snapshots.json": "e4624ca761c155aeb680d372e69681d1b08f7a8b8c48ec23e8a4f0b8da159f98",
+    "web/trials.jsonl": "ef00fd0ba4db4bc19e150ad1c6589d96a38d0f997c8fe9e2c753d77a54c9e189",
+    "desktop/manifest.json": "ab6523cc18ca56d5335bd2674f14661a9ee97a6960300d02e1c3ed317cf3f884",
+    "desktop/operations.json": "581710e70ec3a1b92bd2aba048b36d90b94314a14a6e2b1f401d78e967b7147d",
+    "desktop/snapshots.json": "911307e7f2834e69d5e297828b302f3f2c328d975298b618cf3f7e1dc92176cb",
+    "desktop/trials.jsonl": "2cdccdda49fbc9540ba64ab9a297ff1253575e344d2557d9651e17214a163699",
+    "derived-results.json": "f747826e550862c91eabc715f1ea0e5d68164e9aee1fdef3ae8aaa5c4e420d40",
+    "paired-update.json": "55b796f5177fa1107faa74ab9649c7ef8e2dce9e2139ddcb806a9f50a411216c",
+    "INDEX.sha256": "41256390c65498d7e814030f8d63ac61084e11afcb7f5bb8a469eee65cfcd491",
+    "REPORT.md": "10b61d55062eb9b5c220732c17f8553f9764e74bf85fffaf8227ca9201a88cb6",
+    "measured-source.patch": "78485f45eaaa09b16c2041ee3c8fb3488012c11c2b967397f6de0dba234b994b",
+    "validation/education-audit-20260908.py": "f114d00ecf688dd9904c8477c709e875744fd7572b654a3536fdd776323d1aa0",
+    "validation/education-audit-20260908-web.json": "6b5ad254813142cd0d611c3ee58ed59b01fe158731dd13949bdf243ce436e883"
+  },
+  "notes": [
+    "synthetic developmental trajectories, not learning gain",
+    "previous-runs/v2 preserves the completed intermediate Web regression",
+    "daily databases and credentials excluded; temporary experiment databases were disposed by runner"
+  ]
+}

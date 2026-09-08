@@ -44,6 +44,7 @@ from app.services.architecture_registry import SEMANTIC_MEMORY_KEYS, SKILLS
 from app.services.learning_runtime import get_kernel_projection, record_event
 from app.services.model_latency import invoke_with_budget
 from learnflow_core.learning_file_generation import task_artifact_checkpoint_id, task_artifact_project_id
+from learnflow_core.planning_guidance import compile_planning_guidance, enforce_planning_guidance
 
 
 PLAN_SCHEMA_VERSION = "learning-task-plan.v1"
@@ -224,7 +225,7 @@ def _portable_planner_context(projection: dict[str, Any]) -> dict[str, dict[str,
     are portable here; _scoped_planner_context adds relevant ContextPacket evidence.
     """
     compact = _compact_planner_context(projection)
-    portable_human_keys = {"pace_preference", "format_preference", "support_need"}
+    portable_human_keys = {"pace_preference", "format_preference"}
     human = {
         key: value
         for key, value in dict(compact.get("human") or {}).items()
@@ -374,8 +375,9 @@ def _fallback_plan(
             "artifact_outputs": ["review_schedule"],
         },
     ]
-    return {
+    plan = {
         "schema_version": PLAN_SCHEMA_VERSION,
+        "planning_basis_minutes": estimated_minutes,
         "summary": (
             f"围绕当前优先事项“{current_priority}”，先学习、再练习和独立验证，最后转交复习队列；任务完成不等于稳定掌握。"
             if current_priority else
@@ -395,6 +397,7 @@ def _fallback_plan(
             for kernel_name, values in learner_context.items() if values
         ],
     }
+    return enforce_planning_guidance(plan, compile_planning_guidance(learner_context))
 
 
 def _extract_json(content: str) -> dict[str, Any]:
@@ -444,11 +447,18 @@ def _validated_plan(raw: dict[str, Any], fallback: dict[str, Any]) -> dict[str, 
                 if _clean(value, 60)
             ][:6],
         }
+        if kind == "verify":
+            original = next(row for row in fallback["phases"] if row["kind"] == "verify")
+            phase["required"] = True
+            phase["purpose"] = original["purpose"]
+            phase["completion_rule"] = original["completion_rule"]
         phases.append(phase)
         seen_kinds.add(kind)
+    # Model proposals cannot put independent verification before preparation.
+    phases.sort(key=lambda phase: ("learn", "practice", "verify", "consolidate").index(phase["kind"]))
     if not {"learn", "verify"} <= seen_kinds:
         phases = list(fallback["phases"])
-    return {
+    plan = {
         **fallback,
         "summary": _clean(raw.get("summary"), 1_000) or fallback["summary"],
         "estimated_minutes": max(
@@ -460,6 +470,7 @@ def _validated_plan(raw: dict[str, Any], fallback: dict[str, Any]) -> dict[str, 
             if _clean(value, 300)
         ][:6] or fallback["adaptation_triggers"],
     }
+    return enforce_planning_guidance(plan, fallback.get("teaching_constraints"))
 
 
 async def generate_learning_task_plan(
@@ -498,7 +509,7 @@ async def generate_learning_task_plan(
             title=title,
             objective=objective,
             origin_kind=origin_kind,
-            estimated_minutes=estimated_minutes,
+            estimated_minutes=fallback["estimated_minutes"],
             preferred_skills=preferred_skills or [],
             learner_context=json.dumps(learner_context or {}, ensure_ascii=False),
             available_skills=json.dumps(_available_plan_skill_catalog(), ensure_ascii=False),
@@ -684,6 +695,8 @@ async def create_learning_task(
             learner_context=learner_context,
         )
     )
+    if plan_override is not None:
+        plan = enforce_planning_guidance(plan, compile_planning_guidance(learner_context))
     now = _now()
     task = LearningTask(
         learner_id=learner_id,
@@ -1631,7 +1644,7 @@ async def replan_learning_task(
         title=task.title,
         objective=task.objective,
         origin_kind=task.origin_kind,
-        estimated_minutes=task.estimated_minutes,
+        estimated_minutes=int((task.plan or {}).get("planning_basis_minutes") or task.estimated_minutes),
         preferred_skills=preferred_skills,
         learner_context=learner_context,
         reason=reason,
@@ -1642,10 +1655,11 @@ async def replan_learning_task(
         row = dict(phase)
         old = previous.get(str(row.get("id")))
         if old and old.get("status") == "completed":
-            row["status"] = "completed"
-            row["completed_at"] = old.get("completed_at")
+            row = dict(old)  # Preserve what was actually completed, including its original evidence and purpose.
         phases.append(row)
     plan["phases"] = phases
+    plan = enforce_planning_guidance(plan, compile_planning_guidance(learner_context))
+    phases = plan["phases"]
     task.plan = plan
     task.plan_version += 1
     task.estimated_minutes = int(plan.get("estimated_minutes") or task.estimated_minutes)

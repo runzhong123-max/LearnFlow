@@ -632,6 +632,7 @@ async def submit_concept(
     cp = await db.get(Checkpoint, checkpoint_id)
     roadmap = await db.get(Roadmap, cp.roadmap_id) if cp else None
     learning_task_id = await _task_for_file_checkpoint(db, current.learner.id, checkpoint_id)
+    from learnflow_core.registry_core import CONCEPT_EVIDENCE_POLICY_VERSION
     evaluation_event = await record_event(
         db, event_type="concept_attempt_evaluated", source="assessment",
         learner_id=current.learner.id,
@@ -651,6 +652,8 @@ async def submit_concept(
             "independent": assistance_level == "none",
             "assistance_level": assistance_level,
             "assessment_mode": (q.assessment_meta or {}).get("mode", ""),
+            "attempt_role": attempt_role,
+            "assessment_policy_version": CONCEPT_EVIDENCE_POLICY_VERSION,
             "blocker_concept_key": str((data or {}).get("blocker_concept_key") or "")[:160],
             "helpful_format": str((data or {}).get("helpful_format") or "")[:80],
             "support_effective": bool((data or {}).get("support_effective", False)),

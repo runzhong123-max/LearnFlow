@@ -33,6 +33,7 @@ from learnflow_core.registry_core import (
     PublicationContract,
     SEMANTIC_MEMORY_KEYS,
     SHARED_CORE_VERSION,
+    EDUCATION_MEMORY_POLICIES,
     SKILL_SPEC_VERSION,
     SkillCalibrationAxisContract,
     SkillContract,
@@ -43,7 +44,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-08.7"
+REGISTRY_VERSION = "2026-09-08.8"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Pure source-data validators/exporters, not Agent-callable tools or learner writers.
@@ -361,7 +362,7 @@ TOOLS = {
         ToolContract("learning_task_runtime", "Learner-visible Learning Task Runtime", "tutor_agent", "learnflow", "orchestration",
                      KERNEL_NAMES, (), "LearningTask + plan revisions + managed artifact refs + deterministic runtime projection + zero-target lifecycle events"),
         ToolContract("learning_task_planner", "Adaptive Learning Task Planner", "learning_design_agent", "learnflow", "proposal",
-                     ("human",), (), "bounded model enhancement -> validated deterministic LearningTask plan using task source/scoped evidence plus portable human preferences only"),
+                     KERNEL_NAMES, (), "scoped teaching guidance -> deterministic session constraints -> bounded model proposal -> enforced time/support/assistance; no mastery write"),
         ToolContract("teach_back_analyzer", "Deterministic Teach-back Analyzer", "practice_agent", "learnflow", "assessment",
                      ("knowledge", "practice"), (), "LearningAttempt + EvidenceEvent"),
         ToolContract("process_animation", "Process Animation", "learning_design_agent", "learnflow", "artifact",
@@ -1332,7 +1333,7 @@ EVENTS = {
         _event("assessment_generated", "generate_assessment", (), "artifact"),
         _event("explanation_requested", "explain_selection", ("knowledge", "human"), "assistance"),
         _event("code_review_requested", "explain_selection", ("practice", "human"), "assistance", workbench="assessment"),
-        _event("concept_attempt_evaluated", "evaluate_attempt", ("knowledge", "practice", "structure", "human"), "graded_attempt_with_optional_explicit_reflection"),
+        _event("concept_attempt_evaluated", "evaluate_attempt", ("knowledge", "practice", "structure", "human"), "graded_attempt_without_ordinary_stable_mastery_with_optional_explicit_reflection"),
         _event("exercise_attempt_evaluated", "evaluate_attempt", ("knowledge", "practice"), "graded_attempt"),
         _event("remediation_started", "request_remediation_explanation", ("knowledge", "human", "practice"), "diagnosis", origin="fused"),
         _event("remediation_mode_rejected", "request_remediation_explanation", ("human", "knowledge"), "preference_evidence", origin="fused"),
@@ -1435,6 +1436,8 @@ _PYTHON_BINDING_TARGETS = {
     "py:learning_skill.prepare": ("app.services.learning_skill_runtime", "prepare_learning_skill_turn"),
     "py:learning_skill.create": ("app.services.learning_skill_runtime", "create_learning_skill_run"),
     "py:learning_task.reconcile": ("app.services.learning_tasks", "reconcile_learning_task"),
+    "py:learning_task.guidance": ("learnflow_core.planning_guidance", "compile_planning_guidance"),
+    "py:learning_task.enforce_guidance": ("learnflow_core.planning_guidance", "enforce_planning_guidance"),
     "py:learning_task.plan": ("app.services.learning_tasks", "generate_learning_task_plan"),
     "py:learning_task_candidate.generate": ("app.services.xingchen_learning_task_candidates", "generate_candidate"),
     "py:learning_task_candidate.validate": ("app.services.xingchen_learning_task_candidates", "validate_candidate"),
@@ -1778,7 +1781,7 @@ _TOOL_BINDING_IDS = {
     "micro_learning_orchestrator": ("py:micro_learning.create", "frontend:learning.verification"),
     "learning_skill_runtime": ("py:learning_skill.create",),
     "learning_task_runtime": ("py:learning_task.reconcile",),
-    "learning_task_planner": ("py:learning_task.plan",),
+    "learning_task_planner": ("py:learning_task.plan", "py:learning_task.guidance", "py:learning_task.enforce_guidance"),
     "teach_back_analyzer": ("py:micro_learning.analyze",),
     "process_animation": ("py:animation.agent",),
     "code_executor": ("py:code.execute",),
@@ -2419,6 +2422,7 @@ def registry_manifest() -> dict[str, Any]:
     payload = {
         "version": REGISTRY_VERSION,
         "shared_core_version": SHARED_CORE_VERSION,
+        "education_memory_policies": EDUCATION_MEMORY_POLICIES,
         "event_schema": EVENT_SCHEMA_VERSION,
         "lifecycle_states": list(LIFECYCLE_STATES),
         "authority": {

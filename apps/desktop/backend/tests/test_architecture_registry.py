@@ -45,7 +45,7 @@ def test_registry_has_three_agents_five_kernels_and_no_drift():
     assert set(ACTION_BOARD) == set(CAPABILITY_OWNERS)
     assert validate_registry() == []
     manifest = registry_manifest()
-    assert REGISTRY_VERSION == "2026-09-08.7-desktop"
+    assert REGISTRY_VERSION == "2026-09-08.8-desktop"
     cloud_contract = next(item for item in manifest['data_contracts'] if item['id'] == 'desktop_cloud_connection_v1')
     assert cloud_contract['kernel_write_path'] == 'none'
     assert manifest["schema_valid"] is True
@@ -565,8 +565,8 @@ def test_learning_task_runtime_is_registered_as_zero_evidence_coordination():
     assert CAPABILITY_OWNERS["plan_learning_task"][0] == "learning_design_agent"
     assert CAPABILITY_OWNERS["run_learning_task"][0] == "tutor_agent"
     assert "deterministic runtime projection" in TOOLS["learning_task_runtime"].write_path
-    assert TOOLS["learning_task_planner"].reads_kernels == ("human",)
-    assert "bounded model enhancement" in TOOLS["learning_task_planner"].write_path
+    assert TOOLS["learning_task_planner"].reads_kernels == tuple(KERNELS)
+    assert "enforced time/support/assistance" in TOOLS["learning_task_planner"].write_path
     assert "deterministic fallback" in TOOLS["micro_learning_orchestrator"].write_path
     assert "persisted lecture/questions" in SKILLS["atomic_learning_loop"].output_contract
     assert all(
@@ -786,7 +786,7 @@ def test_memory_read_contract_versions_and_helpers_are_shared():
     from learnflow_core.registry_core import SHARED_CORE_VERSION, MEMORY_RETRIEVAL_VERSION
     from learnflow_core.five_kernel_context import RETRIEVAL_VERSION, CONTEXT_PACKET_VERSION, ContextPolicy
     from learnflow_core.memory_query import QUERY_PLAN_VERSION
-    assert learnflow_core.__version__ == SHARED_CORE_VERSION == "0.2.3"
+    assert learnflow_core.__version__ == SHARED_CORE_VERSION == "0.2.4"
     assert RETRIEVAL_VERSION == MEMORY_RETRIEVAL_VERSION == "relevance-budget.v2"
     assert CONTEXT_PACKET_VERSION == "five-kernel-context.v2"
     assert QUERY_PLAN_VERSION == "memory-query.v1"

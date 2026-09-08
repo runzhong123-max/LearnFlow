@@ -18,6 +18,8 @@ bash start.sh demo
 
 ## 文档索引
 
+- [教育记忆升级与同场景复验](EDUCATION_MEMORY_UPDATE_REPORT.md)：收紧掌握证据与规划约束；双端原协议复验，保留中间退步、残余失败和完整来源。
+
 - [教育学习者画像与记忆消融实验](EDUCATION_MEMORY_ABLATION_REPORT.md)：数学、物理、编程、生物的真实服务链路，双端 9,184 次读取/规划调用；分别报告画像形成、信息交付和规划采用，保留失败。
 - [记忆系统扩展消融实验报告](MEMORY_ABLATION_REPORT.md)：35 类读取场景、新旧同数据对照、失败边界与复现证据；不代表教育画像效果。
 
@@ -28,6 +30,8 @@ bash start.sh demo
 - `../ARCHITECTURE_AUTHORITY.md`：架构维护边界和变更规则。
 - `../FUSION_CATALOG.md`：两仓库并行参考时的能力映射与去重决策。
 - `../DESKTOP_WORKSPACE_SECURITY.md`：桌面文件工作区、sidecar、路径和证据边界。
+
+> 2026-09-08 实查补充：当前 Web 的 `/review`、`/demo` 未自动登录演示账号，仍停在统一登录页；后端隔离模式与架构接口已通过。浏览器闭环尚未完成，详见升级报告，不能仅凭下列服务测试声称现场演示已验收。
 
 ## 可复现验收
 
