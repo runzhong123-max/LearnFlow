@@ -132,3 +132,8 @@ app.include_router(visuals_router, prefix="/api")
 
 from app.api.project_guidance import router as project_guidance_router
 app.include_router(project_guidance_router, prefix="/api")
+
+from app.api.work_task_conversions import router as work_task_conversions_router
+app.include_router(work_task_conversions_router, prefix="/api")
+from learnflow_core.work_task_conversion_logging import install_access_log_redaction
+install_access_log_redaction()
