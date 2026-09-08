@@ -7,6 +7,7 @@ import {
   errorFromTutorProviderResponse,
   isTutorMode,
   textFromTutorProviderResponse,
+  tutorProviderResponseIssue,
   tutorConfigurationIssue,
 } from './src/tutor.ts'
 import { isTutorToolChoice } from './src/tooling.ts'
@@ -531,9 +532,16 @@ function tutorProxy(mode: string, backendBase: string): Plugin {
           maxTokens: Math.max(400, Math.min(7_000, Number(maxTokens) || 1_200)),
           responseFormat: generationOptions?.responseFormat,
         })
-        const payload = await invokeProvider({ ...request, timeoutMs: timeoutMs || AI_LATENCY_BUDGETS.providerRequest })
-        const text = textFromTutorProviderResponse(payload)
-        if (!text) throw new Error('模型没有返回可用的生成内容')
+        const requestTimeout = timeoutMs || AI_LATENCY_BUDGETS.providerRequest
+        let payload = await invokeProvider({ ...request, timeoutMs: requestTimeout })
+        let text = textFromTutorProviderResponse(payload, {
+          allowStructuredJson: generationOptions?.responseFormat === 'json_object',
+        })
+        if (!text && generationOptions?.responseFormat === 'json_object') {
+          payload = await invokeProvider({ ...request, timeoutMs: requestTimeout })
+          text = textFromTutorProviderResponse(payload, { allowStructuredJson: true })
+        }
+        if (!text) throw new Error(`模型没有返回可用的生成内容：${tutorProviderResponseIssue(payload)}`)
         return text
       }
       const pluginRegistry = await pluginRegistryProvider.get()
