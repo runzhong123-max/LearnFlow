@@ -1,0 +1,1792 @@
+{
+  "validation": "passed",
+  "schema_version": "computing-learner-profile-dataset.v1",
+  "domains": 9,
+  "task_families": 72,
+  "authored_probes": 216,
+  "trajectories": 1584,
+  "decision_points": 1584,
+  "history_patterns": 22,
+  "paired_comparisons": 864,
+  "scripted_observations": 11520,
+  "out_of_scope_or_future_observations": 288,
+  "distinct_visible_inputs": 1440,
+  "intentional_equivalent_input_groups": 72,
+  "visible_input_characters_not_tokens": {
+    "min": 2140,
+    "median": 3826.5,
+    "max": 34603
+  },
+  "families_by_domain": {
+    "algorithms": 8,
+    "data_ai": 8,
+    "databases": 8,
+    "frontend": 8,
+    "networks": 8,
+    "programming": 8,
+    "systems": 8,
+    "testing": 8,
+    "web_backend": 8
+  },
+  "families_by_split": {
+    "development": 45,
+    "holdout": 18,
+    "validation": 9
+  },
+  "cases_by_split": {
+    "development": 990,
+    "holdout": 396,
+    "validation": 198
+  },
+  "probe_answer_validation": {
+    "executable": 207,
+    "reasoned_draft": 9
+  },
+  "observation_kinds": {
+    "learner_statement": 2592,
+    "resource_view": 6192,
+    "assessment_observation": 2304,
+    "support_feedback": 144,
+    "task_paused": 72,
+    "source_correction": 72,
+    "execution_observation": 72,
+    "artifact_observation": 72
+  },
+  "scripted_assessment_outcomes": {
+    "correct": 1728,
+    "incorrect": 360,
+    "missing": 72,
+    "skipped": 72,
+    "dont_know": 72
+  },
+  "human_teacher_reviewed": 0,
+  "product_or_ablation_runs": 0,
+  "python_version": "3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]",
+  "executable_answers_recomputed": 207,
+  "oracle_reports": {
+    "foundations": {
+      "families": 24,
+      "domain_counts": {
+        "programming": 8,
+        "algorithms": 8,
+        "databases": 8
+      },
+      "checked_probes": 72,
+      "checked_oracle_ids": [
+        "programming_reference_ownership.base",
+        "programming_reference_ownership.near_transfer",
+        "programming_reference_ownership.delayed_transfer",
+        "programming_signed_division.base",
+        "programming_signed_division.near_transfer",
+        "programming_signed_division.delayed_transfer",
+        "programming_default_argument_lifetime.base",
+        "programming_default_argument_lifetime.near_transfer",
+        "programming_default_argument_lifetime.delayed_transfer",
+        "programming_short_circuit_validation.base",
+        "programming_short_circuit_validation.near_transfer",
+        "programming_short_circuit_validation.delayed_transfer",
+        "programming_finally_control_flow.base",
+        "programming_finally_control_flow.near_transfer",
+        "programming_finally_control_flow.delayed_transfer",
+        "programming_unicode_boundaries.base",
+        "programming_unicode_boundaries.near_transfer",
+        "programming_unicode_boundaries.delayed_transfer",
+        "programming_csv_validation.base",
+        "programming_csv_validation.near_transfer",
+        "programming_csv_validation.delayed_transfer",
+        "programming_binary_packet_validation.base",
+        "programming_binary_packet_validation.near_transfer",
+        "programming_binary_packet_validation.delayed_transfer",
+        "algorithms_lower_bound_boundary.base",
+        "algorithms_lower_bound_boundary.near_transfer",
+        "algorithms_lower_bound_boundary.delayed_transfer",
+        "algorithms_stable_insertion_shifts.base",
+        "algorithms_stable_insertion_shifts.near_transfer",
+        "algorithms_stable_insertion_shifts.delayed_transfer",
+        "algorithms_bfs_reachability.base",
+        "algorithms_bfs_reachability.near_transfer",
+        "algorithms_bfs_reachability.delayed_transfer",
+        "algorithms_weighted_shortest_path.base",
+        "algorithms_weighted_shortest_path.near_transfer",
+        "algorithms_weighted_shortest_path.delayed_transfer",
+        "algorithms_dependency_topology.base",
+        "algorithms_dependency_topology.near_transfer",
+        "algorithms_dependency_topology.delayed_transfer",
+        "algorithms_interval_objectives.base",
+        "algorithms_interval_objectives.near_transfer",
+        "algorithms_interval_objectives.delayed_transfer",
+        "algorithms_coin_inventory.base",
+        "algorithms_coin_inventory.near_transfer",
+        "algorithms_coin_inventory.delayed_transfer",
+        "algorithms_linear_probing_tombstones.base",
+        "algorithms_linear_probing_tombstones.near_transfer",
+        "algorithms_linear_probing_tombstones.delayed_transfer",
+        "databases_null_three_valued_logic.base",
+        "databases_null_three_valued_logic.near_transfer",
+        "databases_null_three_valued_logic.delayed_transfer",
+        "databases_left_join_cardinality.base",
+        "databases_left_join_cardinality.near_transfer",
+        "databases_left_join_cardinality.delayed_transfer",
+        "databases_group_filter_aggregation.base",
+        "databases_group_filter_aggregation.near_transfer",
+        "databases_group_filter_aggregation.delayed_transfer",
+        "databases_window_peer_semantics.base",
+        "databases_window_peer_semantics.near_transfer",
+        "databases_window_peer_semantics.delayed_transfer",
+        "databases_transaction_savepoints.base",
+        "databases_transaction_savepoints.near_transfer",
+        "databases_transaction_savepoints.delayed_transfer",
+        "databases_unique_constraints_upsert.base",
+        "databases_unique_constraints_upsert.near_transfer",
+        "databases_unique_constraints_upsert.delayed_transfer",
+        "databases_relational_division.base",
+        "databases_relational_division.near_transfer",
+        "databases_relational_division.delayed_transfer",
+        "databases_recursive_reachability.base",
+        "databases_recursive_reachability.near_transfer",
+        "databases_recursive_reachability.delayed_transfer"
+      ],
+      "checks_per_probe": [
+        "artifact_contains_exact_structured_input",
+        "correct_response_matches_recomputation",
+        "incorrect_response_differs_from_recomputation"
+      ],
+      "sql_version": "3.53.4",
+      "dataset_sha256": "4ffa7e83faf2b31760d527d2b934b064d36e3611a7d498f44dc9b5d5b9c56356",
+      "limitations": [
+        "No teacher or independent human review",
+        "Python display code is not executed",
+        "No evaluation of learner ability or remediation effectiveness"
+      ],
+      "stderr": "${DATASET_ROOT}/checks/foundations_check.py:86: SyntaxWarning: 'return' in a 'finally' block\n  return data['final_value']\n"
+    },
+    "software": {
+      "catalog": "catalog/software.json",
+      "family_count": 24,
+      "probe_count": 72,
+      "checked_oracle_ids": [
+        "web_backend_conditional_update.base",
+        "web_backend_conditional_update.near_transfer",
+        "web_backend_conditional_update.delayed_transfer",
+        "web_backend_idempotent_charge.base",
+        "web_backend_idempotent_charge.near_transfer",
+        "web_backend_idempotent_charge.delayed_transfer",
+        "web_backend_resource_authorization.base",
+        "web_backend_resource_authorization.near_transfer",
+        "web_backend_resource_authorization.delayed_transfer",
+        "web_backend_atomic_purchase.base",
+        "web_backend_atomic_purchase.near_transfer",
+        "web_backend_atomic_purchase.delayed_transfer",
+        "web_backend_keyset_pagination.base",
+        "web_backend_keyset_pagination.near_transfer",
+        "web_backend_keyset_pagination.delayed_transfer",
+        "web_backend_patch_validation.base",
+        "web_backend_patch_validation.near_transfer",
+        "web_backend_patch_validation.delayed_transfer",
+        "web_backend_sliding_rate_limit.base",
+        "web_backend_sliding_rate_limit.near_transfer",
+        "web_backend_sliding_rate_limit.delayed_transfer",
+        "frontend_event_loop_order.base",
+        "frontend_event_loop_order.near_transfer",
+        "frontend_event_loop_order.delayed_transfer",
+        "frontend_css_cascade.base",
+        "frontend_css_cascade.near_transfer",
+        "frontend_css_cascade.delayed_transfer",
+        "frontend_dom_event_propagation.base",
+        "frontend_dom_event_propagation.near_transfer",
+        "frontend_dom_event_propagation.delayed_transfer",
+        "frontend_form_successful_controls.base",
+        "frontend_form_successful_controls.near_transfer",
+        "frontend_form_successful_controls.delayed_transfer",
+        "frontend_flex_distribution.base",
+        "frontend_flex_distribution.near_transfer",
+        "frontend_flex_distribution.delayed_transfer",
+        "frontend_batched_state_updates.base",
+        "frontend_batched_state_updates.near_transfer",
+        "frontend_batched_state_updates.delayed_transfer",
+        "frontend_async_search_race.base",
+        "frontend_async_search_race.near_transfer",
+        "frontend_async_search_race.delayed_transfer",
+        "frontend_keyboard_focus_order.base",
+        "frontend_keyboard_focus_order.near_transfer",
+        "frontend_keyboard_focus_order.delayed_transfer",
+        "testing_boundary_partitions.base",
+        "testing_boundary_partitions.near_transfer",
+        "testing_boundary_partitions.delayed_transfer",
+        "testing_branch_coverage.base",
+        "testing_branch_coverage.near_transfer",
+        "testing_branch_coverage.delayed_transfer",
+        "testing_mcdc_independence.base",
+        "testing_mcdc_independence.near_transfer",
+        "testing_mcdc_independence.delayed_transfer",
+        "testing_fixture_isolation.base",
+        "testing_fixture_isolation.near_transfer",
+        "testing_fixture_isolation.delayed_transfer",
+        "testing_metamorphic_sort_properties.base",
+        "testing_metamorphic_sort_properties.near_transfer",
+        "testing_metamorphic_sort_properties.delayed_transfer",
+        "testing_concurrency_interleavings.base",
+        "testing_concurrency_interleavings.near_transfer",
+        "testing_concurrency_interleavings.delayed_transfer",
+        "testing_mutation_adequacy.base",
+        "testing_mutation_adequacy.near_transfer",
+        "testing_mutation_adequacy.delayed_transfer"
+      ],
+      "executable_count": 66,
+      "executable_by_domain": {
+        "web_backend": 21,
+        "frontend": 24,
+        "testing": 21
+      },
+      "reasoned_draft_ids": [
+        "web_backend_sql_input_boundary.base",
+        "web_backend_sql_input_boundary.near_transfer",
+        "web_backend_sql_input_boundary.delayed_transfer",
+        "testing_mock_contract_fidelity.base",
+        "testing_mock_contract_fidelity.near_transfer",
+        "testing_mock_contract_fidelity.delayed_transfer"
+      ],
+      "correct_responses_verified": 66,
+      "incorrect_responses_rejected": 66,
+      "checks_performed": [
+        "schema and unique IDs",
+        "three distinct artifacts per family",
+        "oracle inputs also present in visible artifacts",
+        "independent bounded computation from task inputs",
+        "correct response exact typed JSON equality",
+        "incorrect response typed JSON inequality"
+      ],
+      "teacher_review": "pending",
+      "actual_browser_framework_runtime": false,
+      "system_or_model_ablation_performed": false
+    },
+    "operations": {
+      "families": 24,
+      "probes": 72,
+      "domain_counts": {
+        "networks": 8,
+        "systems": 8,
+        "data_ai": 8
+      },
+      "checked_count": 69,
+      "checked_oracle_ids": [
+        "networks_subnet_boundary__base__v1",
+        "networks_subnet_boundary__near_transfer__v1",
+        "networks_subnet_boundary__delayed_transfer__v1",
+        "networks_route_precedence__base__v1",
+        "networks_route_precedence__near_transfer__v1",
+        "networks_route_precedence__delayed_transfer__v1",
+        "networks_ordered_acl__base__v1",
+        "networks_ordered_acl__near_transfer__v1",
+        "networks_ordered_acl__delayed_transfer__v1",
+        "networks_tcp_reassembly__base__v1",
+        "networks_tcp_reassembly__near_transfer__v1",
+        "networks_tcp_reassembly__delayed_transfer__v1",
+        "networks_ipv4_mtu__base__v1",
+        "networks_ipv4_mtu__near_transfer__v1",
+        "networks_ipv4_mtu__delayed_transfer__v1",
+        "networks_window_throughput__base__v1",
+        "networks_window_throughput__near_transfer__v1",
+        "networks_window_throughput__delayed_transfer__v1",
+        "networks_dns_cache_scope__base__v1",
+        "networks_dns_cache_scope__near_transfer__v1",
+        "networks_dns_cache_scope__delayed_transfer__v1",
+        "networks_nat_lifetime__base__v1",
+        "networks_nat_lifetime__near_transfer__v1",
+        "networks_nat_lifetime__delayed_transfer__v1",
+        "systems_run_queue__base__v1",
+        "systems_run_queue__near_transfer__v1",
+        "systems_run_queue__delayed_transfer__v1",
+        "systems_resource_admission__base__v1",
+        "systems_resource_admission__near_transfer__v1",
+        "systems_resource_admission__delayed_transfer__v1",
+        "systems_cache_recency__base__v1",
+        "systems_cache_recency__near_transfer__v1",
+        "systems_cache_recency__delayed_transfer__v1",
+        "systems_unix_permissions__base__v1",
+        "systems_unix_permissions__near_transfer__v1",
+        "systems_unix_permissions__delayed_transfer__v1",
+        "systems_raid_incident__base__v1",
+        "systems_raid_incident__near_transfer__v1",
+        "systems_raid_incident__delayed_transfer__v1",
+        "systems_tail_latency__base__v1",
+        "systems_tail_latency__near_transfer__v1",
+        "systems_tail_latency__delayed_transfer__v1",
+        "systems_disk_accounting__base__v1",
+        "systems_disk_accounting__near_transfer__v1",
+        "systems_disk_accounting__delayed_transfer__v1",
+        "systems_retry_atomicity__base__v1",
+        "systems_retry_atomicity__near_transfer__v1",
+        "systems_retry_atomicity__delayed_transfer__v1",
+        "data_ai_imbalance_metrics__base__v1",
+        "data_ai_imbalance_metrics__near_transfer__v1",
+        "data_ai_imbalance_metrics__delayed_transfer__v1",
+        "data_ai_threshold_constraints__base__v1",
+        "data_ai_threshold_constraints__near_transfer__v1",
+        "data_ai_threshold_constraints__delayed_transfer__v1",
+        "data_ai_group_split__base__v1",
+        "data_ai_group_split__near_transfer__v1",
+        "data_ai_group_split__delayed_transfer__v1",
+        "data_ai_stratified_drift__base__v1",
+        "data_ai_stratified_drift__near_transfer__v1",
+        "data_ai_stratified_drift__delayed_transfer__v1",
+        "data_ai_distance_scaling__base__v1",
+        "data_ai_distance_scaling__near_transfer__v1",
+        "data_ai_distance_scaling__delayed_transfer__v1",
+        "data_ai_temporal_visibility__base__v1",
+        "data_ai_temporal_visibility__near_transfer__v1",
+        "data_ai_temporal_visibility__delayed_transfer__v1",
+        "data_ai_quality_contract__base__v1",
+        "data_ai_quality_contract__near_transfer__v1",
+        "data_ai_quality_contract__delayed_transfer__v1"
+      ],
+      "reasoned_draft_count": 3,
+      "reasoned_draft_probes": [
+        "data_ai_preprocessing_leakage/base",
+        "data_ai_preprocessing_leakage/near_transfer",
+        "data_ai_preprocessing_leakage/delayed_transfer"
+      ],
+      "checks": [
+        "visible inputs equal oracle inputs",
+        "independent algorithm recomputation",
+        "stored correct response equals computation",
+        "stored incorrect response differs",
+        "unique oracle IDs",
+        "domain and family/probe counts"
+      ],
+      "errors": []
+    }
+  },
+  "technical_reasoning_only_probes": [
+    {
+      "family_id": "data_ai_preprocessing_leakage",
+      "probe_id": "base"
+    },
+    {
+      "family_id": "data_ai_preprocessing_leakage",
+      "probe_id": "near_transfer"
+    },
+    {
+      "family_id": "data_ai_preprocessing_leakage",
+      "probe_id": "delayed_transfer"
+    },
+    {
+      "family_id": "testing_mock_contract_fidelity",
+      "probe_id": "base"
+    },
+    {
+      "family_id": "testing_mock_contract_fidelity",
+      "probe_id": "near_transfer"
+    },
+    {
+      "family_id": "testing_mock_contract_fidelity",
+      "probe_id": "delayed_transfer"
+    },
+    {
+      "family_id": "web_backend_sql_input_boundary",
+      "probe_id": "base"
+    },
+    {
+      "family_id": "web_backend_sql_input_boundary",
+      "probe_id": "near_transfer"
+    },
+    {
+      "family_id": "web_backend_sql_input_boundary",
+      "probe_id": "delayed_transfer"
+    }
+  ],
+  "levels_by_split": {
+    "development": {
+      "intermediate": 19,
+      "integrated": 15,
+      "foundation": 11
+    },
+    "validation": {
+      "intermediate": 3,
+      "foundation": 3,
+      "integrated": 3
+    },
+    "holdout": {
+      "integrated": 3,
+      "intermediate": 10,
+      "foundation": 5
+    }
+  },
+  "similarity_screen": {
+    "method": "5-character shingle Jaccard after whitespace removal and digit normalization",
+    "threshold": 0.72,
+    "purpose": "review triage; does not prove semantic novelty or absence of leakage",
+    "flagged_pairs": [
+      {
+        "a": [
+          "data_ai_distance_scaling",
+          "base"
+        ],
+        "b": [
+          "data_ai_distance_scaling",
+          "near_transfer"
+        ],
+        "similarity": 0.7476,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "data_ai_distance_scaling",
+          "base"
+        ],
+        "b": [
+          "data_ai_distance_scaling",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7536,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "data_ai_distance_scaling",
+          "near_transfer"
+        ],
+        "b": [
+          "data_ai_distance_scaling",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7523,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "data_ai_quality_contract",
+          "base"
+        ],
+        "b": [
+          "data_ai_quality_contract",
+          "near_transfer"
+        ],
+        "similarity": 0.7276,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "data_ai_quality_contract",
+          "base"
+        ],
+        "b": [
+          "data_ai_quality_contract",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7992,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "data_ai_stratified_drift",
+          "base"
+        ],
+        "b": [
+          "data_ai_stratified_drift",
+          "near_transfer"
+        ],
+        "similarity": 0.8468,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "data_ai_stratified_drift",
+          "base"
+        ],
+        "b": [
+          "data_ai_stratified_drift",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8261,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "data_ai_stratified_drift",
+          "near_transfer"
+        ],
+        "b": [
+          "data_ai_stratified_drift",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8327,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "data_ai_threshold_constraints",
+          "base"
+        ],
+        "b": [
+          "data_ai_threshold_constraints",
+          "near_transfer"
+        ],
+        "similarity": 0.7833,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "data_ai_threshold_constraints",
+          "base"
+        ],
+        "b": [
+          "data_ai_threshold_constraints",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7899,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "data_ai_threshold_constraints",
+          "near_transfer"
+        ],
+        "b": [
+          "data_ai_threshold_constraints",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7951,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "databases_left_join_cardinality",
+          "base"
+        ],
+        "b": [
+          "databases_left_join_cardinality",
+          "near_transfer"
+        ],
+        "similarity": 0.8448,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "databases_null_three_valued_logic",
+          "base"
+        ],
+        "b": [
+          "databases_null_three_valued_logic",
+          "near_transfer"
+        ],
+        "similarity": 0.8192,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "databases_recursive_reachability",
+          "base"
+        ],
+        "b": [
+          "databases_recursive_reachability",
+          "near_transfer"
+        ],
+        "similarity": 0.8545,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "databases_relational_division",
+          "base"
+        ],
+        "b": [
+          "databases_relational_division",
+          "near_transfer"
+        ],
+        "similarity": 0.9274,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "databases_relational_division",
+          "base"
+        ],
+        "b": [
+          "databases_relational_division",
+          "delayed_transfer"
+        ],
+        "similarity": 0.841,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "databases_relational_division",
+          "near_transfer"
+        ],
+        "b": [
+          "databases_relational_division",
+          "delayed_transfer"
+        ],
+        "similarity": 0.841,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "databases_transaction_savepoints",
+          "base"
+        ],
+        "b": [
+          "databases_transaction_savepoints",
+          "near_transfer"
+        ],
+        "similarity": 0.7466,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "databases_transaction_savepoints",
+          "near_transfer"
+        ],
+        "b": [
+          "databases_transaction_savepoints",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7303,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "databases_unique_constraints_upsert",
+          "base"
+        ],
+        "b": [
+          "databases_unique_constraints_upsert",
+          "near_transfer"
+        ],
+        "similarity": 0.8313,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "databases_unique_constraints_upsert",
+          "base"
+        ],
+        "b": [
+          "databases_unique_constraints_upsert",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7259,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "frontend_async_search_race",
+          "base"
+        ],
+        "b": [
+          "frontend_async_search_race",
+          "near_transfer"
+        ],
+        "similarity": 0.8434,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "frontend_async_search_race",
+          "base"
+        ],
+        "b": [
+          "frontend_async_search_race",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8518,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "frontend_async_search_race",
+          "near_transfer"
+        ],
+        "b": [
+          "frontend_async_search_race",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7995,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "frontend_batched_state_updates",
+          "base"
+        ],
+        "b": [
+          "frontend_batched_state_updates",
+          "near_transfer"
+        ],
+        "similarity": 0.9053,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "frontend_batched_state_updates",
+          "base"
+        ],
+        "b": [
+          "frontend_batched_state_updates",
+          "delayed_transfer"
+        ],
+        "similarity": 0.9008,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "frontend_batched_state_updates",
+          "near_transfer"
+        ],
+        "b": [
+          "frontend_batched_state_updates",
+          "delayed_transfer"
+        ],
+        "similarity": 0.9048,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "frontend_css_cascade",
+          "base"
+        ],
+        "b": [
+          "frontend_css_cascade",
+          "near_transfer"
+        ],
+        "similarity": 0.8575,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "frontend_css_cascade",
+          "base"
+        ],
+        "b": [
+          "frontend_css_cascade",
+          "delayed_transfer"
+        ],
+        "similarity": 0.73,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "frontend_css_cascade",
+          "near_transfer"
+        ],
+        "b": [
+          "frontend_css_cascade",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7719,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "frontend_dom_event_propagation",
+          "base"
+        ],
+        "b": [
+          "frontend_dom_event_propagation",
+          "near_transfer"
+        ],
+        "similarity": 0.9253,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "frontend_dom_event_propagation",
+          "base"
+        ],
+        "b": [
+          "frontend_dom_event_propagation",
+          "delayed_transfer"
+        ],
+        "similarity": 0.892,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "frontend_dom_event_propagation",
+          "near_transfer"
+        ],
+        "b": [
+          "frontend_dom_event_propagation",
+          "delayed_transfer"
+        ],
+        "similarity": 0.854,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "frontend_event_loop_order",
+          "base"
+        ],
+        "b": [
+          "frontend_event_loop_order",
+          "near_transfer"
+        ],
+        "similarity": 0.8694,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "frontend_event_loop_order",
+          "base"
+        ],
+        "b": [
+          "frontend_event_loop_order",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8824,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "frontend_event_loop_order",
+          "near_transfer"
+        ],
+        "b": [
+          "frontend_event_loop_order",
+          "delayed_transfer"
+        ],
+        "similarity": 0.848,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "frontend_flex_distribution",
+          "base"
+        ],
+        "b": [
+          "frontend_flex_distribution",
+          "near_transfer"
+        ],
+        "similarity": 0.9274,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "frontend_flex_distribution",
+          "base"
+        ],
+        "b": [
+          "frontend_flex_distribution",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8846,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "frontend_flex_distribution",
+          "near_transfer"
+        ],
+        "b": [
+          "frontend_flex_distribution",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8919,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "networks_dns_cache_scope",
+          "base"
+        ],
+        "b": [
+          "networks_dns_cache_scope",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7337,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "networks_nat_lifetime",
+          "base"
+        ],
+        "b": [
+          "networks_nat_lifetime",
+          "near_transfer"
+        ],
+        "similarity": 0.7905,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "networks_nat_lifetime",
+          "base"
+        ],
+        "b": [
+          "networks_nat_lifetime",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8106,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "networks_nat_lifetime",
+          "near_transfer"
+        ],
+        "b": [
+          "networks_nat_lifetime",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7935,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "networks_ordered_acl",
+          "base"
+        ],
+        "b": [
+          "networks_ordered_acl",
+          "near_transfer"
+        ],
+        "similarity": 0.751,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "networks_ordered_acl",
+          "base"
+        ],
+        "b": [
+          "networks_ordered_acl",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7888,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "networks_ordered_acl",
+          "near_transfer"
+        ],
+        "b": [
+          "networks_ordered_acl",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7302,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "networks_route_precedence",
+          "base"
+        ],
+        "b": [
+          "networks_route_precedence",
+          "near_transfer"
+        ],
+        "similarity": 0.7809,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "networks_route_precedence",
+          "base"
+        ],
+        "b": [
+          "networks_route_precedence",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7487,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "networks_tcp_reassembly",
+          "base"
+        ],
+        "b": [
+          "networks_tcp_reassembly",
+          "near_transfer"
+        ],
+        "similarity": 0.7222,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "networks_tcp_reassembly",
+          "base"
+        ],
+        "b": [
+          "networks_tcp_reassembly",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7278,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "networks_window_throughput",
+          "base"
+        ],
+        "b": [
+          "networks_window_throughput",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7246,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "programming_finally_control_flow",
+          "base"
+        ],
+        "b": [
+          "programming_finally_control_flow",
+          "near_transfer"
+        ],
+        "similarity": 0.7993,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "programming_finally_control_flow",
+          "base"
+        ],
+        "b": [
+          "programming_finally_control_flow",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7266,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "programming_finally_control_flow",
+          "near_transfer"
+        ],
+        "b": [
+          "programming_finally_control_flow",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8147,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "programming_signed_division",
+          "base"
+        ],
+        "b": [
+          "programming_signed_division",
+          "near_transfer"
+        ],
+        "similarity": 0.7739,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "programming_signed_division",
+          "base"
+        ],
+        "b": [
+          "programming_signed_division",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7236,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "systems_raid_incident",
+          "base"
+        ],
+        "b": [
+          "systems_raid_incident",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7394,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "systems_resource_admission",
+          "base"
+        ],
+        "b": [
+          "systems_resource_admission",
+          "near_transfer"
+        ],
+        "similarity": 0.8084,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "systems_resource_admission",
+          "base"
+        ],
+        "b": [
+          "systems_resource_admission",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7854,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "systems_resource_admission",
+          "near_transfer"
+        ],
+        "b": [
+          "systems_resource_admission",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7414,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "systems_retry_atomicity",
+          "base"
+        ],
+        "b": [
+          "systems_retry_atomicity",
+          "near_transfer"
+        ],
+        "similarity": 0.7218,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "systems_retry_atomicity",
+          "base"
+        ],
+        "b": [
+          "systems_retry_atomicity",
+          "delayed_transfer"
+        ],
+        "similarity": 0.7978,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "systems_retry_atomicity",
+          "near_transfer"
+        ],
+        "b": [
+          "systems_retry_atomicity",
+          "delayed_transfer"
+        ],
+        "similarity": 0.761,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "systems_run_queue",
+          "base"
+        ],
+        "b": [
+          "systems_run_queue",
+          "near_transfer"
+        ],
+        "similarity": 0.7204,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "testing_boundary_partitions",
+          "base"
+        ],
+        "b": [
+          "testing_boundary_partitions",
+          "near_transfer"
+        ],
+        "similarity": 0.8324,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "testing_branch_coverage",
+          "base"
+        ],
+        "b": [
+          "testing_branch_coverage",
+          "near_transfer"
+        ],
+        "similarity": 0.8547,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "testing_branch_coverage",
+          "base"
+        ],
+        "b": [
+          "testing_branch_coverage",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8969,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "testing_branch_coverage",
+          "near_transfer"
+        ],
+        "b": [
+          "testing_branch_coverage",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8439,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "testing_concurrency_interleavings",
+          "base"
+        ],
+        "b": [
+          "testing_concurrency_interleavings",
+          "near_transfer"
+        ],
+        "similarity": 0.9331,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "testing_concurrency_interleavings",
+          "base"
+        ],
+        "b": [
+          "testing_concurrency_interleavings",
+          "delayed_transfer"
+        ],
+        "similarity": 0.9102,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "testing_concurrency_interleavings",
+          "near_transfer"
+        ],
+        "b": [
+          "testing_concurrency_interleavings",
+          "delayed_transfer"
+        ],
+        "similarity": 0.9102,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "testing_fixture_isolation",
+          "base"
+        ],
+        "b": [
+          "testing_fixture_isolation",
+          "near_transfer"
+        ],
+        "similarity": 0.9049,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "testing_fixture_isolation",
+          "base"
+        ],
+        "b": [
+          "testing_fixture_isolation",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8639,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "testing_fixture_isolation",
+          "near_transfer"
+        ],
+        "b": [
+          "testing_fixture_isolation",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8486,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "testing_mcdc_independence",
+          "base"
+        ],
+        "b": [
+          "testing_mcdc_independence",
+          "near_transfer"
+        ],
+        "similarity": 0.8933,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "testing_mcdc_independence",
+          "base"
+        ],
+        "b": [
+          "testing_mcdc_independence",
+          "delayed_transfer"
+        ],
+        "similarity": 0.875,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "testing_mcdc_independence",
+          "near_transfer"
+        ],
+        "b": [
+          "testing_mcdc_independence",
+          "delayed_transfer"
+        ],
+        "similarity": 0.859,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "testing_metamorphic_sort_properties",
+          "base"
+        ],
+        "b": [
+          "testing_metamorphic_sort_properties",
+          "near_transfer"
+        ],
+        "similarity": 0.9172,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "testing_metamorphic_sort_properties",
+          "base"
+        ],
+        "b": [
+          "testing_metamorphic_sort_properties",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8646,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "testing_metamorphic_sort_properties",
+          "near_transfer"
+        ],
+        "b": [
+          "testing_metamorphic_sort_properties",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8758,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "testing_mutation_adequacy",
+          "base"
+        ],
+        "b": [
+          "testing_mutation_adequacy",
+          "near_transfer"
+        ],
+        "similarity": 0.8601,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "testing_mutation_adequacy",
+          "base"
+        ],
+        "b": [
+          "testing_mutation_adequacy",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8579,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "testing_mutation_adequacy",
+          "near_transfer"
+        ],
+        "b": [
+          "testing_mutation_adequacy",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8601,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_atomic_purchase",
+          "base"
+        ],
+        "b": [
+          "web_backend_atomic_purchase",
+          "near_transfer"
+        ],
+        "similarity": 0.9119,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_atomic_purchase",
+          "base"
+        ],
+        "b": [
+          "web_backend_atomic_purchase",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8922,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_atomic_purchase",
+          "near_transfer"
+        ],
+        "b": [
+          "web_backend_atomic_purchase",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8932,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_conditional_update",
+          "base"
+        ],
+        "b": [
+          "web_backend_conditional_update",
+          "near_transfer"
+        ],
+        "similarity": 0.8776,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_conditional_update",
+          "base"
+        ],
+        "b": [
+          "web_backend_conditional_update",
+          "delayed_transfer"
+        ],
+        "similarity": 0.9034,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_conditional_update",
+          "near_transfer"
+        ],
+        "b": [
+          "web_backend_conditional_update",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8398,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_idempotent_charge",
+          "base"
+        ],
+        "b": [
+          "web_backend_idempotent_charge",
+          "near_transfer"
+        ],
+        "similarity": 0.8414,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_idempotent_charge",
+          "base"
+        ],
+        "b": [
+          "web_backend_idempotent_charge",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8074,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_idempotent_charge",
+          "near_transfer"
+        ],
+        "b": [
+          "web_backend_idempotent_charge",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8074,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_keyset_pagination",
+          "base"
+        ],
+        "b": [
+          "web_backend_keyset_pagination",
+          "near_transfer"
+        ],
+        "similarity": 0.8544,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_keyset_pagination",
+          "base"
+        ],
+        "b": [
+          "web_backend_keyset_pagination",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8756,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_keyset_pagination",
+          "near_transfer"
+        ],
+        "b": [
+          "web_backend_keyset_pagination",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8421,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_patch_validation",
+          "base"
+        ],
+        "b": [
+          "web_backend_patch_validation",
+          "near_transfer"
+        ],
+        "similarity": 0.8018,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_patch_validation",
+          "base"
+        ],
+        "b": [
+          "web_backend_patch_validation",
+          "delayed_transfer"
+        ],
+        "similarity": 0.786,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_patch_validation",
+          "near_transfer"
+        ],
+        "b": [
+          "web_backend_patch_validation",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8037,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_resource_authorization",
+          "base"
+        ],
+        "b": [
+          "web_backend_resource_authorization",
+          "near_transfer"
+        ],
+        "similarity": 0.8651,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_resource_authorization",
+          "base"
+        ],
+        "b": [
+          "web_backend_resource_authorization",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8678,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_resource_authorization",
+          "near_transfer"
+        ],
+        "b": [
+          "web_backend_resource_authorization",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8092,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_sliding_rate_limit",
+          "base"
+        ],
+        "b": [
+          "web_backend_sliding_rate_limit",
+          "near_transfer"
+        ],
+        "similarity": 0.8794,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_sliding_rate_limit",
+          "base"
+        ],
+        "b": [
+          "web_backend_sliding_rate_limit",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8883,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      },
+      {
+        "a": [
+          "web_backend_sliding_rate_limit",
+          "near_transfer"
+        ],
+        "b": [
+          "web_backend_sliding_rate_limit",
+          "delayed_transfer"
+        ],
+        "similarity": 0.8621,
+        "cross_split": false,
+        "review_status": "candidate_requires_semantic_review_not_automatic_duplicate"
+      }
+    ]
+  },
+  "frozen_source_sha256": {
+    "audit.py": "649436f89446b083f7846baff8c47f6adeffc763cda352f6547a6f662ea5f373",
+    "dataset.py": "660ec7adc4043752efa4e476a3b343bdd0e0a1abc9f7a0778981edfd5ed30ff7",
+    "test_dataset.py": "411bfd8d31bf36f47b62ed7366d73ffff15ab40611010098c3b5cf93ddd6ae67",
+    "test_oracle_integrity.py": "5a06b1466498cc7517480d83b277cdd134d5e3521ae146a86aa69615ba975c1c",
+    "checks/foundations_check.py": "5e4265a065a5628352a71c72647f94988fc9b60d14c769c0d25af06627639d3c",
+    "checks/operations_check.py": "9b3e4b2151f8cccd746d2c49f777ebbd4ae66f339b2541e64d0731a298f3b9bb",
+    "checks/software_check.py": "4b287ea1dca1742eced81cbc271a81ce97d99c81a5d6a28cec9c76c67d02a44b"
+  },
+  "data_manifest_sha256": "57f01d56473fcb683a1d2d9adaaaf04760fdd81a9db3c5e157fd5168f6f80873",
+  "claims_excluded": [
+    "real learner accuracy",
+    "learning gains",
+    "teacher endorsement",
+    "product pass rate",
+    "ablation effect",
+    "blind holdout"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": "computing-learner-profile-dataset.v1",
+  "seed": 20260908,
+  "authorship": "AI-assisted original synthetic curricular fixtures",
+  "real_students": 0,
+  "teacher_reviewed_cases": 0,
+  "product_runs": 0,
+  "ablation_runs": 0,
+  "holdout_status": "public_author_visible_family_disjoint_not_blind",
+  "files": {
+    "catalog/foundations.json": "4ffa7e83faf2b31760d527d2b934b064d36e3611a7d498f44dc9b5d5b9c56356",
+    "catalog/operations.json": "cc835b96cbc71ddca0e89a007a272f80efbf80abc1c960d118270069dc1b35e9",
+    "catalog/software.json": "36f20da350c61209adb9f1188c8a0d83e88a0e97f83cbfc0e26091d5a6259180",
+    "data/cases.jsonl": "1a13f915e14445e73122c87fb3f0a3ff193a88b4d67481754a1e6a4bb0d5a224",
+    "data/pairs.jsonl": "495f3e2c43d58d00e2fc978fb277747b3a08eb41685635ff6f4e9574e32cf126",
+    "data/rubrics.jsonl": "4ae854f3d5d7d7d7326ade6308f486c8aea07e2251d2a8bd0ba7191e7665e888",
+    "data/splits.jsonl": "02f3d4898b07a16a8ccbbfca546ca66cf40a0aa8be1bd51c5ca8160897cabf0a",
+    "data/teacher_review_queue.csv": "ad653a9800d6ad2148fbf0c4607a91989d590854ebaee71d7548c14224ce58a5"
+  }
+}

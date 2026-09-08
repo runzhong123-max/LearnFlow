@@ -1,0 +1,3486 @@
+[
+  {
+    "family_id": "programming_reference_ownership",
+    "domain": "programming",
+    "title": "排查预处理列表互相污染",
+    "course": "程序设计基础",
+    "level": "foundation",
+    "project_context": "实验脚本把传感器采样列表交给预处理模块。主程序还要保存原始样本，要求说明每次修改究竟影响哪个容器。",
+    "competency": "画出引用关系并准确给出赋值、浅复制和深复制后的嵌套列表内容。",
+    "prerequisites": [
+      "变量绑定",
+      "可变列表",
+      "嵌套容器"
+    ],
+    "misconception": "把列表赋给另一个变量，或复制外层列表，就等于复制了全部内层对象。",
+    "misconception_probe": "如果只执行 b=a.copy()，修改 b[0] 的内部元素与向 b 追加元素分别会影响 a 吗？",
+    "remediation_activity": "用两个外层框和两个内层框画引用箭头；只追踪一次内层append，再追踪一次外层append，完成后撤去箭头模板重画。",
+    "next_activity": "在 preprocessing.py 的归一化入口决定哪些数据需要独立副本，并补一条原始输入保持不变的断言。",
+    "return_anchor": "preprocessing.py::prepare_batch，第2步复制输入之后、首次修改之前。",
+    "goal_a": "优先明确原始样本的所有权，避免预处理污染归档。",
+    "goal_b": "优先减少不必要的深复制，同时写清共享边界。",
+    "task_prompt": "根据给定代码列出 a、b 的最终内容，说明哪次修改穿过了共享引用。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "执行后打印的字典是什么？",
+        "artifact": "a=[1,2]\nb=a\nb.append(3)\nprint({\"a\":a,\"b\":b})\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"initial\": {\n    \"a\": [\n      1,\n      2\n    ]\n  },\n  \"kind\": \"aliases\",\n  \"outputs\": [\n    \"a\",\n    \"b\"\n  ],\n  \"steps\": [\n    {\n      \"dst\": \"b\",\n      \"op\": \"bind\",\n      \"src\": \"a\"\n    },\n    {\n      \"op\": \"append\",\n      \"value\": 3,\n      \"var\": \"b\"\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"a\":[1,2,3],\"b\":[1,2,3]}",
+        "incorrect_response": "我的结果是：{\"a\":[1,2],\"b\":[1,2,3]}",
+        "explanation": "普通赋值保留同一列表身份；通过b追加也改变a可见的列表。",
+        "observable_checks": [
+          "两个变量都包含追加元素",
+          "不把赋值解释为容器复制"
+        ],
+        "novelty": "同一层可变对象的别名修改。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_reference_ownership.base",
+        "oracle_input": {
+          "kind": "aliases",
+          "initial": {
+            "a": [
+              1,
+              2
+            ]
+          },
+          "steps": [
+            {
+              "op": "bind",
+              "dst": "b",
+              "src": "a"
+            },
+            {
+              "op": "append",
+              "var": "b",
+              "value": 3
+            }
+          ],
+          "outputs": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "浅复制后两次append的结果是什么？",
+        "artifact": "a=[[1],[2]]\nb=a.copy()\nb[0].append(9)\nb.append([3])\nprint({\"a\":a,\"b\":b})\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"initial\": {\n    \"a\": [\n      [\n        1\n      ],\n      [\n        2\n      ]\n    ]\n  },\n  \"kind\": \"aliases\",\n  \"outputs\": [\n    \"a\",\n    \"b\"\n  ],\n  \"steps\": [\n    {\n      \"dst\": \"b\",\n      \"op\": \"shallow_copy\",\n      \"src\": \"a\"\n    },\n    {\n      \"op\": \"append\",\n      \"path\": [\n        0\n      ],\n      \"value\": 9,\n      \"var\": \"b\"\n    },\n    {\n      \"op\": \"append\",\n      \"value\": [\n        3\n      ],\n      \"var\": \"b\"\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"a\":[[1,9],[2]],\"b\":[[1,9],[2],[3]]}",
+        "incorrect_response": "我的结果是：{\"a\":[[1],[2]],\"b\":[[1,9],[2],[3]]}",
+        "explanation": "外层已分离，内层仍共享；外层追加只影响b，内层追加同时可见。",
+        "observable_checks": [
+          "区分外层身份与内层身份",
+          "两个append具有不同传播范围"
+        ],
+        "novelty": "加入嵌套结构，同时出现内部修改和外部扩容。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_reference_ownership.near_transfer",
+        "oracle_input": {
+          "kind": "aliases",
+          "initial": {
+            "a": [
+              [
+                1
+              ],
+              [
+                2
+              ]
+            ]
+          },
+          "steps": [
+            {
+              "op": "shallow_copy",
+              "dst": "b",
+              "src": "a"
+            },
+            {
+              "op": "append",
+              "var": "b",
+              "path": [
+                0
+              ],
+              "value": 9
+            },
+            {
+              "op": "append",
+              "var": "b",
+              "value": [
+                3
+              ]
+            }
+          ],
+          "outputs": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "深复制后独立修改两个方向，最终结果是什么？",
+        "artifact": "from copy import deepcopy\na=[[1],[2]]\nb=deepcopy(a)\na[1].append(8)\nb[0].append(9)\nprint({\"a\":a,\"b\":b})\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"initial\": {\n    \"a\": [\n      [\n        1\n      ],\n      [\n        2\n      ]\n    ]\n  },\n  \"kind\": \"aliases\",\n  \"outputs\": [\n    \"a\",\n    \"b\"\n  ],\n  \"steps\": [\n    {\n      \"dst\": \"b\",\n      \"op\": \"deep_copy\",\n      \"src\": \"a\"\n    },\n    {\n      \"op\": \"append\",\n      \"path\": [\n        1\n      ],\n      \"value\": 8,\n      \"var\": \"a\"\n    },\n    {\n      \"op\": \"append\",\n      \"path\": [\n        0\n      ],\n      \"value\": 9,\n      \"var\": \"b\"\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"a\":[[1],[2,8]],\"b\":[[1,9],[2]]}",
+        "incorrect_response": "我的结果是：{\"a\":[[1,9],[2,8]],\"b\":[[1,9],[2,8]]}",
+        "explanation": "此处deepcopy复制两层列表；两个方向的后续修改不再相互传播。",
+        "observable_checks": [
+          "保留原列表第二项的修改",
+          "副本第一项修改不能回写原列表"
+        ],
+        "novelty": "把复制深度作为控制条件，并分别修改源和副本。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_reference_ownership.delayed_transfer",
+        "oracle_input": {
+          "kind": "aliases",
+          "initial": {
+            "a": [
+              [
+                1
+              ],
+              [
+                2
+              ]
+            ]
+          },
+          "steps": [
+            {
+              "op": "deep_copy",
+              "dst": "b",
+              "src": "a"
+            },
+            {
+              "op": "append",
+              "var": "a",
+              "path": [
+                1
+              ],
+              "value": 8
+            },
+            {
+              "op": "append",
+              "var": "b",
+              "path": [
+                0
+              ],
+              "value": 9
+            }
+          ],
+          "outputs": [
+            "a",
+            "b"
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "programming_signed_division",
+    "domain": "programming",
+    "title": "计算环形日志的跨块位移",
+    "course": "程序设计基础",
+    "level": "foundation",
+    "project_context": "日志查看器把相对字节位移分解为块偏移与块内余数。调试环境使用Python整数运算，位移与除数可能带符号。",
+    "competency": "对带符号整数给出divmod结果，并核对被除数=商×除数+余数及余数的符号约束。",
+    "prerequisites": [
+      "整数运算",
+      "负数",
+      "取模"
+    ],
+    "misconception": "整数除法总是向零截断，余数总取被除数的符号。",
+    "misconception_probe": "Python中负位移除以正块长时，为保持重组恒等式，商是否一定向零取整？",
+    "remediation_activity": "在整数轴上标出相邻两个除数倍数，找出向下取整商；用乘加恢复位移，三组中只保留一组提示。",
+    "next_activity": "为 log_cursor.py 的跨块移动添加正移、负移和带符号除数的边界测试。",
+    "return_anchor": "log_cursor.py::split_offset，计算q、r之后、更新游标之前。",
+    "goal_a": "优先避免负位移定位到错误日志块。",
+    "goal_b": "优先写清跨语言移植时整除规则的差异。",
+    "task_prompt": "按Python语义写出每个输入的商与余数，不使用其他语言的整数除法习惯。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "求打印的[q,r]。",
+        "artifact": "q,r=divmod(data[\"a\"],data[\"b\"])\nprint([q,r])\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"a\": 17,\n  \"b\": 5,\n  \"kind\": \"division\"\n}",
+        "correct_response": "我的结果是：[3,2]",
+        "incorrect_response": "我的结果是：[4,-3]",
+        "explanation": "正数情形得到3个完整块，余数2。",
+        "observable_checks": [
+          "结果满足重组恒等式",
+          "正除数余数位于0到b之间"
+        ],
+        "novelty": "正位移的基本分解。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_signed_division.base",
+        "oracle_input": {
+          "kind": "division",
+          "a": 17,
+          "b": 5
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "反向位移时求打印结果。",
+        "artifact": "q,r=divmod(data[\"a\"],data[\"b\"])\nprint([q,r])\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"a\": -17,\n  \"b\": 5,\n  \"kind\": \"division\"\n}",
+        "correct_response": "我的结果是：[-4,3]",
+        "incorrect_response": "我的结果是：[-3,-2]",
+        "explanation": "Python向负无穷取整，-17=5×(-4)+3。",
+        "observable_checks": [
+          "商按floor计算",
+          "正除数的余数仍非负"
+        ],
+        "novelty": "被除数变负，暴露向零截断的错误规则。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_signed_division.near_transfer",
+        "oracle_input": {
+          "kind": "division",
+          "a": -17,
+          "b": 5
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "除数也可能代表反向坐标约定，求此结果。",
+        "artifact": "q,r=divmod(data[\"a\"],data[\"b\"])\nprint([q,r])\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"a\": 17,\n  \"b\": -5,\n  \"kind\": \"division\"\n}",
+        "correct_response": "我的结果是：[-4,-3]",
+        "incorrect_response": "我的结果是：[-3,2]",
+        "explanation": "17=(-5)×(-4)-3；非零余数与除数同号。",
+        "observable_checks": [
+          "区分被除数符号和除数符号",
+          "余数严格大于负除数且不大于0"
+        ],
+        "novelty": "转为负除数坐标，不能照抄上一题的正余数。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_signed_division.delayed_transfer",
+        "oracle_input": {
+          "kind": "division",
+          "a": 17,
+          "b": -5
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "programming_default_argument_lifetime",
+    "domain": "programming",
+    "title": "修复批处理函数的跨次状态残留",
+    "course": "Python程序设计",
+    "level": "intermediate",
+    "project_context": "导入任务反复调用一个收集标记的函数。每次调用后都会立即保存列表快照，用户报告无关任务的标记混在一起。",
+    "competency": "区分函数定义时创建的默认列表、显式传入列表与None哨兵每次新建列表。",
+    "prerequisites": [
+      "函数参数",
+      "对象生命周期",
+      "列表复制"
+    ],
+    "misconception": "默认列表会在每次函数调用时自动重新创建。",
+    "misconception_probe": "第二次调用显式传入[]，会清空第一次省略参数时使用的默认列表吗？",
+    "remediation_activity": "先把默认列表画在函数对象旁，按三次调用写快照；随后把默认值改成None，独立重跑一组含显式已有列表的输入。",
+    "next_activity": "给 batch_marks.py 的公共接口去掉隐式共享可变默认值，并保留对显式容器的行为说明。",
+    "return_anchor": "batch_marks.py::push，进入三次批次调用的循环前。",
+    "goal_a": "优先保证不同批次默认状态互不污染。",
+    "goal_b": "优先保留调用方显式共享容器的能力。",
+    "task_prompt": "按调用顺序给出每次立即复制所得的列表快照。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "连续省略bucket参数，三个快照是什么？",
+        "artifact": "def push(v,bucket=[]):\n    bucket.append(v)\n    return bucket\nout=[list(push(v)) for v in [1,2,3]]\nprint(out)\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"calls\": [\n    {\n      \"value\": 1\n    },\n    {\n      \"value\": 2\n    },\n    {\n      \"value\": 3\n    }\n  ],\n  \"kind\": \"defaults\",\n  \"mode\": \"shared_default\"\n}",
+        "correct_response": "我的结果是：[[1],[1,2],[1,2,3]]",
+        "incorrect_response": "我的结果是：[[1],[2],[3]]",
+        "explanation": "默认列表在函数定义时创建一次，省略参数的调用共享它。",
+        "observable_checks": [
+          "输出按立即快照解释",
+          "累积只发生在同一个默认对象上"
+        ],
+        "novelty": "连续省略参数，观察跨次累积。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_default_argument_lifetime.base",
+        "oracle_input": {
+          "kind": "defaults",
+          "mode": "shared_default",
+          "calls": [
+            {
+              "value": 1
+            },
+            {
+              "value": 2
+            },
+            {
+              "value": 3
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "中间一次显式传空列表，第三次又省略参数，结果是什么？",
+        "artifact": "def push(v,bucket=[]):\n    bucket.append(v)\n    return bucket\nout=[list(push(1)),list(push(2,[])),list(push(3))]\nprint(out)\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"calls\": [\n    {\n      \"value\": 1\n    },\n    {\n      \"bucket\": [],\n      \"value\": 2\n    },\n    {\n      \"value\": 3\n    }\n  ],\n  \"kind\": \"defaults\",\n  \"mode\": \"shared_default\"\n}",
+        "correct_response": "我的结果是：[[1],[2],[1,3]]",
+        "incorrect_response": "我的结果是：[[1],[2],[3]]",
+        "explanation": "显式[]仅替代该次实参，默认对象仍保留第一次的1。",
+        "observable_checks": [
+          "显式参数不重置函数默认对象",
+          "第三次重新访问旧默认对象"
+        ],
+        "novelty": "显式实参与默认对象交错使用。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_default_argument_lifetime.near_transfer",
+        "oracle_input": {
+          "kind": "defaults",
+          "mode": "shared_default",
+          "calls": [
+            {
+              "value": 1
+            },
+            {
+              "value": 2,
+              "bucket": []
+            },
+            {
+              "value": 3
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "使用None哨兵后，已有列表实参是否也被丢弃？",
+        "artifact": "def push(v,bucket=None):\n    if bucket is None: bucket=[]\n    bucket.append(v)\n    return bucket\nout=[list(push(1)),list(push(2,None)),list(push(3,[8]))]\nprint(out)\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"calls\": [\n    {\n      \"value\": 1\n    },\n    {\n      \"bucket\": null,\n      \"value\": 2\n    },\n    {\n      \"bucket\": [\n        8\n      ],\n      \"value\": 3\n    }\n  ],\n  \"kind\": \"defaults\",\n  \"mode\": \"none_fresh\"\n}",
+        "correct_response": "我的结果是：[[1],[2],[8,3]]",
+        "incorrect_response": "我的结果是：[[1],[2],[3]]",
+        "explanation": "None触发新建；显式已有列表仍被作为容器使用。",
+        "observable_checks": [
+          "显式None和省略参数均新建",
+          "保留非None实参已有元素"
+        ],
+        "novelty": "改用None模式，并加入非空显式容器检验过度重置。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_default_argument_lifetime.delayed_transfer",
+        "oracle_input": {
+          "kind": "defaults",
+          "mode": "none_fresh",
+          "calls": [
+            {
+              "value": 1
+            },
+            {
+              "value": 2,
+              "bucket": null
+            },
+            {
+              "value": 3,
+              "bucket": [
+                8
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "programming_short_circuit_validation",
+    "domain": "programming",
+    "title": "验证可空数据入口的短路保护",
+    "course": "程序设计基础",
+    "level": "intermediate",
+    "project_context": "设备接口返回None、空数组或整数数组，调用方要读取首项。接口不可因为缺测数据崩溃，也不能把合法的零当成缺测。",
+    "competency": "追踪短路求值顺序，指出异常发生位置并区分容器为空与首项为零。",
+    "prerequisites": [
+      "布尔运算",
+      "条件表达式",
+      "空值与空列表"
+    ],
+    "misconception": "and条件的先后无关紧要，而且任何值为0的数据都应触发默认值。",
+    "misconception_probe": "把len(xs)>0移到xs is not None前面后，None输入是否仍能被后面的条件保护？",
+    "remediation_activity": "为None、[]、[0]各画一条求值路径，只圈出实际被求值的子表达式，再独立设计一个不会误替换0的入口。",
+    "next_activity": "在 ingest.py 中保留合法零读数，并把缺测处理与业务阈值判断分开。",
+    "return_anchor": "ingest.py::first_reading，读取xs[0]的前一行。",
+    "goal_a": "优先确保空值输入不会触发异常。",
+    "goal_b": "优先避免默认值覆盖合法的零读数。",
+    "task_prompt": "按输入顺序输出布尔值、首项或捕获的异常类型；异常类型用字符串表示。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "按values顺序列出safe判断结果。",
+        "artifact": "def check(xs):\n    return xs is not None and len(xs)>0 and xs[0]>2\nprint([check(xs) for xs in data[\"values\"]])\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"kind\": \"guards\",\n  \"limit\": 2,\n  \"mode\": \"safe\",\n  \"values\": [\n    null,\n    [],\n    [\n      1\n    ],\n    [\n      5\n    ]\n  ]\n}",
+        "correct_response": "我的结果是：[false,false,false,true]",
+        "incorrect_response": "我的结果是：[\"TypeError\",false,false,true]",
+        "explanation": "None和空列表均提前短路，只有非空列表才读取首项。",
+        "observable_checks": [
+          "None不执行len",
+          "空数组不访问索引0"
+        ],
+        "novelty": "覆盖缺测、空数组与阈值两侧。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_short_circuit_validation.base",
+        "oracle_input": {
+          "kind": "guards",
+          "mode": "safe",
+          "values": [
+            null,
+            [],
+            [
+              1
+            ],
+            [
+              5
+            ]
+          ],
+          "limit": 2
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "对每个输入单独捕获TypeError，输出结果序列。",
+        "artifact": "def check(xs):\n    return len(xs)>0 and xs is not None and xs[0]>2\n# 逐项try/except TypeError，将异常记为\"TypeError\"\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"kind\": \"guards\",\n  \"limit\": 2,\n  \"mode\": \"unsafe_order\",\n  \"values\": [\n    null,\n    [],\n    [\n      3\n    ]\n  ]\n}",
+        "correct_response": "我的结果是：[\"TypeError\",false,true]",
+        "incorrect_response": "我的结果是：[false,false,true]",
+        "explanation": "第一项先执行len(None)，后续判空来不及阻止异常。",
+        "observable_checks": [
+          "错误来自条件顺序",
+          "异常不终止其他输入的独立评估"
+        ],
+        "novelty": "交换保护条件的位置，验证执行顺序而非只看逻辑集合。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_short_circuit_validation.near_transfer",
+        "oracle_input": {
+          "kind": "guards",
+          "mode": "unsafe_order",
+          "values": [
+            null,
+            [],
+            [
+              3
+            ]
+          ],
+          "limit": 2
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "条件表达式给出的首项或fallback序列是什么？",
+        "artifact": "out=[xs[0] if xs else data[\"fallback\"] for xs in data[\"values\"]]\nprint(out)\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"fallback\": 7,\n  \"kind\": \"guards\",\n  \"mode\": \"fallback\",\n  \"values\": [\n    [],\n    [\n      0\n    ],\n    [\n      4\n    ],\n    null\n  ]\n}",
+        "correct_response": "我的结果是：[7,0,4,7]",
+        "incorrect_response": "我的结果是：[7,7,4,7]",
+        "explanation": "判断的是容器是否为空；[0]是非空容器，因此保留首项0。",
+        "observable_checks": [
+          "空容器才使用fallback",
+          "零值不被替换"
+        ],
+        "novelty": "由布尔过滤迁移为默认值选择，加入真假性易混边界。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_short_circuit_validation.delayed_transfer",
+        "oracle_input": {
+          "kind": "guards",
+          "mode": "fallback",
+          "values": [
+            [],
+            [
+              0
+            ],
+            [
+              4
+            ],
+            null
+          ],
+          "fallback": 7
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "programming_finally_control_flow",
+    "domain": "programming",
+    "title": "审核导出任务的资源清理与错误传播",
+    "course": "软件开发技术",
+    "level": "intermediate",
+    "project_context": "文件导出任务无论成功失败都要记录关闭动作。维护者在finally里追加return后，调用方报告原本的错误消失了。",
+    "competency": "区分finally清理、副作用日志与return/exception被覆盖的控制流结果。",
+    "prerequisites": [
+      "异常处理",
+      "return语义",
+      "资源释放"
+    ],
+    "misconception": "finally只负责清理，里面的return不会影响try中的返回值或异常。",
+    "misconception_probe": "try抛出ValueError而finally返回0时，外层except是否一定能收到原异常？",
+    "remediation_activity": "用两列记录待传播的结果和已执行的清理动作，分别追踪成功、失败、finally覆盖三条路径，不运行文件I/O。",
+    "next_activity": "重构 export_job.py，使清理逻辑不吞异常，并为失败路径补回归断言。",
+    "return_anchor": "export_job.py::job 的finally块。",
+    "goal_a": "优先保证导出失败能被上层识别。",
+    "goal_b": "优先确认所有路径都完成资源清理。",
+    "task_prompt": "给出外层观察到的result、error和执行日志，未返回或未发生异常分别用null。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "成功返回且finally只记录清理时，结果是什么？",
+        "artifact": "def job(log):\n    try:\n        log.append(\"open\")\n        if data[\"raise_body\"]: raise ValueError()\n        return data[\"body_value\"]\n    finally:\n        log.append(\"close\")\n        if data[\"override\"]: return data[\"final_value\"]\n# 外层捕获ValueError并记录error；无返回结果记null。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"body_value\": 7,\n  \"final_value\": 0,\n  \"kind\": \"finally\",\n  \"override\": false,\n  \"raise_body\": false\n}",
+        "correct_response": "我的结果是：{\"result\":7,\"error\":null,\"log\":[\"open\",\"close\"]}",
+        "incorrect_response": "我的结果是：{\"result\":7,\"error\":null,\"log\":[\"open\"]}",
+        "explanation": "返回前仍执行finally，日志包含close。",
+        "observable_checks": [
+          "清理在返回前执行",
+          "保留try的成功返回值"
+        ],
+        "novelty": "普通返回与必执行清理同时存在。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_finally_control_flow.base",
+        "oracle_input": {
+          "kind": "finally",
+          "raise_body": false,
+          "body_value": 7,
+          "override": false,
+          "final_value": 0
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "try失败但finally不返回时，结果是什么？",
+        "artifact": "def job(log):\n    try:\n        log.append(\"open\")\n        if data[\"raise_body\"]: raise ValueError()\n        return data[\"body_value\"]\n    finally:\n        log.append(\"close\")\n        if data[\"override\"]: return data[\"final_value\"]\n# 外层捕获ValueError并记录error。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"body_value\": 7,\n  \"final_value\": 0,\n  \"kind\": \"finally\",\n  \"override\": false,\n  \"raise_body\": true\n}",
+        "correct_response": "我的结果是：{\"result\":null,\"error\":\"ValueError\",\"log\":[\"open\",\"close\"]}",
+        "incorrect_response": "我的结果是：{\"result\":7,\"error\":null,\"log\":[\"open\",\"close\"]}",
+        "explanation": "finally完成清理后，原异常继续向外传播。",
+        "observable_checks": [
+          "失败路径仍清理",
+          "不制造try未执行到的返回值"
+        ],
+        "novelty": "加入异常路径，分离清理成功与任务成功。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_finally_control_flow.near_transfer",
+        "oracle_input": {
+          "kind": "finally",
+          "raise_body": true,
+          "body_value": 7,
+          "override": false,
+          "final_value": 0
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "finally也返回值时，外层实际观察到什么？",
+        "artifact": "def job(log):\n    try:\n        log.append(\"open\")\n        if data[\"raise_body\"]: raise ValueError()\n        return data[\"body_value\"]\n    finally:\n        log.append(\"close\")\n        if data[\"override\"]: return data[\"final_value\"]\n# 外层捕获ValueError并记录error。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"body_value\": 7,\n  \"final_value\": 0,\n  \"kind\": \"finally\",\n  \"override\": true,\n  \"raise_body\": true\n}",
+        "correct_response": "我的结果是：{\"result\":0,\"error\":null,\"log\":[\"open\",\"close\"]}",
+        "incorrect_response": "我的结果是：{\"result\":null,\"error\":\"ValueError\",\"log\":[\"open\",\"close\"]}",
+        "explanation": "finally中的return覆盖待传播的异常，错误被吞掉。",
+        "observable_checks": [
+          "识别finally返回覆盖异常",
+          "日志不能单独证明任务成功"
+        ],
+        "novelty": "清理块引入控制流覆盖，而非简单增加一条日志。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_finally_control_flow.delayed_transfer",
+        "oracle_input": {
+          "kind": "finally",
+          "raise_body": true,
+          "body_value": 7,
+          "override": true,
+          "final_value": 0
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "programming_unicode_boundaries",
+    "domain": "programming",
+    "title": "修复UTF-8日志截断与字符计数",
+    "course": "程序设计与信息表示",
+    "level": "intermediate",
+    "project_context": "日志服务按字节限制字段，展示层却按Python字符串长度计数。输入包含汉字、组合音标和emoji，截断不得假定每个字符只占一个字节。",
+    "competency": "分别计算Unicode码点数、UTF-8长度、NFC归一化长度和指定字节前缀的解码结果。",
+    "prerequisites": [
+      "字符串编码",
+      "字节序列",
+      "Unicode组合字符"
+    ],
+    "misconception": "len(text)、UTF-8字节数和屏幕上看见的字形数量永远相同。",
+    "misconception_probe": "一个看起来像é的组合序列，在归一化前后码点数是否必然相同？",
+    "remediation_activity": "把输入按码点与UTF-8字节分别排成两行，标出截断边界；再用NFC对照表解释两个长度为何能改变。",
+    "next_activity": "给 log_field.py 增加编码边界安全的截断策略，记录接口限制是字节还是码点。",
+    "return_anchor": "log_field.py::truncate_utf8，在切片之后、decode之前。",
+    "goal_a": "优先避免日志截断引起解码异常。",
+    "goal_b": "优先统一存储限额和展示计数的单位。",
+    "task_prompt": "输出characters、utf8_bytes、nfc_characters、nfc_bytes和prefix；characters特指码点，不是字素簇。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "计算各长度及前缀解码。",
+        "artifact": "import unicodedata\ns=data[\"text\"]; n=unicodedata.normalize(\"NFC\",s)\n# 长度分别取len(s)、len(s.encode(\"utf-8\"))和对应n长度。\n# prefix为s.encode(\"utf-8\")[:prefix_bytes].decode(\"utf-8\")，失败记类型。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"kind\": \"unicode\",\n  \"prefix_bytes\": 1,\n  \"text\": \"A中\"\n}",
+        "correct_response": "我的结果是：{\"characters\":2,\"utf8_bytes\":4,\"nfc_characters\":2,\"nfc_bytes\":4,\"prefix\":\"A\"}",
+        "incorrect_response": "我的结果是：{\"characters\":2,\"utf8_bytes\":2,\"nfc_characters\":2,\"nfc_bytes\":2,\"prefix\":\"A\"}",
+        "explanation": "ASCII和汉字的UTF-8长度不同；截到第一个ASCII字节可解码。",
+        "observable_checks": [
+          "码点数与字节数分开",
+          "前缀按字节而非字符切片"
+        ],
+        "novelty": "混合ASCII与汉字的基本编码边界。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_unicode_boundaries.base",
+        "oracle_input": {
+          "kind": "unicode",
+          "text": "A中",
+          "prefix_bytes": 1
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "输入是e后接组合重音，计算结果。",
+        "artifact": "import unicodedata\ns=data[\"text\"]; n=unicodedata.normalize(\"NFC\",s)\n# 返回原文与NFC的码点/UTF-8长度；严格解码指定字节前缀。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"kind\": \"unicode\",\n  \"prefix_bytes\": 2,\n  \"text\": \"é\"\n}",
+        "correct_response": "我的结果是：{\"characters\":2,\"utf8_bytes\":3,\"nfc_characters\":1,\"nfc_bytes\":2,\"prefix\":\"UnicodeDecodeError\"}",
+        "incorrect_response": "我的结果是：{\"characters\":1,\"utf8_bytes\":2,\"nfc_characters\":1,\"nfc_bytes\":2,\"prefix\":\"é\"}",
+        "explanation": "原文是两个码点三个字节；两个字节前缀截断了组合符的UTF-8序列。",
+        "observable_checks": [
+          "NFC前后长度可以不同",
+          "严格解码截断序列应报告异常"
+        ],
+        "novelty": "组合字符归一化与不完整多字节序列同时出现。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_unicode_boundaries.near_transfer",
+        "oracle_input": {
+          "kind": "unicode",
+          "text": "é",
+          "prefix_bytes": 2
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "输入是女性程序员emoji序列，计算结果。",
+        "artifact": "import unicodedata\ns=data[\"text\"]; n=unicodedata.normalize(\"NFC\",s)\n# 返回码点数、UTF-8字节数、NFC对应长度及严格解码前缀。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"kind\": \"unicode\",\n  \"prefix_bytes\": 4,\n  \"text\": \"👩‍💻\"\n}",
+        "correct_response": "我的结果是：{\"characters\":3,\"utf8_bytes\":11,\"nfc_characters\":3,\"nfc_bytes\":11,\"prefix\":\"👩\"}",
+        "incorrect_response": "我的结果是：{\"characters\":1,\"utf8_bytes\":4,\"nfc_characters\":1,\"nfc_bytes\":4,\"prefix\":\"👩\"}",
+        "explanation": "该字素簇由女性、连接符和电脑三个码点组成，共11个UTF-8字节；4字节前缀只是第一个码点。",
+        "observable_checks": [
+          "不能把一个可见字形当一个码点",
+          "有效解码前缀也可能破坏字素簇"
+        ],
+        "novelty": "非BMP字符与零宽连接符，检验字符/字形边界的差异。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_unicode_boundaries.delayed_transfer",
+        "oracle_input": {
+          "kind": "unicode",
+          "text": "👩‍💻",
+          "prefix_bytes": 4
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "programming_csv_validation",
+    "domain": "programming",
+    "title": "对库存导入文件进行规范化汇总",
+    "course": "软件工程实践",
+    "level": "integrated",
+    "project_context": "仓库导入CSV库存增量，SKU大小写与首尾空格不应制造新商品。负数量或非整数需要逐行拒绝，不能把引号内逗号当列分隔。",
+    "competency": "按照CSV语法解析行、规范化键、汇总合法数量并报告拒绝的数据行序号。",
+    "prerequisites": [
+      "CSV转义",
+      "字典汇总",
+      "输入验证"
+    ],
+    "misconception": "直接split逗号就能解析任意CSV，且重复SKU会自动覆盖成正确总数。",
+    "misconception_probe": "SKU本身包含逗号并用引号包围时，按逗号split会产生多少列，是否仍对应原表头？",
+    "remediation_activity": "手动拆解一行带引号字段，用DictReader读取后列出规范化键；再对四行输入逐行判定接受或拒绝并核对总量。",
+    "next_activity": "在 import_stock.py 保存拒绝行号与原因，避免静默丢弃或重复覆盖数量。",
+    "return_anchor": "import_stock.py::load_delta 的CSV读取循环。",
+    "goal_a": "优先保证汇总总量与合法输入相符。",
+    "goal_b": "优先建立可追查的坏行报告。",
+    "task_prompt": "返回按规则汇总的totals与rejected_data_rows；行号从表头后的第一行记为1。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "按大小写不敏感且去首尾空格的SKU汇总。",
+        "artifact": "import csv,io\n# 对DictReader每行：sku.strip().casefold()；qty=int(qty)。\n# sku为空或qty<0时拒绝；合法行累加，不覆盖旧值。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"csv\": \"sku,qty\\nA,2\\na,3\\n B ,1\\n\",\n  \"kind\": \"csv_totals\"\n}",
+        "correct_response": "我的结果是：{\"totals\":{\"a\":5,\"b\":1},\"rejected_data_rows\":[]}",
+        "incorrect_response": "我的结果是：{\"totals\":{\"a\":3,\"b\":1},\"rejected_data_rows\":[]}",
+        "explanation": "A和a规范化到同一个键，数量2与3相加。",
+        "observable_checks": [
+          "重复键累加而非覆盖",
+          "空格与大小写规范化发生在匹配前"
+        ],
+        "novelty": "重复SKU及空格噪声。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_csv_validation.base",
+        "oracle_input": {
+          "kind": "csv_totals",
+          "csv": "sku,qty\nA,2\na,3\n B ,1\n"
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "含引号和字段内逗号时，输出什么？",
+        "artifact": "import csv,io\n# 用csv.DictReader解析；sku.strip().casefold()，合法非负整数累加。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"csv\": \"sku,qty\\n\\\"red,large\\\",2\\n\\\"RED,Large\\\",3\\nblue,1\\n\",\n  \"kind\": \"csv_totals\"\n}",
+        "correct_response": "我的结果是：{\"totals\":{\"red,large\":5,\"blue\":1},\"rejected_data_rows\":[]}",
+        "incorrect_response": "我的结果是：{\"totals\":{\"red\":5,\"blue\":1},\"rejected_data_rows\":[]}",
+        "explanation": "引号内逗号属于SKU正文，两行仍是同一完整SKU。",
+        "observable_checks": [
+          "保留引号内逗号",
+          "完整字段规范化后再聚合"
+        ],
+        "novelty": "CSV词法边界变化，不能复用逐逗号切分。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_csv_validation.near_transfer",
+        "oracle_input": {
+          "kind": "csv_totals",
+          "csv": "sku,qty\n\"red,large\",2\n\"RED,Large\",3\nblue,1\n"
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "遇到负数与非整数时，哪些数据行被拒绝？",
+        "artifact": "import csv,io\n# 用csv.DictReader解析；每行先对sku执行strip().casefold()，再独立try int(qty)。\n# 转换失败、规范化后空SKU或qty<0则记录该行号并继续；合法行按规范化后的SKU累加，不覆盖旧值。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"csv\": \"sku,qty\\nA,2\\nA,-1\\nB,x\\nC,3\\n\",\n  \"kind\": \"csv_totals\"\n}",
+        "correct_response": "我的结果是：{\"totals\":{\"a\":2,\"c\":3},\"rejected_data_rows\":[2,3]}",
+        "incorrect_response": "我的结果是：{\"totals\":{\"a\":1,\"b\":0,\"c\":3},\"rejected_data_rows\":[]}",
+        "explanation": "坏行不会减库存，也不会被强制转换为0；其后的合法行仍处理。",
+        "observable_checks": [
+          "非法行不进入总数",
+          "局部错误不终止整个文件处理"
+        ],
+        "novelty": "输入验证与逐行容错，改变错误处理机制。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_csv_validation.delayed_transfer",
+        "oracle_input": {
+          "kind": "csv_totals",
+          "csv": "sku,qty\nA,2\nA,-1\nB,x\nC,3\n"
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "programming_binary_packet_validation",
+    "domain": "programming",
+    "title": "解析带长度与校验和的设备报文",
+    "course": "系统程序设计",
+    "level": "integrated",
+    "project_context": "离线采集文件保存二进制设备报文。格式为2字节无符号长度、该长度的载荷和1字节模256校验和，必须先验证长度再使用载荷。",
+    "competency": "按指定字节序读取长度，检查总长与模256校验和，并拒绝不完整报文。",
+    "prerequisites": [
+      "二进制表示",
+      "字节序",
+      "边界校验"
+    ],
+    "misconception": "长度头的字节顺序可以忽略，而且只要校验和碰巧一致就可以接受截断报文。",
+    "misconception_probe": "声明3字节载荷的报文实际只有2字节，即使最后一个字节等于两字节之和，也可以通过吗？",
+    "remediation_activity": "在纸上将报文切为长度、载荷、校验和三段，先数总长再求和；换一次字节序并重新切分。",
+    "next_activity": "在 packet_reader.py 把长度校验置于解包前，并记录不同拒绝原因。",
+    "return_anchor": "packet_reader.py::parse，在读完长度头后。",
+    "goal_a": "优先阻止截断或畸形输入进入业务逻辑。",
+    "goal_b": "优先明确跨设备端序差异并验证校验和回绕。",
+    "task_prompt": "输出解析结果status；通过时附length和payload，不通过时仅返回长度或校验错误。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "小端报文能否通过，载荷是什么？",
+        "artifact": "n=int.from_bytes(packet[:2],data[\"byteorder\"])\n# 要求len(packet)==n+3，再比较sum(packet[2:-1])%256与末字节。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"byteorder\": \"little\",\n  \"bytes\": [\n    3,\n    0,\n    10,\n    20,\n    30,\n    60\n  ],\n  \"kind\": \"packet\"\n}",
+        "correct_response": "我的结果是：{\"status\":\"ok\",\"length\":3,\"payload\":[10,20,30]}",
+        "incorrect_response": "我的结果是：{\"status\":\"length_error\"}",
+        "explanation": "小端长度为3，总长6且校验和为60。",
+        "observable_checks": [
+          "长度头按端序解释",
+          "总长包含两字节头和一字节校验"
+        ],
+        "novelty": "完整的小端基本报文。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_binary_packet_validation.base",
+        "oracle_input": {
+          "kind": "packet",
+          "byteorder": "little",
+          "bytes": [
+            3,
+            0,
+            10,
+            20,
+            30,
+            60
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "大端报文且校验和溢出8位时，结果是什么？",
+        "artifact": "n=int.from_bytes(packet[:2],data[\"byteorder\"])\n# 按长度切载荷；校验和使用总和模256。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"byteorder\": \"big\",\n  \"bytes\": [\n    0,\n    2,\n    255,\n    2,\n    1\n  ],\n  \"kind\": \"packet\"\n}",
+        "correct_response": "我的结果是：{\"status\":\"ok\",\"length\":2,\"payload\":[255,2]}",
+        "incorrect_response": "我的结果是：{\"status\":\"checksum_error\"}",
+        "explanation": "大端长度为2，255+2=257，模256后是1。",
+        "observable_checks": [
+          "端序改变不改变格式规则",
+          "校验和按8位回绕"
+        ],
+        "novelty": "端序与校验和溢出同时变化。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_binary_packet_validation.near_transfer",
+        "oracle_input": {
+          "kind": "packet",
+          "byteorder": "big",
+          "bytes": [
+            0,
+            2,
+            255,
+            2,
+            1
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "该报文的末字节等于可见两字节之和，是否通过？",
+        "artifact": "n=int.from_bytes(packet[:2],data[\"byteorder\"])\n# 必须先检查总长，再计算校验和。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"byteorder\": \"little\",\n  \"bytes\": [\n    3,\n    0,\n    10,\n    20,\n    30\n  ],\n  \"kind\": \"packet\"\n}",
+        "correct_response": "我的结果是：{\"status\":\"length_error\"}",
+        "incorrect_response": "我的结果是：{\"status\":\"ok\",\"length\":2,\"payload\":[10,20]}",
+        "explanation": "头声明3个载荷字节，报文总长应为6；不能依据现有总长擅自改写声明长度。",
+        "observable_checks": [
+          "拒绝长度不一致",
+          "校验和不能替代结构验证"
+        ],
+        "novelty": "构造校验值貌似可用的截断边界。",
+        "answer_validation": "executable",
+        "oracle_id": "programming_binary_packet_validation.delayed_transfer",
+        "oracle_input": {
+          "kind": "packet",
+          "byteorder": "little",
+          "bytes": [
+            3,
+            0,
+            10,
+            20,
+            30
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "algorithms_lower_bound_boundary",
+    "domain": "algorithms",
+    "title": "定位有序事件表的最早匹配位置",
+    "course": "数据结构与算法",
+    "level": "foundation",
+    "project_context": "检索组件要定位时间戳有序表中第一个不小于目标的位置。目标可能重复或完全不存在，接口允许返回数组长度表示插入到末尾。",
+    "competency": "维护半开区间不变式并给出lower_bound在重复、缺失和右边界的返回下标。",
+    "prerequisites": [
+      "数组下标",
+      "二分查找",
+      "半开区间"
+    ],
+    "misconception": "二分命中任意相等元素就能作为最早位置，未找到时固定返回-1。",
+    "misconception_probe": "命中重复元素的中间位置后，是否仍需要继续搜索左半区间？",
+    "remediation_activity": "用left/right两张卡片追踪长度5的重复数组，标明候选区间；删去目标后独立推导插入位置。",
+    "next_activity": "为 event_index.py 的范围检索加上重复时间戳与区间端点用例。",
+    "return_anchor": "event_index.py::lower_bound，更新right的分支。",
+    "goal_a": "优先返回重复键的最早位置。",
+    "goal_b": "优先保证不存在目标时插入位置仍合法。",
+    "task_prompt": "执行半开区间lower_bound逻辑，给出返回下标。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "返回哪个下标？",
+        "artifact": "a=data[\"values\"]; x=data[\"target\"]\nl,r=0,len(a)\nwhile l<r:\n    m=(l+r)//2\n    if a[m]<x: l=m+1\n    else: r=m\nprint(l)\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"kind\": \"lower_bound\",\n  \"target\": 3,\n  \"values\": [\n    1,\n    3,\n    3,\n    3,\n    8\n  ]\n}",
+        "correct_response": "我的结果是：1",
+        "incorrect_response": "我的结果是：2",
+        "explanation": "相等时收缩右边界，保留最早候选。",
+        "observable_checks": [
+          "返回首个符合a[i]>=x的位置",
+          "重复键不能提前停止"
+        ],
+        "novelty": "多个相等键。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_lower_bound_boundary.base",
+        "oracle_input": {
+          "kind": "lower_bound",
+          "values": [
+            1,
+            3,
+            3,
+            3,
+            8
+          ],
+          "target": 3
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "目标没有出现，返回什么？",
+        "artifact": "l,r=0,len(data[\"values\"])\n# 循环：a[m]<target时l=m+1，否则r=m；返回l。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"kind\": \"lower_bound\",\n  \"target\": 5,\n  \"values\": [\n    1,\n    3,\n    3,\n    8\n  ]\n}",
+        "correct_response": "我的结果是：3",
+        "incorrect_response": "我的结果是：-1",
+        "explanation": "第3号元素8是第一个不小于5的位置。",
+        "observable_checks": [
+          "缺失目标也返回插入位置",
+          "不强制使用-1"
+        ],
+        "novelty": "目标落在两个已存在键之间。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_lower_bound_boundary.near_transfer",
+        "oracle_input": {
+          "kind": "lower_bound",
+          "values": [
+            1,
+            3,
+            3,
+            8
+          ],
+          "target": 5
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "目标大于所有元素时，返回什么？",
+        "artifact": "l,r=0,len(data[\"values\"])\n# 使用同样半开区间循环，允许返回len(a)。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"kind\": \"lower_bound\",\n  \"target\": 9,\n  \"values\": [\n    2,\n    4,\n    6\n  ]\n}",
+        "correct_response": "我的结果是：3",
+        "incorrect_response": "我的结果是：2",
+        "explanation": "所有元素都小于目标，合法插入位置为数组末尾之外的len(a)。",
+        "observable_checks": [
+          "返回边界长度不越界读取",
+          "区分最后元素下标和末尾插入位置"
+        ],
+        "novelty": "右侧哨兵边界，没有任何满足元素。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_lower_bound_boundary.delayed_transfer",
+        "oracle_input": {
+          "kind": "lower_bound",
+          "values": [
+            2,
+            4,
+            6
+          ],
+          "target": 9
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "algorithms_stable_insertion_shifts",
+    "domain": "algorithms",
+    "title": "审核稳定排序的顺序与移动成本",
+    "course": "数据结构与算法",
+    "level": "foundation",
+    "project_context": "审计日志按优先级排序，同优先级必须保持接收顺序。采用插入排序并统计向右移动已有元素的次数，不能把比较次数混入。",
+    "competency": "给出稳定排序后的带标签记录与严格逆序对对应的移动次数。",
+    "prerequisites": [
+      "排序稳定性",
+      "插入排序",
+      "逆序对"
+    ],
+    "misconception": "相等键也必须右移，所以相等记录的接收顺序不重要。",
+    "misconception_probe": "内层条件从key>current改为key>=current，会同时改变稳定性和移动计数吗？",
+    "remediation_activity": "只移动严格大于当前键的卡片，每移动一次记一笔；再数严格逆序对交叉核对，最后去掉演示独立计算。",
+    "next_activity": "在 audit_sort.py 保留原始到达标签，比较稳定性回归与移动量。",
+    "return_anchor": "audit_sort.py::insertion_sort，while比较条件。",
+    "goal_a": "优先保持同键日志的先后关系。",
+    "goal_b": "优先解释移动次数与输入逆序程度的关系。",
+    "task_prompt": "输出items与shifts；items中第二项标签只用于追踪原顺序。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "稳定插入排序后结果是什么？",
+        "artifact": "shifts = 0\nfor i in range(1,len(items)):\n    current=items[i]; j=i-1\n    while j>=0 and items[j][0]>current[0]:\n        items[j+1]=items[j]; shifts+=1; j-=1\n    items[j+1]=current\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"items\": [\n    [\n      2,\n      \"A\"\n    ],\n    [\n      1,\n      \"B\"\n    ],\n    [\n      2,\n      \"C\"\n    ]\n  ],\n  \"kind\": \"stable_insertion\"\n}",
+        "correct_response": "我的结果是：{\"items\":[[1,\"B\"],[2,\"A\"],[2,\"C\"]],\"shifts\":1}",
+        "incorrect_response": "我的结果是：{\"items\":[[1,\"B\"],[2,\"C\"],[2,\"A\"]],\"shifts\":2}",
+        "explanation": "仅A越过B右移一次；A与C的相等优先级保持原顺序。",
+        "observable_checks": [
+          "相等键保序",
+          "只统计已有元素的右移"
+        ],
+        "novelty": "一处逆序与一组相等键。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_stable_insertion_shifts.base",
+        "oracle_input": {
+          "kind": "stable_insertion",
+          "items": [
+            [
+              2,
+              "A"
+            ],
+            [
+              1,
+              "B"
+            ],
+            [
+              2,
+              "C"
+            ]
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "后到的小键穿过两个相等键，结果是什么？",
+        "artifact": "使用严格大于比较的稳定插入排序；shifts只在已有记录右移时加1。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"items\": [\n    [\n      2,\n      \"A\"\n    ],\n    [\n      2,\n      \"B\"\n    ],\n    [\n      1,\n      \"C\"\n    ]\n  ],\n  \"kind\": \"stable_insertion\"\n}",
+        "correct_response": "我的结果是：{\"items\":[[1,\"C\"],[2,\"A\"],[2,\"B\"]],\"shifts\":2}",
+        "incorrect_response": "我的结果是：{\"items\":[[1,\"C\"],[2,\"B\"],[2,\"A\"]],\"shifts\":3}",
+        "explanation": "C使A和B各右移一次，但A、B互不交换。",
+        "observable_checks": [
+          "区分跨过小键与相等键交换",
+          "移动计数不包含最终写回current"
+        ],
+        "novelty": "两条相等记录共同被小键越过。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_stable_insertion_shifts.near_transfer",
+        "oracle_input": {
+          "kind": "stable_insertion",
+          "items": [
+            [
+              2,
+              "A"
+            ],
+            [
+              2,
+              "B"
+            ],
+            [
+              1,
+              "C"
+            ]
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "混合逆序和重复键时，总共移动多少次？",
+        "artifact": "使用相同严格比较循环；按键升序输出全部带标签记录及shifts。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"items\": [\n    [\n      3,\n      \"A\"\n    ],\n    [\n      2,\n      \"B\"\n    ],\n    [\n      1,\n      \"C\"\n    ],\n    [\n      2,\n      \"D\"\n    ]\n  ],\n  \"kind\": \"stable_insertion\"\n}",
+        "correct_response": "我的结果是：{\"items\":[[1,\"C\"],[2,\"B\"],[2,\"D\"],[3,\"A\"]],\"shifts\":4}",
+        "incorrect_response": "我的结果是：{\"items\":[[1,\"C\"],[2,\"B\"],[2,\"D\"],[3,\"A\"]],\"shifts\":5}",
+        "explanation": "A与后方三个较小键、B与C构成4个严格逆序对；B与D相等不算。",
+        "observable_checks": [
+          "累计不同轮次移动",
+          "相等键不计严格逆序对"
+        ],
+        "novelty": "多轮插入叠加，重复键穿插于逆序段。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_stable_insertion_shifts.delayed_transfer",
+        "oracle_input": {
+          "kind": "stable_insertion",
+          "items": [
+            [
+              3,
+              "A"
+            ],
+            [
+              2,
+              "B"
+            ],
+            [
+              1,
+              "C"
+            ],
+            [
+              2,
+              "D"
+            ]
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "algorithms_bfs_reachability",
+    "domain": "algorithms",
+    "title": "计算服务依赖图的最少跳数",
+    "course": "数据结构与算法",
+    "level": "intermediate",
+    "project_context": "离线服务依赖图只关心跨过多少条调用边，不包含耗时权重。存在环和不可达节点，查询必须终止并返回最短跳数或null。",
+    "competency": "按层扩展有向图，处理重复到达、环与不可达目标。",
+    "prerequisites": [
+      "队列",
+      "有向图",
+      "访问标记"
+    ],
+    "misconception": "第一次发现的任意深度路径都是最短路径，或不可达节点也应返回0。",
+    "misconception_probe": "同一个目标在两条分支中出现时，入队标记与出队标记会怎样影响重复扩展？",
+    "remediation_activity": "按距离分层摆放节点并在首次入队时贴标记，用一个三节点环检查终止，再独立求不可达目标。",
+    "next_activity": "为 dependency_view.py 显示最少跳数与不可达状态，不把null显示成距离0。",
+    "return_anchor": "dependency_view.py::fewest_hops，起点入队之后。",
+    "goal_a": "优先找到最少调用边的路径。",
+    "goal_b": "优先处理环和不可达结果的界面语义。",
+    "task_prompt": "返回start到target的最少边数；不存在路径时返回null，起点到自身为0。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "该图的最少跳数是多少？",
+        "artifact": "BFS：start距离0入队；按给定邻接表扩展，首次发现邻居时记录当前距离+1。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"graph\": {\n    \"A\": [\n      \"C\"\n    ],\n    \"B\": [\n      \"C\"\n    ],\n    \"C\": [],\n    \"S\": [\n      \"A\",\n      \"B\"\n    ]\n  },\n  \"kind\": \"bfs\",\n  \"start\": \"S\",\n  \"target\": \"C\"\n}",
+        "correct_response": "我的结果是：2",
+        "incorrect_response": "我的结果是：3",
+        "explanation": "S经A或B都在两条边后到C；路径条数不等于距离。",
+        "observable_checks": [
+          "按边数计距",
+          "重复到达不增加距离"
+        ],
+        "novelty": "两条同长分支汇合。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_bfs_reachability.base",
+        "oracle_input": {
+          "kind": "bfs",
+          "graph": {
+            "S": [
+              "A",
+              "B"
+            ],
+            "A": [
+              "C"
+            ],
+            "B": [
+              "C"
+            ],
+            "C": []
+          },
+          "start": "S",
+          "target": "C"
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "加入回边后，查询是否仍终止，结果是多少？",
+        "artifact": "使用队列BFS；已访问节点不再次入队。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"graph\": {\n    \"A\": [\n      \"S\",\n      \"B\"\n    ],\n    \"B\": [\n      \"C\"\n    ],\n    \"C\": [],\n    \"S\": [\n      \"A\"\n    ]\n  },\n  \"kind\": \"bfs\",\n  \"start\": \"S\",\n  \"target\": \"C\"\n}",
+        "correct_response": "我的结果是：3",
+        "incorrect_response": "我的结果是：null",
+        "explanation": "A到S的回边被访问标记阻断，仍可沿A、B到C。",
+        "observable_checks": [
+          "环不导致无限扩展",
+          "回边不会抹去正常路径"
+        ],
+        "novelty": "出现有向环，但目标仍可达。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_bfs_reachability.near_transfer",
+        "oracle_input": {
+          "kind": "bfs",
+          "graph": {
+            "S": [
+              "A"
+            ],
+            "A": [
+              "S",
+              "B"
+            ],
+            "B": [
+              "C"
+            ],
+            "C": []
+          },
+          "start": "S",
+          "target": "C"
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "存在独立分量时，目标距离是什么？",
+        "artifact": "队列耗尽而未发现target时返回null。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"graph\": {\n    \"A\": [\n      \"S\"\n    ],\n    \"S\": [\n      \"A\"\n    ],\n    \"Y\": [],\n    \"Z\": [\n      \"Y\"\n    ]\n  },\n  \"kind\": \"bfs\",\n  \"start\": \"S\",\n  \"target\": \"Z\"\n}",
+        "correct_response": "我的结果是：null",
+        "incorrect_response": "我的结果是：0",
+        "explanation": "Z不在S的可达分量内；0只表示起点到自己。",
+        "observable_checks": [
+          "识别方向与连通分量",
+          "未到达与零距离分开"
+        ],
+        "novelty": "目标转移到不可达分量，需处理无结果边界。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_bfs_reachability.delayed_transfer",
+        "oracle_input": {
+          "kind": "bfs",
+          "graph": {
+            "S": [
+              "A"
+            ],
+            "A": [
+              "S"
+            ],
+            "Z": [
+              "Y"
+            ],
+            "Y": []
+          },
+          "start": "S",
+          "target": "Z"
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "algorithms_weighted_shortest_path",
+    "domain": "algorithms",
+    "title": "核对非负路网的最短成本",
+    "course": "算法设计与分析",
+    "level": "intermediate",
+    "project_context": "路网边表示非负传输成本，间接路线可能更便宜。前端要显示起点到每个节点的最低成本，未连通节点显示null。",
+    "competency": "使用松弛更新正确计算最短距离，处理零成本边与不可达节点。",
+    "prerequisites": [
+      "带权图",
+      "优先队列",
+      "松弛"
+    ],
+    "misconception": "Dijkstra第一次把节点放入队列就能永久固定距离，且边数少必然成本低。",
+    "misconception_probe": "已入队成本4的节点后来发现成本3的路径，是否允许更新并再次入队？",
+    "remediation_activity": "用距离表逐条比较候选路径，给旧队列项加过期标记；再用所有简单路径核对一个四节点图。",
+    "next_activity": "在 route_cost.py 中跳过过期队列项，并保留不可达值而不是默认0。",
+    "return_anchor": "route_cost.py::dijkstra 的松弛分支。",
+    "goal_a": "优先算对经中转节点改善的路线。",
+    "goal_b": "优先正确展示免费边和断开节点。",
+    "task_prompt": "按nodes给出从start出发的距离字典，所有边均为非负。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "间接路径改善已发现距离后，各节点距离是什么？",
+        "artifact": "Dijkstra：dist[start]=0，其余∞；弹最小候选并松弛所有出边，发现更小值则更新。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"edges\": [\n    [\n      \"A\",\n      \"B\",\n      4\n    ],\n    [\n      \"A\",\n      \"C\",\n      1\n    ],\n    [\n      \"C\",\n      \"B\",\n      2\n    ],\n    [\n      \"B\",\n      \"D\",\n      1\n    ],\n    [\n      \"C\",\n      \"D\",\n      7\n    ]\n  ],\n  \"kind\": \"dijkstra\",\n  \"nodes\": [\n    \"A\",\n    \"B\",\n    \"C\",\n    \"D\"\n  ],\n  \"start\": \"A\"\n}",
+        "correct_response": "我的结果是：{\"A\":0,\"B\":3,\"C\":1,\"D\":4}",
+        "incorrect_response": "我的结果是：{\"A\":0,\"B\":4,\"C\":1,\"D\":5}",
+        "explanation": "A到B可由C改善为3，再经B到D为4。",
+        "observable_checks": [
+          "允许改善已发现但未定型的距离",
+          "比较累计权重而非边数"
+        ],
+        "novelty": "存在比直接边更便宜的多跳路径。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_weighted_shortest_path.base",
+        "oracle_input": {
+          "kind": "dijkstra",
+          "nodes": [
+            "A",
+            "B",
+            "C",
+            "D"
+          ],
+          "edges": [
+            [
+              "A",
+              "B",
+              4
+            ],
+            [
+              "A",
+              "C",
+              1
+            ],
+            [
+              "C",
+              "B",
+              2
+            ],
+            [
+              "B",
+              "D",
+              1
+            ],
+            [
+              "C",
+              "D",
+              7
+            ]
+          ],
+          "start": "A"
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "零成本边是否改变答案？",
+        "artifact": "边权可以为0；松弛规则仍比较dist[u]+weight。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"edges\": [\n    [\n      \"A\",\n      \"B\",\n      0\n    ],\n    [\n      \"A\",\n      \"C\",\n      5\n    ],\n    [\n      \"B\",\n      \"C\",\n      2\n    ]\n  ],\n  \"kind\": \"dijkstra\",\n  \"nodes\": [\n    \"A\",\n    \"B\",\n    \"C\"\n  ],\n  \"start\": \"A\"\n}",
+        "correct_response": "我的结果是：{\"A\":0,\"B\":0,\"C\":2}",
+        "incorrect_response": "我的结果是：{\"A\":0,\"B\":1,\"C\":3}",
+        "explanation": "零成本边不是缺失边，B距离为0，经B到C为2。",
+        "observable_checks": [
+          "接受非负而非严格正边权",
+          "不额外加入每跳单位成本"
+        ],
+        "novelty": "边权达到0的下界。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_weighted_shortest_path.near_transfer",
+        "oracle_input": {
+          "kind": "dijkstra",
+          "nodes": [
+            "A",
+            "B",
+            "C"
+          ],
+          "edges": [
+            [
+              "A",
+              "B",
+              0
+            ],
+            [
+              "A",
+              "C",
+              5
+            ],
+            [
+              "B",
+              "C",
+              2
+            ]
+          ],
+          "start": "A"
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "含不可达节点与改善路径时，输出什么？",
+        "artifact": "不可达距离在输出时转为null；其他节点仍执行正常松弛。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"edges\": [\n    [\n      \"A\",\n      \"B\",\n      6\n    ],\n    [\n      \"A\",\n      \"C\",\n      2\n    ],\n    [\n      \"C\",\n      \"B\",\n      1\n    ]\n  ],\n  \"kind\": \"dijkstra\",\n  \"nodes\": [\n    \"A\",\n    \"B\",\n    \"C\",\n    \"D\"\n  ],\n  \"start\": \"A\"\n}",
+        "correct_response": "我的结果是：{\"A\":0,\"B\":3,\"C\":2,\"D\":null}",
+        "incorrect_response": "我的结果是：{\"A\":0,\"B\":3,\"C\":2,\"D\":0}",
+        "explanation": "D没有可达路径，不能用0填补未知距离。",
+        "observable_checks": [
+          "保持不可达哨兵语义",
+          "其他分量不妨碍可达节点求解"
+        ],
+        "novelty": "在正常可达子图之外加入孤立目标。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_weighted_shortest_path.delayed_transfer",
+        "oracle_input": {
+          "kind": "dijkstra",
+          "nodes": [
+            "A",
+            "B",
+            "C",
+            "D"
+          ],
+          "edges": [
+            [
+              "A",
+              "B",
+              6
+            ],
+            [
+              "A",
+              "C",
+              2
+            ],
+            [
+              "C",
+              "B",
+              1
+            ]
+          ],
+          "start": "A"
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "algorithms_dependency_topology",
+    "domain": "algorithms",
+    "title": "安排构建任务并报告循环依赖",
+    "course": "数据结构与算法",
+    "level": "intermediate",
+    "project_context": "构建器只允许先决任务完成后启动后继任务。为使离线演示可复现，每次从所有就绪任务中选择字母序最小者，循环阻塞必须明确报告。",
+    "competency": "给出确定的拓扑执行序列和无法消去的阻塞节点，区分多个就绪任务与循环。",
+    "prerequisites": [
+      "入度",
+      "有向无环图",
+      "集合与排序"
+    ],
+    "misconception": "任意按节点名称排序都满足依赖，或只要存在环就一个任务也不能执行。",
+    "misconception_probe": "A可先执行而B、C构成环时，已输出的A是否应该从结果中删除？",
+    "remediation_activity": "每移除一张就绪任务卡就划去其出边，记录新的就绪集合；保留停机时的剩余节点并解释阻塞来源。",
+    "next_activity": "在 build_order.py 分开显示可执行前缀与循环阻塞清单。",
+    "return_anchor": "build_order.py::schedule，选择下一个入度为0节点处。",
+    "goal_a": "优先得到满足先决条件的可复现顺序。",
+    "goal_b": "优先报告可执行前缀之后的阻塞范围。",
+    "task_prompt": "输出order和blocked；每一步选择当前就绪节点中字母序最小者。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "菱形依赖的执行序列是什么？",
+        "artifact": "Kahn规则：反复移除无剩余前驱的最小名称节点；无就绪节点时停止并报告remaining。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"edges\": [\n    [\n      \"A\",\n      \"B\"\n    ],\n    [\n      \"A\",\n      \"C\"\n    ],\n    [\n      \"B\",\n      \"D\"\n    ],\n    [\n      \"C\",\n      \"D\"\n    ]\n  ],\n  \"kind\": \"topological\",\n  \"nodes\": [\n    \"A\",\n    \"B\",\n    \"C\",\n    \"D\"\n  ]\n}",
+        "correct_response": "我的结果是：{\"order\":[\"A\",\"B\",\"C\",\"D\"],\"blocked\":[]}",
+        "incorrect_response": "我的结果是：{\"order\":[\"A\",\"B\",\"D\",\"C\"],\"blocked\":[]}",
+        "explanation": "D必须等B和C均完成，不能在只完成B时执行。",
+        "observable_checks": [
+          "所有前驱均被满足",
+          "名称顺序仅在就绪集合内使用"
+        ],
+        "novelty": "汇合任务具有两个先决条件。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_dependency_topology.base",
+        "oracle_input": {
+          "kind": "topological",
+          "nodes": [
+            "A",
+            "B",
+            "C",
+            "D"
+          ],
+          "edges": [
+            [
+              "A",
+              "B"
+            ],
+            [
+              "A",
+              "C"
+            ],
+            [
+              "B",
+              "D"
+            ],
+            [
+              "C",
+              "D"
+            ]
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "前缀可执行但后续存在环，结果是什么？",
+        "artifact": "使用同样规则，不删除已经合法输出的前缀。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"edges\": [\n    [\n      \"A\",\n      \"B\"\n    ],\n    [\n      \"B\",\n      \"C\"\n    ],\n    [\n      \"C\",\n      \"B\"\n    ]\n  ],\n  \"kind\": \"topological\",\n  \"nodes\": [\n    \"A\",\n    \"B\",\n    \"C\"\n  ]\n}",
+        "correct_response": "我的结果是：{\"order\":[\"A\"],\"blocked\":[\"B\",\"C\"]}",
+        "incorrect_response": "我的结果是：{\"order\":[],\"blocked\":[\"A\",\"B\",\"C\"]}",
+        "explanation": "A无前驱可执行，B/C互相等待后停机。",
+        "observable_checks": [
+          "保留可执行前缀",
+          "循环节点不能靠名称强行输出"
+        ],
+        "novelty": "局部循环而非全图无就绪节点。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_dependency_topology.near_transfer",
+        "oracle_input": {
+          "kind": "topological",
+          "nodes": [
+            "A",
+            "B",
+            "C"
+          ],
+          "edges": [
+            [
+              "A",
+              "B"
+            ],
+            [
+              "B",
+              "C"
+            ],
+            [
+              "C",
+              "B"
+            ]
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "独立任务与新就绪任务并存时，按规则输出什么？",
+        "artifact": "每轮重新计算当前就绪集合，并取其中字母序最小者。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"edges\": [\n    [\n      \"A\",\n      \"C\"\n    ],\n    [\n      \"B\",\n      \"C\"\n    ]\n  ],\n  \"kind\": \"topological\",\n  \"nodes\": [\n    \"A\",\n    \"B\",\n    \"C\",\n    \"D\"\n  ]\n}",
+        "correct_response": "我的结果是：{\"order\":[\"A\",\"B\",\"C\",\"D\"],\"blocked\":[]}",
+        "incorrect_response": "我的结果是：{\"order\":[\"A\",\"B\",\"D\",\"C\"],\"blocked\":[]}",
+        "explanation": "A、B完成后C进入就绪集合，C应排在独立的D之前。",
+        "observable_checks": [
+          "每轮比较新旧就绪节点",
+          "初始队列顺序不能固定后续选择"
+        ],
+        "novelty": "独立分量与动态入队的确定性仲裁。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_dependency_topology.delayed_transfer",
+        "oracle_input": {
+          "kind": "topological",
+          "nodes": [
+            "A",
+            "B",
+            "C",
+            "D"
+          ],
+          "edges": [
+            [
+              "A",
+              "C"
+            ],
+            [
+              "B",
+              "C"
+            ]
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "algorithms_interval_objectives",
+    "domain": "algorithms",
+    "title": "选择共享实验室的预约集合",
+    "course": "算法设计与分析",
+    "level": "integrated",
+    "project_context": "实验室只能同时执行一个预约，预约端点含义由接口约定。任务可能要求最大数量或最大收益，算法选择必须跟随目标而改变。",
+    "competency": "根据区间边界和目标函数选择最优兼容子集的数量或收益，识别贪心适用前提。",
+    "prerequisites": [
+      "区间重叠",
+      "贪心选择",
+      "目标函数"
+    ],
+    "misconception": "按结束时间最早的贪心策略，对闭区间和任意权重收益都同样最优。",
+    "misconception_probe": "一个长预约收益大于两个短预约的总和时，仍按最早结束必然最优吗？",
+    "remediation_activity": "对四个预约列出全部兼容组合，先按数量评分，再按收益评分；最后解释端点相接是否允许并行切换。",
+    "next_activity": "在 lab_booking.py 明确端点协议，并将最大数量与加权收益求解分为两个接口。",
+    "return_anchor": "lab_booking.py::choose_reservations，选择评分目标之前。",
+    "goal_a": "优先安排尽可能多的普通预约。",
+    "goal_b": "优先在带权预约中最大化实验收益。",
+    "task_prompt": "只返回最优目标值；区间数组的第三列是收益，数量目标时不使用它。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "半开区间、最大数量目标的最优值是多少？",
+        "artifact": "区间为[start,end)；不重叠集合最大化预约条数。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"boundary\": \"half_open\",\n  \"intervals\": [\n    [\n      0,\n      2,\n      1\n    ],\n    [\n      2,\n      4,\n      1\n    ],\n    [\n      1,\n      3,\n      1\n    ],\n    [\n      4,\n      5,\n      1\n    ]\n  ],\n  \"kind\": \"intervals\",\n  \"objective\": \"count\"\n}",
+        "correct_response": "我的结果是：3",
+        "incorrect_response": "我的结果是：2",
+        "explanation": "端点相接可连续使用，能选[0,2)、[2,4)、[4,5)。",
+        "observable_checks": [
+          "端点相接按半开规则兼容",
+          "优化数量而非跨度"
+        ],
+        "novelty": "半开区间的正常连续预约。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_interval_objectives.base",
+        "oracle_input": {
+          "kind": "intervals",
+          "intervals": [
+            [
+              0,
+              2,
+              1
+            ],
+            [
+              2,
+              4,
+              1
+            ],
+            [
+              1,
+              3,
+              1
+            ],
+            [
+              4,
+              5,
+              1
+            ]
+          ],
+          "boundary": "half_open",
+          "objective": "count"
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "相同时间段改为闭区间后，最优数量是多少？",
+        "artifact": "区间为闭区间[start,end]；共享端点也算重叠。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"boundary\": \"closed\",\n  \"intervals\": [\n    [\n      0,\n      2,\n      1\n    ],\n    [\n      2,\n      4,\n      1\n    ],\n    [\n      1,\n      3,\n      1\n    ],\n    [\n      4,\n      5,\n      1\n    ]\n  ],\n  \"kind\": \"intervals\",\n  \"objective\": \"count\"\n}",
+        "correct_response": "我的结果是：2",
+        "incorrect_response": "我的结果是：3",
+        "explanation": "共享端点也冲突，不能把三个首尾相接的预约全选。",
+        "observable_checks": [
+          "改变端点语义后重新判断兼容",
+          "不机械复用上一题结果"
+        ],
+        "novelty": "接口端点约定改变，数据相同但可行集合不同。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_interval_objectives.near_transfer",
+        "oracle_input": {
+          "kind": "intervals",
+          "intervals": [
+            [
+              0,
+              2,
+              1
+            ],
+            [
+              2,
+              4,
+              1
+            ],
+            [
+              1,
+              3,
+              1
+            ],
+            [
+              4,
+              5,
+              1
+            ]
+          ],
+          "boundary": "closed",
+          "objective": "count"
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "半开区间改为最大收益目标，最优值是多少？",
+        "artifact": "区间为[start,end)，第三列是收益；目标为兼容预约的收益总和。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"boundary\": \"half_open\",\n  \"intervals\": [\n    [\n      0,\n      2,\n      2\n    ],\n    [\n      2,\n      4,\n      2\n    ],\n    [\n      0,\n      4,\n      10\n    ]\n  ],\n  \"kind\": \"intervals\",\n  \"objective\": \"weight\"\n}",
+        "correct_response": "我的结果是：10",
+        "incorrect_response": "我的结果是：4",
+        "explanation": "一个长预约收益10，高于两个短预约合计4；最大数量贪心不再适用。",
+        "observable_checks": [
+          "按收益而非预约条数优化",
+          "识别改变目标函数使贪心前提失效"
+        ],
+        "novelty": "由无权数量迁移到带权优化，最优解结构发生改变。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_interval_objectives.delayed_transfer",
+        "oracle_input": {
+          "kind": "intervals",
+          "intervals": [
+            [
+              0,
+              2,
+              2
+            ],
+            [
+              2,
+              4,
+              2
+            ],
+            [
+              0,
+              4,
+              10
+            ]
+          ],
+          "boundary": "half_open",
+          "objective": "weight"
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "algorithms_coin_inventory",
+    "domain": "algorithms",
+    "title": "计算实验耗材组合的最少件数",
+    "course": "算法设计与分析",
+    "level": "intermediate",
+    "project_context": "耗材包提供不同容量规格，必须恰好凑足需求。部分批次可无限领取，另一些批次受库存限制，无法凑齐要返回null。",
+    "competency": "求恰好满足容量的最少件数，验证贪心反例、不可达状态和有限库存约束。",
+    "prerequisites": [
+      "动态规划状态",
+      "可达性",
+      "库存约束"
+    ],
+    "misconception": "每次选不超过剩余容量的最大规格，一定得到最少件数，且可忽略库存。",
+    "misconception_probe": "规格1、3、4凑6时，先选4得到的件数能证明最优吗？",
+    "remediation_activity": "填写容量0到8的最少件数表，标出不可达格；再在每条转移旁扣减库存，比较同容量的两种库存限制。",
+    "next_activity": "在 package_mix.py 分别验证无限供给和有限库存模式，并保存无法满足需求的解释。",
+    "return_anchor": "package_mix.py::minimum_packages，选择转移来源状态处。",
+    "goal_a": "优先找到确切需求的最少耗材件数。",
+    "goal_b": "优先避免算法返回超过现实库存的方案。",
+    "task_prompt": "返回最少件数；没有counts时供给无限，有counts时每种规格不能超过对应库存。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "无限供给时最少需要几件？",
+        "artifact": "容量必须恰好等于amount；比较所有合法组合的总件数。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"amount\": 6,\n  \"coins\": [\n    1,\n    3,\n    4\n  ],\n  \"kind\": \"coins\"\n}",
+        "correct_response": "我的结果是：2",
+        "incorrect_response": "我的结果是：3",
+        "explanation": "3+3仅两件，优于贪心的4+1+1。",
+        "observable_checks": [
+          "恰好凑足容量",
+          "候选解比较总件数"
+        ],
+        "novelty": "非规范面额上的最大优先贪心反例。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_coin_inventory.base",
+        "oracle_input": {
+          "kind": "coins",
+          "coins": [
+            1,
+            3,
+            4
+          ],
+          "amount": 6
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "无法凑足时应该返回什么？",
+        "artifact": "规格只能整件领取；无恰好组合时返回null。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"amount\": 3,\n  \"coins\": [\n    2,\n    5\n  ],\n  \"kind\": \"coins\"\n}",
+        "correct_response": "我的结果是：null",
+        "incorrect_response": "我的结果是：2",
+        "explanation": "2与5的非负整数组合不能等于3；不得超量或使用分数件。",
+        "observable_checks": [
+          "不可达保持null",
+          "不以最接近需求代替精确需求"
+        ],
+        "novelty": "产生不可达容量状态。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_coin_inventory.near_transfer",
+        "oracle_input": {
+          "kind": "coins",
+          "coins": [
+            2,
+            5
+          ],
+          "amount": 3
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "同样使用整数规格但加库存上限，最少件数是多少？",
+        "artifact": "counts按coins顺序给出各规格最多可用件数；不能假设无限供给。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"amount\": 8,\n  \"coins\": [\n    1,\n    3,\n    4\n  ],\n  \"counts\": [\n    1,\n    2,\n    1\n  ],\n  \"kind\": \"coins\"\n}",
+        "correct_response": "我的结果是：3",
+        "incorrect_response": "我的结果是：2",
+        "explanation": "4+3+1使用三件且满足库存；两个4会超过库存。",
+        "observable_checks": [
+          "库存约束进入可行性判断",
+          "最少件数仅在合法方案中比较"
+        ],
+        "novelty": "从无限背包转为有界库存，排除原本更短的非法组合。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_coin_inventory.delayed_transfer",
+        "oracle_input": {
+          "kind": "coins",
+          "coins": [
+            1,
+            3,
+            4
+          ],
+          "counts": [
+            1,
+            2,
+            1
+          ],
+          "amount": 8
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "algorithms_linear_probing_tombstones",
+    "domain": "algorithms",
+    "title": "维护开放寻址哈希表的删除链",
+    "course": "数据结构与算法",
+    "level": "integrated",
+    "project_context": "嵌入式索引使用固定长度表，整数键的初始槽为key模表长。冲突线性探测，删除保留DELETED墓碑，查询遇到真正空槽才可提前结束。",
+    "competency": "追踪碰撞、墓碑复用、环绕与重复插入后的槽状态和查询下标。",
+    "prerequisites": [
+      "哈希函数",
+      "线性探测",
+      "删除墓碑"
+    ],
+    "misconception": "删除一个键后直接设为空，与保留墓碑完全等价，不会影响后面的冲突键。",
+    "misconception_probe": "碰撞链的第一个槽被清空后，查询后续键为什么可能提前停止？",
+    "remediation_activity": "用五个槽追踪插入、删除、查询；先用真正空槽模拟错误，再换墓碑复跑，只记录遇空提前停的区别。",
+    "next_activity": "在 fixed_index.py 添加删除后可达性与绕回槽0的回归用例。",
+    "return_anchor": "fixed_index.py::find，遇到空槽和墓碑的分支。",
+    "goal_a": "优先保证删除不切断碰撞链。",
+    "goal_b": "优先安全复用墓碑并处理探测环绕。",
+    "task_prompt": "返回slots和所有get操作的下标序列；空槽用null，墓碑用DELETED，查不到也返回null。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "两次碰撞插入后，查询下标是什么？",
+        "artifact": "初始表全空。put线性探测第一个可用槽，get跳过墓碑并在空槽停止，delete将命中槽置DELETED。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"kind\": \"linear_hash\",\n  \"operations\": [\n    [\n      \"put\",\n      1\n    ],\n    [\n      \"put\",\n      6\n    ],\n    [\n      \"get\",\n      6\n    ]\n  ],\n  \"size\": 5\n}",
+        "correct_response": "我的结果是：{\"slots\":[null,1,6,null,null],\"get_indexes\":[2]}",
+        "incorrect_response": "我的结果是：{\"slots\":[null,6,null,null,null],\"get_indexes\":[1]}",
+        "explanation": "6与1哈希到同一槽，不能覆盖已有不同键。",
+        "observable_checks": [
+          "冲突键继续探测",
+          "返回实际槽而非初始哈希值"
+        ],
+        "novelty": "基本线性碰撞。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_linear_probing_tombstones.base",
+        "oracle_input": {
+          "kind": "linear_hash",
+          "size": 5,
+          "operations": [
+            [
+              "put",
+              1
+            ],
+            [
+              "put",
+              6
+            ],
+            [
+              "get",
+              6
+            ]
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "删除碰撞链首键后，后继键仍在哪里？",
+        "artifact": "删除只置墓碑；get必须越过DELETED继续探测。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"kind\": \"linear_hash\",\n  \"operations\": [\n    [\n      \"put\",\n      1\n    ],\n    [\n      \"put\",\n      6\n    ],\n    [\n      \"delete\",\n      1\n    ],\n    [\n      \"get\",\n      6\n    ]\n  ],\n  \"size\": 5\n}",
+        "correct_response": "我的结果是：{\"slots\":[null,\"DELETED\",6,null,null],\"get_indexes\":[2]}",
+        "incorrect_response": "我的结果是：{\"slots\":[null,null,6,null,null],\"get_indexes\":[null]}",
+        "explanation": "墓碑保留探测链，6仍能在槽2被找到。",
+        "observable_checks": [
+          "墓碑不同于从未使用的空槽",
+          "查询不能在墓碑处结束"
+        ],
+        "novelty": "加入链首删除后的后继可达性。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_linear_probing_tombstones.near_transfer",
+        "oracle_input": {
+          "kind": "linear_hash",
+          "size": 5,
+          "operations": [
+            [
+              "put",
+              1
+            ],
+            [
+              "put",
+              6
+            ],
+            [
+              "delete",
+              1
+            ],
+            [
+              "get",
+              6
+            ]
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "插入绕回、墓碑复用与重复键后，表和查询结果是什么？",
+        "artifact": "put存在键时不重复占槽；不存在时可复用首个墓碑，探测下标按表长环绕。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"kind\": \"linear_hash\",\n  \"operations\": [\n    [\n      \"put\",\n      4\n    ],\n    [\n      \"put\",\n      9\n    ],\n    [\n      \"put\",\n      14\n    ],\n    [\n      \"delete\",\n      9\n    ],\n    [\n      \"put\",\n      19\n    ],\n    [\n      \"put\",\n      14\n    ],\n    [\n      \"get\",\n      14\n    ],\n    [\n      \"get\",\n      9\n    ]\n  ],\n  \"size\": 5\n}",
+        "correct_response": "我的结果是：{\"slots\":[19,14,null,null,4],\"get_indexes\":[1,null]}",
+        "incorrect_response": "我的结果是：{\"slots\":[19,14,14,null,4],\"get_indexes\":[1,null]}",
+        "explanation": "9从槽4绕到0，19复用删除留下的槽0；再次插入14不能产生第二个副本。",
+        "observable_checks": [
+          "正确环绕到槽0",
+          "复用墓碑前后仍检查已有键"
+        ],
+        "novelty": "同时包含环绕、复用与幂等插入，超出简单删除链。",
+        "answer_validation": "executable",
+        "oracle_id": "algorithms_linear_probing_tombstones.delayed_transfer",
+        "oracle_input": {
+          "kind": "linear_hash",
+          "size": 5,
+          "operations": [
+            [
+              "put",
+              4
+            ],
+            [
+              "put",
+              9
+            ],
+            [
+              "put",
+              14
+            ],
+            [
+              "delete",
+              9
+            ],
+            [
+              "put",
+              19
+            ],
+            [
+              "put",
+              14
+            ],
+            [
+              "get",
+              14
+            ],
+            [
+              "get",
+              9
+            ]
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "databases_null_three_valued_logic",
+    "domain": "databases",
+    "title": "定位空值条件造成的筛选遗漏",
+    "course": "数据库原理",
+    "level": "foundation",
+    "project_context": "工单数据允许状态缺失，封禁名单也可能含待补录的用户编号。系统必须按SQL三值逻辑解释筛选，不能把NULL当普通字符串或零。",
+    "competency": "预测等号、IS NULL和含NULL的NOT IN条件产生的实际结果。",
+    "prerequisites": [
+      "关系选择",
+      "NULL语义",
+      "布尔三值逻辑"
+    ],
+    "misconception": "NULL可以像普通值一样用等号比较，且NOT IN只需要忽略名单中的NULL。",
+    "misconception_probe": "某个编号与名单中的NULL比较结果未知时，NOT IN是否仍能断言该编号不在名单里？",
+    "remediation_activity": "对一条记录分别填TRUE/FALSE/UNKNOWN真值表，确认WHERE只保留TRUE；再把NOT IN展开为多个不等比较。",
+    "next_activity": "在 ticket_filters.sql 中将业务空值判断写成明确谓词，并为含空名单保留回归数据。",
+    "return_anchor": "ticket_filters.sql 的WHERE子句。",
+    "goal_a": "优先找回真实状态缺失的工单。",
+    "goal_b": "优先避免封禁名单中的空值误清空结果集。",
+    "task_prompt": "只依据给定关系和SQL计算结果行，不按自然语言猜测数据库会自动忽略空值。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "该等号查询返回哪些id？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT id FROM tickets WHERE status = NULL ORDER BY id\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"query\": \"SELECT id FROM tickets WHERE status = NULL ORDER BY id\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"id\",\n          \"INTEGER\"\n        ],\n        [\n          \"status\",\n          \"TEXT\"\n        ]\n      ],\n      \"name\": \"tickets\",\n      \"rows\": [\n        [\n          1,\n          \"open\"\n        ],\n        [\n          2,\n          null\n        ],\n        [\n          3,\n          null\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[]",
+        "incorrect_response": "我的结果是：[[2],[3]]",
+        "explanation": "与NULL的等号比较结果为UNKNOWN，WHERE不保留这些行。",
+        "observable_checks": [
+          "WHERE只接受TRUE",
+          "NULL不作为普通等号值"
+        ],
+        "novelty": "空值等号比较的基本陷阱。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_null_three_valued_logic.base",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "tickets",
+              "columns": [
+                [
+                  "id",
+                  "INTEGER"
+                ],
+                [
+                  "status",
+                  "TEXT"
+                ]
+              ],
+              "rows": [
+                [
+                  1,
+                  "open"
+                ],
+                [
+                  2,
+                  null
+                ],
+                [
+                  3,
+                  null
+                ]
+              ]
+            }
+          ],
+          "query": "SELECT id FROM tickets WHERE status = NULL ORDER BY id"
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "改为明确空值谓词后，返回什么？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT id FROM tickets WHERE status IS NULL ORDER BY id\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"query\": \"SELECT id FROM tickets WHERE status IS NULL ORDER BY id\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"id\",\n          \"INTEGER\"\n        ],\n        [\n          \"status\",\n          \"TEXT\"\n        ]\n      ],\n      \"name\": \"tickets\",\n      \"rows\": [\n        [\n          1,\n          \"open\"\n        ],\n        [\n          2,\n          null\n        ],\n        [\n          3,\n          null\n        ],\n        [\n          4,\n          \"NULL\"\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[[2],[3]]",
+        "incorrect_response": "我的结果是：[[2],[3],[4]]",
+        "explanation": "IS NULL命中数据库空值，不命中文本字符串NULL。",
+        "observable_checks": [
+          "区分SQL空值和四字母文本",
+          "正确返回多个空值行"
+        ],
+        "novelty": "同时加入表示NULL的普通字符串，不能只做词面匹配。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_null_three_valued_logic.near_transfer",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "tickets",
+              "columns": [
+                [
+                  "id",
+                  "INTEGER"
+                ],
+                [
+                  "status",
+                  "TEXT"
+                ]
+              ],
+              "rows": [
+                [
+                  1,
+                  "open"
+                ],
+                [
+                  2,
+                  null
+                ],
+                [
+                  3,
+                  null
+                ],
+                [
+                  4,
+                  "NULL"
+                ]
+              ]
+            }
+          ],
+          "query": "SELECT id FROM tickets WHERE status IS NULL ORDER BY id"
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "封禁子查询含NULL时，NOT IN返回什么？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT id FROM users WHERE id NOT IN (SELECT blocked_id FROM blocks) ORDER BY id\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"query\": \"SELECT id FROM users WHERE id NOT IN (SELECT blocked_id FROM blocks) ORDER BY id\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"id\",\n          \"INTEGER\"\n        ]\n      ],\n      \"name\": \"users\",\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ],\n        [\n          3\n        ]\n      ]\n    },\n    {\n      \"columns\": [\n        [\n          \"blocked_id\",\n          \"INTEGER\"\n        ]\n      ],\n      \"name\": \"blocks\",\n      \"rows\": [\n        [\n          2\n        ],\n        [\n          null\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[]",
+        "incorrect_response": "我的结果是：[[1],[3]]",
+        "explanation": "2被明确排除，其他编号与NULL比较带来UNKNOWN，也无法通过WHERE。",
+        "observable_checks": [
+          "识别NOT IN的空值传播",
+          "不静默丢弃子查询空值"
+        ],
+        "novelty": "由单列空值判断迁移到子查询反连接语义。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_null_three_valued_logic.delayed_transfer",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "users",
+              "columns": [
+                [
+                  "id",
+                  "INTEGER"
+                ]
+              ],
+              "rows": [
+                [
+                  1
+                ],
+                [
+                  2
+                ],
+                [
+                  3
+                ]
+              ]
+            },
+            {
+              "name": "blocks",
+              "columns": [
+                [
+                  "blocked_id",
+                  "INTEGER"
+                ]
+              ],
+              "rows": [
+                [
+                  2
+                ],
+                [
+                  null
+                ]
+              ]
+            }
+          ],
+          "query": "SELECT id FROM users WHERE id NOT IN (SELECT blocked_id FROM blocks) ORDER BY id"
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "databases_left_join_cardinality",
+    "domain": "databases",
+    "title": "保留没有订单的客户统计",
+    "course": "数据库应用",
+    "level": "foundation",
+    "project_context": "客户看板必须保留未下单客户，并区分订单筛选与客户筛选。LEFT JOIN之后再过滤右表可能改变保留范围，聚合时还要区分补空行。",
+    "competency": "给出连接行并解释ON/WHERE位置及COUNT列与COUNT(*)的不同基数。",
+    "prerequisites": [
+      "左外连接",
+      "连接谓词",
+      "聚合计数"
+    ],
+    "misconception": "LEFT JOIN一定保留所有左表记录，不管后面的WHERE怎么写；COUNT(*)等同实际订单数。",
+    "misconception_probe": "右表缺失被补成NULL后，再要求o.status=paid，是否还会保留该客户？",
+    "remediation_activity": "先手动生成左连接中间表，给补出的NULL行着色，再分别执行WHERE和COUNT两种版本。",
+    "next_activity": "在 customer_overview.sql 中明确已支付订单指标并保留零订单客户。",
+    "return_anchor": "customer_overview.sql 的订单LEFT JOIN及分组计数。",
+    "goal_a": "优先保证零订单客户不消失。",
+    "goal_b": "优先算对不同订单状态的统计基数。",
+    "task_prompt": "按给定查询输出行数组，不能只根据LEFT JOIN名称判断结果。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "右表条件放在WHERE，返回哪些客户订单对？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT c.id,o.id FROM customers c LEFT JOIN orders o ON o.customer_id=c.id WHERE o.status='paid' ORDER BY c.id,o.id\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"query\": \"SELECT c.id,o.id FROM customers c LEFT JOIN orders o ON o.customer_id=c.id WHERE o.status='paid' ORDER BY c.id,o.id\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"id\",\n          \"INTEGER\"\n        ]\n      ],\n      \"name\": \"customers\",\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    },\n    {\n      \"columns\": [\n        [\n          \"id\",\n          \"INTEGER\"\n        ],\n        [\n          \"customer_id\",\n          \"INTEGER\"\n        ],\n        [\n          \"status\",\n          \"TEXT\"\n        ]\n      ],\n      \"name\": \"orders\",\n      \"rows\": [\n        [\n          10,\n          1,\n          \"paid\"\n        ],\n        [\n          11,\n          1,\n          \"pending\"\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[[1,10]]",
+        "incorrect_response": "我的结果是：[[1,10],[2,null]]",
+        "explanation": "客户2补空后的status无法满足paid，因而被WHERE过滤。",
+        "observable_checks": [
+          "先连接再WHERE",
+          "补空行也接受后续筛选"
+        ],
+        "novelty": "外连接后置右表过滤。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_left_join_cardinality.base",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "customers",
+              "columns": [
+                [
+                  "id",
+                  "INTEGER"
+                ]
+              ],
+              "rows": [
+                [
+                  1
+                ],
+                [
+                  2
+                ]
+              ]
+            },
+            {
+              "name": "orders",
+              "columns": [
+                [
+                  "id",
+                  "INTEGER"
+                ],
+                [
+                  "customer_id",
+                  "INTEGER"
+                ],
+                [
+                  "status",
+                  "TEXT"
+                ]
+              ],
+              "rows": [
+                [
+                  10,
+                  1,
+                  "paid"
+                ],
+                [
+                  11,
+                  1,
+                  "pending"
+                ]
+              ]
+            }
+          ],
+          "query": "SELECT c.id,o.id FROM customers c LEFT JOIN orders o ON o.customer_id=c.id WHERE o.status='paid' ORDER BY c.id,o.id"
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "将状态条件放到ON后，查询结果是什么？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT c.id,o.id FROM customers c LEFT JOIN orders o ON o.customer_id=c.id AND o.status='paid' ORDER BY c.id,o.id\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"query\": \"SELECT c.id,o.id FROM customers c LEFT JOIN orders o ON o.customer_id=c.id AND o.status='paid' ORDER BY c.id,o.id\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"id\",\n          \"INTEGER\"\n        ]\n      ],\n      \"name\": \"customers\",\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    },\n    {\n      \"columns\": [\n        [\n          \"id\",\n          \"INTEGER\"\n        ],\n        [\n          \"customer_id\",\n          \"INTEGER\"\n        ],\n        [\n          \"status\",\n          \"TEXT\"\n        ]\n      ],\n      \"name\": \"orders\",\n      \"rows\": [\n        [\n          10,\n          1,\n          \"paid\"\n        ],\n        [\n          11,\n          1,\n          \"pending\"\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[[1,10],[2,null]]",
+        "incorrect_response": "我的结果是：[[1,10]]",
+        "explanation": "ON限定可匹配订单，不会取消左连接对客户2的补空保留。",
+        "observable_checks": [
+          "理解筛选位置改变保留关系",
+          "未匹配客户仍有一条补空行"
+        ],
+        "novelty": "数据相同但谓词从WHERE迁到ON，关系语义改变。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_left_join_cardinality.near_transfer",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "customers",
+              "columns": [
+                [
+                  "id",
+                  "INTEGER"
+                ]
+              ],
+              "rows": [
+                [
+                  1
+                ],
+                [
+                  2
+                ]
+              ]
+            },
+            {
+              "name": "orders",
+              "columns": [
+                [
+                  "id",
+                  "INTEGER"
+                ],
+                [
+                  "customer_id",
+                  "INTEGER"
+                ],
+                [
+                  "status",
+                  "TEXT"
+                ]
+              ],
+              "rows": [
+                [
+                  10,
+                  1,
+                  "paid"
+                ],
+                [
+                  11,
+                  1,
+                  "pending"
+                ]
+              ]
+            }
+          ],
+          "query": "SELECT c.id,o.id FROM customers c LEFT JOIN orders o ON o.customer_id=c.id AND o.status='paid' ORDER BY c.id,o.id"
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "count_rows和count_orders分别是多少？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT c.id,COUNT(*) AS count_rows,COUNT(o.id) AS count_orders FROM customers c LEFT JOIN orders o ON o.customer_id=c.id GROUP BY c.id ORDER BY c.id\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"query\": \"SELECT c.id,COUNT(*) AS count_rows,COUNT(o.id) AS count_orders FROM customers c LEFT JOIN orders o ON o.customer_id=c.id GROUP BY c.id ORDER BY c.id\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"id\",\n          \"INTEGER\"\n        ]\n      ],\n      \"name\": \"customers\",\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ],\n        [\n          3\n        ]\n      ]\n    },\n    {\n      \"columns\": [\n        [\n          \"id\",\n          \"INTEGER\"\n        ],\n        [\n          \"customer_id\",\n          \"INTEGER\"\n        ]\n      ],\n      \"name\": \"orders\",\n      \"rows\": [\n        [\n          10,\n          1\n        ],\n        [\n          11,\n          1\n        ],\n        [\n          12,\n          3\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[[1,2,2],[2,1,0],[3,1,1]]",
+        "incorrect_response": "我的结果是：[[1,2,2],[2,0,0],[3,1,1]]",
+        "explanation": "零订单客户有一条补空连接行，COUNT(*)为1，但COUNT(o.id)忽略NULL而为0。",
+        "observable_checks": [
+          "区分连接行数与非空订单键数",
+          "多订单产生多条连接行"
+        ],
+        "novelty": "由行保留迁移到外连接后的聚合基数。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_left_join_cardinality.delayed_transfer",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "customers",
+              "columns": [
+                [
+                  "id",
+                  "INTEGER"
+                ]
+              ],
+              "rows": [
+                [
+                  1
+                ],
+                [
+                  2
+                ],
+                [
+                  3
+                ]
+              ]
+            },
+            {
+              "name": "orders",
+              "columns": [
+                [
+                  "id",
+                  "INTEGER"
+                ],
+                [
+                  "customer_id",
+                  "INTEGER"
+                ]
+              ],
+              "rows": [
+                [
+                  10,
+                  1
+                ],
+                [
+                  11,
+                  1
+                ],
+                [
+                  12,
+                  3
+                ]
+              ]
+            }
+          ],
+          "query": "SELECT c.id,COUNT(*) AS count_rows,COUNT(o.id) AS count_orders FROM customers c LEFT JOIN orders o ON o.customer_id=c.id GROUP BY c.id ORDER BY c.id"
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "databases_group_filter_aggregation",
+    "domain": "databases",
+    "title": "生成订单聚合与阈值报表",
+    "course": "数据库应用",
+    "level": "intermediate",
+    "project_context": "运营报告按账户汇总交易，既有行级状态过滤，也有组级金额阈值。商品种类数不应因为重复购买或缺失商品编号而虚增。",
+    "competency": "按SQL执行顺序计算过滤、分组、HAVING与COUNT(DISTINCT)结果。",
+    "prerequisites": [
+      "GROUP BY",
+      "WHERE与HAVING",
+      "聚合函数"
+    ],
+    "misconception": "WHERE和HAVING可以不加区分地互换，COUNT(DISTINCT)也会把每个NULL算成一种商品。",
+    "misconception_probe": "先过滤未支付行再求和，与先把所有行求和再判断支付状态，是否描述同一个业务指标？",
+    "remediation_activity": "把六条交易先分到状态盒再分账户组，手算每组指标；用重复商品和NULL对照COUNT与COUNT(DISTINCT)。",
+    "next_activity": "在 revenue_report.sql 为行级条件和组级条件分别写出业务注释。",
+    "return_anchor": "revenue_report.sql 的WHERE、GROUP BY和HAVING之间。",
+    "goal_a": "优先准确实现支付金额阈值。",
+    "goal_b": "优先去除重复购买对商品种类数的影响。",
+    "task_prompt": "计算完整结果行，明确只有满足查询条件的组才输出。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "严格大于100的账户合计有哪些？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT account,SUM(amount) FROM sales GROUP BY account HAVING SUM(amount)>100 ORDER BY account\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"query\": \"SELECT account,SUM(amount) FROM sales GROUP BY account HAVING SUM(amount)>100 ORDER BY account\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"account\",\n          \"TEXT\"\n        ],\n        [\n          \"amount\",\n          \"INTEGER\"\n        ]\n      ],\n      \"name\": \"sales\",\n      \"rows\": [\n        [\n          \"A\",\n          60\n        ],\n        [\n          \"A\",\n          50\n        ],\n        [\n          \"B\",\n          100\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[[\"A\",110]]",
+        "incorrect_response": "我的结果是：[[\"A\",110],[\"B\",100]]",
+        "explanation": "A为110满足严格大于，B恰好100不满足。",
+        "observable_checks": [
+          "先分组求和再判断阈值",
+          "严格不等号不能当作大于等于"
+        ],
+        "novelty": "基本分组阈值边界。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_group_filter_aggregation.base",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "sales",
+              "columns": [
+                [
+                  "account",
+                  "TEXT"
+                ],
+                [
+                  "amount",
+                  "INTEGER"
+                ]
+              ],
+              "rows": [
+                [
+                  "A",
+                  60
+                ],
+                [
+                  "A",
+                  50
+                ],
+                [
+                  "B",
+                  100
+                ]
+              ]
+            }
+          ],
+          "query": "SELECT account,SUM(amount) FROM sales GROUP BY account HAVING SUM(amount)>100 ORDER BY account"
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "只汇总paid交易并保留合计至少100，输出什么？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT account,SUM(amount) FROM sales WHERE status='paid' GROUP BY account HAVING SUM(amount)>=100 ORDER BY account\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"query\": \"SELECT account,SUM(amount) FROM sales WHERE status='paid' GROUP BY account HAVING SUM(amount)>=100 ORDER BY account\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"account\",\n          \"TEXT\"\n        ],\n        [\n          \"amount\",\n          \"INTEGER\"\n        ],\n        [\n          \"status\",\n          \"TEXT\"\n        ]\n      ],\n      \"name\": \"sales\",\n      \"rows\": [\n        [\n          \"A\",\n          60,\n          \"paid\"\n        ],\n        [\n          \"A\",\n          50,\n          \"pending\"\n        ],\n        [\n          \"B\",\n          70,\n          \"paid\"\n        ],\n        [\n          \"B\",\n          50,\n          \"paid\"\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[[\"B\",120]]",
+        "incorrect_response": "我的结果是：[[\"A\",110],[\"B\",120]]",
+        "explanation": "A未支付的50在分组前被删除，所以A只剩60；B合计120。",
+        "observable_checks": [
+          "行过滤先于分组",
+          "不得把未支付金额计入paid指标"
+        ],
+        "novelty": "加入行级状态筛选，改变聚合输入集合。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_group_filter_aggregation.near_transfer",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "sales",
+              "columns": [
+                [
+                  "account",
+                  "TEXT"
+                ],
+                [
+                  "amount",
+                  "INTEGER"
+                ],
+                [
+                  "status",
+                  "TEXT"
+                ]
+              ],
+              "rows": [
+                [
+                  "A",
+                  60,
+                  "paid"
+                ],
+                [
+                  "A",
+                  50,
+                  "pending"
+                ],
+                [
+                  "B",
+                  70,
+                  "paid"
+                ],
+                [
+                  "B",
+                  50,
+                  "paid"
+                ]
+              ]
+            }
+          ],
+          "query": "SELECT account,SUM(amount) FROM sales WHERE status='paid' GROUP BY account HAVING SUM(amount)>=100 ORDER BY account"
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "每账户不同非空商品数是多少？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT account,COUNT(DISTINCT product) FROM purchases GROUP BY account ORDER BY account\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"query\": \"SELECT account,COUNT(DISTINCT product) FROM purchases GROUP BY account ORDER BY account\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"account\",\n          \"TEXT\"\n        ],\n        [\n          \"product\",\n          \"TEXT\"\n        ]\n      ],\n      \"name\": \"purchases\",\n      \"rows\": [\n        [\n          \"A\",\n          \"p\"\n        ],\n        [\n          \"A\",\n          \"p\"\n        ],\n        [\n          \"A\",\n          null\n        ],\n        [\n          \"B\",\n          \"q\"\n        ],\n        [\n          \"B\",\n          \"r\"\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[[\"A\",1],[\"B\",2]]",
+        "incorrect_response": "我的结果是：[[\"A\",2],[\"B\",2]]",
+        "explanation": "重复p只算一次，NULL不进入COUNT(DISTINCT)。",
+        "observable_checks": [
+          "重复值去重",
+          "NULL不计为一个额外商品"
+        ],
+        "novelty": "聚合由金额切换为去重基数，加入缺失键。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_group_filter_aggregation.delayed_transfer",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "purchases",
+              "columns": [
+                [
+                  "account",
+                  "TEXT"
+                ],
+                [
+                  "product",
+                  "TEXT"
+                ]
+              ],
+              "rows": [
+                [
+                  "A",
+                  "p"
+                ],
+                [
+                  "A",
+                  "p"
+                ],
+                [
+                  "A",
+                  null
+                ],
+                [
+                  "B",
+                  "q"
+                ],
+                [
+                  "B",
+                  "r"
+                ]
+              ]
+            }
+          ],
+          "query": "SELECT account,COUNT(DISTINCT product) FROM purchases GROUP BY account ORDER BY account"
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "databases_window_peer_semantics",
+    "domain": "databases",
+    "title": "生成并列成绩排名与累计指标",
+    "course": "数据库原理与应用",
+    "level": "intermediate",
+    "project_context": "教学运营页面需要展示每人的最佳成绩、并列名次和同日累计值。窗口排序中的并列行以及ROWS/RANGE边界决定输出，不能套用一条固定排名公式。",
+    "competency": "准确计算ROW_NUMBER、RANK及RANGE累计窗口在并列键下的行为。",
+    "prerequisites": [
+      "窗口分区",
+      "ORDER BY",
+      "排名与累计"
+    ],
+    "misconception": "ROW_NUMBER、RANK和同日累计都会逐行递增，不受并列键影响。",
+    "misconception_probe": "两个相同成绩使用RANK后，第三个较低成绩应排第2还是第3？",
+    "remediation_activity": "把分区内记录按排序键排好，用同色圈标出peer组；分别标行号、名次和累计窗口范围，再比较结果。",
+    "next_activity": "在 progress_windows.sql 明确最佳记录的破平局键与累计窗口类型。",
+    "return_anchor": "progress_windows.sql 的OVER子句。",
+    "goal_a": "优先让每人最佳成绩选择可复现。",
+    "goal_b": "优先正确展示并列名次与同日累计量。",
+    "task_prompt": "根据窗口定义计算查询结果，区分返回的排名列和原始成绩。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "每人按分数降序、id升序取rn=1，输出哪些行？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nWITH ranked AS (SELECT id,student,score,ROW_NUMBER() OVER(PARTITION BY student ORDER BY score DESC,id ASC) rn FROM scores) SELECT student,id,score FROM ranked WHERE rn=1 ORDER BY student\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"query\": \"WITH ranked AS (SELECT id,student,score,ROW_NUMBER() OVER(PARTITION BY student ORDER BY score DESC,id ASC) rn FROM scores) SELECT student,id,score FROM ranked WHERE rn=1 ORDER BY student\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"id\",\n          \"INTEGER\"\n        ],\n        [\n          \"student\",\n          \"TEXT\"\n        ],\n        [\n          \"score\",\n          \"INTEGER\"\n        ]\n      ],\n      \"name\": \"scores\",\n      \"rows\": [\n        [\n          1,\n          \"A\",\n          90\n        ],\n        [\n          2,\n          \"A\",\n          90\n        ],\n        [\n          3,\n          \"A\",\n          80\n        ],\n        [\n          4,\n          \"B\",\n          70\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[[\"A\",1,90],[\"B\",4,70]]",
+        "incorrect_response": "我的结果是：[[\"A\",2,90],[\"B\",4,70]]",
+        "explanation": "A的并列最高分按id升序破平局，选id1。",
+        "observable_checks": [
+          "分区互不影响",
+          "ROW_NUMBER的破平局顺序明确"
+        ],
+        "novelty": "分区内最佳行与稳定破平局。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_window_peer_semantics.base",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "scores",
+              "columns": [
+                [
+                  "id",
+                  "INTEGER"
+                ],
+                [
+                  "student",
+                  "TEXT"
+                ],
+                [
+                  "score",
+                  "INTEGER"
+                ]
+              ],
+              "rows": [
+                [
+                  1,
+                  "A",
+                  90
+                ],
+                [
+                  2,
+                  "A",
+                  90
+                ],
+                [
+                  3,
+                  "A",
+                  80
+                ],
+                [
+                  4,
+                  "B",
+                  70
+                ]
+              ]
+            }
+          ],
+          "query": "WITH ranked AS (SELECT id,student,score,ROW_NUMBER() OVER(PARTITION BY student ORDER BY score DESC,id ASC) rn FROM scores) SELECT student,id,score FROM ranked WHERE rn=1 ORDER BY student"
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "RANK不加id破平局，各名次是多少？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT id,RANK() OVER(ORDER BY score DESC) AS r FROM scores ORDER BY id\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"query\": \"SELECT id,RANK() OVER(ORDER BY score DESC) AS r FROM scores ORDER BY id\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"id\",\n          \"INTEGER\"\n        ],\n        [\n          \"score\",\n          \"INTEGER\"\n        ]\n      ],\n      \"name\": \"scores\",\n      \"rows\": [\n        [\n          1,\n          90\n        ],\n        [\n          2,\n          90\n        ],\n        [\n          3,\n          80\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[[1,1],[2,1],[3,3]]",
+        "incorrect_response": "我的结果是：[[1,1],[2,1],[3,2]]",
+        "explanation": "相同成绩共享名次1，下一名次跳到3；连续编号是DENSE_RANK的行为。",
+        "observable_checks": [
+          "并列共享名次",
+          "后续名次存在空档"
+        ],
+        "novelty": "切换排名函数并移除破平局键，不能套ROW_NUMBER。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_window_peer_semantics.near_transfer",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "scores",
+              "columns": [
+                [
+                  "id",
+                  "INTEGER"
+                ],
+                [
+                  "score",
+                  "INTEGER"
+                ]
+              ],
+              "rows": [
+                [
+                  1,
+                  90
+                ],
+                [
+                  2,
+                  90
+                ],
+                [
+                  3,
+                  80
+                ]
+              ]
+            }
+          ],
+          "query": "SELECT id,RANK() OVER(ORDER BY score DESC) AS r FROM scores ORDER BY id"
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "RANGE窗口按同日peer组累计，结果是什么？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT id,SUM(amount) OVER(ORDER BY day RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS total FROM daily ORDER BY id\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"query\": \"SELECT id,SUM(amount) OVER(ORDER BY day RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS total FROM daily ORDER BY id\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"id\",\n          \"INTEGER\"\n        ],\n        [\n          \"day\",\n          \"INTEGER\"\n        ],\n        [\n          \"amount\",\n          \"INTEGER\"\n        ]\n      ],\n      \"name\": \"daily\",\n      \"rows\": [\n        [\n          1,\n          1,\n          10\n        ],\n        [\n          2,\n          1,\n          20\n        ],\n        [\n          3,\n          2,\n          5\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[[1,30],[2,30],[3,35]]",
+        "incorrect_response": "我的结果是：[[1,10],[2,30],[3,35]]",
+        "explanation": "RANGE的CURRENT ROW包含排序键相同的peer组，因此第一天两行均累计30。",
+        "observable_checks": [
+          "窗口边界按排序键peer确定",
+          "不混淆ROWS逐行累计"
+        ],
+        "novelty": "由排名迁移到含重复时间键的累计窗口。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_window_peer_semantics.delayed_transfer",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "daily",
+              "columns": [
+                [
+                  "id",
+                  "INTEGER"
+                ],
+                [
+                  "day",
+                  "INTEGER"
+                ],
+                [
+                  "amount",
+                  "INTEGER"
+                ]
+              ],
+              "rows": [
+                [
+                  1,
+                  1,
+                  10
+                ],
+                [
+                  2,
+                  1,
+                  20
+                ],
+                [
+                  3,
+                  2,
+                  5
+                ]
+              ]
+            }
+          ],
+          "query": "SELECT id,SUM(amount) OVER(ORDER BY day RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS total FROM daily ORDER BY id"
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "databases_transaction_savepoints",
+    "domain": "databases",
+    "title": "检查转账回滚与嵌套保存点",
+    "course": "数据库系统",
+    "level": "intermediate",
+    "project_context": "测试环境以两个账户模拟转账，所有操作在单个SQLite连接执行。异常恢复可能回滚整个事务或只回滚保存点之后的语句，需要明确最终余额。",
+    "competency": "按事务边界追踪UPDATE、SAVEPOINT、ROLLBACK TO和RELEASE对最终持久状态的影响。",
+    "prerequisites": [
+      "事务原子性",
+      "提交与回滚",
+      "保存点"
+    ],
+    "misconception": "ROLLBACK TO会撤销整个事务，而RELEASE保存点就等于永久提交其中修改。",
+    "misconception_probe": "释放内层保存点之后回滚到仍存在的外层保存点，内层修改还能被撤销吗？",
+    "remediation_activity": "画一条带BEGIN和两个保存点的时间线，为每次余额修改写版本；沿回滚箭头擦除相应版本后重新求总余额。",
+    "next_activity": "为 transfer_service.sql 把借方和贷方写入放在同一原子边界，并测试保存点恢复路径。",
+    "return_anchor": "transfer_service.sql 的异常回滚分支。",
+    "goal_a": "优先避免转账只扣不加。",
+    "goal_b": "优先解释局部失败恢复与整个事务撤销的差别。",
+    "task_prompt": "执行全部语句后查询余额，按id排序；不要因为曾经执行过UPDATE就把它当已提交。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "两次UPDATE后ROLLBACK，最后余额是什么？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n先依次执行操作（每条单独execute；唯一约束失败只拒绝该条，其余继续）：\nBEGIN\nUPDATE accounts SET balance=balance-30 WHERE id=1\nUPDATE accounts SET balance=balance+30 WHERE id=2\nROLLBACK\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT id,balance FROM accounts ORDER BY id\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"operations\": [\n    \"BEGIN\",\n    \"UPDATE accounts SET balance=balance-30 WHERE id=1\",\n    \"UPDATE accounts SET balance=balance+30 WHERE id=2\",\n    \"ROLLBACK\"\n  ],\n  \"query\": \"SELECT id,balance FROM accounts ORDER BY id\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"id\",\n          \"INTEGER\"\n        ],\n        [\n          \"balance\",\n          \"INTEGER\"\n        ]\n      ],\n      \"name\": \"accounts\",\n      \"rows\": [\n        [\n          1,\n          100\n        ],\n        [\n          2,\n          40\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[[1,100],[2,40]]",
+        "incorrect_response": "我的结果是：[[1,70],[2,70]]",
+        "explanation": "整个事务被回滚，两次余额修改都不保留。",
+        "observable_checks": [
+          "回滚覆盖事务内所有更新",
+          "执行成功不等于已提交"
+        ],
+        "novelty": "完整事务回滚。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_transaction_savepoints.base",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "accounts",
+              "columns": [
+                [
+                  "id",
+                  "INTEGER"
+                ],
+                [
+                  "balance",
+                  "INTEGER"
+                ]
+              ],
+              "rows": [
+                [
+                  1,
+                  100
+                ],
+                [
+                  2,
+                  40
+                ]
+              ]
+            }
+          ],
+          "query": "SELECT id,balance FROM accounts ORDER BY id",
+          "operations": [
+            "BEGIN",
+            "UPDATE accounts SET balance=balance-30 WHERE id=1",
+            "UPDATE accounts SET balance=balance+30 WHERE id=2",
+            "ROLLBACK"
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "保存点设在扣款后，只撤销其后语句，提交后余额是什么？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n先依次执行操作（每条单独execute；唯一约束失败只拒绝该条，其余继续）：\nBEGIN\nUPDATE accounts SET balance=balance-30 WHERE id=1\nSAVEPOINT credit\nUPDATE accounts SET balance=balance+30 WHERE id=2\nROLLBACK TO credit\nRELEASE credit\nCOMMIT\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT id,balance FROM accounts ORDER BY id\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"operations\": [\n    \"BEGIN\",\n    \"UPDATE accounts SET balance=balance-30 WHERE id=1\",\n    \"SAVEPOINT credit\",\n    \"UPDATE accounts SET balance=balance+30 WHERE id=2\",\n    \"ROLLBACK TO credit\",\n    \"RELEASE credit\",\n    \"COMMIT\"\n  ],\n  \"query\": \"SELECT id,balance FROM accounts ORDER BY id\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"id\",\n          \"INTEGER\"\n        ],\n        [\n          \"balance\",\n          \"INTEGER\"\n        ]\n      ],\n      \"name\": \"accounts\",\n      \"rows\": [\n        [\n          1,\n          100\n        ],\n        [\n          2,\n          40\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[[1,70],[2,40]]",
+        "incorrect_response": "我的结果是：[[1,100],[2,40]]",
+        "explanation": "扣款发生在保存点之前，ROLLBACK TO仅撤销后来的加款；提交留下不平衡结果。",
+        "observable_checks": [
+          "保存点只限制局部回滚范围",
+          "识别操作顺序破坏转账原子性"
+        ],
+        "novelty": "回滚边界落在转账两步之间。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_transaction_savepoints.near_transfer",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "accounts",
+              "columns": [
+                [
+                  "id",
+                  "INTEGER"
+                ],
+                [
+                  "balance",
+                  "INTEGER"
+                ]
+              ],
+              "rows": [
+                [
+                  1,
+                  100
+                ],
+                [
+                  2,
+                  40
+                ]
+              ]
+            }
+          ],
+          "query": "SELECT id,balance FROM accounts ORDER BY id",
+          "operations": [
+            "BEGIN",
+            "UPDATE accounts SET balance=balance-30 WHERE id=1",
+            "SAVEPOINT credit",
+            "UPDATE accounts SET balance=balance+30 WHERE id=2",
+            "ROLLBACK TO credit",
+            "RELEASE credit",
+            "COMMIT"
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "内层保存点释放后再回滚外层，余额是什么？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n先依次执行操作（每条单独execute；唯一约束失败只拒绝该条，其余继续）：\nBEGIN\nSAVEPOINT outer_tx\nUPDATE accounts SET balance=balance-20 WHERE id=1\nSAVEPOINT inner_tx\nUPDATE accounts SET balance=balance+20 WHERE id=2\nRELEASE inner_tx\nROLLBACK TO outer_tx\nRELEASE outer_tx\nCOMMIT\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT id,balance FROM accounts ORDER BY id\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"operations\": [\n    \"BEGIN\",\n    \"SAVEPOINT outer_tx\",\n    \"UPDATE accounts SET balance=balance-20 WHERE id=1\",\n    \"SAVEPOINT inner_tx\",\n    \"UPDATE accounts SET balance=balance+20 WHERE id=2\",\n    \"RELEASE inner_tx\",\n    \"ROLLBACK TO outer_tx\",\n    \"RELEASE outer_tx\",\n    \"COMMIT\"\n  ],\n  \"query\": \"SELECT id,balance FROM accounts ORDER BY id\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"id\",\n          \"INTEGER\"\n        ],\n        [\n          \"balance\",\n          \"INTEGER\"\n        ]\n      ],\n      \"name\": \"accounts\",\n      \"rows\": [\n        [\n          1,\n          100\n        ],\n        [\n          2,\n          40\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[[1,100],[2,40]]",
+        "incorrect_response": "我的结果是：[[1,80],[2,60]]",
+        "explanation": "RELEASE内层并未提交外层事务；回滚到outer_tx仍撤销两次更新。",
+        "observable_checks": [
+          "RELEASE内层不等于数据库提交",
+          "外层回滚覆盖内层已释放保存点的修改"
+        ],
+        "novelty": "嵌套保存点与释放后的外层回滚。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_transaction_savepoints.delayed_transfer",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "accounts",
+              "columns": [
+                [
+                  "id",
+                  "INTEGER"
+                ],
+                [
+                  "balance",
+                  "INTEGER"
+                ]
+              ],
+              "rows": [
+                [
+                  1,
+                  100
+                ],
+                [
+                  2,
+                  40
+                ]
+              ]
+            }
+          ],
+          "query": "SELECT id,balance FROM accounts ORDER BY id",
+          "operations": [
+            "BEGIN",
+            "SAVEPOINT outer_tx",
+            "UPDATE accounts SET balance=balance-20 WHERE id=1",
+            "SAVEPOINT inner_tx",
+            "UPDATE accounts SET balance=balance+20 WHERE id=2",
+            "RELEASE inner_tx",
+            "ROLLBACK TO outer_tx",
+            "RELEASE outer_tx",
+            "COMMIT"
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "databases_unique_constraints_upsert",
+    "domain": "databases",
+    "title": "设计选课计数表的唯一约束",
+    "course": "数据库应用开发",
+    "level": "integrated",
+    "project_context": "选课计数按学生与课程联合键记录，导入可能重复，也可能暂缺课程编号。测试采用SQLite默认约束语义，并区分拒绝重复、NULL特例和显式UPSERT。",
+    "competency": "根据唯一约束和冲突处理语句预测接受的行、拒绝的操作与最终计数。",
+    "prerequisites": [
+      "复合键",
+      "NULL",
+      "INSERT与UPSERT"
+    ],
+    "misconception": "UNIQUE天然保证含NULL的每种键也只能出现一次，普通INSERT会自动累加已有计数。",
+    "misconception_probe": "在SQLite的UNIQUE(user_id,course)约束中，两条course=NULL的行一定冲突吗？",
+    "remediation_activity": "用三列卡片组成联合键，分别比较完整键、缺失键与ON CONFLICT目标；逐句记录成功或IntegrityError。",
+    "next_activity": "在 enrollment_import.sql 为缺失课程编号增加明确的业务处理，并区分去重导入与次数累加。",
+    "return_anchor": "enrollment_import.sql 的联合唯一约束和插入语句。",
+    "goal_a": "优先避免重复导入制造重复选课记录。",
+    "goal_b": "优先使重试导入与业务计数更新的语义明确。",
+    "task_prompt": "输出errors和最终rows；errors按每条操作顺序用null或IntegrityError表示。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "普通重复插入会发生什么？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n先依次执行操作（每条单独execute；唯一约束失败只拒绝该条，其余继续）：\nINSERT INTO enroll VALUES(1,'sql',1)\nINSERT INTO enroll VALUES(1,'sql',1)\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT user_id,course,n FROM enroll ORDER BY user_id,course\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"operations\": [\n    \"INSERT INTO enroll VALUES(1,'sql',1)\",\n    \"INSERT INTO enroll VALUES(1,'sql',1)\"\n  ],\n  \"query\": \"SELECT user_id,course,n FROM enroll ORDER BY user_id,course\",\n  \"report_errors\": true,\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"user_id\",\n          \"INTEGER\"\n        ],\n        [\n          \"course\",\n          \"TEXT\"\n        ],\n        [\n          \"n\",\n          \"INTEGER\"\n        ]\n      ],\n      \"constraints\": [\n        \"UNIQUE(user_id,course)\"\n      ],\n      \"name\": \"enroll\",\n      \"rows\": []\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"errors\":[null,\"IntegrityError\"],\"rows\":[[1,\"sql\",1]]}",
+        "incorrect_response": "我的结果是：{\"errors\":[null,null],\"rows\":[[1,\"sql\",2]]}",
+        "explanation": "第二条普通INSERT违反联合唯一约束，不会自动变成加一操作。",
+        "observable_checks": [
+          "重复键导致该语句失败",
+          "失败不修改原有计数"
+        ],
+        "novelty": "完整联合键的重复插入。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_unique_constraints_upsert.base",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "enroll",
+              "columns": [
+                [
+                  "user_id",
+                  "INTEGER"
+                ],
+                [
+                  "course",
+                  "TEXT"
+                ],
+                [
+                  "n",
+                  "INTEGER"
+                ]
+              ],
+              "rows": [],
+              "constraints": [
+                "UNIQUE(user_id,course)"
+              ]
+            }
+          ],
+          "query": "SELECT user_id,course,n FROM enroll ORDER BY user_id,course",
+          "operations": [
+            "INSERT INTO enroll VALUES(1,'sql',1)",
+            "INSERT INTO enroll VALUES(1,'sql',1)"
+          ],
+          "report_errors": true
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "联合键包含NULL时，两次插入的结果是什么？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n先依次执行操作（每条单独execute；唯一约束失败只拒绝该条，其余继续）：\nINSERT INTO enroll VALUES(1,NULL,1)\nINSERT INTO enroll VALUES(1,NULL,2)\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT user_id,course,n FROM enroll ORDER BY rowid\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"operations\": [\n    \"INSERT INTO enroll VALUES(1,NULL,1)\",\n    \"INSERT INTO enroll VALUES(1,NULL,2)\"\n  ],\n  \"query\": \"SELECT user_id,course,n FROM enroll ORDER BY rowid\",\n  \"report_errors\": true,\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"user_id\",\n          \"INTEGER\"\n        ],\n        [\n          \"course\",\n          \"TEXT\"\n        ],\n        [\n          \"n\",\n          \"INTEGER\"\n        ]\n      ],\n      \"constraints\": [\n        \"UNIQUE(user_id,course)\"\n      ],\n      \"name\": \"enroll\",\n      \"rows\": []\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"errors\":[null,null],\"rows\":[[1,null,1],[1,null,2]]}",
+        "incorrect_response": "我的结果是：{\"errors\":[null,\"IntegrityError\"],\"rows\":[[1,null,1]]}",
+        "explanation": "SQLite默认UNIQUE允许多行NULL参与的键，不能依赖该约束合并未知课程。",
+        "observable_checks": [
+          "使用指定数据库的NULL唯一性语义",
+          "区分业务缺失值和实际重复已知键"
+        ],
+        "novelty": "缺失联合键分量改变冲突行为。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_unique_constraints_upsert.near_transfer",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "enroll",
+              "columns": [
+                [
+                  "user_id",
+                  "INTEGER"
+                ],
+                [
+                  "course",
+                  "TEXT"
+                ],
+                [
+                  "n",
+                  "INTEGER"
+                ]
+              ],
+              "rows": [],
+              "constraints": [
+                "UNIQUE(user_id,course)"
+              ]
+            }
+          ],
+          "query": "SELECT user_id,course,n FROM enroll ORDER BY rowid",
+          "operations": [
+            "INSERT INTO enroll VALUES(1,NULL,1)",
+            "INSERT INTO enroll VALUES(1,NULL,2)"
+          ],
+          "report_errors": true
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "显式冲突累加与新增课程后，最终结果是什么？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n先依次执行操作（每条单独execute；唯一约束失败只拒绝该条，其余继续）：\nINSERT INTO enroll VALUES(1,'sql',3) ON CONFLICT(user_id,course) DO UPDATE SET n=enroll.n+excluded.n\nINSERT INTO enroll VALUES(1,'algorithms',1) ON CONFLICT(user_id,course) DO UPDATE SET n=enroll.n+excluded.n\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT user_id,course,n FROM enroll ORDER BY user_id,course\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"operations\": [\n    \"INSERT INTO enroll VALUES(1,'sql',3) ON CONFLICT(user_id,course) DO UPDATE SET n=enroll.n+excluded.n\",\n    \"INSERT INTO enroll VALUES(1,'algorithms',1) ON CONFLICT(user_id,course) DO UPDATE SET n=enroll.n+excluded.n\"\n  ],\n  \"query\": \"SELECT user_id,course,n FROM enroll ORDER BY user_id,course\",\n  \"report_errors\": true,\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"user_id\",\n          \"INTEGER\"\n        ],\n        [\n          \"course\",\n          \"TEXT\"\n        ],\n        [\n          \"n\",\n          \"INTEGER\"\n        ]\n      ],\n      \"constraints\": [\n        \"UNIQUE(user_id,course)\"\n      ],\n      \"name\": \"enroll\",\n      \"rows\": [\n        [\n          1,\n          \"sql\",\n          2\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"errors\":[null,null],\"rows\":[[1,\"algorithms\",1],[1,\"sql\",5]]}",
+        "incorrect_response": "我的结果是：{\"errors\":[null,null],\"rows\":[[1,\"algorithms\",1],[1,\"sql\",3]]}",
+        "explanation": "冲突分支使用旧n加excluded.n，得到2+3；新课程按普通插入保留。",
+        "observable_checks": [
+          "excluded值是新候选值",
+          "冲突更新与非冲突插入分开追踪"
+        ],
+        "novelty": "从拒绝重复转为显式UPSERT语义，不能把更新当覆盖。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_unique_constraints_upsert.delayed_transfer",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "enroll",
+              "columns": [
+                [
+                  "user_id",
+                  "INTEGER"
+                ],
+                [
+                  "course",
+                  "TEXT"
+                ],
+                [
+                  "n",
+                  "INTEGER"
+                ]
+              ],
+              "rows": [
+                [
+                  1,
+                  "sql",
+                  2
+                ]
+              ],
+              "constraints": [
+                "UNIQUE(user_id,course)"
+              ]
+            }
+          ],
+          "query": "SELECT user_id,course,n FROM enroll ORDER BY user_id,course",
+          "operations": [
+            "INSERT INTO enroll VALUES(1,'sql',3) ON CONFLICT(user_id,course) DO UPDATE SET n=enroll.n+excluded.n",
+            "INSERT INTO enroll VALUES(1,'algorithms',1) ON CONFLICT(user_id,course) DO UPDATE SET n=enroll.n+excluded.n"
+          ],
+          "report_errors": true
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "databases_relational_division",
+    "domain": "databases",
+    "title": "筛选完成全部必修实验的学生",
+    "course": "数据库原理",
+    "level": "integrated",
+    "project_context": "实验平台要找出完成所有指定必修实验的学生。完成表可能重复写入，必修清单也可能为空，因此不能只比较原始记录条数。",
+    "competency": "用双重NOT EXISTS解释全称条件，并处理重复完成记录与空要求集。",
+    "prerequisites": [
+      "EXISTS子查询",
+      "集合包含",
+      "重复行"
+    ],
+    "misconception": "完成记录数达到必修实验数就等于覆盖全部要求；必修清单为空时没人符合。",
+    "misconception_probe": "某学生把同一实验重复提交两次，另一必修实验从未完成，记录数相等能证明全部完成吗？",
+    "remediation_activity": "画学生×必修实验覆盖矩阵，逐格找缺口；去掉所有必修列后解释为什么不存在缺口，再核对SQL。",
+    "next_activity": "在 eligibility.sql 用覆盖关系判断资格，并对重试产生的重复记录加回归。",
+    "return_anchor": "eligibility.sql 的双重NOT EXISTS条件。",
+    "goal_a": "优先正确判定每一项必修是否被覆盖。",
+    "goal_b": "优先保证重复提交不会伪造完成资格。",
+    "task_prompt": "返回满足查询的学生名称，不把完成记录数量当成覆盖证明。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "正常必修清单下哪些学生符合？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT s.name FROM students s WHERE NOT EXISTS (SELECT 1 FROM required_labs r WHERE NOT EXISTS (SELECT 1 FROM completions c WHERE c.student=s.name AND c.lab=r.lab)) ORDER BY s.name\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"query\": \"SELECT s.name FROM students s WHERE NOT EXISTS (SELECT 1 FROM required_labs r WHERE NOT EXISTS (SELECT 1 FROM completions c WHERE c.student=s.name AND c.lab=r.lab)) ORDER BY s.name\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"name\",\n          \"TEXT\"\n        ]\n      ],\n      \"name\": \"students\",\n      \"rows\": [\n        [\n          \"Ada\"\n        ],\n        [\n          \"Bob\"\n        ]\n      ]\n    },\n    {\n      \"columns\": [\n        [\n          \"lab\",\n          \"TEXT\"\n        ]\n      ],\n      \"name\": \"required_labs\",\n      \"rows\": [\n        [\n          \"L1\"\n        ],\n        [\n          \"L2\"\n        ]\n      ]\n    },\n    {\n      \"columns\": [\n        [\n          \"student\",\n          \"TEXT\"\n        ],\n        [\n          \"lab\",\n          \"TEXT\"\n        ]\n      ],\n      \"name\": \"completions\",\n      \"rows\": [\n        [\n          \"Ada\",\n          \"L1\"\n        ],\n        [\n          \"Ada\",\n          \"L2\"\n        ],\n        [\n          \"Bob\",\n          \"L1\"\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[[\"Ada\"]]",
+        "incorrect_response": "我的结果是：[[\"Ada\"],[\"Bob\"]]",
+        "explanation": "只有Ada不存在任何未完成必修实验。",
+        "observable_checks": [
+          "逐项覆盖必修集合",
+          "至少完成一项不足以满足全部"
+        ],
+        "novelty": "基本全称覆盖查询。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_relational_division.base",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "students",
+              "columns": [
+                [
+                  "name",
+                  "TEXT"
+                ]
+              ],
+              "rows": [
+                [
+                  "Ada"
+                ],
+                [
+                  "Bob"
+                ]
+              ]
+            },
+            {
+              "name": "required_labs",
+              "columns": [
+                [
+                  "lab",
+                  "TEXT"
+                ]
+              ],
+              "rows": [
+                [
+                  "L1"
+                ],
+                [
+                  "L2"
+                ]
+              ]
+            },
+            {
+              "name": "completions",
+              "columns": [
+                [
+                  "student",
+                  "TEXT"
+                ],
+                [
+                  "lab",
+                  "TEXT"
+                ]
+              ],
+              "rows": [
+                [
+                  "Ada",
+                  "L1"
+                ],
+                [
+                  "Ada",
+                  "L2"
+                ],
+                [
+                  "Bob",
+                  "L1"
+                ]
+              ]
+            }
+          ],
+          "query": "SELECT s.name FROM students s WHERE NOT EXISTS (SELECT 1 FROM required_labs r WHERE NOT EXISTS (SELECT 1 FROM completions c WHERE c.student=s.name AND c.lab=r.lab)) ORDER BY s.name"
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "重复提交能否代替另一项必修？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT s.name FROM students s WHERE NOT EXISTS (SELECT 1 FROM required_labs r WHERE NOT EXISTS (SELECT 1 FROM completions c WHERE c.student=s.name AND c.lab=r.lab)) ORDER BY s.name\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"query\": \"SELECT s.name FROM students s WHERE NOT EXISTS (SELECT 1 FROM required_labs r WHERE NOT EXISTS (SELECT 1 FROM completions c WHERE c.student=s.name AND c.lab=r.lab)) ORDER BY s.name\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"name\",\n          \"TEXT\"\n        ]\n      ],\n      \"name\": \"students\",\n      \"rows\": [\n        [\n          \"Ada\"\n        ],\n        [\n          \"Bob\"\n        ]\n      ]\n    },\n    {\n      \"columns\": [\n        [\n          \"lab\",\n          \"TEXT\"\n        ]\n      ],\n      \"name\": \"required_labs\",\n      \"rows\": [\n        [\n          \"L1\"\n        ],\n        [\n          \"L2\"\n        ]\n      ]\n    },\n    {\n      \"columns\": [\n        [\n          \"student\",\n          \"TEXT\"\n        ],\n        [\n          \"lab\",\n          \"TEXT\"\n        ]\n      ],\n      \"name\": \"completions\",\n      \"rows\": [\n        [\n          \"Ada\",\n          \"L1\"\n        ],\n        [\n          \"Ada\",\n          \"L1\"\n        ],\n        [\n          \"Bob\",\n          \"L1\"\n        ],\n        [\n          \"Bob\",\n          \"L2\"\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[[\"Bob\"]]",
+        "incorrect_response": "我的结果是：[[\"Ada\"],[\"Bob\"]]",
+        "explanation": "Ada两条记录都指向L1，仍缺L2；Bob覆盖全部必修。",
+        "observable_checks": [
+          "重复行不增加不同要求的覆盖",
+          "EXISTS只关心匹配存在性"
+        ],
+        "novelty": "完成行数足够但覆盖集合不足的反例。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_relational_division.near_transfer",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "students",
+              "columns": [
+                [
+                  "name",
+                  "TEXT"
+                ]
+              ],
+              "rows": [
+                [
+                  "Ada"
+                ],
+                [
+                  "Bob"
+                ]
+              ]
+            },
+            {
+              "name": "required_labs",
+              "columns": [
+                [
+                  "lab",
+                  "TEXT"
+                ]
+              ],
+              "rows": [
+                [
+                  "L1"
+                ],
+                [
+                  "L2"
+                ]
+              ]
+            },
+            {
+              "name": "completions",
+              "columns": [
+                [
+                  "student",
+                  "TEXT"
+                ],
+                [
+                  "lab",
+                  "TEXT"
+                ]
+              ],
+              "rows": [
+                [
+                  "Ada",
+                  "L1"
+                ],
+                [
+                  "Ada",
+                  "L1"
+                ],
+                [
+                  "Bob",
+                  "L1"
+                ],
+                [
+                  "Bob",
+                  "L2"
+                ]
+              ]
+            }
+          ],
+          "query": "SELECT s.name FROM students s WHERE NOT EXISTS (SELECT 1 FROM required_labs r WHERE NOT EXISTS (SELECT 1 FROM completions c WHERE c.student=s.name AND c.lab=r.lab)) ORDER BY s.name"
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "必修集合为空且没有完成记录时，结果是什么？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nSELECT s.name FROM students s WHERE NOT EXISTS (SELECT 1 FROM required_labs r WHERE NOT EXISTS (SELECT 1 FROM completions c WHERE c.student=s.name AND c.lab=r.lab)) ORDER BY s.name\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"query\": \"SELECT s.name FROM students s WHERE NOT EXISTS (SELECT 1 FROM required_labs r WHERE NOT EXISTS (SELECT 1 FROM completions c WHERE c.student=s.name AND c.lab=r.lab)) ORDER BY s.name\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"name\",\n          \"TEXT\"\n        ]\n      ],\n      \"name\": \"students\",\n      \"rows\": [\n        [\n          \"Ada\"\n        ],\n        [\n          \"Bob\"\n        ]\n      ]\n    },\n    {\n      \"columns\": [\n        [\n          \"lab\",\n          \"TEXT\"\n        ]\n      ],\n      \"name\": \"required_labs\",\n      \"rows\": []\n    },\n    {\n      \"columns\": [\n        [\n          \"student\",\n          \"TEXT\"\n        ],\n        [\n          \"lab\",\n          \"TEXT\"\n        ]\n      ],\n      \"name\": \"completions\",\n      \"rows\": []\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[[\"Ada\"],[\"Bob\"]]",
+        "incorrect_response": "我的结果是：[]",
+        "explanation": "不存在任何必修要求，自然也不存在未满足要求；这是给定查询的空集全称语义。",
+        "observable_checks": [
+          "识别空要求集的真空真",
+          "不把SQL结果额外解释为真实学习掌握"
+        ],
+        "novelty": "空要求集边界，禁止把资格查询结果当学习证据。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_relational_division.delayed_transfer",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "students",
+              "columns": [
+                [
+                  "name",
+                  "TEXT"
+                ]
+              ],
+              "rows": [
+                [
+                  "Ada"
+                ],
+                [
+                  "Bob"
+                ]
+              ]
+            },
+            {
+              "name": "required_labs",
+              "columns": [
+                [
+                  "lab",
+                  "TEXT"
+                ]
+              ],
+              "rows": []
+            },
+            {
+              "name": "completions",
+              "columns": [
+                [
+                  "student",
+                  "TEXT"
+                ],
+                [
+                  "lab",
+                  "TEXT"
+                ]
+              ],
+              "rows": []
+            }
+          ],
+          "query": "SELECT s.name FROM students s WHERE NOT EXISTS (SELECT 1 FROM required_labs r WHERE NOT EXISTS (SELECT 1 FROM completions c WHERE c.student=s.name AND c.lab=r.lab)) ORDER BY s.name"
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "databases_recursive_reachability",
+    "domain": "databases",
+    "title": "查询课程依赖的可达节点与路径条数",
+    "course": "数据库系统",
+    "level": "intermediate",
+    "project_context": "课程依赖表要支持可达节点浏览和路径数量统计，两者不是同一指标。错误导入可能形成环，查询必须有明确去重或深度界限。",
+    "competency": "解释递归CTE中UNION去重、UNION ALL路径保留及深度限制产生的结果。",
+    "prerequisites": [
+      "递归CTE",
+      "图可达性",
+      "集合与多重集"
+    ],
+    "misconception": "UNION ALL和UNION只影响显示顺序，不影响环终止或汇合节点的重复次数。",
+    "misconception_probe": "菱形依赖中两条路径都到D时，查询唯一节点数与查询路径条数会得到相同结果吗？",
+    "remediation_activity": "逐轮写出递归新增行，分别维护节点集合与带深度的路径行；对三节点环检查在哪个机制下停止。",
+    "next_activity": "在 curriculum_graph.sql 分别提供唯一可达节点与受限路径统计接口，拒绝无界循环枚举。",
+    "return_anchor": "curriculum_graph.sql 的递归UNION分支。",
+    "goal_a": "优先查询不重复的可达课程节点。",
+    "goal_b": "优先在深度上限内统计不同依赖路径。",
+    "task_prompt": "执行给定递归查询并返回完整有序结果，注意题面是否包含起点以及使用集合还是多重集。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "链式依赖包含起点时，可达节点有哪些？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nWITH RECURSIVE reach(node) AS (SELECT 'A' UNION SELECT e.dst FROM edges e JOIN reach r ON e.src=r.node) SELECT node FROM reach ORDER BY node\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"query\": \"WITH RECURSIVE reach(node) AS (SELECT 'A' UNION SELECT e.dst FROM edges e JOIN reach r ON e.src=r.node) SELECT node FROM reach ORDER BY node\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"src\",\n          \"TEXT\"\n        ],\n        [\n          \"dst\",\n          \"TEXT\"\n        ]\n      ],\n      \"name\": \"edges\",\n      \"rows\": [\n        [\n          \"A\",\n          \"B\"\n        ],\n        [\n          \"B\",\n          \"C\"\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[[\"A\"],[\"B\"],[\"C\"]]",
+        "incorrect_response": "我的结果是：[[\"B\"],[\"C\"]]",
+        "explanation": "种子SELECT明确加入A，递归依次加入B、C。",
+        "observable_checks": [
+          "种子行属于结果",
+          "递归扩展遵循边方向"
+        ],
+        "novelty": "无环链上的包含起点可达性。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_recursive_reachability.base",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "edges",
+              "columns": [
+                [
+                  "src",
+                  "TEXT"
+                ],
+                [
+                  "dst",
+                  "TEXT"
+                ]
+              ],
+              "rows": [
+                [
+                  "A",
+                  "B"
+                ],
+                [
+                  "B",
+                  "C"
+                ]
+              ]
+            }
+          ],
+          "query": "WITH RECURSIVE reach(node) AS (SELECT 'A' UNION SELECT e.dst FROM edges e JOIN reach r ON e.src=r.node) SELECT node FROM reach ORDER BY node"
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "加入回到起点的环，UNION结果是什么？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nWITH RECURSIVE reach(node) AS (SELECT 'A' UNION SELECT e.dst FROM edges e JOIN reach r ON e.src=r.node) SELECT node FROM reach ORDER BY node\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"query\": \"WITH RECURSIVE reach(node) AS (SELECT 'A' UNION SELECT e.dst FROM edges e JOIN reach r ON e.src=r.node) SELECT node FROM reach ORDER BY node\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"src\",\n          \"TEXT\"\n        ],\n        [\n          \"dst\",\n          \"TEXT\"\n        ]\n      ],\n      \"name\": \"edges\",\n      \"rows\": [\n        [\n          \"A\",\n          \"B\"\n        ],\n        [\n          \"B\",\n          \"C\"\n        ],\n        [\n          \"C\",\n          \"A\"\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[[\"A\"],[\"B\"],[\"C\"]]",
+        "incorrect_response": "我的结果是：[[\"A\"],[\"A\"],[\"B\"],[\"C\"]]",
+        "explanation": "UNION对递归节点行去重，重新得到A不会无限追加。",
+        "observable_checks": [
+          "去重键是整条node行",
+          "环不等于必须输出重复节点"
+        ],
+        "novelty": "同一查询面对有向环，终止依赖集合去重。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_recursive_reachability.near_transfer",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "edges",
+              "columns": [
+                [
+                  "src",
+                  "TEXT"
+                ],
+                [
+                  "dst",
+                  "TEXT"
+                ]
+              ],
+              "rows": [
+                [
+                  "A",
+                  "B"
+                ],
+                [
+                  "B",
+                  "C"
+                ],
+                [
+                  "C",
+                  "A"
+                ]
+              ]
+            }
+          ],
+          "query": "WITH RECURSIVE reach(node) AS (SELECT 'A' UNION SELECT e.dst FROM edges e JOIN reach r ON e.src=r.node) SELECT node FROM reach ORDER BY node"
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "UNION ALL保留不同到达路径且限制深度，按节点计数是什么？",
+        "artifact": "SQLite 3；关系数据与列类型见下方输入。\n最后执行以下查询，返回按ORDER BY规定排序的行数组：\nWITH RECURSIVE routes(node,depth) AS (SELECT 'A',0 UNION ALL SELECT e.dst,r.depth+1 FROM edges e JOIN routes r ON e.src=r.node WHERE r.depth<3) SELECT node,COUNT(*) FROM routes GROUP BY node ORDER BY node\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"query\": \"WITH RECURSIVE routes(node,depth) AS (SELECT 'A',0 UNION ALL SELECT e.dst,r.depth+1 FROM edges e JOIN routes r ON e.src=r.node WHERE r.depth<3) SELECT node,COUNT(*) FROM routes GROUP BY node ORDER BY node\",\n  \"tables\": [\n    {\n      \"columns\": [\n        [\n          \"src\",\n          \"TEXT\"\n        ],\n        [\n          \"dst\",\n          \"TEXT\"\n        ]\n      ],\n      \"name\": \"edges\",\n      \"rows\": [\n        [\n          \"A\",\n          \"B\"\n        ],\n        [\n          \"A\",\n          \"C\"\n        ],\n        [\n          \"B\",\n          \"D\"\n        ],\n        [\n          \"C\",\n          \"D\"\n        ]\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：[[\"A\",1],[\"B\",1],[\"C\",1],[\"D\",2]]",
+        "incorrect_response": "我的结果是：[[\"A\",1],[\"B\",1],[\"C\",1],[\"D\",1]]",
+        "explanation": "到D的两条路径被UNION ALL分别保留；计数表示到达路径行而非唯一节点。",
+        "observable_checks": [
+          "汇合节点可产生多条路径行",
+          "深度上限属于枚举契约"
+        ],
+        "novelty": "由唯一节点集合迁移到有界多重路径统计。",
+        "answer_validation": "executable",
+        "oracle_id": "databases_recursive_reachability.delayed_transfer",
+        "oracle_input": {
+          "tables": [
+            {
+              "name": "edges",
+              "columns": [
+                [
+                  "src",
+                  "TEXT"
+                ],
+                [
+                  "dst",
+                  "TEXT"
+                ]
+              ],
+              "rows": [
+                [
+                  "A",
+                  "B"
+                ],
+                [
+                  "A",
+                  "C"
+                ],
+                [
+                  "B",
+                  "D"
+                ],
+                [
+                  "C",
+                  "D"
+                ]
+              ]
+            }
+          ],
+          "query": "WITH RECURSIVE routes(node,depth) AS (SELECT 'A',0 UNION ALL SELECT e.dst,r.depth+1 FROM edges e JOIN routes r ON e.src=r.node WHERE r.depth<3) SELECT node,COUNT(*) FROM routes GROUP BY node ORDER BY node"
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  }
+]

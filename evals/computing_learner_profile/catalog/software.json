@@ -1,0 +1,3135 @@
+[
+  {
+    "family_id": "web_backend_conditional_update",
+    "domain": "web_backend",
+    "title": "用条件请求避免库存被旧页面覆盖",
+    "course": "Web 后端开发",
+    "level": "intermediate",
+    "project_context": "仓库页面由两名操作员同时打开，各自保存读取时的 ETag。后台需要区分旧版本写入和库存不足，失败时不能偷偷更新版本。",
+    "competency": "按实际版本与业务状态逐请求判定响应和最终库存",
+    "prerequisites": [
+      "HTTP 状态码",
+      "ETag 条件请求",
+      "状态更新"
+    ],
+    "misconception": "不同标签只是缓存提示，服务端仍可接受旧标签修改。",
+    "misconception_probe": "同一标签连续提交两个扣减请求，第二个请求能否沿用第一次成功前的版本？",
+    "remediation_activity": "在三行纸质状态表中依次记录请求前版本、条件判断和扣减结果。",
+    "next_activity": "给库存编辑页面接入412后的重新读取与人工确认。",
+    "return_anchor": "backend/stock.py 的 PATCH 条件校验分支",
+    "goal_a": "防止并发页面覆盖库存",
+    "goal_b": "向前端提供可解释的失败响应",
+    "task_prompt": "逐条模拟条件库存请求，报告响应序列及最终状态。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "计算请求序列。",
+        "artifact": "库存接口 PATCH /stock.test/items/7。按顺序处理请求。If-Match 缺失返回428；标签不等于当前 \"vN\" 返回412；匹配但 take 超过库存返回409。其余请求扣减 take，版本加1，返回200。所有 take 是正整数。失败不改状态。输出 JSON：statuses、quantity、etag。\n\n输入：\n{\n  \"quantity\": 8,\n  \"version\": 3,\n  \"requests\": [\n    {\n      \"match\": \"\\\"v3\\\"\",\n      \"take\": 3\n    },\n    {\n      \"match\": \"\\\"v3\\\"\",\n      \"take\": 1\n    }\n  ]\n}",
+        "correct_response": "{\"statuses\": [200, 412], \"quantity\": 5, \"etag\": \"\\\"v4\\\"\"}",
+        "incorrect_response": "{\"statuses\": [200, 200], \"quantity\": 4, \"etag\": \"\\\"v5\\\"\"}",
+        "explanation": "第一次成功使旧标签失效；第二次不能继续扣库存。",
+        "observable_checks": [
+          "正确区分版本失败与成功",
+          "失败请求不改变库存或版本"
+        ],
+        "novelty": "共享旧版本导致第二个请求冲突。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_conditional_update.base",
+        "oracle_input": {
+          "kind": "etag",
+          "quantity": 8,
+          "version": 3,
+          "requests": [
+            {
+              "match": "\"v3\"",
+              "take": 3
+            },
+            {
+              "match": "\"v3\"",
+              "take": 1
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "同时区分缺头、业务失败和最终成功。",
+        "artifact": "库存接口 PATCH /stock.test/items/7。按顺序处理请求。If-Match 缺失返回428；标签不等于当前 \"vN\" 返回412；匹配但 take 超过库存返回409。其余请求扣减 take，版本加1，返回200。所有 take 是正整数。失败不改状态。输出 JSON：statuses、quantity、etag。\n\n输入：\n{\n  \"quantity\": 2,\n  \"version\": 7,\n  \"requests\": [\n    {\n      \"match\": null,\n      \"take\": 1\n    },\n    {\n      \"match\": \"\\\"v7\\\"\",\n      \"take\": 3\n    },\n    {\n      \"match\": \"\\\"v7\\\"\",\n      \"take\": 2\n    }\n  ]\n}",
+        "correct_response": "{\"statuses\": [428, 409, 200], \"quantity\": 0, \"etag\": \"\\\"v8\\\"\"}",
+        "incorrect_response": "{\"statuses\": [200, 412, 412], \"quantity\": 1, \"etag\": \"\\\"v8\\\"\"}",
+        "explanation": "缺头与超量都不消耗版本，最后仍能用原标签完成合法扣减。",
+        "observable_checks": [
+          "缺失前置条件返回428",
+          "超量失败保留原标签可用",
+          "返回最终成功后的版本"
+        ],
+        "novelty": "加入请求格式前置条件及业务失败后的版本保留。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_conditional_update.near_transfer",
+        "oracle_input": {
+          "kind": "etag",
+          "quantity": 2,
+          "version": 7,
+          "requests": [
+            {
+              "match": null,
+              "take": 1
+            },
+            {
+              "match": "\"v7\"",
+              "take": 3
+            },
+            {
+              "match": "\"v7\"",
+              "take": 2
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "页面刷新过一次后，处理以下三个请求。",
+        "artifact": "库存接口 PATCH /stock.test/items/7。按顺序处理请求。If-Match 缺失返回428；标签不等于当前 \"vN\" 返回412；匹配但 take 超过库存返回409。其余请求扣减 take，版本加1，返回200。所有 take 是正整数。失败不改状态。输出 JSON：statuses、quantity、etag。\n\n输入：\n{\n  \"quantity\": 10,\n  \"version\": 2,\n  \"requests\": [\n    {\n      \"match\": \"\\\"v2\\\"\",\n      \"take\": 2\n    },\n    {\n      \"match\": \"\\\"v3\\\"\",\n      \"take\": 8\n    },\n    {\n      \"match\": \"\\\"v3\\\"\",\n      \"take\": 1\n    }\n  ]\n}",
+        "correct_response": "{\"statuses\": [200, 200, 412], \"quantity\": 0, \"etag\": \"\\\"v4\\\"\"}",
+        "incorrect_response": "{\"statuses\": [200, 200, 409], \"quantity\": 0, \"etag\": \"\\\"v4\\\"\"}",
+        "explanation": "第三个请求先在前置版本检查失败，不能跳到库存业务判断。",
+        "observable_checks": [
+          "新标签能继续更新",
+          "检查顺序优先判定前置条件",
+          "空库存不把旧标签冲突误报为业务失败"
+        ],
+        "novelty": "两个合法串行版本之后同时存在空库存与陈旧标签。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_conditional_update.delayed_transfer",
+        "oracle_input": {
+          "kind": "etag",
+          "quantity": 10,
+          "version": 2,
+          "requests": [
+            {
+              "match": "\"v2\"",
+              "take": 2
+            },
+            {
+              "match": "\"v3\"",
+              "take": 8
+            },
+            {
+              "match": "\"v3\"",
+              "take": 1
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "web_backend_idempotent_charge",
+    "domain": "web_backend",
+    "title": "验证支付重试不会重复扣款",
+    "course": "Web 后端开发",
+    "level": "integrated",
+    "project_context": "校园自助打印的扣款接口会因客户端超时而重试。案例只使用模拟余额，不接支付平台；需要同时处理重复成功和失败后重试。",
+    "competency": "追踪幂等键绑定的请求内容并计算账本变化",
+    "prerequisites": [
+      "HTTP 重试",
+      "请求身份",
+      "原子写入"
+    ],
+    "misconception": "同一幂等键的所有请求都应无条件返回成功，或每次都再次扣款。",
+    "misconception_probe": "第一次余额不足后，同一键在充值后重试，应复用一个不存在的成功收据吗？",
+    "remediation_activity": "对照请求身份表和余额表，分别处理相同内容、不同内容、未缓存失败。",
+    "next_activity": "在扣款仓储层加入同键并发的唯一约束测试。",
+    "return_anchor": "backend/payments.py 的 idempotency_lookup 步骤",
+    "goal_a": "保证超时重试不重复计费",
+    "goal_b": "区分业务失败重试与请求冲突",
+    "task_prompt": "根据明确的幂等合同计算每个响应与账本。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "第一次成功响应在网络中丢失，客户端重试相同请求。",
+        "artifact": "支付服务仅为本题内存模拟，不接网络。初始账本为空。charge 请求：先查 key；已有相同 amount 返回原201及receipt，不再扣款；已有不同 amount 返回409且receipt为null；新key余额不足返回422且不缓存；否则扣款，生成按成功顺序编号 r1、r2…并缓存。deposit 直接加款，返回204、receipt为null。输出 statuses、receipts、balance、charge_count。\n\n输入：\n{\n  \"balance\": 100,\n  \"requests\": [\n    {\n      \"op\": \"charge\",\n      \"key\": \"a\",\n      \"amount\": 30\n    },\n    {\n      \"op\": \"charge\",\n      \"key\": \"a\",\n      \"amount\": 30\n    }\n  ]\n}",
+        "correct_response": "{\"statuses\": [201, 201], \"receipts\": [\"r1\", \"r1\"], \"balance\": 70, \"charge_count\": 1}",
+        "incorrect_response": "{\"statuses\": [201, 201], \"receipts\": [\"r1\", \"r2\"], \"balance\": 40, \"charge_count\": 2}",
+        "explanation": "重放复用同一收据，不能产生第二次业务写入。",
+        "observable_checks": [
+          "同键相同请求收据一致",
+          "仅一次扣款"
+        ],
+        "novelty": "测试成功响应丢失后的重放。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_idempotent_charge.base",
+        "oracle_input": {
+          "kind": "idempotency",
+          "balance": 100,
+          "requests": [
+            {
+              "op": "charge",
+              "key": "a",
+              "amount": 30
+            },
+            {
+              "op": "charge",
+              "key": "a",
+              "amount": 30
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "旧键被用于不同金额，随后换用一个新键。",
+        "artifact": "支付服务仅为本题内存模拟，不接网络。初始账本为空。charge 请求：先查 key；已有相同 amount 返回原201及receipt，不再扣款；已有不同 amount 返回409且receipt为null；新key余额不足返回422且不缓存；否则扣款，生成按成功顺序编号 r1、r2…并缓存。deposit 直接加款，返回204、receipt为null。输出 statuses、receipts、balance、charge_count。\n\n输入：\n{\n  \"balance\": 100,\n  \"requests\": [\n    {\n      \"op\": \"charge\",\n      \"key\": \"a\",\n      \"amount\": 30\n    },\n    {\n      \"op\": \"charge\",\n      \"key\": \"a\",\n      \"amount\": 40\n    },\n    {\n      \"op\": \"charge\",\n      \"key\": \"b\",\n      \"amount\": 20\n    }\n  ]\n}",
+        "correct_response": "{\"statuses\": [201, 409, 201], \"receipts\": [\"r1\", null, \"r2\"], \"balance\": 50, \"charge_count\": 2}",
+        "incorrect_response": "{\"statuses\": [201, 201, 201], \"receipts\": [\"r1\", \"r1\", \"r2\"], \"balance\": 50, \"charge_count\": 2}",
+        "explanation": "余额碰巧相同仍不代表协议正确；相同键不同内容必须显式冲突。",
+        "observable_checks": [
+          "内容冲突返回409",
+          "新键可建立新账目",
+          "不能只检查最终余额"
+        ],
+        "novelty": "加入幂等键误复用，要求检查响应契约而非只看余额。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_idempotent_charge.near_transfer",
+        "oracle_input": {
+          "kind": "idempotency",
+          "balance": 100,
+          "requests": [
+            {
+              "op": "charge",
+              "key": "a",
+              "amount": 30
+            },
+            {
+              "op": "charge",
+              "key": "a",
+              "amount": 40
+            },
+            {
+              "op": "charge",
+              "key": "b",
+              "amount": 20
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "第一次失败没有缓存，之后发生充值。",
+        "artifact": "支付服务仅为本题内存模拟，不接网络。初始账本为空。charge 请求：先查 key；已有相同 amount 返回原201及receipt，不再扣款；已有不同 amount 返回409且receipt为null；新key余额不足返回422且不缓存；否则扣款，生成按成功顺序编号 r1、r2…并缓存。deposit 直接加款，返回204、receipt为null。输出 statuses、receipts、balance、charge_count。\n\n输入：\n{\n  \"balance\": 50,\n  \"requests\": [\n    {\n      \"op\": \"charge\",\n      \"key\": \"x\",\n      \"amount\": 60\n    },\n    {\n      \"op\": \"deposit\",\n      \"amount\": 20\n    },\n    {\n      \"op\": \"charge\",\n      \"key\": \"x\",\n      \"amount\": 60\n    }\n  ]\n}",
+        "correct_response": "{\"statuses\": [422, 204, 201], \"receipts\": [null, null, \"r1\"], \"balance\": 10, \"charge_count\": 1}",
+        "incorrect_response": "{\"statuses\": [422, 204, 422], \"receipts\": [null, null, null], \"balance\": 70, \"charge_count\": 0}",
+        "explanation": "合同明确不缓存余额不足；充值后同键请求可以重新处理。",
+        "observable_checks": [
+          "尊重失败缓存边界",
+          "充值属于不同操作",
+          "成功收据序号只数成功扣款"
+        ],
+        "novelty": "考查失败不缓存与外部状态改变，区别于成功重放。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_idempotent_charge.delayed_transfer",
+        "oracle_input": {
+          "kind": "idempotency",
+          "balance": 50,
+          "requests": [
+            {
+              "op": "charge",
+              "key": "x",
+              "amount": 60
+            },
+            {
+              "op": "deposit",
+              "amount": 20
+            },
+            {
+              "op": "charge",
+              "key": "x",
+              "amount": 60
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "web_backend_resource_authorization",
+    "domain": "web_backend",
+    "title": "为团队文档实现对象级授权",
+    "course": "Web 后端开发",
+    "level": "foundation",
+    "project_context": "文档服务存在多个团队，管理员权限也只能作用于自己的团队。接口用404隐藏跨团队对象，需要保持读取和编辑的差异。",
+    "competency": "对照登录身份与实际对象归属判定访问结果",
+    "prerequisites": [
+      "认证与授权",
+      "对象归属",
+      "最小权限"
+    ],
+    "misconception": "有文档ID或管理员角色就可以访问任何团队的文档。",
+    "misconception_probe": "团队管理员访问另一个团队文档时，团队边界和管理员权限谁先约束？",
+    "remediation_activity": "列出每个请求的团队检查与编辑权限检查两列，不从URL猜权限。",
+    "next_activity": "为团队文件下载入口复用对象级授权。",
+    "return_anchor": "backend/docs.py 的 load_scoped_document 调用处",
+    "goal_a": "防止跨团队数据泄露",
+    "goal_b": "解释同团队403与跨团队404的差别",
+    "task_prompt": "按给定授权合同判定请求序列，不补充隐藏角色。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "普通成员发出三种请求。",
+        "artifact": "GET 与 PATCH /docs/{id} 的封闭权限规则：文档不存在或 team_id 与当前用户不同均返回404。其余 GET 返回200；PATCH 仅 owner_id 等于用户id或用户role为admin时200，否则403。只处理这里给出的两种动作；不根据路径内用户ID推断登录身份。输出 statuses。\n\n输入：\n{\n  \"user\": {\n    \"id\": 7,\n    \"team\": 1,\n    \"role\": \"member\"\n  },\n  \"documents\": {\n    \"10\": {\n      \"owner\": 7,\n      \"team\": 1\n    },\n    \"11\": {\n      \"owner\": 8,\n      \"team\": 1\n    },\n    \"12\": {\n      \"owner\": 7,\n      \"team\": 2\n    }\n  },\n  \"requests\": [\n    {\n      \"id\": 10,\n      \"action\": \"PATCH\"\n    },\n    {\n      \"id\": 11,\n      \"action\": \"PATCH\"\n    },\n    {\n      \"id\": 12,\n      \"action\": \"GET\"\n    }\n  ]\n}",
+        "correct_response": "{\"statuses\": [200, 403, 404]}",
+        "incorrect_response": "{\"statuses\": [200, 200, 200]}",
+        "explanation": "同团队非本人对象可读不一定可改；跨团队先被隐藏。",
+        "observable_checks": [
+          "先校验真实团队归属",
+          "区分读取与修改权限"
+        ],
+        "novelty": "区分对象所有权与团队边界。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_resource_authorization.base",
+        "oracle_input": {
+          "kind": "authorization",
+          "user": {
+            "id": 7,
+            "team": 1,
+            "role": "member"
+          },
+          "documents": {
+            "10": {
+              "owner": 7,
+              "team": 1
+            },
+            "11": {
+              "owner": 8,
+              "team": 1
+            },
+            "12": {
+              "owner": 7,
+              "team": 2
+            }
+          },
+          "requests": [
+            {
+              "id": 10,
+              "action": "PATCH"
+            },
+            {
+              "id": 11,
+              "action": "PATCH"
+            },
+            {
+              "id": 12,
+              "action": "GET"
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "当前用户变为团队管理员。",
+        "artifact": "GET 与 PATCH /docs/{id} 的封闭权限规则：文档不存在或 team_id 与当前用户不同均返回404。其余 GET 返回200；PATCH 仅 owner_id 等于用户id或用户role为admin时200，否则403。只处理这里给出的两种动作；不根据路径内用户ID推断登录身份。输出 statuses。\n\n输入：\n{\n  \"user\": {\n    \"id\": 7,\n    \"team\": 1,\n    \"role\": \"admin\"\n  },\n  \"documents\": {\n    \"10\": {\n      \"owner\": 8,\n      \"team\": 1\n    },\n    \"12\": {\n      \"owner\": 9,\n      \"team\": 2\n    }\n  },\n  \"requests\": [\n    {\n      \"id\": 10,\n      \"action\": \"PATCH\"\n    },\n    {\n      \"id\": 12,\n      \"action\": \"PATCH\"\n    },\n    {\n      \"id\": 99,\n      \"action\": \"GET\"\n    }\n  ]\n}",
+        "correct_response": "{\"statuses\": [200, 404, 404]}",
+        "incorrect_response": "{\"statuses\": [200, 200, 404]}",
+        "explanation": "管理员只放开同团队编辑规则，不跨越租户边界。",
+        "observable_checks": [
+          "管理员权限有团队范围",
+          "未知对象不暴露存在性"
+        ],
+        "novelty": "将管理员角色与租户隔离同时测试。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_resource_authorization.near_transfer",
+        "oracle_input": {
+          "kind": "authorization",
+          "user": {
+            "id": 7,
+            "team": 1,
+            "role": "admin"
+          },
+          "documents": {
+            "10": {
+              "owner": 8,
+              "team": 1
+            },
+            "12": {
+              "owner": 9,
+              "team": 2
+            }
+          },
+          "requests": [
+            {
+              "id": 10,
+              "action": "PATCH"
+            },
+            {
+              "id": 12,
+              "action": "PATCH"
+            },
+            {
+              "id": 99,
+              "action": "GET"
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "用户换到团队2，旧团队中仍有其曾拥有的文档。",
+        "artifact": "GET 与 PATCH /docs/{id} 的封闭权限规则：文档不存在或 team_id 与当前用户不同均返回404。其余 GET 返回200；PATCH 仅 owner_id 等于用户id或用户role为admin时200，否则403。只处理这里给出的两种动作；不根据路径内用户ID推断登录身份。输出 statuses。\n\n输入：\n{\n  \"user\": {\n    \"id\": 7,\n    \"team\": 2,\n    \"role\": \"member\"\n  },\n  \"documents\": {\n    \"10\": {\n      \"owner\": 7,\n      \"team\": 1\n    },\n    \"11\": {\n      \"owner\": 8,\n      \"team\": 2\n    },\n    \"12\": {\n      \"owner\": 7,\n      \"team\": 2\n    }\n  },\n  \"requests\": [\n    {\n      \"id\": 10,\n      \"action\": \"GET\"\n    },\n    {\n      \"id\": 11,\n      \"action\": \"GET\"\n    },\n    {\n      \"id\": 12,\n      \"action\": \"PATCH\"\n    }\n  ]\n}",
+        "correct_response": "{\"statuses\": [404, 200, 200]}",
+        "incorrect_response": "{\"statuses\": [200, 403, 200]}",
+        "explanation": "历史所有者身份不绕过当前团队约束，同团队读取也不要求所有者身份。",
+        "observable_checks": [
+          "历史归属不覆盖当前team",
+          "同团队读取允许非所有者"
+        ],
+        "novelty": "迁移团队后同时检查历史所有权与当前读取权限。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_resource_authorization.delayed_transfer",
+        "oracle_input": {
+          "kind": "authorization",
+          "user": {
+            "id": 7,
+            "team": 2,
+            "role": "member"
+          },
+          "documents": {
+            "10": {
+              "owner": 7,
+              "team": 1
+            },
+            "11": {
+              "owner": 8,
+              "team": 2
+            },
+            "12": {
+              "owner": 7,
+              "team": 2
+            }
+          },
+          "requests": [
+            {
+              "id": 10,
+              "action": "GET"
+            },
+            {
+              "id": 11,
+              "action": "GET"
+            },
+            {
+              "id": 12,
+              "action": "PATCH"
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "web_backend_atomic_purchase",
+    "domain": "web_backend",
+    "title": "定位订单事务失败后的回滚范围",
+    "course": "Web 后端开发",
+    "level": "intermediate",
+    "project_context": "实验室耗材订购需要同时修改库存、余额和订单表。余额检查发生在库存扣减之后，应用仍必须保证三者一致。",
+    "competency": "按事务边界计算成功和失败后的持久状态",
+    "prerequisites": [
+      "数据库事务",
+      "原子性",
+      "业务约束"
+    ],
+    "misconception": "在事务失败前已经执行的库存扣减可以保留，只回滚最后一条语句。",
+    "misconception_probe": "库存已扣但余额不足时，订单数和库存分别应是什么状态？",
+    "remediation_activity": "将一次购买拆成三个写入格，用同一事务边框圈出需要一起撤销的变化。",
+    "next_activity": "给真实订单服务补充提交失败后的数据库状态断言。",
+    "return_anchor": "backend/orders.py 的 reserve/debit/insert 事务块",
+    "goal_a": "保持库存与账本一致",
+    "goal_b": "验证部分失败后的恢复",
+    "task_prompt": "逐事务模拟并只报告最终持久结果。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "计算一次合法购买。",
+        "artifact": "每次 purchase 是独立原子事务：先检查 stock>=qty 并扣库存；再检查 balance>=qty*price 并扣余额；最后创建一条订单。任一步失败回滚本次所有变化，返回 rolled_back；全部完成返回 committed。所有数量价格为正整数，订单初始0。输出 outcomes、stock、balance、orders。\n\n输入：\n{\n  \"stock\": 3,\n  \"balance\": 20,\n  \"requests\": [\n    {\n      \"qty\": 2,\n      \"price\": 7\n    }\n  ]\n}",
+        "correct_response": "{\"outcomes\": [\"committed\"], \"stock\": 1, \"balance\": 6, \"orders\": 1}",
+        "incorrect_response": "{\"outcomes\": [\"committed\"], \"stock\": 1, \"balance\": 13, \"orders\": 1}",
+        "explanation": "总价应按数量乘单价扣除。",
+        "observable_checks": [
+          "数量影响库存和总价",
+          "成功只创建一条订单"
+        ],
+        "novelty": "基准验证完整提交及总价计算。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_atomic_purchase.base",
+        "oracle_input": {
+          "kind": "transaction",
+          "stock": 3,
+          "balance": 20,
+          "requests": [
+            {
+              "qty": 2,
+              "price": 7
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "库存足够，但余额检查失败。",
+        "artifact": "每次 purchase 是独立原子事务：先检查 stock>=qty 并扣库存；再检查 balance>=qty*price 并扣余额；最后创建一条订单。任一步失败回滚本次所有变化，返回 rolled_back；全部完成返回 committed。所有数量价格为正整数，订单初始0。输出 outcomes、stock、balance、orders。\n\n输入：\n{\n  \"stock\": 5,\n  \"balance\": 8,\n  \"requests\": [\n    {\n      \"qty\": 2,\n      \"price\": 5\n    }\n  ]\n}",
+        "correct_response": "{\"outcomes\": [\"rolled_back\"], \"stock\": 5, \"balance\": 8, \"orders\": 0}",
+        "incorrect_response": "{\"outcomes\": [\"rolled_back\"], \"stock\": 3, \"balance\": 8, \"orders\": 0}",
+        "explanation": "失败必须恢复前面已扣的库存。",
+        "observable_checks": [
+          "回滚恢复本次全部写入",
+          "失败不创建订单"
+        ],
+        "novelty": "故障发生在第二个写入阶段。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_atomic_purchase.near_transfer",
+        "oracle_input": {
+          "kind": "transaction",
+          "stock": 5,
+          "balance": 8,
+          "requests": [
+            {
+              "qty": 2,
+              "price": 5
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "两个独立事务中第二个失败。",
+        "artifact": "每次 purchase 是独立原子事务：先检查 stock>=qty 并扣库存；再检查 balance>=qty*price 并扣余额；最后创建一条订单。任一步失败回滚本次所有变化，返回 rolled_back；全部完成返回 committed。所有数量价格为正整数，订单初始0。输出 outcomes、stock、balance、orders。\n\n输入：\n{\n  \"stock\": 3,\n  \"balance\": 7,\n  \"requests\": [\n    {\n      \"qty\": 1,\n      \"price\": 3\n    },\n    {\n      \"qty\": 2,\n      \"price\": 3\n    }\n  ]\n}",
+        "correct_response": "{\"outcomes\": [\"committed\", \"rolled_back\"], \"stock\": 2, \"balance\": 4, \"orders\": 1}",
+        "incorrect_response": "{\"outcomes\": [\"committed\", \"rolled_back\"], \"stock\": 3, \"balance\": 7, \"orders\": 0}",
+        "explanation": "第二次回滚只撤销第二次事务，不能撤销已提交的第一笔。",
+        "observable_checks": [
+          "识别每次请求的事务边界",
+          "保留先前成功结果"
+        ],
+        "novelty": "区分单次回滚与误撤销整个批次。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_atomic_purchase.delayed_transfer",
+        "oracle_input": {
+          "kind": "transaction",
+          "stock": 3,
+          "balance": 7,
+          "requests": [
+            {
+              "qty": 1,
+              "price": 3
+            },
+            {
+              "qty": 2,
+              "price": 3
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "web_backend_keyset_pagination",
+    "domain": "web_backend",
+    "title": "处理同时间记录的游标分页",
+    "course": "Web 后端开发",
+    "level": "intermediate",
+    "project_context": "消息后台会在同一秒插入多条记录，也允许删除旧消息。分页必须使用稳定的复合顺序，避免只按时间筛选导致漏项。",
+    "competency": "基于复合游标找出下一页及返回游标",
+    "prerequisites": [
+      "排序",
+      "元组比较",
+      "分页边界"
+    ],
+    "misconception": "只需要created字段，等时间记录可以全部跳过。",
+    "misconception_probe": "两条记录created相同但ID不同，下一页应怎样避免跳过其中一条？",
+    "remediation_activity": "手工按两列排序，在表中画出严格小于游标的边界。",
+    "next_activity": "实现分页URL并加入删除游标行后继续翻页的测试。",
+    "return_anchor": "backend/messages.py 的 cursor filter",
+    "goal_a": "避免同时间记录漏读",
+    "goal_b": "让删除或新插入不破坏翻页",
+    "task_prompt": "严格按复合排序合同计算下一页。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "上页停在同一秒的第一条。",
+        "artifact": "列表按 (created,id) 两列降序排序。cursor=[t,i] 表示上页最后一条；下一页只选 (created,id)<(t,i) 的元组，排序后取limit条。cursor不要求对应行仍存在。返回 ids 和 next_cursor；非空页的next_cursor取最后一条，空页取null。输入行是 [created,id]。\n\n输入：\n{\n  \"rows\": [\n    [\n      10,\n      3\n    ],\n    [\n      10,\n      2\n    ],\n    [\n      9,\n      8\n    ],\n    [\n      8,\n      1\n    ]\n  ],\n  \"cursor\": [\n    10,\n    3\n  ],\n  \"limit\": 2\n}",
+        "correct_response": "{\"ids\": [2, 8], \"next_cursor\": [9, 8]}",
+        "incorrect_response": "{\"ids\": [8, 1], \"next_cursor\": [8, 1]}",
+        "explanation": "created相同且id更小的记录仍在下一页。",
+        "observable_checks": [
+          "复合元组严格比较",
+          "next_cursor对应实际末行"
+        ],
+        "novelty": "测试同时间次级键。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_keyset_pagination.base",
+        "oracle_input": {
+          "kind": "pagination",
+          "rows": [
+            [
+              10,
+              3
+            ],
+            [
+              10,
+              2
+            ],
+            [
+              9,
+              8
+            ],
+            [
+              8,
+              1
+            ]
+          ],
+          "cursor": [
+            10,
+            3
+          ],
+          "limit": 2
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "游标指向的行已删除，但游标值仍在客户端。",
+        "artifact": "列表按 (created,id) 两列降序排序。cursor=[t,i] 表示上页最后一条；下一页只选 (created,id)<(t,i) 的元组，排序后取limit条。cursor不要求对应行仍存在。返回 ids 和 next_cursor；非空页的next_cursor取最后一条，空页取null。输入行是 [created,id]。\n\n输入：\n{\n  \"rows\": [\n    [\n      12,\n      4\n    ],\n    [\n      11,\n      9\n    ],\n    [\n      11,\n      8\n    ],\n    [\n      10,\n      7\n    ]\n  ],\n  \"cursor\": [\n    11,\n    10\n  ],\n  \"limit\": 3\n}",
+        "correct_response": "{\"ids\": [9, 8, 7], \"next_cursor\": [10, 7]}",
+        "incorrect_response": "{\"ids\": [], \"next_cursor\": null}",
+        "explanation": "游标是排序边界，不能先要求数据库仍存在原行。",
+        "observable_checks": [
+          "不依赖游标行仍存在",
+          "严格按排序边界续读"
+        ],
+        "novelty": "删除边界行仍需继续分页。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_keyset_pagination.near_transfer",
+        "oracle_input": {
+          "kind": "pagination",
+          "rows": [
+            [
+              12,
+              4
+            ],
+            [
+              11,
+              9
+            ],
+            [
+              11,
+              8
+            ],
+            [
+              10,
+              7
+            ]
+          ],
+          "cursor": [
+            11,
+            10
+          ],
+          "limit": 3
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "翻页期间新增记录位于游标前面。",
+        "artifact": "列表按 (created,id) 两列降序排序。cursor=[t,i] 表示上页最后一条；下一页只选 (created,id)<(t,i) 的元组，排序后取limit条。cursor不要求对应行仍存在。返回 ids 和 next_cursor；非空页的next_cursor取最后一条，空页取null。输入行是 [created,id]。\n\n输入：\n{\n  \"rows\": [\n    [\n      9,\n      10\n    ],\n    [\n      8,\n      6\n    ],\n    [\n      8,\n      5\n    ],\n    [\n      7,\n      2\n    ],\n    [\n      7,\n      1\n    ]\n  ],\n  \"cursor\": [\n    8,\n    5\n  ],\n  \"limit\": 2\n}",
+        "correct_response": "{\"ids\": [2, 1], \"next_cursor\": [7, 1]}",
+        "incorrect_response": "{\"ids\": [10, 6], \"next_cursor\": [8, 6]}",
+        "explanation": "新增的较新记录属于此前区间，不应混入当前下一页。",
+        "observable_checks": [
+          "过滤后再截页",
+          "新增较新项不造成当前页重复"
+        ],
+        "novelty": "测试分页间插入带来的稳定性。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_keyset_pagination.delayed_transfer",
+        "oracle_input": {
+          "kind": "pagination",
+          "rows": [
+            [
+              9,
+              10
+            ],
+            [
+              8,
+              6
+            ],
+            [
+              8,
+              5
+            ],
+            [
+              7,
+              2
+            ],
+            [
+              7,
+              1
+            ]
+          ],
+          "cursor": [
+            8,
+            5
+          ],
+          "limit": 2
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "web_backend_patch_validation",
+    "domain": "web_backend",
+    "title": "区分缺字段、零值和空值",
+    "course": "Web 后端开发",
+    "level": "foundation",
+    "project_context": "学习平台允许用户部分更新个人资料。后端不能用truthy判断过滤掉年龄0，也不能把JSON布尔值当整数。",
+    "competency": "根据类型和字段存在性进行原子部分更新",
+    "prerequisites": [
+      "JSON 类型",
+      "可空字段",
+      "部分更新"
+    ],
+    "misconception": "if value 就能区分未填写和合法输入，true也可以当作年龄1。",
+    "misconception_probe": "age=0、age=true和未提供age，在该合同下分别代表什么？",
+    "remediation_activity": "把三个输入逐项列为缺失、合法零值和类型错误，再决定是否改原值。",
+    "next_activity": "为资料编辑表单显示字段级校验错误。",
+    "return_anchor": "backend/profile.py 的 PATCH payload validation",
+    "goal_a": "防止合法零值丢失",
+    "goal_b": "保持错误请求原子性",
+    "task_prompt": "只根据给定JSON类型合同计算结果。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "更新年龄为0，不提交昵称。",
+        "artifact": "PATCH /profile：未提供字段保持原值。nickname允许字符串或null，null表示清空；age必须是JSON整数且0<=age<=150，布尔值与数字字符串均不合格。任一字段不合法则整次返回422且所有字段保持；否则200。没有未知字段。输出 status、profile。\n\n输入：\n{\n  \"profile\": {\n    \"nickname\": \"小陈\",\n    \"age\": 18\n  },\n  \"patch\": {\n    \"age\": 0\n  }\n}",
+        "correct_response": "{\"status\": 200, \"profile\": {\"nickname\": \"小陈\", \"age\": 0}}",
+        "incorrect_response": "{\"status\": 200, \"profile\": {\"nickname\": \"小陈\", \"age\": 18}}",
+        "explanation": "0是明确合法值，不能按缺失处理。",
+        "observable_checks": [
+          "区分缺失与零",
+          "保留未提供字段"
+        ],
+        "novelty": "基础假值边界。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_patch_validation.base",
+        "oracle_input": {
+          "kind": "patch",
+          "profile": {
+            "nickname": "小陈",
+            "age": 18
+          },
+          "patch": {
+            "age": 0
+          }
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "同时清空昵称并传入布尔年龄。",
+        "artifact": "PATCH /profile：未提供字段保持原值。nickname允许字符串或null，null表示清空；age必须是JSON整数且0<=age<=150，布尔值与数字字符串均不合格。任一字段不合法则整次返回422且所有字段保持；否则200。没有未知字段。输出 status、profile。\n\n输入：\n{\n  \"profile\": {\n    \"nickname\": \"小陈\",\n    \"age\": 18\n  },\n  \"patch\": {\n    \"nickname\": null,\n    \"age\": true\n  }\n}",
+        "correct_response": "{\"status\": 422, \"profile\": {\"nickname\": \"小陈\", \"age\": 18}}",
+        "incorrect_response": "{\"status\": 200, \"profile\": {\"nickname\": null, \"age\": 1}}",
+        "explanation": "JSON boolean不属于此合同允许的integer，整次失败也不能先清昵称。",
+        "observable_checks": [
+          "严格区分布尔与整数",
+          "错误时所有字段均不改"
+        ],
+        "novelty": "混合合法字段和类型错误考查原子性。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_patch_validation.near_transfer",
+        "oracle_input": {
+          "kind": "patch",
+          "profile": {
+            "nickname": "小陈",
+            "age": 18
+          },
+          "patch": {
+            "nickname": null,
+            "age": true
+          }
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "使用明确空值和允许上界。",
+        "artifact": "PATCH /profile：未提供字段保持原值。nickname允许字符串或null，null表示清空；age必须是JSON整数且0<=age<=150，布尔值与数字字符串均不合格。任一字段不合法则整次返回422且所有字段保持；否则200。没有未知字段。输出 status、profile。\n\n输入：\n{\n  \"profile\": {\n    \"nickname\": \"阿林\",\n    \"age\": 21\n  },\n  \"patch\": {\n    \"nickname\": null,\n    \"age\": 150\n  }\n}",
+        "correct_response": "{\"status\": 200, \"profile\": {\"nickname\": null, \"age\": 150}}",
+        "incorrect_response": "{\"status\": 422, \"profile\": {\"nickname\": \"阿林\", \"age\": 21}}",
+        "explanation": "允许上界是闭区间，null是明确清空而不是缺失。",
+        "observable_checks": [
+          "识别闭区间上界",
+          "显式null清空字段"
+        ],
+        "novelty": "同时测试上界包含和清空语义。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_patch_validation.delayed_transfer",
+        "oracle_input": {
+          "kind": "patch",
+          "profile": {
+            "nickname": "阿林",
+            "age": 21
+          },
+          "patch": {
+            "nickname": null,
+            "age": 150
+          }
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "web_backend_sliding_rate_limit",
+    "domain": "web_backend",
+    "title": "检查滑动窗口的边界与拒绝计数",
+    "course": "Web 后端开发",
+    "level": "integrated",
+    "project_context": "代码评测入口限制单个学生瞬时提交频率。窗口端点和被拒请求是否计数都会影响学生何时可以再次提交。",
+    "competency": "精确模拟窗口淘汰与接受记录的变化",
+    "prerequisites": [
+      "队列",
+      "时间窗口",
+      "边界条件"
+    ],
+    "misconception": "被429拒绝的请求也应延长最后一次成功请求的限流时间。",
+    "misconception_probe": "一个请求恰好在最早成功请求window秒之后到达，旧记录还计数吗？",
+    "remediation_activity": "用时间轴标出开区间左端点，逐次删旧记录再判断是否写入新记录。",
+    "next_activity": "把单进程实现替换为原子存储操作前先固定边界测试。",
+    "return_anchor": "backend/rate_limit.py 的 evict_then_admit",
+    "goal_a": "控制突发流量",
+    "goal_b": "避免边界误拒合法提交",
+    "task_prompt": "按封闭的滑动窗口规则计算响应与记录数。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "请求跨越窗口左边界。",
+        "artifact": "滑动窗口限流：每个请求时刻t先移除接受时间<=t-window的记录。若剩余已接受记录数<limit则返回200并记入t，否则429且不记录失败请求。全部请求属于同一个用户，按输入顺序执行，包括同一时刻的多次请求。输出 statuses、active_counts（每次处理后的窗口大小）。\n\n输入：\n{\n  \"limit\": 2,\n  \"window\": 10,\n  \"times\": [\n    0,\n    1,\n    9,\n    10,\n    11\n  ]\n}",
+        "correct_response": "{\"statuses\": [200, 200, 429, 200, 200], \"active_counts\": [1, 2, 2, 2, 2]}",
+        "incorrect_response": "{\"statuses\": [200, 200, 429, 429, 429], \"active_counts\": [1, 2, 3, 3, 3]}",
+        "explanation": "拒绝请求不占位；到10秒时0秒成功记录已过期。",
+        "observable_checks": [
+          "使用规定的开区间左端点",
+          "拒绝不增加窗口计数"
+        ],
+        "novelty": "测试拒绝后到期恢复。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_sliding_rate_limit.base",
+        "oracle_input": {
+          "kind": "rate",
+          "limit": 2,
+          "window": 10,
+          "times": [
+            0,
+            1,
+            9,
+            10,
+            11
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "多个请求在相同边界时刻连续到达。",
+        "artifact": "滑动窗口限流：每个请求时刻t先移除接受时间<=t-window的记录。若剩余已接受记录数<limit则返回200并记入t，否则429且不记录失败请求。全部请求属于同一个用户，按输入顺序执行，包括同一时刻的多次请求。输出 statuses、active_counts（每次处理后的窗口大小）。\n\n输入：\n{\n  \"limit\": 2,\n  \"window\": 5,\n  \"times\": [\n    0,\n    5,\n    5,\n    5\n  ]\n}",
+        "correct_response": "{\"statuses\": [200, 200, 200, 429], \"active_counts\": [1, 1, 2, 2]}",
+        "incorrect_response": "{\"statuses\": [200, 200, 200, 200], \"active_counts\": [1, 1, 1, 1]}",
+        "explanation": "同一时间戳的多次成功是不同请求，不能去重为一条。",
+        "observable_checks": [
+          "相同时间戳不等于同一请求",
+          "边界淘汰后仍按序占位"
+        ],
+        "novelty": "测试时间戳重复导致集合计数错误。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_sliding_rate_limit.near_transfer",
+        "oracle_input": {
+          "kind": "rate",
+          "limit": 2,
+          "window": 5,
+          "times": [
+            0,
+            5,
+            5,
+            5
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "饱和窗口后逐个成功记录到期。",
+        "artifact": "滑动窗口限流：每个请求时刻t先移除接受时间<=t-window的记录。若剩余已接受记录数<limit则返回200并记入t，否则429且不记录失败请求。全部请求属于同一个用户，按输入顺序执行，包括同一时刻的多次请求。输出 statuses、active_counts（每次处理后的窗口大小）。\n\n输入：\n{\n  \"limit\": 3,\n  \"window\": 10,\n  \"times\": [\n    0,\n    1,\n    2,\n    2,\n    10,\n    11,\n    12\n  ]\n}",
+        "correct_response": "{\"statuses\": [200, 200, 200, 429, 200, 200, 200], \"active_counts\": [1, 2, 3, 3, 3, 3, 3]}",
+        "incorrect_response": "{\"statuses\": [200, 200, 200, 429, 200, 200, 429], \"active_counts\": [1, 2, 3, 3, 3, 3, 3]}",
+        "explanation": "被拒的第二个2秒请求不留下记录，12秒时原成功记录正常到期。",
+        "observable_checks": [
+          "只保留接受记录",
+          "连续恢复不受旧拒绝影响"
+        ],
+        "novelty": "同机制巩固：在更长的到期与同刻请求序列中验证窗口恢复边界，不宣称跨机制或远迁移。",
+        "answer_validation": "executable",
+        "oracle_id": "web_backend_sliding_rate_limit.delayed_transfer",
+        "oracle_input": {
+          "kind": "rate",
+          "limit": 3,
+          "window": 10,
+          "times": [
+            0,
+            1,
+            2,
+            2,
+            10,
+            11,
+            12
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "web_backend_sql_input_boundary",
+    "domain": "web_backend",
+    "title": "将用户输入限制在SQL数据位置",
+    "course": "Web 后端开发",
+    "level": "integrated",
+    "project_context": "课程查询接口允许按学生名搜索并选择排序字段。题目只讨论给出的SQLite风格参数接口，不执行网络或真实学生库。",
+    "competency": "指出输入进入SQL语法的位置并给出保持需求的参数化修补",
+    "prerequisites": [
+      "SQL 查询",
+      "绑定参数",
+      "输入白名单"
+    ],
+    "misconception": "对用户输入做一次引号转义即可同时保护值、列名和LIKE通配符。",
+    "misconception_probe": "SQL绑定参数能否把一个用户提交的字符串变成安全的列名？",
+    "remediation_activity": "分别把值、排序标识符和LIKE字面量需求分成三个输入边界，再写对应处理。",
+    "next_activity": "给查询接口加入恶意值与合法通配符边界测试。",
+    "return_anchor": "backend/students.py 的 build_query 函数",
+    "goal_a": "避免输入改变查询结构",
+    "goal_b": "保留合法搜索与排序功能",
+    "task_prompt": "在保留业务需求前提下修补展示的SQL构造，不需要访问数据库。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "说明风险并给出query与params。",
+        "artifact": "代码：\nname = request['name']\nquery = \"SELECT id FROM students WHERE name = '\" + name + \"'\"\nrows = db.execute(query).fetchall()\n请求：{\"name\":\"' OR 1=1 --\"}\n接口支持 db.execute(sql, params)，占位符为?；需求是姓名精确匹配。",
+        "correct_response": "query = 'SELECT id FROM students WHERE name = ?'；params = (request['name'],)。这会将整个输入当作姓名值，不能让OR改变筛选条件。",
+        "incorrect_response": "先检查输入里有没有OR，没有就拼接；或者把单引号删掉再查询。",
+        "explanation": "输入值应与SQL语法结构分离；删字符也改变姓名语义。",
+        "observable_checks": [
+          "SQL中输入值使用绑定参数",
+          "参数保留原始输入",
+          "不依赖黑名单发现全部SQL语法"
+        ],
+        "novelty": "从具体字符串拼接定位值注入。",
+        "answer_validation": "reasoned_draft",
+        "oracle_id": null
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "允许按name或created_at排序，拒绝其他字段；给出安全构造。",
+        "artifact": "代码：\nquery = 'SELECT id,name FROM students ORDER BY ' + request['sort']\n请求A：{\"sort\":\"created_at\"}\n请求B：{\"sort\":\"name; DROP TABLE students;--\"}\n需求：仅允许name与created_at，均升序；SQL驱动的?只能绑定值。",
+        "correct_response": "先用 {'name':'name','created_at':'created_at'} 映射。A拼成ORDER BY created_at ASC；B不在映射中，返回输入错误且不执行SQL。列名不能用值占位符替代。",
+        "incorrect_response": "改成 ORDER BY ?，把request['sort']作为参数；这样两种请求都能按指定列排序。",
+        "explanation": "值参数不是标识符替换功能；有限列集合应通过固定映射选取。",
+        "observable_checks": [
+          "列名来自服务端有限映射",
+          "非法字段不执行SQL",
+          "保留合法排序字段语义"
+        ],
+        "novelty": "从值注入迁移到不能直接参数化的标识符。",
+        "answer_validation": "reasoned_draft",
+        "oracle_id": null
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "搜索名字中包含字面字符_的学生，要求_不充当通配符。",
+        "artifact": "代码：\nterm = request['term']\nrows = db.execute('SELECT id FROM students WHERE name LIKE ?', ('%' + term + '%',)).fetchall()\n请求：{\"term\":\"a_b\"}\n本题SQL规定 LIKE 中%匹配任意串、_匹配任意单字符；ESCAPE '\\'将后继%或_解释为字面量。",
+        "correct_response": "先按顺序将term中的反斜杠、%、_分别转义为双反斜杠、反斜杠%、反斜杠_；再绑定两侧加%的模式。SQL显式声明ESCAPE '\\'。输入a_b对应包含字面下划线的模式，而不是任意字符。",
+        "incorrect_response": "已经用了?，所以a_b只可能匹配包含字面下划线的名字，不需要其他处理。",
+        "explanation": "参数化解决SQL结构注入，不自动改变LIKE的业务通配符含义。",
+        "observable_checks": [
+          "区分SQL注入与模式语义",
+          "转义顺序先处理转义字符",
+          "使用参数并显式声明ESCAPE"
+        ],
+        "novelty": "从安全绑定迁移到搜索字面量的语义边界。",
+        "answer_validation": "reasoned_draft",
+        "oracle_id": null
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "frontend_event_loop_order",
+    "domain": "frontend",
+    "title": "解释页面异步日志的实际顺序",
+    "course": "Web 前端开发",
+    "level": "foundation",
+    "project_context": "课程页面先更新同步状态，再安排微任务和零延时提示。日志用于排查UI提示为何晚于状态变化，不涉及网络时间。",
+    "competency": "逐步区分同步执行、微任务排队和后续任务",
+    "prerequisites": [
+      "调用栈",
+      "回调",
+      "队列"
+    ],
+    "misconception": "queueMicrotask注册后立即执行，或所有定时器执行完才清微任务。",
+    "misconception_probe": "定时器A内部排入的微任务和已就绪定时器B，哪个先执行？",
+    "remediation_activity": "画出一个同步栈和两个FIFO队列，移动日志卡片到实际执行序列。",
+    "next_activity": "修复页面提示的调度并添加顺序回归。",
+    "return_anchor": "frontend/status.js 的异步提示回调",
+    "goal_a": "定位异步UI时序错误",
+    "goal_b": "用可复现日志解释任务调度",
+    "task_prompt": "在封闭调度假设下追踪以下实际JavaScript代码。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "输出console.log的字符串序列，使用JSON数组。",
+        "artifact": "console.log(\"A\");\nqueueMicrotask(() => {console.log(\"B\");});\nsetTimeout(() => {console.log(\"C\");}, 0);\nconsole.log(\"D\");\n假设：无其他任务，两次同延时定时器按注册顺序就绪；每个任务后清空微任务队列。\n\n材料数据：\n{\n  \"program\": [\n    {\n      \"op\": \"log\",\n      \"text\": \"A\"\n    },\n    {\n      \"op\": \"micro\",\n      \"body\": [\n        {\n          \"op\": \"log\",\n          \"text\": \"B\"\n        }\n      ]\n    },\n    {\n      \"op\": \"timer\",\n      \"body\": [\n        {\n          \"op\": \"log\",\n          \"text\": \"C\"\n        }\n      ]\n    },\n    {\n      \"op\": \"log\",\n      \"text\": \"D\"\n    }\n  ]\n}",
+        "correct_response": "[\"A\", \"D\", \"B\", \"C\"]",
+        "incorrect_response": "[\"A\", \"B\", \"D\", \"C\"]",
+        "explanation": "同步栈完成后才执行微任务，定时器任务排在其后。",
+        "observable_checks": [
+          "按给定队列语义报告完整顺序",
+          "不把注册动作当作执行回调"
+        ],
+        "novelty": "同步栈、微任务和定时器三种时点。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_event_loop_order.base",
+        "oracle_input": {
+          "kind": "eventloop",
+          "program": [
+            {
+              "op": "log",
+              "text": "A"
+            },
+            {
+              "op": "micro",
+              "body": [
+                {
+                  "op": "log",
+                  "text": "B"
+                }
+              ]
+            },
+            {
+              "op": "timer",
+              "body": [
+                {
+                  "op": "log",
+                  "text": "C"
+                }
+              ]
+            },
+            {
+              "op": "log",
+              "text": "D"
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "输出console.log的字符串序列，使用JSON数组。",
+        "artifact": "console.log(\"A\");\nqueueMicrotask(() => {console.log(\"B\");\nqueueMicrotask(() => {console.log(\"C\");});});\nqueueMicrotask(() => {console.log(\"D\");});\nsetTimeout(() => {console.log(\"E\");}, 0);\n假设：无其他任务，两次同延时定时器按注册顺序就绪；每个任务后清空微任务队列。\n\n材料数据：\n{\n  \"program\": [\n    {\n      \"op\": \"log\",\n      \"text\": \"A\"\n    },\n    {\n      \"op\": \"micro\",\n      \"body\": [\n        {\n          \"op\": \"log\",\n          \"text\": \"B\"\n        },\n        {\n          \"op\": \"micro\",\n          \"body\": [\n            {\n              \"op\": \"log\",\n              \"text\": \"C\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"op\": \"micro\",\n      \"body\": [\n        {\n          \"op\": \"log\",\n          \"text\": \"D\"\n        }\n      ]\n    },\n    {\n      \"op\": \"timer\",\n      \"body\": [\n        {\n          \"op\": \"log\",\n          \"text\": \"E\"\n        }\n      ]\n    }\n  ]\n}",
+        "correct_response": "[\"A\", \"B\", \"D\", \"C\", \"E\"]",
+        "incorrect_response": "[\"A\", \"B\", \"C\", \"D\", \"E\"]",
+        "explanation": "微任务内部新排入的微任务进入队尾，不能插到原有微任务之前。",
+        "observable_checks": [
+          "按给定队列语义报告完整顺序",
+          "不把注册动作当作执行回调"
+        ],
+        "novelty": "嵌套微任务的先进先出。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_event_loop_order.near_transfer",
+        "oracle_input": {
+          "kind": "eventloop",
+          "program": [
+            {
+              "op": "log",
+              "text": "A"
+            },
+            {
+              "op": "micro",
+              "body": [
+                {
+                  "op": "log",
+                  "text": "B"
+                },
+                {
+                  "op": "micro",
+                  "body": [
+                    {
+                      "op": "log",
+                      "text": "C"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "op": "micro",
+              "body": [
+                {
+                  "op": "log",
+                  "text": "D"
+                }
+              ]
+            },
+            {
+              "op": "timer",
+              "body": [
+                {
+                  "op": "log",
+                  "text": "E"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "输出console.log的字符串序列，使用JSON数组。",
+        "artifact": "setTimeout(() => {console.log(\"A\");\nqueueMicrotask(() => {console.log(\"B\");});}, 0);\nsetTimeout(() => {console.log(\"C\");}, 0);\nqueueMicrotask(() => {console.log(\"D\");});\n假设：无其他任务，两次同延时定时器按注册顺序就绪；每个任务后清空微任务队列。\n\n材料数据：\n{\n  \"program\": [\n    {\n      \"op\": \"timer\",\n      \"body\": [\n        {\n          \"op\": \"log\",\n          \"text\": \"A\"\n        },\n        {\n          \"op\": \"micro\",\n          \"body\": [\n            {\n              \"op\": \"log\",\n              \"text\": \"B\"\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"op\": \"timer\",\n      \"body\": [\n        {\n          \"op\": \"log\",\n          \"text\": \"C\"\n        }\n      ]\n    },\n    {\n      \"op\": \"micro\",\n      \"body\": [\n        {\n          \"op\": \"log\",\n          \"text\": \"D\"\n        }\n      ]\n    }\n  ]\n}",
+        "correct_response": "[\"D\", \"A\", \"B\", \"C\"]",
+        "incorrect_response": "[\"D\", \"A\", \"C\", \"B\"]",
+        "explanation": "每个定时器回调结束后都先清空微任务，再执行下一个定时器。",
+        "observable_checks": [
+          "按给定队列语义报告完整顺序",
+          "不把注册动作当作执行回调"
+        ],
+        "novelty": "两个定时器之间的微任务检查点。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_event_loop_order.delayed_transfer",
+        "oracle_input": {
+          "kind": "eventloop",
+          "program": [
+            {
+              "op": "timer",
+              "body": [
+                {
+                  "op": "log",
+                  "text": "A"
+                },
+                {
+                  "op": "micro",
+                  "body": [
+                    {
+                      "op": "log",
+                      "text": "B"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "op": "timer",
+              "body": [
+                {
+                  "op": "log",
+                  "text": "C"
+                }
+              ]
+            },
+            {
+              "op": "micro",
+              "body": [
+                {
+                  "op": "log",
+                  "text": "D"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "frontend_css_cascade",
+    "domain": "frontend",
+    "title": "查明保存按钮为何显示错误颜色",
+    "course": "Web 前端开发",
+    "level": "foundation",
+    "project_context": "设计系统中的按钮同时接收基础、状态与局部规则。排查时只看题目给定的单元素样式，不假定其他样式表。",
+    "competency": "从匹配规则中按重要性、特异性和顺序找出最终声明",
+    "prerequisites": [
+      "CSS 选择器",
+      "特异性",
+      "级联"
+    ],
+    "misconception": "文件后面的CSS永远覆盖前面所有声明。",
+    "misconception_probe": "一个不匹配当前元素的!important规则能否覆盖匹配的普通规则？",
+    "remediation_activity": "先划掉不匹配规则，再分别比较important、特异性和源顺序。",
+    "next_activity": "把按钮颜色修复限定在正确组件选择器范围。",
+    "return_anchor": "frontend/button.css 的保存按钮color声明",
+    "goal_a": "定位实际胜出的样式",
+    "goal_b": "减少无必要的!important补丁",
+    "task_prompt": "根据目标DOM及规则列表选择最终颜色。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "计算目标元素最终颜色。",
+        "artifact": "仅考虑同一作者样式表、同一层、无继承/动画/内联样式，所有规则都是color属性。选择器仅含可选标签、#id、.class的简单组合。只对匹配目标元素的声明级联：important优先，然后按(id数量,class数量,tag数量)字典序，最后按源顺序。输出 color 和 rule_index（从0开始）。\nDOM：<button id=\"save\" class=\"primary\">保存</button>\n\n材料数据：\n{\n  \"element\": {\n    \"tag\": \"button\",\n    \"id\": \"save\",\n    \"classes\": [\n      \"primary\"\n    ]\n  },\n  \"rules\": [\n    {\n      \"selector\": \"button\",\n      \"color\": \"black\",\n      \"important\": false\n    },\n    {\n      \"selector\": \".primary\",\n      \"color\": \"blue\",\n      \"important\": false\n    },\n    {\n      \"selector\": \"#save\",\n      \"color\": \"green\",\n      \"important\": false\n    }\n  ]\n}",
+        "correct_response": "{\"color\": \"green\", \"rule_index\": 2}",
+        "incorrect_response": "{\"color\": \"blue\", \"rule_index\": 1}",
+        "explanation": "同重要性下ID选择器的特异性高于类选择器。",
+        "observable_checks": [
+          "仅比较匹配声明",
+          "按特异性找胜出规则"
+        ],
+        "novelty": "基础标签、类、ID的比较。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_css_cascade.base",
+        "oracle_input": {
+          "kind": "cascade",
+          "element": {
+            "tag": "button",
+            "id": "save",
+            "classes": [
+              "primary"
+            ]
+          },
+          "rules": [
+            {
+              "selector": "button",
+              "color": "black",
+              "important": false
+            },
+            {
+              "selector": ".primary",
+              "color": "blue",
+              "important": false
+            },
+            {
+              "selector": "#save",
+              "color": "green",
+              "important": false
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "普通ID规则写在!important类规则后面。",
+        "artifact": "仅考虑同一作者样式表、同一层、无继承/动画/内联样式，所有规则都是color属性。选择器仅含可选标签、#id、.class的简单组合。只对匹配目标元素的声明级联：important优先，然后按(id数量,class数量,tag数量)字典序，最后按源顺序。输出 color 和 rule_index（从0开始）。\nDOM：<button id=\"save\" class=\"primary\">保存</button>\n\n材料数据：\n{\n  \"element\": {\n    \"tag\": \"button\",\n    \"id\": \"save\",\n    \"classes\": [\n      \"primary\"\n    ]\n  },\n  \"rules\": [\n    {\n      \"selector\": \".primary\",\n      \"color\": \"blue\",\n      \"important\": true\n    },\n    {\n      \"selector\": \"#save\",\n      \"color\": \"green\",\n      \"important\": false\n    },\n    {\n      \"selector\": \"button\",\n      \"color\": \"red\",\n      \"important\": true\n    }\n  ]\n}",
+        "correct_response": "{\"color\": \"blue\", \"rule_index\": 0}",
+        "incorrect_response": "{\"color\": \"green\", \"rule_index\": 1}",
+        "explanation": "先比较important层级，然后在两个重要声明之间比较特异性。",
+        "observable_checks": [
+          "重要性优先于普通特异性",
+          "重要声明之间仍比较选择器"
+        ],
+        "novelty": "引入重要性与特异性的先后关系。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_css_cascade.near_transfer",
+        "oracle_input": {
+          "kind": "cascade",
+          "element": {
+            "tag": "button",
+            "id": "save",
+            "classes": [
+              "primary"
+            ]
+          },
+          "rules": [
+            {
+              "selector": ".primary",
+              "color": "blue",
+              "important": true
+            },
+            {
+              "selector": "#save",
+              "color": "green",
+              "important": false
+            },
+            {
+              "selector": "button",
+              "color": "red",
+              "important": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "规则中混有另一个元素的ID声明。",
+        "artifact": "仅考虑同一作者样式表、同一层、无继承/动画/内联样式，所有规则都是color属性。选择器仅含可选标签、#id、.class的简单组合。只对匹配目标元素的声明级联：important优先，然后按(id数量,class数量,tag数量)字典序，最后按源顺序。输出 color 和 rule_index（从0开始）。\nDOM：<button id=\"save\" class=\"primary\">保存</button>\n\n材料数据：\n{\n  \"element\": {\n    \"tag\": \"button\",\n    \"id\": \"save\",\n    \"classes\": [\n      \"primary\"\n    ]\n  },\n  \"rules\": [\n    {\n      \"selector\": \".primary\",\n      \"color\": \"orange\",\n      \"important\": true\n    },\n    {\n      \"selector\": \"#other\",\n      \"color\": \"red\",\n      \"important\": true\n    },\n    {\n      \"selector\": \"button.primary\",\n      \"color\": \"purple\",\n      \"important\": true\n    }\n  ]\n}",
+        "correct_response": "{\"color\": \"purple\", \"rule_index\": 2}",
+        "incorrect_response": "{\"color\": \"red\", \"rule_index\": 1}",
+        "explanation": "不匹配的ID规则不参与竞争；组合选择器胜过单类。",
+        "observable_checks": [
+          "不匹配规则不能参与级联",
+          "比较组合选择器的特异性"
+        ],
+        "novelty": "转移到匹配性与组合选择器边界。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_css_cascade.delayed_transfer",
+        "oracle_input": {
+          "kind": "cascade",
+          "element": {
+            "tag": "button",
+            "id": "save",
+            "classes": [
+              "primary"
+            ]
+          },
+          "rules": [
+            {
+              "selector": ".primary",
+              "color": "orange",
+              "important": true
+            },
+            {
+              "selector": "#other",
+              "color": "red",
+              "important": true
+            },
+            {
+              "selector": "button.primary",
+              "color": "purple",
+              "important": true
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "frontend_dom_event_propagation",
+    "domain": "frontend",
+    "title": "定位事件委托与停止传播的影响",
+    "course": "Web 前端开发",
+    "level": "intermediate",
+    "project_context": "表格容器用委托处理按钮点击，同时上层埋点监听捕获阶段。需要知道子组件停止传播会影响哪些已注册监听器。",
+    "competency": "根据事件路径与停止传播规则列出实际触发监听器",
+    "prerequisites": [
+      "DOM 树",
+      "捕获与冒泡",
+      "事件监听器"
+    ],
+    "misconception": "stopPropagation会立即停止当前节点的所有其他监听器。",
+    "misconception_probe": "捕获阶段的父节点调用stopPropagation后，同节点第二个捕获监听器还运行吗？",
+    "remediation_activity": "把路径画成root-panel-button，将同节点监听器分组后逐步标注停止位置。",
+    "next_activity": "调整表格委托逻辑并验证一次点击只触发预期处理器。",
+    "return_anchor": "frontend/table.js 的 delegated click handler",
+    "goal_a": "避免组件事件相互干扰",
+    "goal_b": "保留必要的父级操作响应",
+    "task_prompt": "只输出会实际执行的监听器日志。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "无监听器停止传播。",
+        "artifact": "DOM：<div id=\"root\"><section id=\"panel\"><button id=\"button\">保存</button></section></div>。点击button，事件bubbles=true。listeners按注册顺序给出，capture=true表示捕获。监听器先输出label，再按effect调用stopPropagation或stopImmediatePropagation（none则不调用）。stopPropagation不停止同一节点剩余监听器；stopImmediatePropagation会停止。输出日志JSON数组。\n\n材料数据：\n{\n  \"path\": [\n    \"root\",\n    \"panel\",\n    \"button\"\n  ],\n  \"listeners\": [\n    {\n      \"node\": \"root\",\n      \"capture\": true,\n      \"label\": \"Rcap\",\n      \"effect\": \"none\"\n    },\n    {\n      \"node\": \"panel\",\n      \"capture\": true,\n      \"label\": \"Pcap\",\n      \"effect\": \"none\"\n    },\n    {\n      \"node\": \"button\",\n      \"capture\": false,\n      \"label\": \"B\",\n      \"effect\": \"none\"\n    },\n    {\n      \"node\": \"panel\",\n      \"capture\": false,\n      \"label\": \"P\",\n      \"effect\": \"none\"\n    },\n    {\n      \"node\": \"root\",\n      \"capture\": false,\n      \"label\": \"R\",\n      \"effect\": \"none\"\n    }\n  ]\n}",
+        "correct_response": "[\"Rcap\", \"Pcap\", \"B\", \"P\", \"R\"]",
+        "incorrect_response": "[\"B\", \"P\", \"R\", \"Rcap\", \"Pcap\"]",
+        "explanation": "捕获由外到内，目标后再向外冒泡。",
+        "observable_checks": [
+          "完整保留捕获及冒泡顺序",
+          "目标节点在两段路径交界处触发"
+        ],
+        "novelty": "标准传播路径。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_dom_event_propagation.base",
+        "oracle_input": {
+          "kind": "dom_events",
+          "path": [
+            "root",
+            "panel",
+            "button"
+          ],
+          "listeners": [
+            {
+              "node": "root",
+              "capture": true,
+              "label": "Rcap",
+              "effect": "none"
+            },
+            {
+              "node": "panel",
+              "capture": true,
+              "label": "Pcap",
+              "effect": "none"
+            },
+            {
+              "node": "button",
+              "capture": false,
+              "label": "B",
+              "effect": "none"
+            },
+            {
+              "node": "panel",
+              "capture": false,
+              "label": "P",
+              "effect": "none"
+            },
+            {
+              "node": "root",
+              "capture": false,
+              "label": "R",
+              "effect": "none"
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "父节点第一个捕获监听器停止传播。",
+        "artifact": "DOM：<div id=\"root\"><section id=\"panel\"><button id=\"button\">保存</button></section></div>。点击button，事件bubbles=true。listeners按注册顺序给出，capture=true表示捕获。监听器先输出label，再按effect调用stopPropagation或stopImmediatePropagation（none则不调用）。stopPropagation不停止同一节点剩余监听器；stopImmediatePropagation会停止。输出日志JSON数组。\n\n材料数据：\n{\n  \"path\": [\n    \"root\",\n    \"panel\",\n    \"button\"\n  ],\n  \"listeners\": [\n    {\n      \"node\": \"root\",\n      \"capture\": true,\n      \"label\": \"Rcap\",\n      \"effect\": \"none\"\n    },\n    {\n      \"node\": \"panel\",\n      \"capture\": true,\n      \"label\": \"Pcap\",\n      \"effect\": \"stop\"\n    },\n    {\n      \"node\": \"panel\",\n      \"capture\": true,\n      \"label\": \"P2\",\n      \"effect\": \"none\"\n    },\n    {\n      \"node\": \"button\",\n      \"capture\": false,\n      \"label\": \"B\",\n      \"effect\": \"none\"\n    }\n  ]\n}",
+        "correct_response": "[\"Rcap\", \"Pcap\", \"P2\"]",
+        "incorrect_response": "[\"Rcap\", \"Pcap\"]",
+        "explanation": "停止前往其他节点，不取消同节点剩余监听器。",
+        "observable_checks": [
+          "同节点剩余监听器仍触发",
+          "事件不再到达目标"
+        ],
+        "novelty": "区分节点间传播与同节点监听器执行。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_dom_event_propagation.near_transfer",
+        "oracle_input": {
+          "kind": "dom_events",
+          "path": [
+            "root",
+            "panel",
+            "button"
+          ],
+          "listeners": [
+            {
+              "node": "root",
+              "capture": true,
+              "label": "Rcap",
+              "effect": "none"
+            },
+            {
+              "node": "panel",
+              "capture": true,
+              "label": "Pcap",
+              "effect": "stop"
+            },
+            {
+              "node": "panel",
+              "capture": true,
+              "label": "P2",
+              "effect": "none"
+            },
+            {
+              "node": "button",
+              "capture": false,
+              "label": "B",
+              "effect": "none"
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "目标节点使用立即停止。",
+        "artifact": "DOM：<div id=\"root\"><section id=\"panel\"><button id=\"button\">保存</button></section></div>。点击button，事件bubbles=true。listeners按注册顺序给出，capture=true表示捕获。监听器先输出label，再按effect调用stopPropagation或stopImmediatePropagation（none则不调用）。stopPropagation不停止同一节点剩余监听器；stopImmediatePropagation会停止。输出日志JSON数组。\n\n材料数据：\n{\n  \"path\": [\n    \"root\",\n    \"panel\",\n    \"button\"\n  ],\n  \"listeners\": [\n    {\n      \"node\": \"root\",\n      \"capture\": true,\n      \"label\": \"Rcap\",\n      \"effect\": \"none\"\n    },\n    {\n      \"node\": \"button\",\n      \"capture\": false,\n      \"label\": \"B1\",\n      \"effect\": \"immediate\"\n    },\n    {\n      \"node\": \"button\",\n      \"capture\": false,\n      \"label\": \"B2\",\n      \"effect\": \"none\"\n    },\n    {\n      \"node\": \"panel\",\n      \"capture\": false,\n      \"label\": \"P\",\n      \"effect\": \"none\"\n    }\n  ]\n}",
+        "correct_response": "[\"Rcap\", \"B1\"]",
+        "incorrect_response": "[\"Rcap\", \"B1\", \"B2\"]",
+        "explanation": "立即停止同时阻止同节点后续监听器与父节点冒泡。",
+        "observable_checks": [
+          "区分immediate与普通stop",
+          "已完成的捕获日志不会被撤销"
+        ],
+        "novelty": "将停止方式改为同节点立即停止。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_dom_event_propagation.delayed_transfer",
+        "oracle_input": {
+          "kind": "dom_events",
+          "path": [
+            "root",
+            "panel",
+            "button"
+          ],
+          "listeners": [
+            {
+              "node": "root",
+              "capture": true,
+              "label": "Rcap",
+              "effect": "none"
+            },
+            {
+              "node": "button",
+              "capture": false,
+              "label": "B1",
+              "effect": "immediate"
+            },
+            {
+              "node": "button",
+              "capture": false,
+              "label": "B2",
+              "effect": "none"
+            },
+            {
+              "node": "panel",
+              "capture": false,
+              "label": "P",
+              "effect": "none"
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "frontend_form_successful_controls",
+    "domain": "frontend",
+    "title": "还原表单实际发送的字段",
+    "course": "Web 前端开发",
+    "level": "intermediate",
+    "project_context": "批量下载表单包含筛选条件、只读账户名和多个标签。服务端收到的字段与页面上可见控件并不总是一一对应。",
+    "competency": "依据成功控件规则构造有序表单字段对",
+    "prerequisites": [
+      "HTML 表单",
+      "控件状态",
+      "重复字段"
+    ],
+    "misconception": "页面上所有有value的控件都会提交，或同名控件只保留最后一个。",
+    "misconception_probe": "readonly和disabled对表单提交有什么不同？",
+    "remediation_activity": "逐控件标记name、是否禁用、是否选中及是否为实际提交按钮。",
+    "next_activity": "修复下载接口对重复标签和遗漏字段的解析。",
+    "return_anchor": "frontend/export.html 的 form controls",
+    "goal_a": "让前后端字段契约一致",
+    "goal_b": "定位缺失或重复的请求参数",
+    "task_prompt": "输出FormData实际包含的字段对，不额外编码为URL。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "区分隐藏值、禁用值和未勾选项。",
+        "artifact": "计算new FormData(form, submitter)的有序(name,value)字符串对；仅包含给定控件。无name或disabled（含禁用fieldset）排除；未选checkbox/radio排除；readonly不排除；hidden类型正常包含；select-multiple只包含选中值；submit只包含给定submitter。按DOM顺序，重复name不合并。控件属性由controls完整给出。\n\n材料数据：\n{\n  \"controls\": [\n    {\n      \"type\": \"text\",\n      \"name\": \"q\",\n      \"value\": \"排序\"\n    },\n    {\n      \"type\": \"text\",\n      \"name\": \"token\",\n      \"value\": \"secret\",\n      \"disabled\": true\n    },\n    {\n      \"type\": \"checkbox\",\n      \"name\": \"news\",\n      \"value\": \"yes\",\n      \"checked\": false\n    },\n    {\n      \"type\": \"hidden\",\n      \"name\": \"csrf\",\n      \"value\": \"X\"\n    },\n    {\n      \"type\": \"checkbox\",\n      \"name\": \"agree\",\n      \"value\": \"yes\",\n      \"checked\": true\n    }\n  ],\n  \"submitter\": null\n}",
+        "correct_response": "[[\"q\", \"排序\"], [\"csrf\", \"X\"], [\"agree\", \"yes\"]]",
+        "incorrect_response": "[[\"q\", \"排序\"], [\"token\", \"secret\"], [\"news\", \"yes\"], [\"csrf\", \"X\"], [\"agree\", \"yes\"]]",
+        "explanation": "hidden只影响展示，disabled与未选复选框才从这些控件中排除。",
+        "observable_checks": [
+          "隐藏控件正常提交",
+          "禁用和未选控件排除"
+        ],
+        "novelty": "基本成功控件分类。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_form_successful_controls.base",
+        "oracle_input": {
+          "kind": "form",
+          "controls": [
+            {
+              "type": "text",
+              "name": "q",
+              "value": "排序"
+            },
+            {
+              "type": "text",
+              "name": "token",
+              "value": "secret",
+              "disabled": true
+            },
+            {
+              "type": "checkbox",
+              "name": "news",
+              "value": "yes",
+              "checked": false
+            },
+            {
+              "type": "hidden",
+              "name": "csrf",
+              "value": "X"
+            },
+            {
+              "type": "checkbox",
+              "name": "agree",
+              "value": "yes",
+              "checked": true
+            }
+          ],
+          "submitter": null
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "多选标签并点击publish按钮。",
+        "artifact": "计算new FormData(form, submitter)的有序(name,value)字符串对；仅包含给定控件。无name或disabled（含禁用fieldset）排除；未选checkbox/radio排除；readonly不排除；hidden类型正常包含；select-multiple只包含选中值；submit只包含给定submitter。按DOM顺序，重复name不合并。控件属性由controls完整给出。\n\n材料数据：\n{\n  \"controls\": [\n    {\n      \"type\": \"select-multiple\",\n      \"name\": \"tag\",\n      \"selected\": [\n        \"a\",\n        \"c\"\n      ]\n    },\n    {\n      \"type\": \"checkbox\",\n      \"name\": \"opt\",\n      \"value\": \"1\",\n      \"checked\": true\n    },\n    {\n      \"type\": \"submit\",\n      \"id\": \"save\",\n      \"name\": \"action\",\n      \"value\": \"save\"\n    },\n    {\n      \"type\": \"submit\",\n      \"id\": \"publish\",\n      \"name\": \"action\",\n      \"value\": \"publish\"\n    }\n  ],\n  \"submitter\": \"publish\"\n}",
+        "correct_response": "[[\"tag\", \"a\"], [\"tag\", \"c\"], [\"opt\", \"1\"], [\"action\", \"publish\"]]",
+        "incorrect_response": "[[\"tag\", \"c\"], [\"opt\", \"1\"], [\"action\", \"save\"], [\"action\", \"publish\"]]",
+        "explanation": "重复tag要保留，提交按钮只保留实际点击的那个。",
+        "observable_checks": [
+          "重复字段保留顺序",
+          "只提交实际submitter"
+        ],
+        "novelty": "加入多值控件和不同提交按钮。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_form_successful_controls.near_transfer",
+        "oracle_input": {
+          "kind": "form",
+          "controls": [
+            {
+              "type": "select-multiple",
+              "name": "tag",
+              "selected": [
+                "a",
+                "c"
+              ]
+            },
+            {
+              "type": "checkbox",
+              "name": "opt",
+              "value": "1",
+              "checked": true
+            },
+            {
+              "type": "submit",
+              "id": "save",
+              "name": "action",
+              "value": "save"
+            },
+            {
+              "type": "submit",
+              "id": "publish",
+              "name": "action",
+              "value": "publish"
+            }
+          ],
+          "submitter": "publish"
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "导出页含只读账户与禁用分组。",
+        "artifact": "计算new FormData(form, submitter)的有序(name,value)字符串对；仅包含给定控件。无name或disabled（含禁用fieldset）排除；未选checkbox/radio排除；readonly不排除；hidden类型正常包含；select-multiple只包含选中值；submit只包含给定submitter。按DOM顺序，重复name不合并。控件属性由controls完整给出。\n\n材料数据：\n{\n  \"controls\": [\n    {\n      \"type\": \"text\",\n      \"name\": \"username\",\n      \"value\": \"lee\",\n      \"readonly\": true\n    },\n    {\n      \"type\": \"text\",\n      \"name\": \"draft\",\n      \"value\": \"v1\",\n      \"disabled\": true\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"unnamed\"\n    },\n    {\n      \"type\": \"radio\",\n      \"name\": \"mode\",\n      \"value\": \"1\",\n      \"checked\": false\n    },\n    {\n      \"type\": \"radio\",\n      \"name\": \"mode\",\n      \"value\": \"2\",\n      \"checked\": true\n    }\n  ],\n  \"submitter\": null\n}",
+        "correct_response": "[[\"username\", \"lee\"], [\"mode\", \"2\"]]",
+        "incorrect_response": "[[\"mode\", \"2\"]]",
+        "explanation": "readonly仍是成功控件；无name控件即使可见也不提交。",
+        "observable_checks": [
+          "readonly与disabled区分",
+          "radio只提交选中项",
+          "无name不制造字段"
+        ],
+        "novelty": "迁移到只读与单选分组边界。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_form_successful_controls.delayed_transfer",
+        "oracle_input": {
+          "kind": "form",
+          "controls": [
+            {
+              "type": "text",
+              "name": "username",
+              "value": "lee",
+              "readonly": true
+            },
+            {
+              "type": "text",
+              "name": "draft",
+              "value": "v1",
+              "disabled": true
+            },
+            {
+              "type": "text",
+              "value": "unnamed"
+            },
+            {
+              "type": "radio",
+              "name": "mode",
+              "value": "1",
+              "checked": false
+            },
+            {
+              "type": "radio",
+              "name": "mode",
+              "value": "2",
+              "checked": true
+            }
+          ],
+          "submitter": null
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "frontend_flex_distribution",
+    "domain": "frontend",
+    "title": "计算仪表盘卡片的伸缩宽度",
+    "course": "Web 前端开发",
+    "level": "intermediate",
+    "project_context": "实验监控仪表盘在固定宽度行中放两张卡片。设计稿要求说明空间如何分配，不能假设所有flex项最终等宽。",
+    "competency": "分别按增长因子和缩减权重计算布局宽度",
+    "prerequisites": [
+      "CSS 盒模型",
+      "比例分配",
+      "Flexbox 主轴"
+    ],
+    "misconception": "flex-shrink只按因子等分，不需要考虑原始basis。",
+    "misconception_probe": "两张basis不同但shrink均为1的卡片，会各减少相同像素吗？",
+    "remediation_activity": "先算总basis与剩余，再分别建立grow权重和shrink*basis权重表。",
+    "next_activity": "为窄屏仪表盘设置明确的最小宽度与换行策略。",
+    "return_anchor": "frontend/dashboard.css 的 card-row 布局",
+    "goal_a": "实现可预测的响应式卡片",
+    "goal_b": "解释伸缩因子的实际作用",
+    "task_prompt": "按题目限定的简化flex环境计算尺寸。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "有100像素正剩余空间。",
+        "artifact": "一个单行flex容器，给定inner_width；无gap、margin、padding、border，所有项min-width:0、无max-width、box-sizing一致，不换行。basis为确定的flex-basis像素。正剩余按grow比例分配；负剩余按shrink*basis比例扣减；本题均不会触及零以下。输出widths数组（像素，不附单位）。\n\n材料数据：\n{\n  \"inner_width\": 300,\n  \"items\": [\n    {\n      \"basis\": 100,\n      \"grow\": 1,\n      \"shrink\": 1\n    },\n    {\n      \"basis\": 100,\n      \"grow\": 1,\n      \"shrink\": 1\n    }\n  ]\n}",
+        "correct_response": "{\"widths\": [150, 150]}",
+        "incorrect_response": "{\"widths\": [100, 200]}",
+        "explanation": "相同增长权重平分额外空间。",
+        "observable_checks": [
+          "先扣除总basis",
+          "按增长权重分剩余"
+        ],
+        "novelty": "正剩余的基础情况。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_flex_distribution.base",
+        "oracle_input": {
+          "kind": "flex",
+          "inner_width": 300,
+          "items": [
+            {
+              "basis": 100,
+              "grow": 1,
+              "shrink": 1
+            },
+            {
+              "basis": 100,
+              "grow": 1,
+              "shrink": 1
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "增长因子改为1与3。",
+        "artifact": "一个单行flex容器，给定inner_width；无gap、margin、padding、border，所有项min-width:0、无max-width、box-sizing一致，不换行。basis为确定的flex-basis像素。正剩余按grow比例分配；负剩余按shrink*basis比例扣减；本题均不会触及零以下。输出widths数组（像素，不附单位）。\n\n材料数据：\n{\n  \"inner_width\": 400,\n  \"items\": [\n    {\n      \"basis\": 100,\n      \"grow\": 1,\n      \"shrink\": 1\n    },\n    {\n      \"basis\": 100,\n      \"grow\": 3,\n      \"shrink\": 1\n    }\n  ]\n}",
+        "correct_response": "{\"widths\": [150, 250]}",
+        "incorrect_response": "{\"widths\": [100, 300]}",
+        "explanation": "比例用于额外200像素，不是把容器总宽度直接按1:3切分。",
+        "observable_checks": [
+          "只对剩余空间应用grow比例",
+          "最后加回各自basis"
+        ],
+        "novelty": "区分总宽度比例与增量比例。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_flex_distribution.near_transfer",
+        "oracle_input": {
+          "kind": "flex",
+          "inner_width": 400,
+          "items": [
+            {
+              "basis": 100,
+              "grow": 1,
+              "shrink": 1
+            },
+            {
+              "basis": 100,
+              "grow": 3,
+              "shrink": 1
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "容器窄于总basis，两个shrink因子均为1。",
+        "artifact": "一个单行flex容器，给定inner_width；无gap、margin、padding、border，所有项min-width:0、无max-width、box-sizing一致，不换行。basis为确定的flex-basis像素。正剩余按grow比例分配；负剩余按shrink*basis比例扣减；本题均不会触及零以下。输出widths数组（像素，不附单位）。\n\n材料数据：\n{\n  \"inner_width\": 240,\n  \"items\": [\n    {\n      \"basis\": 200,\n      \"grow\": 1,\n      \"shrink\": 1\n    },\n    {\n      \"basis\": 100,\n      \"grow\": 1,\n      \"shrink\": 1\n    }\n  ]\n}",
+        "correct_response": "{\"widths\": [160, 80]}",
+        "incorrect_response": "{\"widths\": [170, 70]}",
+        "explanation": "缩减60像素按200:100的权重分为40和20。",
+        "observable_checks": [
+          "负剩余改用scaled shrink权重",
+          "最终宽度和等于容器"
+        ],
+        "novelty": "迁移到缩小分支及不同基础尺寸。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_flex_distribution.delayed_transfer",
+        "oracle_input": {
+          "kind": "flex",
+          "inner_width": 240,
+          "items": [
+            {
+              "basis": 200,
+              "grow": 1,
+              "shrink": 1
+            },
+            {
+              "basis": 100,
+              "grow": 1,
+              "shrink": 1
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "frontend_batched_state_updates",
+    "domain": "frontend",
+    "title": "排查批量状态更新少加一次的问题",
+    "course": "Web 前端开发",
+    "level": "foundation",
+    "project_context": "计数面板一次点击会触发多个状态更新，当前渲染值不能当作随时变化的局部计数器。任务给出完整队列合同，不依赖未说明的框架并发行为。",
+    "competency": "按值替换与函数更新的不同语义计算最终状态",
+    "prerequisites": [
+      "闭包快照",
+      "函数参数",
+      "更新队列"
+    ],
+    "misconception": "每次调用setN之后当前闭包里的n都会立即改变。",
+    "misconception_probe": "连续两次setN(n+1)与两次函数更新在一次批量刷新里是否等价？",
+    "remediation_activity": "写出每个入队条目的实际值或函数，再从旧状态依次应用。",
+    "next_activity": "修复批量加分按钮，并保留一次用户动作的回归测试。",
+    "return_anchor": "frontend/Counter.jsx 的 handleClick",
+    "goal_a": "避免闭包旧值丢失更新",
+    "goal_b": "区分替换与函数组合",
+    "task_prompt": "按照给定批量队列合同计算一次点击后的显示数值。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "代码：n初始0；setN(n+1); setN(n+1)。",
+        "artifact": "计数器采用以下明确批量更新合同：一次点击期间变量n是本次渲染快照，不随setN改变；setN(数值)排入替换值；setN(x=>x+d)排入函数更新，刷新时按队列顺序作用于前一步状态。无其他更新。输入updates中的replace_snapshot_delta代表setN(n+d)，increment代表setN(x=>x+d)。输出最终n。\n\n材料数据：\n{\n  \"initial\": 0,\n  \"updates\": [\n    {\n      \"type\": \"replace_snapshot_delta\",\n      \"delta\": 1\n    },\n    {\n      \"type\": \"replace_snapshot_delta\",\n      \"delta\": 1\n    }\n  ]\n}",
+        "correct_response": "{\"n\": 1}",
+        "incorrect_response": "{\"n\": 2}",
+        "explanation": "两个值更新都捕获同一个0，各自入队值1。",
+        "observable_checks": [
+          "不提前改变闭包快照",
+          "识别两个相同替换值"
+        ],
+        "novelty": "两次值更新的快照问题。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_batched_state_updates.base",
+        "oracle_input": {
+          "kind": "state_queue",
+          "initial": 0,
+          "updates": [
+            {
+              "type": "replace_snapshot_delta",
+              "delta": 1
+            },
+            {
+              "type": "replace_snapshot_delta",
+              "delta": 1
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "代码：n初始0；setN(x=>x+1); setN(x=>x+1)。",
+        "artifact": "计数器采用以下明确批量更新合同：一次点击期间变量n是本次渲染快照，不随setN改变；setN(数值)排入替换值；setN(x=>x+d)排入函数更新，刷新时按队列顺序作用于前一步状态。无其他更新。输入updates中的replace_snapshot_delta代表setN(n+d)，increment代表setN(x=>x+d)。输出最终n。\n\n材料数据：\n{\n  \"initial\": 0,\n  \"updates\": [\n    {\n      \"type\": \"increment\",\n      \"delta\": 1\n    },\n    {\n      \"type\": \"increment\",\n      \"delta\": 1\n    }\n  ]\n}",
+        "correct_response": "{\"n\": 2}",
+        "incorrect_response": "{\"n\": 1}",
+        "explanation": "函数更新依次收到前一个状态，两个增量均保留。",
+        "observable_checks": [
+          "函数使用队列前一步状态",
+          "依次组合两个增量"
+        ],
+        "novelty": "迁移到函数更新。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_batched_state_updates.near_transfer",
+        "oracle_input": {
+          "kind": "state_queue",
+          "initial": 0,
+          "updates": [
+            {
+              "type": "increment",
+              "delta": 1
+            },
+            {
+              "type": "increment",
+              "delta": 1
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "代码：n初始5；setN(n+2); setN(x=>x+3); setN(n-1)。",
+        "artifact": "计数器采用以下明确批量更新合同：一次点击期间变量n是本次渲染快照，不随setN改变；setN(数值)排入替换值；setN(x=>x+d)排入函数更新，刷新时按队列顺序作用于前一步状态。无其他更新。输入updates中的replace_snapshot_delta代表setN(n+d)，increment代表setN(x=>x+d)。输出最终n。\n\n材料数据：\n{\n  \"initial\": 5,\n  \"updates\": [\n    {\n      \"type\": \"replace_snapshot_delta\",\n      \"delta\": 2\n    },\n    {\n      \"type\": \"increment\",\n      \"delta\": 3\n    },\n    {\n      \"type\": \"replace_snapshot_delta\",\n      \"delta\": -1\n    }\n  ]\n}",
+        "correct_response": "{\"n\": 4}",
+        "incorrect_response": "{\"n\": 9}",
+        "explanation": "最后一个值更新仍根据快照5得到4，覆盖前面计算结果。",
+        "observable_checks": [
+          "混合队列保持顺序",
+          "最后替换不等于对中间结果减1"
+        ],
+        "novelty": "混合更新与尾部覆盖。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_batched_state_updates.delayed_transfer",
+        "oracle_input": {
+          "kind": "state_queue",
+          "initial": 5,
+          "updates": [
+            {
+              "type": "replace_snapshot_delta",
+              "delta": 2
+            },
+            {
+              "type": "increment",
+              "delta": 3
+            },
+            {
+              "type": "replace_snapshot_delta",
+              "delta": -1
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "frontend_async_search_race",
+    "domain": "frontend",
+    "title": "防止旧搜索结果覆盖最新意图",
+    "course": "Web 前端开发",
+    "level": "integrated",
+    "project_context": "代码片段搜索框允许用户快速修改关键词，返回顺序可能与发出顺序相反。组件通过请求编号决定是否允许结果更新界面。",
+    "competency": "根据请求发起顺序过滤过期结果并保留最新错误状态",
+    "prerequisites": [
+      "Promise",
+      "异步竞态",
+      "状态归属"
+    ],
+    "misconception": "最后完成的网络请求永远代表最新用户意图。",
+    "misconception_probe": "最新请求失败而旧请求随后成功，页面应显示哪个请求的状态？",
+    "remediation_activity": "按start顺序标编号，逐个finish检查其编号是否仍等于latest。",
+    "next_activity": "把请求身份校验接入搜索加载和错误展示。",
+    "return_anchor": "frontend/search.js 的 response apply guard",
+    "goal_a": "防止旧结果回写",
+    "goal_b": "正确展示最新请求的失败",
+    "task_prompt": "模拟请求开始与完成事件，报告组件实际渲染。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "第二个请求先成功，旧请求后成功。",
+        "artifact": "搜索组件代码等价于：let latest=0; async function search(q){const mine=++latest; const r=await fakeFetch(q); if(mine===latest){ render(r.ok?{status:'ready',value:r.data}:{status:'error',value:r.error}); }}。fakeFetch只由给定finish事件完成；请求一经start分配递增编号。finish里的name指对应start。无其他渲染。输出renders数组及final（从未渲染则null）。\n\n材料数据：\n{\n  \"events\": [\n    {\n      \"op\": \"start\",\n      \"name\": \"a\"\n    },\n    {\n      \"op\": \"start\",\n      \"name\": \"b\"\n    },\n    {\n      \"op\": \"finish\",\n      \"name\": \"b\",\n      \"ok\": true,\n      \"data\": [\n        \"new\"\n      ]\n    },\n    {\n      \"op\": \"finish\",\n      \"name\": \"a\",\n      \"ok\": true,\n      \"data\": [\n        \"old\"\n      ]\n    }\n  ]\n}",
+        "correct_response": "{\"renders\": [{\"status\": \"ready\", \"value\": [\"new\"]}], \"final\": {\"status\": \"ready\", \"value\": [\"new\"]}}",
+        "incorrect_response": "{\"renders\": [{\"status\": \"ready\", \"value\": [\"new\"]}, {\"status\": \"ready\", \"value\": [\"old\"]}], \"final\": {\"status\": \"ready\", \"value\": [\"old\"]}}",
+        "explanation": "旧请求完成时编号已不是latest，不能覆盖新结果。",
+        "observable_checks": [
+          "按发起顺序判断最新",
+          "丢弃旧成功结果"
+        ],
+        "novelty": "乱序成功的基本竞态。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_async_search_race.base",
+        "oracle_input": {
+          "kind": "search_race",
+          "events": [
+            {
+              "op": "start",
+              "name": "a"
+            },
+            {
+              "op": "start",
+              "name": "b"
+            },
+            {
+              "op": "finish",
+              "name": "b",
+              "ok": true,
+              "data": [
+                "new"
+              ]
+            },
+            {
+              "op": "finish",
+              "name": "a",
+              "ok": true,
+              "data": [
+                "old"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "第一个请求在第二个请求开始前已经完成。",
+        "artifact": "搜索组件代码等价于：let latest=0; async function search(q){const mine=++latest; const r=await fakeFetch(q); if(mine===latest){ render(r.ok?{status:'ready',value:r.data}:{status:'error',value:r.error}); }}。fakeFetch只由给定finish事件完成；请求一经start分配递增编号。finish里的name指对应start。无其他渲染。输出renders数组及final（从未渲染则null）。\n\n材料数据：\n{\n  \"events\": [\n    {\n      \"op\": \"start\",\n      \"name\": \"a\"\n    },\n    {\n      \"op\": \"finish\",\n      \"name\": \"a\",\n      \"ok\": true,\n      \"data\": [\n        \"first\"\n      ]\n    },\n    {\n      \"op\": \"start\",\n      \"name\": \"b\"\n    },\n    {\n      \"op\": \"finish\",\n      \"name\": \"b\",\n      \"ok\": true,\n      \"data\": [\n        \"second\"\n      ]\n    }\n  ]\n}",
+        "correct_response": "{\"renders\": [{\"status\": \"ready\", \"value\": [\"first\"]}, {\"status\": \"ready\", \"value\": [\"second\"]}], \"final\": {\"status\": \"ready\", \"value\": [\"second\"]}}",
+        "incorrect_response": "{\"renders\": [{\"status\": \"ready\", \"value\": [\"second\"]}], \"final\": {\"status\": \"ready\", \"value\": [\"second\"]}}",
+        "explanation": "当时仍为最新的第一个结果应正常渲染，不能追溯删除其有效更新。",
+        "observable_checks": [
+          "检查每次完成当时的编号",
+          "合法中间渲染需保留"
+        ],
+        "novelty": "区分真正过期与曾经有效的结果。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_async_search_race.near_transfer",
+        "oracle_input": {
+          "kind": "search_race",
+          "events": [
+            {
+              "op": "start",
+              "name": "a"
+            },
+            {
+              "op": "finish",
+              "name": "a",
+              "ok": true,
+              "data": [
+                "first"
+              ]
+            },
+            {
+              "op": "start",
+              "name": "b"
+            },
+            {
+              "op": "finish",
+              "name": "b",
+              "ok": true,
+              "data": [
+                "second"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "最新请求失败后，旧请求才成功。",
+        "artifact": "搜索组件代码等价于：let latest=0; async function search(q){const mine=++latest; const r=await fakeFetch(q); if(mine===latest){ render(r.ok?{status:'ready',value:r.data}:{status:'error',value:r.error}); }}。fakeFetch只由给定finish事件完成；请求一经start分配递增编号。finish里的name指对应start。无其他渲染。输出renders数组及final（从未渲染则null）。\n\n材料数据：\n{\n  \"events\": [\n    {\n      \"op\": \"start\",\n      \"name\": \"a\"\n    },\n    {\n      \"op\": \"start\",\n      \"name\": \"b\"\n    },\n    {\n      \"op\": \"finish\",\n      \"name\": \"b\",\n      \"ok\": false,\n      \"error\": \"timeout\"\n    },\n    {\n      \"op\": \"finish\",\n      \"name\": \"a\",\n      \"ok\": true,\n      \"data\": [\n        \"old\"\n      ]\n    }\n  ]\n}",
+        "correct_response": "{\"renders\": [{\"status\": \"error\", \"value\": \"timeout\"}], \"final\": {\"status\": \"error\", \"value\": \"timeout\"}}",
+        "incorrect_response": "{\"renders\": [{\"status\": \"error\", \"value\": \"timeout\"}, {\"status\": \"ready\", \"value\": [\"old\"]}], \"final\": {\"status\": \"ready\", \"value\": [\"old\"]}}",
+        "explanation": "旧成功不能冒充最新搜索成功，最新请求的失败仍应可见。",
+        "observable_checks": [
+          "错误状态也受请求身份约束",
+          "旧成功不能清除新失败"
+        ],
+        "novelty": "迁移到成功与失败交错。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_async_search_race.delayed_transfer",
+        "oracle_input": {
+          "kind": "search_race",
+          "events": [
+            {
+              "op": "start",
+              "name": "a"
+            },
+            {
+              "op": "start",
+              "name": "b"
+            },
+            {
+              "op": "finish",
+              "name": "b",
+              "ok": false,
+              "error": "timeout"
+            },
+            {
+              "op": "finish",
+              "name": "a",
+              "ok": true,
+              "data": [
+                "old"
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "frontend_keyboard_focus_order",
+    "domain": "frontend",
+    "title": "检查键盘用户能否遍历操作区",
+    "course": "Web 前端开发",
+    "level": "integrated",
+    "project_context": "代码评审界面使用按钮、链接和自定义工具栏。鼠标能点击并不等于键盘可访问，本题只检查Tab可达性而不评价全部无障碍要求。",
+    "competency": "从DOM属性计算顺序焦点路径并识别不可达控件",
+    "prerequisites": [
+      "语义HTML",
+      "tabindex",
+      "隐藏与禁用"
+    ],
+    "misconception": "给div设置role=button后就自动进入键盘Tab顺序。",
+    "misconception_probe": "role=button但无tabindex的div能否被Tab访问？",
+    "remediation_activity": "按DOM列出原生可聚焦性，再单独处理正tabindex、负值、隐藏和禁用。",
+    "next_activity": "把不可达自定义操作替换为语义按钮并验证焦点顺序。",
+    "return_anchor": "frontend/review.html 的 toolbar 操作区",
+    "goal_a": "保证核心操作键盘可达",
+    "goal_b": "避免人为tabindex打乱顺序",
+    "task_prompt": "在题目限定的焦点模型中计算顺序。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "普通工具栏含一个自定义div。",
+        "artifact": "只分析给定DOM顺序下顺序键盘Tab导航；无脚本改焦点。hidden或祖先hidden、disabled控件排除。显式tabindex<0排除Tab；>0先按数值升序，同值按DOM序；0及原生可聚焦控件随后按DOM序。button/input原生可聚焦；a须有href；div即使有role=button也不自动可聚焦。输出控件id顺序。\n\n材料数据：\n{\n  \"elements\": [\n    {\n      \"id\": \"save\",\n      \"tag\": \"button\",\n      \"tabindex\": 0\n    },\n    {\n      \"id\": \"search\",\n      \"tag\": \"input\"\n    },\n    {\n      \"id\": \"fake\",\n      \"tag\": \"div\",\n      \"role\": \"button\"\n    }\n  ]\n}",
+        "correct_response": "[\"save\", \"search\"]",
+        "incorrect_response": "[\"save\", \"search\", \"fake\"]",
+        "explanation": "role只提供语义，不自动增加聚焦行为。",
+        "observable_checks": [
+          "区分角色与可聚焦性",
+          "原生控件按DOM排序"
+        ],
+        "novelty": "语义角色不提供键盘行为。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_keyboard_focus_order.base",
+        "oracle_input": {
+          "kind": "focus",
+          "elements": [
+            {
+              "id": "save",
+              "tag": "button",
+              "tabindex": 0
+            },
+            {
+              "id": "search",
+              "tag": "input"
+            },
+            {
+              "id": "fake",
+              "tag": "div",
+              "role": "button"
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "开发者加入正tabindex。",
+        "artifact": "只分析给定DOM顺序下顺序键盘Tab导航；无脚本改焦点。hidden或祖先hidden、disabled控件排除。显式tabindex<0排除Tab；>0先按数值升序，同值按DOM序；0及原生可聚焦控件随后按DOM序。button/input原生可聚焦；a须有href；div即使有role=button也不自动可聚焦。输出控件id顺序。\n\n材料数据：\n{\n  \"elements\": [\n    {\n      \"id\": \"help\",\n      \"tag\": \"a\",\n      \"href\": \"/help\",\n      \"tabindex\": 2\n    },\n    {\n      \"id\": \"search\",\n      \"tag\": \"input\",\n      \"tabindex\": 1\n    },\n    {\n      \"id\": \"save\",\n      \"tag\": \"button\"\n    },\n    {\n      \"id\": \"other\",\n      \"tag\": \"a\",\n      \"href\": \"/other\",\n      \"tabindex\": 2\n    }\n  ]\n}",
+        "correct_response": "[\"search\", \"help\", \"other\", \"save\"]",
+        "incorrect_response": "[\"help\", \"search\", \"save\", \"other\"]",
+        "explanation": "正数先按数值排列，同值保留DOM序，之后才是普通序列。",
+        "observable_checks": [
+          "正数优先且同值稳定",
+          "默认可聚焦项最后按DOM排序"
+        ],
+        "novelty": "正tabindex改变默认顺序。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_keyboard_focus_order.near_transfer",
+        "oracle_input": {
+          "kind": "focus",
+          "elements": [
+            {
+              "id": "help",
+              "tag": "a",
+              "href": "/help",
+              "tabindex": 2
+            },
+            {
+              "id": "search",
+              "tag": "input",
+              "tabindex": 1
+            },
+            {
+              "id": "save",
+              "tag": "button"
+            },
+            {
+              "id": "other",
+              "tag": "a",
+              "href": "/other",
+              "tabindex": 2
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "折叠区和禁用操作混在同一DOM中。",
+        "artifact": "只分析给定DOM顺序下顺序键盘Tab导航；无脚本改焦点。hidden或祖先hidden、disabled控件排除。显式tabindex<0排除Tab；>0先按数值升序，同值按DOM序；0及原生可聚焦控件随后按DOM序。button/input原生可聚焦；a须有href；div即使有role=button也不自动可聚焦。输出控件id顺序。\n\n材料数据：\n{\n  \"elements\": [\n    {\n      \"id\": \"hidden-search\",\n      \"tag\": \"input\",\n      \"ancestor_hidden\": true\n    },\n    {\n      \"id\": \"disabled-save\",\n      \"tag\": \"button\",\n      \"disabled\": true\n    },\n    {\n      \"id\": \"no-link\",\n      \"tag\": \"a\"\n    },\n    {\n      \"id\": \"panel\",\n      \"tag\": \"div\",\n      \"tabindex\": 0\n    },\n    {\n      \"id\": \"skip\",\n      \"tag\": \"button\",\n      \"tabindex\": -1\n    },\n    {\n      \"id\": \"help\",\n      \"tag\": \"a\",\n      \"href\": \"/help\"\n    }\n  ]\n}",
+        "correct_response": "[\"panel\", \"help\"]",
+        "incorrect_response": "[\"panel\", \"skip\", \"help\"]",
+        "explanation": "负tabindex可用于脚本聚焦但不在顺序Tab路径，其他隐藏与禁用项也排除。",
+        "observable_checks": [
+          "祖先隐藏同样排除",
+          "负tabindex不参加Tab",
+          "无href链接不是本题原生焦点项"
+        ],
+        "novelty": "组合隐藏、禁用和程序聚焦边界。",
+        "answer_validation": "executable",
+        "oracle_id": "frontend_keyboard_focus_order.delayed_transfer",
+        "oracle_input": {
+          "kind": "focus",
+          "elements": [
+            {
+              "id": "hidden-search",
+              "tag": "input",
+              "ancestor_hidden": true
+            },
+            {
+              "id": "disabled-save",
+              "tag": "button",
+              "disabled": true
+            },
+            {
+              "id": "no-link",
+              "tag": "a"
+            },
+            {
+              "id": "panel",
+              "tag": "div",
+              "tabindex": 0
+            },
+            {
+              "id": "skip",
+              "tag": "button",
+              "tabindex": -1
+            },
+            {
+              "id": "help",
+              "tag": "a",
+              "href": "/help"
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "testing_boundary_partitions",
+    "domain": "testing",
+    "title": "补齐批量任务参数的边界测试",
+    "course": "软件测试技术",
+    "level": "foundation",
+    "project_context": "批量编译接口限制单次提交数量，需要检查边界附近而非只测试常见值。团队固定使用题目给出的六点集合，窄区间允许边界值重合。",
+    "competency": "从明确输入范围推导边界集合并定位缺失用例",
+    "prerequisites": [
+      "整数区间",
+      "边界值分析",
+      "集合去重"
+    ],
+    "misconception": "只测最小值和最大值即可覆盖规定的所有边界邻域。",
+    "misconception_probe": "允许范围只有0和1时，六个边界位置一定需要六个不同测试输入吗？",
+    "remediation_activity": "画数轴，先计算六个位置，再合并相同值并与已有测试做差集。",
+    "next_activity": "把缺失输入加入批量编译接口参数化测试。",
+    "return_anchor": "tests/test_batch_api.py 的 count 参数表",
+    "goal_a": "发现边界偏移错误",
+    "goal_b": "用少而完整的参数集替代重复测试",
+    "task_prompt": "使用题目指定边界准则补全测试输入，不声称其覆盖全部功能。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "找出已有测试缺少的邻界值。",
+        "artifact": "接口只接受整数闭区间[L,U]。本题采用明确定义的六点边界集合 {L-1,L,L+1,U-1,U,U+1}，重合值去重；不要求覆盖整个等价类。已有测试只算列出的输入值。输出 required（升序完整集合）与missing（尚未测试的集合）。\n\n测试输入：\n{\n  \"L\": 1,\n  \"U\": 5,\n  \"existing\": [\n    0,\n    1,\n    5,\n    6\n  ]\n}",
+        "correct_response": "{\"required\": [0, 1, 2, 4, 5, 6], \"missing\": [2, 4]}",
+        "incorrect_response": "{\"required\": [0, 1, 5, 6], \"missing\": []}",
+        "explanation": "已有测试覆盖边界和外侧，但缺两个紧邻内部值。",
+        "observable_checks": [
+          "按六点准则计算",
+          "列出差集而非重复已有值"
+        ],
+        "novelty": "宽度足够时六个位置互异。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_boundary_partitions.base",
+        "oracle_input": {
+          "kind": "boundaries",
+          "L": 1,
+          "U": 5,
+          "existing": [
+            0,
+            1,
+            5,
+            6
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "区间缩小为两个整数。",
+        "artifact": "接口只接受整数闭区间[L,U]。本题采用明确定义的六点边界集合 {L-1,L,L+1,U-1,U,U+1}，重合值去重；不要求覆盖整个等价类。已有测试只算列出的输入值。输出 required（升序完整集合）与missing（尚未测试的集合）。\n\n测试输入：\n{\n  \"L\": 0,\n  \"U\": 1,\n  \"existing\": [\n    -1,\n    0,\n    1,\n    2\n  ]\n}",
+        "correct_response": "{\"required\": [-1, 0, 1, 2], \"missing\": []}",
+        "incorrect_response": "{\"required\": [-1, 0, 1, 0, 1, 2], \"missing\": [0, 1]}",
+        "explanation": "邻界值重合时不应强造六个不同用例。",
+        "observable_checks": [
+          "去重重叠的边界位置",
+          "不把重复值当覆盖缺口"
+        ],
+        "novelty": "窄区间造成边界位置重叠。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_boundary_partitions.near_transfer",
+        "oracle_input": {
+          "kind": "boundaries",
+          "L": 0,
+          "U": 1,
+          "existing": [
+            -1,
+            0,
+            1,
+            2
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "接口要求 count 为整数且 0 < count <= 100。先求有效整数闭区间，再补齐六点边界测试。",
+        "artifact": "接口只接受整数 count，满足 lower_exclusive < count <= upper_inclusive。请自行推导有效整数闭区间[L,U]，然后采用六点边界集合{L-1,L,L+1,U-1,U,U+1}并去重。输出 effective_bounds（[L,U]）、required（升序完整集合）、missing（未测试的集合）。\n\n测试输入：\n{\n  \"lower_exclusive\": 0,\n  \"upper_inclusive\": 100,\n  \"existing\": [\n    0,\n    1,\n    2,\n    99,\n    101\n  ]\n}",
+        "correct_response": "{\"effective_bounds\": [1, 100], \"required\": [0, 1, 2, 99, 100, 101], \"missing\": [100]}",
+        "incorrect_response": "{\"effective_bounds\": [0, 100], \"required\": [-1, 0, 1, 99, 100, 101], \"missing\": [-1, 100]}",
+        "explanation": "整数域下严格大于0的下界是1，不能把开区间端点直接当L。",
+        "observable_checks": [
+          "自行从整数域及严格下界求出有效闭区间",
+          "基于推导出的L和U求六点集合及已有用例差集"
+        ],
+        "novelty": "不再直接提供L；必须先把业务开边界转换成有效整数边界，再做测试集合计算。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_boundary_partitions.delayed_transfer",
+        "oracle_input": {
+          "kind": "boundary_contract",
+          "lower_exclusive": 0,
+          "upper_inclusive": 100,
+          "existing": [
+            0,
+            1,
+            2,
+            99,
+            101
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "testing_branch_coverage",
+    "domain": "testing",
+    "title": "区分执行过代码与覆盖了分支",
+    "course": "软件测试技术",
+    "level": "foundation",
+    "project_context": "优惠计算函数有两个独立判断，现有测试可以执行所有赋值行却遗漏否定分支。报告需要列出缺少的分支，而不是只给一个覆盖百分比。",
+    "competency": "追踪输入对应的分支结果并计算覆盖缺口",
+    "prerequisites": [
+      "条件判断",
+      "语句覆盖",
+      "分支覆盖"
+    ],
+    "misconception": "所有赋值语句都执行过就表示所有分支都测试过。",
+    "misconception_probe": "member=true且amount=100会运行全部赋值行，这一个输入覆盖了两个if的哪几种结果？",
+    "remediation_activity": "按两个if分别画T/F边，并为每个测试在边上打点。",
+    "next_activity": "补充必要的负分支测试后再接入CI覆盖报告。",
+    "return_anchor": "tests/test_discount.py 的 branch cases",
+    "goal_a": "定位真实未测分支",
+    "goal_b": "避免用语句覆盖代替条件覆盖",
+    "task_prompt": "逐输入追踪函数并报告分支覆盖集合。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "只有一个会员小额输入。",
+        "artifact": "被测代码：\ndef discount(member, amount):\n    result = 0\n    if member:             # 分支名member\n        result = 10\n    if amount >= 100:      # 分支名amount\n        result += 5\n    return result\n\n分支覆盖以每个if的T/F结果为单位。输出outputs；covered与missing按 member:T,member:F,amount:T,amount:F 的固定顺序。\n\n测试输入：\n{\n  \"tests\": [\n    {\n      \"member\": true,\n      \"amount\": 50\n    }\n  ]\n}",
+        "correct_response": "{\"outputs\": [10], \"covered\": [\"member:T\", \"amount:F\"], \"missing\": [\"member:F\", \"amount:T\"]}",
+        "incorrect_response": "{\"outputs\": [10], \"covered\": [\"member:T\", \"member:F\", \"amount:T\", \"amount:F\"], \"missing\": []}",
+        "explanation": "一次执行只走每个if的一条边。",
+        "observable_checks": [
+          "逐if记录真假结果",
+          "输出与覆盖分别核验"
+        ],
+        "novelty": "基础单输入覆盖计算。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_branch_coverage.base",
+        "oracle_input": {
+          "kind": "branches",
+          "tests": [
+            {
+              "member": true,
+              "amount": 50
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "用两个输入覆盖相反结果。",
+        "artifact": "被测代码：\ndef discount(member, amount):\n    result = 0\n    if member:             # 分支名member\n        result = 10\n    if amount >= 100:      # 分支名amount\n        result += 5\n    return result\n\n分支覆盖以每个if的T/F结果为单位。输出outputs；covered与missing按 member:T,member:F,amount:T,amount:F 的固定顺序。\n\n测试输入：\n{\n  \"tests\": [\n    {\n      \"member\": true,\n      \"amount\": 100\n    },\n    {\n      \"member\": false,\n      \"amount\": 0\n    }\n  ]\n}",
+        "correct_response": "{\"outputs\": [15, 0], \"covered\": [\"member:T\", \"member:F\", \"amount:T\", \"amount:F\"], \"missing\": []}",
+        "incorrect_response": "{\"outputs\": [15, 0], \"covered\": [\"member:T\", \"amount:T\"], \"missing\": [\"member:F\", \"amount:F\"]}",
+        "explanation": "第二次执行提供两个否定分支。",
+        "observable_checks": [
+          "跨测试取覆盖并集",
+          "阈值相等走肯定分支"
+        ],
+        "novelty": "多用例覆盖并集。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_branch_coverage.near_transfer",
+        "oracle_input": {
+          "kind": "branches",
+          "tests": [
+            {
+              "member": true,
+              "amount": 100
+            },
+            {
+              "member": false,
+              "amount": 0
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "一个输入执行了全部赋值语句。",
+        "artifact": "被测代码：\ndef discount(member, amount):\n    result = 0\n    if member:             # 分支名member\n        result = 10\n    if amount >= 100:      # 分支名amount\n        result += 5\n    return result\n\n分支覆盖以每个if的T/F结果为单位。输出outputs；covered与missing按 member:T,member:F,amount:T,amount:F 的固定顺序。\n\n测试输入：\n{\n  \"tests\": [\n    {\n      \"member\": true,\n      \"amount\": 100\n    }\n  ]\n}",
+        "correct_response": "{\"outputs\": [15], \"covered\": [\"member:T\", \"amount:T\"], \"missing\": [\"member:F\", \"amount:F\"]}",
+        "incorrect_response": "{\"outputs\": [15], \"covered\": [\"member:T\", \"member:F\", \"amount:T\", \"amount:F\"], \"missing\": []}",
+        "explanation": "两个赋值块都执行不代表两个if的假分支存在测试。",
+        "observable_checks": [
+          "区分语句覆盖与分支覆盖",
+          "明确列出两个未走的否定结果"
+        ],
+        "novelty": "全赋值行执行仍不满足分支覆盖。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_branch_coverage.delayed_transfer",
+        "oracle_input": {
+          "kind": "branches",
+          "tests": [
+            {
+              "member": true,
+              "amount": 100
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "testing_mcdc_independence",
+    "domain": "testing",
+    "title": "验证复合授权条件的独立影响",
+    "course": "软件测试技术",
+    "level": "integrated",
+    "project_context": "发布流水线的授权规则由项目成员资格、分支权限与紧急授权共同决定。测试需要证明每个输入条件可独立改变决策，不只观察总结果有真有假。",
+    "competency": "从测试真值表找出唯一条件变化且改变决策的证据对",
+    "prerequisites": [
+      "布尔代数",
+      "判定覆盖",
+      "条件独立性"
+    ],
+    "misconception": "只要每个条件都出现过true和false，就已经证明其独立影响。",
+    "misconception_probe": "A与B在两行中同时翻转，能否据此证明A独立决定了结果？",
+    "remediation_activity": "把候选行两两比较，先排除有两个及以上条件变化的行对。",
+    "next_activity": "为发布权限评审提供独立影响对及仍缺条件。",
+    "return_anchor": "tests/test_release_policy.py 的 decision table",
+    "goal_a": "验证复合权限规则",
+    "goal_b": "避免条件覆盖的伪充分性",
+    "task_prompt": "按给定MC/DC定义分析有限真值表。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "为每个条件找出证据对。",
+        "artifact": "授权布尔决策 D=(A and B) or C。测试表每行给出A,B,C，行号从0开始。本题使用unique-cause MC/DC：某条件合格当存在一对行，仅该条件改变、其他条件相同且D改变。输出decisions布尔数组、pairs（A/B/C各对应所有合格行号对，按字典序）、missing。不得把多个条件一起改变算作独立影响。\n\n测试输入：\n{\n  \"tests\": [\n    [\n      false,\n      true,\n      false\n    ],\n    [\n      true,\n      true,\n      false\n    ],\n    [\n      true,\n      false,\n      false\n    ],\n    [\n      true,\n      false,\n      true\n    ]\n  ]\n}",
+        "correct_response": "{\"decisions\": [false, true, false, true], \"pairs\": {\"A\": [[0, 1]], \"B\": [[1, 2]], \"C\": [[2, 3]]}, \"missing\": []}",
+        "incorrect_response": "{\"decisions\": [false, true, false, true], \"pairs\": {\"A\": [[0, 1]], \"B\": [[0, 2]], \"C\": [[0, 3]]}, \"missing\": []}",
+        "explanation": "B的证据对须固定A和C；C的证据对须固定A和B。",
+        "observable_checks": [
+          "每对仅改变目标条件",
+          "决策必须随之改变"
+        ],
+        "novelty": "最小规模的三条件独立影响集合。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_mcdc_independence.base",
+        "oracle_input": {
+          "kind": "mcdc",
+          "tests": [
+            [
+              false,
+              true,
+              false
+            ],
+            [
+              true,
+              true,
+              false
+            ],
+            [
+              true,
+              false,
+              false
+            ],
+            [
+              true,
+              false,
+              true
+            ]
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "表中每个条件均取过真假值。",
+        "artifact": "授权布尔决策 D=(A and B) or C。测试表每行给出A,B,C，行号从0开始。本题使用unique-cause MC/DC：某条件合格当存在一对行，仅该条件改变、其他条件相同且D改变。输出decisions布尔数组、pairs（A/B/C各对应所有合格行号对，按字典序）、missing。不得把多个条件一起改变算作独立影响。\n\n测试输入：\n{\n  \"tests\": [\n    [\n      false,\n      false,\n      false\n    ],\n    [\n      true,\n      true,\n      false\n    ],\n    [\n      true,\n      true,\n      true\n    ]\n  ]\n}",
+        "correct_response": "{\"decisions\": [false, true, true], \"pairs\": {\"A\": [], \"B\": [], \"C\": []}, \"missing\": [\"A\", \"B\", \"C\"]}",
+        "incorrect_response": "{\"decisions\": [false, true, true], \"pairs\": {\"A\": [[0, 1]], \"B\": [[0, 1]], \"C\": [[1, 2]]}, \"missing\": []}",
+        "explanation": "前两行同时改变A和B；后两行虽只改C，但输出没变。",
+        "observable_checks": [
+          "多条件变化不算独立影响",
+          "输出不变也不构成证据"
+        ],
+        "novelty": "条件覆盖成立但MC/DC全部不满足。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_mcdc_independence.near_transfer",
+        "oracle_input": {
+          "kind": "mcdc",
+          "tests": [
+            [
+              false,
+              false,
+              false
+            ],
+            [
+              true,
+              true,
+              false
+            ],
+            [
+              true,
+              true,
+              true
+            ]
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "C的独立影响在A=false时验证。",
+        "artifact": "授权布尔决策 D=(A and B) or C。测试表每行给出A,B,C，行号从0开始。本题使用unique-cause MC/DC：某条件合格当存在一对行，仅该条件改变、其他条件相同且D改变。输出decisions布尔数组、pairs（A/B/C各对应所有合格行号对，按字典序）、missing。不得把多个条件一起改变算作独立影响。\n\n测试输入：\n{\n  \"tests\": [\n    [\n      false,\n      true,\n      false\n    ],\n    [\n      true,\n      true,\n      false\n    ],\n    [\n      true,\n      false,\n      false\n    ],\n    [\n      false,\n      true,\n      true\n    ]\n  ]\n}",
+        "correct_response": "{\"decisions\": [false, true, false, true], \"pairs\": {\"A\": [[0, 1]], \"B\": [[1, 2]], \"C\": [[0, 3]]}, \"missing\": []}",
+        "incorrect_response": "{\"decisions\": [false, true, false, true], \"pairs\": {\"A\": [[0, 1]], \"B\": [[1, 2]], \"C\": []}, \"missing\": [\"C\"]}",
+        "explanation": "C是OR的一侧，即使A为false仍能独立改变总决策。",
+        "observable_checks": [
+          "允许在合适上下文验证短路分支",
+          "不额外要求A必须为真"
+        ],
+        "novelty": "换到OR救援分支的独立影响上下文。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_mcdc_independence.delayed_transfer",
+        "oracle_input": {
+          "kind": "mcdc",
+          "tests": [
+            [
+              false,
+              true,
+              false
+            ],
+            [
+              true,
+              true,
+              false
+            ],
+            [
+              true,
+              false,
+              false
+            ],
+            [
+              false,
+              true,
+              true
+            ]
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "testing_fixture_isolation",
+    "domain": "testing",
+    "title": "发现共享测试数据造成的顺序依赖",
+    "course": "软件测试技术",
+    "level": "intermediate",
+    "project_context": "购物车单元测试单独运行都通过，组合运行却出现空购物车断言失败。需要依据实际fixture生命周期解释问题，不能直接归咎于业务代码。",
+    "competency": "比较共享与每测试重建数据时的观测结果",
+    "prerequisites": [
+      "测试夹具",
+      "可变对象",
+      "测试隔离"
+    ],
+    "misconception": "测试单独通过且某个执行顺序通过，就证明它们互不影响。",
+    "misconception_probe": "先测空购物车再测试添加时全绿，能否排除共享列表污染？",
+    "remediation_activity": "用两种执行顺序追踪同一列表对象，再改为每测试新建对象比较。",
+    "next_activity": "将购物车fixture改成每测试独立初始化。",
+    "return_anchor": "tests/test_cart.py 的 cart fixture",
+    "goal_a": "消除顺序依赖",
+    "goal_b": "让失败准确指向业务行为",
+    "task_prompt": "模拟测试夹具状态，不运行任意测试代码。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "先添加商品再检查空购物车。",
+        "artifact": "测试使用列表fixture。shared=true时各测试引用同一个列表，shared=false时每个测试开始都从initial深复制。每个测试按ops执行append或clear，之后断言列表等于expected；断言失败不恢复列表，仍继续后续测试。输出seen（各测试断言时列表快照）及failed（失败的测试name顺序）。\n\n测试输入：\n{\n  \"initial\": [],\n  \"shared\": true,\n  \"tests\": [\n    {\n      \"name\": \"add\",\n      \"ops\": [\n        {\n          \"op\": \"append\",\n          \"value\": \"book\"\n        }\n      ],\n      \"expected\": [\n        \"book\"\n      ]\n    },\n    {\n      \"name\": \"empty\",\n      \"ops\": [],\n      \"expected\": []\n    }\n  ]\n}",
+        "correct_response": "{\"seen\": [[\"book\"], [\"book\"]], \"failed\": [\"empty\"]}",
+        "incorrect_response": "{\"seen\": [[\"book\"], []], \"failed\": []}",
+        "explanation": "第二个测试仍引用已被第一个修改的列表。",
+        "observable_checks": [
+          "保留共享状态跨测试传播",
+          "失败归因于实际列表内容"
+        ],
+        "novelty": "共享可变夹具造成直接污染。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_fixture_isolation.base",
+        "oracle_input": {
+          "kind": "fixture",
+          "initial": [],
+          "shared": true,
+          "tests": [
+            {
+              "name": "add",
+              "ops": [
+                {
+                  "op": "append",
+                  "value": "book"
+                }
+              ],
+              "expected": [
+                "book"
+              ]
+            },
+            {
+              "name": "empty",
+              "ops": [],
+              "expected": []
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "仅调换测试执行顺序。",
+        "artifact": "测试使用列表fixture。shared=true时各测试引用同一个列表，shared=false时每个测试开始都从initial深复制。每个测试按ops执行append或clear，之后断言列表等于expected；断言失败不恢复列表，仍继续后续测试。输出seen（各测试断言时列表快照）及failed（失败的测试name顺序）。\n\n测试输入：\n{\n  \"initial\": [],\n  \"shared\": true,\n  \"tests\": [\n    {\n      \"name\": \"empty\",\n      \"ops\": [],\n      \"expected\": []\n    },\n    {\n      \"name\": \"add\",\n      \"ops\": [\n        {\n          \"op\": \"append\",\n          \"value\": \"book\"\n        }\n      ],\n      \"expected\": [\n        \"book\"\n      ]\n    }\n  ]\n}",
+        "correct_response": "{\"seen\": [[], [\"book\"]], \"failed\": []}",
+        "incorrect_response": "{\"seen\": [[\"book\"], [\"book\"]], \"failed\": [\"empty\"]}",
+        "explanation": "这个顺序碰巧通过；结果不能证明隔离性已经修复。",
+        "observable_checks": [
+          "按实际顺序追踪",
+          "不以另一顺序结果替代当前观测"
+        ],
+        "novelty": "展示顺序依赖可以被单次绿灯掩盖。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_fixture_isolation.near_transfer",
+        "oracle_input": {
+          "kind": "fixture",
+          "initial": [],
+          "shared": true,
+          "tests": [
+            {
+              "name": "empty",
+              "ops": [],
+              "expected": []
+            },
+            {
+              "name": "add",
+              "ops": [
+                {
+                  "op": "append",
+                  "value": "book"
+                }
+              ],
+              "expected": [
+                "book"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "测试恢复原顺序，改为每测试独立夹具。",
+        "artifact": "测试使用列表fixture。shared=true时各测试引用同一个列表，shared=false时每个测试开始都从initial深复制。每个测试按ops执行append或clear，之后断言列表等于expected；断言失败不恢复列表，仍继续后续测试。输出seen（各测试断言时列表快照）及failed（失败的测试name顺序）。\n\n测试输入：\n{\n  \"initial\": [],\n  \"shared\": false,\n  \"tests\": [\n    {\n      \"name\": \"add\",\n      \"ops\": [\n        {\n          \"op\": \"append\",\n          \"value\": \"book\"\n        }\n      ],\n      \"expected\": [\n        \"book\"\n      ]\n    },\n    {\n      \"name\": \"empty\",\n      \"ops\": [],\n      \"expected\": []\n    }\n  ]\n}",
+        "correct_response": "{\"seen\": [[\"book\"], []], \"failed\": []}",
+        "incorrect_response": "{\"seen\": [[\"book\"], [\"book\"]], \"failed\": [\"empty\"]}",
+        "explanation": "重建fixture而非调换顺序消除了跨测试状态传播。",
+        "observable_checks": [
+          "每测试使用初始副本",
+          "添加测试不能污染后续空状态"
+        ],
+        "novelty": "改变生命周期来验证真正修复。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_fixture_isolation.delayed_transfer",
+        "oracle_input": {
+          "kind": "fixture",
+          "initial": [],
+          "shared": false,
+          "tests": [
+            {
+              "name": "add",
+              "ops": [
+                {
+                  "op": "append",
+                  "value": "book"
+                }
+              ],
+              "expected": [
+                "book"
+              ]
+            },
+            {
+              "name": "empty",
+              "ops": [],
+              "expected": []
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "testing_metamorphic_sort_properties",
+    "domain": "testing",
+    "title": "用性质断言识别貌似正确的排序",
+    "course": "软件测试技术",
+    "level": "intermediate",
+    "project_context": "日志排序工具的输出看似有序，但可能丢重复项或修改调用者缓存。团队需要同时检查排序结果与非破坏性合同。",
+    "competency": "为给定实现和反例检查顺序、多重集和输入保持等有限性质",
+    "prerequisites": [
+      "排序",
+      "多重集合",
+      "性质测试"
+    ],
+    "misconception": "输出已经升序就说明排序实现满足全部API合同。",
+    "misconception_probe": "将列表先转成set再排序，遇到重复日志会违反哪些约束？",
+    "remediation_activity": "用重复值、负数和共享输入各构造一个短反例，逐项核验性质。",
+    "next_activity": "将这些性质加入排序工具的自动化测试。",
+    "return_anchor": "tests/test_log_sort.py 的 property assertions",
+    "goal_a": "保留日志记录的完整性",
+    "goal_b": "防止排序污染调用者缓存",
+    "task_prompt": "执行给定小型实现的语义，报告违反的合同性质。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "实现先去重再排序。",
+        "artifact": "排序API承诺三项性质：nondecreasing（输出升序）、multiset_preserved（每个元素出现次数保留）、input_unchanged（调用后输入列表未变）；另记录length_preserved。给定implementation对应实际代码：dedup -> return sorted(set(xs)); inplace -> xs.sort(); return xs; absolute -> return sorted(xs,key=abs)。输出result、input_after、violated，性质名称按nondecreasing,multiset_preserved,input_unchanged,length_preserved顺序。\n\n测试输入：\n{\n  \"implementation\": \"dedup\",\n  \"values\": [\n    2,\n    1,\n    2\n  ]\n}",
+        "correct_response": "{\"result\": [1, 2], \"input_after\": [2, 1, 2], \"violated\": [\"multiset_preserved\", \"length_preserved\"]}",
+        "incorrect_response": "{\"result\": [1, 2], \"input_after\": [2, 1, 2], \"violated\": []}",
+        "explanation": "有序不等于保留所有记录；重复2被丢弃。",
+        "observable_checks": [
+          "检查元素计数而非集合相等",
+          "区分输出性质与副作用"
+        ],
+        "novelty": "重复元素的多重集反例。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_metamorphic_sort_properties.base",
+        "oracle_input": {
+          "kind": "sort_properties",
+          "implementation": "dedup",
+          "values": [
+            2,
+            1,
+            2
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "实现原地排序。",
+        "artifact": "排序API承诺三项性质：nondecreasing（输出升序）、multiset_preserved（每个元素出现次数保留）、input_unchanged（调用后输入列表未变）；另记录length_preserved。给定implementation对应实际代码：dedup -> return sorted(set(xs)); inplace -> xs.sort(); return xs; absolute -> return sorted(xs,key=abs)。输出result、input_after、violated，性质名称按nondecreasing,multiset_preserved,input_unchanged,length_preserved顺序。\n\n测试输入：\n{\n  \"implementation\": \"inplace\",\n  \"values\": [\n    3,\n    1,\n    2\n  ]\n}",
+        "correct_response": "{\"result\": [1, 2, 3], \"input_after\": [1, 2, 3], \"violated\": [\"input_unchanged\"]}",
+        "incorrect_response": "{\"result\": [1, 2, 3], \"input_after\": [3, 1, 2], \"violated\": []}",
+        "explanation": "输出数值正确仍违反不修改输入的API合同。",
+        "observable_checks": [
+          "观测调用后原始对象",
+          "不把正确输出等同无副作用"
+        ],
+        "novelty": "副作用反例与排序值无关。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_metamorphic_sort_properties.near_transfer",
+        "oracle_input": {
+          "kind": "sort_properties",
+          "implementation": "inplace",
+          "values": [
+            3,
+            1,
+            2
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "实现按绝对值排序。",
+        "artifact": "排序API承诺三项性质：nondecreasing（输出升序）、multiset_preserved（每个元素出现次数保留）、input_unchanged（调用后输入列表未变）；另记录length_preserved。给定implementation对应实际代码：dedup -> return sorted(set(xs)); inplace -> xs.sort(); return xs; absolute -> return sorted(xs,key=abs)。输出result、input_after、violated，性质名称按nondecreasing,multiset_preserved,input_unchanged,length_preserved顺序。\n\n测试输入：\n{\n  \"implementation\": \"absolute\",\n  \"values\": [\n    -3,\n    2,\n    -1\n  ]\n}",
+        "correct_response": "{\"result\": [-1, 2, -3], \"input_after\": [-3, 2, -1], \"violated\": [\"nondecreasing\"]}",
+        "incorrect_response": "{\"result\": [-3, -1, 2], \"input_after\": [-3, 2, -1], \"violated\": []}",
+        "explanation": "实际比较键为abs，不能按需求中的自然大小假装执行。",
+        "observable_checks": [
+          "执行真实比较键",
+          "逐邻项验证自然升序"
+        ],
+        "novelty": "负值暴露错误排序键。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_metamorphic_sort_properties.delayed_transfer",
+        "oracle_input": {
+          "kind": "sort_properties",
+          "implementation": "absolute",
+          "values": [
+            -3,
+            2,
+            -1
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "testing_mock_contract_fidelity",
+    "domain": "testing",
+    "title": "让测试替身覆盖真实上游失败合同",
+    "course": "软件测试技术",
+    "level": "intermediate",
+    "project_context": "仪表盘从计数服务读取非负整数，现有单元测试只覆盖成功返回。题目中的HTTP响应和异常均为本地替身，不需要访问网络。",
+    "competency": "提出能让当前错误实现失败的具体测试输入和断言，并说明替身未覆盖的边界",
+    "prerequisites": [
+      "测试替身",
+      "异常路径",
+      "接口合同"
+    ],
+    "misconception": "给依赖打了mock并得到一次绿灯就验证了完整上游协议。",
+    "misconception_probe": "替身始终返回200时，测试是否检验了上游返回500但仍有JSON正文的情形？",
+    "remediation_activity": "逐个列出状态码、数据类型和异常类型，用一个具体替身行为触发每个边界。",
+    "next_activity": "为计数客户端补充三类失败路径的单元测试，再单列集成契约检查。",
+    "return_anchor": "tests/test_counter_client.py 的 FakeResponse",
+    "goal_a": "让替身能暴露真实协议错误",
+    "goal_b": "区分单元检查与网络集成证据",
+    "task_prompt": "给出具体替身行为和预期断言，不把新增测试文字当作已执行结果。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "写出一个会暴露遗漏状态码检查的测试。",
+        "artifact": "当前代码：\ndef read_count(client):\n    r = client.get('/count')\n    return r.json()['count']\n\n接口合同：status_code!=200必须抛UpstreamError；200的JSON才可读取。已有FakeResponse.status_code=200，json()返回{'count':3}，现有测试只断言read_count(fake)==3。",
+        "correct_response": "新增替身返回status_code=500但json()仍返回{'count':3}；断言read_count抛UpstreamError。当前实现返回3，因此这个测试应失败并定位遗漏状态检查。",
+        "incorrect_response": "再增加一个返回200、count为5的替身，断言结果5，就验证了错误响应处理。",
+        "explanation": "选择仍可解析的错误正文，避免异常来自JSON解析而掩盖真正的状态码缺口。",
+        "observable_checks": [
+          "提出具体的非成功状态且body仍可解析的响应，使遗漏状态检查的实现错误地返回值",
+          "断言应抛出合同规定的上游异常；状态码和count数值不限定为参考示例"
+        ],
+        "novelty": "状态错误与正文可解析性分离。",
+        "answer_validation": "reasoned_draft",
+        "oracle_id": null
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "为响应字段类型写一个不能被数值相等掩盖的测试。",
+        "artifact": "当前代码：\ndef read_count(client):\n    r = client.get('/count')\n    if r.status_code != 200: raise UpstreamError()\n    return r.json()['count']\n\n接口合同：count必须为JSON非负整数，true/false、字符串和浮点数均非法，非法时抛PayloadError。FakeResponse状态200。",
+        "correct_response": "令json()返回{'count':True}，断言抛PayloadError；再用{'count':0}验证返回类型是int且值0。只断言结果==1会把Python的True与1混淆，无法检验类型合同。",
+        "incorrect_response": "让count=True并断言结果==1；通过说明整数类型校验正确。",
+        "explanation": "Python值相等不等于JSON类型合同成立，需要检验异常及合法零值。",
+        "observable_checks": [
+          "提出一种能被int转换但违反count严格整数类型合同的值，例如布尔或浮点数",
+          "断言应抛PayloadError；不强制额外零值正例，允许其他能暴露同一缺陷的等价测试"
+        ],
+        "novelty": "类型边界不能被值相等断言掩盖。",
+        "answer_validation": "reasoned_draft",
+        "oracle_id": null
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "测试超时降级分支是否真正被执行。",
+        "artifact": "当前代码：\ndef read_count(client):\n    try:\n        r = client.get('/count')\n    except ConnectionError:\n        return {'available':False,'count':None}\n    return {'available':True,'count':r.json()['count']}\n\n合同：ConnectionError和TimeoutError均返回同一降级对象。替身可让get直接抛指定Python内建异常；没有自动重试。",
+        "correct_response": "让get('/count')直接抛TimeoutError，断言返回{'available':False,'count':None}，并断言只调用一次get。当前代码会向外抛TimeoutError，所以新测试会失败；不能把成功空正文当超时。",
+        "incorrect_response": "让json()返回{'count':0}并断言count为0，这与超时无数据等价。",
+        "explanation": "超时是调用阶段异常，不等于成功响应中的零值。",
+        "observable_checks": [
+          "替身在get调用点抛异常",
+          "断言具体降级对象",
+          "不添加合同未允许的重试"
+        ],
+        "novelty": "从响应检查迁移到调用异常及降级合同。",
+        "answer_validation": "reasoned_draft",
+        "oracle_id": null
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "testing_concurrency_interleavings",
+    "domain": "testing",
+    "title": "用确定交错复现计数丢失",
+    "course": "软件测试技术",
+    "level": "integrated",
+    "project_context": "服务统计请求总数时使用读后写加一，偶发少计难以靠随机sleep稳定复现。测试将线程操作拆成确定的交错步骤。",
+    "competency": "从读写轨迹计算最终值并识别丢失更新",
+    "prerequisites": [
+      "共享内存",
+      "竞态条件",
+      "读改写原子性"
+    ],
+    "misconception": "两个线程各执行了一次加一，最终值必然增加二，与交错无关。",
+    "misconception_probe": "两个线程都在任何写入前读取同一旧值，会各写回什么？",
+    "remediation_activity": "按线程分列local，按时间分行填counter，避免把write误当再次读取。",
+    "next_activity": "为计数器更换原子更新后复用同一交错测试。",
+    "return_anchor": "tests/test_counter_race.py 的 scheduled steps",
+    "goal_a": "稳定复现竞态",
+    "goal_b": "验证计数更新的原子边界",
+    "task_prompt": "严格执行给定读写轨迹，不靠真实并发时机猜测。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "两个线程先读后写。",
+        "artifact": "共享计数器counter初值给定。每个线程执行一次非原子增量：read把counter保存到自己的local；write执行counter=local+1。trace按真实交错顺序给出，所有线程恰好read/write各一次；不使用锁。输出final、lost_increments，其中理想值=initial+完成write数量，lost为理想值减实际值。\n\n测试输入：\n{\n  \"initial\": 0,\n  \"trace\": [\n    [\n      \"A\",\n      \"read\"\n    ],\n    [\n      \"B\",\n      \"read\"\n    ],\n    [\n      \"A\",\n      \"write\"\n    ],\n    [\n      \"B\",\n      \"write\"\n    ]\n  ]\n}",
+        "correct_response": "{\"final\": 1, \"lost_increments\": 1}",
+        "incorrect_response": "{\"final\": 2, \"lost_increments\": 0}",
+        "explanation": "两次write均使用各自保存的0写回1。",
+        "observable_checks": [
+          "write使用本线程旧快照",
+          "按完成增量数计算丢失量"
+        ],
+        "novelty": "最短丢失更新交错。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_concurrency_interleavings.base",
+        "oracle_input": {
+          "kind": "interleaving",
+          "initial": 0,
+          "trace": [
+            [
+              "A",
+              "read"
+            ],
+            [
+              "B",
+              "read"
+            ],
+            [
+              "A",
+              "write"
+            ],
+            [
+              "B",
+              "write"
+            ]
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "线程操作恰好串行。",
+        "artifact": "共享计数器counter初值给定。每个线程执行一次非原子增量：read把counter保存到自己的local；write执行counter=local+1。trace按真实交错顺序给出，所有线程恰好read/write各一次；不使用锁。输出final、lost_increments，其中理想值=initial+完成write数量，lost为理想值减实际值。\n\n测试输入：\n{\n  \"initial\": 0,\n  \"trace\": [\n    [\n      \"A\",\n      \"read\"\n    ],\n    [\n      \"A\",\n      \"write\"\n    ],\n    [\n      \"B\",\n      \"read\"\n    ],\n    [\n      \"B\",\n      \"write\"\n    ]\n  ]\n}",
+        "correct_response": "{\"final\": 2, \"lost_increments\": 0}",
+        "incorrect_response": "{\"final\": 1, \"lost_increments\": 1}",
+        "explanation": "这个交错没有丢失，不代表无锁实现对所有交错都安全。",
+        "observable_checks": [
+          "按实际轨迹而非概括性标签判结果",
+          "后读线程读到先前写入"
+        ],
+        "novelty": "安全交错与程序整体线程安全的区别。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_concurrency_interleavings.near_transfer",
+        "oracle_input": {
+          "kind": "interleaving",
+          "initial": 0,
+          "trace": [
+            [
+              "A",
+              "read"
+            ],
+            [
+              "A",
+              "write"
+            ],
+            [
+              "B",
+              "read"
+            ],
+            [
+              "B",
+              "write"
+            ]
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "三个线程部分重叠。",
+        "artifact": "共享计数器counter初值给定。每个线程执行一次非原子增量：read把counter保存到自己的local；write执行counter=local+1。trace按真实交错顺序给出，所有线程恰好read/write各一次；不使用锁。输出final、lost_increments，其中理想值=initial+完成write数量，lost为理想值减实际值。\n\n测试输入：\n{\n  \"initial\": 10,\n  \"trace\": [\n    [\n      \"A\",\n      \"read\"\n    ],\n    [\n      \"B\",\n      \"read\"\n    ],\n    [\n      \"A\",\n      \"write\"\n    ],\n    [\n      \"C\",\n      \"read\"\n    ],\n    [\n      \"B\",\n      \"write\"\n    ],\n    [\n      \"C\",\n      \"write\"\n    ]\n  ]\n}",
+        "correct_response": "{\"final\": 12, \"lost_increments\": 1}",
+        "incorrect_response": "{\"final\": 13, \"lost_increments\": 0}",
+        "explanation": "C读到A写的11；B仍写11，C最后写12，三次增量只留下两次。",
+        "observable_checks": [
+          "保存三个线程各自local",
+          "区分部分恢复和全部丢失"
+        ],
+        "novelty": "三线程交错中旧写覆盖与新读并存。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_concurrency_interleavings.delayed_transfer",
+        "oracle_input": {
+          "kind": "interleaving",
+          "initial": 10,
+          "trace": [
+            [
+              "A",
+              "read"
+            ],
+            [
+              "B",
+              "read"
+            ],
+            [
+              "A",
+              "write"
+            ],
+            [
+              "C",
+              "read"
+            ],
+            [
+              "B",
+              "write"
+            ],
+            [
+              "C",
+              "write"
+            ]
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  },
+  {
+    "family_id": "testing_mutation_adequacy",
+    "domain": "testing",
+    "title": "通过变异体找出遗漏的阈值断言",
+    "course": "软件测试技术",
+    "level": "integrated",
+    "project_context": "配送费用测试在几个常用金额上全绿，但边界关系或收费常量可能改错。有限变异体用于评价这组测试能发现哪些具体错误。",
+    "competency": "逐测试计算原函数与变异体输出并列出被发现及未发现的错误",
+    "prerequisites": [
+      "测试断言",
+      "边界条件",
+      "变异测试"
+    ],
+    "misconception": "测试原实现全绿就能杀死所有可能的边界与常量错误。",
+    "misconception_probe": "只测50和150能区分>=100与>100吗？",
+    "remediation_activity": "为每个金额写一行四个输出，找出每个变异体是否存在不同列。",
+    "next_activity": "将能杀死存活边界变异体的输入加入运费回归。",
+    "return_anchor": "tests/test_shipping.py 的 threshold cases",
+    "goal_a": "识别测试未发现的具体错误",
+    "goal_b": "用最小增补改善回归敏感度",
+    "task_prompt": "只对给定有限变异体判断检测能力，不外推全部缺陷。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "已有测试只在阈值两侧较远处。",
+        "artifact": "原函数shipping(total)：return 0 if total>=100 else 10。三个非等价变异体：m1改为total>100；m2改为return 10 if total>=100 else 0；m3改为return 0 if total>=100 else 9。每个测试断言返回值等于原函数的合同值；某变异体只要在任一测试输出不同就被杀死。输出expected、killed、survived，变异体ID按m1,m2,m3顺序。\n\n测试输入：\n{\n  \"totals\": [\n    50,\n    150\n  ]\n}",
+        "correct_response": "{\"expected\": [10, 0], \"killed\": [\"m2\", \"m3\"], \"survived\": [\"m1\"]}",
+        "incorrect_response": "{\"expected\": [10, 0], \"killed\": [\"m1\", \"m2\", \"m3\"], \"survived\": []}",
+        "explanation": "50和150对>与>=分支结果相同，边界变异体存活。",
+        "observable_checks": [
+          "按每个变异体逐输入比较",
+          "存活不代表变异体正确"
+        ],
+        "novelty": "遗漏阈值本身。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_mutation_adequacy.base",
+        "oracle_input": {
+          "kind": "mutation",
+          "totals": [
+            50,
+            150
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "测试集只有恰好100。",
+        "artifact": "原函数shipping(total)：return 0 if total>=100 else 10。三个非等价变异体：m1改为total>100；m2改为return 10 if total>=100 else 0；m3改为return 0 if total>=100 else 9。每个测试断言返回值等于原函数的合同值；某变异体只要在任一测试输出不同就被杀死。输出expected、killed、survived，变异体ID按m1,m2,m3顺序。\n\n测试输入：\n{\n  \"totals\": [\n    100\n  ]\n}",
+        "correct_response": "{\"expected\": [0], \"killed\": [\"m1\", \"m2\"], \"survived\": [\"m3\"]}",
+        "incorrect_response": "{\"expected\": [0], \"killed\": [\"m1\", \"m2\", \"m3\"], \"survived\": []}",
+        "explanation": "边界输入杀死比较错误，但未执行收费分支，9与10仍不可区分。",
+        "observable_checks": [
+          "阈值输入覆盖比较差异",
+          "未执行分支常量仍可能存活"
+        ],
+        "novelty": "补边界仍无法覆盖另一个收费错误。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_mutation_adequacy.near_transfer",
+        "oracle_input": {
+          "kind": "mutation",
+          "totals": [
+            100
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "使用99、100、101的邻界集。",
+        "artifact": "原函数shipping(total)：return 0 if total>=100 else 10。三个非等价变异体：m1改为total>100；m2改为return 10 if total>=100 else 0；m3改为return 0 if total>=100 else 9。每个测试断言返回值等于原函数的合同值；某变异体只要在任一测试输出不同就被杀死。输出expected、killed、survived，变异体ID按m1,m2,m3顺序。\n\n测试输入：\n{\n  \"totals\": [\n    99,\n    100,\n    101\n  ]\n}",
+        "correct_response": "{\"expected\": [10, 0, 0], \"killed\": [\"m1\", \"m2\", \"m3\"], \"survived\": []}",
+        "incorrect_response": "{\"expected\": [10, 0, 0], \"killed\": [\"m1\", \"m2\"], \"survived\": [\"m3\"]}",
+        "explanation": "99检测收费常量，100检测边界，输出颠倒也被检测。",
+        "observable_checks": [
+          "说明各输入区分的变异",
+          "只声明覆盖给定变异集合"
+        ],
+        "novelty": "组合边界与分支常量检测。",
+        "answer_validation": "executable",
+        "oracle_id": "testing_mutation_adequacy.delayed_transfer",
+        "oracle_input": {
+          "kind": "mutation",
+          "totals": [
+            99,
+            100,
+            101
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_software_2025"
+    ]
+  }
+]

@@ -1,0 +1,3299 @@
+[
+  {
+    "family_id": "networks_subnet_boundary",
+    "domain": "networks",
+    "title": "审查实验室静态地址工单",
+    "course": "计算机网络基础",
+    "level": "foundation",
+    "project_context": "实验室在隔离仿真器中分配三个 IPv4 网段，工单以一个网内地址加前缀长度表示网段。只处理普通 /27、/26、/29 广播子网，不考虑 /31、/32 或厂商保留规则。",
+    "competency": "从前缀算出网络与广播地址，并判定候选地址是否可分配",
+    "prerequisites": [
+      "IPv4 地址",
+      "子网掩码",
+      "广播地址"
+    ],
+    "misconception": "最后一段小于255的地址都可以分给主机。",
+    "misconception_probe": "在 /27 中，尾数31一定是主机地址吗？应依据哪个边界判断？",
+    "remediation_activity": "在一张32格地址表标出网络、广播和候选位置，再独立核对另一个 /29 工单。",
+    "next_activity": "独立核对通过后，为该工单补写地址冲突检查清单。",
+    "return_anchor": "lab-addresses.csv 的 candidate_ip 审批列",
+    "goal_a": "先避免网络和广播地址误分配",
+    "goal_b": "先把网段容量与设备数量核对清楚",
+    "task_prompt": "审核每个静态地址申请，提交网络地址、广播地址、普通可用主机数和候选可分配判断。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "工单 A 的候选地址能否发放？同时给出完整边界。",
+        "artifact": "工单规则：cidr 可以写任意网内地址；按前缀归一为网络。网络和广播不可分配，其余地址必须位于该子网。\n输入清单：\n{\n  \"cidr\": \"192.0.2.70/26\",\n  \"candidate\": \"192.0.2.126\"\n}",
+        "correct_response": "我的结果是：{\"网络地址\":\"192.0.2.64\",\"广播地址\":\"192.0.2.127\",\"可用主机数\":62,\"候选可分配\":true}",
+        "incorrect_response": "我的结果是：{\"网络地址\":\"192.0.2.0\",\"广播地址\":\"192.0.2.255\",\"可用主机数\":254,\"候选可分配\":true}",
+        "explanation": "前缀决定64地址一块；不能默认整段 /24。",
+        "observable_checks": [
+          "按 /26 归一边界",
+          "去掉两个保留地址",
+          "检查候选包含关系"
+        ],
+        "novelty": "基础案例使用非网络地址形式的CIDR，考查归一。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_subnet_boundary__base__v1",
+        "oracle_kind": "subnet",
+        "oracle_input": {
+          "cidr": "192.0.2.70/26",
+          "candidate": "192.0.2.126"
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "设备申请尾数31，工单写 /27；请批准或拒绝并给出边界。",
+        "artifact": "工单规则：cidr 可以写任意网内地址；按前缀归一为网络。网络和广播不可分配，其余地址必须位于该子网。\n输入清单：\n{\n  \"cidr\": \"198.51.100.31/27\",\n  \"candidate\": \"198.51.100.31\"\n}",
+        "correct_response": "我的结果是：{\"网络地址\":\"198.51.100.0\",\"广播地址\":\"198.51.100.31\",\"可用主机数\":30,\"候选可分配\":false}",
+        "incorrect_response": "我的结果是：{\"网络地址\":\"198.51.100.0\",\"广播地址\":\"198.51.100.31\",\"可用主机数\":30,\"候选可分配\":true}",
+        "explanation": "候选正好落在广播边界，尾数不是255也不能分配。",
+        "observable_checks": [
+          "识别子网自己的广播边界",
+          "不能把全局尾数规则当作掩码规则"
+        ],
+        "novelty": "候选从普通主机转为广播地址，改变判定边界。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_subnet_boundary__near_transfer__v1",
+        "oracle_kind": "subnet",
+        "oracle_input": {
+          "cidr": "198.51.100.31/27",
+          "candidate": "198.51.100.31"
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "备份设备申请紧邻网段前方的地址，请核对是否属于本工单。",
+        "artifact": "工单规则：cidr 可以写任意网内地址；按前缀归一为网络。网络和广播不可分配，其余地址必须位于该子网。\n输入清单：\n{\n  \"cidr\": \"203.0.113.250/29\",\n  \"candidate\": \"203.0.113.247\"\n}",
+        "correct_response": "我的结果是：{\"网络地址\":\"203.0.113.248\",\"广播地址\":\"203.0.113.255\",\"可用主机数\":6,\"候选可分配\":false}",
+        "incorrect_response": "我的结果是：{\"网络地址\":\"203.0.113.248\",\"广播地址\":\"203.0.113.255\",\"可用主机数\":6,\"候选可分配\":true}",
+        "explanation": "247不在248—255范围内；只排除网络和广播还不够。",
+        "observable_checks": [
+          "按 /29 确定小地址块",
+          "先做子网包含判断"
+        ],
+        "novelty": "候选既非本子网网络也非广播，却完全不属于目标子网。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_subnet_boundary__delayed_transfer__v1",
+        "oracle_kind": "subnet",
+        "oracle_input": {
+          "cidr": "203.0.113.250/29",
+          "candidate": "203.0.113.247"
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_network_2025"
+    ]
+  },
+  {
+    "family_id": "networks_route_precedence",
+    "domain": "networks",
+    "title": "定位分支路由表选路异常",
+    "course": "网络路由与交换",
+    "level": "intermediate",
+    "project_context": "分支网关只有静态 IPv4 路由，工单给出当时完整有效表和目的地址。所有下一跳均为仿真端口标识，metric只在相同最长前缀内比较。",
+    "competency": "按活动状态、最长前缀和同前缀metric顺序确定下一跳集合",
+    "prerequisites": [
+      "路由前缀",
+      "最长前缀匹配",
+      "等价路由"
+    ],
+    "misconception": "整张路由表中metric最小的项总是优先。",
+    "misconception_probe": "一个 /26 的metric为900，而默认路由为1时，匹配 /26 的包应先比较哪个字段？",
+    "remediation_activity": "把三个候选按匹配/不匹配分组，再仅在最长前缀组比较metric；手动排除一条down路由。",
+    "next_activity": "独立判断通过后，在变更单中列出受影响目的网段和回滚项。",
+    "return_anchor": "branch-gw/routes.json 的选路复核步骤",
+    "goal_a": "先确认故障流量实际下一跳",
+    "goal_b": "先建立可审计的路由优先级说明",
+    "task_prompt": "只根据给定表选择下一跳；先忽略up=false，再取最长匹配前缀，在同长度组取最低metric，完全相同的都保留。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "目标203.0.113.77会走哪一组下一跳？",
+        "artifact": "离线选路规则：活动路由 → 最长匹配前缀 → 同长度最低metric → 并列均为可用下一跳。不模拟任何其他管理距离。\n输入清单：\n{\n  \"destination\": \"203.0.113.77\",\n  \"routes\": [\n    {\n      \"prefix\": \"0.0.0.0/0\",\n      \"next_hop\": \"192.0.2.1\",\n      \"metric\": 1,\n      \"up\": true\n    },\n    {\n      \"prefix\": \"203.0.113.0/24\",\n      \"next_hop\": \"192.0.2.2\",\n      \"metric\": 100,\n      \"up\": true\n    },\n    {\n      \"prefix\": \"203.0.113.64/26\",\n      \"next_hop\": \"192.0.2.3\",\n      \"metric\": 900,\n      \"up\": true\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"前缀长度\":26,\"下一跳\":[\"192.0.2.3\"]}",
+        "incorrect_response": "我的结果是：{\"前缀长度\":0,\"下一跳\":[\"192.0.2.1\"]}",
+        "explanation": "最长前缀先于metric，默认路由的低数值不覆盖具体路由。",
+        "observable_checks": [
+          "筛出包含目标的前缀",
+          "把前缀长度置于metric之前"
+        ],
+        "novelty": "不同长度路由的优先级冲突。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_route_precedence__base__v1",
+        "oracle_kind": "route",
+        "oracle_input": {
+          "destination": "203.0.113.77",
+          "routes": [
+            {
+              "prefix": "0.0.0.0/0",
+              "next_hop": "192.0.2.1",
+              "metric": 1,
+              "up": true
+            },
+            {
+              "prefix": "203.0.113.0/24",
+              "next_hop": "192.0.2.2",
+              "metric": 100,
+              "up": true
+            },
+            {
+              "prefix": "203.0.113.64/26",
+              "next_hop": "192.0.2.3",
+              "metric": 900,
+              "up": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "两个相同 /24 出口同时up，请确定是否形成等价出口。",
+        "artifact": "离线选路规则：活动路由 → 最长匹配前缀 → 同长度最低metric → 并列均为可用下一跳。不模拟任何其他管理距离。\n输入清单：\n{\n  \"destination\": \"198.51.100.80\",\n  \"routes\": [\n    {\n      \"prefix\": \"0.0.0.0/0\",\n      \"next_hop\": \"192.0.2.1\",\n      \"metric\": 1,\n      \"up\": true\n    },\n    {\n      \"prefix\": \"198.51.100.0/24\",\n      \"next_hop\": \"192.0.2.4\",\n      \"metric\": 5,\n      \"up\": true\n    },\n    {\n      \"prefix\": \"198.51.100.0/24\",\n      \"next_hop\": \"192.0.2.5\",\n      \"metric\": 10,\n      \"up\": true\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"前缀长度\":24,\"下一跳\":[\"192.0.2.4\"]}",
+        "incorrect_response": "我的结果是：{\"前缀长度\":24,\"下一跳\":[\"192.0.2.4\",\"192.0.2.5\"]}",
+        "explanation": "同前缀还要比较metric；仅同时up并不构成等价。",
+        "observable_checks": [
+          "同长度组比较metric",
+          "排除较大metric出口"
+        ],
+        "novelty": "不再靠最长前缀区分，必须处理同前缀代价。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_route_precedence__near_transfer__v1",
+        "oracle_kind": "route",
+        "oracle_input": {
+          "destination": "198.51.100.80",
+          "routes": [
+            {
+              "prefix": "0.0.0.0/0",
+              "next_hop": "192.0.2.1",
+              "metric": 1,
+              "up": true
+            },
+            {
+              "prefix": "198.51.100.0/24",
+              "next_hop": "192.0.2.4",
+              "metric": 5,
+              "up": true
+            },
+            {
+              "prefix": "198.51.100.0/24",
+              "next_hop": "192.0.2.5",
+              "metric": 10,
+              "up": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "维护中最具体路由down，恢复后的实际出口集合是什么？",
+        "artifact": "离线选路规则：活动路由 → 最长匹配前缀 → 同长度最低metric → 并列均为可用下一跳。不模拟任何其他管理距离。\n输入清单：\n{\n  \"destination\": \"203.0.113.70\",\n  \"routes\": [\n    {\n      \"prefix\": \"203.0.113.64/26\",\n      \"next_hop\": \"192.0.2.9\",\n      \"metric\": 1,\n      \"up\": false\n    },\n    {\n      \"prefix\": \"203.0.113.0/24\",\n      \"next_hop\": \"192.0.2.6\",\n      \"metric\": 7,\n      \"up\": true\n    },\n    {\n      \"prefix\": \"203.0.113.0/24\",\n      \"next_hop\": \"192.0.2.7\",\n      \"metric\": 7,\n      \"up\": true\n    },\n    {\n      \"prefix\": \"0.0.0.0/0\",\n      \"next_hop\": \"192.0.2.1\",\n      \"metric\": 1,\n      \"up\": true\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"前缀长度\":24,\"下一跳\":[\"192.0.2.6\",\"192.0.2.7\"]}",
+        "incorrect_response": "我的结果是：{\"前缀长度\":26,\"下一跳\":[\"192.0.2.9\"]}",
+        "explanation": "down项应先剔除，剩余最长组的相同metric构成两条可用出口。",
+        "observable_checks": [
+          "先过滤down",
+          "保留真正等价的两个出口"
+        ],
+        "novelty": "同时考查失效路由过滤和并列路由，不能照抄正常表结果。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_route_precedence__delayed_transfer__v1",
+        "oracle_kind": "route",
+        "oracle_input": {
+          "destination": "203.0.113.70",
+          "routes": [
+            {
+              "prefix": "203.0.113.64/26",
+              "next_hop": "192.0.2.9",
+              "metric": 1,
+              "up": false
+            },
+            {
+              "prefix": "203.0.113.0/24",
+              "next_hop": "192.0.2.6",
+              "metric": 7,
+              "up": true
+            },
+            {
+              "prefix": "203.0.113.0/24",
+              "next_hop": "192.0.2.7",
+              "metric": 7,
+              "up": true
+            },
+            {
+              "prefix": "0.0.0.0/0",
+              "next_hop": "192.0.2.1",
+              "metric": 1,
+              "up": true
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_network_2025"
+    ]
+  },
+  {
+    "family_id": "networks_ordered_acl",
+    "domain": "networks",
+    "title": "复核无状态ACL放行工单",
+    "course": "网络安全基础",
+    "level": "foundation",
+    "project_context": "测试网关使用首条命中即停止的无状态ACL，末尾隐含deny。工单中每条规则均给出协议、地址与可选端口范围，不存在连接跟踪或隐式回包放行。",
+    "competency": "逐条匹配五元组并指出首条命中或隐含拒绝",
+    "prerequisites": [
+      "五元组",
+      "首条匹配",
+      "无状态过滤"
+    ],
+    "misconception": "更具体的deny会自动覆盖前面的宽泛allow。",
+    "misconception_probe": "若宽泛allow位于deny之前，设备会不会继续读到deny？",
+    "remediation_activity": "按一张五元组检查表逐行画勾，到首条完全命中停止；另画请求和回包端口交换。",
+    "next_activity": "独立检查通过后，为ACL调整提交一条正向与一条回包回归样例。",
+    "return_anchor": "gateway/acl.json 的拟生效规则预检",
+    "goal_a": "先阻止意外管理端口暴露",
+    "goal_b": "先验证业务请求与回包都可达",
+    "task_prompt": "给出包最终命中的规则ID和动作。所有端口范围闭区间；any表示不限制该字段。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "这条SSH请求会被最后的deny挡住吗？",
+        "artifact": "配置语义：从上至下首条全字段匹配即执行；无匹配使用implicit/deny。无状态，不自动准许回包。\n输入清单：\n{\n  \"packet\": {\n    \"protocol\": \"tcp\",\n    \"src\": \"198.51.100.20\",\n    \"dst\": \"192.0.2.10\",\n    \"sport\": 51000,\n    \"dport\": 22\n  },\n  \"rules\": [\n    {\n      \"id\": \"R1\",\n      \"action\": \"allow\",\n      \"protocol\": \"tcp\",\n      \"src\": \"198.51.100.0/24\",\n      \"dst\": \"any\",\n      \"sport\": null,\n      \"dport\": null\n    },\n    {\n      \"id\": \"R2\",\n      \"action\": \"deny\",\n      \"protocol\": \"tcp\",\n      \"src\": \"any\",\n      \"dst\": \"any\",\n      \"sport\": null,\n      \"dport\": [\n        22,\n        22\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"规则\":\"R1\",\"动作\":\"allow\"}",
+        "incorrect_response": "我的结果是：{\"规则\":\"R2\",\"动作\":\"deny\"}",
+        "explanation": "R1已经完整命中，R2不能追溯覆盖前面的决定。",
+        "observable_checks": [
+          "遵循顺序而非规则特异性",
+          "说明首条终止"
+        ],
+        "novelty": "宽泛允许在先，暴露规则次序问题。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_ordered_acl__base__v1",
+        "oracle_kind": "acl",
+        "oracle_input": {
+          "packet": {
+            "protocol": "tcp",
+            "src": "198.51.100.20",
+            "dst": "192.0.2.10",
+            "sport": 51000,
+            "dport": 22
+          },
+          "rules": [
+            {
+              "id": "R1",
+              "action": "allow",
+              "protocol": "tcp",
+              "src": "198.51.100.0/24",
+              "dst": "any",
+              "sport": null,
+              "dport": null
+            },
+            {
+              "id": "R2",
+              "action": "deny",
+              "protocol": "tcp",
+              "src": "any",
+              "dst": "any",
+              "sport": null,
+              "dport": [
+                22,
+                22
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "HTTPS服务回包进入该出接口ACL，是否能通过？",
+        "artifact": "配置语义：从上至下首条全字段匹配即执行；无匹配使用implicit/deny。无状态，不自动准许回包。\n输入清单：\n{\n  \"packet\": {\n    \"protocol\": \"tcp\",\n    \"src\": \"192.0.2.10\",\n    \"dst\": \"198.51.100.25\",\n    \"sport\": 443,\n    \"dport\": 51000\n  },\n  \"rules\": [\n    {\n      \"id\": \"R1\",\n      \"action\": \"allow\",\n      \"protocol\": \"tcp\",\n      \"src\": \"any\",\n      \"dst\": \"any\",\n      \"sport\": null,\n      \"dport\": [\n        443,\n        443\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"规则\":\"implicit\",\"动作\":\"deny\"}",
+        "incorrect_response": "我的结果是：{\"规则\":\"R1\",\"动作\":\"allow\"}",
+        "explanation": "回包的443是源端口，规则要求目的端口443；本ACL也不跟踪连接。",
+        "observable_checks": [
+          "分清源端口和目的端口",
+          "不假定无状态设备记住请求"
+        ],
+        "novelty": "回包方向与端口位置发生实质变化。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_ordered_acl__near_transfer__v1",
+        "oracle_kind": "acl",
+        "oracle_input": {
+          "packet": {
+            "protocol": "tcp",
+            "src": "192.0.2.10",
+            "dst": "198.51.100.25",
+            "sport": 443,
+            "dport": 51000
+          },
+          "rules": [
+            {
+              "id": "R1",
+              "action": "allow",
+              "protocol": "tcp",
+              "src": "any",
+              "dst": "any",
+              "sport": null,
+              "dport": [
+                443,
+                443
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "DNS请求进入53端口，应该匹配哪条协议规则？",
+        "artifact": "配置语义：从上至下首条全字段匹配即执行；无匹配使用implicit/deny。无状态，不自动准许回包。\n输入清单：\n{\n  \"packet\": {\n    \"protocol\": \"udp\",\n    \"src\": \"203.0.113.9\",\n    \"dst\": \"192.0.2.53\",\n    \"sport\": 40000,\n    \"dport\": 53\n  },\n  \"rules\": [\n    {\n      \"id\": \"R1\",\n      \"action\": \"deny\",\n      \"protocol\": \"tcp\",\n      \"src\": \"any\",\n      \"dst\": \"any\",\n      \"sport\": null,\n      \"dport\": [\n        53,\n        53\n      ]\n    },\n    {\n      \"id\": \"R2\",\n      \"action\": \"allow\",\n      \"protocol\": \"udp\",\n      \"src\": \"any\",\n      \"dst\": \"192.0.2.53/32\",\n      \"sport\": null,\n      \"dport\": [\n        53,\n        53\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"规则\":\"R2\",\"动作\":\"allow\"}",
+        "incorrect_response": "我的结果是：{\"规则\":\"R1\",\"动作\":\"deny\"}",
+        "explanation": "目的端口相同不足以命中；TCP规则不匹配UDP。",
+        "observable_checks": [
+          "同时检查协议与端口",
+          "继续检查未完整命中的下一行"
+        ],
+        "novelty": "加入跨协议同端口边界，不能只按端口判断。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_ordered_acl__delayed_transfer__v1",
+        "oracle_kind": "acl",
+        "oracle_input": {
+          "packet": {
+            "protocol": "udp",
+            "src": "203.0.113.9",
+            "dst": "192.0.2.53",
+            "sport": 40000,
+            "dport": 53
+          },
+          "rules": [
+            {
+              "id": "R1",
+              "action": "deny",
+              "protocol": "tcp",
+              "src": "any",
+              "dst": "any",
+              "sport": null,
+              "dport": [
+                53,
+                53
+              ]
+            },
+            {
+              "id": "R2",
+              "action": "allow",
+              "protocol": "udp",
+              "src": "any",
+              "dst": "192.0.2.53/32",
+              "sport": null,
+              "dport": [
+                53,
+                53
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_network_2025"
+    ]
+  },
+  {
+    "family_id": "networks_tcp_reassembly",
+    "domain": "networks",
+    "title": "解释抓包中的累计ACK与重传",
+    "course": "网络协议分析",
+    "level": "intermediate",
+    "project_context": "传输验收只观察一个方向的数据字节，初始序号表示接收方下一期待字节。日志不含SYN/FIN、序号回绕或接收窗口限制，所有段都通过校验并被保存。",
+    "competency": "根据乱序、重叠和重复段算累计ACK及缺口后的暂存字节",
+    "prerequisites": [
+      "TCP序号",
+      "累计确认",
+      "乱序缓存"
+    ],
+    "misconception": "收到序号最大的段后，ACK就直接跳到它的结尾。",
+    "misconception_probe": "接收方缺少起始100字节，但后方有完整段时，累计ACK能越过缺口吗？",
+    "remediation_activity": "在200字节纸带上覆盖每个段，合并连续区间；用另一种颜色标记重复覆盖。",
+    "next_activity": "独立分析通过后，为抓包工单区分丢包缺口与重复传输。",
+    "return_anchor": "captures/receiver-trace.json 的ACK解释栏",
+    "goal_a": "先确认发送端为何持续重传",
+    "goal_b": "先计算接收侧仍缺失的连续区间",
+    "task_prompt": "输出所有日志段处理后的累计ACK、缺口后不同字节数及累计重复接收字节数。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "后段先到、前段随后补齐，最终ACK是多少？",
+        "artifact": "段[start,length]覆盖[start,start+length)。ACK是从initial_sequence开始第一个没收到的字节；重复字节指此前已收到又再次到达的字节，每次重复到达都计一次。\n输入清单：\n{\n  \"initial_sequence\": 1000,\n  \"segments\": [\n    [\n      1100,\n      100\n    ],\n    [\n      1000,\n      100\n    ]\n  ]\n}",
+        "correct_response": "我的结果是：{\"累计ACK\":1200,\"缺口后暂存字节\":0,\"重复字节\":0}",
+        "incorrect_response": "我的结果是：{\"累计ACK\":1100,\"缺口后暂存字节\":100,\"重复字节\":0}",
+        "explanation": "前段补齐后可一次跨过已经缓存的后段。",
+        "observable_checks": [
+          "按字节区间求并集",
+          "累计ACK不跨越缺口",
+          "重复字节与不同字节分开"
+        ],
+        "novelty": "乱序缺口被补齐，需要合并已有缓存。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_tcp_reassembly__base__v1",
+        "oracle_kind": "tcp",
+        "oracle_input": {
+          "initial_sequence": 1000,
+          "segments": [
+            [
+              1100,
+              100
+            ],
+            [
+              1000,
+              100
+            ]
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "第二段部分重叠，第三段又重传整段，请避免把重叠计为新数据。",
+        "artifact": "段[start,length]覆盖[start,start+length)。ACK是从initial_sequence开始第一个没收到的字节；重复字节指此前已收到又再次到达的字节，每次重复到达都计一次。\n输入清单：\n{\n  \"initial_sequence\": 2000,\n  \"segments\": [\n    [\n      2000,\n      100\n    ],\n    [\n      2050,\n      100\n    ],\n    [\n      2000,\n      100\n    ]\n  ]\n}",
+        "correct_response": "我的结果是：{\"累计ACK\":2150,\"缺口后暂存字节\":0,\"重复字节\":150}",
+        "incorrect_response": "我的结果是：{\"累计ACK\":2300,\"缺口后暂存字节\":0,\"重复字节\":0}",
+        "explanation": "合并后只有150个不同字节；50字节重叠和100字节重传共重复150字节。",
+        "observable_checks": [
+          "按字节区间求并集",
+          "累计ACK不跨越缺口",
+          "重复字节与不同字节分开"
+        ],
+        "novelty": "增加部分重叠和完整重传，不能累加段长推进ACK。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_tcp_reassembly__near_transfer__v1",
+        "oracle_kind": "tcp",
+        "oracle_input": {
+          "initial_sequence": 2000,
+          "segments": [
+            [
+              2000,
+              100
+            ],
+            [
+              2050,
+              100
+            ],
+            [
+              2000,
+              100
+            ]
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "起始缺口一直没有补齐，但后方又出现重叠段，最终缓存状态如何？",
+        "artifact": "段[start,length]覆盖[start,start+length)。ACK是从initial_sequence开始第一个没收到的字节；重复字节指此前已收到又再次到达的字节，每次重复到达都计一次。\n输入清单：\n{\n  \"initial_sequence\": 3000,\n  \"segments\": [\n    [\n      3100,\n      50\n    ],\n    [\n      3200,\n      50\n    ],\n    [\n      3125,\n      50\n    ]\n  ]\n}",
+        "correct_response": "我的结果是：{\"累计ACK\":3000,\"缺口后暂存字节\":125,\"重复字节\":25}",
+        "incorrect_response": "我的结果是：{\"累计ACK\":3250,\"缺口后暂存字节\":0,\"重复字节\":25}",
+        "explanation": "起点缺失使ACK保持3000，后方有75加50个不同字节。",
+        "observable_checks": [
+          "按字节区间求并集",
+          "累计ACK不跨越缺口",
+          "重复字节与不同字节分开"
+        ],
+        "novelty": "同时保留多个不连续区间，最大段尾不能决定ACK。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_tcp_reassembly__delayed_transfer__v1",
+        "oracle_kind": "tcp",
+        "oracle_input": {
+          "initial_sequence": 3000,
+          "segments": [
+            [
+              3100,
+              50
+            ],
+            [
+              3200,
+              50
+            ],
+            [
+              3125,
+              50
+            ]
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_network_2025"
+    ]
+  },
+  {
+    "family_id": "networks_ipv4_mtu",
+    "domain": "networks",
+    "title": "核对隧道路径的IPv4分片报告",
+    "course": "网络协议与运维",
+    "level": "intermediate",
+    "project_context": "隔离路径上的各段MTU已由配置导出，不需要真实探测。每片IPv4头固定20字节、无选项；题目忽略额外隧道头和二次分片，按路径最小MTU直接制定分片。",
+    "competency": "依据DF和8字节偏移单位制定合法分片或拒绝理由",
+    "prerequisites": [
+      "MTU",
+      "IPv4头部",
+      "分片偏移"
+    ],
+    "misconception": "每片的数据长度都等于MTU减20，不需要8字节对齐。",
+    "misconception_probe": "当MTU为600时，非末片能否承载580字节并表示下一片偏移？",
+    "remediation_activity": "把总长度、数据长度和偏移单位放进三列表，只对非末片做8字节对齐，再检查总数据守恒。",
+    "next_activity": "独立计算通过后，在隧道上线单中记录DF行为和最大无分片报文大小。",
+    "return_anchor": "tunnel/mtu-plan.json 的报文尺寸验算",
+    "goal_a": "先消除大报文失败",
+    "goal_b": "先解释分片的偏移与额外头开销",
+    "task_prompt": "若DF禁止分片，给出处理与出接口MTU；否则按顺序列出每片数据字节、8字节单位偏移、MF。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "1400字节应用数据经过最小600 MTU，DF未置位，分几片？",
+        "artifact": "按min(path_mtu)计算。总长度=数据+头；DF=true且超限则丢弃并报告需要分片。非末片数据必须是8的倍数，末片可用剩余数据。\n输入清单：\n{\n  \"payload_bytes\": 1400,\n  \"header_bytes\": 20,\n  \"path_mtu\": [\n    1500,\n    600,\n    900\n  ],\n  \"df\": false\n}",
+        "correct_response": "我的结果是：{\"分片\":[{\"数据字节\":576,\"偏移单位8字节\":0,\"MF\":1},{\"数据字节\":576,\"偏移单位8字节\":72,\"MF\":1},{\"数据字节\":248,\"偏移单位8字节\":144,\"MF\":0}]}",
+        "incorrect_response": "我的结果是：{\"分片\":[{\"数据字节\":580,\"偏移单位8字节\":0,\"MF\":1},{\"数据字节\":580,\"偏移单位8字节\":72,\"MF\":1},{\"数据字节\":240,\"偏移单位8字节\":145,\"MF\":0}]}",
+        "explanation": "非末片可用580必须向下对齐至576；最后248字节补齐原数据。",
+        "observable_checks": [
+          "取路径最小MTU",
+          "非末片8字节对齐",
+          "数据总量1400不变"
+        ],
+        "novelty": "非8倍数容量使简单减头算法失效。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_ipv4_mtu__base__v1",
+        "oracle_kind": "fragment",
+        "oracle_input": {
+          "payload_bytes": 1400,
+          "header_bytes": 20,
+          "path_mtu": [
+            1500,
+            600,
+            900
+          ],
+          "df": false
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "报文在首链路恰好1500字节，但下一段MTU1280且DF置位，应怎样处理？",
+        "artifact": "按min(path_mtu)计算。总长度=数据+头；DF=true且超限则丢弃并报告需要分片。非末片数据必须是8的倍数，末片可用剩余数据。\n输入清单：\n{\n  \"payload_bytes\": 1480,\n  \"header_bytes\": 20,\n  \"path_mtu\": [\n    1500,\n    1280\n  ],\n  \"df\": true\n}",
+        "correct_response": "我的结果是：{\"处理\":\"丢弃并报告需要分片\",\"出接口MTU\":1280}",
+        "incorrect_response": "我的结果是：{\"处理\":\"原样转发\",\"出接口MTU\":1500}",
+        "explanation": "首链路能容纳不能代表后续链路；DF禁止通过分片解决。",
+        "observable_checks": [
+          "检查整条路径",
+          "尊重DF禁止分片"
+        ],
+        "novelty": "由可分片变为禁止分片，正确动作不是给分片列表。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_ipv4_mtu__near_transfer__v1",
+        "oracle_kind": "fragment",
+        "oracle_input": {
+          "payload_bytes": 1480,
+          "header_bytes": 20,
+          "path_mtu": [
+            1500,
+            1280
+          ],
+          "df": true
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "数据长度恰好为两份560字节，末片MF如何设置？",
+        "artifact": "按min(path_mtu)计算。总长度=数据+头；DF=true且超限则丢弃并报告需要分片。非末片数据必须是8的倍数，末片可用剩余数据。\n输入清单：\n{\n  \"payload_bytes\": 1120,\n  \"header_bytes\": 20,\n  \"path_mtu\": [\n    1500,\n    580\n  ],\n  \"df\": false\n}",
+        "correct_response": "我的结果是：{\"分片\":[{\"数据字节\":560,\"偏移单位8字节\":0,\"MF\":1},{\"数据字节\":560,\"偏移单位8字节\":70,\"MF\":0}]}",
+        "incorrect_response": "我的结果是：{\"分片\":[{\"数据字节\":560,\"偏移单位8字节\":0,\"MF\":1},{\"数据字节\":560,\"偏移单位8字节\":70,\"MF\":1}]}",
+        "explanation": "末片是否满载与MF无关；没有后续数据就必须MF=0。",
+        "observable_checks": [
+          "精确整除时不制造空末片",
+          "MF表达是否还有后片"
+        ],
+        "novelty": "最后一片也满载，检验MF与填满程度的区别。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_ipv4_mtu__delayed_transfer__v1",
+        "oracle_kind": "fragment",
+        "oracle_input": {
+          "payload_bytes": 1120,
+          "header_bytes": 20,
+          "path_mtu": [
+            1500,
+            580
+          ],
+          "df": false
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_network_2025"
+    ]
+  },
+  {
+    "family_id": "networks_window_throughput",
+    "domain": "networks",
+    "title": "解释跨机房备份吞吐受限",
+    "course": "网络性能分析",
+    "level": "integrated",
+    "project_context": "备份链路采用单连接，工单给定瓶颈链路、固定RTT和最大在途窗口。只计算无丢包、无协议开销、发送端始终有数据的理想上界，不把它当作实际测速保证。",
+    "competency": "比较链路速率与窗口/RTT上界并求满速所需窗口",
+    "prerequisites": [
+      "bit与byte",
+      "RTT",
+      "带宽时延积"
+    ],
+    "misconception": "链路标称100Mbps时，单连接无论窗口多小都能达到100Mbps。",
+    "misconception_probe": "如果一个RTT内最多确认64KiB数据，100ms RTT下能持续发满100Mbps吗？",
+    "remediation_activity": "先把窗口转换为bit，再除RTT；画链路上界与窗口上界两条线，取较小值。",
+    "next_activity": "独立核算通过后，制定只调整一个变量的离线压测计划。",
+    "return_anchor": "backup/performance-ticket.md 的容量预测段",
+    "goal_a": "先定位窗口还是链路瓶颈",
+    "goal_b": "先估算带宽时延积与配置上限",
+    "task_prompt": "报告理想吞吐上限Mbps、发满最慢链路需要的最小窗口字节数、限制因素。Mbps=10^6bit/s。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "为什么64KiB窗口的备份没有接近百兆？",
+        "artifact": "吞吐上界=min(所有链路Mbps, window_bytes*8/RTT秒/10^6)。满速窗口取带宽时延积向上取整字节。结果最多保留4位小数；相等标二者相等。\n输入清单：\n{\n  \"links_mbps\": [\n    100,\n    1000\n  ],\n  \"window_bytes\": 65536,\n  \"rtt_ms\": 100\n}",
+        "correct_response": "我的结果是：{\"吞吐上限Mbps\":5.2429,\"满速最小窗口字节\":1250000,\"限制因素\":\"窗口\"}",
+        "incorrect_response": "我的结果是：{\"吞吐上限Mbps\":100,\"满速最小窗口字节\":125000,\"限制因素\":\"链路\"}",
+        "explanation": "64KiB每0.1秒最多约5.24Mbps，注意8bit/byte。",
+        "observable_checks": [
+          "统一bit/byte和毫秒单位",
+          "取链路与窗口较小上界",
+          "不声称实际吞吐必达上界"
+        ],
+        "novelty": "窗口显著小于带宽时延积。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_window_throughput__base__v1",
+        "oracle_kind": "flow",
+        "oracle_input": {
+          "links_mbps": [
+            100,
+            1000
+          ],
+          "window_bytes": 65536,
+          "rtt_ms": 100
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "窗口已扩到1MiB但经过10Mbps出口，继续加窗口是否改变该上界？",
+        "artifact": "吞吐上界=min(所有链路Mbps, window_bytes*8/RTT秒/10^6)。满速窗口取带宽时延积向上取整字节。结果最多保留4位小数；相等标二者相等。\n输入清单：\n{\n  \"links_mbps\": [\n    100,\n    10\n  ],\n  \"window_bytes\": 1048576,\n  \"rtt_ms\": 20\n}",
+        "correct_response": "我的结果是：{\"吞吐上限Mbps\":10,\"满速最小窗口字节\":25000,\"限制因素\":\"链路\"}",
+        "incorrect_response": "我的结果是：{\"吞吐上限Mbps\":419.4304,\"满速最小窗口字节\":25000,\"限制因素\":\"窗口\"}",
+        "explanation": "窗口提供的潜在速率超过链路，只能以10Mbps为上界。",
+        "observable_checks": [
+          "统一bit/byte和毫秒单位",
+          "取链路与窗口较小上界",
+          "不声称实际吞吐必达上界"
+        ],
+        "novelty": "瓶颈从窗口转到中间链路。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_window_throughput__near_transfer__v1",
+        "oracle_kind": "flow",
+        "oracle_input": {
+          "links_mbps": [
+            100,
+            10
+          ],
+          "window_bytes": 1048576,
+          "rtt_ms": 20
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "窗口与40Mbps、50ms的带宽时延积相等，如何标记限制因素？",
+        "artifact": "吞吐上界=min(所有链路Mbps, window_bytes*8/RTT秒/10^6)。满速窗口取带宽时延积向上取整字节。结果最多保留4位小数；相等标二者相等。\n输入清单：\n{\n  \"links_mbps\": [\n    40,\n    100\n  ],\n  \"window_bytes\": 250000,\n  \"rtt_ms\": 50\n}",
+        "correct_response": "我的结果是：{\"吞吐上限Mbps\":40,\"满速最小窗口字节\":250000,\"限制因素\":\"二者相等\"}",
+        "incorrect_response": "我的结果是：{\"吞吐上限Mbps\":5,\"满速最小窗口字节\":2000000,\"限制因素\":\"窗口\"}",
+        "explanation": "250000字节在50ms对应40Mbps，两个边界相等。",
+        "observable_checks": [
+          "统一bit/byte和毫秒单位",
+          "取链路与窗口较小上界",
+          "不声称实际吞吐必达上界"
+        ],
+        "novelty": "检验byte/bit单位和两个限制恰好相等的边界。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_window_throughput__delayed_transfer__v1",
+        "oracle_kind": "flow",
+        "oracle_input": {
+          "links_mbps": [
+            40,
+            100
+          ],
+          "window_bytes": 250000,
+          "rtt_ms": 50
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_network_2025"
+    ]
+  },
+  {
+    "family_id": "networks_dns_cache_scope",
+    "domain": "networks",
+    "title": "分析DNS变更后的缓存观测",
+    "course": "网络服务部署",
+    "level": "intermediate",
+    "project_context": "开发域名全部以.test结尾，题目是离线递归解析器模型。给定缓存、当前权威区记录及查询时刻；无真实DNS请求，也不考虑预取、最小TTL或客户端额外缓存。",
+    "competency": "区分NODATA与NXDOMAIN缓存范围并判断过期边界",
+    "prerequisites": [
+      "DNS记录类型",
+      "TTL",
+      "否定缓存"
+    ],
+    "misconception": "一个类型查不到就代表域名所有类型都不存在，区文件更新还会立即清空缓存。",
+    "misconception_probe": "同名A记录的NODATA缓存能否阻止AAAA查询？",
+    "remediation_activity": "把缓存键写成名称/类型，另给NXDOMAIN画名称级覆盖框；在时间轴标出严格到期点。",
+    "next_activity": "独立判定通过后，为DNS切换工单补写缓存等待与验证时刻。",
+    "return_anchor": "dns/change-window.md 的缓存解释步骤",
+    "goal_a": "先解释变更为何暂未可见",
+    "goal_b": "先区分记录类型缺失和域名不存在",
+    "task_prompt": "按明确给出的模型判断是否命中缓存，返回来源、状态、值和剩余TTL秒；权威查询时TTL使用区记录值。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "A记录刚加入区文件，查询会立即见到新地址吗？",
+        "artifact": "缓存规则：NODATA和NOERROR只匹配name/type；NXDOMAIN匹配同name所有type。stored_at+ttl大于查询时刻才有效，等于即过期。区文件更新不主动清缓存。\n输入清单：\n{\n  \"cache\": [\n    {\n      \"name\": \"build.test\",\n      \"type\": \"A\",\n      \"status\": \"NODATA\",\n      \"stored_at\": 0,\n      \"ttl\": 60,\n      \"value\": null\n    }\n  ],\n  \"query\": {\n    \"name\": \"build.test\",\n    \"type\": \"A\",\n    \"time\": 40\n  },\n  \"authoritative\": {\n    \"build.test/A\": {\n      \"status\": \"NOERROR\",\n      \"value\": \"192.0.2.20\",\n      \"ttl\": 120\n    }\n  }\n}",
+        "correct_response": "我的结果是：{\"来源\":\"缓存\",\"状态\":\"NODATA\",\"值\":null,\"剩余TTL秒\":20}",
+        "incorrect_response": "我的结果是：{\"来源\":\"权威查询\",\"状态\":\"NOERROR\",\"值\":\"192.0.2.20\",\"剩余TTL秒\":120}",
+        "explanation": "有效否定缓存仍控制本次A查询，区文件更新没有自动失效通知。",
+        "observable_checks": [
+          "检验缓存到期时间",
+          "尊重否定缓存结果"
+        ],
+        "novelty": "权威内容更新但否定缓存未过期。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_dns_cache_scope__base__v1",
+        "oracle_kind": "dns",
+        "oracle_input": {
+          "cache": [
+            {
+              "name": "build.test",
+              "type": "A",
+              "status": "NODATA",
+              "stored_at": 0,
+              "ttl": 60,
+              "value": null
+            }
+          ],
+          "query": {
+            "name": "build.test",
+            "type": "A",
+            "time": 40
+          },
+          "authoritative": {
+            "build.test/A": {
+              "status": "NOERROR",
+              "value": "192.0.2.20",
+              "ttl": 120
+            }
+          }
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "已有A类型NODATA时，查询同名AAAA会怎样？",
+        "artifact": "缓存规则：NODATA和NOERROR只匹配name/type；NXDOMAIN匹配同name所有type。stored_at+ttl大于查询时刻才有效，等于即过期。区文件更新不主动清缓存。\n输入清单：\n{\n  \"cache\": [\n    {\n      \"name\": \"dual.test\",\n      \"type\": \"A\",\n      \"status\": \"NODATA\",\n      \"stored_at\": 0,\n      \"ttl\": 60,\n      \"value\": null\n    }\n  ],\n  \"query\": {\n    \"name\": \"dual.test\",\n    \"type\": \"AAAA\",\n    \"time\": 40\n  },\n  \"authoritative\": {\n    \"dual.test/AAAA\": {\n      \"status\": \"NOERROR\",\n      \"value\": \"2001:db8::53\",\n      \"ttl\": 120\n    }\n  }\n}",
+        "correct_response": "我的结果是：{\"来源\":\"权威查询\",\"状态\":\"NOERROR\",\"值\":\"2001:db8::53\",\"剩余TTL秒\":120}",
+        "incorrect_response": "我的结果是：{\"来源\":\"缓存\",\"状态\":\"NODATA\",\"值\":null,\"剩余TTL秒\":20}",
+        "explanation": "NODATA限定记录类型，不代表整个域名不存在。",
+        "observable_checks": [
+          "使用名称和类型共同匹配",
+          "不把NODATA扩大为NXDOMAIN"
+        ],
+        "novelty": "换记录类型改变缓存作用域，并非仅换域名。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_dns_cache_scope__near_transfer__v1",
+        "oracle_kind": "dns",
+        "oracle_input": {
+          "cache": [
+            {
+              "name": "dual.test",
+              "type": "A",
+              "status": "NODATA",
+              "stored_at": 0,
+              "ttl": 60,
+              "value": null
+            }
+          ],
+          "query": {
+            "name": "dual.test",
+            "type": "AAAA",
+            "time": 40
+          },
+          "authoritative": {
+            "dual.test/AAAA": {
+              "status": "NOERROR",
+              "value": "2001:db8::53",
+              "ttl": 120
+            }
+          }
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "查询恰好到达NXDOMAIN缓存到期秒，使用旧结果还是新记录？",
+        "artifact": "缓存规则：NODATA和NOERROR只匹配name/type；NXDOMAIN匹配同name所有type。stored_at+ttl大于查询时刻才有效，等于即过期。区文件更新不主动清缓存。\n输入清单：\n{\n  \"cache\": [\n    {\n      \"name\": \"new.test\",\n      \"type\": \"AAAA\",\n      \"status\": \"NXDOMAIN\",\n      \"stored_at\": 10,\n      \"ttl\": 30,\n      \"value\": null\n    }\n  ],\n  \"query\": {\n    \"name\": \"new.test\",\n    \"type\": \"A\",\n    \"time\": 40\n  },\n  \"authoritative\": {\n    \"new.test/A\": {\n      \"status\": \"NOERROR\",\n      \"value\": \"198.51.100.40\",\n      \"ttl\": 90\n    }\n  }\n}",
+        "correct_response": "我的结果是：{\"来源\":\"权威查询\",\"状态\":\"NOERROR\",\"值\":\"198.51.100.40\",\"剩余TTL秒\":90}",
+        "incorrect_response": "我的结果是：{\"来源\":\"缓存\",\"状态\":\"NXDOMAIN\",\"值\":null,\"剩余TTL秒\":0}",
+        "explanation": "本模型采用严格大于，剩余TTL为0已经不能再返回缓存。",
+        "observable_checks": [
+          "处理等于到期时刻",
+          "NXDOMAIN跨类型但不能跨有效期"
+        ],
+        "novelty": "跨类型名称级负缓存加精确过期边界。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_dns_cache_scope__delayed_transfer__v1",
+        "oracle_kind": "dns",
+        "oracle_input": {
+          "cache": [
+            {
+              "name": "new.test",
+              "type": "AAAA",
+              "status": "NXDOMAIN",
+              "stored_at": 10,
+              "ttl": 30,
+              "value": null
+            }
+          ],
+          "query": {
+            "name": "new.test",
+            "type": "A",
+            "time": 40
+          },
+          "authoritative": {
+            "new.test/A": {
+              "status": "NOERROR",
+              "value": "198.51.100.40",
+              "ttl": 90
+            }
+          }
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_network_2025"
+    ]
+  },
+  {
+    "family_id": "networks_nat_lifetime",
+    "domain": "networks",
+    "title": "排查网关NAT映射与回包失败",
+    "course": "网络服务与运维",
+    "level": "integrated",
+    "project_context": "仿真网关导出地址转换表，每条映射包含协议、内外端口、远端及失效时刻。题目给出映射策略与入站过滤策略，不将NAT默认等同于防火墙或身份认证。",
+    "competency": "根据方向、协议、端点约束和有效期判断转换或拒绝",
+    "prerequisites": [
+      "地址与端口转换",
+      "五元组",
+      "映射生命周期"
+    ],
+    "misconception": "公网端口曾属于某客户端，就会永远把回包送给该客户端。",
+    "misconception_probe": "同一公网UDP端口被回收后分给另一内部端点，旧映射还能决定转发吗？",
+    "remediation_activity": "为一个出站包和两个入站包各画一次五元组转换，划掉到期行，再核对远端过滤条件。",
+    "next_activity": "独立分析通过后，在NAT工单中补充端口复用和会话失效的观测字段。",
+    "return_anchor": "gateway/nat-snapshot.json 的回包路径诊断",
+    "goal_a": "先确认回包是否有有效映射",
+    "goal_b": "先说明端口复用为什么不能证明客户端身份",
+    "task_prompt": "使用当前映射表作判断：出站结果地址指变换后的源端点；入站指变换后的目的端点。没有映射时不猜测新端口。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "内部DNS请求复用已有映射，线上的源地址端口是什么？",
+        "artifact": "映射仅在expires_at>time时有效。endpoint_independent出站按内部端点/协议匹配；endpoint_dependent还匹配远端。入站先按公网端点/协议找映射，address_port_dependent再核验源远端；endpoint_independent过滤不核验远端。本题无多条同时有效的相同公网端点映射。\n输入清单：\n{\n  \"mapping_policy\": \"endpoint_independent\",\n  \"filter_policy\": \"address_port_dependent\",\n  \"mappings\": [\n    {\n      \"inside_ip\": \"192.0.2.10\",\n      \"inside_port\": 53000,\n      \"outside_ip\": \"198.51.100.5\",\n      \"outside_port\": 40001,\n      \"remote_ip\": \"203.0.113.53\",\n      \"remote_port\": 53,\n      \"expires_at\": 100,\n      \"protocol\": \"udp\"\n    }\n  ],\n  \"packet\": {\n    \"direction\": \"outbound\",\n    \"time\": 30,\n    \"protocol\": \"udp\",\n    \"src_ip\": \"192.0.2.10\",\n    \"src_port\": 53000,\n    \"dst_ip\": \"203.0.113.53\",\n    \"dst_port\": 53\n  }\n}",
+        "correct_response": "我的结果是：{\"结果\":\"转发\",\"变换后地址\":\"198.51.100.5:40001\"}",
+        "incorrect_response": "我的结果是：{\"结果\":\"转发\",\"变换后地址\":\"198.51.100.5:53000\"}",
+        "explanation": "映射明确分配40001，不能假定转换只改IP而保持端口。",
+        "observable_checks": [
+          "按内部端点匹配有效映射",
+          "使用表中的公网端口"
+        ],
+        "novelty": "基本出站端口转换，内部与外部端口不同。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_nat_lifetime__base__v1",
+        "oracle_kind": "nat",
+        "oracle_input": {
+          "mapping_policy": "endpoint_independent",
+          "filter_policy": "address_port_dependent",
+          "mappings": [
+            {
+              "inside_ip": "192.0.2.10",
+              "inside_port": 53000,
+              "outside_ip": "198.51.100.5",
+              "outside_port": 40001,
+              "remote_ip": "203.0.113.53",
+              "remote_port": 53,
+              "expires_at": 100,
+              "protocol": "udp"
+            }
+          ],
+          "packet": {
+            "direction": "outbound",
+            "time": 30,
+            "protocol": "udp",
+            "src_ip": "192.0.2.10",
+            "src_port": 53000,
+            "dst_ip": "203.0.113.53",
+            "dst_port": 53
+          }
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "公网端口存在TCP映射，但入站源地址不是原远端，这包能进入吗？",
+        "artifact": "映射仅在expires_at>time时有效。endpoint_independent出站按内部端点/协议匹配；endpoint_dependent还匹配远端。入站先按公网端点/协议找映射，address_port_dependent再核验源远端；endpoint_independent过滤不核验远端。本题无多条同时有效的相同公网端点映射。\n输入清单：\n{\n  \"mapping_policy\": \"endpoint_dependent\",\n  \"filter_policy\": \"address_port_dependent\",\n  \"mappings\": [\n    {\n      \"inside_ip\": \"192.0.2.11\",\n      \"inside_port\": 45000,\n      \"outside_ip\": \"198.51.100.5\",\n      \"outside_port\": 40002,\n      \"remote_ip\": \"203.0.113.20\",\n      \"remote_port\": 443,\n      \"expires_at\": 200,\n      \"protocol\": \"tcp\"\n    }\n  ],\n  \"packet\": {\n    \"direction\": \"inbound\",\n    \"time\": 50,\n    \"protocol\": \"tcp\",\n    \"src_ip\": \"203.0.113.99\",\n    \"src_port\": 443,\n    \"dst_ip\": \"198.51.100.5\",\n    \"dst_port\": 40002\n  }\n}",
+        "correct_response": "我的结果是：{\"结果\":\"源端点不匹配，丢弃\",\"变换后地址\":null}",
+        "incorrect_response": "我的结果是：{\"结果\":\"转发\",\"变换后地址\":\"192.0.2.11:45000\"}",
+        "explanation": "找到映射不是全部条件，所配置的远端地址端口过滤仍必须通过。",
+        "observable_checks": [
+          "区分映射与过滤",
+          "检查入站远端完整端点"
+        ],
+        "novelty": "入站过滤条件独立于映射存在性。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_nat_lifetime__near_transfer__v1",
+        "oracle_kind": "nat",
+        "oracle_input": {
+          "mapping_policy": "endpoint_dependent",
+          "filter_policy": "address_port_dependent",
+          "mappings": [
+            {
+              "inside_ip": "192.0.2.11",
+              "inside_port": 45000,
+              "outside_ip": "198.51.100.5",
+              "outside_port": 40002,
+              "remote_ip": "203.0.113.20",
+              "remote_port": 443,
+              "expires_at": 200,
+              "protocol": "tcp"
+            }
+          ],
+          "packet": {
+            "direction": "inbound",
+            "time": 50,
+            "protocol": "tcp",
+            "src_ip": "203.0.113.99",
+            "src_port": 443,
+            "dst_ip": "198.51.100.5",
+            "dst_port": 40002
+          }
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "同一公网端口已经复用，按90秒的当前表应送给哪一个内部端点？",
+        "artifact": "映射仅在expires_at>time时有效。endpoint_independent出站按内部端点/协议匹配；endpoint_dependent还匹配远端。入站先按公网端点/协议找映射，address_port_dependent再核验源远端；endpoint_independent过滤不核验远端。本题无多条同时有效的相同公网端点映射。\n输入清单：\n{\n  \"mapping_policy\": \"endpoint_independent\",\n  \"filter_policy\": \"endpoint_independent\",\n  \"mappings\": [\n    {\n      \"inside_ip\": \"192.0.2.12\",\n      \"inside_port\": 46000,\n      \"outside_ip\": \"198.51.100.5\",\n      \"outside_port\": 40003,\n      \"remote_ip\": \"203.0.113.20\",\n      \"remote_port\": 500,\n      \"expires_at\": 80,\n      \"protocol\": \"udp\"\n    },\n    {\n      \"inside_ip\": \"192.0.2.13\",\n      \"inside_port\": 46001,\n      \"outside_ip\": \"198.51.100.5\",\n      \"outside_port\": 40003,\n      \"remote_ip\": \"203.0.113.21\",\n      \"remote_port\": 500,\n      \"expires_at\": 140,\n      \"protocol\": \"udp\"\n    }\n  ],\n  \"packet\": {\n    \"direction\": \"inbound\",\n    \"time\": 90,\n    \"protocol\": \"udp\",\n    \"src_ip\": \"203.0.113.21\",\n    \"src_port\": 500,\n    \"dst_ip\": \"198.51.100.5\",\n    \"dst_port\": 40003\n  }\n}",
+        "correct_response": "我的结果是：{\"结果\":\"转发\",\"变换后地址\":\"192.0.2.13:46001\"}",
+        "incorrect_response": "我的结果是：{\"结果\":\"转发\",\"变换后地址\":\"192.0.2.12:46000\"}",
+        "explanation": "到期行必须先排除；公网端口不是跨时间稳定的内部身份。",
+        "observable_checks": [
+          "过滤到期映射",
+          "按当前映射解析复用端口"
+        ],
+        "novelty": "加入端口回收再分配，检验时间边界与身份误解。",
+        "answer_validation": "executable",
+        "oracle_id": "networks_nat_lifetime__delayed_transfer__v1",
+        "oracle_kind": "nat",
+        "oracle_input": {
+          "mapping_policy": "endpoint_independent",
+          "filter_policy": "endpoint_independent",
+          "mappings": [
+            {
+              "inside_ip": "192.0.2.12",
+              "inside_port": 46000,
+              "outside_ip": "198.51.100.5",
+              "outside_port": 40003,
+              "remote_ip": "203.0.113.20",
+              "remote_port": 500,
+              "expires_at": 80,
+              "protocol": "udp"
+            },
+            {
+              "inside_ip": "192.0.2.13",
+              "inside_port": 46001,
+              "outside_ip": "198.51.100.5",
+              "outside_port": 40003,
+              "remote_ip": "203.0.113.21",
+              "remote_port": 500,
+              "expires_at": 140,
+              "protocol": "udp"
+            }
+          ],
+          "packet": {
+            "direction": "inbound",
+            "time": 90,
+            "protocol": "udp",
+            "src_ip": "203.0.113.21",
+            "src_port": 500,
+            "dst_ip": "198.51.100.5",
+            "dst_port": 40003
+          }
+        }
+      }
+    ],
+    "source_basis": [
+      "moe_network_2025"
+    ]
+  },
+  {
+    "family_id": "systems_run_queue",
+    "domain": "systems",
+    "title": "复核单核构建Worker轮转日志",
+    "course": "操作系统与性能诊断",
+    "level": "intermediate",
+    "project_context": "构建平台离线回放器用固定时间片轮转单核CPU，任务不阻塞I/O。到达事件与CPU需求来自工单，没有切换开销；虚拟时间不代表实际主机调度。",
+    "competency": "还原就绪队列并核对完成时刻与等待时间",
+    "prerequisites": [
+      "就绪队列",
+      "时间片",
+      "周转时间"
+    ],
+    "misconception": "等待时间就是完成时刻，时间片末新任务总排到刚运行的任务之后。",
+    "misconception_probe": "任务恰好在片尾到达，应在被抢占作业前还是后排队？",
+    "remediation_activity": "画带空闲段的CPU时间线，片尾先加入到达事件再把旧作业入队，逐项计算等待。",
+    "next_activity": "独立核算通过后，在构建工单区分排队等待与CPU需求。",
+    "return_anchor": "worker/replay-log.json 的完成时刻栏",
+    "goal_a": "先定位排队等待",
+    "goal_b": "先核对边界到达规则",
+    "task_prompt": "根据回放策略给出每个作业完成时刻和平均等待时间，不把模型值称为实测。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "三项构建交错到达，复核工单完成时间。",
+        "artifact": "单CPU固定quantum无开销；片内到达按arrival和输入顺序入队。片尾新到达先入队，再将未完成运行作业放队尾。等待=完成-arrival-burst。空队列跳到下一到达。\n输入清单：\n{\n  \"quantum\": 2,\n  \"processes\": [\n    {\n      \"id\": \"compile\",\n      \"arrival\": 0,\n      \"burst\": 5\n    },\n    {\n      \"id\": \"lint\",\n      \"arrival\": 1,\n      \"burst\": 3\n    },\n    {\n      \"id\": \"pack\",\n      \"arrival\": 2,\n      \"burst\": 1\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"完成时刻\":{\"compile\":9,\"lint\":8,\"pack\":5},\"平均等待时间\":3.3333}",
+        "incorrect_response": "我的结果是：{\"完成时刻\":{\"compile\":5,\"lint\":8,\"pack\":9},\"平均等待时间\":3.6667}",
+        "explanation": "完成顺序由轮转队列决定，不能按先来先完成。",
+        "observable_checks": [
+          "遵守到达与抢占次序",
+          "逐作业列完成时刻",
+          "等待扣除arrival和burst"
+        ],
+        "novelty": "交错到达与不等CPU需求共同决定队列。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_run_queue__base__v1",
+        "oracle_kind": "rr",
+        "oracle_input": {
+          "quantum": 2,
+          "processes": [
+            {
+              "id": "compile",
+              "arrival": 0,
+              "burst": 5
+            },
+            {
+              "id": "lint",
+              "arrival": 1,
+              "burst": 3
+            },
+            {
+              "id": "pack",
+              "arrival": 2,
+              "burst": 1
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "短检查恰好在编译片尾到达，谁先拿到CPU？",
+        "artifact": "单CPU固定quantum无开销；片内到达按arrival和输入顺序入队。片尾新到达先入队，再将未完成运行作业放队尾。等待=完成-arrival-burst。空队列跳到下一到达。\n输入清单：\n{\n  \"quantum\": 2,\n  \"processes\": [\n    {\n      \"id\": \"compile\",\n      \"arrival\": 0,\n      \"burst\": 3\n    },\n    {\n      \"id\": \"check\",\n      \"arrival\": 2,\n      \"burst\": 1\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"完成时刻\":{\"check\":3,\"compile\":4},\"平均等待时间\":0.5}",
+        "incorrect_response": "我的结果是：{\"完成时刻\":{\"check\":4,\"compile\":3},\"平均等待时间\":0.5}",
+        "explanation": "片尾到达先入队；只比较平均值会漏掉完成对象错序。",
+        "observable_checks": [
+          "遵守到达与抢占次序",
+          "逐作业列完成时刻",
+          "等待扣除arrival和burst"
+        ],
+        "novelty": "专门隔离片尾到达与重新排队的先后。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_run_queue__near_transfer__v1",
+        "oracle_kind": "rr",
+        "oracle_input": {
+          "quantum": 2,
+          "processes": [
+            {
+              "id": "compile",
+              "arrival": 0,
+              "burst": 3
+            },
+            {
+              "id": "check",
+              "arrival": 2,
+              "burst": 1
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "夜间Worker有空闲段，系统启动后的空闲是否属于作业等待？",
+        "artifact": "单CPU固定quantum无开销；片内到达按arrival和输入顺序入队。片尾新到达先入队，再将未完成运行作业放队尾。等待=完成-arrival-burst。空队列跳到下一到达。\n输入清单：\n{\n  \"quantum\": 2,\n  \"processes\": [\n    {\n      \"id\": \"scan\",\n      \"arrival\": 3,\n      \"burst\": 1\n    },\n    {\n      \"id\": \"build\",\n      \"arrival\": 7,\n      \"burst\": 4\n    },\n    {\n      \"id\": \"notify\",\n      \"arrival\": 8,\n      \"burst\": 1\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"完成时刻\":{\"build\":12,\"notify\":10,\"scan\":4},\"平均等待时间\":0.6667}",
+        "incorrect_response": "我的结果是：{\"完成时刻\":{\"build\":12,\"notify\":10,\"scan\":4},\"平均等待时间\":6.6667}",
+        "explanation": "到达前的空闲不属于作业等待，必须扣除arrival与burst。",
+        "observable_checks": [
+          "遵守到达与抢占次序",
+          "逐作业列完成时刻",
+          "等待扣除arrival和burst"
+        ],
+        "novelty": "空闲间隙要求区分绝对时刻和等待。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_run_queue__delayed_transfer__v1",
+        "oracle_kind": "rr",
+        "oracle_input": {
+          "quantum": 2,
+          "processes": [
+            {
+              "id": "scan",
+              "arrival": 3,
+              "burst": 1
+            },
+            {
+              "id": "build",
+              "arrival": 7,
+              "burst": 4
+            },
+            {
+              "id": "notify",
+              "arrival": 8,
+              "burst": 1
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "systems_resource_admission",
+    "domain": "systems",
+    "title": "审核双资源批作业准入快照",
+    "course": "操作系统资源管理",
+    "level": "integrated",
+    "project_context": "批平台把A视为执行槽、B视为存储句柄，作业声明最大需求。给出的是安全序列检查输入，没有实际阻塞请求；不安全不等于已经死锁。",
+    "competency": "用剩余需求与资源归还过程检验安全性",
+    "prerequisites": [
+      "最大需求",
+      "资源分配",
+      "安全序列"
+    ],
+    "misconception": "available为零一定死锁，每个作业最大需求合法就保证整体安全。",
+    "misconception_probe": "若available为零但某作业剩余需求也为零，它能否完成并释放资源？",
+    "remediation_activity": "逐项写need，完成可运行作业后归还allocated，重新从表头扫描。",
+    "next_activity": "独立检查通过后，为准入服务补安全与不安全快照回归。",
+    "return_anchor": "batch/admission-snapshot.json 的检查阶段",
+    "goal_a": "先防止接受无法证明安全的分配",
+    "goal_b": "先说明安全检查不等于死锁检测",
+    "task_prompt": "输出安全性、按规则得到的可完成序列，以及剩余未能证明可完成的作业。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "当前双资源快照有完整安全序列吗？",
+        "artifact": "资源向量[A,B]；初始work=available。每次选输入顺序第一个未完成且maximum-allocated逐维<=work的作业，完成后work+=allocated并重扫表头；不能据最大声明推断当前死锁。\n输入清单：\n{\n  \"available\": [\n    1,\n    1\n  ],\n  \"processes\": [\n    {\n      \"id\": \"A\",\n      \"allocated\": [\n        1,\n        0\n      ],\n      \"maximum\": [\n        2,\n        1\n      ]\n    },\n    {\n      \"id\": \"B\",\n      \"allocated\": [\n        0,\n        1\n      ],\n      \"maximum\": [\n        2,\n        2\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"安全\":true,\"可完成序列\":[\"A\",\"B\"],\"未能证明可完成\":[]}",
+        "incorrect_response": "我的结果是：{\"安全\":false,\"可完成序列\":[\"A\"],\"未能证明可完成\":[\"B\"]}",
+        "explanation": "A归还资源后B可运行，不能一直用原available。",
+        "observable_checks": [
+          "用maximum-allocated比较",
+          "完成后归还allocated",
+          "结论限于安全性"
+        ],
+        "novelty": "归还资源后才出现可行下一步。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_resource_admission__base__v1",
+        "oracle_kind": "banker",
+        "oracle_input": {
+          "available": [
+            1,
+            1
+          ],
+          "processes": [
+            {
+              "id": "A",
+              "allocated": [
+                1,
+                0
+              ],
+              "maximum": [
+                2,
+                1
+              ]
+            },
+            {
+              "id": "B",
+              "allocated": [
+                0,
+                1
+              ],
+              "maximum": [
+                2,
+                2
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "两个作业各占一种资源，最大声明还需要另一种，能证明安全吗？",
+        "artifact": "资源向量[A,B]；初始work=available。每次选输入顺序第一个未完成且maximum-allocated逐维<=work的作业，完成后work+=allocated并重扫表头；不能据最大声明推断当前死锁。\n输入清单：\n{\n  \"available\": [\n    0,\n    0\n  ],\n  \"processes\": [\n    {\n      \"id\": \"A\",\n      \"allocated\": [\n        1,\n        0\n      ],\n      \"maximum\": [\n        1,\n        1\n      ]\n    },\n    {\n      \"id\": \"B\",\n      \"allocated\": [\n        0,\n        1\n      ],\n      \"maximum\": [\n        1,\n        1\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"安全\":false,\"可完成序列\":[],\"未能证明可完成\":[\"A\",\"B\"]}",
+        "incorrect_response": "我的结果是：{\"安全\":true,\"可完成序列\":[\"A\",\"B\"],\"未能证明可完成\":[]}",
+        "explanation": "没有可先完成的作业，无法证明安全；仍缺实际阻塞请求以判断是否已死锁。",
+        "observable_checks": [
+          "用maximum-allocated比较",
+          "完成后归还allocated",
+          "结论限于安全性"
+        ],
+        "novelty": "无安全序列反例，结论不能扩大成当前死锁。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_resource_admission__near_transfer__v1",
+        "oracle_kind": "banker",
+        "oracle_input": {
+          "available": [
+            0,
+            0
+          ],
+          "processes": [
+            {
+              "id": "A",
+              "allocated": [
+                1,
+                0
+              ],
+              "maximum": [
+                1,
+                1
+              ]
+            },
+            {
+              "id": "B",
+              "allocated": [
+                0,
+                1
+              ],
+              "maximum": [
+                1,
+                1
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "第一行暂时不能运行，第二行无需更多资源，是否应立刻拒绝？",
+        "artifact": "资源向量[A,B]；初始work=available。每次选输入顺序第一个未完成且maximum-allocated逐维<=work的作业，完成后work+=allocated并重扫表头；不能据最大声明推断当前死锁。\n输入清单：\n{\n  \"available\": [\n    1,\n    0\n  ],\n  \"processes\": [\n    {\n      \"id\": \"A\",\n      \"allocated\": [\n        1,\n        0\n      ],\n      \"maximum\": [\n        2,\n        1\n      ]\n    },\n    {\n      \"id\": \"B\",\n      \"allocated\": [\n        0,\n        1\n      ],\n      \"maximum\": [\n        0,\n        1\n      ]\n    },\n    {\n      \"id\": \"C\",\n      \"allocated\": [\n        0,\n        0\n      ],\n      \"maximum\": [\n        2,\n        1\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"安全\":true,\"可完成序列\":[\"B\",\"A\",\"C\"],\"未能证明可完成\":[]}",
+        "incorrect_response": "我的结果是：{\"安全\":false,\"可完成序列\":[],\"未能证明可完成\":[\"A\",\"B\",\"C\"]}",
+        "explanation": "B剩余需求为零，先完成它就能让A与C依次完成。",
+        "observable_checks": [
+          "用maximum-allocated比较",
+          "完成后归还allocated",
+          "结论限于安全性"
+        ],
+        "novelty": "需要跳过首行并反复重扫，不能单遍拒绝。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_resource_admission__delayed_transfer__v1",
+        "oracle_kind": "banker",
+        "oracle_input": {
+          "available": [
+            1,
+            0
+          ],
+          "processes": [
+            {
+              "id": "A",
+              "allocated": [
+                1,
+                0
+              ],
+              "maximum": [
+                2,
+                1
+              ]
+            },
+            {
+              "id": "B",
+              "allocated": [
+                0,
+                1
+              ],
+              "maximum": [
+                0,
+                1
+              ]
+            },
+            {
+              "id": "C",
+              "allocated": [
+                0,
+                0
+              ],
+              "maximum": [
+                2,
+                1
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "systems_cache_recency",
+    "domain": "systems",
+    "title": "核对文档服务LRU缓存日志",
+    "course": "操作系统缓存策略",
+    "level": "foundation",
+    "project_context": "文档Worker使用页ID和固定容量精确LRU，warm-start与FLUSH事件均在日志中。没有预读、后台淘汰或页大小差异，统计只针对给定日志。",
+    "competency": "核对命中刷新、缓存失效及缺页计数",
+    "prerequisites": [
+      "缓存命中",
+      "LRU",
+      "工作集"
+    ],
+    "misconception": "命中不改变淘汰次序，清空不会导致后续冷缓存。",
+    "misconception_probe": "缓存[A,B]从旧到新，访问A再插入C，会淘汰谁？",
+    "remediation_activity": "用卡片模拟缓存，命中也移到队尾，再插入FLUSH检查后续缺页。",
+    "next_activity": "独立核对通过后，为重启策略说明冷缓存影响。",
+    "return_anchor": "doc-worker/cache-trace.json 的miss计数",
+    "goal_a": "先解释高miss率",
+    "goal_b": "先评估缓存刷新代价",
+    "task_prompt": "报告缺页总数及最终从最旧到最新的页ID顺序。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "热点页被再次访问后，后续插入应淘汰谁？",
+        "artifact": "initial_old_to_new不计本次缺页。命中也移到最新；未命中计1，满时淘汰最旧。FLUSH立刻清空，本身不是页访问，不计缺页。\n输入清单：\n{\n  \"frames\": 3,\n  \"initial_old_to_new\": [],\n  \"references\": [\n    1,\n    2,\n    3,\n    1,\n    4,\n    2\n  ]\n}",
+        "correct_response": "我的结果是：{\"缺页次数\":5,\"最终从旧到新\":[1,4,2]}",
+        "incorrect_response": "我的结果是：{\"缺页次数\":4,\"最终从旧到新\":[3,4,2]}",
+        "explanation": "命中1更新最近性，4淘汰2，最后2再次缺页。",
+        "observable_checks": [
+          "命中刷新最近性",
+          "初始快照不计日志缺页",
+          "FLUSH清空状态"
+        ],
+        "novelty": "命中改变后续淘汰受害者。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_cache_recency__base__v1",
+        "oracle_kind": "lru",
+        "oracle_input": {
+          "frames": 3,
+          "initial_old_to_new": [],
+          "references": [
+            1,
+            2,
+            3,
+            1,
+            4,
+            2
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "Worker恢复已有两页的快照，核算当前日志新增miss。",
+        "artifact": "initial_old_to_new不计本次缺页。命中也移到最新；未命中计1，满时淘汰最旧。FLUSH立刻清空，本身不是页访问，不计缺页。\n输入清单：\n{\n  \"frames\": 2,\n  \"initial_old_to_new\": [\n    \"A\",\n    \"B\"\n  ],\n  \"references\": [\n    \"A\",\n    \"C\",\n    \"A\",\n    \"B\"\n  ]\n}",
+        "correct_response": "我的结果是：{\"缺页次数\":2,\"最终从旧到新\":[\"A\",\"B\"]}",
+        "incorrect_response": "我的结果是：{\"缺页次数\":4,\"最终从旧到新\":[\"A\",\"B\"]}",
+        "explanation": "初始页不是本次miss，只有C和最后的B未命中。",
+        "observable_checks": [
+          "命中刷新最近性",
+          "初始快照不计日志缺页",
+          "FLUSH清空状态"
+        ],
+        "novelty": "warm-start要求区分历史状态与观测区间。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_cache_recency__near_transfer__v1",
+        "oracle_kind": "lru",
+        "oracle_input": {
+          "frames": 2,
+          "initial_old_to_new": [
+            "A",
+            "B"
+          ],
+          "references": [
+            "A",
+            "C",
+            "A",
+            "B"
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "运维中途FLUSH，刷新后哪些请求重新缺页？",
+        "artifact": "initial_old_to_new不计本次缺页。命中也移到最新；未命中计1，满时淘汰最旧。FLUSH立刻清空，本身不是页访问，不计缺页。\n输入清单：\n{\n  \"frames\": 3,\n  \"initial_old_to_new\": [],\n  \"references\": [\n    1,\n    2,\n    1,\n    \"FLUSH\",\n    1,\n    2,\n    3,\n    1\n  ]\n}",
+        "correct_response": "我的结果是：{\"缺页次数\":5,\"最终从旧到新\":[2,3,1]}",
+        "incorrect_response": "我的结果是：{\"缺页次数\":3,\"最终从旧到新\":[2,3,1]}",
+        "explanation": "FLUSH使此前缓存的1、2重新缺页，自身不额外算一页。",
+        "observable_checks": [
+          "命中刷新最近性",
+          "初始快照不计日志缺页",
+          "FLUSH清空状态"
+        ],
+        "novelty": "显式失效事件改变缓存生命周期。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_cache_recency__delayed_transfer__v1",
+        "oracle_kind": "lru",
+        "oracle_input": {
+          "frames": 3,
+          "initial_old_to_new": [],
+          "references": [
+            1,
+            2,
+            1,
+            "FLUSH",
+            1,
+            2,
+            3,
+            1
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "systems_unix_permissions",
+    "domain": "systems",
+    "title": "处理服务账号文件访问工单",
+    "course": "系统管理基础",
+    "level": "foundation",
+    "project_context": "服务使用普通非root账号，只有传统owner/group/other权限位。无ACL、capability、只读挂载或符号链接，输入列出全部需遍历目录。",
+    "competency": "结合umask、目录搜索位与互斥权限类别判断访问",
+    "prerequisites": [
+      "八进制权限",
+      "umask",
+      "目录执行位"
+    ],
+    "misconception": "文件可读就能打开路径，owner不足还能回退group。",
+    "misconception_probe": "账号既是owner又属于group，只有group可读时会回退吗？",
+    "remediation_activity": "逐目录先检查x，再只选文件一个权限类别；另用位掩码计算创建权限。",
+    "next_activity": "独立判断通过后，提交最小权限修订及受影响账号范围。",
+    "return_anchor": "deploy/service-account.md 的路径核验",
+    "goal_a": "先解决启动读文件失败",
+    "goal_b": "先避免以过大权限掩盖问题",
+    "task_prompt": "给出创建权限，或允许/拒绝和第一个拒绝位置；不建议直接赋予777。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "0666请求创建文件且umask0027，落盘权限是什么？",
+        "artifact": "创建=requested_mode & ~umask & 0777。每级目录先检查x；文件read需r，write需w。uid匹配则仅用owner，否则组匹配仅用group，否则用other，不合并不回退。\n输入清单：\n{\n  \"operation\": \"create\",\n  \"requested_mode\": \"0666\",\n  \"umask\": \"0027\"\n}",
+        "correct_response": "我的结果是：{\"最终权限\":\"0640\"}",
+        "incorrect_response": "我的结果是：{\"最终权限\":\"0639\"}",
+        "explanation": "umask是位操作而非十进制相减。",
+        "observable_checks": [
+          "按八进制位操作",
+          "不会添加未请求执行位"
+        ],
+        "novelty": "创建掩码边界。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_unix_permissions__base__v1",
+        "oracle_kind": "permissions",
+        "oracle_input": {
+          "operation": "create",
+          "requested_mode": "0666",
+          "umask": "0027"
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "文件0644，但服务经过中间目录报拒绝，定位第一处。",
+        "artifact": "创建=requested_mode & ~umask & 0777。每级目录先检查x；文件read需r，write需w。uid匹配则仅用owner，否则组匹配仅用group，否则用other，不合并不回退。\n输入清单：\n{\n  \"operation\": \"read\",\n  \"actor\": {\n    \"uid\": 200,\n    \"groups\": [\n      300\n    ]\n  },\n  \"directories\": [\n    {\n      \"path\": \"/srv\",\n      \"owner\": 100,\n      \"group\": 300,\n      \"mode\": \"0710\"\n    },\n    {\n      \"path\": \"/srv/reports\",\n      \"owner\": 100,\n      \"group\": 300,\n      \"mode\": \"0700\"\n    }\n  ],\n  \"file\": {\n    \"path\": \"/srv/reports/config.json\",\n    \"owner\": 100,\n    \"group\": 300,\n    \"mode\": \"0644\"\n  }\n}",
+        "correct_response": "我的结果是：{\"允许\":false,\"拒绝位置\":\"/srv/reports\"}",
+        "incorrect_response": "我的结果是：{\"允许\":true,\"拒绝位置\":null}",
+        "explanation": "缺少父目录搜索位阻断路径，文件可读不能弥补。",
+        "observable_checks": [
+          "按顺序检查目录x",
+          "指出第一处拒绝"
+        ],
+        "novelty": "从创建转为路径搜索权限。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_unix_permissions__near_transfer__v1",
+        "oracle_kind": "permissions",
+        "oracle_input": {
+          "operation": "read",
+          "actor": {
+            "uid": 200,
+            "groups": [
+              300
+            ]
+          },
+          "directories": [
+            {
+              "path": "/srv",
+              "owner": 100,
+              "group": 300,
+              "mode": "0710"
+            },
+            {
+              "path": "/srv/reports",
+              "owner": 100,
+              "group": 300,
+              "mode": "0700"
+            }
+          ],
+          "file": {
+            "path": "/srv/reports/config.json",
+            "owner": 100,
+            "group": 300,
+            "mode": "0644"
+          }
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "账号既是owner又属于group，只有group有读位，能否读取？",
+        "artifact": "创建=requested_mode & ~umask & 0777。每级目录先检查x；文件read需r，write需w。uid匹配则仅用owner，否则组匹配仅用group，否则用other，不合并不回退。\n输入清单：\n{\n  \"operation\": \"read\",\n  \"actor\": {\n    \"uid\": 100,\n    \"groups\": [\n      300\n    ]\n  },\n  \"directories\": [\n    {\n      \"path\": \"/work\",\n      \"owner\": 0,\n      \"group\": 0,\n      \"mode\": \"0711\"\n    }\n  ],\n  \"file\": {\n    \"path\": \"/work/report.txt\",\n    \"owner\": 100,\n    \"group\": 300,\n    \"mode\": \"0040\"\n  }\n}",
+        "correct_response": "我的结果是：{\"允许\":false,\"拒绝位置\":\"/work/report.txt\"}",
+        "incorrect_response": "我的结果是：{\"允许\":true,\"拒绝位置\":null}",
+        "explanation": "命中owner后只看owner位，不得回退group。",
+        "observable_checks": [
+          "类别互斥选择",
+          "不合并owner与group位"
+        ],
+        "novelty": "重叠身份测试错误的权限并集规则。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_unix_permissions__delayed_transfer__v1",
+        "oracle_kind": "permissions",
+        "oracle_input": {
+          "operation": "read",
+          "actor": {
+            "uid": 100,
+            "groups": [
+              300
+            ]
+          },
+          "directories": [
+            {
+              "path": "/work",
+              "owner": 0,
+              "group": 0,
+              "mode": "0711"
+            }
+          ],
+          "file": {
+            "path": "/work/report.txt",
+            "owner": 100,
+            "group": 300,
+            "mode": "0040"
+          }
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "systems_raid_incident",
+    "domain": "systems",
+    "title": "核对阵列容量与失盘影响",
+    "course": "存储系统与运维",
+    "level": "intermediate",
+    "project_context": "盘阵工单只计算标称容量及给定失盘组合是否可读。忽略文件系统、热备、重建时间和不可恢复读错误，容量单位均为相同TB。",
+    "competency": "由布局和失盘位置判断有效容量与可读性",
+    "prerequisites": [
+      "条带与镜像",
+      "校验冗余",
+      "故障域"
+    ],
+    "misconception": "有两份副本就能容忍任意两盘故障，混盘还能把容量直接相加。",
+    "misconception_probe": "RAID10两盘故障落在同一镜像对，与落在不同对是否一样？",
+    "remediation_activity": "先画镜像对或校验容量，再标故障盘；混盘逐组找最小容量。",
+    "next_activity": "独立检查通过后，为采购单补容量损耗与故障组合说明。",
+    "return_anchor": "storage/array-inventory.json 的容量栏",
+    "goal_a": "先判断故障阵列能否读",
+    "goal_b": "先核对扩容的有效容量",
+    "task_prompt": "按题内模型给出标称可用容量TB和故障后可读性；不将此计算当成恢复保证。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "四块2TB的RAID5有一盘离线。",
+        "artifact": "RAID5容量=(N-1)*最小盘容量，至多1盘故障可读；RAID6容量=(N-2)*最小盘容量，至多2盘故障可读。RAID10容量为各镜像对最小容量之和，每对至少存活1盘才可读。\n输入清单：\n{\n  \"layout\": \"raid5\",\n  \"capacity_tb\": [\n    2,\n    2,\n    2,\n    2\n  ],\n  \"failed_indexes\": [\n    1\n  ]\n}",
+        "correct_response": "我的结果是：{\"标称可用容量TB\":6,\"故障后仍可读\":true}",
+        "incorrect_response": "我的结果是：{\"标称可用容量TB\":8,\"故障后仍可读\":true}",
+        "explanation": "校验占一盘等效容量，单盘失效仍在模型容错内。",
+        "observable_checks": [
+          "按布局扣冗余",
+          "考虑最小盘限制",
+          "检查故障位置或数量"
+        ],
+        "novelty": "原始容量与可用容量不同。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_raid_incident__base__v1",
+        "oracle_kind": "raid",
+        "oracle_input": {
+          "layout": "raid5",
+          "capacity_tb": [
+            2,
+            2,
+            2,
+            2
+          ],
+          "failed_indexes": [
+            1
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "RAID10的两块故障盘都在同一镜像对。",
+        "artifact": "RAID5容量=(N-1)*最小盘容量，至多1盘故障可读；RAID6容量=(N-2)*最小盘容量，至多2盘故障可读。RAID10容量为各镜像对最小容量之和，每对至少存活1盘才可读。\n输入清单：\n{\n  \"layout\": \"raid10\",\n  \"capacity_tb\": [\n    2,\n    2,\n    2,\n    2\n  ],\n  \"pairs\": [\n    [\n      0,\n      1\n    ],\n    [\n      2,\n      3\n    ]\n  ],\n  \"failed_indexes\": [\n    0,\n    1\n  ]\n}",
+        "correct_response": "我的结果是：{\"标称可用容量TB\":4,\"故障后仍可读\":false}",
+        "incorrect_response": "我的结果是：{\"标称可用容量TB\":4,\"故障后仍可读\":true}",
+        "explanation": "一个镜像对两个副本都丢失，不能只数剩余盘总数。",
+        "observable_checks": [
+          "按布局扣冗余",
+          "考虑最小盘限制",
+          "检查故障位置或数量"
+        ],
+        "novelty": "故障位置相关性改变结论。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_raid_incident__near_transfer__v1",
+        "oracle_kind": "raid",
+        "oracle_input": {
+          "layout": "raid10",
+          "capacity_tb": [
+            2,
+            2,
+            2,
+            2
+          ],
+          "pairs": [
+            [
+              0,
+              1
+            ],
+            [
+              2,
+              3
+            ]
+          ],
+          "failed_indexes": [
+            0,
+            1
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "RAID6混入一块2TB，其余4TB，已有两盘失效。",
+        "artifact": "RAID5容量=(N-1)*最小盘容量，至多1盘故障可读；RAID6容量=(N-2)*最小盘容量，至多2盘故障可读。RAID10容量为各镜像对最小容量之和，每对至少存活1盘才可读。\n输入清单：\n{\n  \"layout\": \"raid6\",\n  \"capacity_tb\": [\n    2,\n    4,\n    4,\n    4,\n    4,\n    4\n  ],\n  \"failed_indexes\": [\n    1,\n    5\n  ]\n}",
+        "correct_response": "我的结果是：{\"标称可用容量TB\":8,\"故障后仍可读\":true}",
+        "incorrect_response": "我的结果是：{\"标称可用容量TB\":16,\"故障后仍可读\":true}",
+        "explanation": "每盘利用容量受2TB限制，再扣两个等效校验盘。",
+        "observable_checks": [
+          "按布局扣冗余",
+          "考虑最小盘限制",
+          "检查故障位置或数量"
+        ],
+        "novelty": "混盘与双校验容错共同出现。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_raid_incident__delayed_transfer__v1",
+        "oracle_kind": "raid",
+        "oracle_input": {
+          "layout": "raid6",
+          "capacity_tb": [
+            2,
+            4,
+            4,
+            4,
+            4,
+            4
+          ],
+          "failed_indexes": [
+            1,
+            5
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "systems_tail_latency",
+    "domain": "systems",
+    "title": "复核服务p95与SLO报表",
+    "course": "系统可观测性",
+    "level": "intermediate",
+    "project_context": "值班人员得到完整请求延迟频数表，需要核对面板。分位数统一使用nearest-rank，SLO是延迟不超过阈值；超时按明确数值计入总体。",
+    "competency": "计算加权p95及SLO分母并识别分位数平均错误",
+    "prerequisites": [
+      "分位数",
+      "频数权重",
+      "SLO分母"
+    ],
+    "misconception": "多实例p95可直接平均，超时没有成功响应所以可以剔除。",
+    "misconception_probe": "95个快请求的实例与5个慢请求的实例，能平均它们的p95吗？",
+    "remediation_activity": "写累计名次定位ceil(0.95N)，再单独数符合SLO的请求，标出超时。",
+    "next_activity": "独立核对通过后，提交含分母与超时口径的监控修订。",
+    "return_anchor": "observability/latency-export.json 的日报复算",
+    "goal_a": "先纠正尾延迟统计",
+    "goal_b": "先核对超时是否进入分母",
+    "task_prompt": "输出样本数、nearest-rank p95毫秒与SLO通过率百分比，保留至多4位小数。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "实例A的95次均10ms，实例B的5次均200ms，核对整体p95。",
+        "artifact": "bins_ms_count为完整[value_ms,count]频数。p95取升序第ceil(0.95*N)项，名次从1开始；SLO为value<=slo_ms。超时已按截止时长放入表，不得删除。\n输入清单：\n{\n  \"bins_ms_count\": [\n    [\n      10,\n      95\n    ],\n    [\n      200,\n      5\n    ]\n  ],\n  \"slo_ms\": 100,\n  \"source_instances\": \"A:95x10ms; B:5x200ms\"\n}",
+        "correct_response": "我的结果是：{\"样本数\":100,\"p95毫秒\":10,\"SLO通过率百分比\":95}",
+        "incorrect_response": "我的结果是：{\"样本数\":100,\"p95毫秒\":105,\"SLO通过率百分比\":95}",
+        "explanation": "第95项仍是10ms，两个实例p95的平均没有总体分位数语义。",
+        "observable_checks": [
+          "按请求频数加权",
+          "严格使用nearest-rank",
+          "分母包含超时"
+        ],
+        "novelty": "实例流量权重严重不均衡。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_tail_latency__base__v1",
+        "oracle_kind": "latency",
+        "oracle_input": {
+          "bins_ms_count": [
+            [
+              10,
+              95
+            ],
+            [
+              200,
+              5
+            ]
+          ],
+          "slo_ms": 100,
+          "source_instances": "A:95x10ms; B:5x200ms"
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "19个成功请求加1个1000ms超时，核对SLO分母。",
+        "artifact": "bins_ms_count为完整[value_ms,count]频数。p95取升序第ceil(0.95*N)项，名次从1开始；SLO为value<=slo_ms。超时已按截止时长放入表，不得删除。\n输入清单：\n{\n  \"bins_ms_count\": [\n    [\n      20,\n      18\n    ],\n    [\n      100,\n      1\n    ],\n    [\n      1000,\n      1\n    ]\n  ],\n  \"slo_ms\": 150,\n  \"timeout_count\": 1\n}",
+        "correct_response": "我的结果是：{\"样本数\":20,\"p95毫秒\":100,\"SLO通过率百分比\":95}",
+        "incorrect_response": "我的结果是：{\"样本数\":19,\"p95毫秒\":100,\"SLO通过率百分比\":100}",
+        "explanation": "删超时会把SLO错误抬到100%；p95碰巧不变不能证明分母正确。",
+        "observable_checks": [
+          "按请求频数加权",
+          "严格使用nearest-rank",
+          "分母包含超时"
+        ],
+        "novelty": "超时影响总体比例，不能只看p95。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_tail_latency__near_transfer__v1",
+        "oracle_kind": "latency",
+        "oracle_input": {
+          "bins_ms_count": [
+            [
+              20,
+              18
+            ],
+            [
+              100,
+              1
+            ],
+            [
+              1000,
+              1
+            ]
+          ],
+          "slo_ms": 150,
+          "timeout_count": 1
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "低流量窗口只有7个请求，按约定求p95。",
+        "artifact": "bins_ms_count为完整[value_ms,count]频数。p95取升序第ceil(0.95*N)项，名次从1开始；SLO为value<=slo_ms。超时已按截止时长放入表，不得删除。\n输入清单：\n{\n  \"bins_ms_count\": [\n    [\n      5,\n      6\n    ],\n    [\n      80,\n      1\n    ]\n  ],\n  \"slo_ms\": 50\n}",
+        "correct_response": "我的结果是：{\"样本数\":7,\"p95毫秒\":80,\"SLO通过率百分比\":85.7143}",
+        "incorrect_response": "我的结果是：{\"样本数\":7,\"p95毫秒\":57.5,\"SLO通过率百分比\":85.7143}",
+        "explanation": "ceil(6.65)=7，必须取80而非线性插值。",
+        "observable_checks": [
+          "按请求频数加权",
+          "严格使用nearest-rank",
+          "分母包含超时"
+        ],
+        "novelty": "小样本下分位数算法差异显著。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_tail_latency__delayed_transfer__v1",
+        "oracle_kind": "latency",
+        "oracle_input": {
+          "bins_ms_count": [
+            [
+              5,
+              6
+            ],
+            [
+              80,
+              1
+            ]
+          ],
+          "slo_ms": 50
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "systems_disk_accounting",
+    "domain": "systems",
+    "title": "解释删除日志后空间未释放",
+    "course": "Linux存储运维",
+    "level": "intermediate",
+    "project_context": "文件工单给出inode物理占用、路径链接和打开句柄的完整快照。模型忽略文件系统快照、压缩、预留块与元数据；仍有路径或句柄的inode占物理空间。",
+    "competency": "区分逻辑长度、物理块、硬链接和打开句柄",
+    "prerequisites": [
+      "inode",
+      "硬链接",
+      "文件句柄"
+    ],
+    "misconception": "删除路径一定立即释放磁盘，硬链接会各占一份文件数据。",
+    "misconception_probe": "一个无路径inode有两个句柄，仅关闭一个会释放吗？",
+    "remediation_activity": "把inode画成实体，路径和句柄画引用，删引用后检查是否仍有任何引用。",
+    "next_activity": "独立核对通过后，为清理脚本补句柄与硬链接检查。",
+    "return_anchor": "incident/disk-usage.json 的df/du解释",
+    "goal_a": "先解释空间未下降",
+    "goal_b": "先避免误删业务仍使用的数据",
+    "task_prompt": "报告已分配MB、目录可见唯一inode的MB、关闭指定句柄释放量及关闭后分配量。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "轮转日志已unlink，进程仍持有句柄，关闭后释放多少？",
+        "artifact": "inode物理空间只计一次。paths非空或open_handles非空就占physical_mb；目录可见量只计有subtree前缀路径的唯一inode。无路径且全部句柄关闭才释放；不用logical_mb计物理块。\n输入清单：\n{\n  \"subtree\": \"/var/log/\",\n  \"close_handles\": [\n    \"old-log\"\n  ],\n  \"inodes\": [\n    {\n      \"id\": 1,\n      \"physical_mb\": 100,\n      \"logical_mb\": 100,\n      \"paths\": [\n        \"/var/log/active.log\"\n      ],\n      \"open_handles\": [\n        \"active\"\n      ]\n    },\n    {\n      \"id\": 2,\n      \"physical_mb\": 900,\n      \"logical_mb\": 900,\n      \"paths\": [],\n      \"open_handles\": [\n        \"old-log\"\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"已分配MB\":1000,\"目录可见唯一inode_MB\":100,\"关闭指定句柄释放MB\":900,\"关闭后已分配MB\":100}",
+        "incorrect_response": "我的结果是：{\"已分配MB\":100,\"目录可见唯一inode_MB\":100,\"关闭指定句柄释放MB\":0,\"关闭后已分配MB\":100}",
+        "explanation": "unlink不消除打开句柄；最后句柄关闭才释放900MB。",
+        "observable_checks": [
+          "按inode去重",
+          "区分物理与逻辑大小",
+          "检查所有路径和句柄"
+        ],
+        "novelty": "已删除但仍打开的文件。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_disk_accounting__base__v1",
+        "oracle_kind": "disk",
+        "oracle_input": {
+          "subtree": "/var/log/",
+          "close_handles": [
+            "old-log"
+          ],
+          "inodes": [
+            {
+              "id": 1,
+              "physical_mb": 100,
+              "logical_mb": 100,
+              "paths": [
+                "/var/log/active.log"
+              ],
+              "open_handles": [
+                "active"
+              ]
+            },
+            {
+              "id": 2,
+              "physical_mb": 900,
+              "logical_mb": 900,
+              "paths": [],
+              "open_handles": [
+                "old-log"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "稀疏文件逻辑1024MB、物理8MB，关闭句柄会回收吗？",
+        "artifact": "inode物理空间只计一次。paths非空或open_handles非空就占physical_mb；目录可见量只计有subtree前缀路径的唯一inode。无路径且全部句柄关闭才释放；不用logical_mb计物理块。\n输入清单：\n{\n  \"subtree\": \"/data/\",\n  \"close_handles\": [\n    \"checkpoint\"\n  ],\n  \"inodes\": [\n    {\n      \"id\": 3,\n      \"physical_mb\": 8,\n      \"logical_mb\": 1024,\n      \"paths\": [\n        \"/data/checkpoint.bin\"\n      ],\n      \"open_handles\": [\n        \"checkpoint\"\n      ]\n    },\n    {\n      \"id\": 4,\n      \"physical_mb\": 12,\n      \"logical_mb\": 12,\n      \"paths\": [\n        \"/data/meta.json\"\n      ],\n      \"open_handles\": []\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"已分配MB\":20,\"目录可见唯一inode_MB\":20,\"关闭指定句柄释放MB\":0,\"关闭后已分配MB\":20}",
+        "incorrect_response": "我的结果是：{\"已分配MB\":1036,\"目录可见唯一inode_MB\":1036,\"关闭指定句柄释放MB\":1024,\"关闭后已分配MB\":12}",
+        "explanation": "应计物理块；路径仍存在，关闭句柄不会删除文件。",
+        "observable_checks": [
+          "按inode去重",
+          "区分物理与逻辑大小",
+          "检查所有路径和句柄"
+        ],
+        "novelty": "稀疏文件与正常目录链接改变空间判断。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_disk_accounting__near_transfer__v1",
+        "oracle_kind": "disk",
+        "oracle_input": {
+          "subtree": "/data/",
+          "close_handles": [
+            "checkpoint"
+          ],
+          "inodes": [
+            {
+              "id": 3,
+              "physical_mb": 8,
+              "logical_mb": 1024,
+              "paths": [
+                "/data/checkpoint.bin"
+              ],
+              "open_handles": [
+                "checkpoint"
+              ]
+            },
+            {
+              "id": 4,
+              "physical_mb": 12,
+              "logical_mb": 12,
+              "paths": [
+                "/data/meta.json"
+              ],
+              "open_handles": []
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "两个路径为同一inode，另一个已删除inode还有两个句柄，仅关闭一个。",
+        "artifact": "inode物理空间只计一次。paths非空或open_handles非空就占physical_mb；目录可见量只计有subtree前缀路径的唯一inode。无路径且全部句柄关闭才释放；不用logical_mb计物理块。\n输入清单：\n{\n  \"subtree\": \"/data/\",\n  \"close_handles\": [\n    \"reader-a\"\n  ],\n  \"inodes\": [\n    {\n      \"id\": 8,\n      \"physical_mb\": 40,\n      \"logical_mb\": 40,\n      \"paths\": [\n        \"/data/a.bin\",\n        \"/data/b.bin\"\n      ],\n      \"open_handles\": []\n    },\n    {\n      \"id\": 9,\n      \"physical_mb\": 60,\n      \"logical_mb\": 60,\n      \"paths\": [],\n      \"open_handles\": [\n        \"reader-a\",\n        \"reader-b\"\n      ]\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"已分配MB\":100,\"目录可见唯一inode_MB\":40,\"关闭指定句柄释放MB\":0,\"关闭后已分配MB\":100}",
+        "incorrect_response": "我的结果是：{\"已分配MB\":140,\"目录可见唯一inode_MB\":80,\"关闭指定句柄释放MB\":60,\"关闭后已分配MB\":80}",
+        "explanation": "硬链接去重；reader-b仍维持已删除inode。",
+        "observable_checks": [
+          "按inode去重",
+          "区分物理与逻辑大小",
+          "检查所有路径和句柄"
+        ],
+        "novelty": "同时考查别名去重与最后引用边界。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_disk_accounting__delayed_transfer__v1",
+        "oracle_kind": "disk",
+        "oracle_input": {
+          "subtree": "/data/",
+          "close_handles": [
+            "reader-a"
+          ],
+          "inodes": [
+            {
+              "id": 8,
+              "physical_mb": 40,
+              "logical_mb": 40,
+              "paths": [
+                "/data/a.bin",
+                "/data/b.bin"
+              ],
+              "open_handles": []
+            },
+            {
+              "id": 9,
+              "physical_mb": 60,
+              "logical_mb": 60,
+              "paths": [],
+              "open_handles": [
+                "reader-a",
+                "reader-b"
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "systems_retry_atomicity",
+    "domain": "systems",
+    "title": "排查任务重试后的重复扣费账本",
+    "course": "可靠系统与事务边界",
+    "level": "integrated",
+    "project_context": "扣费Worker仅在离线内存账本回放合成请求，不涉及真实资金。输入给出业务key、金额、失败点和原子性，必须区分提交与响应。",
+    "competency": "按幂等标记和事务边界判断实际副作用及载荷冲突",
+    "prerequisites": [
+      "幂等键",
+      "原子事务",
+      "提交与响应"
+    ],
+    "misconception": "只要key相同就绝不重复扣费，响应丢失就表示未提交。",
+    "misconception_probe": "扣费已经持久化、marker尚未写入就崩溃，split模式重试会读到什么？",
+    "remediation_activity": "在时间线上分别标扣费、marker和响应，重放三个故障点。",
+    "next_activity": "独立判断通过后，为Worker补原子提交和同key载荷冲突回归。",
+    "return_anchor": "jobs/payment-replay.json 的失败点分析",
+    "goal_a": "先定位重复副作用",
+    "goal_b": "先区分安全重试与载荷冲突",
+    "task_prompt": "报告累计扣款、账本条数及冲突拒绝数；这些只表示仿真结果。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "首次提交成功响应丢失，同key重试，实际扣几次？",
+        "artifact": "已有key且同amount直接返回旧结果；不同amount拒绝并计冲突。新key先扣费再写marker。atomic遇after_charge会回滚；split保留扣费但无marker。commit_ack_lost表示扣费和marker均已提交仅响应丢失；none正常。\n输入清单：\n{\n  \"transaction\": \"atomic\",\n  \"requests\": [\n    {\n      \"key\": \"invoice-1\",\n      \"amount\": 25,\n      \"failure\": \"commit_ack_lost\"\n    },\n    {\n      \"key\": \"invoice-1\",\n      \"amount\": 25,\n      \"failure\": \"none\"\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"累计扣款\":25,\"账本条数\":1,\"冲突拒绝次数\":0}",
+        "incorrect_response": "我的结果是：{\"累计扣款\":50,\"账本条数\":2,\"冲突拒绝次数\":0}",
+        "explanation": "marker已提交，同载荷重试复用旧结果。",
+        "observable_checks": [
+          "区分提交与响应",
+          "按事务边界回滚或保留",
+          "拒绝同key不同载荷"
+        ],
+        "novelty": "提交成功而响应丢失。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_retry_atomicity__base__v1",
+        "oracle_kind": "retry",
+        "oracle_input": {
+          "transaction": "atomic",
+          "requests": [
+            {
+              "key": "invoice-1",
+              "amount": 25,
+              "failure": "commit_ack_lost"
+            },
+            {
+              "key": "invoice-1",
+              "amount": 25,
+              "failure": "none"
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "split模式扣费后崩溃、无marker，再重试一次。",
+        "artifact": "已有key且同amount直接返回旧结果；不同amount拒绝并计冲突。新key先扣费再写marker。atomic遇after_charge会回滚；split保留扣费但无marker。commit_ack_lost表示扣费和marker均已提交仅响应丢失；none正常。\n输入清单：\n{\n  \"transaction\": \"split\",\n  \"requests\": [\n    {\n      \"key\": \"invoice-2\",\n      \"amount\": 40,\n      \"failure\": \"after_charge\"\n    },\n    {\n      \"key\": \"invoice-2\",\n      \"amount\": 40,\n      \"failure\": \"none\"\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"累计扣款\":80,\"账本条数\":2,\"冲突拒绝次数\":0}",
+        "incorrect_response": "我的结果是：{\"累计扣款\":40,\"账本条数\":1,\"冲突拒绝次数\":0}",
+        "explanation": "副作用与标记分开持久化留下重复窗口，带key仍会双扣。",
+        "observable_checks": [
+          "区分提交与响应",
+          "按事务边界回滚或保留",
+          "拒绝同key不同载荷"
+        ],
+        "novelty": "不同事务边界使相同key不再足够。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_retry_atomicity__near_transfer__v1",
+        "oracle_kind": "retry",
+        "oracle_input": {
+          "transaction": "split",
+          "requests": [
+            {
+              "key": "invoice-2",
+              "amount": 40,
+              "failure": "after_charge"
+            },
+            {
+              "key": "invoice-2",
+              "amount": 40,
+              "failure": "none"
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "同key第二次换金额，第三次恢复原金额。",
+        "artifact": "已有key且同amount直接返回旧结果；不同amount拒绝并计冲突。新key先扣费再写marker。atomic遇after_charge会回滚；split保留扣费但无marker。commit_ack_lost表示扣费和marker均已提交仅响应丢失；none正常。\n输入清单：\n{\n  \"transaction\": \"atomic\",\n  \"requests\": [\n    {\n      \"key\": \"invoice-3\",\n      \"amount\": 30,\n      \"failure\": \"none\"\n    },\n    {\n      \"key\": \"invoice-3\",\n      \"amount\": 45,\n      \"failure\": \"none\"\n    },\n    {\n      \"key\": \"invoice-3\",\n      \"amount\": 30,\n      \"failure\": \"none\"\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"累计扣款\":30,\"账本条数\":1,\"冲突拒绝次数\":1}",
+        "incorrect_response": "我的结果是：{\"累计扣款\":75,\"账本条数\":2,\"冲突拒绝次数\":0}",
+        "explanation": "第二次是载荷冲突而非合法重试，第三次仍可复用原结果。",
+        "observable_checks": [
+          "区分提交与响应",
+          "按事务边界回滚或保留",
+          "拒绝同key不同载荷"
+        ],
+        "novelty": "同key异载荷与后续合法重试并存。",
+        "answer_validation": "executable",
+        "oracle_id": "systems_retry_atomicity__delayed_transfer__v1",
+        "oracle_kind": "retry",
+        "oracle_input": {
+          "transaction": "atomic",
+          "requests": [
+            {
+              "key": "invoice-3",
+              "amount": 30,
+              "failure": "none"
+            },
+            {
+              "key": "invoice-3",
+              "amount": 45,
+              "failure": "none"
+            },
+            {
+              "key": "invoice-3",
+              "amount": 30,
+              "failure": "none"
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "data_ai_imbalance_metrics",
+    "domain": "data_ai",
+    "title": "复核稀有故障检测模型指标",
+    "course": "机器学习评估基础",
+    "level": "foundation",
+    "project_context": "项目识别少见设备故障，所有标签都是合成二分类记录。工单明确正类为故障，需同时看自动报警的精确率、召回率和F1，不能把高准确率解释为已检出故障。",
+    "competency": "从混淆计数和明确弃权口径计算指标并识别分母误用",
+    "prerequisites": [
+      "混淆矩阵",
+      "精确率与召回率",
+      "类别不平衡"
+    ],
+    "misconception": "准确率99%就意味着故障检出率99%，弃权样本可以从总体悄悄删除。",
+    "misconception_probe": "若1000个样本有10个故障而模型全部预测正常，故障召回率会很高吗？",
+    "remediation_activity": "画真实类别与报警结果的2x2表，把弃权按自动报警定义归类，再为每个指标圈分母。",
+    "next_activity": "独立核算通过后，为模型卡补各类计数、弃权口径和评估分母。",
+    "return_anchor": "model-card/fault-detector.md 的指标表",
+    "goal_a": "先避免漏报被总体准确率掩盖",
+    "goal_b": "先分清告警精度与故障召回",
+    "task_prompt": "报告准确率、精确率、召回率、F1百分比，零分母按0；不要据这些合成指标宣称实际部署效果。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "模型一个报警都没有，但总体准确率看似很高，请完整复算。",
+        "artifact": "正类=故障，预测正类=自动报警。TP/FP/FN/TN按此定义；若有abstained_positive/negative，因没有自动报警分别并入FN/TN。指标乘100，保留4位小数，零分母按0。\n输入清单：\n{\n  \"tp\": 0,\n  \"fp\": 0,\n  \"fn\": 10,\n  \"tn\": 990\n}",
+        "correct_response": "我的结果是：{\"准确率百分比\":99,\"精确率百分比\":0,\"召回率百分比\":0,\"F1百分比\":0}",
+        "incorrect_response": "我的结果是：{\"准确率百分比\":99,\"精确率百分比\":99,\"召回率百分比\":99,\"F1百分比\":99}",
+        "explanation": "多数正常样本抬高准确率，零报警没有检出任何故障。",
+        "observable_checks": [
+          "保留故障类分母",
+          "零分母按规定处理",
+          "不把accuracy当recall"
+        ],
+        "novelty": "正类稀少且预测正类分母为零。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_imbalance_metrics__base__v1",
+        "oracle_kind": "metrics",
+        "oracle_input": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 10,
+          "tn": 990
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "这份报警结果中，准确率、报警精确率与故障召回率分别是多少？",
+        "artifact": "正类=故障，预测正类=自动报警。TP/FP/FN/TN按此定义；若有abstained_positive/negative，因没有自动报警分别并入FN/TN。指标乘100，保留4位小数，零分母按0。\n输入清单：\n{\n  \"tp\": 18,\n  \"fp\": 42,\n  \"fn\": 2,\n  \"tn\": 138\n}",
+        "correct_response": "我的结果是：{\"准确率百分比\":78,\"精确率百分比\":30,\"召回率百分比\":90,\"F1百分比\":45}",
+        "incorrect_response": "我的结果是：{\"准确率百分比\":78,\"精确率百分比\":90,\"召回率百分比\":30,\"F1百分比\":45}",
+        "explanation": "报警中18/60为真故障，故障中18/20被检出；两个分母不能交换。",
+        "observable_checks": [
+          "precision分母TP+FP",
+          "recall分母TP+FN",
+          "F1用调和关系"
+        ],
+        "novelty": "假阳性占多数导致精确率与召回率相差很大。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_imbalance_metrics__near_transfer__v1",
+        "oracle_kind": "metrics",
+        "oracle_input": {
+          "tp": 18,
+          "fp": 42,
+          "fn": 2,
+          "tn": 138
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "系统另把10条样本交人工复核但没有自动报警，按全体自动检出指标如何计入？",
+        "artifact": "正类=故障，预测正类=自动报警。TP/FP/FN/TN按此定义；若有abstained_positive/negative，因没有自动报警分别并入FN/TN。指标乘100，保留4位小数，零分母按0。\n输入清单：\n{\n  \"tp\": 9,\n  \"fp\": 1,\n  \"fn\": 1,\n  \"tn\": 79,\n  \"abstained_positive\": 8,\n  \"abstained_negative\": 2\n}",
+        "correct_response": "我的结果是：{\"准确率百分比\":90,\"精确率百分比\":90,\"召回率百分比\":50,\"F1百分比\":64.2857}",
+        "incorrect_response": "我的结果是：{\"准确率百分比\":97.7778,\"精确率百分比\":90,\"召回率百分比\":90,\"F1百分比\":90}",
+        "explanation": "弃权故障仍未被自动检出，必须进入FN；不能只报告90条非弃权样本。",
+        "observable_checks": [
+          "弃权正类并入FN",
+          "弃权负类并入TN",
+          "全体样本分母100不缩小"
+        ],
+        "novelty": "加入弃权通道，评估分母与系统覆盖范围发生变化。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_imbalance_metrics__delayed_transfer__v1",
+        "oracle_kind": "metrics",
+        "oracle_input": {
+          "tp": 9,
+          "fp": 1,
+          "fn": 1,
+          "tn": 79,
+          "abstained_positive": 8,
+          "abstained_negative": 2
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "data_ai_preprocessing_leakage",
+    "domain": "data_ai",
+    "title": "审查离线建模流程的数据边界",
+    "course": "机器学习工程",
+    "level": "integrated",
+    "project_context": "团队做归纳式部署评估：部署时无法访问未来测试样本，最终测试集只用于一次验收。题中代码是带明确函数语义的伪代码，不执行外部机器学习库；审查的是fit边界而非跑分。",
+    "competency": "指出预处理何时读到验证信息并给出相应折内修复位置",
+    "prerequisites": [
+      "训练验证测试划分",
+      "fit与transform",
+      "交叉验证"
+    ],
+    "misconception": "预处理不使用标签就能在所有数据上拟合；只要最终测试集未动，交叉验证内提前拟合就安全。",
+    "misconception_probe": "无监督标准化看到验证集分布，是否也会改变对未见样本的评估条件？",
+    "remediation_activity": "把每个fit读取的行ID画出来，逐折遮住验证行，找出仍读取它们的步骤。",
+    "next_activity": "完成独立流程审查后，再在隔离开发集实现折内pipeline并保留最终测试集。",
+    "return_anchor": "training/pipeline.pseudo 的split与fit顺序",
+    "goal_a": "先封住验证信息泄漏",
+    "goal_b": "先形成可重放的折内预处理流程",
+    "task_prompt": "审查给定伪代码，指出具体泄漏读路径、最小修复位置和验证集未知值处理；不需估计能提高多少分。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "标准化未读标签，为什么仍要检查fit的输入行？",
+        "artifact": "数据：train=[{id:t1,x:1},{id:t2,x:3}]；validation=[{id:v1,x:80}]。\n伪代码：\nall_rows = train + validation\nscaler = FitMeanStd(all_rows.x)  # 保存传入行的均值与标准差\nmodel = FitModel(scaler.transform(train.x), train.y)\nscore = Evaluate(model, scaler.transform(validation.x), validation.y)\n约束：验证输入在训练时不可见；FitMeanStd只读取x，不读取y。",
+        "correct_response": "我会把FitMeanStd移到train.x上拟合，只用冻结参数转换validation。当前all_rows把v1的分布提前带进了训练变换，未使用y也不能消除这条信息路径。",
+        "incorrect_response": "这没有泄漏，因为FitMeanStd只看x；只有直接使用validation.y才需要修改。",
+        "explanation": "预处理参数也是训练产物；归纳评估要求它们不能利用验证输入分布。",
+        "observable_checks": [
+          "点名all_rows读取v1",
+          "fit只读train",
+          "验证只调用transform"
+        ],
+        "novelty": "由标签泄漏直觉转到无监督分布泄漏。",
+        "answer_validation": "reasoned_draft",
+        "oracle_id": null
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "已保留最终测试集，开发集交叉验证前对整份开发集做降维是否安全？",
+        "artifact": "行ID：development=[d1,d2,d3,d4]；final_test=[h1,h2]，最终测试从不参与以下代码。\n折1 train=[d1,d2], val=[d3,d4]；折2 train=[d3,d4], val=[d1,d2]。\n伪代码：\nprojector = FitPCA(development.x)  # 由输入行学习投影方向\nz = projector.transform(development.x)\nfor fold in folds:\n    model = FitModel(z[fold.train], y[fold.train])\n    Evaluate(model, z[fold.val], y[fold.val])\n任务约束：每折模拟未见样本，不允许transductive访问该折验证x。",
+        "correct_response": "最终测试没参与是必要但不充分的。PCA在每一折都提前读到了该折验证x，应把FitPCA放进循环，只在fold.train拟合，并用该投影转换fold.val。",
+        "incorrect_response": "最终测试h1和h2没有参与，所以可以在全部development上先做PCA，折内分数仍代表未见样本。",
+        "explanation": "外层测试隔离不能补救内层交叉验证泄漏；每层评估都有自己的训练边界。",
+        "observable_checks": [
+          "指出每折验证x已进入FitPCA",
+          "把fit移入fold循环",
+          "保留最终测试隔离"
+        ],
+        "novelty": "泄漏发生在开发集的折内边界，最终测试隔离仍不足。",
+        "answer_validation": "reasoned_draft",
+        "oracle_id": null
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "类别目标编码仅用development标签，却在交叉验证前计算，找出问题。",
+        "artifact": "合成行：d1(category=A,y=1), d2(A,0), d3(B,1), d4(C,0), d5(B,1), d6(C,0)。\n折1 train=[d1,d3,d5], val=[d2,d4,d6]；折2反向。\n伪代码：\nencoder = FitCategoryTargetMean(development.category, development.y)\nx_encoded = encoder.transform(development.category)\nCrossValidateModel(x_encoded, development.y, folds)\n函数语义：每类编码为传入训练行中该类y均值；未知类别用传入训练行的总体y均值。最终test不在development中。",
+        "correct_response": "每折验证标签已经进入类别均值编码，即使编码器只在development上fit也不安全。每折只用该折训练行和标签建立编码，未知类别用同一折训练标签的总体均值，验证标签不能参与。",
+        "incorrect_response": "编码器只用development，没有使用最终test标签，所以预先编码再交叉验证没有问题。",
+        "explanation": "目标编码直接使用标签；折外拟合会把验证标签带回特征，未知类别回退也必须只取训练标签。",
+        "observable_checks": [
+          "识别验证y进入类别编码",
+          "每折用训练标签拟合",
+          "回退均值也只来自折内训练"
+        ],
+        "novelty": "由无监督预处理转为有监督类别编码，同时出现未知类别回退边界。",
+        "answer_validation": "reasoned_draft",
+        "oracle_id": null
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "data_ai_threshold_constraints",
+    "domain": "data_ai",
+    "title": "在成本与审核容量约束下选择阈值",
+    "course": "机器学习模型决策",
+    "level": "intermediate",
+    "project_context": "工单只比较开发验证集上已经冻结的候选阈值，不重新调最终测试集。每个候选给出完整混淆计数和外部业务约束；如果没有可行候选，应明确无法选择，不能篡改限制。",
+    "competency": "先过滤硬约束再按错误代价选择阈值，必要时拒绝所有候选",
+    "prerequisites": [
+      "混淆矩阵",
+      "阈值权衡",
+      "约束优化"
+    ],
+    "misconception": "F1或召回最高的阈值永远最好，硬容量不足也可先上线再说。",
+    "misconception_probe": "审核队列最多处理50条，某阈值产生90条报警，即便代价最低还能算可行吗？",
+    "remediation_activity": "给每个阈值先打可行标记，再单独计算FP成本和FN成本；加入一个全部不可行的表。",
+    "next_activity": "独立选择通过后，提交阈值、约束与开发验证依据并锁定最终测试评估步骤。",
+    "return_anchor": "evaluation/threshold-grid.json 的候选筛选",
+    "goal_a": "先减少高代价漏报",
+    "goal_b": "先满足实际审核能力约束",
+    "task_prompt": "先按max_alerts和max_false_positives硬限制过滤，再最小化FP*fp_cost+FN*fn_cost；同代价选较高阈值，无可行项返回null。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "漏报代价为误报的10倍，两个阈值应如何比较？",
+        "artifact": "候选计数均来自固定开发验证集。报警数=TP+FP。max_alerts及max_false_positives若存在即为硬上限。先过滤再最小错误成本；同成本选较高threshold。无可行候选返回选定阈值null、总错误代价null。\n输入清单：\n{\n  \"fp_cost\": 1,\n  \"fn_cost\": 10,\n  \"candidates\": [\n    {\n      \"threshold\": 0.2,\n      \"tp\": 90,\n      \"fp\": 40,\n      \"fn\": 10,\n      \"tn\": 860\n    },\n    {\n      \"threshold\": 0.7,\n      \"tp\": 65,\n      \"fp\": 8,\n      \"fn\": 35,\n      \"tn\": 892\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"选定阈值\":0.2,\"总错误代价\":140}",
+        "incorrect_response": "我的结果是：{\"选定阈值\":0.7,\"总错误代价\":358}",
+        "explanation": "应比较总成本，不是只最小化误报数。",
+        "observable_checks": [
+          "分别计算FP和FN成本",
+          "在同一验证集比较",
+          "不只看某一个指标"
+        ],
+        "novelty": "不等错误代价使低误报阈值未必最优。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_threshold_constraints__base__v1",
+        "oracle_kind": "metrics",
+        "oracle_input": {
+          "fp_cost": 1,
+          "fn_cost": 10,
+          "candidates": [
+            {
+              "threshold": 0.2,
+              "tp": 90,
+              "fp": 40,
+              "fn": 10,
+              "tn": 860
+            },
+            {
+              "threshold": 0.7,
+              "tp": 65,
+              "fp": 8,
+              "fn": 35,
+              "tn": 892
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "人工审核最多50条，低阈值的收益能否抵消硬容量超限？",
+        "artifact": "候选计数均来自固定开发验证集。报警数=TP+FP。max_alerts及max_false_positives若存在即为硬上限。先过滤再最小错误成本；同成本选较高threshold。无可行候选返回选定阈值null、总错误代价null。\n输入清单：\n{\n  \"fp_cost\": 1,\n  \"fn_cost\": 3,\n  \"max_alerts\": 50,\n  \"candidates\": [\n    {\n      \"threshold\": 0.2,\n      \"tp\": 90,\n      \"fp\": 40,\n      \"fn\": 10,\n      \"tn\": 860\n    },\n    {\n      \"threshold\": 0.6,\n      \"tp\": 70,\n      \"fp\": 20,\n      \"fn\": 30,\n      \"tn\": 880\n    },\n    {\n      \"threshold\": 0.9,\n      \"tp\": 30,\n      \"fp\": 5,\n      \"fn\": 70,\n      \"tn\": 895\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"选定阈值\":0.9,\"总错误代价\":215}",
+        "incorrect_response": "我的结果是：{\"选定阈值\":0.2,\"总错误代价\":70}",
+        "explanation": "前两个分别130和90条报警，均不可行；只能在满足容量的候选中选。",
+        "observable_checks": [
+          "先检查报警容量",
+          "不把硬限制当软代价",
+          "计算所选候选成本"
+        ],
+        "novelty": "加入独立硬容量，不能仅对代价排序。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_threshold_constraints__near_transfer__v1",
+        "oracle_kind": "metrics",
+        "oracle_input": {
+          "fp_cost": 1,
+          "fn_cost": 3,
+          "max_alerts": 50,
+          "candidates": [
+            {
+              "threshold": 0.2,
+              "tp": 90,
+              "fp": 40,
+              "fn": 10,
+              "tn": 860
+            },
+            {
+              "threshold": 0.6,
+              "tp": 70,
+              "fp": 20,
+              "fn": 30,
+              "tn": 880
+            },
+            {
+              "threshold": 0.9,
+              "tp": 30,
+              "fp": 5,
+              "fn": 70,
+              "tn": 895
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "误报最多9条，但表中没有候选满足，应返回什么？",
+        "artifact": "候选计数均来自固定开发验证集。报警数=TP+FP。max_alerts及max_false_positives若存在即为硬上限。先过滤再最小错误成本；同成本选较高threshold。无可行候选返回选定阈值null、总错误代价null。\n输入清单：\n{\n  \"fp_cost\": 2,\n  \"fn_cost\": 1,\n  \"max_false_positives\": 9,\n  \"candidates\": [\n    {\n      \"threshold\": 0.4,\n      \"tp\": 80,\n      \"fp\": 20,\n      \"fn\": 20,\n      \"tn\": 880\n    },\n    {\n      \"threshold\": 0.8,\n      \"tp\": 40,\n      \"fp\": 10,\n      \"fn\": 60,\n      \"tn\": 890\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"选定阈值\":null,\"总错误代价\":null}",
+        "incorrect_response": "我的结果是：{\"选定阈值\":0.8,\"总错误代价\":80}",
+        "explanation": "最接近限制也不是满足限制，应该明确没有可行候选而非强行返回一个。",
+        "observable_checks": [
+          "检查全部候选可行性",
+          "空集合返回null",
+          "不临时改变业务上限"
+        ],
+        "novelty": "可行集合为空的边界，不允许偷偷放宽约束。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_threshold_constraints__delayed_transfer__v1",
+        "oracle_kind": "metrics",
+        "oracle_input": {
+          "fp_cost": 2,
+          "fn_cost": 1,
+          "max_false_positives": 9,
+          "candidates": [
+            {
+              "threshold": 0.4,
+              "tp": 80,
+              "fp": 20,
+              "fn": 20,
+              "tn": 880
+            },
+            {
+              "threshold": 0.8,
+              "tp": 40,
+              "fp": 10,
+              "fn": 60,
+              "tn": 890
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "data_ai_group_split",
+    "domain": "data_ai",
+    "title": "审核实体与内容隔离的测试划分",
+    "course": "数据集工程",
+    "level": "intermediate",
+    "project_context": "评估对象由工单明确指定，行ID只是记录标识，不一定是独立样本单位。设备、用户、会话与内容hash均为合成值；只按本次要求的键检查集合隔离，不推断其他身份关系。",
+    "competency": "按声明评估目标寻找训练测试重叠实体或内容并定位受影响测试行",
+    "prerequisites": [
+      "样本单位",
+      "分组切分",
+      "内容去重"
+    ],
+    "misconception": "训练测试行ID不同就完全独立，或者任何评估都必须隔离全部用户。",
+    "misconception_probe": "不同设备采集到同一内容hash，测试新设备且新内容时仍独立吗？",
+    "remediation_activity": "为指定隔离键分别建立train和test集合，交集标红，再回指具体测试行。",
+    "next_activity": "独立审查通过后，提交按评估对象定义的可重复划分清单。",
+    "return_anchor": "dataset/split-manifest.json 的泄漏审查",
+    "goal_a": "先阻止实体重复污染评估",
+    "goal_b": "先让切分单位与部署目标一致",
+    "task_prompt": "只检查must_disjoint_keys指定的硬隔离字段，输出重叠值、受影响测试行及是否满足；不额外发明隔离要求。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "评估新用户，行ID已不同，是否仍有同用户跨集合？",
+        "artifact": "训练和测试必须在must_disjoint_keys的每个字段上无交集。只输出实际有重叠的字段；受影响测试行是任一要求字段命中训练值的行，按id排序。未要求的字段重叠不自动判错。\n输入清单：\n{\n  \"must_disjoint_keys\": [\n    \"user\"\n  ],\n  \"rows\": [\n    {\n      \"id\": \"r1\",\n      \"split\": \"train\",\n      \"user\": \"u1\"\n    },\n    {\n      \"id\": \"r2\",\n      \"split\": \"train\",\n      \"user\": \"u2\"\n    },\n    {\n      \"id\": \"r3\",\n      \"split\": \"test\",\n      \"user\": \"u1\"\n    },\n    {\n      \"id\": \"r4\",\n      \"split\": \"test\",\n      \"user\": \"u3\"\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"跨集合重叠值\":{\"user\":[\"u1\"]},\"受影响测试行\":[\"r3\"],\"满足隔离约束\":false}",
+        "incorrect_response": "我的结果是：{\"跨集合重叠值\":{},\"受影响测试行\":[],\"满足隔离约束\":true}",
+        "explanation": "r1/r3行ID不同，但评估单位u1跨集合。",
+        "observable_checks": [
+          "按user而非行id比较",
+          "定位r3",
+          "拒绝行唯一即安全规则"
+        ],
+        "novelty": "记录ID唯一不等于实体独立。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_group_split__base__v1",
+        "oracle_kind": "group_split",
+        "oracle_input": {
+          "must_disjoint_keys": [
+            "user"
+          ],
+          "rows": [
+            {
+              "id": "r1",
+              "split": "train",
+              "user": "u1"
+            },
+            {
+              "id": "r2",
+              "split": "train",
+              "user": "u2"
+            },
+            {
+              "id": "r3",
+              "split": "test",
+              "user": "u1"
+            },
+            {
+              "id": "r4",
+              "split": "test",
+              "user": "u3"
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "评估新设备和新内容，设备不同但内容复本出现在哪一行？",
+        "artifact": "训练和测试必须在must_disjoint_keys的每个字段上无交集。只输出实际有重叠的字段；受影响测试行是任一要求字段命中训练值的行，按id排序。未要求的字段重叠不自动判错。\n输入清单：\n{\n  \"must_disjoint_keys\": [\n    \"device\",\n    \"content_hash\"\n  ],\n  \"rows\": [\n    {\n      \"id\": \"r1\",\n      \"split\": \"train\",\n      \"device\": \"d1\",\n      \"content_hash\": \"hash-a\"\n    },\n    {\n      \"id\": \"r2\",\n      \"split\": \"train\",\n      \"device\": \"d2\",\n      \"content_hash\": \"hash-b\"\n    },\n    {\n      \"id\": \"r3\",\n      \"split\": \"test\",\n      \"device\": \"d3\",\n      \"content_hash\": \"hash-a\"\n    },\n    {\n      \"id\": \"r4\",\n      \"split\": \"test\",\n      \"device\": \"d4\",\n      \"content_hash\": \"hash-c\"\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"跨集合重叠值\":{\"content_hash\":[\"hash-a\"]},\"受影响测试行\":[\"r3\"],\"满足隔离约束\":false}",
+        "incorrect_response": "我的结果是：{\"跨集合重叠值\":{},\"受影响测试行\":[],\"满足隔离约束\":true}",
+        "explanation": "实体隔离通过仍可能存在内容重复，两个硬约束都要检查。",
+        "observable_checks": [
+          "同时检查设备和内容",
+          "只列实际相交字段",
+          "定位内容复本"
+        ],
+        "novelty": "不同实体共享同一内容副本，单一分组键不足。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_group_split__near_transfer__v1",
+        "oracle_kind": "group_split",
+        "oracle_input": {
+          "must_disjoint_keys": [
+            "device",
+            "content_hash"
+          ],
+          "rows": [
+            {
+              "id": "r1",
+              "split": "train",
+              "device": "d1",
+              "content_hash": "hash-a"
+            },
+            {
+              "id": "r2",
+              "split": "train",
+              "device": "d2",
+              "content_hash": "hash-b"
+            },
+            {
+              "id": "r3",
+              "split": "test",
+              "device": "d3",
+              "content_hash": "hash-a"
+            },
+            {
+              "id": "r4",
+              "split": "test",
+              "device": "d4",
+              "content_hash": "hash-c"
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "部署目标是已知用户的新会话，本轮仅要求session隔离，用户重叠是否自动判错？",
+        "artifact": "训练和测试必须在must_disjoint_keys的每个字段上无交集。只输出实际有重叠的字段；受影响测试行是任一要求字段命中训练值的行，按id排序。未要求的字段重叠不自动判错。\n输入清单：\n{\n  \"must_disjoint_keys\": [\n    \"session\"\n  ],\n  \"evaluation_goal\": \"known users, unseen sessions\",\n  \"rows\": [\n    {\n      \"id\": \"r1\",\n      \"split\": \"train\",\n      \"user\": \"u1\",\n      \"session\": \"s1\"\n    },\n    {\n      \"id\": \"r2\",\n      \"split\": \"train\",\n      \"user\": \"u2\",\n      \"session\": \"s2\"\n    },\n    {\n      \"id\": \"r3\",\n      \"split\": \"test\",\n      \"user\": \"u1\",\n      \"session\": \"s3\"\n    },\n    {\n      \"id\": \"r4\",\n      \"split\": \"test\",\n      \"user\": \"u2\",\n      \"session\": \"s4\"\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"跨集合重叠值\":{},\"受影响测试行\":[],\"满足隔离约束\":true}",
+        "incorrect_response": "我的结果是：{\"跨集合重叠值\":{\"user\":[\"u1\",\"u2\"]},\"受影响测试行\":[\"r3\",\"r4\"],\"满足隔离约束\":false}",
+        "explanation": "评估目标允许已知用户，强制用户隔离会改成另一种泛化问题。",
+        "observable_checks": [
+          "服从声明的评估单位",
+          "检查session无重叠",
+          "不增加user隔离要求"
+        ],
+        "novelty": "改变部署泛化单位，防止无条件套用最严格分组。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_group_split__delayed_transfer__v1",
+        "oracle_kind": "group_split",
+        "oracle_input": {
+          "must_disjoint_keys": [
+            "session"
+          ],
+          "evaluation_goal": "known users, unseen sessions",
+          "rows": [
+            {
+              "id": "r1",
+              "split": "train",
+              "user": "u1",
+              "session": "s1"
+            },
+            {
+              "id": "r2",
+              "split": "train",
+              "user": "u2",
+              "session": "s2"
+            },
+            {
+              "id": "r3",
+              "split": "test",
+              "user": "u1",
+              "session": "s3"
+            },
+            {
+              "id": "r4",
+              "split": "test",
+              "user": "u2",
+              "session": "s4"
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "data_ai_stratified_drift",
+    "domain": "data_ai",
+    "title": "区分总体错误率变化与分层退化",
+    "course": "模型监控与数据分析",
+    "level": "integrated",
+    "project_context": "模型监控分为常规与困难两种已知输入组，观测给出各组样本量与错误数。采用固定基准组权重比较当前错误率，不把观察差异直接解释为模型参数变化或因果效应。",
+    "competency": "计算原始与标准化错误率并按明确阈值判断告警",
+    "prerequisites": [
+      "条件比例",
+      "加权平均",
+      "组成变化"
+    ],
+    "misconception": "总体错误率上升必然说明各组模型都退化，总体下降则必然没有问题。",
+    "misconception_probe": "困难样本比例增加但两组各自错误率未变，会怎样影响总体错误率？",
+    "remediation_activity": "先逐组算错误率，再分别用当前权重和基准权重汇总，标出仅由组成变化造成的差异。",
+    "next_activity": "独立核对通过后，为监控告警补分层样本量、固定权重与不确定性说明。",
+    "return_anchor": "monitoring/strata-error.json 的模型退化诊断",
+    "goal_a": "先避免样本组成变化触发误判",
+    "goal_b": "先发现总体均值掩盖的组内退化",
+    "task_prompt": "报告基准错误率、当前原始错误率、按基准权重标准化的当前错误率及是否触发分层退化告警。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "总体错误率大幅上升，但是否只是困难输入增多？",
+        "artifact": "基准权重=各组reference_n/基准总数；当前标准化率=基准权重*当前各组错误率之和。告警仅当标准化当前率-基准率严格大于threshold_percentage_points个百分点；等于不告警。百分比保留4位小数，不做因果推断。\n输入清单：\n{\n  \"threshold_percentage_points\": 2,\n  \"groups\": [\n    {\n      \"name\": \"routine\",\n      \"reference_n\": 900,\n      \"reference_errors\": 9,\n      \"current_n\": 100,\n      \"current_errors\": 1\n    },\n    {\n      \"name\": \"hard\",\n      \"reference_n\": 100,\n      \"reference_errors\": 20,\n      \"current_n\": 900,\n      \"current_errors\": 180\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"基准错误率百分比\":2.9,\"当前原始错误率百分比\":18.1,\"当前标准化错误率百分比\":2.9,\"触发分层退化告警\":false}",
+        "incorrect_response": "我的结果是：{\"基准错误率百分比\":2.9,\"当前原始错误率百分比\":18.1,\"当前标准化错误率百分比\":18.1,\"触发分层退化告警\":true}",
+        "explanation": "两组条件错误率均未改变，固定权重后仍为2.9%。",
+        "observable_checks": [
+          "逐组计算条件错误率",
+          "固定基准权重",
+          "百分点阈值严格比较",
+          "不从观察推断因果"
+        ],
+        "novelty": "样本组成变化制造总体恶化。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_stratified_drift__base__v1",
+        "oracle_kind": "drift",
+        "oracle_input": {
+          "threshold_percentage_points": 2,
+          "groups": [
+            {
+              "name": "routine",
+              "reference_n": 900,
+              "reference_errors": 9,
+              "current_n": 100,
+              "current_errors": 1
+            },
+            {
+              "name": "hard",
+              "reference_n": 100,
+              "reference_errors": 20,
+              "current_n": 900,
+              "current_errors": 180
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "总体错误率下降，是否仍隐藏两组内部退化？",
+        "artifact": "基准权重=各组reference_n/基准总数；当前标准化率=基准权重*当前各组错误率之和。告警仅当标准化当前率-基准率严格大于threshold_percentage_points个百分点；等于不告警。百分比保留4位小数，不做因果推断。\n输入清单：\n{\n  \"threshold_percentage_points\": 2,\n  \"groups\": [\n    {\n      \"name\": \"routine\",\n      \"reference_n\": 100,\n      \"reference_errors\": 1,\n      \"current_n\": 900,\n      \"current_errors\": 18\n    },\n    {\n      \"name\": \"hard\",\n      \"reference_n\": 900,\n      \"reference_errors\": 180,\n      \"current_n\": 100,\n      \"current_errors\": 30\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"基准错误率百分比\":18.1,\"当前原始错误率百分比\":4.8,\"当前标准化错误率百分比\":27.2,\"触发分层退化告警\":true}",
+        "incorrect_response": "我的结果是：{\"基准错误率百分比\":18.1,\"当前原始错误率百分比\":4.8,\"当前标准化错误率百分比\":4.8,\"触发分层退化告警\":false}",
+        "explanation": "常规组1%升到2%，困难组20%升到30%；样本变容易掩盖了组内恶化。",
+        "observable_checks": [
+          "逐组计算条件错误率",
+          "固定基准权重",
+          "百分点阈值严格比较",
+          "不从观察推断因果"
+        ],
+        "novelty": "总体改善但条件表现退化，方向与基础题相反。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_stratified_drift__near_transfer__v1",
+        "oracle_kind": "drift",
+        "oracle_input": {
+          "threshold_percentage_points": 2,
+          "groups": [
+            {
+              "name": "routine",
+              "reference_n": 100,
+              "reference_errors": 1,
+              "current_n": 900,
+              "current_errors": 18
+            },
+            {
+              "name": "hard",
+              "reference_n": 900,
+              "reference_errors": 180,
+              "current_n": 100,
+              "current_errors": 30
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "标准化退化刚好为2个百分点，按严格阈值是否报警？",
+        "artifact": "基准权重=各组reference_n/基准总数；当前标准化率=基准权重*当前各组错误率之和。告警仅当标准化当前率-基准率严格大于threshold_percentage_points个百分点；等于不告警。百分比保留4位小数，不做因果推断。\n输入清单：\n{\n  \"threshold_percentage_points\": 2,\n  \"groups\": [\n    {\n      \"name\": \"routine\",\n      \"reference_n\": 500,\n      \"reference_errors\": 25,\n      \"current_n\": 1000,\n      \"current_errors\": 70\n    },\n    {\n      \"name\": \"hard\",\n      \"reference_n\": 500,\n      \"reference_errors\": 50,\n      \"current_n\": 1000,\n      \"current_errors\": 120\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"基准错误率百分比\":7.5,\"当前原始错误率百分比\":9.5,\"当前标准化错误率百分比\":9.5,\"触发分层退化告警\":false}",
+        "incorrect_response": "我的结果是：{\"基准错误率百分比\":7.5,\"当前原始错误率百分比\":9.5,\"当前标准化错误率百分比\":9.5,\"触发分层退化告警\":true}",
+        "explanation": "规则是严格大于，恰好达到阈值不是超出；不能混淆百分点和相对百分比。",
+        "observable_checks": [
+          "逐组计算条件错误率",
+          "固定基准权重",
+          "百分点阈值严格比较",
+          "不从观察推断因果"
+        ],
+        "novelty": "检验阈值相等以及百分点单位的边界。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_stratified_drift__delayed_transfer__v1",
+        "oracle_kind": "drift",
+        "oracle_input": {
+          "threshold_percentage_points": 2,
+          "groups": [
+            {
+              "name": "routine",
+              "reference_n": 500,
+              "reference_errors": 25,
+              "current_n": 1000,
+              "current_errors": 70
+            },
+            {
+              "name": "hard",
+              "reference_n": 500,
+              "reference_errors": 50,
+              "current_n": 1000,
+              "current_errors": 120
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "data_ai_distance_scaling",
+    "domain": "data_ai",
+    "title": "复核最近邻检索的特征尺度",
+    "course": "机器学习特征工程",
+    "level": "intermediate",
+    "project_context": "设备样本检索有不同单位的数值特征，训练表与待查询行均在题中给出。均值和总体方差只从训练表计算，常量列忽略；查询缺失值用训练均值填补，不在查询上重新拟合。",
+    "competency": "按训练统计缩放后比较距离，处理常量与缺失列",
+    "prerequisites": [
+      "欧氏距离",
+      "标准化",
+      "缺失值插补"
+    ],
+    "misconception": "原始数值大的单位天然更重要，常量列可以直接除以零方差，查询值可参与重新拟合。",
+    "misconception_probe": "两列单位量级不同，原始距离最近的样本一定也是标准化后最近的吗？",
+    "remediation_activity": "每列只用训练行求均值与总体方差，划掉方差零列，再逐样本列标准化距离贡献。",
+    "next_activity": "独立计算通过后，为特征pipeline保存训练统计、列顺序和缺失值策略。",
+    "return_anchor": "retrieval/features.json 的距离复核",
+    "goal_a": "先纠正单位主导的距离",
+    "goal_b": "先处理常量与缺失列而不泄漏查询分布",
+    "task_prompt": "报告全部并列最近样本ID、标准化距离平方、忽略的常量列下标、插补列下标；下标从0开始。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "第一列量纲小、第二列量纲大，按标准化距离会选谁？",
+        "artifact": "使用训练各列均值与总体方差(除N)。查询null用训练均值填补。距离平方=sum((train_j-query_j)^2/variance_j)，variance=0列完全忽略；并列全部返回，距离平方保留4位小数。\n输入清单：\n{\n  \"training\": [\n    {\n      \"id\": \"A\",\n      \"x\": [\n        0,\n        1000\n      ]\n    },\n    {\n      \"id\": \"B\",\n      \"x\": [\n        10,\n        0\n      ]\n    }\n  ],\n  \"query\": [\n    9,\n    600\n  ]\n}",
+        "correct_response": "我的结果是：{\"最近样本\":[\"B\"],\"标准化距离平方\":1.48,\"忽略常量列下标\":[],\"插补列下标\":[]}",
+        "incorrect_response": "我的结果是：{\"最近样本\":[\"A\"],\"标准化距离平方\":160081,\"忽略常量列下标\":[],\"插补列下标\":[]}",
+        "explanation": "训练方差为25与250000，缩放后B更近；原始单位距离会错误偏向A。",
+        "observable_checks": [
+          "统计只来自训练行",
+          "忽略零方差列",
+          "列出全部并列最近邻",
+          "缺失值用训练均值"
+        ],
+        "novelty": "缩放实际翻转最近邻，不能只比较原始差。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_distance_scaling__base__v1",
+        "oracle_kind": "knn",
+        "oracle_input": {
+          "training": [
+            {
+              "id": "A",
+              "x": [
+                0,
+                1000
+              ]
+            },
+            {
+              "id": "B",
+              "x": [
+                10,
+                0
+              ]
+            }
+          ],
+          "query": [
+            9,
+            600
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "第二列在训练中恒定，查询位于第一列两个样本中点。",
+        "artifact": "使用训练各列均值与总体方差(除N)。查询null用训练均值填补。距离平方=sum((train_j-query_j)^2/variance_j)，variance=0列完全忽略；并列全部返回，距离平方保留4位小数。\n输入清单：\n{\n  \"training\": [\n    {\n      \"id\": \"A\",\n      \"x\": [\n        0,\n        7\n      ]\n    },\n    {\n      \"id\": \"B\",\n      \"x\": [\n        2,\n        7\n      ]\n    },\n    {\n      \"id\": \"C\",\n      \"x\": [\n        4,\n        7\n      ]\n    }\n  ],\n  \"query\": [\n    3,\n    7\n  ]\n}",
+        "correct_response": "我的结果是：{\"最近样本\":[\"B\",\"C\"],\"标准化距离平方\":0.375,\"忽略常量列下标\":[1],\"插补列下标\":[]}",
+        "incorrect_response": "我的结果是：{\"最近样本\":[\"B\"],\"标准化距离平方\":0.375,\"忽略常量列下标\":[],\"插补列下标\":[]}",
+        "explanation": "常量列应忽略，第一列到B/C的标准化距离相同，不能任意删除并列。",
+        "observable_checks": [
+          "统计只来自训练行",
+          "忽略零方差列",
+          "列出全部并列最近邻",
+          "缺失值用训练均值"
+        ],
+        "novelty": "零方差与并列最近邻共同出现。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_distance_scaling__near_transfer__v1",
+        "oracle_kind": "knn",
+        "oracle_input": {
+          "training": [
+            {
+              "id": "A",
+              "x": [
+                0,
+                7
+              ]
+            },
+            {
+              "id": "B",
+              "x": [
+                2,
+                7
+              ]
+            },
+            {
+              "id": "C",
+              "x": [
+                4,
+                7
+              ]
+            }
+          ],
+          "query": [
+            3,
+            7
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "查询第一列缺失，用训练统计插补后该选谁？",
+        "artifact": "使用训练各列均值与总体方差(除N)。查询null用训练均值填补。距离平方=sum((train_j-query_j)^2/variance_j)，variance=0列完全忽略；并列全部返回，距离平方保留4位小数。\n输入清单：\n{\n  \"training\": [\n    {\n      \"id\": \"A\",\n      \"x\": [\n        0,\n        0\n      ]\n    },\n    {\n      \"id\": \"B\",\n      \"x\": [\n        10,\n        10\n      ]\n    },\n    {\n      \"id\": \"C\",\n      \"x\": [\n        20,\n        0\n      ]\n    }\n  ],\n  \"query\": [\n    null,\n    9\n  ]\n}",
+        "correct_response": "我的结果是：{\"最近样本\":[\"B\"],\"标准化距离平方\":0.045,\"忽略常量列下标\":[],\"插补列下标\":[0]}",
+        "incorrect_response": "我的结果是：{\"最近样本\":[\"B\"],\"标准化距离平方\":1.545,\"忽略常量列下标\":[],\"插补列下标\":[0]}",
+        "explanation": "第一列填训练均值10而不是0，B仅有第二列的一点差异。",
+        "observable_checks": [
+          "统计只来自训练行",
+          "忽略零方差列",
+          "列出全部并列最近邻",
+          "缺失值用训练均值"
+        ],
+        "novelty": "缺失值处理改变距离，不能把null当零或重新fit。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_distance_scaling__delayed_transfer__v1",
+        "oracle_kind": "knn",
+        "oracle_input": {
+          "training": [
+            {
+              "id": "A",
+              "x": [
+                0,
+                0
+              ]
+            },
+            {
+              "id": "B",
+              "x": [
+                10,
+                10
+              ]
+            },
+            {
+              "id": "C",
+              "x": [
+                20,
+                0
+              ]
+            }
+          ],
+          "query": [
+            null,
+            9
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "data_ai_temporal_visibility",
+    "domain": "data_ai",
+    "title": "核对预测时刻可见的时序特征",
+    "course": "时序数据与机器学习工程",
+    "level": "integrated",
+    "project_context": "服务需要还原预测当时真正可见的输入，记录同时给出事件发生时间和系统可用时间。每题提供预测实体、窗口和特征/标签角色，不能使用未来记录、迟到尚不可见记录或目标标签。",
+    "competency": "按实体、窗口、可用时间与角色筛选记录并计算均值特征",
+    "prerequisites": [
+      "事件时间与到达时间",
+      "滑动窗口",
+      "标签泄漏"
+    ],
+    "misconception": "只要event_time早于预测时刻就能用，标签列也可当作普通历史数值。",
+    "misconception_probe": "测量在预测前发生但在预测后才入库，离线回放能把它当作当时已知输入吗？",
+    "remediation_activity": "给每行画event_time与available_at两个点，先遮住预测时刻之后可见的行，再标窗口和label角色。",
+    "next_activity": "独立核对通过后，为特征仓库补双时间戳与as-of回放测试。",
+    "return_anchor": "features/asof-input.json 的预测重放",
+    "goal_a": "先消除未来信息泄漏",
+    "goal_b": "先还原线上可见性与离线一致性",
+    "task_prompt": "只对允许记录取均值，输出记录ID与特征均值；无允许记录时均值为null。所有时间为同一虚拟时钟单位。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "未来测量和已入库标签混在导出表中，预测10时能用哪些行？",
+        "artifact": "允许条件同时满足：role=feature、entity相同、window_start<=event_time<prediction_time、available_at<=prediction_time。event_time等于预测时刻排除；available_at等于预测时刻允许。不使用label记录。\n输入清单：\n{\n  \"entity\": \"sensor-A\",\n  \"window_start\": 0,\n  \"prediction_time\": 10,\n  \"records\": [\n    {\n      \"id\": \"a\",\n      \"entity\": \"sensor-A\",\n      \"event_time\": 2,\n      \"available_at\": 2,\n      \"role\": \"feature\",\n      \"value\": 10\n    },\n    {\n      \"id\": \"b\",\n      \"entity\": \"sensor-A\",\n      \"event_time\": 8,\n      \"available_at\": 8,\n      \"role\": \"feature\",\n      \"value\": 20\n    },\n    {\n      \"id\": \"c\",\n      \"entity\": \"sensor-A\",\n      \"event_time\": 12,\n      \"available_at\": 12,\n      \"role\": \"feature\",\n      \"value\": 30\n    },\n    {\n      \"id\": \"target\",\n      \"entity\": \"sensor-A\",\n      \"event_time\": 5,\n      \"available_at\": 5,\n      \"role\": \"label\",\n      \"value\": 100\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"允许记录ID\":[\"a\",\"b\"],\"特征均值\":15}",
+        "incorrect_response": "我的结果是：{\"允许记录ID\":[\"a\",\"b\",\"c\",\"target\"],\"特征均值\":40}",
+        "explanation": "未来测量和目标标签都不能成为当前特征，导出表可见不等于预测当时允许。",
+        "observable_checks": [
+          "排除未来事件",
+          "排除label角色",
+          "仅对允许记录求均值"
+        ],
+        "novelty": "同时存在未来行与标签列泄漏。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_temporal_visibility__base__v1",
+        "oracle_kind": "temporal",
+        "oracle_input": {
+          "entity": "sensor-A",
+          "window_start": 0,
+          "prediction_time": 10,
+          "records": [
+            {
+              "id": "a",
+              "entity": "sensor-A",
+              "event_time": 2,
+              "available_at": 2,
+              "role": "feature",
+              "value": 10
+            },
+            {
+              "id": "b",
+              "entity": "sensor-A",
+              "event_time": 8,
+              "available_at": 8,
+              "role": "feature",
+              "value": 20
+            },
+            {
+              "id": "c",
+              "entity": "sensor-A",
+              "event_time": 12,
+              "available_at": 12,
+              "role": "feature",
+              "value": 30
+            },
+            {
+              "id": "target",
+              "entity": "sensor-A",
+              "event_time": 5,
+              "available_at": 5,
+              "role": "label",
+              "value": 100
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "一个早发生的测量晚入库，另一个恰在预测时可用，应怎样筛选？",
+        "artifact": "允许条件同时满足：role=feature、entity相同、window_start<=event_time<prediction_time、available_at<=prediction_time。event_time等于预测时刻排除；available_at等于预测时刻允许。不使用label记录。\n输入清单：\n{\n  \"entity\": \"sensor-A\",\n  \"window_start\": 0,\n  \"prediction_time\": 10,\n  \"records\": [\n    {\n      \"id\": \"late\",\n      \"entity\": \"sensor-A\",\n      \"event_time\": 2,\n      \"available_at\": 11,\n      \"role\": \"feature\",\n      \"value\": 100\n    },\n    {\n      \"id\": \"ready\",\n      \"entity\": \"sensor-A\",\n      \"event_time\": 9,\n      \"available_at\": 9,\n      \"role\": \"feature\",\n      \"value\": 20\n    },\n    {\n      \"id\": \"boundary\",\n      \"entity\": \"sensor-A\",\n      \"event_time\": 8,\n      \"available_at\": 10,\n      \"role\": \"feature\",\n      \"value\": 40\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"允许记录ID\":[\"boundary\",\"ready\"],\"特征均值\":30}",
+        "incorrect_response": "我的结果是：{\"允许记录ID\":[\"boundary\",\"late\",\"ready\"],\"特征均值\":53.3333}",
+        "explanation": "晚入库记录在预测时不可见；恰好available_at=10的行按给定规则可以用。",
+        "observable_checks": [
+          "检查available_at而非仅event_time",
+          "处理可用时刻等于边界",
+          "不提前使用迟到数据"
+        ],
+        "novelty": "双时间戳打破只看event_time的错误规则。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_temporal_visibility__near_transfer__v1",
+        "oracle_kind": "temporal",
+        "oracle_input": {
+          "entity": "sensor-A",
+          "window_start": 0,
+          "prediction_time": 10,
+          "records": [
+            {
+              "id": "late",
+              "entity": "sensor-A",
+              "event_time": 2,
+              "available_at": 11,
+              "role": "feature",
+              "value": 100
+            },
+            {
+              "id": "ready",
+              "entity": "sensor-A",
+              "event_time": 9,
+              "available_at": 9,
+              "role": "feature",
+              "value": 20
+            },
+            {
+              "id": "boundary",
+              "entity": "sensor-A",
+              "event_time": 8,
+              "available_at": 10,
+              "role": "feature",
+              "value": 40
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "滚动窗口[10,20)还混有另一实体和标签，精确核对边界。",
+        "artifact": "允许条件同时满足：role=feature、entity相同、window_start<=event_time<prediction_time、available_at<=prediction_time。event_time等于预测时刻排除；available_at等于预测时刻允许。不使用label记录。\n输入清单：\n{\n  \"entity\": \"sensor-A\",\n  \"window_start\": 10,\n  \"prediction_time\": 20,\n  \"records\": [\n    {\n      \"id\": \"left\",\n      \"entity\": \"sensor-A\",\n      \"event_time\": 10,\n      \"available_at\": 10,\n      \"role\": \"feature\",\n      \"value\": 5\n    },\n    {\n      \"id\": \"right\",\n      \"entity\": \"sensor-A\",\n      \"event_time\": 20,\n      \"available_at\": 20,\n      \"role\": \"feature\",\n      \"value\": 100\n    },\n    {\n      \"id\": \"old\",\n      \"entity\": \"sensor-A\",\n      \"event_time\": 9,\n      \"available_at\": 9,\n      \"role\": \"feature\",\n      \"value\": 15\n    },\n    {\n      \"id\": \"other\",\n      \"entity\": \"sensor-B\",\n      \"event_time\": 15,\n      \"available_at\": 15,\n      \"role\": \"feature\",\n      \"value\": 80\n    },\n    {\n      \"id\": \"recent\",\n      \"entity\": \"sensor-A\",\n      \"event_time\": 19,\n      \"available_at\": 20,\n      \"role\": \"feature\",\n      \"value\": 15\n    },\n    {\n      \"id\": \"label\",\n      \"entity\": \"sensor-A\",\n      \"event_time\": 18,\n      \"available_at\": 18,\n      \"role\": \"label\",\n      \"value\": 1\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"允许记录ID\":[\"left\",\"recent\"],\"特征均值\":10}",
+        "incorrect_response": "我的结果是：{\"允许记录ID\":[\"left\",\"recent\",\"right\"],\"特征均值\":40}",
+        "explanation": "窗口左闭右开，且要同时满足实体、可用性和角色；不能把当前时刻边界行算进去。",
+        "observable_checks": [
+          "左边界包含右边界排除",
+          "过滤其他实体",
+          "不使用标签",
+          "只聚合允许行"
+        ],
+        "novelty": "加入双侧窗口边界及实体过滤，不能沿用全历史聚合。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_temporal_visibility__delayed_transfer__v1",
+        "oracle_kind": "temporal",
+        "oracle_input": {
+          "entity": "sensor-A",
+          "window_start": 10,
+          "prediction_time": 20,
+          "records": [
+            {
+              "id": "left",
+              "entity": "sensor-A",
+              "event_time": 10,
+              "available_at": 10,
+              "role": "feature",
+              "value": 5
+            },
+            {
+              "id": "right",
+              "entity": "sensor-A",
+              "event_time": 20,
+              "available_at": 20,
+              "role": "feature",
+              "value": 100
+            },
+            {
+              "id": "old",
+              "entity": "sensor-A",
+              "event_time": 9,
+              "available_at": 9,
+              "role": "feature",
+              "value": 15
+            },
+            {
+              "id": "other",
+              "entity": "sensor-B",
+              "event_time": 15,
+              "available_at": 15,
+              "role": "feature",
+              "value": 80
+            },
+            {
+              "id": "recent",
+              "entity": "sensor-A",
+              "event_time": 19,
+              "available_at": 20,
+              "role": "feature",
+              "value": 15
+            },
+            {
+              "id": "label",
+              "entity": "sensor-A",
+              "event_time": 18,
+              "available_at": 18,
+              "role": "label",
+              "value": 1
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  },
+  {
+    "family_id": "data_ai_quality_contract",
+    "domain": "data_ai",
+    "title": "复核延迟特征入库质量契约",
+    "course": "数据工程与质量控制",
+    "level": "foundation",
+    "project_context": "遥测特征入库前需要做单位统一、类型验证、去重与冲突隔离。所有事件ID是合成业务标识，质量规则在题中明确给出，不能默默强制转换或用最后一条覆盖冲突。",
+    "competency": "按规则区分零值缺失、类型错误、等价重复与异值冲突并核算均值",
+    "prerequisites": [
+      "数据类型",
+      "单位换算",
+      "业务键去重"
+    ],
+    "misconception": "0和null都算缺失，同ID只保留最后一条就总能消除重复。",
+    "misconception_probe": "同ID一条100ms、一条100000us是冲突吗？同ID50ms和70ms又应如何处理？",
+    "remediation_activity": "先逐行标类型/单位合法性，再统一为ms，最后按event_id分组判断等价重复或冲突。",
+    "next_activity": "独立核对通过后，把拒绝原因与冲突隔离计数加进入库审计。",
+    "return_anchor": "ingestion/latency-rows.json 的质量门",
+    "goal_a": "先避免单位混乱污染特征",
+    "goal_b": "先防止静默覆盖和错误缺失处理",
+    "task_prompt": "给出有效唯一事件ID、无效行数、重复排除行数、冲突隔离行数及最终均值毫秒；无有效事件时均值为null。",
+    "probes": [
+      {
+        "id": "base",
+        "prompt": "不同单位的延迟进入同一特征均值，如何归一？",
+        "artifact": "先校验：event_id非空；latency必须JSON数值且不是bool，null和数字字符串均无效；unit仅ms或us（us除1000），规范值范围[0,10000]ms。再按event_id分组：规范值全相同保留1行，其余计重复；值不同则整个组隔离，每行计冲突。均值按有效唯一事件计算，保留4位小数。\n输入清单：\n{\n  \"rows\": [\n    {\n      \"event_id\": \"e1\",\n      \"latency\": 100,\n      \"unit\": \"ms\"\n    },\n    {\n      \"event_id\": \"e2\",\n      \"latency\": 100000,\n      \"unit\": \"us\"\n    },\n    {\n      \"event_id\": \"e3\",\n      \"latency\": 200,\n      \"unit\": \"ms\"\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"有效唯一事件ID\":[\"e1\",\"e2\",\"e3\"],\"无效行数\":0,\"重复排除行数\":0,\"冲突隔离行数\":0,\"平均延迟毫秒\":133.3333}",
+        "incorrect_response": "我的结果是：{\"有效唯一事件ID\":[\"e1\",\"e2\",\"e3\"],\"无效行数\":0,\"重复排除行数\":0,\"冲突隔离行数\":0,\"平均延迟毫秒\":33433.3333}",
+        "explanation": "100000us是100ms，不统一单位会使特征量级错误。",
+        "observable_checks": [
+          "us换算ms",
+          "范围检查在规范值上",
+          "均值按唯一有效事件"
+        ],
+        "novelty": "单位不同但语义相同，需要先规范化再聚合。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_quality_contract__base__v1",
+        "oracle_kind": "quality",
+        "oracle_input": {
+          "rows": [
+            {
+              "event_id": "e1",
+              "latency": 100,
+              "unit": "ms"
+            },
+            {
+              "event_id": "e2",
+              "latency": 100000,
+              "unit": "us"
+            },
+            {
+              "event_id": "e3",
+              "latency": 200,
+              "unit": "ms"
+            }
+          ]
+        }
+      },
+      {
+        "id": "near_transfer",
+        "prompt": "零延迟、null、数字字符串和负数同时出现，哪些是有效观测？",
+        "artifact": "先校验：event_id非空；latency必须JSON数值且不是bool，null和数字字符串均无效；unit仅ms或us（us除1000），规范值范围[0,10000]ms。再按event_id分组：规范值全相同保留1行，其余计重复；值不同则整个组隔离，每行计冲突。均值按有效唯一事件计算，保留4位小数。\n输入清单：\n{\n  \"rows\": [\n    {\n      \"event_id\": \"e1\",\n      \"latency\": 0,\n      \"unit\": \"ms\"\n    },\n    {\n      \"event_id\": \"e2\",\n      \"latency\": null,\n      \"unit\": \"ms\"\n    },\n    {\n      \"event_id\": \"e3\",\n      \"latency\": \"20\",\n      \"unit\": \"ms\"\n    },\n    {\n      \"event_id\": \"e4\",\n      \"latency\": -5,\n      \"unit\": \"ms\"\n    },\n    {\n      \"event_id\": \"e5\",\n      \"latency\": 40,\n      \"unit\": \"ms\"\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"有效唯一事件ID\":[\"e1\",\"e5\"],\"无效行数\":3,\"重复排除行数\":0,\"冲突隔离行数\":0,\"平均延迟毫秒\":20}",
+        "incorrect_response": "我的结果是：{\"有效唯一事件ID\":[\"e3\",\"e5\"],\"无效行数\":3,\"重复排除行数\":0,\"冲突隔离行数\":0,\"平均延迟毫秒\":30}",
+        "explanation": "0是合法观测，不应因falsy删除；数字字符串按本契约拒绝，不能默默转换。",
+        "observable_checks": [
+          "保留数值0",
+          "拒绝null与字符串",
+          "拒绝负数",
+          "按明确类型契约处理"
+        ],
+        "novelty": "区分零、缺失、类型错误和越界值。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_quality_contract__near_transfer__v1",
+        "oracle_kind": "quality",
+        "oracle_input": {
+          "rows": [
+            {
+              "event_id": "e1",
+              "latency": 0,
+              "unit": "ms"
+            },
+            {
+              "event_id": "e2",
+              "latency": null,
+              "unit": "ms"
+            },
+            {
+              "event_id": "e3",
+              "latency": "20",
+              "unit": "ms"
+            },
+            {
+              "event_id": "e4",
+              "latency": -5,
+              "unit": "ms"
+            },
+            {
+              "event_id": "e5",
+              "latency": 40,
+              "unit": "ms"
+            }
+          ]
+        }
+      },
+      {
+        "id": "delayed_transfer",
+        "prompt": "同ID有单位等价重复，也有真正异值冲突，应如何入库？",
+        "artifact": "先校验：event_id非空；latency必须JSON数值且不是bool，null和数字字符串均无效；unit仅ms或us（us除1000），规范值范围[0,10000]ms。再按event_id分组：规范值全相同保留1行，其余计重复；值不同则整个组隔离，每行计冲突。均值按有效唯一事件计算，保留4位小数。\n输入清单：\n{\n  \"rows\": [\n    {\n      \"event_id\": \"e1\",\n      \"latency\": 100,\n      \"unit\": \"ms\"\n    },\n    {\n      \"event_id\": \"e1\",\n      \"latency\": 100000,\n      \"unit\": \"us\"\n    },\n    {\n      \"event_id\": \"e2\",\n      \"latency\": 50,\n      \"unit\": \"ms\"\n    },\n    {\n      \"event_id\": \"e2\",\n      \"latency\": 70,\n      \"unit\": \"ms\"\n    },\n    {\n      \"event_id\": \"e3\",\n      \"latency\": 30,\n      \"unit\": \"ms\"\n    },\n    {\n      \"event_id\": \"e4\",\n      \"latency\": 1,\n      \"unit\": \"s\"\n    }\n  ]\n}",
+        "correct_response": "我的结果是：{\"有效唯一事件ID\":[\"e1\",\"e3\"],\"无效行数\":1,\"重复排除行数\":1,\"冲突隔离行数\":2,\"平均延迟毫秒\":65}",
+        "incorrect_response": "我的结果是：{\"有效唯一事件ID\":[\"e1\",\"e2\",\"e3\"],\"无效行数\":1,\"重复排除行数\":2,\"冲突隔离行数\":0,\"平均延迟毫秒\":66.6667}",
+        "explanation": "e1单位归一后相同只去重复；e2内容冲突必须隔离两行，不能最后写入覆盖；s单位不在允许列表。",
+        "observable_checks": [
+          "归一后比较重复",
+          "异值冲突整组隔离",
+          "区分无效行和冲突行",
+          "不采用最后写入覆盖"
+        ],
+        "novelty": "同一批次混合等价重放、真实冲突和非法单位。",
+        "answer_validation": "executable",
+        "oracle_id": "data_ai_quality_contract__delayed_transfer__v1",
+        "oracle_kind": "quality",
+        "oracle_input": {
+          "rows": [
+            {
+              "event_id": "e1",
+              "latency": 100,
+              "unit": "ms"
+            },
+            {
+              "event_id": "e1",
+              "latency": 100000,
+              "unit": "us"
+            },
+            {
+              "event_id": "e2",
+              "latency": 50,
+              "unit": "ms"
+            },
+            {
+              "event_id": "e2",
+              "latency": 70,
+              "unit": "ms"
+            },
+            {
+              "event_id": "e3",
+              "latency": 30,
+              "unit": "ms"
+            },
+            {
+              "event_id": "e4",
+              "latency": 1,
+              "unit": "s"
+            }
+          ]
+        }
+      }
+    ],
+    "source_basis": [
+      "cs2023"
+    ]
+  }
+]
