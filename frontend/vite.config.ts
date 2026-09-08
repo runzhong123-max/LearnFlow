@@ -2,6 +2,7 @@ import { explicitProjectGuidanceMode, hasProjectGuidanceConversation, projectGui
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'node:path'
+import { SITE_ORIGINS } from './src/site-auth.ts'
 import {
   buildProviderRequest,
   errorFromTutorProviderResponse,
@@ -711,7 +712,7 @@ export default defineConfig(({ mode }) => {
     strictPort: true,
   },
   preview: {
-    allowedHosts: ['learn.learnflow.club', 'learnflow.club'],
+    allowedHosts: SITE_ORIGINS.map(origin => new URL(origin).hostname),
   },
   }
 })

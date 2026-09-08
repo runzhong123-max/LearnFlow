@@ -1,3 +1,4 @@
+import { dispatchSchema } from "./dispatch-schema";
 import { linkRunAttachments, archiveJobAttempt } from "@/lib/research-collection/store";
 import { ensureAppSchema, getD1 } from "@/db";
 import { canonicalStringify } from "@/lib/versioning/canonical";
@@ -123,10 +124,10 @@ export async function checkpointRoleJob(input: {
     state: input.state,
     savedAt,
   };
-  await getD1().prepare(`UPDATE role_jobs SET phase=?, checkpoint_json=?, lease_expires_at=?, updated_at=?
-    WHERE id=? AND lease_owner=? AND status='running'`)
-    .bind(input.phase, JSON.stringify(checkpoint), isoAfter(input.leaseMs || 45_000), savedAt, input.jobId, input.owner).run();
-  return true;
+  const written = await getD1().prepare(`UPDATE role_jobs SET phase=?, checkpoint_json=?, lease_expires_at=?, updated_at=?
+    WHERE id=? AND lease_owner=? AND status='running' AND lease_expires_at>?`)
+    .bind(input.phase, JSON.stringify(checkpoint), isoAfter(input.leaseMs || 45_000), savedAt, input.jobId, input.owner, savedAt).run();
+  return Boolean(written.meta.changes);
 }
 
 export async function completeRoleJob(input: { jobId: string; owner: string; phase: string; result?: unknown }) {
@@ -134,8 +135,8 @@ export async function completeRoleJob(input: { jobId: string; owner: string; pha
   const now = new Date().toISOString();
   await getD1().prepare(`UPDATE role_jobs SET status='completed', phase=?, result_json=?, lease_owner=NULL,
     lease_expires_at=NULL, error=NULL, completed_at=?, updated_at=?
-    WHERE id=? AND lease_owner=? AND status='running'`)
-    .bind(input.phase, JSON.stringify(input.result || {}), now, now, input.jobId, input.owner).run();
+    WHERE id=? AND lease_owner=? AND status='running' AND lease_expires_at>?`)
+    .bind(input.phase, JSON.stringify(input.result || {}), now, now, input.jobId, input.owner, now).run();
   await archiveJobAttempt(input.jobId);
 }
 
@@ -152,7 +153,10 @@ export async function getRoleJob(jobId: string) {
   await ensureAppSchema();
   const row = await getD1().prepare("SELECT * FROM role_jobs WHERE id=?").bind(jobId).first<RoleJobRow>();
   if (!row) return null;
+  await getD1().prepare(dispatchSchema).run();
+  const recovery = await getD1().prepare("SELECT state,deliveries FROM role_job_dispatch WHERE job_id=?").bind(jobId).first<{ state: string; deliveries: number }>();
   return {
+    recovery: recovery || undefined,
     ...descriptor(row),
     iterationBrief: iterationRunBrief(parseJson<{ iteration?: unknown }>(row.input_json)?.iteration),
     checkpoint: parseJson<RoleJobCheckpoint>(row.checkpoint_json),
@@ -202,4 +206,10 @@ export async function assertRoleJobLease(jobId: string, owner: string) {
   const row = await getD1().prepare(`SELECT id FROM role_jobs WHERE id=? AND lease_owner=? AND status='running'
     AND lease_expires_at>?`).bind(jobId, owner, new Date().toISOString()).first();
   if (!row) throw new DOMException("任务已取消或执行租约失效", "AbortError");
+}
+
+export async function lastRoleEventSequence(jobId: string) {
+  await ensureAppSchema();
+  const row = await getD1().prepare(`SELECT MAX(event_seq) AS seq FROM role_job_events WHERE job_id=? AND event_seq<9007199254740991`).bind(jobId).first<{ seq: number | null }>();
+  return row?.seq || 0;
 }

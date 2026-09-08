@@ -17,7 +17,7 @@ import {
   type FormalRegistrationInput,
 } from './formal-runtime.ts'
 import styles from './AuthGate.module.css'
-import { loginDestination, safeReturnTo, isUnifiedSite, returnToFromSearch } from './site-auth.ts'
+import { loginDestination, afterLoginDestination, isUnifiedSite, returnToFromSearch } from './site-auth.ts'
 import { PASSWORD_MIN_LENGTH, PASSWORD_POLICY_MESSAGE, passwordPolicyError } from './password-policy.ts'
 
 export type AuthGateSession = {
@@ -211,7 +211,7 @@ export default function AuthGate({ children }: AuthGateProps) {
   useEffect(() => {
     if (checking || !isUnifiedSite(window.location.hostname)) return
     if (account && window.location.pathname === '/login') {
-      window.location.replace(safeReturnTo(returnToFromSearch(window.location.search)))
+      window.location.replace(afterLoginDestination(returnToFromSearch(window.location.search), window.location.hash))
     } else if (!account && window.location.pathname !== '/login') {
       window.location.replace(loginDestination(window.location.href))
     }

@@ -14,7 +14,7 @@ import math
 import re
 from typing import Any, Iterable
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import Integer, and_, case, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.learning import (
@@ -28,12 +28,17 @@ from app.models.learning import (
     MemoryArchive,
 )
 from app.services.architecture_registry import KERNEL_NAMES
+from learnflow_core.registry_core import MEMORY_RETRIEVAL_VERSION
+from learnflow_core.memory_query import plan_query, tokenize, fuzzy_probes, resolve_fuzzy
+from learnflow_core.memory_excerpt import excerpt
+from learnflow_core.memory_paths import collect_path_bundles
 from app.services.personal_concept_graph import build_personal_concept_context
 from app.services.teaching_guidance import GUIDANCE_VERSION, select_teaching_guidance
 
 
 MEMORY_SCHEMA_VERSION = "memory-item.v2"
 CONTEXT_PACKET_VERSION = "five-kernel-context.v2"
+RETRIEVAL_VERSION = MEMORY_RETRIEVAL_VERSION
 HEAD_LIMITS = {"focus": 3, "alerts": 5, "working": 8, "stable": 5}
 DEFAULT_RELATIONS = (
     "SAME_SUBJECT", "SUPPORTS", "CONTRADICTS", "REFINES", "SUPERSEDES",
@@ -65,6 +70,7 @@ class ContextPolicy:
     token_budget: int
     scope_mode: str
     relations: tuple[str, ...] = DEFAULT_RELATIONS
+    max_hops: int = 2
 
 
 CONTEXT_POLICIES = {
@@ -512,15 +518,7 @@ def _safe_payload(value: Any) -> Any:
 
 
 def _search_terms(text: str) -> set[str]:
-    lowered = str(text or "").casefold()
-    latin = set(re.findall(r"[a-z0-9_\-]{2,}", lowered))
-    han_runs = re.findall(r"[\u4e00-\u9fff]+", lowered)
-    han = {
-        run[index:index + 2]
-        for run in han_runs for index in range(max(1, len(run) - 1))
-        if run[index:index + 2]
-    }
-    return latin | han
+    return tokenize(text)
 
 
 def _in_scope(
@@ -550,24 +548,24 @@ def _in_scope(
     return True
 
 
-def _scope_filters(policy: ContextPolicy, project_id, checkpoint_id, session_id):
+def _scope_filters(policy: ContextPolicy, project_id, checkpoint_id, session_id, *, model=MemoryNode, history=False):
     """Apply scope before bounding candidates; old relevant memories stay reachable."""
     filters = [
-        MemoryNode.status.in_(("active", "transient", "legacy")),
-        or_(MemoryNode.valid_to.is_(None), MemoryNode.valid_to > datetime.utcnow()),
-        or_(MemoryNode.status != "transient", MemoryNode.session_id == session_id)
-        if session_id is not None else MemoryNode.status != "transient",
+        model.status.in_(("active", "transient", "legacy", "superseded") if history else ("active", "transient", "legacy")),
+        or_(model.valid_to.is_(None), model.valid_to > datetime.utcnow()),
+        or_(model.status != "transient", model.session_id == session_id)
+        if session_id is not None else model.status != "transient",
     ]
     if policy.scope_mode == "portfolio_reference":
-        filters.append(or_(MemoryNode.node_type == "claim", MemoryNode.project_id.is_(None)))
+        filters.append(or_(model.node_type == "claim", model.project_id.is_(None)))
     else:
         if project_id is not None:
             filters.extend([
-                or_(MemoryNode.project_id.is_(None), MemoryNode.project_id == project_id),
-                or_(MemoryNode.status != "legacy", MemoryNode.project_id.is_not(None)),
+                or_(model.project_id.is_(None), model.project_id == project_id),
+                or_(model.status != "legacy", model.project_id.is_not(None)),
             ])
         if checkpoint_id is not None:
-            filters.append(or_(MemoryNode.checkpoint_id.is_(None), MemoryNode.checkpoint_id == checkpoint_id))
+            filters.append(or_(model.checkpoint_id.is_(None), model.checkpoint_id == checkpoint_id))
     return filters
 
 
@@ -645,6 +643,7 @@ def _sensitive_node(node: MemoryNode, fact: MemoryFact | None) -> bool:
 def _serialize_item(
     node: MemoryNode, *, score: float, reasons: list[str],
     fact: MemoryFact | None, claim: MemoryClaim | None, module: MemoryModule | None,
+    terms: Iterable[str] = (),
 ) -> dict[str, Any]:
     evidence_refs = [fact.source_event_id] if fact else []
     detail: dict[str, Any] = {}
@@ -668,6 +667,8 @@ def _serialize_item(
             "revision_kind": module.revision_kind,
             "policy_version": module.policy_version,
         }
+    rendered, source_text = excerpt(node.text, terms, limit=640)
+    detail["source_text"] = source_text
     return {
         "id": node.id,
         "kernel": node.kernel_name,
@@ -683,7 +684,7 @@ def _serialize_item(
             "checkpoint_id": node.checkpoint_id,
             "session_id": node.session_id,
         },
-        "text": node.text[:900],
+        "text": rendered,
         "status": node.status,
         "confidence": round(float(node.confidence or 0), 3),
         "salience": round(float(node.salience or 0), 3),
@@ -694,6 +695,30 @@ def _serialize_item(
         "retrieval": {"score": round(score, 4), "reasons": reasons},
         "schema_version": node.schema_version or MEMORY_SCHEMA_VERSION,
     }
+
+
+def _query_relevance(node: MemoryNode, subjects: set[str], terms: set[str]) -> tuple[int, float]:
+    """Scope and cache membership are not evidence of topical relevance."""
+    overlap = len(terms & _search_terms(f"{node.subject_id or node.subject_key.split(':', 1)[-1]} {node.text}"))
+    return (2 if node.subject_key in subjects else 1 if overlap else 0,
+            overlap / max(1, len(terms)))
+
+
+def _same_summary(left: dict[str, Any], right: dict[str, Any], claims, modules, nodes) -> bool:
+    """Only remove identical Module/Claim renderings of the SAME version.
+
+    Shared evidence alone does not imply equal information. In particular,
+    separate attempts, assistance grades and timestamps must remain available.
+    """
+    if {left["node_type"], right["node_type"]} != {"module", "claim"}:
+        return False
+    claim_item, module_item = (left, right) if left["node_type"] == "claim" else (right, left)
+    claim = claims.get(claim_item["id"])
+    module = modules.get(module_item["id"])
+    return bool(claim and module and claim.module_node_id == module.node_id
+                and left["kernel"] == right["kernel"] and left["subject"] == right["subject"]
+                and left["scope"] == right["scope"] and left["status"] == right["status"]
+                and nodes[left["id"]].text == nodes[right["id"]].text)
 
 
 async def build_five_kernel_context(
@@ -710,6 +735,17 @@ async def build_five_kernel_context(
     """Build a deterministic, answer-free and budgeted ContextPacket."""
     if isinstance(policy, str):
         policy = CONTEXT_POLICIES[policy]
+    explicit_subjects = {str(item) for item in subject_keys if str(item)}
+    query_plan = plan_query(query)
+    query_terms = set(query_plan.terms)
+    focused = bool(explicit_subjects or str(query).strip())
+    document_terms: dict[int, set[str]] = {}
+    def node_relevance(node):
+        if node.id not in document_terms:
+            document_terms[node.id] = _search_terms(f"{node.subject_id or node.subject_key.split(':', 1)[-1]} {node.text}")
+        overlap = len(query_terms & document_terms[node.id])
+        return (2 if node.subject_key in explicit_subjects else 1 if overlap else 0,
+                overlap / max(1, len(query_terms)))
     archives = list((await db.execute(select(MemoryArchive).where(
         MemoryArchive.learner_id == learner_id, MemoryArchive.status == "archived",
     ))).scalars().all())
@@ -756,6 +792,7 @@ async def build_five_kernel_context(
             return [
                 int(ref) for ref in refs
                 if int(ref) not in hidden_refs and int(ref) in referenced_map
+                and (not focused or node_relevance(referenced_map[int(ref)])[0] > 0)
             ][:limit]
 
         focus_refs = visible(head.focus_refs or [], HEAD_LIMITS["focus"])
@@ -786,7 +823,10 @@ async def build_five_kernel_context(
             head_states.pop("adaptation_source", None)
             head_states.pop("adaptation_scope", None)
         else:
-            summary = "；".join(node.text for node in scoped_nodes[:3])[:420]
+            # Deep nodes are rendered once, with provenance, in items/paths.
+            # Heads remain a compact navigation index, not a second body copy.
+            summary = ("" if head.kernel_name in policy.deep_kernels else
+                       "；".join(node.text for node in scoped_nodes[:3])[:420])
         subjects = list(dict.fromkeys(node.subject_key for node in scoped_nodes))[:8]
         head_payload[head.kernel_name] = {
             "summary": summary,
@@ -806,7 +846,7 @@ async def build_five_kernel_context(
             },
             "version": int(head.version or 0),
         }
-    requested_subjects = {str(item) for item in subject_keys if str(item)}
+    requested_subjects = set(explicit_subjects)
     if project_id is not None:
         requested_subjects.add(f"project:{project_id}")
     if checkpoint_id is not None:
@@ -826,19 +866,60 @@ async def build_five_kernel_context(
         *_scope_filters(policy, project_id, checkpoint_id, session_id),
     )
     recent_order = (MemoryNode.occurred_at.desc(), MemoryNode.id.desc())
-    query_terms = _search_terms(query)
     nodes_by_id = {}
     channels = [MemoryNode.subject_key.in_(requested_subjects or {"__none__"}),
                 MemoryNode.id.in_(head_refs or {-1})]
     if query_terms:
-        channels.append(or_(*(MemoryNode.text.contains(term, autoescape=True)
+        channels.append(or_(*(MemoryNode.text.icontains(term, autoescape=True)
                               for term in sorted(query_terms)[:48])))
+    # Rank lexical matches BEFORE the bounded window, so an old precise match
+    # is not displaced by hundreds of recent records sharing a generic word.
+    lexical_order = sum((case((MemoryNode.text.icontains(term, autoescape=True), 1), else_=0)
+                         for term in sorted(query_terms)[:48]), 0)
+    candidate_order = (lexical_order.desc(), *recent_order) if query_terms else recent_order
     for channel in [*channels, None]:
         statement = base.where(channel) if channel is not None else base
-        for node in (await db.execute(statement.order_by(*recent_order).limit(240))).scalars():
+        order = candidate_order if channel is not None else recent_order
+        for node in (await db.execute(statement.order_by(*order).limit(240))).scalars():
+            nodes_by_id[node.id] = node
+    # History requests reserve oldest/middle/latest FACT candidates per subject,
+    # after the same SQL scope filter. No generated summary becomes an event.
+    temporal_slots: dict[int, str] = {}
+    if query_plan.temporal != "current" and (query_terms or explicit_subjects):
+        matched = or_(MemoryNode.subject_key.in_(explicit_subjects or {"__none__"}),
+                      *(MemoryNode.text.icontains(t, autoescape=True) for t in sorted(query_terms)))
+        partition = (MemoryNode.kernel_name, MemoryNode.subject_key)
+        history_window = base.where(matched, MemoryNode.node_type == "fact").with_only_columns(
+            MemoryNode.id.label("id"),
+            func.row_number().over(partition_by=partition,
+                order_by=(MemoryNode.occurred_at, MemoryNode.id)).label("position"),
+            func.count().over(partition_by=partition).label("total"),
+        ).subquery()
+        slots = list((await db.execute(select(history_window).where(or_(
+            history_window.c.position == 1,
+            history_window.c.position == history_window.c.total,
+            history_window.c.position == cast((history_window.c.total + 1) / 2, Integer),
+        )).order_by(history_window.c.position, history_window.c.id).limit(48))).mappings())
+        temporal_slots = {r["id"]: "earliest" if r["position"] == 1 else
+                          "latest" if r["position"] == r["total"] else "middle" for r in slots}
+        for node in (await db.execute(base.where(MemoryNode.id.in_(temporal_slots or {-1})))).scalars():
+            nodes_by_id[node.id] = node
+    probes = fuzzy_probes(query_plan)
+    if probes:
+        # Probes only find a scoped vocabulary. They never qualify an item as relevant.
+        fuzzy_filter = or_(*(MemoryNode.text.icontains(t, autoescape=True) for t in probes))
+        for node in (await db.execute(base.where(fuzzy_filter).order_by(*recent_order).limit(240))).scalars():
             nodes_by_id[node.id] = node
     nodes = list(nodes_by_id.values())
     facts, claims, modules = await _node_metadata(db, [node.id for node in nodes])
+    def permitted(node, fact, history=False):
+        return (node.learner_id == learner_id and node.kernel_name in policy.deep_kernels
+                and node.kernel_name != "human" and node.id not in archived_ids
+                and not _sensitive_node(node, fact)
+                and _in_scope(node, policy, project_id=project_id, checkpoint_id=checkpoint_id,
+                              session_id=session_id, allow_superseded=history))
+    query_plan = resolve_fuzzy(query_plan, [n.text for n in nodes if permitted(n, facts.get(n.id))])
+    query_terms = set(query_plan.terms)
     concept_context = await build_personal_concept_context(
         db,
         learner_id,
@@ -846,11 +927,37 @@ async def build_five_kernel_context(
         project_id=project_id,
         checkpoint_id=checkpoint_id,
         session_id=session_id,
+        node_filter=lambda node, fact: (
+            node.id not in archived_ids and node.kernel_name in policy.deep_kernels
+            and node.kernel_name != "human" and not _sensitive_node(node, fact)
+            and _in_scope(node, policy, project_id=project_id,
+                          checkpoint_id=checkpoint_id, session_id=session_id)
+            and (not focused or node_relevance(node)[0] > 0)
+        ),
     )
+    # Ranking must not observe a hidden historical endpoint either. Apply the
+    # same graph scope and Python metadata filter before treating an update as
+    # a current correction anchor. The extra ranking channel is also bounded.
+    update_rows = list((await db.execute(select(MemoryEdge.source_node_id, MemoryNode)
+        .join(MemoryNode, MemoryNode.id == MemoryEdge.target_node_id).where(
+            MemoryEdge.learner_id == learner_id,
+            MemoryEdge.source_node_id.in_(nodes_by_id or {-1}),
+            MemoryEdge.relation_type.in_(("SUPERSEDES", "CONTRADICTS")),
+            MemoryNode.learner_id == learner_id,
+            MemoryNode.kernel_name.in_(policy.deep_kernels), MemoryNode.kernel_name != "human",
+            MemoryNode.id.not_in(archived_ids or {-1}),
+            *_scope_filters(policy, project_id, checkpoint_id, session_id, history=True),
+        ).order_by(MemoryEdge.id.desc()).limit(769))).all())
+    update_ranking_truncated = len(update_rows) > 768
+    update_rows = update_rows[:768]
+    update_facts, _, _ = await _node_metadata(db, [n.id for _, n in update_rows])
+    current_update_ids = {source for source, target in update_rows
+                          if permitted(target, update_facts.get(target.id), history=True)}
     now = datetime.utcnow()
     ranked: list[tuple[float, int, MemoryNode, list[str]]] = []
     excluded_sensitive = 0
     excluded_scope = 0
+    excluded_irrelevant = 0
     for node in nodes:
         # Human facts may be sensitive even when their compact directive is
         # safe.  Tutor receives only the typed adaptation directives below.
@@ -867,37 +974,48 @@ async def build_five_kernel_context(
         if _sensitive_node(node, fact):
             excluded_sensitive += 1
             continue
-        score = float(node.salience or 0.25)
+        tier, lexical = node_relevance(node)
+        if focused and tier == 0:
+            excluded_irrelevant += 1
+            continue
+        # Lexicographic relevance tiers dominate bounded quality tie-breakers.
+        score = 10.0 * tier + 2.5 * lexical + float(node.salience or 0.25)
         reasons: list[str] = ["salience"]
-        if node.subject_key in requested_subjects:
-            score += 5.0
+        if node.subject_key in explicit_subjects:
             reasons.append("exact_subject")
+        if lexical:
+            reasons.append("lexical_match")
         if node.id in head_refs:
-            score += 2.2
+            # Cache is a retrieval channel, never a semantic score bonus.
             reasons.append("kernel_head_ref")
         if project_id is not None and node.project_id == project_id:
-            score += 1.4
+            score += 0.3
             reasons.append("project_scope")
         if checkpoint_id is not None and node.checkpoint_id == checkpoint_id:
-            score += 1.8
+            score += 0.3
             reasons.append("checkpoint_scope")
         if session_id is not None and node.session_id == session_id:
-            score += 1.0
+            score += 0.2
             reasons.append("session_scope")
-        corpus_terms = _search_terms(
-            f"{node.subject_key} {node.memory_kind} {node.text}"
-        )
-        overlap = len(query_terms & corpus_terms)
-        if overlap:
-            lexical = 2.5 * overlap / max(1, len(query_terms))
-            score += lexical
-            reasons.append("lexical_match")
-        if node.node_type == "claim" and node.status == "active":
-            # An evidence-backed current claim is a denser summary than a raw
-            # event and must survive when concept history competes for the
-            # bounded packet.
-            score += 3.0
-            reasons.append("active_claim")
+        if query_plan.intent == "summary" or not focused:
+            if node.node_type in {"module", "claim"} and node.status == "active":
+                score += 1.25
+                reasons.append("summary_query")
+        elif node.node_type == "fact":
+            score += 0.85
+            reasons.append("original_fact_for_detail")
+        if node.id in current_update_ids:
+            score += 1.2
+            reasons.append("current_correction_anchor")
+        if node.id in temporal_slots:
+            slot = temporal_slots[node.id]
+            boost = (3.0 if slot == "earliest" else 0.0) if query_plan.temporal == "earliest" else {
+                "earliest": 2.0, "middle": 1.5, "latest": 1.0,
+            }[slot]
+            score += boost
+            reasons.append("temporal_" + slot)
+        if lexical and query_terms != set(query_plan.literal_terms):
+            reasons.append("audited_query_expansion")
         age_days = max(0.0, (now - node.occurred_at).total_seconds() / 86400) if node.occurred_at else 999
         score += 0.5 / (1.0 + age_days)
         ranked.append((score, node.id, node, reasons))
@@ -909,85 +1027,30 @@ async def build_five_kernel_context(
     adaptation_directives = _human_adaptation_directives(
         dict((head_payload.get("human") or {}).get("facets", {}).get("states") or {})
     )
-    used_tokens = (
-        _token_estimate(head_payload) + _token_estimate(concept_context)
-        + _token_estimate(adaptation_directives)
-        + _token_estimate(teaching_guidance)
-    )
-    for score, _, node, reasons in ranked:
-        candidate = _serialize_item(
-            node, score=score, reasons=reasons, fact=facts.get(node.id),
-            claim=claims.get(node.id), module=modules.get(node.id),
-        )
-        candidate_tokens = _token_estimate(candidate)
-        if used_tokens + candidate_tokens > policy.token_budget:
-            continue
-        items.append(candidate)
-        used_tokens += candidate_tokens
-        if len(items) >= policy.max_items:
-            break
-
-    selected_ids = {int(item["id"]) for item in items}
     relation_paths: list[dict[str, Any]] = []
-    conflicts: list[dict[str, Any]] = []
-    if selected_ids and policy.max_paths:
-        edges = list((await db.execute(select(MemoryEdge).where(
-            MemoryEdge.learner_id == learner_id,
-            MemoryEdge.relation_type.in_(policy.relations),
-            or_(
-                MemoryEdge.source_node_id.in_(selected_ids),
-                MemoryEdge.target_node_id.in_(selected_ids),
-            ),
-        ).order_by(MemoryEdge.created_at.desc(), MemoryEdge.id.desc()).limit(80))).scalars().all())
-        neighbor_ids = {
-            node_id for edge in edges
-            for node_id in (edge.source_node_id, edge.target_node_id)
-            if node_id not in selected_ids
-        }
-        neighbors = list((await db.execute(select(MemoryNode).where(
-            MemoryNode.learner_id == learner_id,
-            MemoryNode.id.in_(neighbor_ids or {-1}),
-        ))).scalars().all())
-        neighbor_map = {node.id: node for node in neighbors}
-        neighbor_facts, _, _ = await _node_metadata(db, neighbor_ids)
-        selected_map = {int(item["id"]): item for item in items}
-        for edge in edges:
-            source = selected_map.get(edge.source_node_id) or neighbor_map.get(edge.source_node_id)
-            target = selected_map.get(edge.target_node_id) or neighbor_map.get(edge.target_node_id)
-            if not source or not target:
-                continue
-            if any(isinstance(value, MemoryNode) and (
-                value.id in archived_ids or value.kernel_name == "human"
-                or _sensitive_node(value, neighbor_facts.get(value.id))
-            ) for value in (source, target)):
-                continue
-            if isinstance(source, MemoryNode) and not _in_scope(
-                source, policy, project_id=project_id, checkpoint_id=checkpoint_id,
-                session_id=session_id,
-                allow_superseded=edge.relation_type in {"CONTRADICTS", "SUPERSEDES"},
-            ):
-                continue
-            if isinstance(target, MemoryNode) and not _in_scope(
-                target, policy, project_id=project_id, checkpoint_id=checkpoint_id,
-                session_id=session_id,
-                allow_superseded=edge.relation_type in {"CONTRADICTS", "SUPERSEDES"},
-            ):
-                continue
-            def endpoint(value: dict[str, Any] | MemoryNode) -> dict[str, Any]:
-                if isinstance(value, dict):
-                    return {"id": value["id"], "kernel": value["kernel"], "text": value["text"][:240]}
-                return {"id": value.id, "kernel": value.kernel_name, "text": value.text[:240], "status": value.status}
-            path = {
-                "relation": edge.relation_type,
-                "source": endpoint(source),
-                "target": endpoint(target),
-                "evidence_event_id": edge.evidence_event_id,
-            }
-            relation_paths.append(path)
-            if edge.relation_type == "CONTRADICTS":
-                conflicts.append(path)
-            if len(relation_paths) >= policy.max_paths:
-                break
+    serialized = {
+        node.id: _serialize_item(node, score=score, reasons=reasons,
+                                fact=facts.get(node.id), claim=claims.get(node.id),
+                                module=modules.get(node.id), terms=query_terms)
+        for score, _, node, reasons in ranked
+    }
+    def graph_scope(model):
+        return [model.kernel_name.in_(policy.deep_kernels), model.kernel_name != "human",
+                model.id.not_in(archived_ids or {-1}),
+                *_scope_filters(policy, project_id, checkpoint_id, session_id, model=model, history=True)]
+    def endpoint(node, fact):
+        body, source = excerpt(node.text, query_terms, limit=240)
+        return {"id": node.id, "kernel": node.kernel_name, "text": body,
+                "status": node.status, "evidence_grade": fact.evidence_grade if fact else None,
+                "source_event_id": fact.source_event_id if fact else None,
+                "occurred_at": node.occurred_at.isoformat() if node.occurred_at else None,
+                "source_text": source}
+    bundles_by_anchor, graph_stats = await collect_path_bundles(
+        db, learner_id=learner_id, anchors=[row[2] for row in ranked[:max(1, policy.max_items * 3)]],
+        relations=policy.relations, max_hops=policy.max_hops if policy.max_paths else 0,
+        node_allowed=permitted, scope_predicates=graph_scope, endpoint=endpoint,
+        relevance=lambda node: sum(node_relevance(node)),
+    )
 
     def current_packet_tokens() -> int:
         return _token_estimate({
@@ -999,25 +1062,73 @@ async def build_five_kernel_context(
             "teaching_guidance": teaching_guidance,
         })
 
-    # One-hop paths are discovered after item selection.  Trim the least
-    # essential tail deterministically so every caller receives a packet that
-    # actually respects the declared policy budget.
-    while current_packet_tokens() > policy.token_budget:
-        if relation_paths:
-            relation_paths.pop()
+    # Reserve the fixed control projection first. For unusually tiny custom
+    # budgets, degrade structured fields explicitly, never slice JSON.
+    head_fields = ("summary", "focus_refs", "alert_refs", "working_refs", "stable_refs", "facets")
+    for field in head_fields:
+        if current_packet_tokens() <= policy.token_budget:
+            break
+        for head in head_payload.values():
+            head[field] = "" if field == "summary" else {} if field == "facets" else []
+    while current_packet_tokens() > policy.token_budget and concept_context.get("edges"):
+        concept_context["edges"].pop()
+    while current_packet_tokens() > policy.token_budget and concept_context.get("nodes"):
+        concept_context["nodes"].pop()
+
+    duplicate_count = 0
+    selected_path_keys: set[tuple] = set()
+    def path_key(path):
+        return path["source"]["id"], path["relation"], path["target"]["id"]
+    def add_bundle(bundle):
+        # A second hop can only travel together with its complete stored prefix.
+        fresh = [p for p in bundle if path_key(p) not in selected_path_keys]
+        if not fresh or len(relation_paths) + len(fresh) > policy.max_paths:
+            return False
+        relation_paths.extend(fresh)
+        if current_packet_tokens() > policy.token_budget:
+            del relation_paths[-len(fresh):]
+            return False
+        selected_path_keys.update(path_key(p) for p in fresh)
+        return True
+    # Each anchor initially receives an update and a dependency chain; space is shared
+    # round-robin rather than consumed by the first high-degree anchor.
+    for _, identifier, _, _ in ranked:
+        if len(items) >= policy.max_items:
+            break
+        candidate = serialized[identifier]
+        if any(_same_summary(candidate, item, claims, modules, nodes_by_id) for item in items):
+            duplicate_count += 1
             continue
-        if items:
+        items.append(candidate)
+        if current_packet_tokens() > policy.token_budget:
             items.pop()
             continue
-        concept_edges = concept_context.get("edges") or []
-        if concept_edges:
-            concept_edges.pop()
-            continue
-        concept_nodes = concept_context.get("nodes") or []
-        if len(concept_nodes) > 1:
-            concept_nodes.pop()
-            continue
-        break
+        groups_used = set()
+        for bundle in bundles_by_anchor.get(identifier, []):
+            relation = bundle[0]["relation"]
+            if relation in {"SAME_SUBJECT", "CONSOLIDATED_INTO", "SUPPORTS", "REFINES"}:
+                continue
+            group = "update" if relation in {"SUPERSEDES", "CONTRADICTS"} else "dependency"
+            if group not in groups_used and add_bundle(bundle):
+                groups_used.add(group)
+    for membership in (False, True):
+        pending = []
+        for item in items:
+            pending.append([bundle for bundle in bundles_by_anchor.get(item["id"], [])
+                if (bundle[0]["relation"] in {"SAME_SUBJECT", "CONSOLIDATED_INTO", "SUPPORTS", "REFINES"}) == membership])
+        for index in range(max((len(v) for v in pending), default=0)):
+            for candidates in pending:
+                if index >= len(candidates):
+                    continue
+                bundle = candidates[index]
+                if membership and all(any(ep["id"] == item["id"] or ep["text"] in item["text"] for item in items)
+                                      for p in bundle for ep in (p["source"], p["target"])):
+                    continue
+                add_bundle(bundle)
+    # If even the fixed envelope cannot fit, reject an impossible policy rather
+    # than label an over-budget packet as valid. Built-in policies fit easily.
+    if current_packet_tokens() > policy.token_budget:
+        raise ValueError("context token budget is too small for the control projection")
     conflicts = [
         path for path in relation_paths
         if path["relation"] == "CONTRADICTS"
@@ -1025,7 +1136,10 @@ async def build_five_kernel_context(
 
     evidence_ids = sorted({
         int(ref) for item in items for ref in item.get("evidence_refs", []) if ref is not None
-    } | {int(item["source_event_id"]) for item in teaching_guidance if item.get("source_event_id")})
+    } | {int(item["source_event_id"]) for item in teaching_guidance if item.get("source_event_id")}
+      | {int(path["evidence_event_id"]) for path in relation_paths if path.get("evidence_event_id")}
+      | {int(path[side]["source_event_id"]) for path in relation_paths for side in ("source", "target")
+         if path[side].get("source_event_id")})
     represented_kernels = {item["kernel"] for item in items}
     missing_facets = [
         kernel for kernel in policy.deep_kernels
@@ -1033,7 +1147,10 @@ async def build_five_kernel_context(
     ]
     manifest_base = {
         "version": CONTEXT_PACKET_VERSION,
+        "retrieval_version": RETRIEVAL_VERSION,
         "policy": policy.id,
+        "query_plan": {"terms": sorted(query_terms), "intent": query_plan.intent, "temporal": query_plan.temporal, "audit": query_plan.audit},
+        "source_ranges": [[i["id"], i["detail"]["source_text"]] for i in items],
         "learner_id": learner_id,
         "project_id": project_id,
         "checkpoint_id": checkpoint_id,
@@ -1045,7 +1162,7 @@ async def build_five_kernel_context(
         "teaching_guidance": teaching_guidance,
         "item_ids": [item["id"] for item in items],
         "path_keys": [
-            [path["source"]["id"], path["relation"], path["target"]["id"]]
+            [path["source"]["id"], path["relation"], path["target"]["id"], path.get("hop"), path.get("via_node_ids")]
             for path in relation_paths
         ],
         "concept_keys": [
@@ -1082,10 +1199,16 @@ async def build_five_kernel_context(
             "teaching_guidance_budget_filtered": guidance_omitted,
             "candidate_count": len(nodes),
             "candidate_limit_per_channel": 240,
-            "candidate_channels": len(channels) + 1,
+            "candidate_channels": len(channels) + 1 + bool(probes) + bool(temporal_slots),
+            "temporal_candidates": len(temporal_slots),
+            "update_ranking_candidates": len(update_rows),
+            "update_ranking_truncated": update_ranking_truncated,
+            "graph": graph_stats,
             "candidate_window_may_be_truncated": len(nodes) >= 240,
             "selected_count": len(items),
             "scope_filtered": excluded_scope,
+            "irrelevant_filtered": excluded_irrelevant,
+            "duplicate_summary_filtered": duplicate_count,
             "sensitive_filtered": excluded_sensitive,
             "budget_or_rank_filtered": max(
                 0, len(ranked) - len(items)
@@ -1103,7 +1226,13 @@ async def build_five_kernel_context(
                 "teaching_guidance": teaching_guidance,
             }),
             "answer_free": True,
-            "retrieval_order": ["exact_scope", "subject_and_lexical", "one_hop_relations"],
+            "retrieval_version": RETRIEVAL_VERSION,
+            "retrieval_order": ["exact_scope", "audited_query_normalization", "temporal_candidates",
+                                "relevance_tiers", "bounded_two_hop_bundles", "original_excerpts_joint_budget"],
+            "query_plan": {"intent": query_plan.intent, "temporal": query_plan.temporal, **query_plan.audit},
+            "direct_memory_evidence": bool(items),
+            "evidence_gap": None if items else "no_direct_memory_for_query",
+            "graph": graph_stats,
             "authority": "read_only_projection_from_evidence_and_memory_graph",
             "personal_concept_graph": (
                 "read-only Knowledge node history + Structure relations "

@@ -1,3 +1,4 @@
+import { selectedLaunchTask, conversionLaunchUrl } from "@/lib/integrations/learnflow/task-launch";
 import { accessErrorResponse, requireReleaseAccess } from "@/lib/access";
 import { getReleaseWithArtifact } from "@/lib/releases/resolver";
 import { resolveLearnFlowIdentity } from "@/lib/integrations/learnflow/auth";
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
     }
     const identity = await resolveLearnFlowIdentity({ request, baseUrl: authBaseUrl });
     if (!identity) return Response.json({ error: "LEARNFLOW_LOGIN_REQUIRED" }, { status: 401 });
-    const input = await request.json() as { releaseId?: unknown; source?: unknown };
+    const input = await request.json() as { releaseId?: unknown; source?: unknown; taskNodeId?: unknown; intent?: unknown };
     if (typeof input.releaseId !== "string" || input.releaseId.length > 240) {
       return Response.json({ error: "RELEASE_ID_REQUIRED" }, { status: 400 });
     }
@@ -50,7 +51,17 @@ export async function POST(request: Request) {
     }
     const rootHash = resolved.release.artifactRootHash || "";
     if (rootHash !== resolved.bundle.manifest.rootHash) throw new Error("RELEASE_ARTIFACT_IDENTITY_MISMATCH");
+    const converting = input.intent === "work_task_conversion";
+    let taskRef;
+    if (converting) {
+      try { taskRef = selectedLaunchTask(resolved.bundle, input.taskNodeId, {
+        packageId: resolved.line.packageId, packageVersion: resolved.release.packageVersion,
+        snapshotId: resolved.release.snapshotId, rootHash,
+      }); }
+      catch (error) { return Response.json({ error: error instanceof Error ? error.message : "TASK_INVALID" }, { status: 422 }); }
+    }
     const token = signRolePackageLaunch({
+      ...(converting ? { intent: "work_task_conversion" as const, taskRef } : {}),
       secret,
       subject: identity.subjectId,
       source,
@@ -63,7 +74,9 @@ export async function POST(request: Request) {
       },
     });
     const base = publicBaseUrl(learnFlowPublicUrl);
-    const launchUrl = new URL(`${base.pathname}/launch/role-package/${token}`, base).toString();
+    const launchUrl = converting
+      ? conversionLaunchUrl(process.env.WORK_TASK_PUBLIC_URL || learnFlowPublicUrl, token)
+      : new URL(`${base.pathname}/launch/role-package/${token}`, base).toString();
     return Response.json({ launchUrl }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     const message = error instanceof Error ? error.message : "LEARNFLOW_LAUNCH_FAILED";

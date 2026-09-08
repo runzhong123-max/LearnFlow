@@ -100,3 +100,8 @@ VisualSpec计算与API统一位于learning-core的visuals及api/visuals.py；表
 共享协议：`learnflow.project-guidance.v1` 保存候选与显式确认；`learnflow.project-workflow.v1` 投影正式阶段和纸张；`learnflow.device-report.v1` 记录设备报告的运行或文件摘要。全部以既有项目 ownership 为边界，不自动生成掌握证据。
 
 2026-09-07 阶段支持增强：`project_stage_support`、帮助策略和文件推荐服务位于 learning-core，Tutor 的有界流程裁剪位于 learning-client。两端 API 与 Tutor 消费同一说明，桌面负责真实文件扫描和工程执行。固定案例包不变，不迁移日常数据库；端侧权限和账户隔离继续保留。注册与验收见[三类项目实现](implementation/DESKTOP_PROJECT_GUIDANCE.md)。
+
+
+## 典型工作任务转换（2026-09-08）
+
+项目创建前的转换工作台复用三类主 Agent 和共享事件权威。`work_task_conversion_gateway` 管理 learner 所有的任务说明、版本、来源与确认接续；`work_task_design_compiler` 提供固定版本专业设计与待审核长尾方案。新增操作事件均为零核目标，生成与设备执行结果不等于掌握证据。运行与兼容性详见 [工作任务转换](implementation/WORK_TASK_CONVERSION.md)。

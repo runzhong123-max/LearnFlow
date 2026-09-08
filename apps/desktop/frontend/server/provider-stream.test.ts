@@ -3,7 +3,7 @@ import test from 'node:test'
 
 import { reasoningContentFromProviderResponse, toolCallsFromProviderResponse } from './agent-runtime.ts'
 import { readProviderStream } from './provider-stream.ts'
-import { textFromTutorProviderResponse } from '../src/tutor.ts'
+import { textFromTutorProviderResponse, tutorProviderResponseIssue } from '../src/tutor.ts'
 
 function sseResponse(chunks: string[]) {
   const encoder = new TextEncoder()
@@ -98,6 +98,22 @@ test('non-streaming provider fallback keeps the same callback contract', async (
   const result = await readProviderStream(response, delta => deltas.push(delta))
   assert.deepEqual(deltas, ['完整回退回答'])
   assert.equal(result.streamed, false)
+})
+
+test('provider text extraction accepts structured content parts and JSON objects', () => {
+  assert.equal(textFromTutorProviderResponse({
+    choices: [{ message: { content: [{ type: 'output_text', text: '结构化正文' }] } }],
+  }), '结构化正文')
+  assert.equal(textFromTutorProviderResponse({ task: '学习路线', steps: ['基础', '实践'] }, {
+    allowStructuredJson: true,
+  }), '{"task":"学习路线","steps":["基础","实践"]}')
+})
+
+test('provider response issues distinguish tool calls from unknown envelopes', () => {
+  assert.match(tutorProviderResponseIssue({
+    choices: [{ message: { tool_calls: [{ id: 'call-1' }] } }],
+  }), /工具调用/)
+  assert.match(tutorProviderResponseIssue({ status: 'completed', output: [] }), /可识别的正文/)
 })
 
 test('semantic stream failures surface instead of becoming empty answers', async () => {

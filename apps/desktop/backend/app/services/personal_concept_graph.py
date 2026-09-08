@@ -285,6 +285,7 @@ async def build_personal_concept_graph(
     project_id: int | None = None,
     checkpoint_id: int | None = None,
     session_id: int | None = None,
+    node_filter=None,
 ) -> dict[str, Any]:
     rows = list((await db.execute(
         select(MemoryNode, MemoryFact, EvidenceEvent)
@@ -357,7 +358,7 @@ async def build_personal_concept_graph(
         return current
 
     for node, fact, event in rows:
-        if not in_scope(node):
+        if not in_scope(node) or (node_filter is not None and not node_filter(node, fact)):
             continue
         payload = dict(event.payload or {})
         anchor = ensure(_anchor_from_payload(payload, node.subject_key))
@@ -414,7 +415,7 @@ async def build_personal_concept_graph(
         })
 
     for claim_node, claim, module in claim_rows:
-        if not in_scope(claim_node):
+        if not in_scope(claim_node) or (node_filter is not None and not node_filter(claim_node, None)):
             continue
         key = claim_node.subject_key.removeprefix("concept:")
         ensure({"concept_key": key, "name": key, "origin": "personal"})
@@ -498,6 +499,7 @@ async def build_personal_concept_context(
     project_id: int | None = None,
     checkpoint_id: int | None = None,
     session_id: int | None = None,
+    node_filter=None,
 ) -> dict[str, Any]:
     graph = await build_personal_concept_graph(
         db,
@@ -506,6 +508,7 @@ async def build_personal_concept_context(
         project_id=project_id,
         checkpoint_id=checkpoint_id,
         session_id=session_id,
+        node_filter=node_filter,
     )
     terms = {item.casefold() for item in re.findall(r"[\u4e00-\u9fffA-Za-z0-9_-]{2,}", query)}
     scored: list[tuple[int, dict[str, Any]]] = []

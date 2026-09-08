@@ -15,5 +15,10 @@ COPY apps/role-atlas/lib/research-collection /app/apps/role-atlas/lib/research-c
 COPY apps/role-atlas/app/admin/research /app/apps/role-atlas/app/admin/research
 COPY apps/role-atlas/app/api/admin/research /app/apps/role-atlas/app/api/admin/research
 
+# Role task recovery bindings are likewise source-only registry contracts.
+COPY apps/role-atlas/lib/jobs /app/apps/role-atlas/lib/jobs
+COPY apps/role-atlas/app/api/internal /app/apps/role-atlas/app/api/internal
+COPY apps/role-atlas/app/api/projects /app/apps/role-atlas/app/api/projects
+
 EXPOSE 8010
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8010", "--proxy-headers", "--forwarded-allow-ips=*"]

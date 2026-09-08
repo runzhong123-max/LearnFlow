@@ -75,6 +75,12 @@ try {
 
   for(const user of [null,1,2,3]) for(const path of ["/api/admin/research","/api/admin/research?view=access","/api/admin/research/export","/api/admin/research?callId=guessed","/api/admin/research/export?attachmentId=guessed"])status(await api(user,path),user?403:401,"admin data denied");
   const index=status(await api(9,"/api/admin/research"),200,"admin index");assert.equal(index.projects.length,3);
+  assert.deepEqual(index.projects.map(p=>p.owner_subject_id).sort(),[1,2,3].map(id=>`learnflow:learner:${id}`),"admin sees every other user's canonical ID");
+  for(const user of [1,2,3]) {
+   const owned=status(await api(user,"/api/projects"),200,"ordinary user's projects");
+   assert.ok(!JSON.stringify(owned).includes(`verify-project-${user===1?2:1}`),"ordinary users stay isolated");
+   status(await api(9,`/api/admin/research?projectId=verify-project-${user}`),200,"admin reads other user's history");
+  }
   const original=new TextEncoder().encode("岗位资料原件\nSQL、数据库部署和沟通。".repeat(10000));
   const hash=createHash("sha256").update(original).digest("hex");
   async function upload(user,filename="测试资料.txt",source=true){const form=new FormData();form.set("file",new Blob([original]),filename);if(source)form.set("source",JSON.stringify({title:filename,kind:"private_document",content:"SQL、数据库部署和沟通。",locator:`attachment:${filename}`}));else form.set("error","模拟 PDF 解析失败");const r=await fetch(`${base}/api/research-materials`,{method:"POST",headers:{cookie:`atlas_verify_user=${user}`,origin:base},body:form});return {status:r.status,data:await r.json()};}

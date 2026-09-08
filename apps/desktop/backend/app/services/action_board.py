@@ -13,6 +13,10 @@ class ActionDefinition:
 
 ACTION_BOARD = {
     item.capability: item for item in (
+        ActionDefinition("import_work_task_conversion", "预览并确认导入云端方案初始文件", "write", "explicit", {}, ("read_project_workflow",)),
+        ActionDefinition("prepare_work_task_conversion", "保存并澄清项目创建前的工作任务", "proposal", "explicit_or_click", {}, ("generate_work_task_conversion",)),
+        ActionDefinition("generate_work_task_conversion", "生成固定任务版本的三类方案候选", "artifact", "explicit", {}, ("handoff_work_task_conversion",)),
+        ActionDefinition("handoff_work_task_conversion", "确认方案并接续 Tutor 或正式项目", "write", "explicit", {}, ("read_project_workflow",)),
         ActionDefinition("prepare_project_guidance", "准备实验或带教项目候选", "proposal", "explicit_or_click", {}, ("confirm_project_guidance",)),
         ActionDefinition("confirm_project_guidance", "确认固定候选并创建正式项目", "write", "explicit", {}, ("read_project_workflow",)),
         ActionDefinition("record_project_device_report", "保存设备上报的实验操作摘要", "write", "explicit", {}, ("read_project_device_report", "submit_project_delivery")),

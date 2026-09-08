@@ -141,6 +141,10 @@ class CloudConnection:
                     'tasks': task_value if isinstance(task_value, list) else task_value.get('tasks', []),
                     'review': {'due': reviews.json()['due'], 'focus_subjects': [], 'mastery_unchanged': True},
                     'model': {'configured': True, 'status': 'ready'}})
+            conversion = re.fullmatch(r'desktop/conversions/([A-Za-z0-9_-]{32,128})/import', path)
+            if conversion and request.method == 'POST' and not pet:
+                from app.services.cloud_conversion_import import import_handoff
+                return await import_handoff(session, self.origin, conversion[1], bytes(body))
             device = re.fullmatch(r'projects/(\d+)/(workspace|experiments|local-agent)/(.*)', path)
             if device and not pet:
                 from app.services.cloud_device import device_request

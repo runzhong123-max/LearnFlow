@@ -1,5 +1,13 @@
 # LearnFlow 架构权威与维护边界
 
+Contract impact（`2026-09-08.6`）：共享核心 0.2.3 / `relevance-budget.v2` 增加可审计查询归一、保留限定的原文片段、时间候选配额、最多两跳的因果依赖与按任务选择摘要。ContextPacket v2 增量增加来源 hash/偏移、查询计划、证据缺口和有界图统计；三类 Agent、稳定工具 ID、事件 schema、五核写入与证据等级保持兼容，无数据库迁移。见 [长尾检索升级](implementation/MEMORY_LONG_TAIL_RETRIEVAL.md)。
+
+Contract impact（`2026-09-08.5`）：完整记忆读取采用 `relevance-budget.v1`，相关性分层、同版本摘要去重、节点与一跳语义关系共同预算；ContextPacket 附带概念图复用相同 scope/归档/敏感过滤。共享核心 0.2.2，保留 ContextPacket v2 与 EvidenceEvent/五核写入链，无数据库迁移。实现、限制与验证见 [记忆检索预算升级](implementation/MEMORY_RETRIEVAL_BUDGET_UPGRADE.md)。
+
+Contract impact（`2026-09-08.3`）：Visual Hub 增加用户自带模型的创作入口，复用 Learning Design 的 educational_visuals 工作流与私有作品服务。`/api/visuals/user-model` 仅接受当次用户配置，公网 HTTPS / DNS 固定连接、无重定向、无平台模型密钥回退；凭据不进入作品、检查点或持久化。既有聊天后台模型策略不变。工作台复用现有生成与工作区能力，无新主 Agent、五核事件或数据库迁移。见 [Hub 自带模型创作](implementation/VISUAL_HUB_BYOK.md)。
+
+Contract impact（`2026-09-08.2`）：Role Atlas 既有岗位生产任务增加持久队列投递、后台消费者、有界失联恢复和游标重放。任务身份、owner、对话版本基线与发布门保持不变；不新增 LearnFlow Agent 工具或学习事件，不读写五核。详见 [岗位任务恢复](../apps/role-atlas/docs/JOB_RECOVERY.md)。
+
 Contract impact（`2026-09-07.5`）：三类项目对话引导与工作流改为跨端共享，知识转换保留讯飞，实验和带教操作在桌面执行。新增项目候选确认及 device_reported 交付参考，工程子 Agent 继续由 Tutor 的 local_agent_broker 所有。新增事件均零 kernel targets，旧 learning 项目与稳定插件 ID 兼容。详见[工作任务到三类学习项目](implementation/DESKTOP_PROJECT_GUIDANCE.md)。
 
 Contract impact（`2026-09-07.4`）：学习方法主入口收敛为清晰讲解、费曼复述、讲义与练习共学；其余稳定 ID 保留旧运行兼容。Skill runtime v7 以真实文件/已读/Attempt 同步文件学习阶段，生成与验证解耦且保留任务原 scope。多节讲义、配对练习、失败缺口和重复/受助提交投影向后兼容；无新表、主 Agent 或五核 reducer 改动。当前合同优先见[学习方法与文件闭环 v2](implementation/LEARNING_METHODS_AND_FILES_V2.md)。
@@ -686,3 +694,8 @@ Web 独立 Hub 地址为 `/visualize`，侧栏直接跳转，保留 `/visual-hub
 
 
 Contract impact（2026-09-08.1）：登记 Role Atlas `role_research_archive_v1` 与管理员独立工作台 `/admin/research`。用户输入、附件原件、模型调用和运行/版本/发布记录作为 operational artifact 保存；访问与导出使用服务端验证的 admin 身份，普通用户的岗位包 ownership 不变。无 Agent 跨用户读取工具，无 EvidenceEvent 或五核变更。仅新增 Role Atlas 审计表，旧历史缺口不回填伪造。详见 [测试数据采集契约](../apps/role-atlas/docs/RESEARCH_COLLECTION.md)。
+
+
+## 典型工作任务转换（2026-09-08）
+
+项目创建前的转换工作台复用三类主 Agent 和共享事件权威。`work_task_conversion_gateway` 管理 learner 所有的任务说明、版本、来源与确认接续；`work_task_design_compiler` 提供固定版本专业设计与待审核长尾方案。新增操作事件均为零核目标，生成与设备执行结果不等于掌握证据。运行与兼容性详见 [工作任务转换](implementation/WORK_TASK_CONVERSION.md)。

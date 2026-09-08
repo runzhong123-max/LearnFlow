@@ -1,5 +1,11 @@
 # LearnFlow 智能体架构与协作指南
 
+Contract impact（`2026-09-08.6`）：共享核心 0.2.3 / `relevance-budget.v2` 增加可审计查询归一、保留限定的原文片段、时间候选配额、最多两跳的因果依赖与按任务选择摘要。ContextPacket v2 增量增加来源 hash/偏移、查询计划、证据缺口和有界图统计；三类 Agent、稳定工具 ID、事件 schema、五核写入与证据等级保持兼容，无数据库迁移。见 [长尾检索升级](implementation/MEMORY_LONG_TAIL_RETRIEVAL.md)。
+
+Contract impact（`2026-09-08.5`）：完整记忆读取采用 `relevance-budget.v1`，相关性分层、同版本摘要去重、节点与一跳语义关系共同预算；ContextPacket 附带概念图复用相同 scope/归档/敏感过滤。共享核心 0.2.2，保留 ContextPacket v2 与 EvidenceEvent/五核写入链，无数据库迁移。实现、限制与验证见 [记忆检索预算升级](implementation/MEMORY_RETRIEVAL_BUDGET_UPGRADE.md)。
+
+Contract impact（`2026-09-08.3`）：Visual Hub 增加用户自带模型的创作入口，复用 Learning Design 的 educational_visuals 工作流与私有作品服务。`/api/visuals/user-model` 仅接受当次用户配置，公网 HTTPS / DNS 固定连接、无重定向、无平台模型密钥回退；凭据不进入作品、检查点或持久化。既有聊天后台模型策略不变。工作台复用现有生成与工作区能力，无新主 Agent、五核事件或数据库迁移。见 [Hub 自带模型创作](implementation/VISUAL_HUB_BYOK.md)。
+
 Contract impact（`2026-09-07.5`）：三类项目对话引导与工作流改为跨端共享，知识转换保留讯飞，实验和带教操作在桌面执行。新增项目候选确认及 device_reported 交付参考，工程子 Agent 继续由 Tutor 的 local_agent_broker 所有。新增事件均零 kernel targets，旧 learning 项目与稳定插件 ID 兼容。详见[工作任务到三类学习项目](implementation/DESKTOP_PROJECT_GUIDANCE.md)。
 
 Contract impact（`2026-09-07.4`）：学习方法主入口收敛为清晰讲解、费曼复述、讲义与练习共学；其余稳定 ID 保留旧运行兼容。Skill runtime v7 以真实文件/已读/Attempt 同步文件学习阶段，生成与验证解耦且保留任务原 scope。多节讲义、配对练习、失败缺口和重复/受助提交投影向后兼容；无新表、主 Agent 或五核 reducer 改动。当前合同优先见[学习方法与文件闭环 v2](implementation/LEARNING_METHODS_AND_FILES_V2.md)。
@@ -842,8 +848,8 @@ EvidenceEvent
 每个 capability 先选择 `ContextPolicy`，再经过 `FiveKernelRetriever` 按顺序执行：
 
 1. learner ownership 与 project/checkpoint/session 精确过滤；
-2. subject key 精确召回，再用本地词项匹配和 salience 排序；
-3. 只展开白名单内的一跳稀疏关系；
+2. subject key 精确召回，合并显式术语归一、受限错拼及时间候选后按相关性分层排序；
+3. 白名单关系读取一跳，仅 BLOCKS/ENABLES 可在每跳 scope 过滤下扩展至两跳；
 4. 按 item、path、个人概念图与统一 token 预算生成 answer-free `ContextPacket`。接入个人概念图后，各策略预算增加 700 个估算 token，保留原有五核召回能力；超限时按确定性顺序裁剪，而不是在 API 层无预算追加。
 
 `ContextPacket` 包含五核热头部、召回项、关系路径、冲突、缺失 facet、省略统计和
@@ -1167,3 +1173,8 @@ Visual Hub 查询展示工作台：Web / 桌面均使用 `/visual-hub`，由 lea
 Web 独立 Hub 地址为 `/visualize`，侧栏直接跳转，保留 `/visual-hub` 别名；经过现有 AuthGate，未开放匿名 API。桌面继续使用内嵌 `/visual-hub`。Web registry 2026-09-07.9 仅更新页面绑定，无事件或数据迁移。
 
 公共维护库修正（registry 2026-09-07.10）：`/visualize` 与别名无需登录。gallery/preview 仅开放已登记维护作品；preview 允许有界参数重算，拒绝任意 spec，固定 public:maintained 展示 scope。公共播放器不执行个人预测写回或要求完成预测才能播放。生成、私有 workspace、compile/inspect/predict 继续认证，无五核或数据库变更。
+
+
+## 典型工作任务转换（2026-09-08）
+
+项目创建前的转换工作台复用三类主 Agent 和共享事件权威。`work_task_conversion_gateway` 管理 learner 所有的任务说明、版本、来源与确认接续；`work_task_design_compiler` 提供固定版本专业设计与待审核长尾方案。新增操作事件均为零核目标，生成与设备执行结果不等于掌握证据。运行与兼容性详见 [工作任务转换](implementation/WORK_TASK_CONVERSION.md)。

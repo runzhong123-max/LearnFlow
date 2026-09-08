@@ -18,6 +18,8 @@ bash start.sh demo
 
 ## 文档索引
 
+- [记忆系统扩展消融实验报告](MEMORY_ABLATION_REPORT.md)：35 类场景、新旧同数据对照、失败边界与复现证据。
+
 - `DEMO_RUNBOOK.md`：3–5 分钟讲解和故障切换。
 - `SUBMISSION_CHECKLIST.md`：按比赛材料编号维护交付物。
 - `USER_TEST_TEMPLATE.md`：2–3 名学生或教师试用的证据模板。

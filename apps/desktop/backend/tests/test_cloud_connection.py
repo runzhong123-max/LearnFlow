@@ -82,3 +82,27 @@ async def test_account_switch_revokes_old_handle_and_pet_is_scoped(relay):
 @pytest.mark.parametrize('url', ['http://example.com','https://user:password@example.com','https://example.com/path','https://example.com?q=1'])
 def test_reject_untrusted_authority(url):
     with pytest.raises(ValueError): cloud_origin(url)
+
+
+@pytest.mark.asyncio
+async def test_conversion_import_is_native_main_only_and_dispatches_local_adapter(relay, monkeypatch):
+    from fastapi.responses import JSONResponse
+    from app.services import cloud_conversion_import
+    connection, app, seen = relay
+    called = []
+    async def import_fake(session, origin, ticket, body):
+        called.append((session.learner_id, origin, ticket, json.loads(body)))
+        return JSONResponse({'status': 'imported', 'project_id': 11})
+    monkeypatch.setattr(cloud_conversion_import, 'import_handoff', import_fake)
+    path = '/desktop/conversions/' + 'a' * 43 + '/import'
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url='http://local') as client:
+        assert (await client.post(path, json={})).status_code == 403
+        client.headers['X-LearnFlow-Desktop-Token'] = 'native-only'
+        assert (await client.post(path, json={})).status_code == 401
+        account = await login(client)
+        assert (await client.post(path, json={'confirmed': True})).status_code == 200
+        client.headers['Authorization'] = 'Bearer ' + account['desktop_pet_capability_token']
+        assert (await client.post(path, json={})).status_code == 403
+    assert called == [(7, 'https://learn.example', 'a' * 43, {'confirmed': True})]
+    assert not any('/desktop/conversions/' in str(request.url) for request in seen)
+    await connection.close()

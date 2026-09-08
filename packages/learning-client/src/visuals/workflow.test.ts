@@ -116,3 +116,12 @@ test('exact retrieved template button does not call the model',async()=>{
   assert.equal(result.status,'ready');assert.equal(setup.generations,0)
   assert.deepEqual(setup.calls.find(c=>c.operation==='publish')?.payload.source,maintained)
 })
+
+test('BYOK configuration errors keep actionable reasons instead of attempting visual repair', async () => {
+  const setup=harness([new Error('visual_user_model:credential_rejected: 请检查 API Key。')])
+  const result=await createVisualWork({request:'从零演示消息',kind:'animation',request_id:'byok-failure'},setup.context)
+  assert.equal(result.status,'paused')
+  assert.equal(result.message,'请检查 API Key。')
+  assert.equal(setup.generations,1)
+  assert.ok(!setup.calls.some(c=>c.operation==='publish'))
+})

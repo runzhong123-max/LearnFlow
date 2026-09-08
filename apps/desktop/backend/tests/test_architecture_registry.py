@@ -8,6 +8,7 @@ from app.services import learning_runtime
 from app.services.action_board import ACTION_BOARD
 from app.services.architecture_registry import (
     AGENTS,
+    DATA_CONTRACTS,
     CHAT_MODES,
     CAPABILITY_OWNERS,
     EVENT_SCHEMA_VERSION,
@@ -44,7 +45,7 @@ def test_registry_has_three_agents_five_kernels_and_no_drift():
     assert set(ACTION_BOARD) == set(CAPABILITY_OWNERS)
     assert validate_registry() == []
     manifest = registry_manifest()
-    assert REGISTRY_VERSION == "2026-09-07.10-desktop"
+    assert REGISTRY_VERSION == "2026-09-08.6-desktop"
     cloud_contract = next(item for item in manifest['data_contracts'] if item['id'] == 'desktop_cloud_connection_v1')
     assert cloud_contract['kernel_write_path'] == 'none'
     assert manifest["schema_valid"] is True
@@ -762,3 +763,31 @@ def test_stage_support_and_file_navigation_are_registered_without_learner_writes
         assert all(binding in IMPLEMENTATION_BINDINGS for binding in contracts[contract_id]["binding_ids"])
     assert "py:project_workflow.set_assistance" in IMPLEMENTATION_BINDINGS
     assert "py:workspace.recommendations" in IMPLEMENTATION_BINDINGS
+
+
+def test_work_task_conversion_is_bound_and_never_mastery_evidence():
+    assert DATA_CONTRACTS["work_task_design_v1"]["schema_version"] == "learnflow.work-task-design.v1"
+    assert DATA_CONTRACTS["work_task_conversion_v1"]["owner"] == "tutor_agent"
+    context = DATA_CONTRACTS["work_task_conversion_context_v1"]
+    assert context["owner"] == "tutor_agent" and context["kernel_write_path"] == "none"
+    assert "api:learner_state.workspace" in context["binding_ids"]
+    assert {event.id for event in EVENTS.values() if event.id.startswith("work_task_conversion_")} == {
+        "work_task_conversion_created", "work_task_conversion_brief_updated",
+        "work_task_conversion_generation_changed", "work_task_conversion_handoff_created",
+    }
+    for event in EVENTS.values():
+        if event.id.startswith("work_task_conversion_"):
+            assert event.kernel_targets == ()
+            assert event.reducer_binding is None
+
+
+def test_memory_read_contract_versions_and_helpers_are_shared():
+    import learnflow_core
+    from learnflow_core.registry_core import SHARED_CORE_VERSION, MEMORY_RETRIEVAL_VERSION
+    from learnflow_core.five_kernel_context import RETRIEVAL_VERSION, CONTEXT_PACKET_VERSION, ContextPolicy
+    from learnflow_core.memory_query import QUERY_PLAN_VERSION
+    assert learnflow_core.__version__ == SHARED_CORE_VERSION == "0.2.3"
+    assert RETRIEVAL_VERSION == MEMORY_RETRIEVAL_VERSION == "relevance-budget.v2"
+    assert CONTEXT_PACKET_VERSION == "five-kernel-context.v2"
+    assert QUERY_PLAN_VERSION == "memory-query.v1"
+    assert ContextPolicy.__dataclass_fields__["max_hops"].default == 2

@@ -13,7 +13,10 @@ MODULES = ('learning_runtime', 'memory_graph', 'five_kernel_context', 'teaching_
 PROBE = r'''
 import dataclasses, importlib, json
 from app.services import architecture_registry as registry
-from learnflow_core.registry_core import SHARED_CORE_VERSION
+from learnflow_core.registry_core import SHARED_CORE_VERSION, MEMORY_RETRIEVAL_VERSION
+from learnflow_core.memory_query import QUERY_PLAN_VERSION
+from learnflow_core import __version__
+assert __version__ == SHARED_CORE_VERSION
 from learnflow_core.api import SHARED_API_MODULES
 names = ('learning_runtime', 'memory_graph', 'five_kernel_context', 'teaching_guidance', 'agent_observations', 'remediation')
 paths = {}
@@ -35,6 +38,9 @@ print(json.dumps({
     'kernels': {k: dataclasses.asdict(v) for k, v in registry.KERNELS.items()},
     'events': {k: dataclasses.asdict(v) for k, v in registry.EVENTS.items()},
     'eventSchema': registry.EVENT_SCHEMA_VERSION,
+    'retrievalVersion': MEMORY_RETRIEVAL_VERSION, 'queryPlanVersion': QUERY_PLAN_VERSION,
+    'memoryTools': {k: dataclasses.asdict(registry.TOOLS[k]) for k in ('five_kernel_retriever', 'context_packet_assembler')},
+    'memoryHelpers': {k: importlib.import_module('learnflow_core.' + k).__file__ for k in ('memory_query', 'memory_excerpt', 'memory_paths')},
 }, ensure_ascii=False))
 '''
 
@@ -49,7 +55,7 @@ def check(web_python: str, desktop_python: str) -> None:
             raise RuntimeError(f'{host}: shared imports failed\n{result.stderr}')
         snapshots.append(json.loads(result.stdout))
     web, desktop = snapshots
-    for field in ('version', 'agents', 'kernels', 'eventSchema'):
+    for field in ('version', 'agents', 'kernels', 'eventSchema', 'retrievalVersion', 'queryPlanVersion', 'memoryTools', 'memoryHelpers'):
         if web[field] != desktop[field]:
             raise RuntimeError(f'shared contract diverged: {field}')
     common_events = web['events'].keys() & desktop['events'].keys()
@@ -58,6 +64,10 @@ def check(web_python: str, desktop_python: str) -> None:
             raise RuntimeError(f'common event contract diverged: {event}')
     if web['apiPaths'] != desktop['apiPaths']:
         raise RuntimeError('API implementations diverged between hosts')
+    for name in ('memory_query', 'memory_excerpt', 'memory_paths'):
+        expected = (ROOT / 'packages/learning-core/src/learnflow_core' / f'{name}.py').resolve()
+        if Path(web['memoryHelpers'][name]).resolve() != expected:
+            raise RuntimeError(f'{name} does not resolve to shared source')
     for name in MODULES:
         expected = (ROOT / 'packages/learning-core/src/learnflow_core' / f'{name}.py').resolve()
         for state in snapshots:

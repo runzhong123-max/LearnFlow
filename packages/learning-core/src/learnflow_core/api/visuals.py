@@ -6,6 +6,53 @@ from learnflow_core.visuals.engine import compile_visual, inspect_visual, predic
 from learnflow_core.visuals.catalog import search_catalog, read_template
 
 router = APIRouter(prefix='/visuals', tags=['Visual teaching'])
+_user_model_active: set[int] = set()
+
+
+@router.post('/user-model')
+async def user_model(request: Request, current: CurrentLearner = Depends(get_current_learner)):
+    """BYOK only: credentials live in this request, never the artifact workspace."""
+    import asyncio
+    from contextlib import suppress
+    from fastapi.responses import JSONResponse
+    from learnflow_core.visuals.user_model import configuration, post_completion, UserModelError
+    from learnflow_core.visuals.workspace import workspace_operation, WorkspaceError
+    headers = {'Cache-Control': 'no-store', 'Pragma': 'no-cache'}
+    data = await body(request)
+    testing = data.get('operation') == 'test'
+    expected = {'operation', 'config'} if testing else {'operation', 'config', 'job_id', 'prompt'}
+    if set(data) != expected or data.get('operation') not in ('test', 'generate'):
+        raise HTTPException(422, 'visual_user_model_fields_invalid', headers=headers)
+    try:
+        config = configuration(data['config'])
+        if not testing:
+            prompt = data['prompt']
+            if not isinstance(prompt, str) or not 1 <= len(prompt) <= 150000:
+                raise UserModelError('prompt_invalid', '构建上下文过大，请缩小作品范围。')
+            job = await workspace_operation(current.learner.id, 'get_job', {'job_id': data['job_id']})
+            if job['status'] != 'running':
+                raise UserModelError('job_not_running', '请从已有任务恢复构建。', 409)
+        learner_id = current.learner.id
+        if learner_id in _user_model_active:
+            raise UserModelError('request_in_progress', '已有模型请求正在进行，请等待完成。', 409)
+        _user_model_active.add(learner_id)
+        task = asyncio.create_task(post_completion(config, data.get('prompt', ''), testing))
+        try:
+            while not task.done():
+                done, _ = await asyncio.wait({task}, timeout=0.5)
+                if not done and await request.is_disconnected():
+                    task.cancel()
+                    raise UserModelError('request_aborted', '本次请求已停止。', 499)
+            return JSONResponse(await task, headers=headers)
+        finally:
+            task.cancel()
+            with suppress(asyncio.CancelledError, Exception):
+                await task
+            _user_model_active.discard(learner_id)
+    except UserModelError as exc:
+        return JSONResponse({'code': 'visual_user_model:' + exc.code, 'detail': exc.message}, status_code=exc.status, headers=headers)
+    except WorkspaceError as exc:
+        raise HTTPException(exc.status, str(exc)[:180], headers=headers)
 
 async def body(request):
     import json
