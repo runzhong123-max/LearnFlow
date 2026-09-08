@@ -510,7 +510,9 @@ async def attach_context(db, row, session, selection):
     brief = row.brief
     context = {"schema_version": SCHEMA_VERSION, "conversion_id": row.id, "root_hash": row.root_hash,
         "brief": brief, "source_refs": row.source_refs, "candidate": public_candidate(row.candidate),
-        "unresolved_questions": missing(brief), "mastery_inference": False}
+        "unresolved_questions": missing(brief), "mastery_inference": False,
+        "scope": {"learner_id": row.learner_id, "session_id": session.id,
+                  "project_id": session.project_id, "checkpoint_id": session.checkpoint_id}}
     if row.candidate.get("learning_candidate"):
         chosen = selected_learning(row.candidate, selection.get("selected_step_ids"))
         context["selected_step_ids"] = [step["id"] for step in chosen["task"]["steps"]]

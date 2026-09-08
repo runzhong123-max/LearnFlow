@@ -328,6 +328,8 @@ def test_selected_learning_steps_survive_tutor_context_and_resume(client, monkey
         async with async_session() as db:
             session = await db.get(AgentSession, result["session_id"])
             context = session.context_summary["work_task_conversion"]
+            assert context["scope"] == {"learner_id": session.learner_id, "session_id": session.id,
+                                        "project_id": None, "checkpoint_id": None}
             assert context["selected_step_ids"] == ids
             assert len(context["candidate"]["learning_candidate"]["task"]["steps"]) == 4
             assert [step["id"] for step in context["selected_learning_candidate"]["task"]["steps"]] == ids
