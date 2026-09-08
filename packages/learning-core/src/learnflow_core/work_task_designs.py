@@ -11,6 +11,7 @@ import csv
 import io
 import hashlib
 import json
+import re
 from pathlib import PurePosixPath
 from fastapi import HTTPException
 
@@ -132,26 +133,54 @@ def _parameters(brief: dict, recipe_id: str) -> tuple[dict, list[dict], list[str
     parameters = {"duplicate_policy": "last_valid_row_wins", "sku_normalization": "trim_uppercase"} if recipe_id == "data-import-quality" else {}
     reviews, errors = [], []
     seen = {}
-    for text in brief["constraints"]:
-        patch = {}
-        if recipe_id == "data-import-quality":
-            if "保留首条" in text or "first_valid_row_wins" in text:
-                patch["duplicate_policy"] = "first_valid_row_wins"
-            if "保留最后" in text or "last_valid_row_wins" in text:
-                patch["duplicate_policy"] = "last_valid_row_wins"
-            if "sku小写" in text.lower() or "trim_lowercase" in text:
-                patch["sku_normalization"] = "trim_lowercase"
-            if "sku大写" in text.lower() or "trim_uppercase" in text:
-                patch["sku_normalization"] = "trim_uppercase"
-            if any(term in text for term in ("允许负数", "负数有效", "保留所有重复", "带引号的逗号", "全量CSV语法")):
-                errors.append("该数据规则尚无维护的验收器：" + text)
-        for key, value in patch.items():
-            if key in seen and seen[key] != value:
-                errors.append("约束冲突：" + key)
-            seen[key] = value
-        parameters.update(patch)
-        reviews.append({"input_text": text, "status": "applied" if patch else "requires_domain_review", "parameters": patch})
-    return parameters, reviews, errors
+    rules = (
+        ("duplicate_policy", "first_valid_row_wins", ("保留首条", "保留第一条", "保留第一行", "first_valid_row_wins")),
+        ("duplicate_policy", "last_valid_row_wins", ("保留最后", "保留末条", "last_valid_row_wins")),
+        ("sku_normalization", "trim_lowercase", ("sku小写", "sku转小写", "trim_lowercase")),
+        ("sku_normalization", "trim_uppercase", ("sku大写", "sku转大写", "trim_uppercase")),
+        ("invalid_quantity", "reject", ("拒绝负数", "数量非负", "quantity>=0")),
+    )
+    # Both user-authored requirement fields constrain the same recipe. The source
+    # location survives into review so conflicts cannot be silently prioritized.
+    for input_field in ("acceptance_criteria", "constraints"):
+        for input_index, text in enumerate(brief[input_field]):
+            patch, clauses = {}, []
+            for clause in (part.strip() for part in re.split(r"[;；\n]+", text) if part.strip()):
+                compact = re.sub(r"\s+", "", clause.lower())
+                matches = []
+                if recipe_id == "data-import-quality":
+                    for key, value, terms in rules:
+                        matched = next((term for term in terms if term in compact), None)
+                        if matched:
+                            prefix = compact[:compact.index(matched)]
+                            if re.search(r"(?:不要|不能|不得|禁止|不应|不)(?:采用)?$", prefix):
+                                errors.append("尚不能解释否定要求：" + clause)
+                                continue
+                            matches.append((key, value))
+                    if any(term in compact for term in ("允许负数", "负数有效", "保留所有重复", "带引号的逗号", "全量csv语法")):
+                        errors.append("该数据规则尚无维护的验收器：" + clause)
+                clause_patch = {}
+                for key, value in matches:
+                    if key in seen and seen[key][0] != value:
+                        errors.append(f"要求冲突：{key}（{seen[key][1]} 与 {input_field}[{input_index}]）")
+                    seen.setdefault(key, (value, f"{input_field}[{input_index}]"))
+                    if key in clause_patch and clause_patch[key] != value:
+                        errors.append("同一要求包含冲突参数：" + key)
+                    clause_patch[key] = value
+                patch.update(clause_patch)
+                # Recognizing a supported parameter does not establish coverage
+                # of other requirements in a compound sentence.
+                fully_recognized = bool(matches) and bool(re.fullmatch(
+                    r"(?:(?:重复(?:数据|记录)?(?:时)?(?:的)?(?:处理)?(?:策略)?[：:=]?)?"
+                    r"(?:保留首条|保留第一条|保留第一行|保留最后(?:一条|一行)?|保留末条)|"
+                    r"sku(?:转)?[大小]写|拒绝负数(?:数量)?|数量非负|quantity>=0|"
+                    r"first_valid_row_wins|last_valid_row_wins|trim_lowercase|trim_uppercase)", compact))
+                clauses.append({"text": clause, "status": "applied" if fully_recognized else "requires_domain_review", "parameters": clause_patch})
+            parameters.update(patch)
+            reviews.append({"input_field": input_field, "input_index": input_index, "input_text": text,
+                            "status": "applied" if clauses and all(item["status"] == "applied" for item in clauses) else "requires_domain_review",
+                            "parameters": patch, "clauses": clauses})
+    return parameters, reviews, list(dict.fromkeys(errors))
 
 
 def _parameterized_recipe(recipe_id: str, parameters: dict) -> dict:
@@ -221,12 +250,14 @@ def design_catalog(brief: dict) -> list[dict]:
             if matched:
                 relation.append({"input_field": field, "input_text": brief[field], "matched_terms": matched,
                                  "activity": recipe["activity"], "design_element": recipe["deliverable"]})
-        parameters, constraint_review, conflicts = _parameters(brief, recipe_id)
+        parameters, requirement_review, conflicts = _parameters(brief, recipe_id)
+        constraint_review = [item for item in requirement_review if item["input_field"] == "constraints"]
+        acceptance_review = [item for item in requirement_review if item["input_field"] == "acceptance_criteria"]
         readiness = "missing_input" if missing else "ready" if relation and not conflicts else "unsupported"
         out.append({"recipe_id": recipe_id, "version": COMPILER_VERSION, "title": recipe["title"],
                     "description": recipe["description"], "activity": recipe["activity"],
                     "project_modes": ["experiment", "practice"], "readiness": readiness,
-                    "missing_fields": missing, "parameters": parameters, "constraint_review": constraint_review, "incompatible_constraints": conflicts, "applicability": {"kind": "authored_analogue", "boundary": recipe["boundary"],
+                    "missing_fields": missing, "parameters": parameters, "constraint_review": constraint_review, "acceptance_review": acceptance_review, "incompatible_constraints": conflicts, "applicability": {"kind": "authored_analogue", "boundary": recipe["boundary"],
                     "matching_method": "transparent_keyword_overlap_requires_user_selection", "requires_user_confirmation": True,
                     "business_acceptance_covered": False}, "relation_map": relation,
                     "drafting_brief": None if readiness == "ready" else {
@@ -291,7 +322,7 @@ def compile_design(brief: dict, project_mode: str, recipe_id: str) -> dict:
               "recipe_id": recipe_id, "project_mode": project_mode, "title": brief["task_title"] + " · " + recipe["title"],
               "objective": brief["deliverable"], "summary": recipe["description"], "estimated_minutes": 90 if project_mode == "experiment" else 150,
               "readiness": "ready", "applicability": catalog["applicability"], "relation_map": catalog["relation_map"],
-              "parameters": catalog["parameters"], "constraint_review": catalog["constraint_review"],
+              "parameters": catalog["parameters"], "constraint_review": catalog["constraint_review"], "acceptance_review": catalog["acceptance_review"],
               "input_brief": brief, "question": recipe["question"], "expected_observables": recipe["observables"],
               "deliverables": [recipe["deliverable"], "与原工作任务的关系、未覆盖要求与后续验证"],
               "acceptance": {"method": "maintained_exact_json_plus_human_review", "scope": "authored_fixture_only", "mastery_inference": False,
@@ -341,7 +372,7 @@ def public_design(design: dict) -> dict:
     """Explicit allowlist: never expose assessment, hints or future fixture bodies."""
     keys = ("schema_version", "id", "version", "root_hash", "recipe_id", "project_mode", "title", "objective", "summary",
             "estimated_minutes", "readiness", "applicability", "relation_map", "question", "expected_observables",
-            "deliverables", "acceptance", "environment", "provenance", "starter_files", "parameters", "constraint_review")
+            "deliverables", "acceptance", "environment", "provenance", "starter_files", "parameters", "constraint_review", "acceptance_review")
     public = {key: deepcopy(design[key]) for key in keys}
     public["stages"] = [{key: deepcopy(stage[key]) for key in ("key", "title", "objective", "independent_validation")} for stage in design["stages"]]
     return public

@@ -195,3 +195,54 @@ def test_numeric_json_equivalence_preserves_boolean_type_boundary():
     assert evaluate_design_stage(incident, {"result": json.dumps(actual)})[0]["passed"]
     actual["control_error_rate"] = False
     assert not evaluate_design_stage(incident, {"result": json.dumps(actual)})[0]["passed"]
+
+
+@pytest.mark.parametrize("mode", ["experiment", "practice"])
+def test_acceptance_criteria_select_first_record_without_last_record_contradiction(mode):
+    task = brief()
+    task["acceptance_criteria"] = ["拒绝负数数量；重复数据保留首条；重跑结果一致"]
+    task["constraints"] = ["只使用合成测试数据"]
+    design = compile_design(task, mode, "data-import-quality")
+    assert design["parameters"]["duplicate_policy"] == "first_valid_row_wins"
+    assert "第一个有效版本" in design["question"]
+    assert "最后一个有效版本" not in design["question"]
+    assert "last_valid_row_wins" not in json.dumps(design, ensure_ascii=False)
+    assert "保留第一行" in design["starter_files"][0]["content"]
+    review = public_design(design)["acceptance_review"][0]
+    assert review["input_text"] == task["acceptance_criteria"][0]
+    assert review["parameters"]["duplicate_policy"] == "first_valid_row_wins"
+    assert review["status"] == "requires_domain_review"
+    assert review["clauses"][-1] == {"text": "重跑结果一致", "status": "requires_domain_review", "parameters": {}}
+    assert not design["applicability"]["business_acceptance_covered"]
+    assert validate_design(design)["valid"]
+    if mode == "practice":
+        assert design["stages"][1]["assessment"]["expected"]["records"][0]["quantity"] == 2
+
+
+@pytest.mark.parametrize("acceptance,constraints", [
+    (["重复数据保留首条"], ["重复记录保留最后一条"]),
+    (["SKU小写"], ["SKU大写"]),
+    (["重复数据保留首条", "重复记录保留最后一条"], []),
+    (["重复数据保留首条；重复记录保留最后一条"], []),
+])
+def test_conflicting_acceptance_and_constraints_reject_generation(acceptance, constraints):
+    task = brief()
+    task["acceptance_criteria"], task["constraints"] = acceptance, constraints
+    recipe = design_catalog(task)[0]
+    assert recipe["readiness"] == "unsupported"
+    assert any("要求冲突" in item for item in recipe["incompatible_constraints"])
+    with pytest.raises(HTTPException) as exc:
+        compile_design(task, "experiment", "data-import-quality")
+    assert exc.value.status_code == 422
+
+
+def test_partial_acceptance_mapping_does_not_claim_entire_requirement_covered():
+    task = brief()
+    task["acceptance_criteria"] = ["重复数据保留首条且一秒内处理百万行", "验收报告必须经过业务负责人签字"]
+    design = compile_design(task, "practice", "data-import-quality")
+    assert design["parameters"]["duplicate_policy"] == "first_valid_row_wins"
+    assert all(item["status"] == "requires_domain_review" for item in design["acceptance_review"])
+    assert design["acceptance_review"][1]["parameters"] == {}
+    task["acceptance_criteria"] = ["不要保留最后一条"]
+    with pytest.raises(HTTPException):
+        compile_design(task, "practice", "data-import-quality")
