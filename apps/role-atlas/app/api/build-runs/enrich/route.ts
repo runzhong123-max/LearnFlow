@@ -1,3 +1,4 @@
+import { enqueueRoleJob } from "@/lib/jobs/dispatch";
 import { rememberResearchRequester } from "@/lib/research-collection/store";
 import { startRoleJobExecution } from "@/lib/jobs/execution";
 import { projectVersionHeadState } from "@/lib/versioning/commit";
@@ -17,7 +18,7 @@ import {
   getProjectWorkspace,
   startBuildRun,
 } from "@/lib/projects/repository";
-import { appendRoleJobEvent, assertRoleJobLease, checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob } from "@/lib/jobs/repository";
+import { lastRoleEventSequence, appendRoleJobEvent, assertRoleJobLease, checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob } from "@/lib/jobs/repository";
 import { createDurableJobStream, durableJobResponse } from "@/lib/jobs/runtime";
 import { resolveProviderConfig, resolveSearchProviderConfig } from "@/lib/server-runtime-config";
 import { workerRuntimeBindings } from "@/lib/worker-runtime-bindings";
@@ -105,18 +106,21 @@ export async function POST(request: Request) {
     searchConfig = undefined;
   }
   const jobOwner = crypto.randomUUID();
-  const job = await claimRoleJob({
+  const claimInput = {
     conversationId: parsed.conversationId,
     baseVersionId: parentVersionId || undefined,
     id: parsed.build.runId,
-    kind: "cold_start",
+    kind: "cold_start" as const,
     threadId: `${parsed.build.projectId}:${parsed.build.runId}`,
     projectId: parsed.build.projectId,
     baseSnapshotId: parsed.baseSnapshotId,
     phase: "semantic.enrichment",
     owner: jobOwner,
     payload: { build: parsed.build, baseSnapshotId: parsed.baseSnapshotId, conversationId: parsed.conversationId, webResearch: parsed.webResearch },
-  }).catch(() => null);
+  };
+  const queued = await enqueueRoleJob(request, claimInput, parsed);
+  if (queued) return queued;
+  const job = await claimRoleJob(claimInput).catch(() => null);
   if (!job?.claimed) return Response.json({ ok: false, code: "ENRICHMENT_ALREADY_RUNNING", error: "同一后台增量正在运行。" }, { status: 409 });
 
   try {
@@ -130,6 +134,7 @@ export async function POST(request: Request) {
   const model = createRecordedModelInvoker(providerConfig,{projectId:parsed.build.projectId,runId:parsed.build.runId});
   const modelLabel = `${providerConfig.provider}/${providerConfig.model}`;
   const graph = createColdStartSkill(model, {
+    initialSeq: await lastRoleEventSequence(parsed.build.runId),
     execution: "enrichment",
     searchConfig,
     sourceLimit: 8,

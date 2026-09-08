@@ -46,6 +46,11 @@ export function requestActor(request: Request): Promise<LearnFlowIdentity> {
   return pending;
 }
 
+/** Only the authenticated internal dispatcher supplies this server-created Request. */
+export function bindJobActor(request: Request, actor: LearnFlowIdentity) {
+  actorCache.set(request, Promise.resolve(actor));
+}
+
 export function mayAccessOwnedProject(owner: string | null, actor: AccessActor, maintenance = false) {
   return Boolean(owner && owner === actor.subjectId) || (maintenance && actor.role === "admin");
 }

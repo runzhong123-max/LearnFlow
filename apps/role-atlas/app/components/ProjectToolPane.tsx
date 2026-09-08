@@ -1,5 +1,6 @@
 "use client";
 
+import { jobDisplayStatus, jobConnectionMessage } from "@/lib/jobs/presentation";
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, Check, LoaderCircle, Play, Square, Wrench, X } from "lucide-react";
 import SourceMaterials from "./SourceMaterials";
@@ -12,9 +13,9 @@ import { SEARCH_PROVIDER_SESSION_KEY } from "@/lib/search/providers";
 import { roleSkillDefinitions, type RoleSkillId, type WorkspaceSkillContext } from "@/lib/skills/workspace";
 
 type RunEvent = { kind: string; payload: Record<string, unknown> };
-type Job = { id: string; kind: string; status: string; phase: string; updatedAt: string; error?: string; iterationBrief?: IterationRunBrief; result?: { candidateSnapshotId?: string; appliedToHead?: boolean }; resumable?: boolean };
-const activeStatuses = new Set(["queued", "running", "cancelling", "waiting_user"]);
-const phaseLabels: Record<string, string> = { queued: "等待执行", running: "正在研究", completed: "已完成", complete: "已完成", failed: "执行失败", cancelled: "已停止", interrupted: "运行已中断" };
+type Job = { id: string; kind: string; status: string; phase: string; updatedAt: string; error?: string; iterationBrief?: IterationRunBrief; result?: { candidateSnapshotId?: string; appliedToHead?: boolean }; resumable?: boolean; recovery?: { state: string; deliveries: number } };
+const activeStatuses = new Set(["queued", "running", "cancelling", "waiting_user", "recovering"]);
+const phaseLabels: Record<string, string> = { queued: "等待执行", recovering: "正在恢复", running: "正在研究", completed: "已完成", complete: "已完成", failed: "执行失败", cancelled: "已停止", interrupted: "运行已中断" };
 function sessionValue(key: string) { try { return JSON.parse(sessionStorage.getItem(key) || "null") || undefined; } catch { return undefined; } }
 
 /** One instance per conversation; hidden conversations keep their request and draft. */
@@ -41,6 +42,8 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
   const [events, setEvents] = useState<string[]>([]);
   const submittedId = useRef("");
   const preparation = useRef<AbortController | null>(null);
+  const cursors = useRef(new Map<string, number>());
+  const [resuming, setResuming] = useState<string>();
   const completed = useRef(new Set<string>());
   const callbacks = useRef({ onPreview, onComplete, onBusyChange });
   callbacks.current = { onPreview, onComplete, onBusyChange };
@@ -65,10 +68,23 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
         const payload = await response.json() as { jobs?: Job[]; error?: string };
         if (!response.ok) throw new Error(payload.error || "任务历史暂时无法读取。");
         if (disposed) return;
-        const list = (payload.jobs || []).map((job) => job.status === "running" && job.resumable
-          ? { ...job, status: "interrupted", error: job.error || "执行已中断，已保存的成果仍可查看。选择工具重新发起即可继续研究。" }
-          : job);
+        const list = (payload.jobs || []).map((job) => {
+          const status = jobDisplayStatus(job);
+          return { ...job, status, error: job.error || (status === "interrupted" ? "执行已中断，检查点与已有成果已保留。" : status === "recovering" ? "后台正在从已保存阶段恢复，无需重复提交。" : undefined) };
+        });
         setJobs(list); setHistoryError("");
+        if (list.some(job => job.id === submittedId.current && !["failed", "interrupted"].includes(job.status))) setError("");
+        // Reconnect using the durable cursor, including events produced while this view was closed.
+        const recent = list.slice(0, 1);
+        for (const job of recent) {
+          const after = cursors.current.get(job.id) || 0;
+          const replay = await fetch(`/api/projects/${encodeURIComponent(context.projectId!)}/jobs/${encodeURIComponent(job.id)}?after=${after}`);
+          if (!replay.ok) throw new Error("执行记录暂时无法读取，正在重连。");
+          const saved = await replay.json() as { events: RunEvent[]; cursor: number };
+          if (disposed) return;
+          for (const event of saved.events) applyEvent(event);
+          cursors.current.set(job.id, saved.cursor);
+        }
         const latest = list.filter((job) => ["completed", "complete"].includes(job.status)).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 1);
         for (const job of latest) {
           if (["completed", "complete"].includes(job.status) && !completed.current.has(job.id)) {
@@ -76,7 +92,7 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
             callbacks.current.onComplete(context.conversationId!);
           }
         }
-      } catch (cause) { if (!disposed) setHistoryError(cause instanceof Error ? cause.message : "任务历史读取失败。"); }
+      } catch (cause) { if (!disposed) setHistoryError(jobConnectionMessage(cause)); }
       finally { if (!disposed) timer = setTimeout(load, 6000); }
     };
     void load();
@@ -131,8 +147,14 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
         setSubmittedBrief(iterationRunBrief(iteration));
         body = { ...common, iteration };
       }
-      const response = await fetch(endpoint, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      const response = await fetch(endpoint, { method: "POST", headers: { "content-type": "application/json", prefer: "respond-async" }, body: JSON.stringify(body) });
       if (!response.ok || !response.body) throw new Error((await response.json().catch(() => ({})) as { error?: string }).error || `提交失败（${response.status}）`);
+      if (response.status === 202) {
+        const accepted = await response.json() as { job: Job };
+        setJobs(current => [accepted.job, ...current.filter(job => job.id !== accepted.job.id)]);
+        setProgress("任务已提交，后台正在执行。");
+        return;
+      }
       const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = "";
       while (true) {
         const { done, value } = await reader.read(); buffer += decoder.decode(value, { stream: !done });
@@ -142,8 +164,19 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
       }
       if (buffer.trim()) applyEvent(JSON.parse(buffer) as RunEvent);
       callbacks.current.onComplete(context.conversationId);
-    } catch (cause) { setError(preparation.current?.signal.aborted ? "已取消准备，本轮未提交。" : cause instanceof Error ? cause.message : "连接暂时中断，请查看下方已保存任务状态。"); }
+    } catch (cause) { setError(preparation.current?.signal.aborted ? "已取消准备，本轮未提交。" : jobConnectionMessage(cause)); }
     finally { preparation.current = null; setRunning(false); }
+  }
+
+  async function resume(id: string) {
+    setResuming(id); setError("");
+    try {
+      const response = await fetch(`/api/projects/${encodeURIComponent(context.projectId!)}/jobs/${encodeURIComponent(id)}/resume`, { method: "POST" });
+      const payload = await response.json() as { job?: Job; error?: string };
+      if (!response.ok || !payload.job) throw new Error(payload.error || "恢复失败，请稍后再试。");
+      setJobs(current => current.map(job => job.id === id ? payload.job! : job));
+    } catch (cause) { setError(jobConnectionMessage(cause)); }
+    finally { setResuming(undefined); }
   }
 
   async function cancel(id: string) {
@@ -176,6 +209,6 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
     </section>}
     {(error || historyError) && <div className="tool-error" role="alert"><AlertTriangle size={14} /><span>{error || historyError}</span></div>}
     {running && <article className="chat-job-card running" role="status"><header><LoaderCircle className="spin" size={14} /><b>{progress}</b></header><p>可以切换或新建对话，任务继续运行。</p>{submittedBrief && <IterationBrief brief={submittedBrief} />}<button onClick={() => void cancel(submittedId.current)}><Square size={12} />停止任务</button>{events.length > 0 && <details><summary>查看执行过程</summary>{events.map((event, index) => <p key={index}>{event}</p>)}</details>}</article>}
-    {jobs.length > 0 && <section className="conversation-jobs" aria-label="当前对话的任务记录">{jobs.slice(0, 8).map((job) => <article key={job.id} className={`chat-job-card ${job.status}`}><header>{activeStatuses.has(job.status) ? <LoaderCircle size={13} className="spin" /> : job.status === "failed" ? <AlertTriangle size={13} /> : <Check size={13} />}<b>{job.kind.includes("workspace") ? "工作区接入" : job.kind.includes("build") || job.kind.includes("cold") ? "岗位研究" : "岗位完善"}</b><span>{phaseLabels[job.status] || "已保存"}</span></header><p>{job.error || (job.result?.appliedToHead === false ? "已形成独立候选版本，可在版本历史比较与采用。" : activeStatuses.has(job.status) ? "正在后台执行，结果将自动更新展示台。" : "结果与执行记录已保存在本对话。")}</p>{job.iterationBrief && <IterationBrief brief={job.iterationBrief} />}{activeStatuses.has(job.status) ? <button onClick={() => void cancel(job.id)}><Square size={11} />停止</button> : job.result?.candidateSnapshotId && <button onClick={() => onComplete(context.conversationId!)}>查看本轮成果</button>}</article>)}</section>}
+    {jobs.length > 0 && <section className="conversation-jobs" aria-label="当前对话的任务记录">{jobs.slice(0, 8).map((job) => <article key={job.id} className={`chat-job-card ${job.status}`}><header>{activeStatuses.has(job.status) ? <LoaderCircle size={13} className="spin" /> : ["failed", "interrupted"].includes(job.status) ? <AlertTriangle size={13} /> : job.status === "cancelled" ? <Square size={13} /> : <Check size={13} />}<b>{job.kind.includes("workspace") ? "工作区接入" : job.kind.includes("build") || job.kind.includes("cold") ? "岗位研究" : "岗位完善"}</b><span>{phaseLabels[job.status] || "已保存"}</span></header><p>{job.error || (job.result?.appliedToHead === false ? "已形成独立候选版本，可在版本历史比较与采用。" : activeStatuses.has(job.status) ? "正在后台执行，结果将自动更新展示台。" : "结果与执行记录已保存在本对话。")}</p>{job.iterationBrief && <IterationBrief brief={job.iterationBrief} />}{activeStatuses.has(job.status) ? <button onClick={() => void cancel(job.id)}><Square size={11} />停止</button> : ["failed", "interrupted"].includes(job.status) && job.resumable ? <button disabled={blocked || Boolean(resuming)} onClick={() => void resume(job.id)}><Play size={11} />{resuming === job.id ? "正在恢复…" : "从保存处继续"}</button> : job.result?.candidateSnapshotId && <button onClick={() => onComplete(context.conversationId!)}>查看本轮成果</button>}</article>)}</section>}
   </div>;
 }

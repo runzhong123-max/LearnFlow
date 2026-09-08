@@ -123,6 +123,19 @@ services:
       - role-atlas-state:/app/apps/role-atlas/.wrangler
       - ../../output/graph-hub:/app/apps/role-atlas/output/graph-hub
 
+  role-atlas-job-worker:
+    image: node:22-bookworm-slim
+    restart: unless-stopped
+    command: node /worker/job-worker.mjs
+    environment:
+      ROLE_ATLAS_INTERNAL_URL: http://role-atlas:3000
+      ROLE_ATLAS_GATEWAY_SECRET: ${ROLE_ATLAS_GATEWAY_SECRET:?set ecosystem gateway secret}
+    volumes:
+      - ../../scripts/job-worker.mjs:/worker/job-worker.mjs:ro
+    depends_on:
+      - role-atlas
+    stop_grace_period: 30s
+
   role-atlas-launch-proxy:
     image: node:22-bookworm-slim
     restart: unless-stopped

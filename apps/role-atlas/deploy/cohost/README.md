@@ -64,3 +64,7 @@ Role Atlas 当前继续使用其 Cloudflare/Miniflare D1 兼容存储，状态�
 身份桥接以 `LEARNFLOW_BASE_URL` 的原始 origin 和可选路径前缀构造 `/api/auth/me`。
 根地址不得拼成 `//api/auth/me`：它会被 URL 解析器当作主机 `api`，导致有会话的项目创建在冷启动之前报 DNS/internal error。
 回归测试见 `tests/learnflow-auth.test.ts`；无效会话应返回未登录，而不是 DNS 错误。此修复不改变身份协议、项目归属或数据库。
+
+### 后台任务消费者
+
+岗位研究工作台使用持久化队列，必须随 `role-atlas` 一起启动 `role-atlas-job-worker`。该服务使用现有 `ROLE_ATLAS_GATEWAY_SECRET`，只扫描服务器接受的任务并以固定端点执行；不要单独启用前端异步提交而遗漏消费者。恢复、凭据保存期限和回滚边界见 [JOB_RECOVERY.md](../../docs/JOB_RECOVERY.md)。

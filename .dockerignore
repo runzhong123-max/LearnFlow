@@ -37,3 +37,11 @@ apps/desktop/backend/data
 !apps/role-atlas/app/admin/research/**
 !apps/role-atlas/app/api/admin/research
 !apps/role-atlas/app/api/admin/research/**
+# Registry bindings for Role Atlas durable job delivery (source inspection only).
+!apps/role-atlas/lib/jobs/
+!apps/role-atlas/lib/jobs/**
+!apps/role-atlas/app/api/internal/
+!apps/role-atlas/app/api/internal/**
+!apps/role-atlas/app/api/projects/
+!apps/role-atlas/app/api/projects/**
+!apps/role-atlas/docs/JOB_RECOVERY.md

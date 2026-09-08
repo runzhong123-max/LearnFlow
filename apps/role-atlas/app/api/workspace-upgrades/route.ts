@@ -1,3 +1,4 @@
+import { enqueueRoleJob } from "@/lib/jobs/dispatch";
 import { rememberResearchRequester } from "@/lib/research-collection/store";
 import { startRoleJobExecution } from "@/lib/jobs/execution";
 import { projectVersionHeadState } from "@/lib/versioning/commit";
@@ -31,7 +32,7 @@ import {
 } from "@/lib/workspaces/repository";
 import { workspaceIngestionRequestSchema, type WorkspaceAlignmentReport, type WorkspaceIngestionResult } from "@/lib/workspaces/types";
 import { createDurableJobStream, durableJobResponse } from "@/lib/jobs/runtime";
-import { appendRoleJobEvent, assertRoleJobLease, checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob } from "@/lib/jobs/repository";
+import { lastRoleEventSequence, appendRoleJobEvent, assertRoleJobLease, checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob } from "@/lib/jobs/repository";
 
 export const runtime = "edge";
 
@@ -104,18 +105,21 @@ export async function POST(request: Request) {
   }
   const workspaceRequest = { ...parsed.workspace, projectId };
   const jobOwner = crypto.randomUUID();
-  const job = await claimRoleJob({
+  const claimInput = {
     conversationId: parsed.conversationId,
     baseVersionId: resolvedSnapshot.reference.versionId,
     id: workspaceRequest.runId,
-    kind: "workspace_instantiation",
+    kind: "workspace_instantiation" as const,
     threadId: `${resolvedSnapshot.reference.snapshotId}:${workspaceRequest.runId}`,
     projectId,
     baseSnapshotId: resolvedSnapshot.reference.snapshotId,
     phase: "workspace.register",
     owner: jobOwner,
     payload: { snapshotRef: resolvedSnapshot.reference, workspace: workspaceRequest, conversationId: parsed.conversationId, iteration: parsed.iteration },
-  }).catch(() => null);
+  };
+  const queued = await enqueueRoleJob(request, claimInput, { ...parsed, snapshotRef: resolvedSnapshot.reference, workspace: workspaceRequest });
+  if (queued) return queued;
+  const job = await claimRoleJob(claimInput).catch(() => null);
   if (!job?.claimed) return Response.json({ error: "同一工作区实例化仍由另一个执行器处理。", code: "JOB_LEASE_HELD" }, { status: 409 });
   try {
     await startWorkspaceIngestion({ request: workspaceRequest, baseSnapshotId: resolvedSnapshot.reference.snapshotId });
@@ -203,6 +207,7 @@ export async function POST(request: Request) {
     const modelConfig = resolveProviderConfig(parsed.providerConfig, bindings);
     const searchConfig = parsed.iteration.webResearch ? resolveSearchProviderConfig(parsed.searchConfig, bindings) : undefined;
     const iterationGraph = createSnapshotIterationSkill({
+      initialSeq: await lastRoleEventSequence(workspaceRequest.runId),
       model: createRecordedModelInvoker(modelConfig,{projectId:workspaceRequest.projectId,runId:iterationRunId}),
       modelLabel: `${modelConfig.provider}/${modelConfig.model}`,
       searchConfig,

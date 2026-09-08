@@ -121,10 +121,11 @@ function stampSnapshot(candidate: ColdStartBuildResult, request: SnapshotIterati
 export function createSnapshotIterationSkill(input: {
   model: ModelInvoker;
   modelLabel?: string;
+  initialSeq?: number;
   searchConfig?: SearchProviderConfig;
   onCheckpoint?: (phase: string, state: Record<string, unknown>) => Promise<void>;
 }) {
-  let seq = 0;
+  let seq = input.initialSeq || 0;
   const emit = (state: Pick<IterationStateType, "request">, kind: IterationEventKind, phase: IterationEvent["phase"], payload: Record<string, unknown>) => {
     const event: IterationEvent = {
       version: "1.0",
@@ -144,6 +145,12 @@ export function createSnapshotIterationSkill(input: {
       phase,
       round: state.round,
       contract: state.contract,
+      candidate: state.candidate,
+      activeResearchPlan: state.activeResearchPlan,
+      researchedSources: state.researchedSources,
+      inspectionWorking: state.inspectionWorking,
+      migrations: state.migrations,
+      evaluation: state.evaluation,
       inspectionBefore: state.inspectionBefore,
       inspectionAfter: state.inspectionAfter,
       opportunities: state.opportunities,
