@@ -196,11 +196,21 @@ function batchMentionsForTaskBarrier(mentions: ConceptMention[], tokenBudget = 6
   return batches.length ? batches : [[]];
 }
 
-function mergeResearchReports(base: WebResearchReport | undefined, next: WebResearchReport) {
+export function mergeResearchReports(base: WebResearchReport | undefined, next: WebResearchReport) {
   if (!base) return next;
   // Enrichment often receives the identical report already embedded in the
   // kernel. Rehydration is not another search or another billed request.
   if (JSON.stringify(base) === JSON.stringify(next)) return base;
+  const includesQueries = base.provider === next.provider && next.queries.length > 0 && next.queries.every(query => base.queries.some(previous =>
+    previous.id === query.id && (query.requestId || previous.requestId
+      ? Boolean(query.requestId) && query.requestId === previous.requestId
+      : base.completedAt === next.completedAt)));
+  const includesExtraction = !next.extraction?.requestCount || (next.extraction.requestIds.length > 0
+    && next.extraction.requestIds.length >= next.extraction.requestCount
+    && next.extraction.requestIds.every(id => base.extraction?.requestIds.includes(id)));
+  // A checkpoint may already contain this round inside its cumulative report.
+  // Match executions, not query text/ID: an actual retry is still billable.
+  if (includesQueries && includesExtraction) return base;
   const coverage = new Map(base.categoryCoverage.map((item) => [item.category, item]));
   for (const item of next.categoryCoverage) {
     const current = coverage.get(item.category);

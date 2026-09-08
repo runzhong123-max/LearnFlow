@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { ModelInvoker } from "@/lib/agent/model";
 import { compileRolePackage, compileSemanticDraft, prepareBuildInput } from "@/lib/build/compiler";
-import type { ColdStartRequest } from "@/lib/build/types";
+import type { ColdStartRequest, ColdStartBuildResult, WebResearchReport } from "@/lib/build/types";
 import { createSnapshotIterationSkill } from "@/lib/iteration/graph";
 import { inspectSnapshot } from "@/lib/iteration/inspector";
 import { createIterationContract, discoverIterationOpportunities, planIterationResearch, planIterationWork, evaluateIteration } from "@/lib/iteration/planner";
@@ -41,6 +41,14 @@ test("三种功能和三种发起方式都能发现空任务层，并检索真�
 
 test("有用户资料且联网开启时仍请求外部检索；空搜索后从原文重新提取缺失任务", async () => {
   const base = emptyFixture();
+  const historicalReport: WebResearchReport = { provider: "glm", providerName: "fixture", startedAt: "2026-09-07T00:00:00Z", completedAt: "2026-09-07T00:00:01Z",
+    queries: [{ id: "historical-duty-query", category: "job_market", query: "实施工程师 职责", requestId: "historical-request", resultCount: 1 }],
+    selectedSourceCount: 1, candidateCount: 1, deduplicatedCount: 0, candidates: [], failures: [],
+    categoryCoverage: [{ category: "job_market", queryCount: 1, candidateCount: 1, selectedSourceCount: 1, status: "covered" }],
+    usage: { searchCredits: 2, extractCredits: 1, totalCredits: 3 } };
+  base.sources.research = historicalReport;
+  base.sources.assets.find(asset => asset.kind !== "user_brief")!.queryIds = ["historical-duty-query"];
+  const rebuilds: Array<{ candidate: ColdStartBuildResult; researchReports: WebResearchReport[] }> = [];
   const original = structuredClone(base);
   const previousFetch = globalThis.fetch;
   const queries: string[] = [];
@@ -63,7 +71,9 @@ test("有用户资料且联网开启时仍请求外部检索；空搜索后从�
   };
   try {
     globalThis.fetch = async (_url, init) => { queries.push(JSON.parse(String(init?.body)).search_query); return Response.json({ search_result: [] }); };
-    const output = await createSnapshotIterationSkill({ model, searchConfig: { provider: "glm", apiKey: "synthetic-test-only" } }).invoke({ request: iteration(base), base, candidate: base });
+    const output = await createSnapshotIterationSkill({ model, searchConfig: { provider: "glm", apiKey: "synthetic-test-only" }, onCheckpoint: async (phase, state) => {
+      if (phase === "rebuild") rebuilds.push(state as unknown as typeof rebuilds[number]);
+    } }).invoke({ request: iteration(base), base, candidate: base });
     const result = output.result!;
     assert.ok(queries.length > 0, "已有用户资料不得关闭联网研究");
     assert.ok(extractionCalls > 0, "空包必须重新运行原子/任务提取，不能 hydrate 空任务列表");
@@ -72,6 +82,14 @@ test("有用户资料且联网开启时仍请求外部检索；空搜索后从�
     assert.ok(result.candidate.semantic.nodes.some(node => node.type === "knowledge_skill"));
     assert.equal(result.inspectionAfter.coverage.tasksWithoutSkills, 0);
     assert.ok(result.candidate.sources.segments.some(segment => segment.text.includes(quote)));
+    assert.ok(rebuilds.length > 0);
+    for (const rebuilt of rebuilds) {
+      const history = rebuilt.candidate.sources.research!;
+      assert.ok(history.queries.some(query => query.id === "historical-duty-query"), "full 重建保留旧来源的查询索引");
+      assert.equal(history.queries.length, 1 + rebuilt.researchReports.reduce((sum, report) => sum + report.queries.length, 0), "历史查询只合并一次，本轮报告仍只统计本次运行");
+      assert.equal(history.usage?.totalCredits, 3, "历史费用只计入一次");
+      for (const asset of rebuilt.candidate.sources.assets) for (const id of asset.queryIds || []) assert.ok(history.queries.some(query => query.id === id), `来源查询索引缺失：${id}`);
+    }
     assert.deepEqual(base, original, "空包历史保留原版本");
   } finally { globalThis.fetch = previousFetch; }
 });

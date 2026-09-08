@@ -4,7 +4,7 @@ import type { ModelInvoker } from "@/lib/agent/model";
 import { prepareBuildInput, stableHash } from "@/lib/build/compiler";
 import { qualifySources } from "@/lib/build/workflow";
 import { refreshRolePackageManifest } from "@/lib/packages/role-package-manifest";
-import { createColdStartSkill } from "@/lib/build/graph";
+import { createColdStartSkill, mergeResearchReports } from "@/lib/build/graph";
 import type { ColdStartBuildResult, ColdStartRequest, SourceInput, WebResearchReport } from "@/lib/build/types";
 import { applyGraphPatch, computeSemanticDiff, proposeSafePatch } from "@/lib/risk/patch";
 import type { GraphPatch } from "@/lib/risk/types";
@@ -58,6 +58,15 @@ const IterationState = new StateSchema({
 });
 
 type IterationStateType = typeof IterationState.State;
+
+export function currentIterationResearchReport(plan: IterationResearchPlan | undefined, reports: WebResearchReport[]) {
+  if (!plan?.queries.length) return undefined;
+  const queryIds = new Set(plan.queries.map(query => query.id));
+  // Query IDs include the round. Old checkpoints have reports but no separate
+  // current-report field; never interpret the previous round as new work.
+  return reports.findLast(report => report.queries.length > 0
+    && report.queries.every(query => queryIds.has(query.id)));
+}
 
 export function mergeIterationSources(current: SourceInput[], incoming: SourceInput[], limit = 80) {
   const seen = new Set<string>();
@@ -341,8 +350,12 @@ export function createSnapshotIterationSkill(input: {
       execution: anchored ? "enrichment" : "full",
       workItemIds: activeItems.map(item => item.id),
     });
+    const currentReport = currentIterationResearchReport(state.activeResearchPlan, state.researchReports);
+    const existingResearchReport = anchored ? currentReport : currentReport
+      ? mergeResearchReports(state.candidate.sources.research, currentReport)
+      : state.candidate.sources.research;
     const skill = createColdStartSkill(input.model, {
-      existingResearchReport: state.researchReports.at(-1),
+      existingResearchReport,
       emitEvents: false,
       execution: anchored ? "enrichment" : "full",
       knowledgeTargetIds: anchored ? activeItems.flatMap(item => item.targetIds).filter(id => state.candidate.semantic.nodes.some(node => node.id === id && node.type === "task")) : undefined,
