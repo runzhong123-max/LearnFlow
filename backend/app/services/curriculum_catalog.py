@@ -75,9 +75,7 @@ async def resolve(db: AsyncSession, current: CurrentLearner, request_id: str, pa
         return {"resolutionId": previous.id, "resolution": previous.resolution}
     graph = await _ensure_head(db, current)
     namespace = namespace_for(current)
-    payload = {"packageRef": package_ref, "graph": graph, "namespace": namespace}
-    if automatic:
-        payload["allowStandaloneRoots"] = True
+    payload = {"packageRef": package_ref, "graph": graph, "namespace": namespace, "groupByCourse": True, "allowStandaloneRoots": True}
     if target_ids is not None:
         payload["targetIds"] = target_ids
     result = await gateway.dispatch(current, "learning.resolve", request_id, payload)
@@ -95,6 +93,13 @@ async def resolve(db: AsyncSession, current: CurrentLearner, request_id: str, pa
             raise gateway.GatewayError("invalid_resolution", "特殊节点提案范围不匹配。")
     elif result["pendingBindings"]:
         raise gateway.GatewayError("invalid_resolution", "缺少待挂载节点的扩展提案。")
+    # Derive display metadata from the scoped source graph/proposal, not model labels.
+    courses = {(n["namespace"], n["id"], n["revision"]): n for n in graph["nodes"] + (proposal or {}).get("nodes", []) if n.get("kind") == "course"}
+    result["courseTargets"] = [
+        {"roleNodeId": b["roleNodeId"], "target": b["target"], "title": courses[(b["target"]["namespace"], b["target"]["id"], b["target"]["revision"])]["title"], "kind": "course"}
+        for b in alignment["bindings"] + result["pendingBindings"]
+        if (b["target"]["namespace"], b["target"]["id"], b["target"]["revision"]) in courses
+    ]
     row = CurriculumResolution(id=str(uuid4()), learner_id=current.learner.id, request_id=request_id,
                                body_hash=body_hash, resolution=result)
     db.add(row)

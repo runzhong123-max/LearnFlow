@@ -169,7 +169,7 @@ function CardDimensionRow({
                 {selected && (detailRows.length > 0 || (node.facets?.length || 0) > 0) ? (
                   <div className="role-card-expanded">
                     {detailRows.map(([key, value]) => <span key={key}><b>{key.replaceAll("_", " ")}</b><small>{value}</small></span>)}
-                    {node.facets?.slice(0, 3).map((facet, index) => <span key={`${facet.nodeId || facet.label}:${index}`}><b>侧面</b><small>{facet.label}</small></span>)}
+                    {(Array.isArray(node.data.courseMemberIds) ? node.facets : node.facets?.slice(0, 3))?.map((facet, index) => <span key={`${facet.nodeId || facet.label}:${index}`}><b>{Array.isArray(node.data.courseMemberIds) ? "岗位应用" : "侧面"}</b><small>{facet.label}</small></span>)}
                   </div>
                 ) : null}
               </button>

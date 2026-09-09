@@ -4,10 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import type { ColdStartBuildResult } from "@/lib/build/types";
 import { LearningReleaseRequired, learningMountUrl, learningPointPreview, readLearningMountPackage } from "@/lib/learning-path/presentation";
 import "./learning-path-mapping.css";
+import { courseGroups, mountedCourseCounts } from "@/lib/learning-path/course-presentation";
 import { mountReason, needsAutomaticResearch, type AutomaticMountRecord } from "@/lib/learning-path/automatic-contract";
 
-export default function LearningPathMapping({ result, projectId, projectVersionId, selectedNodeId, onPreparePackage, learnFlowBaseUrl }: {
+export default function LearningPathMapping({ result, projectId, projectVersionId, selectedNodeId, onPreparePackage, learnFlowBaseUrl, onMountChange }: {
   result: ColdStartBuildResult;
+  onMountChange?: (mount: AutomaticMountRecord | null) => void;
   projectId?: string;
   projectVersionId?: string;
   selectedNodeId?: string;
@@ -19,6 +21,7 @@ export default function LearningPathMapping({ result, projectId, projectVersionI
   const [needsPackage, setNeedsPackage] = useState(false);
   const request = useRef<AbortController | null>(null);
   const [mount, setMount] = useState<AutomaticMountRecord | null>(null);
+  useEffect(() => { onMountChange?.(mount); }, [mount, onMountChange]);
   const [mountError, setMountError] = useState("");
   const [refresh, setRefresh] = useState(0);
   const mountUrl = projectId && projectVersionId ? `/api/projects/${encodeURIComponent(projectId)}/learning-mounts?versionId=${encodeURIComponent(projectVersionId)}` : "";
@@ -51,7 +54,9 @@ export default function LearningPathMapping({ result, projectId, projectVersionI
   }, [result.snapshot.id, projectVersionId]);
   const points = result.semantic.nodes.filter(node => node.type === "knowledge_skill");
   const selected = points.find(node => node.id === selectedNodeId);
-  const rows = selected ? [selected] : points;
+  const groups = courseGroups(result, mount).filter(group => !selected && !selectedNodeId?.startsWith("course-") || group.id === selectedNodeId || group.members.some(member => member.node.id === selected?.id));
+  const counts = mountedCourseCounts(mount);
+  const hasLegacy = mount?.result?.points.some(point => point.target && !point.course);
   async function open(nodeId?: string) {
     if (!projectId || !projectVersionId || request.current) return;
     const controller = new AbortController(); request.current = controller;
@@ -67,10 +72,10 @@ export default function LearningPathMapping({ result, projectId, projectVersionI
     } finally { if (request.current === controller) { request.current = null; setBusy(""); } }
   }
   return <details className="learning-path-mapping">
-    <summary>学习路径挂载 <span>{mount?.result?.reason === "no_learning_points" ? "知识技能待补全" : mount?.result ? `已挂载 ${mount.result.points.filter(point => point.status !== "needs_research").length} / ${points.length} 个知识技能点` : mount && ["queued", "running", "retry"].includes(mount.status) ? "自动挂载中" : `${points.length} 个知识技能点`}</span></summary>
-    <p>冷启动与迭代保存版本后，会自动复用已有知识技能节点，或创建当前账号的学习内容节点。挂载不会改变个人掌握状态。</p>
+    <summary>学习路径挂载 <span>{mount?.result?.reason === "no_learning_points" ? "知识技能待补全" : mount?.result ? hasLegacy ? `${courseGroups(result, mount).length} 个课程主题 · 历史细项挂载` : `${courseGroups(result, mount).filter(group => group.mounted).length} 门已挂载课程 · ${points.length} 条岗位要求` : mount && ["queued", "running", "retry"].includes(mount.status) ? "自动挂载中" : `${groups.length} 个课程主题 · ${points.length} 条岗位要求`}</span></summary>
+    <p>优先复用已有课程，缺少时新建课程。具体操作、场景与验收要求在课程内展开，挂载不会改变掌握状态。</p>
     {mount && ["queued", "running", "retry"].includes(mount.status) && <p role="status">{mount.status === "retry" ? "服务暂不可用，后台将继续重试。" : "后台正在核对并保存学习路径，关闭页面后仍会继续。"}</p>}
-    {mount?.result && <p role="status">复用已有节点 {mount.result.points.filter(point => point.status === "existing").length} 个 · 新增知识技能节点 {mount.result.points.filter(point => point.status === "created").length} 个 · 待补全 {mount.result.unresolved.length} 个</p>}
+    {mount?.result && <p role="status">复用已有{hasLegacy ? "路径节点" : "课程"} {counts.existing} 个 · 新增{hasLegacy ? "路径节点" : "课程"} {counts.created} 个 · 待补全 {mount.result.unresolved.length} 个</p>}
     {mount?.result?.reason && <p role="status">{mountReason(mount.result.reason)}</p>}
     {mount?.repair && <p role="status">{["pending", "preparing", "queued"].includes(mount.repair.status) ? "正在原对话中自动补研知识技能缺口；完成后会再核对新版本的挂载。" : mount.repair.status === "completed" ? "自动补研已完成，请查看本对话最新版本及其挂载结果。" : mount.repair.error || "本轮自动补研已停止，尚未解决的缺口已保留。"}</p>}
     {mount?.status === "superseded" && <p>本轮后续研究已保存更新版本，自动挂载使用该对话的最终版本。</p>}
@@ -79,14 +84,18 @@ export default function LearningPathMapping({ result, projectId, projectVersionI
     {mount?.status === "failed" && <button type="button" onClick={() => void retry()}>重试自动挂载</button>}
     {!mount && !mountError && <p>当前版本尚无自动挂载回执；下方仅为静态匹配预览。</p>}
     {!points.length && <p>尚未形成知识技能点，需要先完善岗位内容。</p>}
-    <ul>{rows.map(node => {
-      const preview = learningPointPreview(node, result.semantic.learningPathProjection);
-      const point = mount?.result?.points.find(item => item.roleNodeId === node.id);
-      return <li key={node.id}><div><strong>{node.label}</strong><span>{point ? point.status === "existing" ? "已挂载 · 已有节点" : point.status === "created" ? "已挂载 · 新建节点" : "待补全" : preview.label}</span></div>
-        <p>{point ? point.status === "needs_research" ? mountReason(point.reason) : `路径节点：${point.target?.id || "见正式回执"}` : preview.rationale}</p>{!point && preview.needsDefinition && <p className="mapping-gap">{preview.needsDefinition}</p>}
-        {projectId && <button type="button" disabled={!projectVersionId || Boolean(busy)} onClick={() => void open(node.id)}>{busy === node.id ? "读取固定版本…" : "在 LearnFlow 预览此点"}</button>}
-      </li>;
-    })}</ul>
+    {hasLegacy && <p>此版本保留历史细项挂载。以下按课程主题整理展示；下一轮迭代使用课程挂载，历史节点和回执不删除。</p>}
+    <ul>{groups.map(group => <li key={group.id}>
+      <details><summary><strong>{group.title}</strong> · {group.members.length} 条岗位应用 · {group.mounted ? "已挂载课程" : "课程组织建议"}</summary>
+        <p>{group.summary}</p>
+        {group.members.map(({ node, mount: point }) => <section key={node.id}>
+          <strong>{node.label}</strong><p>{node.learningDefinition?.scopeNote || node.summary}</p>
+          {node.learningDefinition?.assessmentCriteria.length ? <p>验收：{node.learningDefinition.assessmentCriteria.join("；")}</p> : null}
+          <small>{point?.target ? `路径：${point.target.id}` : learningPointPreview(node, result.semantic.learningPathProjection).label} · {node.evidenceBindingIds.length} 条证据</small>
+          {projectId && <p><button type="button" disabled={!projectVersionId || Boolean(busy)} onClick={() => void open(node.id)}>{busy === node.id ? "读取固定版本…" : "在 LearnFlow 查看此项"}</button></p>}
+        </section>)}
+      </details>
+    </li>)}</ul>
     {points.length > 1 && projectId && <button type="button" disabled={!projectVersionId || Boolean(busy)} onClick={() => void open()}>{busy === "all" ? "读取固定版本…" : "在 LearnFlow 核对全部知识技能"}</button>}
     {error && <p role="alert">{error}</p>}
     {needsPackage && onPreparePackage && <button type="button" onClick={onPreparePackage}>准备当前版本的私有岗位包</button>}

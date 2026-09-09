@@ -356,6 +356,8 @@ export type SemanticNode = {
   learningKind?: "knowledge" | "skill" | "hybrid";
   /** Explicit atomic semantics. Missing/legacy hybrid definitions stay unresolved in v2. */
   learningDefinition?: { scopeNote: string; assessmentCriteria: string[] };
+  /** Candidate course organization, never a canonical path ID or mastery evidence. */
+  learningCourse?: { title: string; scopeNote: string };
   /** Daily cultivation contract. Required for newly generated capability units. */
   cultivation?: CapabilityUnitCultivation;
   applicability?: string;

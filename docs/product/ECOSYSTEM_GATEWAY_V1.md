@@ -110,3 +110,11 @@ resolution
 新节点仅追加到当前主体 graph_extension namespace。确切类型、名称或别名、范围、验收条件相同则复用，说明摘要更新不产生新点；定义变化创建不同语义点，原节点、绑定和已学内容不被覆写。无锚点时新增显式 standaloneRoots 岗位学习域与 contains 子节点，不虚构与官方课程的包含、先修或等价。人工预览与提交入口继续保留。
 
 提交沿现有事务保存 source graph、alignment、receipt 和零 target `learning_path_extension_committed`，自动提交的 provenance 记录 role_production_start 与精确生产身份。没有新增掌握事件或 KernelMutation，也不创建个人学习计划。部署与恢复说明见 [自动挂载运行说明](../../apps/role-atlas/docs/automatic-learning-mount.md)。
+
+### Course-first organization (role-course/v1)
+
+New central `learning.resolve` calls send `groupByCourse: true` and permit learner-owned standalone course proposals. Existing v2 `narrower_than` bindings retain each role point's scope, assessment criteria and evidence. Official courses are read-only; new course identities depend on normalized subject names, not role wording or assessment text, enabling reuse across batches and iterations. Exact course/alias matches precede strong subject containment; competing equal-scored subjects remain unresolved. Course hints are optional candidate metadata; legacy points use conservative subject organization, with a role-specific course proposal for unclassified content. This is organization, not asserted equivalence.
+
+`courseTargets` is additive resolution metadata, reconstructed centrally from the scoped graph and proposal; automatic point receipts include optional `course: {title, kind: "course"}`. Legacy automatic receipts remain immutable. Radar/course lists project multiple facts into a course while references and tools expand back into original fact IDs. Historical fine-grained mounts display as historical nodes under proposed course groups, not as newly committed course mounts. A new iteration or new manual resolution uses the course policy; no database migration or removal is performed.
+
+Validation compatibility: an explicitly declared standalone course proposal may now have zero edges; unanchored additions, atomic roots, foreign namespaces and missing provenance remain invalid. Fields and v2 protocol IDs are unchanged. Deploy the central frontend and Atlas validators together; no synthetic edges or dummy child nodes are required.

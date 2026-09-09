@@ -713,3 +713,5 @@ Contract impact（2026-09-08.1）：登记 Role Atlas `role_research_archive_v1`
 
 
 Contract impact（2026-09-09.3）：Graph Hub 公开岗位与典型任务复用 discovery.v1 接口和 field-coverage.v2 检索服务，冷启动与 LearnFlow 插件使用相同相关性门槛。新增 target、role 过滤及稳定任务/发布引用，旧响应字段保留。网页来源与图谱引用分型显示，不伪造置信度，不写五核。见 [统一检索契约](implementation/GRAPH_HUB_SEARCH.md)。
+
+课程级岗位挂载（Contract impact，2026-09-09.4）：`curriculum_source_runtime` 的新 resolve 使用 `role-course/v1` 策略，优先复用当前主体源图中的课程，缺少时通过既有 v2 standaloneRoots 提议本人课程；多个原子岗位要求以 `narrower_than` 共享课程，范围、验收与证据留在各 binding。模型 `learningCourse` 是可选组织建议，不是路径 ID、事实或掌握状态。课程回执元数据由中央从真实源图/提案派生。旧 resolve/commit/自动操作按原请求重放，历史细点不删除、不冒充已迁移；新迭代走课程策略。v2 字段保持兼容，校验器允许显式 standaloneRoots 的纯课程提案 edges 为空；仍禁止未声明根、未归属原子点和越权节点。前端与 Atlas 必须一起更新校验器；不改主 Agent、EvidenceEvent 或五核语义。

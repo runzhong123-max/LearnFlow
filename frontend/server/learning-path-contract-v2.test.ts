@@ -187,3 +187,18 @@ test('official node revisions evolve independently from graph release and keep s
   assert.equal(next.nodes[1].revision, 1)
   assert.equal(next.revision, 'test:next')
 })
+
+test('a scoped standalone course needs no synthetic edge or dummy atomic child', () => {
+  const p = proposal(), { atomic: _, ...node } = p.nodes[0]
+  p.nodes = [{ ...node, kind: 'course', title: '软件测试方法与实践' }]
+  p.edges = []; p.standaloneRoots = [{ namespace, id: node.id }]
+  assert.equal(validateGraphExtensionProposalV2(p, official(), source).valid, true)
+  const noRoot = structuredClone(p); delete noRoot.standaloneRoots
+  assert.equal(validateGraphExtensionProposalV2(noRoot, official(), source).valid, false)
+  const atomicRoot = proposal(); atomicRoot.edges = []; atomicRoot.standaloneRoots = [{ namespace, id: atomicRoot.nodes[0].id }]
+  rejects(validateGraphExtensionProposalV2(atomicRoot, official(), source), 'root_scope')
+  const foreign = structuredClone(p); foreign.nodes[0].namespace = 'learnflow:extension:other'
+  rejects(validateGraphExtensionProposalV2(foreign, official(), source), 'extension_scope')
+  const missingEvidence = structuredClone(p); missingEvidence.nodes[0].provenance.evidenceRefs = ['not-real']
+  rejects(validateGraphExtensionProposalV2(missingEvidence, official(), source), 'evidence_missing')
+})

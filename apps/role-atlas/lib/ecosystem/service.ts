@@ -28,11 +28,11 @@ export async function dispatchGateway(request: GatewayRequest, actor: Actor, dep
       return new SnapshotRoleRuntime(loaded.result).execute({ name: p.tool, args: p.args }, request.requestId);
     }
     case "learning.resolve": {
-      const p = z.object({ packageRef: packageRefSchema, graph: z.unknown(), namespace: z.string(), targetIds: targets, allowStandaloneRoots: z.boolean().optional() }).strict().parse(request.payload);
+      const p = z.object({ packageRef: packageRefSchema, graph: z.unknown(), namespace: z.string(), targetIds: targets, allowStandaloneRoots: z.boolean().optional(), groupByCourse: z.boolean().optional() }).strict().parse(request.payload);
       const namespace = `learnflow:extension:${(await sha256Hex(actor.sub)).slice(0, 20)}`;
       if (p.namespace !== namespace) throw new GatewayError("NAMESPACE_FORBIDDEN", 403);
       const loaded = await repo.load(actor, p.packageRef);
-      return resolveRoleLearningPoints({ ...loaded, graph: graphInput(p.graph), namespace, targetIds: p.targetIds, allowStandaloneRoots: p.allowStandaloneRoots });
+      return resolveRoleLearningPoints({ ...loaded, graph: graphInput(p.graph), namespace, targetIds: p.targetIds, allowStandaloneRoots: p.allowStandaloneRoots, groupByCourse: p.groupByCourse });
     }
     case "learning.validate_extension": {
       const p = z.object({ proposal: z.unknown(), graph: z.unknown() }).strict().parse(request.payload);

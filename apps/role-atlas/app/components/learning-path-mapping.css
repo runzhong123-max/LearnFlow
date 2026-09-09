@@ -11,3 +11,5 @@
 .learning-path-mapping button:focus-visible, .learning-path-mapping summary:focus-visible { outline: 2px solid #2f7357; outline-offset: 3px; }
 .learning-path-mapping .mapping-gap, .learning-path-mapping [role=alert] { color: #965333; }
 .learning-path-mapping small { display: block; margin-top: 8px; color: #687970; line-height: 1.5; }
+
+.learning-path-mapping section { margin: 10px 0 0 8px; padding: 8px 0 8px 10px; border-left: 2px solid #d8e0d8; }

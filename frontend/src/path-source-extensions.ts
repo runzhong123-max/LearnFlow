@@ -3,7 +3,7 @@ import { OFFICIAL_PATH_NAMESPACE, pathNodeKey, type LearningPathGraphV2, type Pa
 /** Source adjacency only: containment never supplies a learner status or prerequisite. */
 export function projectPathSourceExtensions(graph: LearningPathGraphV2, officialId?: string) {
   const allNodes = new Map(graph.nodes.map(node => [pathNodeKey(node), node]))
-  const extensions = graph.nodes.filter(node => node.ownership.catalog === 'graph_extension' && (node.kind === 'knowledge' || node.kind === 'skill'))
+  const extensions = graph.nodes.filter(node => node.ownership.catalog === 'graph_extension' && (node.kind === 'course' || node.kind === 'knowledge' || node.kind === 'skill'))
   const children = new Map<string, PathNodeV2[]>()
   for (const edge of graph.edges) {
     if (edge.kind !== 'contains') continue

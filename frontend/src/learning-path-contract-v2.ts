@@ -334,7 +334,8 @@ export function validateGraphExtensionProposalV2(input: unknown, baseGraph: Lear
     if (typeof input.namespace !== 'string' || !extensionNamespace.test(input.namespace)) c.issue('$.namespace', 'namespace', 'Expected a scoped LearnFlow extension namespace')
     c.array(input.sources, '$.sources', (v, p) => checkSource(c, v, p))
     c.array(input.nodes, '$.nodes', (v, p) => checkNode(c, v, p), 1)
-    c.array(input.edges, '$.edges', (v, p) => checkEdge(c, v, p), 1)
+    // A standalone course can be proposed without inventing prerequisite/containment edges.
+    c.array(input.edges, '$.edges', (v, p) => checkEdge(c, v, p), Array.isArray(input.standaloneRoots) && input.standaloneRoots.length ? 0 : 1)
     if (input.standaloneRoots !== undefined) c.array(input.standaloneRoots, '$.standaloneRoots', (v, p) => checkKey(c, v, p), 1)
   }
   if (!c.issues.length) {

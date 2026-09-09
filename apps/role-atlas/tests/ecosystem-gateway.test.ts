@@ -144,8 +144,10 @@ test("dedicated gateway ingress rejects every legacy route and unsigned method",
 test("atomic definitions survive immutable package compilation and reconstruction", async () => {
   const { compileStaticRolePackage, reconstructBuildResult } = await import("../lib/packages/compiler");
   const { result, point } = fixture();
+  point.learningCourse = { title: "数据库系统", scopeNote: "数据库原理、方法与实践" };
   const compiled = await compileStaticRolePackage({ result, packageId: result.packages.rolePackage.packageId, packageVersion: "2.0.0", visibility: "private", evidencePolicy: "full" });
   assert.deepEqual(reconstructBuildResult(compiled.bundle).semantic.nodes.find(n => n.id === point.id)?.learningDefinition, point.learningDefinition);
+  assert.deepEqual(reconstructBuildResult(compiled.bundle).semantic.nodes.find(n => n.id === point.id)?.learningCourse, point.learningCourse);
 });
 
 test("task selection follows declared capability requirements and excludes similarity edges", async () => {
@@ -257,4 +259,48 @@ test("automatic collision fallback lengthens the content ID without equating or 
       atomic: { scopeNote: "不等价的不同范围", assessmentCriteria: ["执行另一项不同考核"] } } as PathNodeV2] };
     assert.equal((await resolveRoleLearningPoints({ ...input, graph: base })).unresolved[0].reason, "ambiguous_definition");
   }
+});
+
+test("course policy reuses official course and keeps independent requirements and evidence", async () => {
+  const { result, graph, point } = fixture();
+  const before = JSON.stringify(result);
+  const resolved = await resolveRoleLearningPoints({ result, graph, packageRef, namespace: "learnflow:extension:test", targetIds: [point.id], groupByCourse: true, allowStandaloneRoots: true });
+  assert.equal(resolved.extensionProposal, undefined);
+  assert.equal(resolved.alignment.bindings[0].target.id, graph.nodes[0].id);
+  assert.equal(resolved.alignment.bindings[0].relation, "narrower_than");
+  assert.match(resolved.alignment.bindings[0].rationale, /根据并发时序辨别读现象/);
+  assert.equal(resolved.courseTargets?.[0].title, "数据库");
+  assert.equal(JSON.stringify(result), before);
+});
+
+test("many operational requirements share courses across batches without creating atomic nodes", async () => {
+  const { result, graph, point } = fixture(); graph.nodes[0].title = "离散数学"; graph.edges = [];
+  const sourceBinding = result.sources.evidenceBindings.find(b => b.id === point.evidenceBindingIds[0])!;
+  const labels = ["为云平台设备漏洞打补丁", "排查云平台日常运行中的障碍", "在参考文档基础上完成华为 FusionCompute 云平台环境搭建", "执行机房客户设备上下架", "管理客户进出机房的登记", "执行机房消防安全检查"];
+  const points = labels.map((label, i) => ({ ...structuredClone(point), id: `skill:course-${i}`, label, learningKind: "skill" as const, evidenceBindingIds: [`evidence:course-${i}`] }));
+  result.semantic.nodes = points;
+  result.sources.evidenceBindings.push(...points.map((p, i) => ({ ...sourceBinding, id: `evidence:course-${i}`, targetId: p.id })));
+  const input = { result, graph, packageRef, namespace: "learnflow:extension:test", groupByCourse: true, allowStandaloneRoots: true };
+  const first = await resolveRoleLearningPoints({ ...input, targetIds: [points[0].id, points[3].id] });
+  assert.equal(first.extensionProposal?.nodes.length, 2);
+  assert.ok(first.extensionProposal?.nodes.every(n => n.kind === "course"));
+  const merged = { ...graph, nodes: [...graph.nodes, ...first.extensionProposal!.nodes], sources: [...graph.sources, ...first.extensionProposal!.sources] };
+  const next = await resolveRoleLearningPoints({ ...input, graph: merged });
+  assert.equal(next.extensionProposal, undefined);
+  assert.equal(next.alignment.bindings.length, 6);
+  assert.equal(new Set(next.alignment.bindings.map(b => b.target.id)).size, 2);
+  assert.ok(next.alignment.bindings.every(b => b.relation === "narrower_than" && b.evidenceRefs.length));
+  points[0].learningDefinition!.assessmentCriteria = ["新的岗位验收要求"];
+  assert.equal((await resolveRoleLearningPoints({ ...input, graph: merged })).extensionProposal, undefined);
+  points[0].evidenceBindingIds = [];
+  assert.equal((await resolveRoleLearningPoints({ ...input, graph: merged })).unresolved[0].reason, "needs_evidence");
+});
+
+test("course organization does not bind to equally ranked different subjects", async () => {
+  const { result, graph, point } = fixture();
+  point.learningCourse = { title: "数据库与网络课程", scopeNote: "数据库和计算机网络学习" };
+  graph.nodes.push({ ...graph.nodes[0], id: "course:network", title: "网络课程" });
+  const resolved = await resolveRoleLearningPoints({ result, graph, packageRef, namespace: "learnflow:extension:test", targetIds: [point.id], groupByCourse: true, allowStandaloneRoots: true });
+  assert.equal(resolved.unresolved[0].reason, "ambiguous_definition");
+  assert.equal(resolved.extensionProposal, undefined);
 });

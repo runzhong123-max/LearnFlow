@@ -51,3 +51,14 @@ test('containment descendants remain reachable while an unselected course does n
   assert.equal(projectPathSourceExtensions(graph, course.id).attached.length, 2)
   assert.equal(projectPathSourceExtensions(graph).attached.length, 0)
 })
+
+test('new standalone courses remain visible without fabricating official containment', () => {
+  const { graph, node } = fixture()
+  const { atomic: _, ...rest } = node
+  const course: PathNodeV2 = { ...rest, id: 'course:cloud', kind: 'course', title: '云平台运维' }
+  graph.nodes.push(course)
+  const view = projectPathSourceExtensions(graph)
+  assert.ok(view.extensions.some(n => n.id === course.id && n.kind === 'course'))
+  assert.deepEqual(view.parents(course), [])
+  assert.deepEqual(view.attached, [])
+})

@@ -94,6 +94,7 @@ def gateway_fixture(count=1, unresolved_ids=()):
             return {"packageRef": REF, "result": {"semantic": {"nodes": nodes}}}
         if operation == "learning.resolve":
             assert payload.get("allowStandaloneRoots") is True
+            assert payload.get("groupByCourse") is True
             assert 0 < len(payload["targetIds"]) <= 25
             graph, namespace = payload["graph"], payload["namespace"]
             result = {"protocol": "role-learning-resolution/v2", "packageRef": REF,
@@ -375,3 +376,17 @@ def test_contradictory_resolution_is_rejected_before_write(tmp_path, monkeypatch
         finally:
             await engine.dispose()
     asyncio.run(run())
+
+
+def test_course_receipt_metadata_cannot_redirect_committed_target():
+    target = {"namespace": "learnflow:extension:test", "id": "course:cloud", "revision": 1}
+    binding = {"roleNodeId": "point:one", "target": target}
+    resolution = {"unresolved": [], "courseTargets": [{"roleNodeId": "point:one", "target": target, "title": "云平台运维", "kind": "course"}]}
+    receipt = {"alignment": {"bindings": [binding]}}
+    points, unresolved = auto._point_results(resolution, receipt, ["point:one"])
+    assert points[0]["course"] == {"title": "云平台运维", "kind": "course"}
+    assert points[0]["target"] == target
+    assert not unresolved
+    resolution["courseTargets"][0]["target"] = {**target, "id": "other"}
+    points, _ = auto._point_results(resolution, receipt, ["point:one"])
+    assert "course" not in points[0]

@@ -1,3 +1,4 @@
+import { courseTheme, courseMatchScore, courseNameKey } from "./course-organization";
 import type { ColdStartBuildResult, SemanticNode } from "@/lib/build/types";
 import { canonicalStringify, sha256Hex } from "@/lib/versioning/canonical";
 import {
@@ -14,6 +15,7 @@ export type RoleLearningResolution = {
   namespace: string;
   alignment: RoleLearningAlignmentV2;
   pendingBindings: RoleLearningAlignmentV2["bindings"];
+  courseTargets?: Array<{ roleNodeId: string; target: { namespace: string; id: string; revision: number }; title: string; kind: "course" }>;
   extensionProposal?: GraphExtensionProposalV2;
   unresolved: Array<{ roleNodeId: string; reason: "needs_decomposition" | "needs_definition" | "needs_evidence" | "ambiguous_definition" | "needs_anchor"; candidates: Array<{ namespace: string; id: string; revision: number; title: string; kind: string }> }>;
 };
@@ -84,6 +86,7 @@ export async function resolveRoleLearningPoints(input: {
   result: ColdStartBuildResult; packageRef: RolePackageRef; graph: LearningPathGraphV2;
   namespace: string; targetIds?: string[];
   allowStandaloneRoots?: boolean;
+  groupByCourse?: boolean;
 }): Promise<RoleLearningResolution> {
   const checked = validateLearningPathGraphV2(input.graph);
   if (!checked.valid) throw new Error(`PATH_CONTRACT_INVALID:${JSON.stringify(checked.issues)}`);
@@ -125,6 +128,46 @@ export async function resolveRoleLearningPoints(input: {
       || point.learningDefinition.assessmentCriteria.some(s => !s.trim())) { fail("needs_definition"); continue; }
     const evidence = input.result.sources.evidenceBindings.filter(b => b.targetId === point.id && point.evidenceBindingIds.includes(b.id) && evidenceIds.has(b.id)).map(b => b.id);
     if (!evidence.length) { fail("needs_evidence"); continue; }
+    if (input.groupByCourse) {
+      const theme = courseTheme(point, input.result.brief.roleTitle);
+      const matches = [...graph.nodes, ...newNodes].filter(n => n.kind === "course")
+        .map(n => ({ n, score: courseMatchScore(theme, point, [n.title, ...n.aliases]) }))
+        .filter(row => row.score > 0).sort((a, b) => b.score - a.score
+          || Number(b.n.ownership.catalog === "official") - Number(a.n.ownership.catalog === "official")
+          || stableCompare(pathNodeKey(a.n), pathNodeKey(b.n)));
+      // Equal names from different catalogs are safe organizational targets;
+      // competing subject names need disambiguation instead of arbitrary reuse.
+      if (matches[1] && matches[0].score === matches[1].score
+        && courseNameKey(matches[0].n.title) !== courseNameKey(matches[1].n.title)) {
+        fail("ambiguous_definition", matches.slice(0, 4).map(row => nodeRef(row.n))); continue;
+      }
+      let course = matches[0]?.n;
+      if (!course) {
+        if (!input.allowStandaloneRoots) { fail("needs_anchor"); continue; }
+        const id = `course:${(await sha256Hex(courseNameKey(theme.title))).slice(0, 40)}`;
+        if ([...graph.nodes, ...newNodes].some(n => n.namespace === input.namespace && n.id === id)) {
+          fail("ambiguous_definition"); continue;
+        }
+        course = { id, namespace: input.namespace, revision: 1, kind: "course", title: theme.title, summary: theme.scopeNote,
+          aliases: [], domains: ["岗位学习"], audiences: ["self_directed"], stage: "domain", order: 0,
+          ownership: { system: "learnflow", catalog: "graph_extension" },
+          provenance: { method: "role_package_proposal", sourceRefs: [packageSourceId], packageRef: input.packageRef, evidenceRefs: [...evidence] } };
+        newNodes.push(course); standaloneRoots.push({ namespace: course.namespace, id: course.id });
+      }
+      const pending = newNodes.includes(course);
+      if (pending) course.provenance.evidenceRefs = [...new Set([...(course.provenance.evidenceRefs || []), ...evidence])];
+      const binding: RoleLearningAlignmentV2["bindings"][number] = {
+        id: `alignment:${(await sha256Hex(`${point.id}:${pathNodeKey(course)}`)).slice(0, 24)}`,
+        roleNodeId: point.id, roleNodeKind: point.learningKind, target: key(course), relation: "narrower_than",
+        requiredLevel: point.learningKind === "skill" ? "apply" : "understand",
+        context: `${input.result.brief.roleTitle}：${point.label}。${point.applicability || ""} 范围：${point.learningDefinition.scopeNote.trim()}`,
+        rationale: `作为“${course.title}”的岗位应用展开；验收：${point.learningDefinition.assessmentCriteria.join("；")}。课程归属不表示已掌握。`,
+        evidenceRefs: evidence,
+      };
+      (pending ? resolution.pendingBindings : resolution.alignment.bindings).push(binding);
+      (resolution.courseTargets ||= []).push({ roleNodeId: point.id, target: key(course), title: course.title, kind: "course" });
+      continue;
+    }
     const compatible = [...graph.nodes, ...newNodes].filter(n => n.kind === point.learningKind && n.atomic);
     const sameName = compatible.filter(n => [n.title, ...n.aliases].some(name => [point.label, ...point.aliases].some(label => lexical(name) === lexical(label))));
     const equivalents = sameName.filter(n => signature({ summary: n.summary, learningDefinition: n.atomic }) === signature(point));

@@ -136,6 +136,12 @@ def _point_results(resolution: dict, receipt: dict | None, ids: list[str]) -> tu
     points = {b["roleNodeId"]: {"roleNodeId": b["roleNodeId"],
               "status": "created" if (b["target"]["namespace"], b["target"]["id"]) in added else "existing", "target": b["target"]}
               for b in bindings}
+    # Display metadata must agree with the committed target; it cannot redirect a binding.
+    for course in resolution.get("courseTargets", []):
+        point = points.get(course.get("roleNodeId"))
+        if (point and course.get("target") == point["target"] and course.get("kind") == "course"
+                and isinstance(course.get("title"), str) and 0 < len(course["title"]) <= 160):
+            point["course"] = {"title": course["title"], "kind": "course"}
     for item in unresolved:
         if item["roleNodeId"] in points:
             raise gateway.GatewayError("invalid_resolution", "岗位点同时被标记为已挂载和未解决。")

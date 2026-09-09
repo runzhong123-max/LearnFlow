@@ -15,7 +15,7 @@ export function sourceFingerprints(result: ColdStartBuildResult) {
 
 function sameStatement(a: { id: string }, b: { id: string }) {
   const canonical = (v: unknown): unknown => Array.isArray(v) ? v.map(canonical) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)).map(([k, value]) => [k, canonical(value)])) : v;
-  const statement = (v: { id: string }) => Object.fromEntries(Object.entries(v).filter(([key]) => !["evidenceBindingIds", "evidenceSegmentIds", "evidenceSpans", "propositionIds", "confidence", "lifecycle", "status", "granularity", "defaultVisibility", "expansion", "facets", "parentKernelId"].includes(key)));
+  const statement = (v: { id: string }) => Object.fromEntries(Object.entries(v).filter(([key]) => !["evidenceBindingIds", "evidenceSegmentIds", "evidenceSpans", "propositionIds", "confidence", "lifecycle", "status", "granularity", "defaultVisibility", "expansion", "facets", "parentKernelId", "learningCourse"].includes(key)));
   return JSON.stringify(canonical(statement(a))) === JSON.stringify(canonical(statement(b)));
 }
 
@@ -26,6 +26,7 @@ function retainEvidence<T extends { id: string; evidenceBindingIds: string[]; ev
     if (!next || !sameStatement(old, next)) return old;
     return {
       ...old,
+      ...("learningCourse" in next && next.learningCourse ? { learningCourse: next.learningCourse } : {}),
       evidenceBindingIds: [...new Set([...old.evidenceBindingIds, ...next.evidenceBindingIds])],
       evidenceSegmentIds: [...new Set([...old.evidenceSegmentIds, ...next.evidenceSegmentIds])],
       ...(old.evidenceSpans || next.evidenceSpans ? { evidenceSpans: [...new Map([...(old.evidenceSpans || []), ...(next.evidenceSpans || [])].map(span => [JSON.stringify(span), span])).values()] } : {}),

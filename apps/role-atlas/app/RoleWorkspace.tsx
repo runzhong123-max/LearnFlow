@@ -1,4 +1,7 @@
 "use client";
+
+import { courseGraphPayload } from "@/lib/learning-path/course-presentation";
+import type { AutomaticMountRecord } from "@/lib/learning-path/automatic-contract";
 import { formatIntakeDescription } from "@/lib/intake/presentation";
 import { normalizeCitations, citationCaption, type CitationView } from "@/lib/presentation/citations";
 import { snapshotQualitySummary } from "@/lib/iteration/learning-health";
@@ -727,16 +730,23 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
     messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
   }, [messages]);
 
+  const [courseMount, setCourseMount] = useState<AutomaticMountRecord | null>(null);
+  const courseData = useMemo(() => projectResult ? courseGraphPayload(projectResult, courseMount) : graphData, [projectResult, courseMount, graphData]);
+  const expandCourseNodes = useCallback((nodes: RoleNode[]): RoleNode[] => {
+    const originals = new Map((graphData?.nodes || []).map(node => [node.id, node]));
+    return [...new Map(nodes.flatMap(node => Array.isArray(node.data.courseMemberIds)
+      ? node.data.courseMemberIds.flatMap(id => typeof id === "string" && originals.has(id) ? [originals.get(id)!] : []) : [node]).map(node => [node.id, node])).values()];
+  }, [graphData]);
   const nodeMap = useMemo(
-    () => new Map((graphData?.nodes ?? []).map((node) => [node.id, node])),
-    [graphData],
+    () => new Map<string, RoleNode>([...(graphData?.nodes ?? []), ...(courseData?.nodes ?? [])].map((node) => [node.id, node])),
+    [graphData, courseData],
   );
   const processNodeMap = useMemo(() => {
     if (!workProcessData) return new Map<string, ProcessReferenceNode>();
     const items = [...workProcessData.workProcess.scenarios, ...workProcessData.workProcess.nodes];
     return new Map(items.map((item) => [item.id, toProcessReference(item, workProcessData)]));
   }, [workProcessData]);
-  const selectedNode = nodeMap.get(selectedId) ?? processNodeMap.get(selectedId) ?? null;
+  const selectedNode: RoleNode | null = nodeMap.get(selectedId) ?? processNodeMap.get(selectedId) ?? null;
   const selectedObject = selectedNode ? objectIndex.get(selectedNode.id) : null;
   const evidenceSources = useMemo<EvidenceSourceItem[]>(() => {
     if (projectResult) {
@@ -770,19 +780,19 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
   }, [objectIndex, projectResult]);
 
   const filteredData = useMemo(() => {
-    if (!graphData) return null;
+    if (!courseData) return null;
     const needle = searchQuery.trim().toLowerCase();
-    const nodes = graphData.nodes.filter((node) => {
-      const searchMatch = needle ? `${node.label} ${node.summary} ${node.id}`.toLowerCase().includes(needle) : true;
+    const nodes = courseData.nodes.filter((node) => {
+      const searchMatch = needle ? `${node.label} ${node.summary} ${node.id} ${node.facets?.map(facet => facet.label).join(" ") || ""}`.toLowerCase().includes(needle) : true;
       const projectionMatch = semanticDensity === "complete" || needle.length > 0 || node.defaultVisibility !== false;
       return searchMatch && projectionMatch;
     });
     const nodeIds = new Set(nodes.map((node) => node.id));
     return {
       nodes,
-      edges: graphData.edges.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target)),
+      edges: courseData.edges.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target)),
     };
-  }, [graphData, searchQuery, semanticDensity]);
+  }, [courseData, searchQuery, semanticDensity]);
 
   const taskNodes = useMemo(() => (graphData?.nodes || []).filter((node) => node.type === "task"), [graphData]);
 
@@ -836,9 +846,9 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
   }, [activeTaskId, taskNodes]);
 
   const addReference = useCallback((node: RoleNode) => {
-    setReferences((current) => current.some((item) => item.id === node.id) ? current : [...current, node]);
+    setReferences((current) => [...new Map([...current, ...expandCourseNodes([node])].map(item => [item.id, item])).values()]);
     // The callback must capture the visible conversation rather than its first render.
-  }, [activeConversationId]);
+  }, [activeConversationId, expandCourseNodes]);
 
   const selectCardNode = useCallback((node: RoleNode) => {
     if (node.type === "task") {
@@ -1134,7 +1144,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
   async function sendMessage() {
     if (isRunning || conversationLoading) return;
     const text = chatInput.trim();
-    const selectedReferences = references.length > 0 ? references : (!text && selectedNode ? [selectedNode] : []);
+    const selectedReferences = expandCourseNodes(references.length > 0 ? references : (!text && selectedNode ? [selectedNode] : []));
     if (!text && selectedReferences.length === 0) return;
     if (projectId && (!packageStatus || conversations.find((item) => item.id === activeConversationId)?.mode === "iteration")) {
       if (await launchTool(packageStatus ? (selectedReferences.length ? "node-deepening" : "snapshot-iteration") : "cold-start-role-package", text)) setChatInput("");
@@ -1362,7 +1372,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
     }
     if (tool !== "cold-start-role-package" && conversations.find((item) => item.id === activeConversationId)?.mode !== "iteration" && !await changeMode("iteration")) return false;
     setChatCollapsed(false);
-    setToolInstances((current) => ({ ...current, [activeConversationId]: { tool, ...(tool === "node-deepening" ? { targetSeed: { ids: references.length ? references.map((node) => node.id) : selectedNode ? [selectedNode.id] : [], nonce: Date.now() } } : {}), context: { ...skillContext, selectedNodeIds: references.length ? references.map((node) => node.id) : selectedNode ? [selectedNode.id] : [] }, ...(prompt !== undefined ? { promptSeed: { text: prompt, nonce: Date.now() } } : {}) } }));
+    setToolInstances((current) => ({ ...current, [activeConversationId]: { tool, ...(tool === "node-deepening" ? { targetSeed: { ids: expandCourseNodes(references.length ? references : selectedNode ? [selectedNode] : []).map(node => node.id), nonce: Date.now() } } : {}), context: { ...skillContext, selectedNodeIds: expandCourseNodes(references.length ? references : selectedNode ? [selectedNode] : []).map(node => node.id) }, ...(prompt !== undefined ? { promptSeed: { text: prompt, nonce: Date.now() } } : {}) } }));
     return true;
   }
 
@@ -1392,7 +1402,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
     projectId,
     versionId: projectId ? conversations.find((conversation) => conversation.id === activeConversationId)?.versionId || undefined : undefined,
     conversationId: projectId ? activeConversationId : undefined,
-    selectedNodeIds: selectedNode ? [selectedNode.id] : [],
+    selectedNodeIds: expandCourseNodes(selectedNode ? [selectedNode] : []).map(node => node.id),
     availableNodes: projectResult ? iterationTargetNodes(projectResult) : [...(graphData?.nodes || []), ...processNodeMap.values()].map((node) => ({ id: node.id, label: node.label })),
     roleTitle: workspaceTitle,
     roleDescription: projectResult?.brief.roleDescription || projectBrief.description,
@@ -1465,7 +1475,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
           <span className="graph-count">{view === "tasks"
             ? `${taskNodes.length} 个典型任务 · ${taskPerspective === "relations" ? "关系雷达" : "事理流程"}`
             : view === "evidence" ? `${evidenceScope.sourceIds.length || evidenceSources.length} 个来源`
-            : `${nodeCount}/${graphData?.nodes.length || 0} 节点 · ${edgeCount} 关系`}</span>
+            : `${nodeCount}/${courseData?.nodes.length || 0} 节点 · ${edgeCount} 关系`}</span>
         </div>
 
         {projectId && enrichmentState.label ? <div className={`enrichment-banner ${enrichmentState.error ? "error" : enrichmentState.running ? "running" : "done"}`}>
@@ -1479,7 +1489,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
           {projectId && <button disabled={Boolean(toolBusy[activeConversationId])} onClick={() => void launchTool("snapshot-iteration", "补充当前岗位各任务缺少的知识和技能，完善工作过程与能力单元，核对来源并更新学习路径挂载。")}>继续完善</button>}
         </details>}
 
-        {projectResult && <LearningPathMapping key={projectResult.snapshot.id} result={projectResult} projectId={projectId} projectVersionId={skillContext.versionId} selectedNodeId={selectedId} onPreparePackage={() => { setLearningMountVersionId(skillContext.versionId); setActiveOperation("publish"); }} />}
+        {projectResult && <LearningPathMapping key={projectResult.snapshot.id} result={projectResult} projectId={projectId} projectVersionId={skillContext.versionId} selectedNodeId={selectedId} onMountChange={setCourseMount} onPreparePackage={() => { setLearningMountVersionId(skillContext.versionId); setActiveOperation("publish"); }} />}
 
         <div data-testid="workspace-stage" className={`graph-stage ${view === "tasks" ? "tasks-mode" : view === "evidence" ? "evidence-mode" : view === "cards" ? "cards-mode" : ""}`}>
           {(projectId || initialNewProject) && !graphData && !conversationLoading ? <div className="empty-project-stage"><Network size={38} /><h2>{workspaceError ? "暂时无法打开项目" : "岗位图谱将在这里逐步形成"}</h2><p>{workspaceError || "在右侧明确岗位并确认说明后，图谱和学习路径会在这里逐步形成。"}</p>{workspaceError ? <a href={loginHref || `https://learn.learnflow.club/login?return_to=${encodeURIComponent(typeof window === "undefined" ? "https://roles.learnflow.club/" : window.location.href)}`}>重新登录</a> : !showIntake && <button onClick={() => { setIntakeDismissed(false); void launchTool("cold-start-role-package"); }}><Sparkles size={14} />开始岗位研究</button>}</div> : view === "evidence" ? (
@@ -1537,6 +1547,9 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
                   <span className={`node-kind ${selectedNode.lifecycle}`}>{typeLabels[selectedNode.type] ?? selectedNode.type} · {selectedNode.lifecycle === "accepted" ? "已接受" : "待审"}</span>
                   <h2>{selectedNode.label}</h2>
                   <p>{selectedNode.summary}</p>
+                  {Array.isArray(selectedNode.data.courseMemberIds) && <details className="node-technical"><summary>岗位应用与验收 · {selectedNode.facets?.length || 0} 项</summary>
+                    {selectedNode.facets?.map(facet => <div key={facet.nodeId}><button type="button" onClick={() => { if (facet.nodeId) setSelectedId(facet.nodeId); }}>{facet.label}</button><p>{facet.summary}</p></div>)}
+                  </details>}
                   <div className="evidence-metrics">
                     <span><ShieldCheck size={13} /><b>{selectedNode.evidence_summary.max_confidence.toFixed(2)}</b><small>置信上限</small></span>
                     <span><BookOpenCheck size={13} /><b>{selectedNode.evidence_summary.source_refs.length}</b><small>来源</small></span>

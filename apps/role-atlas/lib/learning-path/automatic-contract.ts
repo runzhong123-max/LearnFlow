@@ -5,6 +5,7 @@ export type AutomaticMountPoint = {
   roleNodeId: string;
   status: "existing" | "created" | "needs_research";
   target?: { namespace: string; id: string; revision: number };
+  course?: { title: string; kind: "course" };
   reason?: string;
   candidates?: Array<{ namespace: string; id: string; title: string; kind: string }>;
 };
