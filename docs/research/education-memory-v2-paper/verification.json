@@ -1,0 +1,41 @@
+{
+  "scope": "manuscript preparation only",
+  "product_contract_impact": "none",
+  "product_tests_rerun": false,
+  "new_experiments_run": false,
+  "table_data_assertions": "passed",
+  "frozen_source_hashes_checked": 186,
+  "frozen_source_differences": 0,
+  "references_numbered": 13,
+  "docx_tables": 4,
+  "docx_figures": 3,
+  "files_sha256": {
+    "LearnFlow_Educational_Memory_Manuscript.docx": "f660e0aeed1ebb48c0570abaa3c977b8f15463401583735cecfe789caf2f8eb2",
+    "derived_results.json": "68dd17ba6d6d9fe531d3950d92bb6ae99aaf25186c51076fd4b966ff9e6d1c3e",
+    "references.bib": "25bc61132fd0f7080fe6954545aa3b2db34151ae9345e1e7da5c624475dd4f78",
+    "build_paper.py": "38dce078749e55ed6521e5c733a0708a5c1bbf89379655b9803db0244bcd71e1",
+    "SUPPLEMENT.md": "1ee592eca1bbf21b2000dc2698c36c92aa53522479536f32c224e9c922ca56dc",
+    "投稿说明与中文摘要.md": "2fd5cae050a226ffdb8a63b17ce3862aed2762d018084b3b9919f84edf516492",
+    "manuscript.md": "68960942a05c7b9bf77ae21eb554552f80ad5fe6d0ba34be09aa14ea3d56a979",
+    "figures/freshness.png": "ca82f4996d86db962a7bdea6c50feb1043f3ebb193c3839e53036008779d590a",
+    "figures/freshness.svg": "1394c8d30a9f6bcaee8baf0fff51b7578225dbed71f66e3d4a59ea8e1bdbf709",
+    "figures/architecture.svg": "f8c7d6efe12cc9bef14247e63f6372483875c95e6dd2974613cdf044206bd25b",
+    "figures/coverage.svg": "626069160daf64111fe58714ce056a8735748c77a0af5c20e46a059e929968b9",
+    "figures/coverage.png": "b788869174432cf0f120a054d2fb64fa96a585f6c0e401759d497fe417d502df",
+    "figures/architecture.png": "367c85cb13eb0c3d81e2c6c458ae9e828a8c99ee95caa90999593b63a1fa0c11"
+  },
+  "rendered_docx_pages": 14,
+  "visual_review": {
+    "status": "passed",
+    "pages_inspected": 14,
+    "checks": [
+      "page layout",
+      "table pagination and repeated headers",
+      "figure labels",
+      "captions",
+      "references",
+      "absence of clipping and overlap"
+    ]
+  },
+  "source_validation_scope": "Retained experiment product snapshot 0da6615eeb2a5dded4101535e8534cd5494b43a9; not concurrent workspace changes."
+}
