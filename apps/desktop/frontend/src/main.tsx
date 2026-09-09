@@ -239,6 +239,8 @@ type PaperDeskView = {
 type Conversation = {
   id: string
   title: string
+  /** Pinned conversations sort above the rest; absent means not pinned. */
+  pinned?: boolean
   messages: Message[]
   updatedAt: number
   mode: TutorMode
@@ -272,6 +274,10 @@ type WorkspaceTab = {
 type SettingsState = {
   baseUrl: string
   model: string
+  /** Extra model names selectable per conversation. They share the account
+      credential, so switching stays inside one provider unless the operator
+      also updates the base URL. */
+  modelProfiles?: string[]
 }
 
 type PersistedState = {
@@ -724,6 +730,25 @@ function App({ auth }: { auth: AuthGateSession }) {
   const [pluginDraftReferences, setPluginDraftReferences] = useState<Record<string, LearnFlowPluginObject[]>>({})
   const [toolChoices, setToolChoices] = useState<Record<string, TutorToolChoice>>({})
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [renamingConversationId, setRenamingConversationId] = useState('')
+  const [renameDraft, setRenameDraft] = useState('')
+
+  const renameConversation = (conversationId: string, title: string) => {
+    setWorkspace(previous => ({
+      ...previous,
+      conversations: previous.conversations.map(item => item.id === conversationId ? { ...item, title } : item),
+      tabs: previous.tabs.map(tab => tab.id === `chat:${conversationId}` ? { ...tab, title } : tab),
+    }))
+  }
+
+  const togglePinConversation = (conversationId: string) => {
+    setWorkspace(previous => ({
+      ...previous,
+      conversations: previous.conversations.map(item => item.id === conversationId ? { ...item, pinned: !item.pinned } : item),
+    }))
+  }
+
   const [pendingDelete, setPendingDelete] = useState<Conversation | null>(null)
   const [pendingSheetDelete, setPendingSheetDelete] = useState<PendingSheetDelete | null>(null)
   const [paperDeskView, setPaperDeskView] = useState<PaperDeskView | null>(null)
@@ -773,6 +798,31 @@ function App({ auth }: { auth: AuthGateSession }) {
       if (workspace.conversations.some(item => item.id === conversation.id)) preparedProjectConversations.current.delete(sessionId)
     }
   }, [workspace.conversations])
+
+  // Native details popovers stay open until their own summary is clicked
+  // again, which does not match how every other menu in the app behaves.
+  // One document listener closes any open menu on an outside click or Escape,
+  // so each popover does not need its own state.
+  useEffect(() => {
+    const closeOutside = (event: MouseEvent) => {
+      const target = event.target as Node | null
+      for (const element of Array.from(document.querySelectorAll('details[open]'))) {
+        if (!target || !element.contains(target)) element.removeAttribute('open')
+      }
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      for (const element of Array.from(document.querySelectorAll('details[open]'))) {
+        element.removeAttribute('open')
+      }
+    }
+    document.addEventListener('pointerdown', closeOutside)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [])
 
   useEffect(() => {
     if (!isDesktopRuntime()) return
@@ -3216,11 +3266,32 @@ function App({ auth }: { auth: AuthGateSession }) {
             onConnectionChange={updateSettings}
             onSignOut={auth.signOut}
           />}
+          <section className="settings-card" aria-labelledby="model-profiles-title">
+            <div className="settings-card-heading">
+              <span>{isCloudDesktopRuntime() ? '02' : '03'}</span>
+              <div>
+                <h2 id="model-profiles-title">可切换的模型</h2>
+                <p>每行一个模型名称。它们共用上面这份凭据，所以适合同一家服务商的不同模型；换服务商需要同时改 Base URL。</p>
+              </div>
+            </div>
+            <textarea
+              className="model-profiles-input"
+              rows={4}
+              defaultValue={(workspace.settings.modelProfiles || []).join('\n')}
+              placeholder={'deepseek-v4-flash\ndeepseek-v4-pro'}
+              onBlur={event => updateSettings({
+                ...workspace.settings,
+                modelProfiles: event.target.value.split('\n').map(line => line.trim()).filter(Boolean).slice(0, 12),
+              })}
+              aria-label="可切换的模型列表"
+            />
+            <p className="settings-hint">保存后可在对话输入框右下角直接切换，不用回到这一页。</p>
+          </section>
           <section className="settings-card profile-settings-card" aria-labelledby="formal-profile-title">
             <div className="settings-card-heading">
               <span>{auth.account.role === 'admin' ? '04' : '03'}</span>
               <div>
-                <h2 id="formal-profile-title">正式学习者状态</h2>
+                <h2 id="formal-profile-title">学习记录同步</h2>
                 <p>{formalConnection.status === 'connected' ? `已连接 ${formalConnection.learner?.display_name || '当前学习者'}；所有写入经过 EvidenceEvent 与 reducer。` : formalConnection.detail}</p>
               </div>
               <i>{formalConnection.status === 'connected' ? '已连接' : '未连接'}</i>
@@ -3324,11 +3395,7 @@ function App({ auth }: { auth: AuthGateSession }) {
           <h1>{conversation.title}</h1>
           <div className="chat-state-stack">
             {conversation.projectId && !embedded && <button type="button" className="project-panel-toggle" onClick={() => openTab({ id: `project:${conversation.projectId}`, kind: 'project', title: '项目工作台', projectId: conversation.projectId })}>项目工作台</button>}
-            <span className={`mode-badge mode-badge-${visibleMode}`}>
-              {TUTOR_MODE_LABELS[visibleMode]}{visibleSubstateLabel ? ` · ${visibleSubstateLabel}` : ''}
-            </span>
             {visibleSkill && <span className="skill-badge">{visibleSkill.name}</span>}
-            <span className="local-label">{workspace.settings.model || '待配置模型'}</span>
           </div>
         </header>
         {verificationConversationId === conversation.id && taskProjection?.task.formalVerificationRunId && (
@@ -3840,9 +3907,10 @@ function App({ auth }: { auth: AuthGateSession }) {
             />
             <div className="composer-footer">
               <div className="composer-tools composer-tools-capability">
+                <div className="composer-lead">
                 <details className="source-attachment-menu">
                   <summary role="button" aria-label="给当前对话添加资料" title="添加本地文件或 URL">
-                    ＋资料{attachedSources.length > 0 ? ` ${attachedSources.length}` : ''}
+                    ＋{attachedSources.length > 0 ? <b>{attachedSources.length}</b> : null}
                   </summary>
                   <div className="source-attachment-popover">
                     <header><strong>{conversation.projectId ? '项目来源' : '本对话资料'}</strong><span>资料只作为带来源的上下文，不代表你已经掌握。</span></header>
@@ -3872,28 +3940,7 @@ function App({ auth }: { auth: AuthGateSession }) {
                     {sourceBusy[conversation.id] && <p className="source-import-status">{sourceBusy[conversation.id]}</p>}
                     {sourceErrors[conversation.id] && <p className="source-import-error">{sourceErrors[conversation.id]}</p>}
                     <small>{conversation.projectId ? '这里与项目面板完全同步，项目内所有对话共享；发送时可强制读取“项目来源”。' : '发送问题时可选“对话资料”强制读取；“自动”会在资料与联网搜索之间判断。'}</small>
-                  </div>
-                </details>
-                <div className="mode-options" aria-label="选择 Tutor 状态">
-                  <button type="button" title="自由讨论；解释请求仍可自动进入简单讲解" aria-pressed={!activeTaskProjection && conversation.mode === 'free'} disabled={Boolean(pendingMode) || Boolean(activeTaskProjection)} onClick={() => setConversationMode(conversation.id, 'free')}>自由态</button>
-                  <button type="button" title="下一轮使用简单讲解，完成后回到自由态" aria-pressed={!activeTaskProjection && conversation.mode === 'simple_explain'} disabled={Boolean(pendingMode) || Boolean(activeTaskProjection)} onClick={() => setConversationMode(conversation.id, 'simple_explain')}>简单讲解</button>
-                  <button
-                    type="button"
-                    title="围绕一个原子目标在当前对话中持续学习"
-                    aria-pressed={Boolean(activeTaskProjection) || conversation.mode === 'guided_learning'}
-                    disabled={Boolean(pendingMode)}
-                    onClick={() => taskProjection?.status === 'paused'
-                      ? updateLearningTask(conversation.id, 'resume')
-                      : setConversationMode(conversation.id, 'guided_learning')}
-                  >带领学习</button>
-                  <button
-                    type="button"
-                    title="规划较大的学习、真实产物项目或未来发展方向"
-                    aria-pressed={!activeTaskProjection && conversation.mode === 'learning_plan'}
-                    disabled={Boolean(pendingMode) || Boolean(activeTaskProjection)}
-                    onClick={() => setConversationMode(conversation.id, 'learning_plan')}
-                  >学习规划</button>
-                </div>
+                    <div className="composer-extra-controls">
                 <ComposerCapabilityPicker
                   isGuidedLearning={Boolean(activeTaskProjection) || conversation.mode === 'guided_learning'}
                   skillChoice={activeTaskProjection?.skillId || (conversation.mode === 'guided_learning' ? conversation.preferredSkillId || 'auto' : 'auto')}
@@ -3919,8 +3966,62 @@ function App({ auth }: { auth: AuthGateSession }) {
                       : item),
                   }))}
                 />
-                <span className="composer-shortcut-hint">Shift + Enter 换行</span>
+                    </div>
+                  </div>
+                </details>
+                <details className="mode-menu">
+                  <summary role="button" title="切换学习状态" aria-label="选择 Tutor 状态">
+                    <span>{TUTOR_MODE_LABELS[visibleMode]}</span><i>⌄</i>
+                  </summary>
+                  <div className="mode-popover">
+                    <button type="button" title="自由讨论；解释请求仍可自动进入简单讲解" aria-pressed={!activeTaskProjection && conversation.mode === 'free'} disabled={Boolean(pendingMode) || Boolean(activeTaskProjection)} onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); setConversationMode(conversation.id, 'free') }}>自由态</button>
+                    <button type="button" title="下一轮使用简单讲解，完成后回到自由态" aria-pressed={!activeTaskProjection && conversation.mode === 'simple_explain'} disabled={Boolean(pendingMode) || Boolean(activeTaskProjection)} onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); setConversationMode(conversation.id, 'simple_explain') }}>简单讲解</button>
+                    <button
+                      type="button"
+                      title="围绕一个原子目标在当前对话中持续学习"
+                      aria-pressed={Boolean(activeTaskProjection) || conversation.mode === 'guided_learning'}
+                      disabled={Boolean(pendingMode)}
+                      onClick={event => {
+                        event.currentTarget.closest('details')?.removeAttribute('open')
+                        if (taskProjection?.status === 'paused') updateLearningTask(conversation.id, 'resume')
+                        else setConversationMode(conversation.id, 'guided_learning')
+                      }}
+                    >带领学习</button>
+                    <button
+                      type="button"
+                      title="规划较大的学习、真实产物项目或未来发展方向"
+                      aria-pressed={!activeTaskProjection && conversation.mode === 'learning_plan'}
+                      disabled={Boolean(pendingMode) || Boolean(activeTaskProjection)}
+                      onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); setConversationMode(conversation.id, 'learning_plan') }}
+                    >学习规划</button>
+                  </div>
+                </details>
+                </div>
               </div>
+              <details className="composer-model-menu">
+                <summary className="composer-model-chip" role="button" title="切换模型" aria-label="切换模型">
+                  <strong>{workspace.settings.model || '待配置模型'}</strong><i>⌄</i>
+                </summary>
+                <div className="composer-model-popover">
+                  <header>对话模型</header>
+                  {[workspace.settings.model, ...(workspace.settings.modelProfiles || [])]
+                    .filter((name, index, all) => name && all.indexOf(name) === index)
+                    .map(name => (
+                      <button
+                        key={name}
+                        type="button"
+                        aria-pressed={workspace.settings.model === name}
+                        onClick={event => {
+                          event.currentTarget.closest('details')?.removeAttribute('open')
+                          updateSettings({ ...workspace.settings, model: name })
+                        }}
+                      >{name}</button>
+                    ))}
+                  <button type="button" className="composer-model-manage" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); openTab(SETTINGS_TAB) }}>
+                    管理模型…
+                  </button>
+                </div>
+              </details>
               <button type="submit" disabled={Boolean(pendingMode) || (!(drafts[draftKey] || '').trim() && draftPluginObjects.length === 0)} aria-label={pendingMode ? 'Tutor 回复中' : '发送消息'}>{pendingMode ? '…' : '↑'}</button>
             </div>
           </form>
@@ -3949,7 +4050,7 @@ function App({ auth }: { auth: AuthGateSession }) {
         openTab({ id: `project:${projectId}`, kind: 'project', title, projectId })
       }} />
       <div className="workspace">
-        <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
+        <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
           <button className="sidebar-brand" type="button" onClick={newConversation} aria-label="新建 LearnFlow 对话">
             <span className="brand-mark">✦</span><span><strong>LearnFlow</strong><small>学习空间</small></span>
           </button>
@@ -4000,27 +4101,75 @@ function App({ auth }: { auth: AuthGateSession }) {
             <section className="sidebar-section sidebar-conversations">
               <header><strong>对话</strong><button type="button" onClick={newConversation} aria-label="新建对话">＋</button></header>
               <nav className="conversation-list" aria-label="对话列表">
-            {workspace.conversations.filter(conversation => !conversation.projectId).map(conversation => (
+            {workspace.conversations
+              .filter(conversation => !conversation.projectId)
+              .slice()
+              .sort((left, right) => Number(Boolean(right.pinned)) - Number(Boolean(left.pinned)))
+              .map(conversation => (
               <div
                 key={conversation.id}
                 className={`conversation-row ${activeConversation?.id === conversation.id ? 'conversation-active' : ''} ${splitConversation?.id === conversation.id ? 'conversation-secondary' : ''}`}
               >
-                <button type="button" className="conversation-open" onClick={() => openTab(chatTab(conversation))}>
-                  <span className="conversation-glyph">□</span>
-                  <span><strong>{conversation.title}</strong><small>{conversation.messages.filter(message => message.role === 'user' && !message.hiddenFromTranscript).length} 条输入</small></span>
-                </button>
-                <button type="button" className="conversation-delete" onClick={() => setPendingDelete(conversation)} aria-label={`删除对话${conversation.title}`} title="删除对话">⌫</button>
+                {renamingConversationId === conversation.id ? (
+                  <form
+                    className="conversation-rename"
+                    onSubmit={event => {
+                      event.preventDefault()
+                      const title = renameDraft.trim()
+                      if (title) renameConversation(conversation.id, title)
+                      setRenamingConversationId('')
+                    }}
+                  >
+                    <input
+                      autoFocus
+                      value={renameDraft}
+                      maxLength={80}
+                      onChange={event => setRenameDraft(event.target.value)}
+                      onBlur={() => setRenamingConversationId('')}
+                      onKeyDown={event => { if (event.key === 'Escape') setRenamingConversationId('') }}
+                      aria-label="重命名对话"
+                    />
+                  </form>
+                ) : (
+                  <button type="button" className="conversation-open" onClick={() => openTab(chatTab(conversation))}>
+                    <span className="conversation-glyph">{conversation.pinned ? '★' : '□'}</span>
+                    <span><strong>{conversation.title}</strong><small>{conversation.messages.filter(message => message.role === 'user' && !message.hiddenFromTranscript).length} 条输入</small></span>
+                  </button>
+                )}
+                <details className="conversation-menu">
+                  <summary role="button" aria-label={`对话操作：${conversation.title}`} title="更多操作">⋯</summary>
+                  <div className="conversation-popover">
+                    <button type="button" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); togglePinConversation(conversation.id) }}>
+                      <i>{conversation.pinned ? '☆' : '★'}</i>{conversation.pinned ? '取消置顶' : '置顶'}
+                    </button>
+                    <button type="button" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); setRenameDraft(conversation.title); setRenamingConversationId(conversation.id) }}>
+                      <i>✎</i>重命名
+                    </button>
+                    <button type="button" className="conversation-popover-danger" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); setPendingDelete(conversation) }}>
+                      <i>⌫</i>删除
+                    </button>
+                  </div>
+                </details>
               </div>
             ))}
               </nav>
             </section>
           </div>
           <div className="sidebar-footer">
-            <button type="button" className="sidebar-user-button" onClick={() => openTab(PROFILE_TAB)}>
-              <span className="sidebar-profile-avatar">{auth.account.display_name.slice(0, 1)}</span>
-              <span><strong>{auth.account.display_name}</strong><small>{formalConnection.status === 'connected' ? `@${auth.account.username} · 画像已连接` : `@${auth.account.username} · 画像离线`}</small></span>
-            </button>
-            <button type="button" className="sidebar-settings-button" onClick={() => openTab(SETTINGS_TAB)} aria-label="打开设置">⚙</button>
+            <details className="sidebar-account-menu">
+              <summary className="sidebar-user-button" role="button" aria-label="账号菜单">
+                <span className="sidebar-profile-avatar">{auth.account.display_name.slice(0, 1)}</span>
+                <span><strong>{auth.account.display_name}</strong><small>{formalConnection.status === 'connected' ? `@${auth.account.username} · 画像已连接` : `@${auth.account.username} · 画像离线`}</small></span>
+              </summary>
+              <div className="sidebar-account-popover">
+                <button type="button" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); openTab(PROFILE_TAB) }}>
+                  <i>◎</i>个人画像
+                </button>
+                <button type="button" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); openTab(SETTINGS_TAB) }}>
+                  <i>⚙</i>设置
+                </button>
+              </div>
+            </details>
           </div>
         </aside>
 
@@ -4029,6 +4178,7 @@ function App({ auth }: { auth: AuthGateSession }) {
         <main className="main-stage">
           <nav className="tabs" aria-label="已打开页面">
             <button className="mobile-menu-trigger mobile-only" type="button" onClick={() => setSidebarOpen(true)} aria-label="打开侧栏">☰</button>
+            <button className="sidebar-collapse-trigger desktop-only" type="button" onClick={() => setSidebarCollapsed(value => !value)} aria-label={sidebarCollapsed ? '展开侧栏' : '收起侧栏'} title={sidebarCollapsed ? '展开侧栏' : '收起侧栏'}>{sidebarCollapsed ? '›' : '‹'}</button>
             {workspace.tabs.map(tab => (
               <div key={tab.id} className={`tab ${tab.id === activeTab?.id ? 'tab-active' : ''} ${tab.id === splitTab?.id ? 'tab-secondary' : ''}`}>
                 <button type="button" className="tab-main" onClick={() => openTab(tab)}>
