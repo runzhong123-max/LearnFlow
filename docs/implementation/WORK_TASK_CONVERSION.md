@@ -30,6 +30,14 @@ Tutor 负责澄清意图与接续控制，`learning_design_agent` 负责候选�
 
 ## API 与状态
 
+### 桌面项目页的岗位任务入口（2026-09-09）
+
+桌面 `/projects` 提供“从我的岗位包选任务”，通过现有 `open_external_url` 在系统浏览器打开 `https://roles.learnflow.club/registry`，不替换当前桌面 WebView，也不发送本机会话句柄、文件或账号凭据。个人中心包含“我创建的”和“已保存岗位包”，尚未生成 Release 的研究项目同样可进入。选择项目后打开典型任务卡片，点击“转为学习任务”沿用固定版本、签名来源和现有转换流程；实验、实践方案继续通过桌面票据预览与确认导入。
+
+选择“体验一个岗位任务”时，上述入口成为主要操作，并展示选任务、转换、回到桌面的三个步骤。手工建空白项目折叠保留；其他项目类型保留直接填写。“已有任务，直接转换”打开既有转换站点。浏览器与桌面应使用同一 LearnFlow 账号，跨账号接续仍由原校验拒绝。导航不会创建项目或学习证据。
+
+Contract impact：复用已登记的项目工作台、岗位个人目录、外部链接与转换交接，仅完善页面入口；无新 Agent 工具、API、schema、事件、五核规则或数据库迁移。Role Atlas 个人中心入口需发布其页面更新；单独更新桌面不会改变线上个人中心内容。
+
 Role Atlas 的「典型任务」详情标题区在关系雷达和事理流程视角均提供「转为学习任务」入口，与总雷达节点卡片复用同一交接函数。私有项目按当前对话的固定 projectVersionId 与 snapshotId 查找 ready/published 制品，不依赖推荐发布版本；没有可用制品时复用现有 prepare API 编译私有、metadata 制品，以源版本 SHA-256 形成稳定版本号，重试复用，不调用 publish 或更改市场可见性。编译失败阻止跳转，切换任务/对话/版本取消旧交接；服务端仍校验 ownership、节点及签名来源。Contract impact：仅补齐既有岗位准备与转换能力的 UI 接线，无 API/schema、注册表版本、主 Agent 或五核语义变化。
 
 所有 `/api/work-task-conversions` 路由要求当前 learner 身份与现有 CSRF/来源校验。列表和详情只能看到自己的草稿。修改传 `expected_revision`，生成和接续传 `expected_root_hash` 与 `confirmed: true`；`client_action_id` 幂等键防止重复操作。岗位包同一签名 launchId 在同一 learner 下也幂等。
