@@ -1157,13 +1157,16 @@ pub fn run() {
             std::fs::create_dir_all(&plugin_artifact_dir)?;
             let pet_preferences_path = app_data_dir.join("desktop-pet-settings.json");
             let pet_preferences = load_desktop_pet_preferences(&pet_preferences_path);
+            let api_origin = validated_platform_url(
+                option_env!("LEARNFLOW_API_ORIGIN").unwrap_or("https://8.148.28.98")
+            ).map_err(std::io::Error::other)?.origin().ascii_serialization();
             let command = app
                 .shell()
                 .sidecar("learnflow-backend")?
                 .args(["--host", "127.0.0.1", "--port", port_argument.as_str()])
                 .env("DESKTOP_MODE", "true")
                 .env("DESKTOP_TOKEN", &token)
-                .env("CLOUD_PLATFORM_URL", option_env!("LEARNFLOW_PLATFORM_URL").unwrap_or("https://learn.learnflow.club"))
+                .env("CLOUD_PLATFORM_URL", &api_origin)
                 .env("DATABASE_URL", database_url)
                 .env("SOURCE_CACHE_DIR", source_cache_dir.to_string_lossy().as_ref())
                 .env("REPO_FILES_DIR", source_cache_dir.to_string_lossy().as_ref())
@@ -1183,7 +1186,7 @@ pub fn run() {
                 config: DesktopRuntimeConfig {
                     api_base_url: format!("http://127.0.0.1:{port}/api"),
                     desktop_token: token,
-                    cloud_origin: option_env!("LEARNFLOW_PLATFORM_URL").unwrap_or("https://learn.learnflow.club").to_string(),
+                    cloud_origin: api_origin,
                 },
                 sidecar: Mutex::new(Some(child)),
                 pet_capability_token: Mutex::new(None),
@@ -1234,6 +1237,7 @@ mod platform_workspace_tests {
     #[test]
     fn validates_pinned_https_authority() {
         assert!(validated_platform_url("https://learn.example.com").is_ok());
+        assert!(validated_platform_url("https://8.148.28.98").is_ok());
         for url in ["http://learn.example.com", "file:///tmp/a", "https://user:pass@learn.example.com", "https://learn.example.com/?token=secret", "https://learn.example.com/#token", "https://learn.example.com/other"] {
             assert!(validated_platform_url(url).is_err(), "{url}");
         }

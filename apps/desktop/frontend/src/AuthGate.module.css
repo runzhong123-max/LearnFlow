@@ -57,6 +57,21 @@
 .devAccounts button span { font-size: 9px; font-weight: 750; }
 .devAccounts button small { margin-top: 3px; color: #8b9891; font-size: 7px; }
 .retry { display: block; margin: 16px auto 0; border: 0; background: transparent; color: #71837a; font-size: 9px; text-decoration: underline; text-underline-offset: 3px; }
+.cloudShell { display: flex; justify-content: center; padding: 32px 20px; }
+.cloudCard { width: min(100%, 480px); }
+.cloudHeader h1 { margin: 28px 0 9px; font-size: 27px; line-height: 1.3; letter-spacing: -0.035em; }
+.cloudHeader p, .cloudHelp, .legacyWorkspace p { color: #65776d; font-size: 12px; line-height: 1.75; }
+.cloudCard .form { margin-top: 24px; }
+.cloudCard .form label > span { font-size: 12px; }
+.cloudCard .form input { font-size: 14px; height: 44px; }
+.cloudCard .form input[readonly] { color: #61766a; background: #f0f5f1; }
+.cloudHelp { margin: 12px 0 0; }
+.cloudCard .primary { font-size: 13px; }
+.cloudCard .error { font-size: 12px; overflow-wrap: anywhere; }
+.legacyWorkspace { margin-top: 25px; border-top: 1px solid #e3e9e5; padding-top: 18px; }
+.legacyWorkspace summary { width: fit-content; color: #65776d; font-size: 12px; cursor: pointer; }
+.legacyWorkspace button { border: 1px solid #d3ddd7; border-radius: 9px; background: #f8faf8; color: #385046; padding: 9px 12px; font-size: 12px; cursor: pointer; }
+.legacyWorkspace button:disabled { cursor: wait; opacity: 0.65; }
 
 @media (max-width: 840px) {
   .shell { grid-template-columns: 1fr; gap: 28px; padding: 30px 18px; }

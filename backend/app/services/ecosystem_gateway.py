@@ -50,7 +50,7 @@ def gateway_url() -> str:
 def delegation_token(current: CurrentLearner, request_id: str, body: bytes, *, now: int | None = None) -> str:
     issued = int(time.time()) if now is None else now
     claims = {"v": 1, "iss": "learnflow", "aud": "role-atlas", "sub": subject_for(current),
-              "role": "admin" if current.account.role == "admin" else "user", "iat": issued, "exp": issued + 60,
+              "role": "admin" if current.account.role == "admin" and current.auth_method != "api_key" else "user", "iat": issued, "exp": issued + 60,
               "requestId": request_id, "bodyHash": hashlib.sha256(body).hexdigest()}
     encoded = base64.urlsafe_b64encode(canonical_bytes(claims)).rstrip(b"=")
     signature = hmac.new(settings.role_atlas_gateway_secret.encode(), encoded, hashlib.sha256).hexdigest()

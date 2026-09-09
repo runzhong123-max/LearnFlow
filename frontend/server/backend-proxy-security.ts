@@ -1,3 +1,5 @@
+import { backendIdentityFromHeaders, backendIdentityHeaders } from './backend-identity.ts'
+
 type IncomingHeaderValue = string | string[] | undefined
 
 export type BackendProxyHeadersInput = Record<string, IncomingHeaderValue>
@@ -34,8 +36,7 @@ export function buildBackendProxyHeaders(
       ? options.contentType
       : 'application/json'
   }
-  includeHeader(headers, incoming, 'cookie', 'Cookie')
-  includeHeader(headers, incoming, 'authorization', 'Authorization')
+  Object.assign(headers, backendIdentityHeaders(backendIdentityFromHeaders(incoming)))
   includeHeader(headers, incoming, 'origin', 'Origin')
   includeHeader(headers, incoming, 'referer', 'Referer')
   includeHeader(headers, incoming, 'sec-fetch-site', 'Sec-Fetch-Site')

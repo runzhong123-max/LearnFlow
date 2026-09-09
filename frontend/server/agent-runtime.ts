@@ -1,3 +1,4 @@
+import { backendIdentityHeaders, backendWriteHeaders } from './backend-identity.ts'
 import { conversionContextMessage } from '../../packages/learning-client/src/work-task-conversion/context.ts'
 import { explicitProjectGuidanceMode, hasProjectGuidanceConversation, projectGuidanceDirectRequest, projectGuidanceConfirmation, projectGuidanceObjects } from '../../packages/learning-client/src/project-guidance/contract.ts'
 import { VISUAL_PLUGIN_PLANNER_INSTRUCTIONS, visualPluginRequest, visualPluginReferences } from '../../packages/learning-client/src/visuals/plugin-host.ts'
@@ -213,6 +214,8 @@ export type TutorAgentRuntimeInput = {
   referencedPluginObjects?: LearnFlowPluginObject[]
   backendBase?: string
   requestCookie?: string
+  requestAuthorization?: string
+  requestDesktopToken?: string
   generate: TutorAgentToolRuntimeOptions['generate']
   searchConfiguration?: SearchProviderConfiguration
   invokeProvider: ProviderInvoke
@@ -340,25 +343,11 @@ export async function requestProjectPluginIntegration(options: {
   const requestBody = projectPluginIntegrationRequestBody(route, body)
   if (route.localCase === 'catalog') path = '/api/practice-cases'
   if (route.guidance === 'prepare') path = '/api/project-guidance/prepare'
-  let csrfToken = ''
-  if (route.method === 'POST') {
-    const csrfResponse = await fetch(`${options.input.backendBase}/api/auth/csrf`, {
-      headers: options.input.requestCookie ? { Cookie: options.input.requestCookie } : {},
-      signal: options.signal,
-    })
-    const csrfBody = await csrfResponse.json().catch(() => ({})) as Record<string, unknown>
-    csrfToken = typeof csrfBody.csrf_token === 'string' ? csrfBody.csrf_token : ''
-    if (!csrfResponse.ok || !csrfToken) {
-      throw new Error(`plugin_integration_error:csrf_unavailable:无法取得项目集成写请求所需的 CSRF 令牌`)
-    }
-  }
   const response = await fetch(`${options.input.backendBase}${path}`, {
     method: route.method,
-    headers: {
-      ...(route.method === 'POST' ? { 'Content-Type': 'application/json' } : {}),
-      ...(options.input.requestCookie ? { Cookie: options.input.requestCookie } : {}),
-      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
-    },
+    headers: route.method === 'POST'
+      ? await backendWriteHeaders(options.input, options.signal)
+      : backendIdentityHeaders(options.input),
     ...(route.method === 'POST' ? { body: JSON.stringify(requestBody) } : {}),
     signal: options.signal,
   })
@@ -1180,6 +1169,8 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
     activeArtifactContext: input.activeArtifactContext,
     backendBase: input.backendBase,
     requestCookie: input.requestCookie,
+    requestAuthorization: input.requestAuthorization,
+    requestDesktopToken: input.requestDesktopToken,
     onVisualStage: stage => {
       const labels: Record<string, string> = {
         compiling: '正在尝试确定性视觉编译',
@@ -1231,7 +1222,7 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
         },
         signal: pluginSignal,
         ...(registered.pluginId === 'educational_visuals' ? {artifactHost: serverArtifactHost({
-          pluginId:registered.pluginId, backendBase:input.backendBase, cookie:input.requestCookie,
+          pluginId:registered.pluginId, backendBase:input.backendBase, cookie:input.requestCookie, authorization:input.requestAuthorization, desktopToken:input.requestDesktopToken,
           projectId:activation.projectId, sessionId:input.formalSessionId,
           signal:pluginSignal,
           context:`${visualPlannerContext(input.messages)}\n<recent_visual_references>${JSON.stringify(visualPluginReferences(input.messages))}</recent_visual_references>`,

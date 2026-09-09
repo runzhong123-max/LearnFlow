@@ -155,6 +155,23 @@ class AuthSession(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class AuthApiKey(Base):
+    """Revocable first-party API credentials; the secret is returned only once."""
+    __tablename__ = "auth_api_keys"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("user_accounts.id"), nullable=False, index=True)
+    name = Column(String(80), nullable=False)
+    token_hash = Column(String(64), nullable=False, unique=True, index=True)
+    key_hint = Column(String(32), nullable=False)
+    auth_epoch = Column(Integer, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at = Column(DateTime, nullable=False, index=True)
+    last_used_at = Column(DateTime, nullable=True)
+    revoked_at = Column(DateTime, nullable=True, index=True)
+    revoked_reason = Column(String(80), nullable=True)
+
+
 class AuthLoginAttempt(Base):
     __tablename__ = "auth_login_attempts"
     __table_args__ = (

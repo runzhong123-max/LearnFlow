@@ -13,6 +13,7 @@ import {
   activateRuntimeAuth,
   captureRuntimeAuth,
   clearRuntimeAuth,
+  isCloudDesktopRuntime,
   runtimeFetch,
 } from './runtime-client.ts'
 
@@ -513,7 +514,7 @@ export class FormalRequestError extends Error {
   }
 }
 
-async function jsonRequest<T>(url: string, init: RequestInit = {}): Promise<T> {
+async function jsonRequest<T>(url: string, init: RequestInit = {}, captureAuth = true): Promise<T> {
   const response = await runtimeFetch(url, {
     ...init,
     credentials: 'include',
@@ -525,7 +526,7 @@ async function jsonRequest<T>(url: string, init: RequestInit = {}): Promise<T> {
   const text = await response.text()
   let payload: unknown = null
   try { payload = text ? JSON.parse(text) : null } catch { payload = text }
-  captureRuntimeAuth(payload)
+  if (captureAuth) captureRuntimeAuth(payload)
   if (!response.ok) {
     if (response.status === 401) identityInitialization = undefined
     throw new FormalRequestError(response.status, errorText(payload, `请求失败（${response.status}）`))
@@ -552,6 +553,7 @@ export async function listFormalDevAccounts() {
 
 let identityInitialization: Promise<FormalAccount> | undefined
 let demoLoginInitialization: Promise<FormalAccount> | undefined
+let identityGeneration = 0
 
 export function activateFormalIdentity(account: FormalAccount) {
   activateRuntimeAuth(account)
@@ -560,6 +562,7 @@ export function activateFormalIdentity(account: FormalAccount) {
 }
 
 export function invalidateFormalIdentity(clearRuntime = true) {
+  identityGeneration += 1
   identityInitialization = undefined
   demoLoginInitialization = undefined
   if (clearRuntime) clearRuntimeAuth()
@@ -596,6 +599,23 @@ export async function loginFormalAccount(username: string, password: string) {
   return activateFormalIdentity(account)
 }
 
+export async function connectFormalApiKey(apiKey: string) {
+  if (!isCloudDesktopRuntime()) throw new FormalRequestError(400, '请在桌面云端连接页使用 API Key。')
+  invalidateFormalIdentity()
+  const generation = identityGeneration
+  const account = await jsonRequest<FormalAccount>('/api/auth/api-key/connect', {
+    method: 'POST',
+    body: JSON.stringify({ api_key: apiKey.trim() }),
+  }, false)
+  if (generation !== identityGeneration) throw new FormalRequestError(409, '连接已取消，请重新输入 API Key。')
+  if (!Number.isSafeInteger(account?.id) || account.id <= 0
+      || !Number.isSafeInteger(account?.learner_id) || account.learner_id <= 0
+      || typeof account.desktop_auth_token !== 'string' || !account.desktop_auth_token) {
+    throw new FormalRequestError(502, '服务器没有返回有效账号，请重新连接。')
+  }
+  return activateFormalIdentity(account)
+}
+
 export async function registerFormalAccount(input: FormalRegistrationInput) {
   demoLoginInitialization = undefined
   clearRuntimeAuth()
@@ -614,6 +634,17 @@ export async function loginFormalDevAccount(accountId: number) {
 }
 
 export async function logoutFormalAccount() {
+  if (isCloudDesktopRuntime()) {
+    try {
+      await jsonRequest<{ status: 'ok' }>('/api/auth/logout', { method: 'POST' })
+    } catch {
+      // The relay drops its session locally. A failed response must never keep
+      // the UI authenticated or restore the discarded capability handle.
+    } finally {
+      invalidateFormalIdentity()
+    }
+    return
+  }
   await jsonRequest<{ status: 'ok' }>('/api/auth/logout', { method: 'POST' })
   invalidateFormalIdentity()
 }

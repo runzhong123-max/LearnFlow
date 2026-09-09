@@ -1,0 +1,31 @@
+# Append to the CURRENT Caddy service's entire existing Compose chain.
+# initialize preserves its active Caddyfile bytes before adding the IP imports.
+services:
+  caddy:
+    volumes:
+      - type: bind
+        source: ${LEARNFLOW_IP_API_ROOT:-/opt/ceg/ip-api}/caddy/Caddyfile
+        target: /etc/caddy/Caddyfile
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${LEARNFLOW_IP_API_ROOT:-/opt/ceg/ip-api}/caddy
+        target: /etc/learnflow/ip-api
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${LEARNFLOW_IP_API_ROOT:-/opt/ceg/ip-api}/webroot
+        target: /var/www/learnflow-ip-acme
+        read_only: true
+        bind:
+          create_host_path: false
+      # Mount the entire certificate store so live/ -> archive/ symlinks work
+      # after unattended renewal. Never bind individual certificate files.
+      - type: bind
+        source: ${LEARNFLOW_IP_API_ROOT:-/opt/ceg/ip-api}/letsencrypt
+        target: /etc/learnflow/ip-certificates
+        read_only: true
+        bind:
+          create_host_path: false
