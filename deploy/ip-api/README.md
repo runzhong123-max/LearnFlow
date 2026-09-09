@@ -56,7 +56,18 @@ python3 /opt/ceg/ip-api/bin/ip_api_tls.py issue --root /opt/ceg/ip-api \
 python3 /opt/ceg/ip-api/bin/ip_api_tls.py enable-https --root /opt/ceg/ip-api
 ```
 
-替换 `ADMIN_CONTACT` 为管理员联系邮箱。脚本先确认 Caddy 的安装目录和四个只读挂载与本次 root 一致，才允许申请。启用时要求 OpenSSL 验证公信链、IP SAN、至少一小时剩余有效期和公私钥匹配，再放入 HTTPS snippet、`caddy validate`、`caddy reload --force`。新 snippet 首次启用失败时移回 bootstrap 状态，不重启服务器。
+替换 `ADMIN_CONTACT` 为管理员联系邮箱。如本轮明确不提供联系邮箱，使用 `--without-email` 替代 `--email ADMIN_CONTACT`，例如：
+
+```sh
+python3 /opt/ceg/ip-api/bin/ip_api_tls.py issue --root /opt/ceg/ip-api \
+  --without-email --staging
+python3 /opt/ceg/ip-api/bin/ip_api_tls.py issue --root /opt/ceg/ip-api \
+  --without-email
+```
+
+`issue` 必须明确选择 `--email` 或 `--without-email`，两者互斥；缺少选择会在访问安装状态前报错。原有邮箱调用方式保持兼容。无邮箱选项传入 Certbot 官方的 `--register-unsafely-without-email`，不读取或修改旧 Caddy ACME 账户，不虚构邮箱；新账户没有邮件联系地址，无法接收账户联系邮件。它不降低 TLS 安全要求：公信链、IP SAN、有效期和公私钥匹配校验、短期证书与自动续期均不变。该选择不是跳过证书校验。[官方 Certbot 5.4 注册逻辑](https://github.com/certbot/certbot/blob/v5.4.0/certbot/src/certbot/_internal/main.py#L688-L693)
+
+脚本先确认 Caddy 的安装目录和四个只读挂载与本次 root 一致，才允许申请。启用时要求 OpenSSL 验证公信链、IP SAN、至少一小时剩余有效期和公私钥匹配，再放入 HTTPS snippet、`caddy validate`、`caddy reload --force`。新 snippet 首次启用失败时移回 bootstrap 状态，不重启服务器。
 
 必须使用保持 TLS 校验的客户端实测裸 IP：无 key/仅 Cookie/错误 key 返回 401 或 403；有效 key 的只读 API 正常，Tutor stream 与其他 SSE 都能逐段到达；IP 根路径和非 API 路径为 404。不要将 key 写进 shell 参数、日志或验证报告；使用桌面应用凭据存储进行带认证验收。还需确认网络中间设备未阻断裸 IP TLS。当前开发没有真实 IP 证书，不能把语法检查称为此验收通过。
 
@@ -85,6 +96,6 @@ python3 -m unittest discover -s deploy/ip-api/tests -v
 python3 deploy/ip-api/verify_adapted_routes.py /path/to/caddy-adapt-output.json
 ```
 
-12 项离线测试已通过；候选 snippets 连同 `default_sni` 在现有 Caddy 2.9.1 使用 stdin **仅 adapt** 成功，其真实适配 JSON 通过 API-key gate 顺序、Tutor/Backend 分流、stream flush、HTTP 拒绝与 404 检查。没有加载配置、申请证书、迁移数据库或重启生产容器。没有真实 IP 证书，因此完整 `validate`、公信 IP TLS、续期与 reload 的生产验收尚未执行。
+16 项离线测试已通过，包括邮箱方式兼容、无邮箱显式选择、互斥/缺参拒绝和 TLS 参数保留；候选 snippets 连同 `default_sni` 在现有 Caddy 2.9.1 使用 stdin **仅 adapt** 成功，其真实适配 JSON 通过 API-key gate 顺序、Tutor/Backend 分流、stream flush、HTTP 拒绝与 404 检查。没有加载配置、申请证书、迁移数据库或重启生产容器。没有真实 IP 证书，因此完整 `validate`、公信 IP TLS、续期与 reload 的生产验收尚未执行。
 
 Contract impact：新增部署入口消费后端 API-key verifier，不改变既有域名路由、三类 Agent、五核或 EvidenceEvent 语义。无数据库 schema 变化。

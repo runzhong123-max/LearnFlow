@@ -94,11 +94,15 @@ def certbot(root: Path, config: dict, arguments: list[str], *, staging: bool = F
     execute([*args, image, *arguments])
 
 
-def issue(root: Path, config: dict, email: str, *, staging: bool = False):
+def issue(root: Path, config: dict, email: str = "", *, staging: bool = False,
+          without_email: bool = False):
+    if without_email and email:
+        raise ValueError("Choose either a contact email or explicit without-email registration")
+    if not without_email and not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
+        raise ValueError("A valid contact email or explicit without-email registration is required")
+    contact = ["--register-unsafely-without-email"] if without_email else ["--email", email]
     assert_mounts(root, config)
-    if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
-        raise ValueError("A contact email is required for this explicit certificate request")
-    certbot(root, config, ["certonly", "--non-interactive", "--agree-tos", "--email", email,
+    certbot(root, config, ["certonly", "--non-interactive", "--agree-tos", *contact,
             "--server", STAGING if staging else PRODUCTION, "--preferred-profile", "shortlived",
             "--preferred-challenges", "http", "--webroot", "--webroot-path", "/var/www/acme",
             "--ip-address", IP, "--cert-name", CERT_NAME, "--keep-until-expiring"], staging=staging)
@@ -171,7 +175,10 @@ def main():
     parser.add_argument("action", choices=["initialize", "issue", "enable-https", "renew"])
     parser.add_argument("--root", type=Path, default=Path("/opt/ceg/ip-api"))
     parser.add_argument("--original-caddyfile", type=Path)
-    parser.add_argument("--email")
+    contact = parser.add_mutually_exclusive_group()
+    contact.add_argument("--email", help="ACME account contact email for issue")
+    contact.add_argument("--without-email", action="store_true",
+                         help="Explicitly register without account contact email; TLS verification is unchanged")
     parser.add_argument("--staging", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
@@ -179,6 +186,10 @@ def main():
     root = args.root.resolve()
     if args.staging and args.action != "issue" or args.dry_run and args.action != "renew":
         parser.error("staging is only for issue; dry-run is only for renew")
+    if args.action == "issue" and not args.email and not args.without_email:
+        parser.error("issue requires either --email or --without-email")
+    if args.action != "issue" and (args.email is not None or args.without_email):
+        parser.error("email options are only for issue")
     if args.action == "initialize":
         if not args.original_caddyfile:
             parser.error("initialize requires the current active --original-caddyfile")
@@ -188,12 +199,14 @@ def main():
         with (root / "certificate.lock").open("a") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
             if args.action == "issue":
-                issue(root, config, args.email or "", staging=args.staging)
+                issue(root, config, args.email or "", staging=args.staging,
+                      without_email=args.without_email)
             elif args.action == "enable-https":
                 enable_https(root, config)
             else:
                 renew(root, config, dry_run=args.dry_run)
-    print(json.dumps({"action": args.action, "completed": True, "ip": IP, "staging": args.staging, "dry_run": args.dry_run}))
+    print(json.dumps({"action": args.action, "completed": True, "ip": IP, "staging": args.staging,
+                      "dry_run": args.dry_run, "without_email": args.without_email}))
 
 
 if __name__ == "__main__":
