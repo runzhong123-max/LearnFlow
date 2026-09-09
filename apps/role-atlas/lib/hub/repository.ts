@@ -89,7 +89,7 @@ export async function listPublicHubEntries(): Promise<HubEntry[]> {
           rootHash: release.artifactRootHash, protocolVersion: release.protocolVersion,
           snapshotAsOf: release.snapshotAsOf, publishedAt: release.publishedAt },
         nodeIndex: (array(semantic.nodes) as JsonRecord[]).flatMap(node => typeof node.id === "string" && typeof node.label === "string"
-          ? [{ id: node.id, label: node.label, type: String(node.type || "object"), aliases: hubStrings(node.aliases) }] : []),
+          ? [{ id: node.id, label: node.label, type: String(node.type || "object"), aliases: hubStrings(node.aliases), summary: typeof node.summary === "string" ? node.summary.slice(0, 2000) : "" }] : []),
       } satisfies HubEntry;
     }));
     for (const entry of batch) if (entry) entries.push({ ...entry, sourceCategories: entry.categories, categories: classifyHubEntry(entry) });

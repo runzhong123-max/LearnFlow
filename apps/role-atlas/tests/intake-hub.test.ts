@@ -55,7 +55,7 @@ test("Hub suggestions inspect at most three fixed public releases without creati
   assert.deepEqual(matches[0], {
     packageLineId: "line:a", releaseId: "release:a", packageId: "package:a", packageVersion: "1.2.0",
     snapshotId: "snapshot:a", rootHash: "a".repeat(64), title: "制品岗位标题 a", license: "CC-BY-4.0",
-    summary: "固定制品中的职责 a", matchReasons: ["匹配岗位名称或包 ID", "匹配分类"],
+    summary: "固定制品中的职责 a", matchReasons: ["匹配岗位名称"],
     tasks: ["任务 0", "任务 1", "任务 2", "任务 3"], capabilities: ["能力 0", "能力 1", "能力 2", "能力 3"],
     scenarios: ["场景 0", "场景 1", "场景 2"], href: "/api/releases/release%3Aa/export?format=json",
   });

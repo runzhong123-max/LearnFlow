@@ -44,7 +44,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-09.2"
+REGISTRY_VERSION = "2026-09-09.3"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Source-data contracts, not Agent-callable tools or learner-state writers.
@@ -313,7 +313,7 @@ TOOLS = {
         ToolContract("curriculum_source_runtime", "Role-linked Learning Path Source Runtime", "learning_design_agent", "learnflow", "artifact",
                      (), (), "verified package -> typed resolution -> explicit manual or authorized production source commit with CAS and durable idempotent receipts; reverse delegation checks active central learner; zero-target audit; no mastery or personal plan write"),
         ToolContract("graph_hub_reader", "Scoped Graph Hub Search and Recommender", "tutor_agent", "vnext", "read",
-                     (), (), "authenticated LearnFlow learner scope + content-addressed Graph Hub catalog -> official, approved-personal, and owner-only pending-personal graph recommendations with bounded node matches; zero learner-state write"),
+                     (), (), "public role/task discovery.v1 field-coverage.v2 API with explicit target and role filter, stable task IDs and fixed release pins; scoped personal/non-role catalog retains ownership checks; zero learner-state write"),
         ToolContract("learning_file_service", "Managed Lecture and Practice File Service", "tutor_agent", "vnext", "artifact",
                      (), (), "owned task + requested file kinds -> versioned multi-section lecture and validated paired practice; preserve task scope, reuse files, report partial/blocked; answer-safe attempt summaries and explicit read/open/attach audit; generation never implies mastery"),
         ToolContract("active_learning_file_reader", "Active Paper Learning File Reader", "tutor_agent", "vnext", "read",
@@ -1619,6 +1619,7 @@ _FRONTEND_HANDLER_TARGETS = {
     "frontend:plugin.registry": ("frontend/src/plugin-api.ts", "LearnFlowPluginRegistry", ""),
     "frontend:plugin.loader": ("frontend/server/plugin-loader.ts", "loadLearnFlowPluginRegistry", ""),
     "frontend:plugin.learning_task_conversion": ("frontend/plugins/learning_task_conversion/server.ts", "plugin", "draft_learning_task"),
+    "frontend:plugin.hub_discovery": ("frontend/plugins/role_capability_graph/hub-discovery-client.ts", "discoverPublicRolePackages", ""),
     "frontend:plugin.graph_hub": ("frontend/plugins/role_capability_graph/graph-hub.ts", "recommendGraphHubEntries", ""),
     "frontend:role_package_launch": ("frontend/src/main.tsx", "rolePackageLaunchTokenFromPath", "/launch/role-package/"),
     "frontend:visual.generate": ("frontend/server/learning-visual-spec.ts", "generateLearningVisual", ""),
@@ -1771,7 +1772,7 @@ _TOOL_BINDING_IDS = {
     "vnext_five_kernel_profile_reader": ("py:five_kernel.context",),
     "vnext_learning_workspace_reader": ("api:learner_state.workspace",),
     "domain_knowledge_reader": ("api:knowledge_library.context",),
-    "graph_hub_reader": ("frontend:plugin.graph_hub",),
+    "graph_hub_reader": ("frontend:plugin.graph_hub", "frontend:plugin.hub_discovery"),
     "learning_file_service": ("api:learning_files.list",),
     "active_learning_file_reader": ("frontend:tool:read_active_learning_file",),
     "assessment_blueprint_builder": ("py:assessment.create",),

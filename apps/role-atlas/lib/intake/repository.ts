@@ -139,7 +139,7 @@ export class IntakeRepository {
           WHERE h.conversation_id=? AND r.id=? AND r.lease_owner=? AND r.state='ready')`)
         .bind(`intake:${claim.revisionId}:assistant`, scope.conversationId, [content.assistantMessage, content.description, ...content.questions].filter(Boolean).join("\n\n"),
           JSON.stringify([{ id: claim.revisionId, label: content.phase === "review" ? "岗位说明待确认" : "岗位方向澄清", status: "done" }]),
-          JSON.stringify(content.sources.filter(source => source.kind === "public_document").map(source => ({ title: source.title, url: source.locator, fetchedAt: source.fetchedAt }))),
+          JSON.stringify(content.sources.filter(source => source.kind === "public_document").map(source => ({ kind: "source", title: source.title, url: source.locator, fetchedAt: source.fetchedAt }))),
           now, scope.conversationId, claim.revisionId, claim.owner),
       this.db.prepare(`UPDATE conversations SET updated_at=? WHERE id=? AND EXISTS(SELECT 1 FROM role_intakes WHERE conversation_id=? AND head_revision_id=?)`)
         .bind(now, scope.conversationId, scope.conversationId, claim.revisionId),
