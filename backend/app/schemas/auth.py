@@ -138,10 +138,15 @@ class ApiKeyCreateRequest(BaseModel):
         return value
 
 
+class ApiKeyRevealRequest(BaseModel):
+    password: str = Field(min_length=1, max_length=128, repr=False)
+
+
 class ApiKeyMetadata(BaseModel):
     id: int
     name: str
     key_hint: str
+    copy_available: bool = False
     created_at: datetime
     expires_at: datetime
     last_used_at: datetime | None

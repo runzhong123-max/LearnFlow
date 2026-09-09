@@ -33,7 +33,7 @@ async def run(args):
         try:
             os.fchmod(descriptor, 0o600)
             with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
-                json.dump({"api_key": token, "metadata": metadata(key)}, stream, default=str, ensure_ascii=False)
+                json.dump({"api_key": token, "metadata": metadata(key, copy_available=True)}, stream, default=str, ensure_ascii=False)
                 stream.write("\n")
                 stream.flush()
                 os.fsync(stream.fileno())
@@ -41,7 +41,7 @@ async def run(args):
         except BaseException:
             output.unlink(missing_ok=True)
             raise
-        return metadata(key)
+        return metadata(key, copy_available=True)
 
 
 def main():

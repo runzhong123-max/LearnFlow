@@ -1,5 +1,7 @@
 # LearnFlow 智能体架构与协作指南
 
+Contract impact（2026-09-09.5）：Web 设置新增个人 API Key 签发、再次复制和撤销台。认证仍比对摘要；新增独立 AES-GCM 加密副本表支持 Cookie + CSRF + 密码复核后的本人读取。旧 Key 不回填，旧接口增量兼容；密码错误使用 403 保留现有登录。无 Agent、学习事件或五核变化。详见 [个人 Key 合同](implementation/DESKTOP_IP_API_KEY.md)。
+
 Contract impact（2026-09-09.2 / 2026-09-09.2-desktop）：桌面默认通过裸公网 IP 的可信 HTTPS 与账户绑定 API Key 连接。新增独立 hash-only 认证表、签发/撤销及 key-only 网关合同；旧浏览器 Cookie 与本地工作区兼容，账号/learner ownership 沿用原入口。鉴权不写学习事件或五核，三类 Agent、评分与核心共享 schema 不变。详见 [IP 与 API Key 连接契约](implementation/DESKTOP_IP_API_KEY.md)。
 
 > Contract impact（2026-09-08.9 / desktop 对应版本，共享核心 0.2.5）：教育记忆读取升级为 relevance-budget.v3。教学控制 v2 保留来源 scope 与应用 scope，采用分句解析、默认会话 8 小时及显式有时区期限的最长 168 小时窗口，兼容读取 v1。只读 learning-episode.v1 通过 Fact → Mutation → Event → owned Attempt 验证真实评分来源；规划 v2 消费该投影并附加确定性决策依据。事件稳定 ID、EvidenceEvent v1、三类 Agent、五核、评分和掌握门槛不变，不迁移历史库。详见 [教育记忆 v2 实现](implementation/EDUCATION_MEMORY_V2.md)；实验结果单独报告，不以新增字段或回归通过证明学习收益。

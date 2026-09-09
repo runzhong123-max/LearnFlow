@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import hashlib
 import json
 from pathlib import Path
@@ -14,7 +15,7 @@ from sqlalchemy import select, update
 from app.core.config import settings
 from app.db.database import async_session
 from app.main import app
-from app.models.learning import AuthApiKey, UserAccount
+from app.models.learning import AuthApiKey, AuthApiKeySecret, UserAccount
 
 
 PASSWORD = "Api-key-tests-2026!"
@@ -28,6 +29,11 @@ def owner(monkeypatch):
     monkeypatch.setattr(settings, "auth_argon2_parallelism", 1)
     monkeypatch.setattr(settings, "registration_invite_code", "")
     monkeypatch.setattr(settings, "desktop_mode", False)
+    kek = base64.urlsafe_b64encode(b"k" * 32).decode()
+    monkeypatch.setattr(settings, "auth_api_key_kek", kek)
+    monkeypatch.setattr(settings, "auth_api_key_kek_version", 1)
+    monkeypatch.setenv("AUTH_API_KEY_KEK", kek)
+    monkeypatch.setenv("AUTH_API_KEY_KEK_VERSION", "1")
     with TestClient(app) as client:
         client.headers.update(BROWSER)
         username = "key_" + __import__("secrets").token_hex(7)
@@ -54,7 +60,7 @@ def key_headers(token):
     return {"Authorization": f"Bearer {token}", "Cookie": "", "X-CSRF-Token": ""}
 
 
-def test_key_hash_only_scope_and_strict_authorization(owner):
+def test_key_hash_authentication_scope_and_strict_authorization(owner):
     created = issue(owner)
     token, key_id = created["api_key"], created["metadata"]["id"]
     assert token.startswith("lfak_") and len(token) == 48
@@ -106,7 +112,7 @@ def test_key_write_without_csrf_and_no_account_privilege_escalation(owner, monke
 
 def test_key_reauth_csrf_expiry_and_revocation(owner):
     assert owner.post("/api/auth/api-keys", headers={"X-CSRF-Token": ""}, json={"name": "missing csrf", "password": PASSWORD}).status_code == 403
-    assert owner.post("/api/auth/api-keys", json={"name": "wrong password", "password": "incorrect"}).status_code == 401
+    assert owner.post("/api/auth/api-keys", json={"name": "wrong password", "password": "incorrect"}).status_code == 403
     for days in (0, 91, 1.5, True):
         assert owner.post("/api/auth/api-keys", json={"name": "invalid expiry", "password": PASSWORD, "expires_in_days": days}).status_code == 422
     created = issue(owner, expires_in_days=90)
@@ -140,6 +146,7 @@ def test_key_password_epoch_and_disabled_account(owner):
         async with async_session() as db:
             key = await db.get(AuthApiKey, created["metadata"]["id"])
             assert key.revoked_reason == "password_changed"
+            assert await db.get(AuthApiKeySecret, key.id) is None
     asyncio.run(inspect())
 
 
@@ -176,6 +183,7 @@ def test_foreign_keys_and_projects_remain_inaccessible(owner):
         foreign.headers["X-CSRF-Token"] = foreign.get("/api/auth/csrf").json()["csrf_token"]
         assert foreign.get("/api/auth/api-keys").json() == {"api_keys": []}
         assert foreign.delete(f"/api/auth/api-keys/{created['metadata']['id']}").status_code == 404
+        assert foreign.post(f"/api/auth/api-keys/{created['metadata']['id']}/reveal", json={"password": PASSWORD}).status_code == 404
         foreign_key = issue(foreign)["api_key"]
         assert foreign.get(f"/api/projects/{project['id']}", headers=key_headers(foreign_key)).status_code == 404
 
@@ -201,3 +209,82 @@ def test_operator_cli_requires_explicit_account_and_exclusive_secret_file(owner,
     revoked = subprocess.run([sys.executable, str(script), "--username", username, "revoke", "--id", str(secret["metadata"]["id"])], capture_output=True)
     assert revoked.returncode == 0, revoked.stderr
     assert owner.get("/api/auth/me", headers=key_headers(secret["api_key"])).status_code == 401
+
+
+def test_repeated_copy_is_encrypted_owner_only_and_password_gated(owner):
+    created = issue(owner)
+    key_id, token = created["metadata"]["id"], created["api_key"]
+    path = f"/api/auth/api-keys/{key_id}/reveal"
+    assert created["metadata"]["copy_available"] is True
+    async def inspect():
+        async with async_session() as db:
+            envelope = await db.get(AuthApiKeySecret, key_id)
+            assert envelope and token not in envelope.ciphertext
+            assert envelope.encryption_version == 1
+    asyncio.run(inspect())
+    assert owner.post(path, json={"password": "incorrect"}).status_code == 403
+    assert owner.get("/api/auth/me").status_code == 200
+    assert owner.post(path, headers={"X-CSRF-Token": ""}, json={"password": PASSWORD}).status_code == 403
+    assert owner.post(path, headers=key_headers(token), json={"password": PASSWORD}).status_code == 403
+    for _ in range(3):
+        result = owner.post(path, json={"password": PASSWORD})
+        assert result.status_code == 200
+        assert result.json()["api_key"] == token
+        assert result.headers["cache-control"] == "no-store"
+    assert token not in owner.get("/api/auth/api-keys").text
+    owner.delete(f"/api/auth/api-keys/{key_id}")
+    assert owner.post(path, json={"password": PASSWORD}).status_code == 409
+    async def removed():
+        async with async_session() as db:
+            assert await db.get(AuthApiKeySecret, key_id) is None
+    asyncio.run(removed())
+
+
+def test_copy_legacy_expired_and_foreign_keys(owner):
+    created = issue(owner)
+    key_id = created["metadata"]["id"]
+    async def remove_envelope():
+        async with async_session() as db:
+            await db.delete(await db.get(AuthApiKeySecret, key_id))
+            await db.commit()
+    asyncio.run(remove_envelope())
+    assert not owner.get("/api/auth/api-keys").json()["api_keys"][0]["copy_available"]
+    assert owner.post(f"/api/auth/api-keys/{key_id}/reveal", json={"password": PASSWORD}).status_code == 409
+    assert owner.get("/api/auth/me", headers=key_headers(created["api_key"])).status_code == 200
+    assert owner.post("/api/auth/api-keys/999999/reveal", json={"password": PASSWORD}).status_code == 404
+
+
+def test_copy_fails_closed_for_missing_wrong_kek_or_tampered_envelope(owner, monkeypatch):
+    created = issue(owner)
+    key_id = created["metadata"]["id"]
+    path = f"/api/auth/api-keys/{key_id}/reveal"
+    original = settings.auth_api_key_kek
+    for value in ("", base64.urlsafe_b64encode(b"x" * 32).decode()):
+        monkeypatch.setattr(settings, "auth_api_key_kek", value)
+        assert owner.post(path, json={"password": PASSWORD}).status_code == 503
+        assert owner.get("/api/auth/me", headers=key_headers(created["api_key"])).status_code == 200
+    monkeypatch.setattr(settings, "auth_api_key_kek", "")
+    before = len(owner.get("/api/auth/api-keys").json()["api_keys"])
+    assert owner.post("/api/auth/api-keys", json={"name": "no encryption", "password": PASSWORD}).status_code == 503
+    assert len(owner.get("/api/auth/api-keys").json()["api_keys"]) == before
+    monkeypatch.setattr(settings, "auth_api_key_kek", original)
+    another = issue(owner)
+    async def swap():
+        async with async_session() as db:
+            envelope = await db.get(AuthApiKeySecret, key_id)
+            other = await db.get(AuthApiKeySecret, another["metadata"]["id"])
+            envelope.ciphertext = other.ciphertext
+            await db.commit()
+    asyncio.run(swap())
+    assert owner.post(path, json={"password": PASSWORD}).status_code == 503
+
+
+def test_key_validation_never_echoes_password(owner):
+    secret_password = "sensitive-invalid-input-" * 20
+    for path, body in (("/api/auth/api-keys", {"name": "test", "password": secret_password}),
+                       ("/api/auth/api-keys/1/reveal", {"password": secret_password})):
+        response = owner.post(path, json=body)
+        assert response.status_code == 422
+        assert secret_password not in response.text
+        assert "sensitive-invalid-input" not in response.text
+        assert response.headers["cache-control"] == "no-store"
