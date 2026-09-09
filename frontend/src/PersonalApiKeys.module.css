@@ -1,0 +1,29 @@
+.card { margin: 22px auto 0; width: min(100%, 720px); box-sizing: border-box; border: 1px solid #dce3de; border-radius: 18px; background: #fff; padding: 24px; color: #25372e; }
+.heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.heading h2 { margin: 0; font-size: 16px; }
+.heading p, .hint { margin: 7px 0 0; color: #61756a; font-size: 12px; line-height: 1.6; }
+.card button { flex: none; border: 1px solid transparent; border-radius: 9px; padding: 9px 13px; background: #087a53; color: #fff; font-size: 12px; cursor: pointer; }
+.card button:hover { filter: brightness(.95); }
+.card button:disabled { opacity: .5; cursor: not-allowed; }
+.card .secondary { background: #f7f9f7; color: #405c4d; border-color: #d6dfd9; }
+.card .textButton { background: transparent; color: #a15148; }
+.card :focus-visible { outline: 2px solid #087a53; outline-offset: 3px; }
+.list { list-style: none; padding: 0; margin: 16px 0 0; }
+.list li { display: flex; align-items: center; gap: 14px; border-top: 1px solid #e9edea; padding: 14px 0; }
+.keyInfo { flex: 1; min-width: 0; }
+.keyInfo strong { font-size: 13px; overflow-wrap: anywhere; }
+.keyInfo code { margin-left: 10px; font-size: 12px; color: #61756a; }
+.keyInfo small { display: block; margin-top: 5px; color: #61756a; font-size: 11px; line-height: 1.5; }
+.rowActions, .actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.form, .secret { margin-top: 14px; padding: 16px; border-radius: 12px; background: #f3f8f5; border: 1px solid #d8e7de; }
+.form h3 { margin: 0 0 12px; font-size: 14px; }
+.form p { font-size: 12px; line-height: 1.6; }
+.fields { display: grid; grid-template-columns: 1fr 110px; gap: 12px; }
+.card label { display: block; font-size: 12px; color: #405148; }
+.card input, .card select { box-sizing: border-box; width: 100%; margin: 6px 0 12px; height: 40px; border: 1px solid #d5ddd8; border-radius: 8px; background: #fff; padding: 0 10px; color: #25372e; font-size: 13px; }
+.secret input { font-family: ui-monospace, monospace; }
+.actions small { color: #61756a; font-size: 11px; }
+.error, .notice { margin: 12px 0 0; font-size: 12px; line-height: 1.6; }
+.error { color: #a33f34; }
+.notice { color: #18704d; }
+@media (max-width: 520px) { .card { padding: 18px; } .heading { align-items: flex-start; flex-direction: column; gap: 10px; } .list li { align-items: flex-start; flex-wrap: wrap; } .keyInfo { min-width: 180px; } }

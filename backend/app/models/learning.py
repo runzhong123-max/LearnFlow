@@ -156,7 +156,7 @@ class AuthSession(Base):
 
 
 class AuthApiKey(Base):
-    """Revocable first-party API credentials; the secret is returned only once."""
+    """Revocable first-party API credentials, authenticated by digest."""
     __tablename__ = "auth_api_keys"
 
     id = Column(Integer, primary_key=True)
@@ -170,6 +170,15 @@ class AuthApiKey(Base):
     last_used_at = Column(DateTime, nullable=True)
     revoked_at = Column(DateTime, nullable=True, index=True)
     revoked_reason = Column(String(80), nullable=True)
+
+
+class AuthApiKeySecret(Base):
+    """Optional recoverable envelope, never part of authentication or key listings."""
+    __tablename__ = "auth_api_key_secrets"
+
+    key_id = Column(Integer, ForeignKey("auth_api_keys.id"), primary_key=True)
+    ciphertext = Column(Text, nullable=False)
+    encryption_version = Column(Integer, nullable=False)
 
 
 class AuthLoginAttempt(Base):

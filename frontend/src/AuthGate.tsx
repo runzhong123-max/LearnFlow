@@ -1,3 +1,4 @@
+import { isIpAccountConsole } from './ip-account-console'
 import { clearTabLayout } from './workspace-layout.ts'
 /// <reference types="vite/client" />
 
@@ -239,8 +240,8 @@ export default function AuthGate({ children }: AuthGateProps) {
   return (
     <main className={styles.shell}>
       <section className={styles.hero}>
-        <h1>岗课评教 比赛成果展示</h1>
-        <p className={styles.heroCopy}>登录后查看比赛成果。</p>
+        <h1>{isIpAccountConsole(window.location) ? 'LearnFlow 个人设置' : '岗课评教 比赛成果展示'}</h1>
+        <p className={styles.heroCopy}>{isIpAccountConsole(window.location) ? '登录自己的账号，签发或复制桌面端 API Key。' : '登录后查看比赛成果。'}</p>
         <div className={styles.securityNote}><span>↗</span><p><strong>统一账号登录</strong><small>一次登录，访问全部成果页面。</small></p></div>
       </section>
 

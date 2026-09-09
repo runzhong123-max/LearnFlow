@@ -27,7 +27,9 @@ def verify(config):
         return matches[0]
     server, https = ip_route(443)
     assert all(policy.get("default_sni") == IP for policy in server["tls_connection_policies"])
-    proxies = [item for item in handles(https) if item["handler"] == "reverse_proxy"]
+    outer = https["handle"][0]["routes"]
+    api = next(route for route in outer if route.get("match") == [{"path": ["/api/*"]}])
+    proxies = [item for item in handles(api) if item["handler"] == "reverse_proxy"]
     assert len(proxies) == 3
     verifier, tutor, ordinary = proxies
     assert verifier["rewrite"] == {"method": "GET", "uri": "/api/auth/api-key/verify"}
@@ -42,6 +44,24 @@ def verify(config):
     assert nested[1]["match"] == [{"path": ["/api/tutor*"]}]
     assert nested[1]["group"] == nested[2]["group"]
     assert list(handles(outer[-1]))[-1]["status_code"] == 404
+    # An independent, bounded Cookie account desk cannot proxy project/Tutor APIs.
+    desk = next(route for route in outer if route.get("match") == [{"path": ["/account-api/*"]}])
+    desk_handles = list(handles(desk))
+    assert sum(item["handler"] == "reverse_proxy" for item in desk_handles) == 1
+    assert any(item.get("status_code") == 403 for item in desk_handles)
+    assert any(item.get("status_code") == 404 for item in desk_handles)
+    def matchers(value):
+        if isinstance(value, dict):
+            if "match" in value: yield from value["match"]
+            for child in value.values(): yield from matchers(child)
+        elif isinstance(value, list):
+            for child in value: yield from matchers(child)
+    assert any("header" in item and "Authorization" in item["header"] for item in matchers(desk))
+    allowed = [item["path"] for item in matchers(desk) if "path" in item and item["path"] != ["/account-api/*"]]
+    assert len(allowed) == 1 and set(allowed[0]) == {
+        "/auth/status", "/auth/me", "/auth/csrf", "/auth/login", "/auth/logout",
+        "/auth/register", "/auth/password", "/auth/api-keys", "/auth/api-keys/*",
+    }
     _, http = ip_route(80)
     entries = list(handles(http))
     assert not any(item["handler"] == "reverse_proxy" for item in entries)

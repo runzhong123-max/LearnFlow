@@ -1,3 +1,5 @@
+> 2026-09-09 个人 Key 签发台部署增量：HTTPS `/account` 为独立账号页，`/account-api/auth/*` 仅允许列明的账号认证与 Key 管理接口，Cookie + CSRF + 密码复核，拒绝 Authorization。原 `/api/*` Key-only、根 404、HTTP 426 均保持。该条取代下文“所有非 API 路径 404”的旧描述。见 [账号台合同](../../docs/implementation/DESKTOP_IP_API_KEY.md)。
+
 # 桌面专用 IP HTTPS API 入口
 
 目标为既有 ECS `i-n4a084s5nh57syfytgfe`（cn-wuhan-lr）上的 `https://8.148.28.98`。本目录只提供待审阅的部署配置和脚本；此次开发没有上传文件、申请证书、加载配置或重启服务。

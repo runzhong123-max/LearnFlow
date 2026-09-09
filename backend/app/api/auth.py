@@ -6,7 +6,10 @@ from datetime import datetime
 from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from sqlalchemy import and_, case, func, select, update
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from fastapi.routing import APIRoute
+from sqlalchemy import and_, case, delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,11 +19,12 @@ from app.core.config import (
     settings,
 )
 from app.db.database import get_db
-from app.models.learning import AuthApiKey, AuthSession, Learner, LearnerProfile, UserAccount
+from app.models.learning import AuthApiKey, AuthApiKeySecret, AuthSession, Learner, LearnerProfile, UserAccount
 from app.models.project import Project
 from app.schemas.auth import (
     AdminAccountProjection,
     ApiKeyCreateRequest,
+    ApiKeyRevealRequest,
     ApiKeyCreateResponse,
     ApiKeyListResponse,
     AuthenticatedAccountResponse,
@@ -69,7 +73,31 @@ from app.services.learning_runtime import ensure_kernel_states, record_event
 from app.services.profile import award_career_goal
 
 
-router = APIRouter(tags=["Authentication"])
+class _AuthRoute(APIRoute):
+    def get_route_handler(self):
+        handler = super().get_route_handler()
+
+        async def protected(request: Request):
+            is_key_management = request.url.path.startswith("/api/auth/api-keys")
+            try:
+                response = await handler(request)
+            except RequestValidationError:
+                if not is_key_management:
+                    raise
+                # FastAPI's default validation detail echoes rejected input (including passwords).
+                response = JSONResponse(status_code=422, content={"detail": "密钥参数无效，请检查名称、密码和有效期"})
+            except HTTPException as error:
+                if is_key_management:
+                    error.headers = {**(error.headers or {}), "Cache-Control": "no-store"}
+                raise
+            if is_key_management:
+                response.headers["Cache-Control"] = "no-store"
+                response.headers["Pragma"] = "no-cache"
+            return response
+        return protected
+
+
+router = APIRouter(tags=["Authentication"], route_class=_AuthRoute)
 dev_router = APIRouter(prefix="/dev", tags=["Development"])
 
 
@@ -79,27 +107,50 @@ async def _cookie_account(current: CurrentLearner = Depends(get_current_learner)
     return current
 
 
+async def _verify_key_management_password(request: Request, current: CurrentLearner, db: AsyncSession, password: str):
+    account_key, ip_key = login_request_keys(request, current.account.username_normalized)
+    delay = await login_backoff_seconds(db, account_key, ip_key)
+    if delay:
+        _raise_login_backoff(delay)
+    try:
+        verification = await verify_password_async(password, current.account.password_hash)
+    except PasswordKDFBusy:
+        _raise_kdf_busy()
+    if not verification.valid:
+        delay = await record_login_failure(db, account_key, ip_key)
+        await db.commit()
+        if delay:
+            _raise_login_backoff(delay)
+        # A failed step-up must not log an otherwise authenticated browser out.
+        raise HTTPException(403, "密码不正确，请重试")
+    await clear_login_failures(db, account_key)
+
+
 @router.post("/auth/api-keys", response_model=ApiKeyCreateResponse, status_code=201)
 async def create_api_key(
     data: ApiKeyCreateRequest, request: Request, response: Response,
     current: CurrentLearner = Depends(_cookie_account), db: AsyncSession = Depends(get_db),
 ):
     from app.services.api_keys import issue_api_key, metadata
-    account_key, ip_key = login_request_keys(request, current.account.username_normalized)
-    delay = await login_backoff_seconds(db, account_key, ip_key)
-    if delay:
-        _raise_login_backoff(delay)
-    try:
-        verification = await verify_password_async(data.password, current.account.password_hash)
-    except PasswordKDFBusy:
-        _raise_kdf_busy()
-    if not verification.valid:
-        await _reject_login(db, account_key, ip_key)
+    await _verify_key_management_password(request, current, db, data.password)
     token, key = await issue_api_key(db, current.account, data.name, data.expires_in_days)
-    await clear_login_failures(db, account_key)
     await db.commit()
     response.headers["Cache-Control"] = "no-store"
-    return {"api_key": token, "metadata": metadata(key)}
+    return {"api_key": token, "metadata": metadata(key, copy_available=True)}
+
+
+@router.post("/auth/api-keys/{key_id}/reveal", response_model=ApiKeyCreateResponse)
+async def reveal_api_key(
+    key_id: int, data: ApiKeyRevealRequest, request: Request, response: Response,
+    current: CurrentLearner = Depends(_cookie_account), db: AsyncSession = Depends(get_db),
+):
+    from app.services.api_keys import reveal_api_key as reveal_owned_key, metadata
+    await _verify_key_management_password(request, current, db, data.password)
+    token, key = await reveal_owned_key(db, current.account, key_id)
+    await db.commit()
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    return {"api_key": token, "metadata": metadata(key, copy_available=True)}
 
 
 @router.get("/auth/api-keys", response_model=ApiKeyListResponse)
@@ -112,7 +163,12 @@ async def list_api_keys(
         AuthApiKey.user_id == current.account.id,
     ).order_by(AuthApiKey.created_at.desc(), AuthApiKey.id.desc()))).scalars().all()
     response.headers["Cache-Control"] = "no-store"
-    return {"api_keys": [metadata(key) for key in keys]}
+    recoverable = set((await db.execute(select(AuthApiKeySecret.key_id).join(
+        AuthApiKey, AuthApiKey.id == AuthApiKeySecret.key_id,
+    ).where(AuthApiKey.user_id == current.account.id))).scalars().all())
+    now = datetime.utcnow()
+    return {"api_keys": [metadata(key, copy_available=key.id in recoverable and not key.revoked_at
+        and key.expires_at > now and key.auth_epoch == current.account.auth_epoch) for key in keys]}
 
 
 @router.delete("/auth/api-keys/{key_id}")
@@ -516,6 +572,9 @@ async def change_password(
         AuthApiKey.user_id == current.account.id,
         AuthApiKey.revoked_at.is_(None),
     ).values(revoked_at=now, revoked_reason="password_changed"))
+    await db.execute(delete(AuthApiKeySecret).where(AuthApiKeySecret.key_id.in_(
+        select(AuthApiKey.id).where(AuthApiKey.user_id == current.account.id),
+    )))
     await db.execute(update(AuthSession).where(
         AuthSession.user_id == current.account.id,
         AuthSession.revoked_at.is_(None),

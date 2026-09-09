@@ -73,6 +73,8 @@ import {
 import ComposerCapabilityPicker from './ComposerCapabilityPicker'
 import AuthGate, { type AuthGateSession } from './AuthGate'
 import AccountModelSettings from './AccountModelSettings'
+import PersonalApiKeys from './PersonalApiKeys'
+import { isIpAccountConsole } from './ip-account-console'
 import {
   activeLearningPlanProjection,
   closeLearningPlan,
@@ -4320,7 +4322,13 @@ const ConversionPage = lazy(() => import('./WorkTaskConversionPage.tsx'))
 const isConversionPage = window.location.pathname === '/convert' || window.location.hostname === 'w2ltask.learnflow.club'
 const publicVisualHub = ['/visualize', '/visual-hub'].includes(window.location.pathname)
 void initializeRuntimeClient().then(() => root.render(
-  <AuthGate>{auth => isConversionPage
+  <AuthGate>{auth => isIpAccountConsole(window.location)
+    ? <main className="settings-page" style={{ maxWidth: 800, margin: '0 auto', padding: '36px 20px' }}>
+      <div className="settings-intro"><h1>LearnFlow 个人设置</h1><p>{auth.account.display_name} · @{auth.account.username}</p><p>签发个人 API Key，复制到 LearnFlow 桌面端即可连接。</p></div>
+      <PersonalApiKeys key={auth.account.id} />
+      <button type="button" className="button-secondary" style={{ marginTop: 20 }} onClick={() => { void auth.signOut() }}>退出账号</button>
+    </main>
+    : isConversionPage
     ? <Suspense fallback={<p>正在载入工作任务转换…</p>}><ConversionPage key={`conversion:${auth.account.learner_id}`} auth={auth}/></Suspense>
     : publicVisualHub
     ? <><nav style={{padding:'16px 26px'}}><a href="/">← 返回学习空间</a></nav><Suspense fallback={<p>正在载入图解库…</p>}><VisualHubPage key={`visual-hub:${auth.account.learner_id}`}/></Suspense></>

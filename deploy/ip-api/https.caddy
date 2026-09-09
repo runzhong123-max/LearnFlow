@@ -21,6 +21,28 @@ https://8.148.28.98 {
             }
         }
     }
+    # Browser account desk. It never accepts Authorization credentials and has
+    # only account auth/key endpoints, not a cookie bypass to desktop /api/*.
+    handle_path /account-api/* {
+        @has_authorization header Authorization *
+        respond @has_authorization 403
+        @account_auth path /auth/status /auth/me /auth/csrf /auth/login /auth/logout /auth/register /auth/password /auth/api-keys /auth/api-keys/*
+        handle @account_auth {
+            rewrite * /api{uri}
+            reverse_proxy learnflow-backend:8010 {
+                # Domain cookies cannot be stored for an IP host. Keep the
+                # existing HttpOnly/Secure/SameSite flags; only drop Domain.
+                header_down Set-Cookie "(?i); Domain=[^;]+" ""
+            }
+        }
+        handle {
+            respond 404
+        }
+    }
+    @account_page path /account /account/ /assets/* /favicon.ico /favicon.svg /site-session.js
+    handle @account_page {
+        reverse_proxy learnflow-frontend:4174
+    }
     handle {
         respond 404
     }

@@ -8,6 +8,7 @@ import {
   type FormalAdminAccount,
 } from './formal-runtime.ts'
 import styles from './AccountModelSettings.module.css'
+import PersonalApiKeys from './PersonalApiKeys'
 
 type AccountModelSettingsProps = {
   account: FormalAccount
@@ -41,7 +42,7 @@ export default function AccountModelSettings({ account, onSignOut }: AccountMode
       <section className={styles.card} aria-labelledby="account-settings-title">
         <div className={styles.heading}>
           <span>01</span>
-          <div><h2 id="account-settings-title">账号与额度</h2><p>模型和 API Key 由平台后台统一管理，浏览器与个人账号不保存供应商密钥。</p></div>
+          <div><h2 id="account-settings-title">账号与额度</h2><p>查看账号与使用额度。连接桌面端所需的个人 API Key 可在下方管理。</p></div>
           <i>{account.role === 'admin' ? '管理员' : '学习者'}</i>
         </div>
         <div className={styles.accountRow}>
@@ -54,12 +55,14 @@ export default function AccountModelSettings({ account, onSignOut }: AccountMode
       <section className={styles.card} aria-labelledby="platform-model-title">
         <div className={styles.heading}>
           <span>02</span>
-          <div><h2 id="platform-model-title">平台智能服务</h2><p>当前账户直接使用后台接入的模型。模型名称、服务地址和 API Key 均不可由用户覆盖。</p></div>
+          <div><h2 id="platform-model-title">平台智能服务</h2><p>当前账户直接使用后台接入的模型。模型名称、服务地址和供应商密钥由平台维护。</p></div>
           <i className={styles.configured}>后台托管</i>
         </div>
         <p className={styles.notice}>当前额度：{quotaLabel}。首发阶段所有账户不设上限，后续可由后台调整额度而无需用户更换 API Key。</p>
         {error ? <p className={styles.error} role="alert">{error}</p> : null}
       </section>
+
+      <PersonalApiKeys key={account.id} />
 
       {account.role === 'admin' ? (
         <section className={styles.card} aria-labelledby="admin-account-title">

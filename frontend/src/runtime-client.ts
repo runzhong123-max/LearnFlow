@@ -1,3 +1,4 @@
+import { ipAccountApiUrl } from './ip-account-console.ts'
 import { usesLocalDesktopRuntime } from './runtime-surface.ts'
 import { AI_LATENCY_BUDGETS } from './latency-budgets.ts'
 
@@ -73,6 +74,9 @@ export function isolateLegacyWorkspaceCache(storage: WorkspaceStorage) {
 }
 
 export function resolveRuntimeUrl(input: RequestInfo | URL) {
+  if (runtime.kind === 'web' && typeof input === 'string' && typeof window !== 'undefined' && window.location) {
+    return ipAccountApiUrl(input, window.location)
+  }
   if (runtime.kind !== 'desktop' || !runtime.apiBaseUrl || typeof input !== 'string' || !input.startsWith('/api')) {
     return input
   }

@@ -44,7 +44,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-09.4"
+REGISTRY_VERSION = "2026-09-09.5"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Source-data contracts, not Agent-callable tools or learner-state writers.
@@ -54,8 +54,8 @@ DATA_CONTRACTS = {
         "schema_version": "learnflow.desktop-api-key.v1", "owner": "tutor_agent", "origin": "builtin",
         "mode": "scoped_account_authentication", "lifecycle": "implemented",
         "authority_path": "docs/implementation/DESKTOP_IP_API_KEY.md",
-        "binding_ids": ['py:auth.api_key_identity', 'api:auth.api_key_create', 'api:auth.api_key_verify'], "kernel_reads": [], "kernel_write_path": "none",
-        "compatibility": "additive account-bound hashed credentials; IP HTTPS key-only gateway; legacy browser cookies and explicit local workspace retained; credentials never become learning evidence",
+        "binding_ids": ['py:auth.api_key_identity', 'api:auth.api_key_create', 'api:auth.api_key_verify', 'api:auth.api_key_reveal', 'api:auth.api_key_list', 'api:auth.api_key_revoke', 'frontend:auth.api_key_console', 'frontend:auth.ip_account_console'], "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "additive account-bound hashed credentials with optional purpose-bound encrypted copy envelopes and password-gated web settings; IP HTTPS key-only gateway; legacy browser cookies and explicit local workspace retained; credentials never become learning evidence",
     },
     "work_task_conversion_context_v1": {
         "schema_version": "learnflow.work-task-conversion-context.v1", "owner": "tutor_agent", "origin": "builtin",
@@ -1489,6 +1489,9 @@ _PYTHON_MEMBER_BINDING_TARGETS = {
 
 
 _API_BINDING_TARGETS = {
+    "api:auth.api_key_reveal": ("app.api.auth", "/auth/api-keys/{key_id}/reveal", "POST", "reveal_api_key"),
+    "api:auth.api_key_list": ("app.api.auth", "/auth/api-keys", "GET", "list_api_keys"),
+    "api:auth.api_key_revoke": ("app.api.auth", "/auth/api-keys/{key_id}", "DELETE", "revoke_api_key"),
     "api:auth.api_key_create": ("app.api.auth", "/auth/api-keys", "POST", "create_api_key"),
     "api:auth.api_key_verify": ("app.api.auth", "/auth/api-key/verify", "GET", "verify_api_key"),
     "api:work_task_conversion.create": ("app.api.work_task_conversions", "/work-task-conversions", "POST", "create_conversion"),
@@ -1605,6 +1608,8 @@ _API_BINDING_TARGETS = {
 
 
 _FRONTEND_HANDLER_TARGETS = {
+    "frontend:auth.ip_account_console": ("frontend/src/ip-account-console.ts", "isIpAccountConsole", ""),
+    "frontend:auth.api_key_console": ("frontend/src/PersonalApiKeys.tsx", "PersonalApiKeys", ""),
     "frontend:role_jobs.enqueue": ("apps/role-atlas/lib/jobs/dispatch.ts", "enqueueRoleJob", ""),
     "frontend:role_jobs.dispatch": ("apps/role-atlas/app/api/internal/role-jobs/[jobId]/route.ts", "POST", ""),
     "frontend:role_jobs.resume": ("apps/role-atlas/app/api/projects/[projectId]/jobs/[jobId]/resume/route.ts", "POST", ""),

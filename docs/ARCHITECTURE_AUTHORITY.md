@@ -1,5 +1,7 @@
 # LearnFlow 架构权威与维护边界
 
+Contract impact（2026-09-09.5）：Web 设置新增个人 API Key 签发、再次复制和撤销台。认证仍比对摘要；新增独立 AES-GCM 加密副本表支持 Cookie + CSRF + 密码复核后的本人读取。旧 Key 不回填，旧接口增量兼容；密码错误使用 403 保留现有登录。无 Agent、学习事件或五核变化。详见 [个人 Key 合同](implementation/DESKTOP_IP_API_KEY.md)。
+
 Contract impact（2026-09-09.2 / 2026-09-09.2-desktop）：桌面默认通过裸公网 IP 的可信 HTTPS 与账户绑定 API Key 连接。新增独立 hash-only 认证表、签发/撤销及 key-only 网关合同；旧浏览器 Cookie 与本地工作区兼容，账号/learner ownership 沿用原入口。鉴权不写学习事件或五核，三类 Agent、评分与核心共享 schema 不变。详见 [IP 与 API Key 连接契约](implementation/DESKTOP_IP_API_KEY.md)。
 
 Contract impact（2026-09-09.1）：网页学习规划在既有对话工作台内增加资料选择界面，复用 source_ingestion、项目来源和个人资料库 API，来源搜索复用现有 Tutor 工具。学习型规划先选资料，项目 Tutor 复用已绑定目标与关卡；普通对话侧重方向和长期计划草案。不新增 Agent、事件、五核字段或数据库迁移；桌面入口本轮不启用。见 implementation/PLANNING_RESOURCE_WORKBENCH.md。
