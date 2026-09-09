@@ -210,7 +210,7 @@ def docx():
             p.paragraph_format.space_after=Pt(1);p.paragraph_format.line_spacing=1.0;p.paragraph_format.keep_with_next=not line.startswith('返回')
             for r in p.runs:r.font.size=Pt(9)
         elif line.startswith('# '):
-            p=doc.add_paragraph(line[2:].replace('记忆的时序','记忆的\n时序'),'Title');p.alignment=WD_ALIGN_PARAGRAPH.CENTER
+            p=doc.add_paragraph(line[2:].replace('教学的证据','教学的\n证据'),'Title');p.alignment=WD_ALIGN_PARAGRAPH.CENTER
         elif line.startswith('## '):
             doc.add_paragraph(line[3:],'Heading 1');ref=line=='## 参考文献'
         elif line.startswith('### '):doc.add_paragraph(line[4:],'Heading 2')

@@ -1,5 +1,5 @@
 {
-  "scope": "Chinese literature review expansion with DeepTutor; retained experiments unchanged",
+  "scope": "Chinese narrative reframed around evidence-driven learner memory; retained experiments unchanged",
   "product_contract_impact": "none",
   "new_experiments_run": false,
   "product_tests_rerun": false,
@@ -24,7 +24,7 @@
       "all reference entries",
       "no clipping or overlap"
     ],
-    "final_render_equivalence": "All 17 pages reviewed; final render differs only on page 15 from reviewed predecessor, re-inspected after restoring the unchanged registry version."
+    "final_render_equivalence": "All 17 pages of the rebuilt narrative version individually inspected."
   },
   "figure_formats": [
     "editable SVG",
@@ -33,10 +33,10 @@
   ],
   "source_validation_scope": "Retained experiment snapshot 0da6615eeb2a5dded4101535e8534cd5494b43a9; not concurrent workspace changes.",
   "files_sha256": {
-    "LearnFlow_Educational_Memory_Manuscript_ZH.docx": "7f1a0f6602dbdf9a144f5f6beb3b183270ee9a4c2dc0f0fec0397bebe3179b59",
-    "manuscript_zh.md": "0a595556efd6d7c53b976bf93195874bc0aa1d7dc577aad78687d9f5cd2c48c6",
-    "build_paper_zh.py": "f7d4572e99ca74651d5e5c91b2ab1fb3228ab9bff978869bbdbfcbd2f86632c1",
-    "图表设计与复现说明.md": "4735e4f4b1511b326e84c2645ced27bd61b9a49139642a104499fd5e75603c29",
+    "LearnFlow_Educational_Memory_Manuscript_ZH.docx": "6f827a638f56d8fa15ce8a3def16089736db58b46d3e046ab0c257f0903152e7",
+    "manuscript_zh.md": "625e5139adf65d63372dcdff4e603532c9773c597f18a1842f8f4d51cdf99592",
+    "build_paper_zh.py": "cd1c4c817cbb0809907b8e7dbf75a5162ac0dc3e9f57cc3804d40d8f0a470e3d",
+    "图表设计与复现说明.md": "0392bd12358d6d44d4efafaa7f9f3d813b8df14034cafd7d986d7ee7a4d6c171",
     "figures_zh/fig1_architecture.pdf": "9fa7a3db7a117c848b6b3e34189fa7110420bb35530776a3a02436785192f43d",
     "figures_zh/fig1_architecture.png": "ac153b05900b510e924240cbb55283ce39760de0929548795ff1e7073fa0ee5e",
     "figures_zh/fig1_architecture.svg": "0ca44495524d423574429698d548876333371be74137c8da01886c41921a5f7a",
@@ -59,7 +59,13 @@
     "primary_source_checks": "passed within disclosed public-access scope",
     "deeptutor_version": "2604.26962v1",
     "external_results_reproduced": false,
-    "methods_results_discussion_comparison": "unchanged except table numbers",
+    "methods_results_discussion_comparison": "Narrative and results order revised; all retained results body paragraphs and tables 2-5 unchanged.",
     "all_12_figure_files": "unchanged"
+  },
+  "narrative_validation": {
+    "experiment_tables_2_to_5": "byte-identical",
+    "results_body_paragraphs": "all preserved verbatim; reordered sections",
+    "references_and_declarations": "byte-identical",
+    "new_experiments": false
   }
 }
