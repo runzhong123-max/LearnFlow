@@ -1,0 +1,10 @@
+import type { StaticRolePackageBundle } from "../../lib/packages/types";
+export type LaunchPackageReference = { packageId: string; packageVersion: string; snapshotId: string; rootHash: string };
+export type LaunchTaskReference = { nodeId: string; label: string; summary: string; summaryTruncated?: boolean };
+export const MAX_LAUNCH_TOKEN_LENGTH: 8192;
+export const MAX_TASK_SUMMARY_CHARACTERS: 400;
+export function validateLaunchBundle(bundle: StaticRolePackageBundle, expectedRef: LaunchPackageReference): void;
+export function selectedLaunchTask(bundle: StaticRolePackageBundle, nodeId: unknown, expectedRef: LaunchPackageReference): LaunchTaskReference;
+export function normalizeLaunchTask(task: LaunchTaskReference): LaunchTaskReference;
+export function encodeLaunchPayload(payload: object, secret: string): string;
+export function conversionLaunchUrl(baseValue: string, token: string): string;

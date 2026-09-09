@@ -1,16 +1,21 @@
+import { enqueueRoleJob, isDispatchedRoleJob } from "@/lib/jobs/dispatch";
+import { rememberResearchRequester } from "@/lib/research-collection/store";
 import { startRoleJobExecution } from "@/lib/jobs/execution";
 import { projectVersionHeadState } from "@/lib/versioning/commit";
-import { authorizeApiRequest } from "@/lib/access";
+import { authorizeApiRequest, requestActor } from "@/lib/access";
+import { requireConfirmedIntake } from "@/lib/intake/server";
+import { intakeBuildGuard } from "@/lib/intake/build-guard";
 import { z } from "zod/v4";
-import { createModelInvoker } from "@/lib/agent/model";
+import { createRecordedModelInvoker } from "@/lib/research-collection/model";
 import { createColdStartSkill } from "@/lib/build/graph";
+import { assertTaskKernel } from "@/lib/build/completion";
 import type { BuildEvent } from "@/lib/build/events";
 import { coldStartRequestSchema, type ColdStartBuildResult } from "@/lib/build/types";
 import { resolveProviderConfig, resolveSearchProviderConfig } from "@/lib/server-runtime-config";
 import { workerRuntimeBindings } from "@/lib/worker-runtime-bindings";
 import { appendBuildEvent, completeBuildStageRun, completeFastBuildSnapshot, failBuildRun, getConversation, getProjectWorkspace, startBuildRun } from "@/lib/projects/repository";
 import { createDurableJobStream, durableJobResponse } from "@/lib/jobs/runtime";
-import { appendRoleJobEvent, assertRoleJobLease, checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob } from "@/lib/jobs/repository";
+import { lastRoleEventSequence, appendRoleJobEvent, assertRoleJobLease, checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob } from "@/lib/jobs/repository";
 
 export const runtime = "edge";
 
@@ -28,6 +33,7 @@ function pruneWorkItemCache(limit = 800) {
 
 const requestSchema = z.object({
   build: coldStartRequestSchema,
+  intakeConfirmation: z.object({ revisionId: z.string().min(4).max(220), contentHash: z.string().regex(/^[a-f0-9]{64}$/) }).optional(),
   conversationId: z.string().min(4).max(100),
   providerConfig: z.unknown().optional(),
   searchConfig: z.unknown().optional(),
@@ -61,6 +67,7 @@ function failureEvent(input: { runId?: string; projectId?: string }, error: unkn
 export async function POST(request: Request) {
   const denied = await authorizeApiRequest(request);
   if (denied) return denied;
+  await rememberResearchRequester(request);
   const contentLength = Number(request.headers.get("content-length") || 0);
   if (contentLength > 800_000) return Response.json({ ok: false, error: "冷启动请求体过大。" }, { status: 413 });
 
@@ -71,9 +78,21 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, error: "冷启动项目简报、资料或模型配置无效。", detail: error instanceof Error ? error.message : undefined }, { status: 400 });
   }
 
+  // Only the saved user confirmation defines the research brief. Workers replay sealed, immutable input.
+  if (!isDispatchedRoleJob(request)) {
+    if (!parsed.intakeConfirmation) return Response.json({ error: "请先在右侧对话确认岗位说明，再开始生成图谱。", code: "INTAKE_CONFIRMATION_REQUIRED" }, { status: 409 });
+    try {
+      const confirmed = await requireConfirmedIntake({ actor: await requestActor(request), projectId: parsed.build.projectId, conversationId: parsed.conversationId, runId: parsed.build.runId, ...parsed.intakeConfirmation });
+      parsed.build = coldStartRequestSchema.parse({ ...parsed.build, roleTitle: confirmed.roleTitle, roleDescription: confirmed.description, market: confirmed.market, sources: confirmed.sources });
+      parsed.webResearch = true;
+      parsed.reuseProjectSources = false;
+    } catch {
+      return Response.json({ error: "岗位说明已更新或尚未确认，请查看最新说明后再确定。", code: "INTAKE_CONFIRMATION_STALE" }, { status: 409 });
+    }
+  }
   let buildRequest = parsed.build;
   let existingResearchReport: ColdStartBuildResult["sources"]["research"];
-  if (parsed.reuseProjectSources) {
+  if (parsed.reuseProjectSources && !isDispatchedRoleJob(request)) {
     const workspace = await getProjectWorkspace(parsed.build.projectId).catch(() => null);
     const previous = workspace?.result;
     if (!previous) return Response.json({ ok: false, error: "当前项目还没有可复用的来源索引。" }, { status: 409 });
@@ -95,6 +114,7 @@ export async function POST(request: Request) {
           content,
           kind: asset.kind,
           locator: asset.locator,
+          attachmentId: asset.attachmentId,
           observedAt: asset.observedAt,
           publisher: asset.publisher,
           domain: asset.domain,
@@ -118,7 +138,7 @@ export async function POST(request: Request) {
   try {
     const bindings = workerRuntimeBindings();
     providerConfig = resolveProviderConfig(parsed.providerConfig, bindings);
-    searchConfig = parsed.reuseProjectSources || !parsed.webResearch
+    searchConfig = !parsed.webResearch
       ? undefined
       : resolveSearchProviderConfig(parsed.searchConfig, bindings);
   } catch (error) {
@@ -138,17 +158,22 @@ export async function POST(request: Request) {
   if (buildConversation.conversation.mode !== "iteration") return Response.json({ error: "请先切换到迭代态再运行工具。", code: "ITERATION_MODE_REQUIRED" }, { status: 409 });
 
   const jobOwner = crypto.randomUUID();
-  const job = await claimRoleJob({
+  const claimInput = {
     conversationId: parsed.conversationId,
     baseVersionId: buildConversation.conversation.versionId || undefined,
     id: buildRequest.runId,
-    kind: "cold_start",
+    kind: "cold_start" as const,
     threadId: `${buildRequest.projectId}:${buildRequest.runId}`,
     projectId: buildRequest.projectId,
     phase: "kernel",
     owner: jobOwner,
-    payload: { build: buildRequest, conversationId: parsed.conversationId, webResearch: parsed.webResearch },
-  }).catch(() => null);
+    payload: { build: buildRequest, conversationId: parsed.conversationId, webResearch: parsed.webResearch, ...(parsed.intakeConfirmation ? { intakeConfirmation: parsed.intakeConfirmation } : {}) },
+  };
+  const insertionFence = parsed.intakeConfirmation && !isDispatchedRoleJob(request)
+    ? intakeBuildGuard({ ...parsed.intakeConfirmation, projectId: buildRequest.projectId, conversationId: parsed.conversationId, runId: buildRequest.runId, subjectId: (await requestActor(request)).subjectId }) : undefined;
+  const queued = await enqueueRoleJob(request, claimInput, { ...parsed, build: buildRequest }, { forceDurable: true, insertionFence });
+  if (queued) return queued;
+  const job = await claimRoleJob(claimInput).catch(() => null);
   if (!job?.claimed) return Response.json({ ok: false, code: "JOB_LEASE_HELD", error: "同一冷启动仍由另一个执行器处理。" }, { status: 409 });
 
   try {
@@ -162,7 +187,8 @@ export async function POST(request: Request) {
   const execution = startRoleJobExecution(buildRequest.runId, jobOwner);
 
   pruneWorkItemCache();
-  const graph = createColdStartSkill(createModelInvoker(providerConfig), {
+  const graph = createColdStartSkill(createRecordedModelInvoker(providerConfig, { projectId: buildRequest.projectId, runId: buildRequest.runId }), {
+    initialSeq: await lastRoleEventSequence(buildRequest.runId),
     searchConfig,
     sourceLimit: 16,
     existingResearchReport,
@@ -191,6 +217,7 @@ export async function POST(request: Request) {
       }
       await assertRoleJobLease(buildRequest.runId, jobOwner);
       const kernel = buildEvent.payload.result as ColdStartBuildResult;
+      assertTaskKernel(kernel);
       await journal.commit(buildEvent, async () => {
         try {
           await checkpointRoleJob({ jobId: buildRequest.runId, owner: jobOwner, kind: "cold_start", phase: "kernel.commit", state: { snapshotId: kernel.snapshot.id, eventSeq: buildEvent.seq } });

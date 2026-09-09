@@ -1,0 +1,34 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { bundledRoleSnapshot } from "@/lib/snapshots/bundled-role-adapter";
+import { applyInspectionToSnapshot, inspectSnapshot } from "@/lib/iteration/inspector";
+import { createIterationContract, discoverIterationOpportunities, planIterationWork } from "@/lib/iteration/planner";
+import type { SnapshotIterationRequest } from "@/lib/iteration/types";
+
+test("少量已有能力不能掩盖其他任务的能力和单元缺口，风险修复可发现并补研", () => {
+  const base = bundledRoleSnapshot();
+  const tasks = base.semantic.nodes.filter(node => node.type === "task" && node.lifecycle !== "rejected");
+  const capability = base.semantic.nodes.find(node => node.type === "capability")!;
+  const unit = base.semantic.nodes.find(node => node.type === "capability_unit")!;
+  base.semantic.edges = base.semantic.edges.filter(edge => edge.type !== "requires_capability" && edge.type !== "contains");
+  base.semantic.edges.push({ id: "edge:task-capability", type: "requires_capability", source: tasks[0].id, target: capability.id, lifecycle: "candidate", confidence: 0.8, evidenceBindingIds: [], evidenceSegmentIds: [] });
+  const before = inspectSnapshot(base);
+  const taskGaps = before.findings.filter(finding => finding.code === "TASK_CAPABILITY_GAP");
+  const unitGaps = before.findings.filter(finding => finding.code === "TASK_CAPABILITY_UNIT_GAP");
+  assert.equal(taskGaps.length, tasks.length - 1);
+  assert.equal(unitGaps.length, 1);
+  assert.deepEqual(unitGaps[0].targetIds, [tasks[0].id]);
+  assert.ok(!taskGaps.some(finding => finding.targetIds.includes(tasks[0].id)), "任务有能力但无单元时只报单元链缺口");
+  const request: SnapshotIterationRequest = { runId: "capability-gap-repair", snapshotRef: { snapshotId: base.snapshot.id }, mode: "risk_repair", initiativeProfile: "autonomous", prompt: "", targetIds: [], supplementalSources: [], webResearch: true, maxRounds: 2, sourceLimit: 12, maxWorkItems: 16 };
+  const contract = createIterationContract(request, base);
+  const opportunities = discoverIterationOpportunities({ request, contract, inspection: { ...before, findings: [...taskGaps, ...unitGaps] } });
+  const workItems = planIterationWork({ runId: request.runId, opportunities, contract });
+  assert.equal(workItems.length, tasks.length);
+  assert.ok(workItems.every(item => item.kind === "repair" && item.requiresResearch));
+  const saved = applyInspectionToSnapshot(base, before);
+  saved.semantic.edges.push({ id: "edge:capability-unit", type: "contains", source: capability.id, target: unit.id, lifecycle: "candidate", confidence: 0.8, evidenceBindingIds: [], evidenceSegmentIds: [] });
+  const after = inspectSnapshot(saved);
+  assert.ok(!after.findings.some(finding => ["TASK_CAPABILITY_GAP", "TASK_CAPABILITY_UNIT_GAP"].includes(finding.code) && finding.targetIds.includes(tasks[0].id)), "修复后重算，不从历史告警复活");
+  assert.equal(after.findings.filter(finding => finding.code === "TASK_CAPABILITY_GAP").length, tasks.length - 1);
+  assert.ok(after.findings.some(finding => finding.code === "CAPABILITY_NOT_CROSS_TASK" && finding.targetIds.includes(capability.id)), "跨任务抽象质量检查保留独立语义");
+});

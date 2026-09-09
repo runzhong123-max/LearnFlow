@@ -1,0 +1,788 @@
+{
+  "experiment": "education-memory-ablation.v1",
+  "measurement_date": "2026-09-08",
+  "data_kind": "fixed synthetic educational trajectories; not real learner outcomes",
+  "hosts": {
+    "web": {
+      "source_revision": "cb0b3d0304fcdfcbf0cff183c3d2769196fa1dec",
+      "snapshot_count": 164,
+      "trial_count": 4592,
+      "formation": [
+        284,
+        300
+      ],
+      "formation_failures": [
+        {
+          "snapshot": "0:natural_time_probe",
+          "check": "形成:指导:human.time_budget"
+        },
+        {
+          "snapshot": "0:natural_hour_probe",
+          "check": "形成:指导:human.time_budget"
+        },
+        {
+          "snapshot": "0:natural_fatigue_probe",
+          "check": "形成:指导:human.support"
+        },
+        {
+          "snapshot": "0:duplicate_question_ids",
+          "check": "相同题面换ID不应形成稳定掌握"
+        },
+        {
+          "snapshot": "1:natural_time_probe",
+          "check": "形成:指导:human.time_budget"
+        },
+        {
+          "snapshot": "1:natural_hour_probe",
+          "check": "形成:指导:human.time_budget"
+        },
+        {
+          "snapshot": "1:natural_fatigue_probe",
+          "check": "形成:指导:human.support"
+        },
+        {
+          "snapshot": "1:duplicate_question_ids",
+          "check": "相同题面换ID不应形成稳定掌握"
+        },
+        {
+          "snapshot": "2:natural_time_probe",
+          "check": "形成:指导:human.time_budget"
+        },
+        {
+          "snapshot": "2:natural_hour_probe",
+          "check": "形成:指导:human.time_budget"
+        },
+        {
+          "snapshot": "2:natural_fatigue_probe",
+          "check": "形成:指导:human.support"
+        },
+        {
+          "snapshot": "2:duplicate_question_ids",
+          "check": "相同题面换ID不应形成稳定掌握"
+        },
+        {
+          "snapshot": "3:natural_time_probe",
+          "check": "形成:指导:human.time_budget"
+        },
+        {
+          "snapshot": "3:natural_hour_probe",
+          "check": "形成:指导:human.time_budget"
+        },
+        {
+          "snapshot": "3:natural_fatigue_probe",
+          "check": "形成:指导:human.support"
+        },
+        {
+          "snapshot": "3:duplicate_question_ids",
+          "check": "相同题面换ID不应形成稳定掌握"
+        }
+      ],
+      "measured_last_states": {
+        "event_count": 288,
+        "mutation_count": 372,
+        "fact_count": 572,
+        "attempt_count": 32,
+        "module_count": 20,
+        "claim_count": 20
+      },
+      "repeat_instability": [],
+      "aggregate": [
+        {
+          "variant": "full",
+          "budget": 1800,
+          "delivery_positive": [
+            72,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            4,
+            24
+          ],
+          "latency_median_ms": 22.140687506180257,
+          "packet_characters_mean": 7176.292682926829,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "no_guidance",
+          "budget": 1800,
+          "delivery_positive": [
+            12,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            4,
+            24
+          ],
+          "latency_median_ms": 20.826063002459705,
+          "packet_characters_mean": 6075,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "recent_facts",
+          "budget": 1800,
+          "delivery_positive": [
+            68,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            4,
+            24
+          ],
+          "latency_median_ms": 26.451562502188608,
+          "packet_characters_mean": 6946.219512195122,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "facts_only",
+          "budget": 1800,
+          "delivery_positive": [
+            72,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            4,
+            24
+          ],
+          "latency_median_ms": 33.509686996694654,
+          "packet_characters_mean": 7126.463414634146,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "no_memory",
+          "budget": 3200,
+          "delivery_positive": [
+            0,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            0,
+            24
+          ],
+          "latency_median_ms": 5.610979482298717,
+          "packet_characters_mean": 73,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "full",
+          "budget": 3200,
+          "delivery_positive": [
+            88,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            8,
+            24
+          ],
+          "latency_median_ms": 20.030582963954657,
+          "packet_characters_mean": 8848.091463414634,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "no_memory",
+          "budget": 1800,
+          "delivery_positive": [
+            0,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            0,
+            24
+          ],
+          "latency_median_ms": 5.621812510071322,
+          "packet_characters_mean": 73,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "no_head_cache",
+          "budget": 1800,
+          "delivery_positive": [
+            72,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            4,
+            24
+          ],
+          "latency_median_ms": 26.11291647190228,
+          "packet_characters_mean": 7176.341463414634,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "facts_only",
+          "budget": 3200,
+          "delivery_positive": [
+            84,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            8,
+            24
+          ],
+          "latency_median_ms": 33.902312483405694,
+          "packet_characters_mean": 8821.798780487805,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "recent_facts",
+          "budget": 3200,
+          "delivery_positive": [
+            80,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            12,
+            24
+          ],
+          "latency_median_ms": 26.776041981065646,
+          "packet_characters_mean": 7785.40243902439,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "no_head_cache",
+          "budget": 3200,
+          "delivery_positive": [
+            88,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            8,
+            24
+          ],
+          "latency_median_ms": 28.117000008933246,
+          "packet_characters_mean": 8848.140243902439,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "no_relations",
+          "budget": 1800,
+          "delivery_positive": [
+            72,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            4,
+            24
+          ],
+          "latency_median_ms": 16.496832977281883,
+          "packet_characters_mean": 7140.280487804878,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "no_relations",
+          "budget": 3200,
+          "delivery_positive": [
+            88,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            8,
+            24
+          ],
+          "latency_median_ms": 16.538021009182557,
+          "packet_characters_mean": 8837.128048780487,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "no_guidance",
+          "budget": 3200,
+          "delivery_positive": [
+            24,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            8,
+            24
+          ],
+          "latency_median_ms": 22.023395489668474,
+          "packet_characters_mean": 7726.664634146341,
+          "budget_failures": 0,
+          "audit_violations": 0
+        }
+      ],
+      "raw_checks_recomputed": 4704,
+      "environment": {
+        "python_version": "3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]",
+        "dependencies": {
+          "SQLAlchemy": "2.0.51",
+          "pydantic": "2.13.4",
+          "fastapi": "0.141.1",
+          "aiosqlite": "0.22.1"
+        },
+        "clock": "virtual business UTC; ORM audit creation timestamps remain real",
+        "network": "socket.connect and socket.connect_ex rejected; no LLM keys",
+        "status": "completed",
+        "source_changes": [],
+        "blocked_network_attempts": 0
+      },
+      "source_file_count": 182,
+      "raw_file_sha256": {
+        "manifest.json": "a856bff73cdd1a6cc3e35c5a0f39f38c3a8a9742acd1961be2e236d909dbc59e",
+        "operations.json": "885acdbc209343ebcd40d5e10839907ebcbaa70d75bca67693d249bc2f228852",
+        "snapshots.json": "6fb2d108bc0c6a00dd2820726b175debcd5f929303d767b5665d922452b16e1b",
+        "trials.jsonl": "14fe4e2a463609d1645f6b94fc31cc063d5316b8dae0d92a34ba791b048ddb2d",
+        "summary.json": "c617bab69a004d4319206b0f9e479f912badad5e8eee953958894a93442e7993"
+      }
+    },
+    "desktop": {
+      "source_revision": "cb0b3d0304fcdfcbf0cff183c3d2769196fa1dec",
+      "snapshot_count": 164,
+      "trial_count": 4592,
+      "formation": [
+        284,
+        300
+      ],
+      "formation_failures": [
+        {
+          "snapshot": "0:natural_time_probe",
+          "check": "形成:指导:human.time_budget"
+        },
+        {
+          "snapshot": "0:natural_hour_probe",
+          "check": "形成:指导:human.time_budget"
+        },
+        {
+          "snapshot": "0:natural_fatigue_probe",
+          "check": "形成:指导:human.support"
+        },
+        {
+          "snapshot": "0:duplicate_question_ids",
+          "check": "相同题面换ID不应形成稳定掌握"
+        },
+        {
+          "snapshot": "1:natural_time_probe",
+          "check": "形成:指导:human.time_budget"
+        },
+        {
+          "snapshot": "1:natural_hour_probe",
+          "check": "形成:指导:human.time_budget"
+        },
+        {
+          "snapshot": "1:natural_fatigue_probe",
+          "check": "形成:指导:human.support"
+        },
+        {
+          "snapshot": "1:duplicate_question_ids",
+          "check": "相同题面换ID不应形成稳定掌握"
+        },
+        {
+          "snapshot": "2:natural_time_probe",
+          "check": "形成:指导:human.time_budget"
+        },
+        {
+          "snapshot": "2:natural_hour_probe",
+          "check": "形成:指导:human.time_budget"
+        },
+        {
+          "snapshot": "2:natural_fatigue_probe",
+          "check": "形成:指导:human.support"
+        },
+        {
+          "snapshot": "2:duplicate_question_ids",
+          "check": "相同题面换ID不应形成稳定掌握"
+        },
+        {
+          "snapshot": "3:natural_time_probe",
+          "check": "形成:指导:human.time_budget"
+        },
+        {
+          "snapshot": "3:natural_hour_probe",
+          "check": "形成:指导:human.time_budget"
+        },
+        {
+          "snapshot": "3:natural_fatigue_probe",
+          "check": "形成:指导:human.support"
+        },
+        {
+          "snapshot": "3:duplicate_question_ids",
+          "check": "相同题面换ID不应形成稳定掌握"
+        }
+      ],
+      "measured_last_states": {
+        "event_count": 288,
+        "mutation_count": 372,
+        "fact_count": 572,
+        "attempt_count": 32,
+        "module_count": 20,
+        "claim_count": 20
+      },
+      "repeat_instability": [],
+      "aggregate": [
+        {
+          "variant": "full",
+          "budget": 1800,
+          "delivery_positive": [
+            72,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            4,
+            24
+          ],
+          "latency_median_ms": 23.168687999714166,
+          "packet_characters_mean": 7176.292682926829,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "no_guidance",
+          "budget": 1800,
+          "delivery_positive": [
+            12,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            4,
+            24
+          ],
+          "latency_median_ms": 22.074124513892457,
+          "packet_characters_mean": 6075,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "recent_facts",
+          "budget": 1800,
+          "delivery_positive": [
+            68,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            4,
+            24
+          ],
+          "latency_median_ms": 28.81606199662201,
+          "packet_characters_mean": 6946.219512195122,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "facts_only",
+          "budget": 1800,
+          "delivery_positive": [
+            72,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            4,
+            24
+          ],
+          "latency_median_ms": 31.73220800817944,
+          "packet_characters_mean": 7126.463414634146,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "no_memory",
+          "budget": 3200,
+          "delivery_positive": [
+            0,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            0,
+            24
+          ],
+          "latency_median_ms": 6.241521012270823,
+          "packet_characters_mean": 73,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "full",
+          "budget": 3200,
+          "delivery_positive": [
+            88,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            8,
+            24
+          ],
+          "latency_median_ms": 21.78039599675685,
+          "packet_characters_mean": 8848.091463414634,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "no_memory",
+          "budget": 1800,
+          "delivery_positive": [
+            0,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            0,
+            24
+          ],
+          "latency_median_ms": 6.230874540051445,
+          "packet_characters_mean": 73,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "no_head_cache",
+          "budget": 1800,
+          "delivery_positive": [
+            72,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            4,
+            24
+          ],
+          "latency_median_ms": 27.258250513114035,
+          "packet_characters_mean": 7176.341463414634,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "facts_only",
+          "budget": 3200,
+          "delivery_positive": [
+            84,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            8,
+            24
+          ],
+          "latency_median_ms": 32.34435452031903,
+          "packet_characters_mean": 8821.798780487805,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "recent_facts",
+          "budget": 3200,
+          "delivery_positive": [
+            80,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            12,
+            24
+          ],
+          "latency_median_ms": 27.847583492984995,
+          "packet_characters_mean": 7785.40243902439,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "no_head_cache",
+          "budget": 3200,
+          "delivery_positive": [
+            88,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            8,
+            24
+          ],
+          "latency_median_ms": 27.665437490213662,
+          "packet_characters_mean": 8848.140243902439,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "no_relations",
+          "budget": 1800,
+          "delivery_positive": [
+            72,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            4,
+            24
+          ],
+          "latency_median_ms": 17.866895999759436,
+          "packet_characters_mean": 7140.280487804878,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "no_relations",
+          "budget": 3200,
+          "delivery_positive": [
+            88,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            8,
+            24
+          ],
+          "latency_median_ms": 17.846145492512733,
+          "packet_characters_mean": 8837.128048780487,
+          "budget_failures": 0,
+          "audit_violations": 0
+        },
+        {
+          "variant": "no_guidance",
+          "budget": 3200,
+          "delivery_positive": [
+            24,
+            104
+          ],
+          "delivery_negative": [
+            40,
+            40
+          ],
+          "planning": [
+            8,
+            24
+          ],
+          "latency_median_ms": 22.819603502284735,
+          "packet_characters_mean": 7726.664634146341,
+          "budget_failures": 0,
+          "audit_violations": 0
+        }
+      ],
+      "raw_checks_recomputed": 4704,
+      "environment": {
+        "python_version": "3.12.13 (main, Apr 14 2026, 14:33:40) [Clang 22.1.3 ]",
+        "dependencies": {
+          "SQLAlchemy": "2.0.35",
+          "pydantic": "2.9.0",
+          "fastapi": "0.115.0",
+          "aiosqlite": "0.20.0"
+        },
+        "clock": "virtual business UTC; ORM audit creation timestamps remain real",
+        "network": "socket.connect and socket.connect_ex rejected; no LLM keys",
+        "status": "completed",
+        "source_changes": [],
+        "blocked_network_attempts": 0
+      },
+      "source_file_count": 189,
+      "raw_file_sha256": {
+        "manifest.json": "9eb76da204b9015d70bda098fea5c0fdef747ee2d96046ef6044b21ab741be7a",
+        "operations.json": "23b343caca96cf9116c74a1aa1b59c0a6f51a776c3cfde942d5a5a0b8713a746",
+        "snapshots.json": "596fc1e988dabea29251814a70cb6092debc1622818702dcb3a79db0305002d6",
+        "trials.jsonl": "d7cdbe3f929626be3942bbe5e392b8af58671281215605a0342dc48cd996b078",
+        "summary.json": "edce531df2464f313acfe0af62d9ae1841e4175c123a26c29cd4109547736ccf"
+      }
+    }
+  },
+  "paired_condition_count": 2296,
+  "paired_outcome_differences": [],
+  "paired_semantic_hash_differences": 0
+}

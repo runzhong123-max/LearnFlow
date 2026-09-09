@@ -1,5 +1,21 @@
 # LearnFlow 架构权威与维护边界
 
+Contract impact（2026-09-09.2 / 2026-09-09.2-desktop）：桌面默认通过裸公网 IP 的可信 HTTPS 与账户绑定 API Key 连接。新增独立 hash-only 认证表、签发/撤销及 key-only 网关合同；旧浏览器 Cookie 与本地工作区兼容，账号/learner ownership 沿用原入口。鉴权不写学习事件或五核，三类 Agent、评分与核心共享 schema 不变。详见 [IP 与 API Key 连接契约](implementation/DESKTOP_IP_API_KEY.md)。
+
+Contract impact（2026-09-09.1）：网页学习规划在既有对话工作台内增加资料选择界面，复用 source_ingestion、项目来源和个人资料库 API，来源搜索复用现有 Tutor 工具。学习型规划先选资料，项目 Tutor 复用已绑定目标与关卡；普通对话侧重方向和长期计划草案。不新增 Agent、事件、五核字段或数据库迁移；桌面入口本轮不启用。见 implementation/PLANNING_RESOURCE_WORKBENCH.md。
+
+> Contract impact（2026-09-08.9 / desktop 对应版本，共享核心 0.2.5）：教育记忆读取升级为 relevance-budget.v3。教学控制 v2 保留来源 scope 与应用 scope，采用分句解析、默认会话 8 小时及显式有时区期限的最长 168 小时窗口，兼容读取 v1。只读 learning-episode.v1 通过 Fact → Mutation → Event → owned Attempt 验证真实评分来源；规划 v2 消费该投影并附加确定性决策依据。事件稳定 ID、EvidenceEvent v1、三类 Agent、五核、评分和掌握门槛不变，不迁移历史库。详见 [教育记忆 v2 实现](implementation/EDUCATION_MEMORY_V2.md)；实验结果单独报告，不以新增字段或回归通过证明学习收益。
+
+Contract impact（`2026-09-08.8`）：共享核心 0.2.4 收紧普通概念评分，取消多题 ID 直接升级稳定掌握；既有间隔复习与显式迁移门保留。双端规划确定性消费带来源的当前时间、困难和受助指导，约束离线与模型最终输出。事件/计划 v1 增量兼容，不回填历史画像、不迁移数据库。实现与限制见 [教育记忆策略](implementation/EDUCATION_MEMORY_POLICY.md)。
+
+Contract impact（`2026-09-08.6`）：共享核心 0.2.3 / `relevance-budget.v2` 增加可审计查询归一、保留限定的原文片段、时间候选配额、最多两跳的因果依赖与按任务选择摘要。ContextPacket v2 增量增加来源 hash/偏移、查询计划、证据缺口和有界图统计；三类 Agent、稳定工具 ID、事件 schema、五核写入与证据等级保持兼容，无数据库迁移。见 [长尾检索升级](implementation/MEMORY_LONG_TAIL_RETRIEVAL.md)。
+
+Contract impact（`2026-09-08.5`）：完整记忆读取采用 `relevance-budget.v1`，相关性分层、同版本摘要去重、节点与一跳语义关系共同预算；ContextPacket 附带概念图复用相同 scope/归档/敏感过滤。共享核心 0.2.2，保留 ContextPacket v2 与 EvidenceEvent/五核写入链，无数据库迁移。实现、限制与验证见 [记忆检索预算升级](implementation/MEMORY_RETRIEVAL_BUDGET_UPGRADE.md)。
+
+Contract impact（`2026-09-08.3`）：Visual Hub 增加用户自带模型的创作入口，复用 Learning Design 的 educational_visuals 工作流与私有作品服务。`/api/visuals/user-model` 仅接受当次用户配置，公网 HTTPS / DNS 固定连接、无重定向、无平台模型密钥回退；凭据不进入作品、检查点或持久化。既有聊天后台模型策略不变。工作台复用现有生成与工作区能力，无新主 Agent、五核事件或数据库迁移。见 [Hub 自带模型创作](implementation/VISUAL_HUB_BYOK.md)。
+
+Contract impact（`2026-09-08.2`）：Role Atlas 既有岗位生产任务增加持久队列投递、后台消费者、有界失联恢复和游标重放。任务身份、owner、对话版本基线与发布门保持不变；不新增 LearnFlow Agent 工具或学习事件，不读写五核。详见 [岗位任务恢复](../apps/role-atlas/docs/JOB_RECOVERY.md)。
+
 Contract impact（`2026-09-07.5`）：三类项目对话引导与工作流改为跨端共享，知识转换保留讯飞，实验和带教操作在桌面执行。新增项目候选确认及 device_reported 交付参考，工程子 Agent 继续由 Tutor 的 local_agent_broker 所有。新增事件均零 kernel targets，旧 learning 项目与稳定插件 ID 兼容。详见[工作任务到三类学习项目](implementation/DESKTOP_PROJECT_GUIDANCE.md)。
 
 Contract impact（`2026-09-07.4`）：学习方法主入口收敛为清晰讲解、费曼复述、讲义与练习共学；其余稳定 ID 保留旧运行兼容。Skill runtime v7 以真实文件/已读/Attempt 同步文件学习阶段，生成与验证解耦且保留任务原 scope。多节讲义、配对练习、失败缺口和重复/受助提交投影向后兼容；无新表、主 Agent 或五核 reducer 改动。当前合同优先见[学习方法与文件闭环 v2](implementation/LEARNING_METHODS_AND_FILES_V2.md)。
@@ -673,3 +689,24 @@ frontend 当前没有该 route，所以 `learner_growth` lifecycle 为 `optional
 Contract impact（`2026-09-06.5`）：新增 `golden_role_workspace_v1` 离线研究契约与 `golden_role_workspace` artifact adapter，绑定标准库实现。宿主 Codex 操作独立工作区，保存源图候选、人工裁决、案例报告及指令版本；没有新增主 Agent、Action Board 处理器或学习事件。local journal 不作为 EvidenceEvent，实验图谱不替代正式 Role Package/LearnFlow v2。正式桌面代码执行仍必须经过 local_agent_broker。见 [黄金岗位项目](../labs/golden-role/README.md)。
 
 Contract impact（`2026-09-07.6`）：阶段分工与帮助策略登记为 `project_stage_support_v1`，复用工作流与 `project_assistance_requested` 零 target 事件；相关文件推荐登记为 `workspace_recommendations_v1`，复用 `inspect_workspace_files`。Broker 从宿主权威读取帮助策略并绑定运行快照；方向、步骤、伪代码仅只读，实现档仍两次确认。推荐是本机有界导航，不授予修改权限或上传正文。旧案例摘要与数据库 schema 不变。见[阶段支持契约](implementation/DESKTOP_PROJECT_GUIDANCE.md#阶段分工帮助权限与文件导航2026-09-07-增强)。
+
+### 内部教学可视化 Hub（2026-09-07）
+
+`visual_content_library` 的共享实现扩展为内部方向/模块/章节/session 目录与版本化维护作品，见 [VISUAL_HUB.md](VISUAL_HUB.md)。新增只读 `/visuals/hub`，维护专用 `interactive_html` 只接收服务器目录中的摘要引用，通过隔离 iframe 展示；生成入口仍为 VisualSpec/SVGStory。两端共享同一实现，不改变五核与 EvidenceEvent 语义。
+
+Visual Hub 查询展示工作台：Web / 桌面均使用 `/visual-hub`，由 learning_design_agent 所有，复用 retrieve_learning_visual。认证后的 gallery / preview API 只读维护版本；浏览与调参不创建学习证据。registry 2026-09-07.8 登记两个宿主绑定，见 [Visual Hub](VISUAL_HUB.md)。
+
+Web 独立 Hub 地址为 `/visualize`，侧栏直接跳转，保留 `/visual-hub` 别名；经过现有 AuthGate，未开放匿名 API。桌面继续使用内嵌 `/visual-hub`。Web registry 2026-09-07.9 仅更新页面绑定，无事件或数据迁移。
+
+公共维护库修正（registry 2026-09-07.10）：`/visualize` 与别名无需登录。gallery/preview 仅开放已登记维护作品；preview 允许有界参数重算，拒绝任意 spec，固定 public:maintained 展示 scope。公共播放器不执行个人预测写回或要求完成预测才能播放。生成、私有 workspace、compile/inspect/predict 继续认证，无五核或数据库变更。
+
+
+Contract impact（2026-09-08.1）：登记 Role Atlas `role_research_archive_v1` 与管理员独立工作台 `/admin/research`。用户输入、附件原件、模型调用和运行/版本/发布记录作为 operational artifact 保存；访问与导出使用服务端验证的 admin 身份，普通用户的岗位包 ownership 不变。无 Agent 跨用户读取工具，无 EvidenceEvent 或五核变更。仅新增 Role Atlas 审计表，旧历史缺口不回填伪造。详见 [测试数据采集契约](../apps/role-atlas/docs/RESEARCH_COLLECTION.md)。
+
+
+## 典型工作任务转换（2026-09-08）
+
+项目创建前的转换工作台复用三类主 Agent 和共享事件权威。`work_task_conversion_gateway` 管理 learner 所有的任务说明、版本、来源与确认接续；`work_task_design_compiler` 提供固定版本专业设计与待审核长尾方案。新增操作事件均为零核目标，生成与设备执行结果不等于掌握证据。运行与兼容性详见 [工作任务转换](implementation/WORK_TASK_CONVERSION.md)。
+
+
+岗位生产自动挂载（Contract impact，2026-09-09.1）：既有 Learning Design 的 curriculum_source_runtime 增加 `role-learning-auto/v1` 反向短时签名入口与持久操作回执。用户启动岗位生产流程授权其知识技能追加到本人 source graph；中央复核真实账号及包权限，复用 resolve/commit/CAS，官方节点不覆写。无锚点可通过 v2 可选 standaloneRoots 创建本人岗位学习域。旧手动确认路径保留，现有 learning_path_extension_committed 仍零 target，生成和挂载均不代表掌握，不新增主 Agent 或五核写入。范围、兼容性及部署见 [服务契约](product/ECOSYSTEM_GATEWAY_V1.md)。

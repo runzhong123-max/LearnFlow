@@ -8,7 +8,7 @@ import math
 import re
 from .engine import digest
 
-STORY_RUNTIME = 'learnflow.svg-story.1.0.0'
+STORY_RUNTIME = 'learnflow.svg-story.1.0.2'
 ID = re.compile(r'^[a-z][a-z0-9_.-]{0,63}$')
 
 
@@ -22,9 +22,15 @@ def text(value, name, limit):
     require(not any(ord(c) < 32 and c not in '\n\t' for c in value), name + ': control characters prohibited')
 
 
+def fields(value, required, optional, path):
+    require(isinstance(value, dict), path + ': object required')
+    missing, unknown = required - set(value), set(value) - required - optional
+    require(not missing and not unknown, path + ': missing fields ' + str(sorted(missing)) + '; unknown fields ' + str(sorted(unknown)))
+
+
 def compile_svg_story(source, kind='diagram'):
     require(kind in ('diagram', 'animation'), 'invalid kind')
-    require(isinstance(source, dict) and set(source) == {'story_version', 'title', 'goal', 'nodes', 'edges', 'steps'}, 'root fields')
+    fields(source, {'story_version', 'title', 'goal', 'nodes', 'edges', 'steps'}, set(), '/')
     require(len(json.dumps(source, ensure_ascii=False, allow_nan=False).encode()) <= 131072, 'source budget')
     require(source['story_version'] == '1', 'unsupported version')
     text(source['title'], '/title', 240); text(source['goal'], '/goal', 2000)
@@ -44,12 +50,17 @@ def compile_svg_story(source, kind='diagram'):
         require(isinstance(edge['from'], str) and isinstance(edge['to'], str) and edge['from'] in ids and edge['to'] in ids, 'edge endpoint missing')
         edge_ids.add(edge['id'])
         if 'label' in edge: text(edge['label'], '/edges/label', 100)
-    for step in steps:
-        require(isinstance(step, dict) and set(step) == {'title', 'note', 'active_nodes', 'active_edges'}, 'step fields')
-        text(step['title'], '/steps/title', 240); text(step['note'], '/steps/note', 2000)
+    step_ids = set()
+    for index, step in enumerate(steps):
+        path = f'/steps/{index}'
+        fields(step, {'title', 'note', 'active_nodes', 'active_edges'}, {'id'}, path)
+        if 'id' in step:
+            require(isinstance(step['id'], str) and ID.fullmatch(step['id']) and step['id'] not in step_ids, path + '/id: invalid or duplicate identifier')
+            step_ids.add(step['id'])
+        text(step['title'], path + '/title', 240); text(step['note'], path + '/note', 2000)
         for key, available in (('active_nodes', ids), ('active_edges', edge_ids)):
             selected = step[key]
-            require(isinstance(selected, list) and all(isinstance(i, str) and i in available for i in selected) and len(selected) == len(set(selected)), '/steps/' + key + ': references invalid')
+            require(isinstance(selected, list) and all(isinstance(i, str) and i in available for i in selected) and len(selected) == len(set(selected)), path + '/' + key + ': references invalid; expected unique IDs from ' + str(sorted(available)))
     if kind == 'animation':
         signatures = {(tuple(sorted(s['active_nodes'])), tuple(sorted(s['active_edges']))) for s in steps}
         require(len(steps) >= 2 and len(signatures) >= 2, 'animation requires two meaningfully different structural states')
@@ -67,16 +78,18 @@ def compile_svg_story(source, kind='diagram'):
             x1,y1 = positions[edge['from']]; x2,y2 = positions[edge['to']]
             active = edge['id'] in step['active_edges']; color = '#0369a1' if active else '#94a3b8'
             if edge['from'] == edge['to']:
+                label_x,label_y = x1+65,y1-85
                 path = f'M {x1+90} {y1-25} C {x1+160} {y1-110}, {x1-20} {y1-110}, {x1+20} {y1-42}'
             else:
                 dx,dy = x2-x1,y2-y1; length = math.hypot(dx,dy)
+                label_x,label_y = (x1+x2)/2+dy/length*25,(y1+y2)/2-dx/length*25
                 boundary = min(119/abs(dx) if dx else math.inf, 53/abs(dy) if dy else math.inf)
                 sx,sy = x1+dx*boundary,y1+dy*boundary
                 ex,ey = x2-dx*boundary,y2-dy*boundary
                 path = f'M {sx:g} {sy:g} Q {(sx+ex)/2+dy/length*28:g} {(sy+ey)/2-dx/length*28:g} {ex:g} {ey:g}'
             parts.append(f'<g id="edge-{edge["id"]}"><title>{escape(edge.get("label", edge["from"]+" → "+edge["to"]))}</title><path d="{path}" fill="none" stroke="{color}" stroke-width="{3 if active else 1.5}" marker-end="url(#arrow)"/>')
             if edge.get('label'):
-                parts.append(f'<text x="{(x1+x2)/2:g}" y="{(y1+y2)/2-14:g}" text-anchor="middle" font-size="12" fill="#334155">{escape(edge["label"][:24])}</text>')
+                parts.append(f'<text x="{label_x:g}" y="{label_y+4:g}" text-anchor="middle" font-size="12" fill="#334155">{escape(edge["label"][:24])}</text>')
             parts.append('</g>')
         for node in nodes:
             x,y = positions[node['id']]; active = node['id'] in step['active_nodes']

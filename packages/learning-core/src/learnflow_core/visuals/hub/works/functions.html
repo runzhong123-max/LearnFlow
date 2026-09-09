@@ -1,0 +1,59 @@
+<section data-lab="functions"><h3></h3><div class="viz-controls" data-controls></div><svg viewBox="0 0 560 365" role="img" aria-label="函数变换联动图形" style="width:100%;display:block"></svg><p data-note aria-live="polite" style="min-height:4em"></p><div class="viz-controls"><button class="btn btn-primary" data-play>播放变化</button><button class="btn" data-reset>重置</button></div></section><script>(()=>{
+const root=document.querySelector('[data-lab]'),mode=root.dataset.lab,q=s=>root.querySelector(s),svg=q('svg');
+let timer=null;
+const configs={
+functions:{title:'函数变换 · 输入怎样改变图像',labels:['水平平移 b','纵向缩放 a'],min:[-3,-2],max:[3,2],step:[.1,.1],initial:[0,1]},
+derivative:{title:'导数 · 割线怎样逼近切线',labels:['观察位置 x','间距 h'],min:[-2,.05],max:[2,2],step:[.1,.05],initial:[1,1.5]},
+linear:{title:'线性变换 · 两个基向量决定整个平面',labels:['水平剪切 k','纵向缩放 s'],min:[-2,-1.5],max:[2,1.5],step:[.1,.1],initial:[.5,1]},
+bayes:{title:'贝叶斯 · 阳性结果里有多少真阳性',labels:['基率（%）','假阳性率（%）'],min:[1,1],max:[50,30],step:[1,1],initial:[5,10]}}
+const c=configs[mode];q('h3').textContent=c.title;
+q('[data-controls]').innerHTML=c.labels.map((label,i)=>`<label>${label} <output data-v="${i}"></output><input aria-label="${label}" data-input="${i}" type="range" min="${c.min[i]}" max="${c.max[i]}" step="${c.step[i]}" value="${c.initial[i]}"></label>`).join('');
+const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+const inputs=[...root.querySelectorAll('[data-input]')],f=n=>Number(n.toFixed(3));
+function values(){return inputs.map(e=>+e.value)}
+function stop(){clearInterval(timer);timer=null;q('[data-play]').textContent=reduced.matches?'下一档':'播放变化'}
+const line=(x1,y1,x2,y2,color='var(--border)',width=1)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="${width}"/>`;
+const text=(x,y,s)=>`<text x="${x}" y="${y}" fill="var(--foreground)" font-size="13">${s}</text>`;
+const point=(x,y,color)=>`<circle cx="${x}" cy="${y}" r="5" fill="${color}"/>`;
+const colors=['var(--viz-series-1)','var(--viz-series-2)'];
+function draw(){
+ const [a,b]=values();inputs.forEach((e,i)=>q(`[data-v="${i}"]`).textContent=f(+e.value));let out='',note='',audit={a,b};
+ if(mode==='bayes'){
+  const sick=a*10,healthy=1000-sick,tp=sick*.9,fp=healthy*b/100,posterior=tp/(tp+fp);audit={...audit,tp,fp,posterior};
+  out=text(20,27,'每 1000 人 · 灵敏度固定 90%')+text(20,62,`有病 ${f(sick)} 人`)+text(300,62,`无病 ${f(healthy)} 人`);
+  const bar=(x,y,w,color,label)=>`<rect x="${x}" y="${y}" width="${w}" height="45" rx="5" fill="${color}"/>`+text(x,y+66,label);
+  out+=bar(20,80,240*tp/1000,colors[0],`真阳性 ${f(tp)}`)+bar(300,80,240*fp/1000,colors[1],`假阳性 ${f(fp)}`);
+  out+=text(20,190,'只看所有阳性结果：')+bar(20,210,520*posterior,colors[0],`真正有病 ${f(posterior*100)}%`)+`<rect x="${20+520*posterior}" y="210" width="${520*(1-posterior)}" height="45" fill="${colors[1]}"/>`;
+  note=`P(有病 | 阳性) = ${f(tp)} ÷ (${f(tp)} + ${f(fp)}) = ${f(posterior*100)}%。橙色是假阳性；基率越低，假阳性越可能占据多数。这是期望人数示意，不是医疗诊断。`;
+ }else{
+  const X=x=>280+x*50,Y=y=>170-y*30;
+  for(let i=-5;i<=5;i++)out+=line(X(i),20,X(i),320);
+  for(let i=-5;i<=5;i++)out+=line(20,Y(i),540,Y(i));
+  out+=line(20,Y(0),540,Y(0),'var(--foreground)')+line(X(0),20,X(0),320,'var(--foreground)')+text(526,Y(0)-8,'x')+text(X(0)+8,22,'y');
+  for(const tick of [-4,-2,2,4])out+=text(X(tick)-4,Y(0)+17,String(tick))+text(X(0)+5,Y(tick),String(tick));
+  if(mode==='linear'){
+   const transform=(x,y)=>[x+a*y,b*y];audit={...audit,determinant:b,point:transform(1,1)};
+   for(let i=-3;i<=3;i++){let p=transform(i,-3),r=transform(i,3);out+=line(X(p[0]),Y(p[1]),X(r[0]),Y(r[1]),colors[0]);p=transform(-3,i);r=transform(3,i);out+=line(X(p[0]),Y(p[1]),X(r[0]),Y(r[1]),colors[0]);}
+   out+=line(X(0),Y(0),X(1),Y(0),colors[1],4)+line(X(0),Y(0),X(a),Y(b),colors[0],4)+point(X(1+a),Y(b),colors[1])+text(X(1)+5,Y(0)-10,'Ae₁')+text(X(a)+5,Y(b)-10,'Ae₂')+text(20,345,`A = [[1, ${f(a)}], [0, ${f(b)}]]`);
+   note=`e₁ → (1, 0)，e₂ → (${f(a)}, ${f(b)})，因此 (1,1) → (${f(1+a)}, ${f(b)})。行列式 = ${f(b)}；${b===0?'面积压成零，变换不可逆':b<0?'面积缩放且方向翻转':'面积按此倍数缩放'}。橙色点是两个变换后基向量的和。`;
+  }else{
+   const curve=fn=>{let d='';for(let x=-5;x<=5;x+=.04)d+=(d?'L':'M')+X(x)+','+Y(fn(x));return `<path d="${d}" fill="none" stroke="${colors[0]}" stroke-width="3"/>`};
+   if(mode==='functions'){
+    out+=curve(x=>b*(x-a)**2)+point(X(a),Y(0),colors[1]);audit={...audit,vertex:[a,0],atOne:b*(1-a)**2};
+    note=`y = ${f(b)}(x − ${f(a)})²。顶点位于 (${f(a)}, 0)；x = 1 时 y = ${f(audit.atOne)}。${b===0?'纵向缩放为 0 时整个函数成为零函数。':b<0?'负缩放使抛物线开口向下。':'先平移输入，再缩放输出。'}`;
+   }else{
+    out+=curve(x=>x*x/2); // Use y=x²/2, derivative x; secant x+h/2.
+    const sec=a+b/2,p=a*a/2,r=(a+b)**2/2;audit={...audit,slope:sec,derivative:a,error:b/2};
+    out+=line(X(-5),Y(p+sec*(-5-a)),X(5),Y(p+sec*(5-a)),colors[1],2)+line(X(-5),Y(p+a*(-5-a)),X(5),Y(p+a*(5-a)),colors[0],1)+point(X(a),Y(p),colors[0])+point(X(a+b),Y(r),colors[1]);
+    note=`f(x)=x²/2。割线斜率 [f(x+h)−f(x)]/h = ${f(sec)}；切线斜率 f′(x) = ${f(a)}；差值 ${f(b/2)}。减小 h，观察橙色割线逼近蓝色切线。`;
+   }
+  }
+ }
+ svg.innerHTML=`<defs><clipPath id="plot"><rect x="15" y="10" width="535" height="350"/></clipPath></defs><g clip-path="url(#plot)">${out}</g>`;q('[data-note]').textContent=note;root.__state=audit;
+}
+inputs.forEach(e=>e.addEventListener('input',()=>{stop();draw()}));
+q('[data-reset]').onclick=()=>{stop();inputs.forEach((e,i)=>e.value=c.initial[i]);draw()};
+q('[data-play]').onclick=()=>{if(timer){stop();return}const i=mode==='derivative'?1:0;if(reduced.matches){inputs[i].value=+inputs[i].value>=c.max[i]?c.min[i]:Math.min(c.max[i],+inputs[i].value+(c.max[i]-c.min[i])/10);draw();return}let n=0;inputs[i].value=mode==='derivative'?c.max[i]:c.min[i];draw();q('[data-play]').textContent='暂停';timer=setInterval(()=>{n++;inputs[i].value=mode==='derivative'?c.max[i]-(c.max[i]-c.min[i])*n/40:c.min[i]+(c.max[i]-c.min[i])*n/40;draw();if(n>=40)stop()},100)};
+root.__audit={draw,values};reduced.addEventListener('change',stop);stop();draw();
+})();
+</script>

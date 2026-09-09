@@ -1,4 +1,4 @@
-# LearnFlow shared learning core 0.2.0
+# LearnFlow shared learning core 0.2.3
 
 唯一源码在 src/learnflow_core/。六个运行模块从已一致的 Web/桌面基线抽取；registry_core.py 保存共同的类型、三类 Agent、五核与基础 schema 声明。宿主 registry 继续登记真实可用的能力与绑定，不伪造端侧功能一致性。
 

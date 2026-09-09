@@ -1,4 +1,5 @@
 import { authorizeApiRequest } from "@/lib/access";
+import { publicationBlockers, validateBuildResult } from "@/lib/packages/validator";
 import { z } from "zod/v4";
 import { listProjectVersions, restoreProjectVersion } from "@/lib/versioning/commit";
 
@@ -19,7 +20,7 @@ export async function GET(request: Request, context: { params: Promise<{ project
     return Response.json({ versions: versions.map((version) => {
       const summary: Partial<typeof version> = { ...version };
       delete summary.result;
-      return summary;
+      return { ...summary, publicationBlockers: [...validateBuildResult(version.result).hardErrors, ...publicationBlockers(version.result)] };
     }) });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : "版本列表读取失败。" }, { status: 500 });

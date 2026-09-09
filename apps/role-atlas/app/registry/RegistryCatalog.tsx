@@ -14,6 +14,7 @@ export type RegistryPackage = {
   visibility: string;
   registryVersion?: number;
   canManageHub?: boolean;
+  forkOrigin?: import("@/lib/hub/fork-plan").ForkOrigin | null;
   evidencePolicy: string;
   license: string;
   protocolRange: string;
@@ -116,6 +117,7 @@ export default function RegistryCatalog({ initialPackages, initialQuery = "", em
       return <article className="registry-card" key={item.id}>
         <header><PackageOpen size={18} /><span><b>{item.title}</b><code>{item.packageId}</code></span><i>{item.status}</i></header>
         <p>{item.roleIdentity?.description || "尚未填写岗位包简介。"}</p>
+        {item.forkOrigin ? <p>Fork 自 <a href={graphHubHref(item.forkOrigin.packageLineId)}>{item.forkOrigin.title} · v{item.forkOrigin.packageVersion}</a> · 独立维护 · 许可：{item.forkOrigin.license}<br /><code>来源哈希 {item.forkOrigin.rootHash.slice(0, 12)}</code></p> : null}
         <dl>
           <div><dt>身份</dt><dd>{item.roleIdentity?.canonicalName || item.title}{identityAliases ? ` · ${identityAliases}` : ""}</dd></div>
           <div><dt>范围</dt><dd>{scope}</dd></div>
@@ -135,7 +137,7 @@ export default function RegistryCatalog({ initialPackages, initialQuery = "", em
             {release.artifactRootHash && ["ready", "published", "deprecated"].includes(release.status) ? <a href={`/api/releases/${release.id}/export`}><Download size={11} /> 导出</a> : null}
           </span>)}</div>
         </details>
-        <footer><span>{item.releases.length} 个 Release</span><div className="registry-card-actions">{surface === "registry" && item.canManageHub && recommended?.status === "published" ? <button type="button" disabled={Boolean(publicationBusy)} onClick={() => void changePublication(item)}>{publicationBusy === item.id ? "正在更新…" : item.visibility === "public" ? "从 Graph Hub 撤回" : "重新公开到 Graph Hub"}</button> : null}{surface === "hub" && recommended ? <a href={roleAtlasHref(recommended.projectId ? `/projects/${recommended.projectId}` : `/snapshots/${encodeURIComponent(recommended.snapshotId)}/iterate`)}><ExternalLink size={12} /> 进入 Role Atlas</a> : recommended && item.visibility === "public" ? <a href={graphHubHref(item.id)}><ExternalLink size={12} /> 进入 Graph Hub</a> : <span>尚未发布到 Graph Hub</span>}{recommended ? <button type="button" disabled={launchingReleaseId === recommended.id} onClick={() => void launchLearnFlow(recommended.id)}><MessageCircle size={12} /> {launchingReleaseId === recommended.id ? "正在进入…" : "在 LearnFlow 中引用"}</button> : null}{recommended ? <a href={`/api/releases/${recommended.id}/export`}><Download size={12} /> 导出</a> : null}</div></footer>
+        <footer><span>{item.releases.length} 个 Release</span><div className="registry-card-actions">{surface === "registry" && recommended?.projectId ? <a href={roleAtlasHref(`/projects/${encodeURIComponent(recommended.projectId)}`)}>打开并维护</a> : null}{surface === "registry" && item.canManageHub && recommended?.status === "published" ? <button type="button" disabled={Boolean(publicationBusy)} onClick={() => void changePublication(item)}>{publicationBusy === item.id ? "正在更新…" : item.visibility === "public" ? "从 Graph Hub 撤回" : "重新公开到 Graph Hub"}</button> : null}{surface === "hub" && recommended ? <a href={roleAtlasHref(recommended.projectId ? `/projects/${recommended.projectId}` : `/snapshots/${encodeURIComponent(recommended.snapshotId)}/iterate`)}><ExternalLink size={12} /> 进入 Role Atlas</a> : recommended && item.visibility === "public" ? <a href={graphHubHref(item.id)}><ExternalLink size={12} /> 进入 Graph Hub</a> : <span>尚未发布到 Graph Hub</span>}{recommended ? <button type="button" disabled={launchingReleaseId === recommended.id} onClick={() => void launchLearnFlow(recommended.id)}><MessageCircle size={12} /> {launchingReleaseId === recommended.id ? "正在进入…" : "在 LearnFlow 中引用"}</button> : null}{recommended ? <a href={`/api/releases/${recommended.id}/export`}><Download size={12} /> 导出</a> : null}</div></footer>
       </article>;
     })}</section>
   </Shell>;

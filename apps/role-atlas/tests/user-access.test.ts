@@ -244,3 +244,22 @@ test("Hub 撤回仅允许所有者操作，撤回后匿名导出与快照访问�
     assert.equal(await h.policy.authorizeApiRequest(request("/api/releases/release-a/export", 1)), undefined);
   } finally { h.cleanup(); }
 });
+
+test("Fork 入口允许登录用户复制公共来源，但不能伪造目标所有者或跨站写入", async () => {
+  const h = await policyHarness();
+  try {
+    let source = await readFile(resolve("app/api/hub/fork/route.ts"), "utf8");
+    source = source.replace('from "zod/v4"', `from ${JSON.stringify(pathToFileURL(resolve("node_modules/zod/v4/index.js")).href)}`);
+    source = source.replace('from "@/lib/access"', `from ${JSON.stringify(h.policyUrl)}`);
+    source = source.replace('import { forkPublicRelease } from "@/lib/hub/fork";', `const forkPublicRelease = async input => ({projectId: input.ownerSubjectId,conversationId: "chat-fork"});`);
+    source = source.replace(/(["'])@\/([^"']+)\1/gu, (_, _quote, path) => JSON.stringify(pathToFileURL(resolve(`${path}.ts`)).href));
+    const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+    const route = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+    assert.equal((await route.POST(request("/api/hub/fork",undefined,{releaseId:"release-public"}))).status,401);
+    const success=await route.POST(request("/api/hub/fork",2,{releaseId:"release-public"}));
+    assert.equal(success.status,200);assert.equal((await success.json()).projectId,"learnflow:learner:2");
+    assert.equal((await route.POST(request("/api/hub/fork",2,{releaseId:"release-public",ownerSubjectId:"learnflow:learner:1"}))).status,400);
+    const cross=request("/api/hub/fork",2,{releaseId:"release-public"});cross.headers.set("origin","https://foreign.example");
+    assert.equal((await route.POST(cross)).status,403);
+  } finally {h.cleanup();}
+});

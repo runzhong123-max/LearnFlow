@@ -1,4 +1,9 @@
+import PlanningResourceWorkbench from './PlanningResourceWorkbench'
+import { conversationTitle, recentConversations } from './conversation-display.ts'
+import { readTabLayout, saveTabLayout, consumeLayoutReset, withoutTabLayout } from './workspace-layout.ts'
+import { conversionMessagePresentation } from '../../packages/learning-client/src/work-task-conversion/presentation.ts'
 import { taskLearningFiles, fileKindForStage, fileProgressMessage } from './learning-file-flow'
+import { ecosystemEntryPath } from './ecosystem-entry.ts'
 import { directVisualWorkflowCall } from '../../packages/learning-client/src/visuals/workflow.ts'
 import { resolveExplicitVisualIntent } from '../server/visual-tool-execution.ts'
 import { FormEvent, Fragment, lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
@@ -169,6 +174,7 @@ import {
 import './styles.css'
 
 type Message = {
+  displayContent?: string
   id: string
   role: 'assistant' | 'user' | 'system'
   content: string
@@ -249,7 +255,7 @@ type Conversation = {
 
 type WorkspaceTab = {
   id: string
-  kind: 'chat' | 'settings' | 'projects' | 'project' | 'learning-path' | 'ecosystem' | 'profile' | 'tasks' | 'review' | 'learning-files' | 'lecture-file' | 'practice-file'
+  kind: 'visual-hub' | 'chat' | 'settings' | 'projects' | 'project' | 'learning-path' | 'ecosystem' | 'profile' | 'tasks' | 'review' | 'learning-files' | 'lecture-file' | 'practice-file'
   title: string
   conversationId?: string
   originConversationId?: string
@@ -272,6 +278,8 @@ type PersistedState = {
   learningPath: LearnerPathState
 }
 
+const VISUAL_HUB_TAB: WorkspaceTab = {id:'visual-hub',kind:'visual-hub',title:'图解与动画'}
+const VisualHubPage = lazy(() => import('./VisualHubPage'))
 const SETTINGS_TAB: WorkspaceTab = { id: 'settings', kind: 'settings', title: '设置' }
 const PROJECTS_TAB: WorkspaceTab = { id: 'projects', kind: 'projects', title: '学习项目' }
 const LEARNING_PATH_TAB: WorkspaceTab = { id: 'learning-path', kind: 'learning-path', title: '学习路径' }
@@ -349,6 +357,7 @@ function messageFromFormal(message: FormalTutorMessage): Message {
     id: String(message.meta_data?.client_message_id || `formal-message-${message.id}`),
     role: message.role,
     content: message.content,
+    displayContent: conversionMessagePresentation(message.meta_data?.work_task_conversion) || (typeof vnext.displayContent === 'string' ? vnext.displayContent : undefined),
     createdAt: message.created_at ? Date.parse(message.created_at) || Date.now() : Date.now(),
     tutorMode,
     toolRuns: Array.isArray(vnext.toolRuns) ? vnext.toolRuns as TutorToolRun[] : undefined,
@@ -377,6 +386,7 @@ function messageFromFormal(message: FormalTutorMessage): Message {
 
 function syncMessageMetaData(message: Message): Record<string, unknown> {
   return {
+    displayContent: message.displayContent,
     tutorMode: message.tutorMode,
     toolRuns: message.toolRuns,
     reasoningContent: message.reasoningContent,
@@ -403,7 +413,7 @@ function conversationFromFormal(session: FormalTutorSession, existing?: Conversa
   const conversation = {
     ...base,
     id: session.client_conversation_id || base.id,
-    title: session.title || base.title,
+    title: conversationTitle(session.title && session.title !== '新对话' ? session.title : base.title, messages.length ? messages : base.messages),
     mode: tutorModeFromFormal(session),
     messages: messages.length > 0 ? messages : base.messages,
     formalSessionId: session.id,
@@ -465,6 +475,7 @@ function learningFileTab(
 
 function tabFromCurrentPath(conversations: Conversation[]): WorkspaceTab | undefined {
   const path = window.location.pathname
+  if (path === '/visual-hub' || path === '/visualize') return VISUAL_HUB_TAB
   if (path === '/settings') return SETTINGS_TAB
   if (path === '/projects') return PROJECTS_TAB
   if (path.startsWith('/projects/')) {
@@ -513,12 +524,26 @@ function initialState(): PersistedState {
 function restoreState(learnerId: number): PersistedState {
   try {
     isolateLegacyWorkspaceCache(localStorage)
-    const value = JSON.parse(localStorage.getItem(learnerWorkspaceStorageKey(learnerId)) || 'null') as Partial<PersistedState> | null
+    const cached = JSON.parse(localStorage.getItem(learnerWorkspaceStorageKey(learnerId)) || 'null') as Partial<PersistedState> | null
+    const resetLayout = consumeLayoutReset(sessionStorage, learnerId)
+    const layout = readTabLayout(sessionStorage, learnerId)
+    const savedConversations = Array.isArray(cached?.conversations) ? [...cached.conversations] : []
+    for (const tab of (layout?.tabs || []) as WorkspaceTab[]) {
+      if (tab.kind !== 'chat' || !tab.conversationId) continue
+      const page = layout?.pages?.[tab.conversationId] as Partial<Conversation> | undefined
+      const index = savedConversations.findIndex(item => item.id === tab.conversationId)
+      const base = index >= 0 ? savedConversations[index] : { ...createConversation(), id: tab.conversationId, title: tab.title }
+      const restoredPage = { ...base, ...(page || {}), id: tab.conversationId }
+      if (index >= 0) savedConversations[index] = restoredPage
+      else savedConversations.push(restoredPage)
+    }
+    const value = { ...cached, conversations: savedConversations, tabs: (layout?.tabs || []) as WorkspaceTab[], activeTabId: layout?.activeTabId, splitTabId: layout?.splitTabId }
     if (!value || !Array.isArray(value.conversations) || value.conversations.length === 0) return initialState()
-    const conversations = value.conversations.map(conversation => {
+    const conversations: Conversation[] = value.conversations.map(conversation => {
       const sheets = sanitizePaperSheets<Message>(conversation.sheets)
       const restored = {
         ...conversation,
+        title: conversationTitle(conversation.title, conversation.messages || []),
         mode: isTutorMode(conversation.mode) ? conversation.mode : 'free' as const,
         sheets,
         learningTasks: Array.isArray(conversation.learningTasks)
@@ -543,10 +568,21 @@ function restoreState(learnerId: number): PersistedState {
     })
     const conversationIds = new Set(conversations.map(item => item.id))
     const tabs = Array.isArray(value.tabs)
-      ? value.tabs.filter(tab => ['settings', 'projects', 'project', 'learning-path', 'ecosystem', 'profile', 'tasks', 'review', 'learning-files', 'lecture-file', 'practice-file'].includes(tab?.kind) || (tab?.kind === 'chat' && tab?.conversationId && conversationIds.has(tab.conversationId)))
+      ? value.tabs.filter(tab => ['visual-hub', 'settings', 'projects', 'project', 'learning-path', 'ecosystem', 'profile', 'tasks', 'review', 'learning-files', 'lecture-file', 'practice-file'].includes(tab?.kind) || (tab?.kind === 'chat' && tab?.conversationId && conversationIds.has(tab.conversationId)))
       : []
-    let safeTabs = tabs.length > 0 ? tabs.slice(-12) : [chatTab(conversations[0])]
-    const routeTab = tabFromCurrentPath(conversations)
+    const currentPages = [VISUAL_HUB_TAB, SETTINGS_TAB, PROJECTS_TAB, LEARNING_PATH_TAB, ECOSYSTEM_TAB, PROFILE_TAB, TASKS_TAB, REVIEW_TAB, LEARNING_FILES_TAB]
+    const validTabs = tabs.filter(tab => !['lecture-file', 'practice-file'].includes(tab.kind) || Boolean(tab.fileRef))
+      .map(tab => currentPages.find(page => page.kind === tab.kind) || (tab.kind === 'chat' ? chatTab(conversations.find(item => item.id === tab.conversationId)!) : tab))
+    const routeTab = resetLayout ? undefined : tabFromCurrentPath(conversations)
+    let safeTabs = validTabs.slice(-12)
+    if (!safeTabs.length) {
+      if (routeTab) safeTabs = [routeTab]
+      else {
+        const fresh = createConversation()
+        conversations.unshift(fresh)
+        safeTabs = [chatTab(fresh)]
+      }
+    }
     if (routeTab && !safeTabs.some(tab => tab.id === routeTab.id)) safeTabs = [...safeTabs, routeTab].slice(-12)
     const activeTabId = routeTab?.id || (safeTabs.some(tab => tab.id === value.activeTabId)
       ? String(value.activeTabId)
@@ -572,6 +608,7 @@ function restoreState(learnerId: number): PersistedState {
 }
 
 function pathForTab(tab: WorkspaceTab) {
+  if (tab.kind === 'visual-hub') return '/visualize'
   if (tab.kind === 'settings') return '/settings'
   if (tab.kind === 'projects') return '/projects'
   if (tab.kind === 'project') return `/projects/${tab.projectId}`
@@ -621,7 +658,7 @@ function humanizeTutorMessageContent(message: Message) {
     const mode = message.content.match(/^“([^”]+)”/)?.[1] || 'Tutor'
     return `“${mode}”续接失败：模型上下文中的思考数据不完整，本轮没有执行。请重新发送本轮消息。`
   }
-  return message.content
+  return message.displayContent || message.content
 }
 
 function inheritedContextMessages(conversation: Conversation) {
@@ -645,7 +682,7 @@ function WorkspaceIcon({ kind }: { kind: WorkspaceTab['kind'] }) {
 
 function App({ auth }: { auth: AuthGateSession }) {
   const [workspace, setWorkspace] = useState<PersistedState>(() => restoreState(auth.account.learner_id))
-  const [drafts, setDrafts] = useState<Record<string, string>>({})
+  const [drafts, setDrafts] = useState<Record<string, string>>(() => readTabLayout(sessionStorage, auth.account.learner_id)?.drafts || {})
   const [pluginDraftReferences, setPluginDraftReferences] = useState<Record<string, LearnFlowPluginObject[]>>({})
   const [toolChoices, setToolChoices] = useState<Record<string, TutorToolChoice>>({})
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -675,6 +712,8 @@ function App({ auth }: { auth: AuthGateSession }) {
   const learningActionLocks = useRef(new Set<string>())
   const formalChatHydrated = useRef(false)
   const pendingRolePackageLaunchToken = useRef(rolePackageLaunchTokenFromPath())
+  const pendingConversionChatId = useRef(window.location.pathname.startsWith('/chat/w2l_')
+    ? window.location.pathname.slice('/chat/'.length) : '')
   const rolePackageLaunchStarted = useRef(false)
   const formalChatFingerprints = useRef<Record<string, string>>({})
   const paperAttachIntents = useRef(new Map<string, string>())
@@ -690,12 +729,16 @@ function App({ auth }: { auth: AuthGateSession }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem(learnerWorkspaceStorageKey(auth.account.learner_id), JSON.stringify(workspace))
+      localStorage.setItem(learnerWorkspaceStorageKey(auth.account.learner_id), JSON.stringify(withoutTabLayout(workspace)))
     } catch {
       // The formal backend remains authoritative when browser storage is
       // unavailable or over quota.
     }
   }, [auth.account.learner_id, workspace])
+
+  useEffect(() => {
+    saveTabLayout(sessionStorage, auth.account.learner_id, { tabs: workspace.tabs, activeTabId: workspace.activeTabId, splitTabId: workspace.splitTabId, drafts, pages: Object.fromEntries(workspace.conversations.filter(item => workspace.tabs.some(tab => tab.conversationId === item.id)).map(item => [item.id, { title: item.title, formalSessionId: item.formalSessionId, projectId: item.projectId, checkpointId: item.checkpointId, projectRole: item.projectRole, sheets: item.sheets, activeSheetId: item.activeSheetId }])) })
+  }, [auth.account.learner_id, workspace.tabs, workspace.activeTabId, workspace.splitTabId, drafts, workspace.conversations])
 
   const refreshFormalProjects = () => {
     void listFormalProjects()
@@ -797,9 +840,12 @@ function App({ auth }: { auth: AuthGateSession }) {
         return conversation ? [{ ...tab, title: conversation.title }] : []
       })
       if (tabs.length === 0 && conversations[0]) tabs = [chatTab(conversations[0])]
-      const activeTabId = tabs.some(tab => tab.id === previous.activeTabId)
+      const incoming = conversations.find(item => item.id === pendingConversionChatId.current)
+      if (incoming && !tabs.some(tab => tab.id === `chat:${incoming.id}`)) tabs = [...tabs, chatTab(incoming)]
+      const activeTabId = incoming ? `chat:${incoming.id}` : tabs.some(tab => tab.id === previous.activeTabId)
         ? previous.activeTabId
         : tabs[0]?.id || ''
+      pendingConversionChatId.current = ''
       const splitTabId = tabs.some(tab => tab.id === previous.splitTabId)
         && previous.splitTabId !== activeTabId
         ? previous.splitTabId
@@ -878,7 +924,9 @@ function App({ auth }: { auth: AuthGateSession }) {
 
   useEffect(() => {
     if (!activeTab) return
-    window.history.replaceState({ tabId: activeTab.id }, '', pathForTab(activeTab))
+    if (pendingConversionChatId.current) return
+    const path = pathForTab(activeTab)
+    window.history.replaceState({ tabId: activeTab.id }, '', activeTab.kind === 'ecosystem' && window.location.pathname === '/ecosystem' ? ecosystemEntryPath(window.location.search) : path)
     document.title = `${activeTab.title} · LearnFlow`
   }, [activeTab])
 
@@ -2196,7 +2244,15 @@ function App({ auth }: { auth: AuthGateSession }) {
         selectionContext: activeSheet(conversation)?.quote,
         activeArtifactContext: activeSheet(conversation)?.artifact,
         learningTaskContext: learningProjection ? learningTaskTutorContext(learningProjection) : undefined,
-        learningPlanContext: planningProjection ? learningPlanTutorContext(planningProjection) : undefined,
+        learningPlanContext: planningProjection ? {
+          ...learningPlanTutorContext(planningProjection),
+          ...(!isDesktopRuntime() ? {
+            kindLabel: conversation.projectId ? '项目学习规划' : '方向与长期学习规划',
+            nextQuestion: conversation.projectSources?.some(source => source.status === 'processed')
+              ? '依据已选资料与已有目标设置关卡和长期安排；只澄清影响安排的基础或时间缺口'
+              : '先读取项目或个人资料库；已有合适资料则规划关卡与时间，否则推荐教材和仓库并邀请选择或上传；不要先逼问工程产物',
+          } : {}),
+        } : undefined,
         learnerPathState: formalSnapshotForTurn
           ? learnerPathStateFromFormal(formalSnapshotForTurn.learning_path)
           : workspace.learningPath,
@@ -2898,6 +2954,7 @@ function App({ auth }: { auth: AuthGateSession }) {
 
   const renderTab = (tab: WorkspaceTab | undefined) => {
     if (!tab) return null
+    if (tab.kind === 'visual-hub') return <Suspense fallback={<p>正在载入图解库…</p>}><VisualHubPage/></Suspense>
     if (tab.kind === 'projects') {
       return <Suspense fallback={<div className="page-loading">正在载入学习项目…</div>}><ProjectsPage onOpen={project => { refreshFormalProjects(); void openProjectTutor(project.id) }} /></Suspense>
     }
@@ -3209,7 +3266,7 @@ function App({ auth }: { auth: AuthGateSession }) {
                       <li key={message.id}>
                         <button type="button" onClick={() => focusMainMessage(message.id)}>
                           <span>{message.role === 'user' ? '你' : message.role === 'assistant' ? 'Tutor' : '系统'} · {String(index + 1).padStart(2, '0')}</span>
-                          <p>{message.content.replace(/\s+/g, ' ').trim().slice(0, 150) || '空内容'}</p>
+                          <p>{(message.displayContent || message.content).replace(/\s+/g, ' ').trim().slice(0, 150) || '空内容'}</p>
                           <small>{topLevelPages.filter(page => page.sourceMessageId === message.id).length} 个分支</small>
                         </button>
                       </li>
@@ -3382,6 +3439,15 @@ function App({ auth }: { auth: AuthGateSession }) {
             {hasWorkbench && paperMode === 'stack' && <span className="paper-desktop-hint">点击桌面空白，平铺全部纸张</span>}
           </div>
         </div>
+        {!isDesktopRuntime() && conversation.mode === 'learning_plan' && !activePluginIds.includes('learning_task_conversion') && <PlanningResourceWorkbench
+          key={`${conversation.id}:${conversation.projectId || 'library'}`}
+          projectId={conversation.projectId}
+          topic={formalProjectWorkspaces[conversation.projectId || 0]?.project.name || planProjection?.plan.objective || conversation.title}
+          runs={conversation.messages.flatMap(message => message.toolRuns || [])}
+          pending={Boolean(pendingMode)}
+          onProjectChange={syncProjectWorkspace}
+          onRequest={prompt => { void runTutorTurn(conversation.id, prompt) }}
+        />}
         <div className="composer-dock">
           <form className="composer" onSubmit={event => sendMessage(conversation.id, event)}>
             {planProjection && conversation.mode === 'learning_plan'
@@ -3396,7 +3462,7 @@ function App({ auth }: { auth: AuthGateSession }) {
                       {planProjection.missingRequirements.length ? ` · 待确认 ${planProjection.missingRequirements.slice(0, 2).map(item => item.label).join('、')}` : ' · 草案信息已齐'}
                     </span>
                   </div>
-                  {planProjection.plan.kind === 'project_seed' && <span className="project-stub-badge">项目尚未接入</span>}
+                  {planProjection.plan.kind === 'project_seed' && <span className="project-stub-badge">{conversation.projectId ? '已绑定项目' : '学习计划草案'}</span>}
                   <details className="planning-menu">
                     <summary role="button" aria-label="学习规划详情">•••</summary>
                     <div className="planning-popover">
@@ -3730,6 +3796,7 @@ function App({ auth }: { auth: AuthGateSession }) {
             <button type="button" onClick={() => openTab(REVIEW_TAB)}><span>↺</span>复习与错题</button>
             <button type="button" onClick={() => openTab(TASKS_TAB)}><span>☷</span>学习任务</button>
             <button type="button" onClick={() => openTab(LEARNING_PATH_TAB)}><span>⌁</span>学习路径</button>
+            <button type="button" onClick={() => window.location.assign('/visualize')}><span>▷</span>图解与动画</button>
             <button type="button" onClick={() => window.location.assign('https://graphs.learnflow.club/hub')}><span>◇</span>岗位图谱</button>
           </nav>
           <div className="sidebar-scroll-area">
@@ -3770,7 +3837,7 @@ function App({ auth }: { auth: AuthGateSession }) {
             <section className="sidebar-section sidebar-conversations">
               <header><strong>对话</strong><button type="button" onClick={newConversation} aria-label="新建对话">＋</button></header>
               <nav className="conversation-list" aria-label="对话列表">
-            {workspace.conversations.filter(conversation => !conversation.projectId).map(conversation => (
+            {recentConversations(workspace.conversations.filter(conversation => !conversation.projectId)).map(conversation => (
               <div
                 key={conversation.id}
                 className={`conversation-row ${activeConversation?.id === conversation.id ? 'conversation-active' : ''} ${splitConversation?.id === conversation.id ? 'conversation-secondary' : ''}`}
@@ -4162,7 +4229,7 @@ function MessageList({ messages, conversationId, onPluginPrompt, onPluginReferen
                       const anchor = selection?.anchorNode
                       const quote = selectedQuote && anchor && article?.contains(anchor)
                         ? selectedQuote
-                        : message.content.replace(/\s+/g, ' ').trim().slice(0, 600)
+                        : (message.displayContent || message.content).replace(/\s+/g, ' ').trim().slice(0, 600)
                       if (!quote) return
                       onQuoteFollowUp(message.id, quote)
                       selection?.removeAllRanges()
@@ -4249,8 +4316,13 @@ const rootElement = document.getElementById('root')!
 const rootScope = globalThis as typeof globalThis & { __learnflowRoot?: Root }
 const root = rootScope.__learnflowRoot || createRoot(rootElement)
 rootScope.__learnflowRoot = root
+const ConversionPage = lazy(() => import('./WorkTaskConversionPage.tsx'))
+const isConversionPage = window.location.pathname === '/convert' || window.location.hostname === 'w2ltask.learnflow.club'
+const publicVisualHub = ['/visualize', '/visual-hub'].includes(window.location.pathname)
 void initializeRuntimeClient().then(() => root.render(
-  <AuthGate>
-    {auth => <App key={`learner:${auth.account.learner_id}`} auth={auth} />}
-  </AuthGate>,
+  <AuthGate>{auth => isConversionPage
+    ? <Suspense fallback={<p>正在载入工作任务转换…</p>}><ConversionPage key={`conversion:${auth.account.learner_id}`} auth={auth}/></Suspense>
+    : publicVisualHub
+    ? <><nav style={{padding:'16px 26px'}}><a href="/">← 返回学习空间</a></nav><Suspense fallback={<p>正在载入图解库…</p>}><VisualHubPage key={`visual-hub:${auth.account.learner_id}`}/></Suspense></>
+    : <App key={`learner:${auth.account.learner_id}`} auth={auth} />}</AuthGate>,
 ))

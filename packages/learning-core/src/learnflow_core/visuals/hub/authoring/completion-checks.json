@@ -1,0 +1,4132 @@
+[
+  {
+    "id": "lab2-riemann",
+    "version": "2.0.0",
+    "session": "math-calculus.c2.s1",
+    "file": "lab2-riemann-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 30,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-chain",
+    "version": "2.0.0",
+    "session": "math-calculus.c3.s2",
+    "file": "lab2-chain-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-projection",
+    "version": "2.0.0",
+    "session": "math-linear.c1.s1",
+    "file": "lab2-projection-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-eigen",
+    "version": "2.0.0",
+    "session": "math-linear.c3.s1",
+    "file": "lab2-eigen-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-svd",
+    "version": "2.0.0",
+    "session": "math-linear.c3.s2",
+    "file": "lab2-svd-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-binomial",
+    "version": "2.0.0",
+    "session": "math-probability.c2.s1",
+    "file": "lab2-binomial-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-normal",
+    "version": "2.0.0",
+    "session": "math-probability.c2.s1",
+    "file": "lab2-normal-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-clt",
+    "version": "2.0.0",
+    "session": "math-probability.c2.s2",
+    "file": "lab2-clt-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-entropy",
+    "version": "2.0.0",
+    "session": "math-probability.c2.s1",
+    "file": "lab2-entropy-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-descent",
+    "version": "2.0.0",
+    "session": "math-optimization.c1.s1",
+    "file": "lab2-descent-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 13,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "optimization.gd.overshoot",
+    "version": "2.0.0",
+    "session": "math-optimization.c1.s1",
+    "file": "optimization.gd.overshoot-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 13,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-huffman",
+    "version": "2.0.0",
+    "session": "data-structures.c3.s2",
+    "file": "lab2-huffman-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-binary",
+    "version": "2.0.0",
+    "session": "algorithms.c1.s2",
+    "file": "lab2-binary-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 5,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "algorithms.binary_search.interval",
+    "version": "2.0.0",
+    "session": "algorithms.c1.s2",
+    "file": "algorithms.binary_search.interval-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 5,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-quicksort",
+    "version": "2.0.0",
+    "session": "algorithms.c2.s1",
+    "file": "lab2-quicksort-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 34,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "algorithms.quicksort.partition",
+    "version": "2.0.0",
+    "session": "algorithms.c2.s1",
+    "file": "algorithms.quicksort.partition-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 34,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-merge",
+    "version": "2.0.0",
+    "session": "algorithms.c2.s2",
+    "file": "lab2-merge-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 9,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-heap",
+    "version": "2.0.0",
+    "session": "algorithms.c2.s2",
+    "file": "lab2-heap-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 17,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-bfs",
+    "version": "2.0.0",
+    "session": "ai-foundations.c1.s1",
+    "file": "lab2-bfs-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "algorithms.bfs.diamond",
+    "version": "2.0.0",
+    "session": "ai-foundations.c1.s1",
+    "file": "algorithms.bfs.diamond-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-dfs",
+    "version": "2.0.0",
+    "session": "ai-foundations.c1.s1",
+    "file": "lab2-dfs-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-prim",
+    "version": "2.0.0",
+    "session": "algorithms.c3.s1",
+    "file": "lab2-prim-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 5,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-kruskal",
+    "version": "2.0.0",
+    "session": "algorithms.c3.s1",
+    "file": "lab2-kruskal-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-knapsack",
+    "version": "2.0.0",
+    "session": "algorithms.c3.s2",
+    "file": "lab2-knapsack-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 5,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-cache",
+    "version": "2.0.0",
+    "session": "architecture.c2.s1",
+    "file": "lab2-cache-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 8,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-paging",
+    "version": "2.0.0",
+    "session": "operating-systems.c2.s1",
+    "file": "lab2-paging-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "systems.virtual_memory.translation",
+    "version": "2.0.0",
+    "session": "operating-systems.c2.s1",
+    "file": "systems.virtual_memory.translation-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-lru",
+    "version": "2.0.0",
+    "session": "operating-systems.c2.s1",
+    "file": "lab2-lru-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 12,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-fifo",
+    "version": "2.0.0",
+    "session": "operating-systems.c2.s1",
+    "file": "lab2-fifo-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 12,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-roundrobin",
+    "version": "2.0.0",
+    "session": "operating-systems.c1.s2",
+    "file": "lab2-roundrobin-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 15,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-deadlock",
+    "version": "2.0.0",
+    "session": "operating-systems.c3.s1",
+    "file": "lab2-deadlock-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "systems.deadlock.wait_cycle",
+    "version": "2.0.0",
+    "session": "operating-systems.c3.s1",
+    "file": "systems.deadlock.wait_cycle-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-subnet",
+    "version": "2.0.0",
+    "session": "networks.c1.s2",
+    "file": "lab2-subnet-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-window",
+    "version": "2.0.0",
+    "session": "networks.c2.s2",
+    "file": "lab2-window-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 11,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-aimd",
+    "version": "2.0.0",
+    "session": "networks.c2.s2",
+    "file": "lab2-aimd-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 20,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-bloom",
+    "version": "2.0.0",
+    "session": "databases.c3.s2",
+    "file": "lab2-bloom-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 4,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-perceptron",
+    "version": "2.0.0",
+    "session": "machine-learning.c1.s2",
+    "file": "lab2-perceptron-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-logistic",
+    "version": "2.0.0",
+    "session": "machine-learning.c1.s2",
+    "file": "lab2-logistic-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-softmax",
+    "version": "2.0.0",
+    "session": "nlp.c2.s2",
+    "file": "lab2-softmax-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-crossentropy",
+    "version": "2.0.0",
+    "session": "deep-learning.c1.s1",
+    "file": "lab2-crossentropy-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-backprop",
+    "version": "2.0.0",
+    "session": "deep-learning.c1.s1",
+    "file": "lab2-backprop-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-conv",
+    "version": "2.0.0",
+    "session": "deep-learning.c2.s1",
+    "file": "lab2-conv-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 9,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-pool",
+    "version": "2.0.0",
+    "session": "deep-learning.c2.s1",
+    "file": "lab2-pool-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 4,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-kmeans",
+    "version": "2.0.0",
+    "session": "machine-learning.c3.s1",
+    "file": "lab2-kmeans-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 7,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-pca",
+    "version": "2.0.0",
+    "session": "machine-learning.c3.s2",
+    "file": "lab2-pca-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-attention",
+    "version": "2.0.0",
+    "session": "deep-learning.c3.s2",
+    "file": "lab2-attention-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-bplus",
+    "version": "2.0.0",
+    "session": "data-structures.c3.s1",
+    "file": "lab2-bplus-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "database.bplus_tree.lookup",
+    "version": "2.0.0",
+    "session": "data-structures.c3.s1",
+    "file": "database.bplus_tree.lookup-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-hash",
+    "version": "2.0.0",
+    "session": "data-structures.c2.s2",
+    "file": "lab2-hash-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 9,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-bst",
+    "version": "2.0.0",
+    "session": "data-structures.c2.s1",
+    "file": "lab2-bst-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 8,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-stack",
+    "version": "2.0.0",
+    "session": "programming.c1.s2",
+    "file": "lab2-stack-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 14,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "programming.recursion.stack",
+    "version": "2.0.0",
+    "session": "programming.c1.s2",
+    "file": "programming.recursion.stack-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 14,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-queue",
+    "version": "2.0.0",
+    "session": "data-structures.c1.s2",
+    "file": "lab2-queue-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 9,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-raft",
+    "version": "2.0.0",
+    "session": "distributed-systems.c2.s1",
+    "file": "lab2-raft-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 5,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-vectorclock",
+    "version": "2.0.0",
+    "session": "distributed-systems.c1.s1",
+    "file": "lab2-vectorclock-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 3,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-tokenbucket",
+    "version": "2.0.0",
+    "session": "cloud.c2.s1",
+    "file": "lab2-tokenbucket-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 8,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-consistenthash",
+    "version": "2.0.0",
+    "session": "databases.c3.s2",
+    "file": "lab2-consistenthash-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "lab2-rag",
+    "version": "2.0.0",
+    "session": "ai-engineering.c1.s2",
+    "file": "lab2-rag-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "ai.rag.evidence_flow",
+    "version": "2.0.0",
+    "session": "ai-engineering.c1.s2",
+    "file": "ai.rag.evidence_flow-2.0.0.html",
+    "parameter_cases": 3,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-theory-c1-s1",
+    "version": "1.0.0",
+    "session": "theory.c1.s1",
+    "file": "course-theory-c1-s1-1.0.0.html",
+    "parameter_cases": 8,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-theory-c1-s2",
+    "version": "1.0.0",
+    "session": "theory.c1.s2",
+    "file": "course-theory-c1-s2-1.0.0.html",
+    "parameter_cases": 8,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-theory-c2-s1",
+    "version": "1.0.0",
+    "session": "theory.c2.s1",
+    "file": "course-theory-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 7,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-theory-c2-s2",
+    "version": "1.0.0",
+    "session": "theory.c2.s2",
+    "file": "course-theory-c2-s2-1.0.0.html",
+    "parameter_cases": 8,
+    "max_frames": 13,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-theory-c3-s1",
+    "version": "1.0.0",
+    "session": "theory.c3.s1",
+    "file": "course-theory-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-theory-c3-s2",
+    "version": "1.0.0",
+    "session": "theory.c3.s2",
+    "file": "course-theory-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-compilers-c1-s1",
+    "version": "1.0.0",
+    "session": "compilers.c1.s1",
+    "file": "course-compilers-c1-s1-1.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 5,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-compilers-c1-s2",
+    "version": "1.0.0",
+    "session": "compilers.c1.s2",
+    "file": "course-compilers-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-compilers-c2-s1",
+    "version": "1.0.0",
+    "session": "compilers.c2.s1",
+    "file": "course-compilers-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-compilers-c2-s2",
+    "version": "1.0.0",
+    "session": "compilers.c2.s2",
+    "file": "course-compilers-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-compilers-c3-s1",
+    "version": "1.0.0",
+    "session": "compilers.c3.s1",
+    "file": "course-compilers-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-compilers-c3-s2",
+    "version": "1.0.0",
+    "session": "compilers.c3.s2",
+    "file": "course-compilers-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 3,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-software-engineering-c1-s1",
+    "version": "1.0.0",
+    "session": "software-engineering.c1.s1",
+    "file": "course-software-engineering-c1-s1-1.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 4,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-software-engineering-c1-s2",
+    "version": "1.0.0",
+    "session": "software-engineering.c1.s2",
+    "file": "course-software-engineering-c1-s2-1.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-software-engineering-c2-s1",
+    "version": "1.0.0",
+    "session": "software-engineering.c2.s1",
+    "file": "course-software-engineering-c2-s1-1.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-software-engineering-c2-s2",
+    "version": "1.0.0",
+    "session": "software-engineering.c2.s2",
+    "file": "course-software-engineering-c2-s2-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-software-engineering-c3-s1",
+    "version": "1.0.0",
+    "session": "software-engineering.c3.s1",
+    "file": "course-software-engineering-c3-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-software-engineering-c3-s2",
+    "version": "1.0.0",
+    "session": "software-engineering.c3.s2",
+    "file": "course-software-engineering-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 5,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-security-c1-s1",
+    "version": "1.0.0",
+    "session": "security.c1.s1",
+    "file": "course-security-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-security-c1-s2",
+    "version": "1.0.0",
+    "session": "security.c1.s2",
+    "file": "course-security-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-security-c2-s1",
+    "version": "1.0.0",
+    "session": "security.c2.s1",
+    "file": "course-security-c2-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 7,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-security-c2-s2",
+    "version": "1.0.0",
+    "session": "security.c2.s2",
+    "file": "course-security-c2-s2-1.0.0.html",
+    "parameter_cases": 8,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-security-c3-s1",
+    "version": "1.0.0",
+    "session": "security.c3.s1",
+    "file": "course-security-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-security-c3-s2",
+    "version": "1.0.0",
+    "session": "security.c3.s2",
+    "file": "course-security-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-ai-foundations-c1-s2",
+    "version": "1.0.0",
+    "session": "ai-foundations.c1.s2",
+    "file": "course-ai-foundations-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 8,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-ai-foundations-c2-s1",
+    "version": "1.0.0",
+    "session": "ai-foundations.c2.s1",
+    "file": "course-ai-foundations-c2-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 3,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-ai-foundations-c2-s2",
+    "version": "1.0.0",
+    "session": "ai-foundations.c2.s2",
+    "file": "course-ai-foundations-c2-s2-1.0.0.html",
+    "parameter_cases": 8,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-ai-foundations-c3-s1",
+    "version": "1.0.0",
+    "session": "ai-foundations.c3.s1",
+    "file": "course-ai-foundations-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-ai-foundations-c3-s2",
+    "version": "1.0.0",
+    "session": "ai-foundations.c3.s2",
+    "file": "course-ai-foundations-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-machine-learning-c1-s1",
+    "version": "1.0.0",
+    "session": "machine-learning.c1.s1",
+    "file": "course-machine-learning-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-machine-learning-c1-s2",
+    "version": "1.0.0",
+    "session": "machine-learning.c1.s2",
+    "file": "course-machine-learning-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-machine-learning-c2-s1",
+    "version": "1.0.0",
+    "session": "machine-learning.c2.s1",
+    "file": "course-machine-learning-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-machine-learning-c2-s2",
+    "version": "1.0.0",
+    "session": "machine-learning.c2.s2",
+    "file": "course-machine-learning-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-machine-learning-c3-s1",
+    "version": "1.0.0",
+    "session": "machine-learning.c3.s1",
+    "file": "course-machine-learning-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 4,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-machine-learning-c3-s2",
+    "version": "1.0.0",
+    "session": "machine-learning.c3.s2",
+    "file": "course-machine-learning-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-deep-learning-c1-s1",
+    "version": "1.0.0",
+    "session": "deep-learning.c1.s1",
+    "file": "course-deep-learning-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-deep-learning-c1-s2",
+    "version": "1.0.0",
+    "session": "deep-learning.c1.s2",
+    "file": "course-deep-learning-c1-s2-1.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-deep-learning-c2-s2",
+    "version": "1.0.0",
+    "session": "deep-learning.c2.s2",
+    "file": "course-deep-learning-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 13,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-deep-learning-c3-s1",
+    "version": "1.0.0",
+    "session": "deep-learning.c3.s1",
+    "file": "course-deep-learning-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-deep-learning-c3-s2",
+    "version": "1.0.0",
+    "session": "deep-learning.c3.s2",
+    "file": "course-deep-learning-c3-s2-1.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-graphics-c1-s1",
+    "version": "1.0.0",
+    "session": "graphics.c1.s1",
+    "file": "course-graphics-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-graphics-c1-s2",
+    "version": "1.0.0",
+    "session": "graphics.c1.s2",
+    "file": "course-graphics-c1-s2-1.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-graphics-c2-s1",
+    "version": "1.0.0",
+    "session": "graphics.c2.s1",
+    "file": "course-graphics-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-graphics-c2-s2",
+    "version": "1.0.0",
+    "session": "graphics.c2.s2",
+    "file": "course-graphics-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-graphics-c3-s1",
+    "version": "1.0.0",
+    "session": "graphics.c3.s1",
+    "file": "course-graphics-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-graphics-c3-s2",
+    "version": "1.0.0",
+    "session": "graphics.c3.s2",
+    "file": "course-graphics-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-hci-c1-s1",
+    "version": "1.0.0",
+    "session": "hci.c1.s1",
+    "file": "course-hci-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-hci-c1-s2",
+    "version": "1.0.0",
+    "session": "hci.c1.s2",
+    "file": "course-hci-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-hci-c2-s1",
+    "version": "1.0.0",
+    "session": "hci.c2.s1",
+    "file": "course-hci-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-hci-c2-s2",
+    "version": "1.0.0",
+    "session": "hci.c2.s2",
+    "file": "course-hci-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-hci-c3-s1",
+    "version": "1.0.0",
+    "session": "hci.c3.s1",
+    "file": "course-hci-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-hci-c3-s2",
+    "version": "1.0.0",
+    "session": "hci.c3.s2",
+    "file": "course-hci-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-web-engineering-c1-s1",
+    "version": "1.0.0",
+    "session": "web-engineering.c1.s1",
+    "file": "course-web-engineering-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 8,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-web-engineering-c1-s2",
+    "version": "1.0.0",
+    "session": "web-engineering.c1.s2",
+    "file": "course-web-engineering-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 10,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-web-engineering-c2-s1",
+    "version": "1.0.0",
+    "session": "web-engineering.c2.s1",
+    "file": "course-web-engineering-c2-s1-1.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-web-engineering-c2-s2",
+    "version": "1.0.0",
+    "session": "web-engineering.c2.s2",
+    "file": "course-web-engineering-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-web-engineering-c3-s1",
+    "version": "1.0.0",
+    "session": "web-engineering.c3.s1",
+    "file": "course-web-engineering-c3-s1-1.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 8,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-web-engineering-c3-s2",
+    "version": "1.0.0",
+    "session": "web-engineering.c3.s2",
+    "file": "course-web-engineering-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-mobile-c1-s1",
+    "version": "1.0.0",
+    "session": "mobile.c1.s1",
+    "file": "course-mobile-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 4,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-mobile-c1-s2",
+    "version": "1.0.0",
+    "session": "mobile.c1.s2",
+    "file": "course-mobile-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 13,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-mobile-c2-s1",
+    "version": "1.0.0",
+    "session": "mobile.c2.s1",
+    "file": "course-mobile-c2-s1-1.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-mobile-c2-s2",
+    "version": "1.0.0",
+    "session": "mobile.c2.s2",
+    "file": "course-mobile-c2-s2-1.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-mobile-c3-s1",
+    "version": "1.0.0",
+    "session": "mobile.c3.s1",
+    "file": "course-mobile-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-mobile-c3-s2",
+    "version": "1.0.0",
+    "session": "mobile.c3.s2",
+    "file": "course-mobile-c3-s2-1.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-cloud-c1-s1",
+    "version": "1.0.0",
+    "session": "cloud.c1.s1",
+    "file": "course-cloud-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-cloud-c1-s2",
+    "version": "1.0.0",
+    "session": "cloud.c1.s2",
+    "file": "course-cloud-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-cloud-c2-s1",
+    "version": "1.0.0",
+    "session": "cloud.c2.s1",
+    "file": "course-cloud-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 12,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-cloud-c2-s2",
+    "version": "1.0.0",
+    "session": "cloud.c2.s2",
+    "file": "course-cloud-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 8,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-cloud-c3-s1",
+    "version": "1.0.0",
+    "session": "cloud.c3.s1",
+    "file": "course-cloud-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 4,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-cloud-c3-s2",
+    "version": "1.0.0",
+    "session": "cloud.c3.s2",
+    "file": "course-cloud-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 8,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-data-engineering-c1-s1",
+    "version": "1.0.0",
+    "session": "data-engineering.c1.s1",
+    "file": "course-data-engineering-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 3,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-data-engineering-c1-s2",
+    "version": "1.0.0",
+    "session": "data-engineering.c1.s2",
+    "file": "course-data-engineering-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 7,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-data-engineering-c2-s1",
+    "version": "1.0.0",
+    "session": "data-engineering.c2.s1",
+    "file": "course-data-engineering-c2-s1-1.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-data-engineering-c2-s2",
+    "version": "1.0.0",
+    "session": "data-engineering.c2.s2",
+    "file": "course-data-engineering-c2-s2-1.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-data-engineering-c3-s1",
+    "version": "1.0.0",
+    "session": "data-engineering.c3.s1",
+    "file": "course-data-engineering-c3-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 5,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-data-engineering-c3-s2",
+    "version": "1.0.0",
+    "session": "data-engineering.c3.s2",
+    "file": "course-data-engineering-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-ai-engineering-c1-s1",
+    "version": "1.0.0",
+    "session": "ai-engineering.c1.s1",
+    "file": "course-ai-engineering-c1-s1-1.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 3,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-ai-engineering-c2-s1",
+    "version": "1.0.0",
+    "session": "ai-engineering.c2.s1",
+    "file": "course-ai-engineering-c2-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-ai-engineering-c2-s2",
+    "version": "1.0.0",
+    "session": "ai-engineering.c2.s2",
+    "file": "course-ai-engineering-c2-s2-1.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-ai-engineering-c3-s1",
+    "version": "1.0.0",
+    "session": "ai-engineering.c3.s1",
+    "file": "course-ai-engineering-c3-s1-1.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-ai-engineering-c3-s2",
+    "version": "1.0.0",
+    "session": "ai-engineering.c3.s2",
+    "file": "course-ai-engineering-c3-s2-1.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-functions-c1-s1",
+    "version": "1.0.0",
+    "session": "math-functions.c1.s1",
+    "file": "course-math-functions-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-functions-c1-s2",
+    "version": "1.0.0",
+    "session": "math-functions.c1.s2",
+    "file": "course-math-functions-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-functions-c2-s1",
+    "version": "1.0.0",
+    "session": "math-functions.c2.s1",
+    "file": "course-math-functions-c2-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-functions-c3-s1",
+    "version": "1.0.0",
+    "session": "math-functions.c3.s1",
+    "file": "course-math-functions-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-functions-c3-s2",
+    "version": "1.0.0",
+    "session": "math-functions.c3.s2",
+    "file": "course-math-functions-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-calculus-c1-s1",
+    "version": "1.0.0",
+    "session": "math-calculus.c1.s1",
+    "file": "course-math-calculus-c1-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-calculus-c2-s1",
+    "version": "1.0.0",
+    "session": "math-calculus.c2.s1",
+    "file": "course-math-calculus-c2-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-calculus-c2-s2",
+    "version": "1.0.0",
+    "session": "math-calculus.c2.s2",
+    "file": "course-math-calculus-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-calculus-c3-s1",
+    "version": "1.0.0",
+    "session": "math-calculus.c3.s1",
+    "file": "course-math-calculus-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-calculus-c3-s2",
+    "version": "1.0.0",
+    "session": "math-calculus.c3.s2",
+    "file": "course-math-calculus-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-linear-c1-s1",
+    "version": "1.0.0",
+    "session": "math-linear.c1.s1",
+    "file": "course-math-linear-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-linear-c1-s2",
+    "version": "1.0.0",
+    "session": "math-linear.c1.s2",
+    "file": "course-math-linear-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-linear-c2-s2",
+    "version": "1.0.0",
+    "session": "math-linear.c2.s2",
+    "file": "course-math-linear-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-linear-c3-s1",
+    "version": "1.0.0",
+    "session": "math-linear.c3.s1",
+    "file": "course-math-linear-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-linear-c3-s2",
+    "version": "1.0.0",
+    "session": "math-linear.c3.s2",
+    "file": "course-math-linear-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-discrete-c1-s1",
+    "version": "1.0.0",
+    "session": "math-discrete.c1.s1",
+    "file": "course-math-discrete-c1-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-discrete-c1-s2",
+    "version": "1.0.0",
+    "session": "math-discrete.c1.s2",
+    "file": "course-math-discrete-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 12,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-discrete-c2-s1",
+    "version": "1.0.0",
+    "session": "math-discrete.c2.s1",
+    "file": "course-math-discrete-c2-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-discrete-c2-s2",
+    "version": "1.0.0",
+    "session": "math-discrete.c2.s2",
+    "file": "course-math-discrete-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-discrete-c3-s1",
+    "version": "1.0.0",
+    "session": "math-discrete.c3.s1",
+    "file": "course-math-discrete-c3-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-discrete-c3-s2",
+    "version": "1.0.0",
+    "session": "math-discrete.c3.s2",
+    "file": "course-math-discrete-c3-s2-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-probability-c1-s1",
+    "version": "1.0.0",
+    "session": "math-probability.c1.s1",
+    "file": "course-math-probability-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-probability-c2-s2",
+    "version": "1.0.0",
+    "session": "math-probability.c2.s2",
+    "file": "course-math-probability-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-probability-c3-s1",
+    "version": "1.0.0",
+    "session": "math-probability.c3.s1",
+    "file": "course-math-probability-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-probability-c3-s2",
+    "version": "1.0.0",
+    "session": "math-probability.c3.s2",
+    "file": "course-math-probability-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-optimization-c1-s2",
+    "version": "1.0.0",
+    "session": "math-optimization.c1.s2",
+    "file": "course-math-optimization-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 19,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-optimization-c2-s1",
+    "version": "1.0.0",
+    "session": "math-optimization.c2.s1",
+    "file": "course-math-optimization-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-optimization-c2-s2",
+    "version": "1.0.0",
+    "session": "math-optimization.c2.s2",
+    "file": "course-math-optimization-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-optimization-c3-s1",
+    "version": "1.0.0",
+    "session": "math-optimization.c3.s1",
+    "file": "course-math-optimization-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-math-optimization-c3-s2",
+    "version": "1.0.0",
+    "session": "math-optimization.c3.s2",
+    "file": "course-math-optimization-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 17,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-programming-c1-s1",
+    "version": "1.0.0",
+    "session": "programming.c1.s1",
+    "file": "course-programming-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 4,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-programming-c2-s1",
+    "version": "1.0.0",
+    "session": "programming.c2.s1",
+    "file": "course-programming-c2-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 3,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-programming-c2-s2",
+    "version": "1.0.0",
+    "session": "programming.c2.s2",
+    "file": "course-programming-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-programming-c3-s1",
+    "version": "1.0.0",
+    "session": "programming.c3.s1",
+    "file": "course-programming-c3-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 4,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-programming-c3-s2",
+    "version": "1.0.0",
+    "session": "programming.c3.s2",
+    "file": "course-programming-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-data-structures-c1-s2",
+    "version": "1.0.0",
+    "session": "data-structures.c1.s2",
+    "file": "course-data-structures-c1-s2-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 7,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-data-structures-c2-s1",
+    "version": "1.0.0",
+    "session": "data-structures.c2.s1",
+    "file": "course-data-structures-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-data-structures-c2-s2",
+    "version": "1.0.0",
+    "session": "data-structures.c2.s2",
+    "file": "course-data-structures-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-data-structures-c3-s2",
+    "version": "1.0.0",
+    "session": "data-structures.c3.s2",
+    "file": "course-data-structures-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 4,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-algorithms-c1-s1",
+    "version": "1.0.0",
+    "session": "algorithms.c1.s1",
+    "file": "course-algorithms-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-algorithms-c2-s2",
+    "version": "1.0.0",
+    "session": "algorithms.c2.s2",
+    "file": "course-algorithms-c2-s2-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 11,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-algorithms-c3-s2",
+    "version": "1.0.0",
+    "session": "algorithms.c3.s2",
+    "file": "course-algorithms-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 16,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-digital-logic-c1-s1",
+    "version": "1.0.0",
+    "session": "digital-logic.c1.s1",
+    "file": "course-digital-logic-c1-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-digital-logic-c1-s2",
+    "version": "1.0.0",
+    "session": "digital-logic.c1.s2",
+    "file": "course-digital-logic-c1-s2-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 4,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-digital-logic-c2-s1",
+    "version": "1.0.0",
+    "session": "digital-logic.c2.s1",
+    "file": "course-digital-logic-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 8,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-digital-logic-c2-s2",
+    "version": "1.0.0",
+    "session": "digital-logic.c2.s2",
+    "file": "course-digital-logic-c2-s2-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 12,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-digital-logic-c3-s1",
+    "version": "1.0.0",
+    "session": "digital-logic.c3.s1",
+    "file": "course-digital-logic-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-digital-logic-c3-s2",
+    "version": "1.0.0",
+    "session": "digital-logic.c3.s2",
+    "file": "course-digital-logic-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-architecture-c1-s1",
+    "version": "1.0.0",
+    "session": "architecture.c1.s1",
+    "file": "course-architecture-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 5,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-architecture-c1-s2",
+    "version": "1.0.0",
+    "session": "architecture.c1.s2",
+    "file": "course-architecture-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-architecture-c2-s1",
+    "version": "1.0.0",
+    "session": "architecture.c2.s1",
+    "file": "course-architecture-c2-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-architecture-c2-s2",
+    "version": "1.0.0",
+    "session": "architecture.c2.s2",
+    "file": "course-architecture-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 4,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-architecture-c3-s1",
+    "version": "1.0.0",
+    "session": "architecture.c3.s1",
+    "file": "course-architecture-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 5,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-architecture-c3-s2",
+    "version": "1.0.0",
+    "session": "architecture.c3.s2",
+    "file": "course-architecture-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-operating-systems-c1-s1",
+    "version": "1.0.0",
+    "session": "operating-systems.c1.s1",
+    "file": "course-operating-systems-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 8,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-operating-systems-c1-s2",
+    "version": "1.0.0",
+    "session": "operating-systems.c1.s2",
+    "file": "course-operating-systems-c1-s2-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-operating-systems-c2-s2",
+    "version": "1.0.0",
+    "session": "operating-systems.c2.s2",
+    "file": "course-operating-systems-c2-s2-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-operating-systems-c3-s2",
+    "version": "1.0.0",
+    "session": "operating-systems.c3.s2",
+    "file": "course-operating-systems-c3-s2-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 8,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-networks-c1-s1",
+    "version": "1.0.0",
+    "session": "networks.c1.s1",
+    "file": "course-networks-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 5,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-networks-c1-s2",
+    "version": "1.0.0",
+    "session": "networks.c1.s2",
+    "file": "course-networks-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-networks-c2-s2",
+    "version": "1.0.0",
+    "session": "networks.c2.s2",
+    "file": "course-networks-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 7,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-networks-c3-s2",
+    "version": "1.0.0",
+    "session": "networks.c3.s2",
+    "file": "course-networks-c3-s2-1.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 5,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-databases-c1-s1",
+    "version": "1.0.0",
+    "session": "databases.c1.s1",
+    "file": "course-databases-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-databases-c1-s2",
+    "version": "1.0.0",
+    "session": "databases.c1.s2",
+    "file": "course-databases-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-databases-c2-s2",
+    "version": "1.0.0",
+    "session": "databases.c2.s2",
+    "file": "course-databases-c2-s2-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 3,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-databases-c3-s1",
+    "version": "1.0.0",
+    "session": "databases.c3.s1",
+    "file": "course-databases-c3-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 3,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-databases-c3-s2",
+    "version": "1.0.0",
+    "session": "databases.c3.s2",
+    "file": "course-databases-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "hub-functions",
+    "version": "2.0.0",
+    "session": "math-functions.c2.s2",
+    "file": "hub-functions-2.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "hub-derivative",
+    "version": "2.0.0",
+    "session": "math-calculus.c1.s2",
+    "file": "hub-derivative-2.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "hub-linear",
+    "version": "2.0.0",
+    "session": "math-linear.c2.s1",
+    "file": "hub-linear-2.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "hub-bayes",
+    "version": "2.0.0",
+    "session": "math-probability.c1.s2",
+    "file": "hub-bayes-2.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "probability.density.area",
+    "version": "2.0.0",
+    "session": "math-probability.c2.s1",
+    "file": "probability.density.area-2.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "data_structures.linked_list.insert",
+    "version": "2.0.0",
+    "session": "data-structures.c1.s1",
+    "file": "data_structures.linked_list.insert-2.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 3,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "networking.tcp.handshake",
+    "version": "2.0.0",
+    "session": "networks.c2.s1",
+    "file": "networking.tcp.handshake-2.0.0.html",
+    "parameter_cases": 7,
+    "max_frames": 5,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "networking.dns.resolution",
+    "version": "2.0.0",
+    "session": "networks.c3.s1",
+    "file": "networking.dns.resolution-2.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 5,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "database.transaction.dirty_read",
+    "version": "2.0.0",
+    "session": "databases.c2.s1",
+    "file": "database.transaction.dirty_read-2.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 4,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "deep_learning.cnn.mechanism",
+    "version": "2.0.0",
+    "session": "deep-learning.c2.s1",
+    "file": "deep_learning.cnn.mechanism-2.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 21,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-testing-c1-s1",
+    "version": "1.0.0",
+    "session": "testing.c1.s1",
+    "file": "course-testing-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-testing-c1-s2",
+    "version": "1.0.0",
+    "session": "testing.c1.s2",
+    "file": "course-testing-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 5,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-testing-c2-s1",
+    "version": "1.0.0",
+    "session": "testing.c2.s1",
+    "file": "course-testing-c2-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-testing-c2-s2",
+    "version": "1.0.0",
+    "session": "testing.c2.s2",
+    "file": "course-testing-c2-s2-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-testing-c3-s1",
+    "version": "1.0.0",
+    "session": "testing.c3.s1",
+    "file": "course-testing-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-testing-c3-s2",
+    "version": "1.0.0",
+    "session": "testing.c3.s2",
+    "file": "course-testing-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 4,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-embedded-c1-s1",
+    "version": "1.0.0",
+    "session": "embedded.c1.s1",
+    "file": "course-embedded-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-embedded-c1-s2",
+    "version": "1.0.0",
+    "session": "embedded.c1.s2",
+    "file": "course-embedded-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-embedded-c2-s1",
+    "version": "1.0.0",
+    "session": "embedded.c2.s1",
+    "file": "course-embedded-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 10,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-embedded-c2-s2",
+    "version": "1.0.0",
+    "session": "embedded.c2.s2",
+    "file": "course-embedded-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 9,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-embedded-c3-s1",
+    "version": "1.0.0",
+    "session": "embedded.c3.s1",
+    "file": "course-embedded-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-embedded-c3-s2",
+    "version": "1.0.0",
+    "session": "embedded.c3.s2",
+    "file": "course-embedded-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 5,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-computer-vision-c1-s1",
+    "version": "1.0.0",
+    "session": "computer-vision.c1.s1",
+    "file": "course-computer-vision-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-computer-vision-c1-s2",
+    "version": "1.0.0",
+    "session": "computer-vision.c1.s2",
+    "file": "course-computer-vision-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 5,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-computer-vision-c2-s1",
+    "version": "1.0.0",
+    "session": "computer-vision.c2.s1",
+    "file": "course-computer-vision-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 3,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-computer-vision-c2-s2",
+    "version": "1.0.0",
+    "session": "computer-vision.c2.s2",
+    "file": "course-computer-vision-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 3,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-computer-vision-c3-s1",
+    "version": "1.0.0",
+    "session": "computer-vision.c3.s1",
+    "file": "course-computer-vision-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 3,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-computer-vision-c3-s2",
+    "version": "1.0.0",
+    "session": "computer-vision.c3.s2",
+    "file": "course-computer-vision-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-nlp-c1-s1",
+    "version": "1.0.0",
+    "session": "nlp.c1.s1",
+    "file": "course-nlp-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-nlp-c1-s2",
+    "version": "1.0.0",
+    "session": "nlp.c1.s2",
+    "file": "course-nlp-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-nlp-c2-s1",
+    "version": "1.0.0",
+    "session": "nlp.c2.s1",
+    "file": "course-nlp-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 3,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-nlp-c2-s2",
+    "version": "1.0.0",
+    "session": "nlp.c2.s2",
+    "file": "course-nlp-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-nlp-c3-s1",
+    "version": "1.0.0",
+    "session": "nlp.c3.s1",
+    "file": "course-nlp-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-nlp-c3-s2",
+    "version": "1.0.0",
+    "session": "nlp.c3.s2",
+    "file": "course-nlp-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-reinforcement-learning-c1-s1",
+    "version": "1.0.0",
+    "session": "reinforcement-learning.c1.s1",
+    "file": "course-reinforcement-learning-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 12,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-reinforcement-learning-c1-s2",
+    "version": "1.0.0",
+    "session": "reinforcement-learning.c1.s2",
+    "file": "course-reinforcement-learning-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-reinforcement-learning-c2-s1",
+    "version": "1.0.0",
+    "session": "reinforcement-learning.c2.s1",
+    "file": "course-reinforcement-learning-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 24,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-reinforcement-learning-c2-s2",
+    "version": "1.0.0",
+    "session": "reinforcement-learning.c2.s2",
+    "file": "course-reinforcement-learning-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-reinforcement-learning-c3-s1",
+    "version": "1.0.0",
+    "session": "reinforcement-learning.c3.s1",
+    "file": "course-reinforcement-learning-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-reinforcement-learning-c3-s2",
+    "version": "1.0.0",
+    "session": "reinforcement-learning.c3.s2",
+    "file": "course-reinforcement-learning-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-distributed-systems-c1-s1",
+    "version": "1.0.0",
+    "session": "distributed-systems.c1.s1",
+    "file": "course-distributed-systems-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-distributed-systems-c1-s2",
+    "version": "1.0.0",
+    "session": "distributed-systems.c1.s2",
+    "file": "course-distributed-systems-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-distributed-systems-c2-s1",
+    "version": "1.0.0",
+    "session": "distributed-systems.c2.s1",
+    "file": "course-distributed-systems-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-distributed-systems-c2-s2",
+    "version": "1.0.0",
+    "session": "distributed-systems.c2.s2",
+    "file": "course-distributed-systems-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-distributed-systems-c3-s1",
+    "version": "1.0.0",
+    "session": "distributed-systems.c3.s1",
+    "file": "course-distributed-systems-c3-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-distributed-systems-c3-s2",
+    "version": "1.0.0",
+    "session": "distributed-systems.c3.s2",
+    "file": "course-distributed-systems-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-formal-methods-c1-s1",
+    "version": "1.0.0",
+    "session": "formal-methods.c1.s1",
+    "file": "course-formal-methods-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 4,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-formal-methods-c1-s2",
+    "version": "1.0.0",
+    "session": "formal-methods.c1.s2",
+    "file": "course-formal-methods-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-formal-methods-c2-s1",
+    "version": "1.0.0",
+    "session": "formal-methods.c2.s1",
+    "file": "course-formal-methods-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 9,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-formal-methods-c2-s2",
+    "version": "1.0.0",
+    "session": "formal-methods.c2.s2",
+    "file": "course-formal-methods-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-formal-methods-c3-s1",
+    "version": "1.0.0",
+    "session": "formal-methods.c3.s1",
+    "file": "course-formal-methods-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-formal-methods-c3-s2",
+    "version": "1.0.0",
+    "session": "formal-methods.c3.s2",
+    "file": "course-formal-methods-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-advanced-algorithms-c1-s1",
+    "version": "1.0.0",
+    "session": "advanced-algorithms.c1.s1",
+    "file": "course-advanced-algorithms-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 4,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-advanced-algorithms-c1-s2",
+    "version": "1.0.0",
+    "session": "advanced-algorithms.c1.s2",
+    "file": "course-advanced-algorithms-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 20,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-advanced-algorithms-c2-s1",
+    "version": "1.0.0",
+    "session": "advanced-algorithms.c2.s1",
+    "file": "course-advanced-algorithms-c2-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-advanced-algorithms-c2-s2",
+    "version": "1.0.0",
+    "session": "advanced-algorithms.c2.s2",
+    "file": "course-advanced-algorithms-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 6,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-advanced-algorithms-c3-s1",
+    "version": "1.0.0",
+    "session": "advanced-algorithms.c3.s1",
+    "file": "course-advanced-algorithms-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-advanced-algorithms-c3-s2",
+    "version": "1.0.0",
+    "session": "advanced-algorithms.c3.s2",
+    "file": "course-advanced-algorithms-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-robotics-c1-s1",
+    "version": "1.0.0",
+    "session": "robotics.c1.s1",
+    "file": "course-robotics-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-robotics-c1-s2",
+    "version": "1.0.0",
+    "session": "robotics.c1.s2",
+    "file": "course-robotics-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-robotics-c2-s1",
+    "version": "1.0.0",
+    "session": "robotics.c2.s1",
+    "file": "course-robotics-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-robotics-c2-s2",
+    "version": "1.0.0",
+    "session": "robotics.c2.s2",
+    "file": "course-robotics-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 25,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-robotics-c3-s1",
+    "version": "1.0.0",
+    "session": "robotics.c3.s1",
+    "file": "course-robotics-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-robotics-c3-s2",
+    "version": "1.0.0",
+    "session": "robotics.c3.s2",
+    "file": "course-robotics-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 12,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-retrieval-mining-c1-s1",
+    "version": "1.0.0",
+    "session": "retrieval-mining.c1.s1",
+    "file": "course-retrieval-mining-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-retrieval-mining-c1-s2",
+    "version": "1.0.0",
+    "session": "retrieval-mining.c1.s2",
+    "file": "course-retrieval-mining-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-retrieval-mining-c2-s1",
+    "version": "1.0.0",
+    "session": "retrieval-mining.c2.s1",
+    "file": "course-retrieval-mining-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-retrieval-mining-c2-s2",
+    "version": "1.0.0",
+    "session": "retrieval-mining.c2.s2",
+    "file": "course-retrieval-mining-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 10,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-retrieval-mining-c3-s1",
+    "version": "1.0.0",
+    "session": "retrieval-mining.c3.s1",
+    "file": "course-retrieval-mining-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-retrieval-mining-c3-s2",
+    "version": "1.0.0",
+    "session": "retrieval-mining.c3.s2",
+    "file": "course-retrieval-mining-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-privacy-crypto-c1-s1",
+    "version": "1.0.0",
+    "session": "privacy-crypto.c1.s1",
+    "file": "course-privacy-crypto-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-privacy-crypto-c1-s2",
+    "version": "1.0.0",
+    "session": "privacy-crypto.c1.s2",
+    "file": "course-privacy-crypto-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-privacy-crypto-c2-s1",
+    "version": "1.0.0",
+    "session": "privacy-crypto.c2.s1",
+    "file": "course-privacy-crypto-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-privacy-crypto-c2-s2",
+    "version": "1.0.0",
+    "session": "privacy-crypto.c2.s2",
+    "file": "course-privacy-crypto-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-privacy-crypto-c3-s1",
+    "version": "1.0.0",
+    "session": "privacy-crypto.c3.s1",
+    "file": "course-privacy-crypto-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-privacy-crypto-c3-s2",
+    "version": "1.0.0",
+    "session": "privacy-crypto.c3.s2",
+    "file": "course-privacy-crypto-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 2,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-quantum-c1-s1",
+    "version": "1.0.0",
+    "session": "quantum.c1.s1",
+    "file": "course-quantum-c1-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-quantum-c1-s2",
+    "version": "1.0.0",
+    "session": "quantum.c1.s2",
+    "file": "course-quantum-c1-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-quantum-c2-s1",
+    "version": "1.0.0",
+    "session": "quantum.c2.s1",
+    "file": "course-quantum-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 3,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-quantum-c2-s2",
+    "version": "1.0.0",
+    "session": "quantum.c2.s2",
+    "file": "course-quantum-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 8,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-quantum-c3-s1",
+    "version": "1.0.0",
+    "session": "quantum.c3.s1",
+    "file": "course-quantum-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-quantum-c3-s2",
+    "version": "1.0.0",
+    "session": "quantum.c3.s2",
+    "file": "course-quantum-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-bioinformatics-c1-s1",
+    "version": "1.0.0",
+    "session": "bioinformatics.c1.s1",
+    "file": "course-bioinformatics-c1-s1-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 4,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-bioinformatics-c1-s2",
+    "version": "1.0.0",
+    "session": "bioinformatics.c1.s2",
+    "file": "course-bioinformatics-c1-s2-1.0.0.html",
+    "parameter_cases": 6,
+    "max_frames": 4,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-bioinformatics-c2-s1",
+    "version": "1.0.0",
+    "session": "bioinformatics.c2.s1",
+    "file": "course-bioinformatics-c2-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-bioinformatics-c2-s2",
+    "version": "1.0.0",
+    "session": "bioinformatics.c2.s2",
+    "file": "course-bioinformatics-c2-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-bioinformatics-c3-s1",
+    "version": "1.0.0",
+    "session": "bioinformatics.c3.s1",
+    "file": "course-bioinformatics-c3-s1-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 12,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  },
+  {
+    "id": "course-bioinformatics-c3-s2",
+    "version": "1.0.0",
+    "session": "bioinformatics.c3.s2",
+    "file": "course-bioinformatics-c3-s2-1.0.0.html",
+    "parameter_cases": 5,
+    "max_frames": 1,
+    "checked": [
+      "compute",
+      "finite_values",
+      "scene_changes",
+      "bounded_steps"
+    ]
+  }
+]

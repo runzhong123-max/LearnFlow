@@ -98,3 +98,63 @@ test('plugin contract and local JSON repair keep data and explicit control routi
   const paused=await createVisualWork({request:'从零演示消息',kind:'animation',request_id:'cancel-golden'},fixture.context)
   assert.equal((await cancelVisualWork(paused.job_id!,fixture.context)).status,'cancelled')
 })
+
+test('maintained interactive reference is reused without generating executable source',async()=>{
+  const source={hub_version:'1.0.0',work_id:template.id,version:'1.0.0',title:'交互作品',sha256:'test-digest'}
+  const setup=harness([{source_mode:'reuse',source_ref:{kind:'template',id:template.id,version:template.version},builder:'interactive_html'}],{templates:true})
+  const base=setup.context.artifactHost!.request
+  setup.context.artifactHost!.request=async(op,p)=>op==='template'?{...template,builder:'interactive_html',source}:base(op,p)
+  const result=await createVisualWork({request:'复用交互作品',kind:'animation',request_id:'hub-reuse'},setup.context)
+  assert.equal(result.status,'ready');assert.equal(result.artifact?.builder,'interactive_html')
+  assert.deepEqual(setup.calls.find(c=>c.operation==='publish')?.payload.source,source)
+  assert.equal(setup.generations,1)
+})
+
+test('exact retrieved template button does not call the model',async()=>{
+  const setup=harness([],{templates:true})
+  const result=await createVisualWork({request:`复用维护图解 template_id=${template.id} template_version=${template.version}`,source_mode:'reuse',kind:'animation',request_id:'exact-ui'},setup.context)
+  assert.equal(result.status,'ready');assert.equal(setup.generations,0)
+  assert.deepEqual(setup.calls.find(c=>c.operation==='publish')?.payload.source,maintained)
+})
+
+test('BYOK configuration errors keep actionable reasons instead of attempting visual repair', async () => {
+  const setup=harness([new Error('visual_user_model:credential_rejected: 请检查 API Key。')])
+  const result=await createVisualWork({request:'从零演示消息',kind:'animation',request_id:'byok-failure'},setup.context)
+  assert.equal(result.status,'paused')
+  assert.equal(result.message,'请检查 API Key。')
+  assert.equal(setup.generations,1)
+  assert.ok(!setup.calls.some(c=>c.operation==='publish'))
+})
+
+test('source selection is small and separate; custom inputs can route to fresh construction',async()=>{
+  const setup=harness([{source_mode:'fresh',reason:'用户要求不同输入'},fresh],{templates:true})
+  const result=await createVisualWork({request:'用动画演示前文的具体输入',kind:'animation',request_id:'route-then-build'},setup.context)
+  assert.equal(result.status,'ready')
+  assert.equal(setup.generations,2)
+  assert.ok(setup.prompts[0].includes('本轮只决定来源'))
+  assert.ok(!setup.prompts[0].includes('<visual_spec_source_contract>'))
+  assert.ok(setup.prompts[1].includes('<visual_spec_source_contract>'))
+  assert.equal(setup.job.route.routing_decided,true)
+})
+
+test('Huffman follow-up reuses retrieved interactive animation with one selection call',async()=>{
+  const huffman={...template,id:'lab2-huffman',title:'哈夫曼树：合并最轻的两棵树',description:'每步合并最小权重，展示前缀编码与带权路径长度'}
+  const source={hub_version:'1.0.0',work_id:huffman.id,version:huffman.version,title:huffman.title,sha256:'test'}
+  const setup=harness([{source_mode:'reuse',source_ref:{kind:'template',id:huffman.id,version:huffman.version}}],{templates:true})
+  const base=setup.context.artifactHost!.request
+  setup.context.artifactHost!.request=async(op,p)=>op==='catalog'?{...OFFLINE_VISUAL_CATALOG,templates:[huffman]}:op==='template'?{...huffman,builder:'interactive_html',source}:base(op,p)
+  const result=await createVisualWork({request:'用动画演示一下\n【前文主题参考】讲一下哈夫曼树',kind:'animation',request_id:'huffman-follow-up'},setup.context)
+  assert.equal(result.status,'ready');assert.equal(result.artifact?.builder,'interactive_html')
+  assert.equal(setup.generations,1)
+  assert.ok(setup.prompts[0].includes('哈夫曼树'))
+  assert.ok(!setup.prompts[0].includes('<visual_spec_source_contract>'))
+  assert.deepEqual(setup.calls.find(c=>c.operation==='publish')?.payload.source,source)
+})
+
+test('repair persists the latest precise diagnostic for the next resume',async()=>{
+  const setup=harness([fresh,fresh],{publishErrors:['svg_story:/steps/0: missing fields [note]','svg_story:/steps/1/active_nodes: references invalid']})
+  const result=await createVisualWork({request:'从零演示消息',kind:'animation',request_id:'precise-diagnostic'},setup.context)
+  assert.equal(result.status,'paused')
+  assert.ok(result.message?.includes('/steps/1/active_nodes'))
+  assert.equal(setup.job.route.diagnostic,setup.job.diagnostics[0].detail)
+})

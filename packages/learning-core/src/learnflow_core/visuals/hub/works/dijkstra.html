@@ -1,0 +1,87 @@
+<div id="dj-live">
+  <h3>迪杰斯特拉 · 最短路径是怎样确定的</h3>
+  <div class="viz-controls">
+    <label class="form-label">起点 <select class="form-select" data-source aria-label="起点"><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option></select></label>
+    <label class="form-label">C—D 边权 <output data-weight>8</output><input class="form-range" data-cost type="range" min="1" max="12" value="8" aria-label="C 到 D 边权"></label>
+  </div>
+  <svg class="dj-scene" role="img" aria-label="无向正权图。节点内显示从起点出发的当前距离，双圈表示已确定。"></svg>
+  <div class="viz-row text-small"><span>◎ 已确定</span><span>○ 待探索</span><span data-frontier></span></div>
+  <div class="dj-detail" aria-live="polite" data-detail></div>
+  <div class="viz-controls">
+    <button class="btn btn-primary" data-play type="button">播放</button>
+    <button class="btn" data-prev type="button">上一步</button>
+    <button class="btn" data-next type="button">下一步</button>
+    <output class="tabular-nums" data-progress></output>
+  </div>
+  <input class="form-range" data-seek type="range" min="0" value="0" aria-label="算法进度">
+</div>
+<style>
+ #dj-live .dj-scene{display:block;width:100%;overflow:visible}
+ #dj-live .dj-detail{min-height:3em;padding:12px 0;color:var(--foreground)}
+ #dj-live .dj-scene text{fill:var(--foreground);font-size:12px;font-weight:500}
+ #dj-live .traveler{fill:var(--viz-series-1)}
+ #dj-live .edge-active{stroke:var(--viz-series-1);stroke-width:3}
+ #dj-live .dj-scene circle.node{fill:var(--background);stroke:var(--border);stroke-width:1.5}
+ #dj-live .dj-scene circle.settled{fill:color-mix(in srgb,var(--viz-series-1) 15%,var(--background));stroke:var(--viz-series-1)}
+ #dj-live .dj-scene .edge{stroke:var(--border);stroke-width:1.5}
+</style>
+<script>
+(()=>{
+const root=document.getElementById('dj-live'), q=s=>root.querySelector(s), names=['A','B','C','D','E','F'];
+const base=[[0,1,4],[0,2,2],[1,2,1],[1,3,5],[2,3,8],[2,4,10],[3,4,2],[3,5,6],[4,5,3]];
+let start=0,cost=8,at=0,timer=null,frames=[],edges=[],motion=null;
+const fmt=x=>Number.isFinite(x)?String(x):'∞';
+function simulate(source,es){
+  const d=names.map(()=>Infinity),prev=names.map(()=>null),done=new Set(),frames=[];d[source]=0;
+  const save=(note,active=null,edge=null,from=null,to=null)=>frames.push({d:[...d],prev:[...prev],done:[...done],note,active,edge,from,to});
+  save(`从 ${names[source]} 出发：自身距离为 0，其他节点暂未知。`);
+  while(done.size<names.length){
+    let u=-1;for(let i=0;i<names.length;i++)if(!done.has(i)&&(u<0||d[i]<d[u]))u=i;
+    if(u<0||!Number.isFinite(d[u]))break;
+    done.add(u);save(`选出未确定节点中距离最小的 ${names[u]}：距离 ${d[u]} 已确定。`,u);
+    es.forEach(([a,b,w],ei)=>{const v=a===u?b:b===u?a:-1;if(v<0||done.has(v))return;
+      const old=d[v],candidate=d[u]+w;
+      if(candidate<old){d[v]=candidate;prev[v]=u;save(`${names[u]} → ${names[v]}：${d[u]} + ${w} = ${candidate} < ${fmt(old)}，更新距离与前驱。`,u,ei,u,v);}
+      else save(`${names[u]} → ${names[v]}：${d[u]} + ${w} = ${candidate} ≥ ${fmt(old)}，保留原来的路径。`,u,ei,u,v);
+    });
+  }
+  save('完成：高亮边组成从起点出发的最短路径树。');return frames;
+}
+function stop(){clearInterval(timer);timer=null;q('[data-play]').textContent=at===frames.length-1?'重播':'播放';}
+function build(){stop();edges=base.map(e=>[...e]);edges[4][2]=cost;frames=simulate(start,edges);at=0;q('[data-seek]').max=frames.length-1;draw();}
+function draw(){
+  cancelAnimationFrame(motion);
+  const f=frames[at],svg=q('svg'),w=Math.max(280,Math.floor(svg.getBoundingClientRect().width)),h=w<450?300:320;
+  svg.setAttribute('viewBox',`0 0 ${w} ${h}`);svg.setAttribute('height',h);
+  const pos=[[.10,.5],[.36,.15],[.36,.85],[.65,.15],[.65,.85],[.90,.5]].map(([x,y])=>[32+x*(w-64),32+y*(h-64)]);
+  const last=at===frames.length-1;let html='<title>迪杰斯特拉算法，第 '+at+' 步</title>';
+  edges.forEach(([a,b,value],i)=>{const [x1,y1]=pos[a],[x2,y2]=pos[b];const tree=last&&(f.prev[a]===b||f.prev[b]===a);const active=i===f.edge;
+    html+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="${active||tree?'edge-active':'edge'}"/>`;
+    const x=(x1+x2)/2,y=(y1+y2)/2;
+    html+=`<rect x="${x-10}" y="${y-10}" width="20" height="20" fill="var(--background)"/><text x="${x}" y="${y+4}" text-anchor="middle">${value}</text>`;
+  });
+  if(f.edge!==null)html+='<circle class="traveler" r="5" cx="0" cy="0"/>';
+  names.forEach((name,i)=>{const [x,y]=pos[i],settled=f.done.includes(i);
+    html+=`<circle class="node ${settled?'settled':''}" cx="${x}" cy="${y}" r="25"/>`;
+    if(settled)html+=`<circle cx="${x}" cy="${y}" r="21" fill="none" stroke="var(--viz-series-1)"/>`;
+    html+=`<text x="${x}" y="${y-3}" text-anchor="middle">${name}${i===start?'·起':''}</text><text x="${x}" y="${y+12}" text-anchor="middle">${fmt(f.d[i])}</text>`;
+  });svg.innerHTML=html;
+  const queue=names.map((name,i)=>({name,i,d:f.d[i]})).filter(n=>!f.done.includes(n.i)&&Number.isFinite(n.d)).sort((a,b)=>a.d-b.d||a.i-b.i);
+  q('[data-frontier]').textContent=queue.length?'候选：'+queue.map(n=>n.name+' '+n.d).join(' · '):last?'全部完成':'候选为空';
+  q('[data-detail]').textContent=f.note;q('[data-progress]').textContent=`${at} / ${frames.length-1}`;q('[data-seek]').value=at;
+  q('[data-prev]').disabled=at===0;q('[data-next]').disabled=last;q('[data-play]').textContent=timer?'暂停':last?'重播':'播放';
+  if(f.edge!==null){const a=pos[f.from],b=pos[f.to],dot=svg.querySelector('.traveler'),begin=performance.now();
+    const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function move(now){const t=reduced?1:Math.min(1,(now-begin)/650);dot.setAttribute('cx',a[0]+(b[0]-a[0])*t);dot.setAttribute('cy',a[1]+(b[1]-a[1])*t);if(t<1)motion=requestAnimationFrame(move);}
+    motion=requestAnimationFrame(move);
+  }
+}
+q('[data-source]').onchange=e=>{start=names.indexOf(e.target.value);build();};
+q('[data-cost]').oninput=e=>{cost=+e.target.value;q('[data-weight]').textContent=cost;build();};
+q('[data-play]').onclick=()=>{if(timer){stop();return;}if(at===frames.length-1)at=0;timer=setInterval(()=>{if(at<frames.length-1){at++;draw();}if(at===frames.length-1)stop();},1000);draw();};
+q('[data-next]').onclick=()=>{stop();at=Math.min(at+1,frames.length-1);draw();};q('[data-prev]').onclick=()=>{stop();at=Math.max(at-1,0);draw();};
+q('[data-seek]').oninput=e=>{stop();at=+e.target.value;draw();};
+root.__audit={simulate,base,get frames(){return frames;},get at(){return at;}};
+new ResizeObserver(()=>draw()).observe(q('svg'));document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});build();
+})();
+</script>

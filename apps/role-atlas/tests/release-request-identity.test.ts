@@ -110,7 +110,7 @@ test("default preparation creates separate successful package lines for projects
     };
     const domainId = prefix => prefix + "-" + ++sequence;
     const canonicalStringify = JSON.stringify, sha256Hex = async value => value;
-    const compileStaticRolePackage = async input => ({ validation: { valid: true }, bundle: { manifest: { ...input, snapshotId: "snapshot-" + input.sourceProjectVersionId.replace("version-", ""), rootHash: "artifact-" + ++sequence } } });
+    const compileStaticRolePackage = async input => ({ validation: { valid: true, publishable: true }, bundle: { manifest: { ...input, snapshotId: "snapshot-" + input.sourceProjectVersionId.replace("version-", ""), rootHash: "artifact-" + ++sequence } } });
     const putPackageArtifact = async bundle => { artifacts.set(bundle.manifest.rootHash, { bundle }); };
     const getPackageArtifact = async root => artifacts.get(root);
     export const inspected = { releases, lines, artifacts, result };

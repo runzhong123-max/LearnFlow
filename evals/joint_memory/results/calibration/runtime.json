@@ -1,0 +1,14 @@
+{
+  "python": "3.14.6",
+  "implementation": "CPython",
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "sqlite": "3.53.4",
+  "packages": {
+    "SQLAlchemy": "2.0.51",
+    "aiosqlite": "0.22.1",
+    "fastapi": "0.141.1",
+    "pydantic": "2.13.4",
+    "pytest": "8.3.5"
+  },
+  "scope": "Existing Web backend runtime; no package installation during experiment"
+}

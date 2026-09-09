@@ -1,3 +1,4 @@
+import {graphLayout} from './graphLayout.ts'
 import type {VisualView, VisualElement, VisualFrame, PresentationPlan, RenderDiagnostic, VisualBundle, PresentationContext} from './types.ts'
 
 const escape = (value: unknown) => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -73,7 +74,7 @@ export function renderView(view: VisualView, viewport = 720, context: Presentati
     if (element.kind === 'table') required = 48 + (values.columns?.length || 0) * 110
     if (required > plan.width) {plan.width = required; repair('HORIZONTAL_SCROLL', element.id)}
   }
-  const width = plan.width
+  let width = plan.width
   const axis = view.elements.find(element => element.kind === 'axis')?.values?.axes
   const plotKinds = new Set(['axis', 'curve', 'point', 'region'])
   let cursor = 28
@@ -187,41 +188,34 @@ export function renderView(view: VisualView, viewport = 720, context: Presentati
       const visibleNodes = graph.nodes as string[]
       const allNodes = context.graphNodes[element.id] || visibleNodes
       const nodes = [...allNodes]
-      const columns = Math.max(1, Math.min(nodes.length, Math.floor((width - 48) / 142)))
-      const pitch = (width - 48) / Math.max(1, columns), rowHeight = 115
-      const positions = Object.fromEntries(nodes.map((node, i) => [node, [24 + pitch * (i % columns + .5), cursor + 42 + Math.floor(i / columns) * rowHeight]]))
-      if (nodes.length > columns) repair('REFLOW_GRAPH', element.id)
-      const marker = `arrow-${view.id.replace(/[^a-zA-Z0-9_-]/g, '_')}-${element.id.replace(/[^a-zA-Z0-9_-]/g, '_')}`
-      shapes.push(`<defs><marker id="${marker}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#64748b"/></marker></defs>`)
-      for (const [from, to] of graph.edges as string[][]) {
-        const a = positions[from], b = positions[to]
-        if (!a || !b) {fail('INVALID_GEOMETRY', element.id); continue}
-        const distance = Math.hypot(b[0] - a[0], b[1] - a[1])
-        let path: string
-        if (!distance) path = `M${a[0] + 35} ${a[1] - 12} C${a[0] + 73} ${a[1] - 65},${a[0] - 73} ${a[1] - 65},${a[0] - 35} ${a[1] - 12}`
-        else {
-          const dx = (b[0] - a[0]) / distance, dy = (b[1] - a[1]) / distance
-          const sx = a[0] + dx * 40, sy = a[1] + dy * 30, ex = b[0] - dx * 45, ey = b[1] - dy * 33
-          const bend = Math.abs(a[1] - b[1]) < 1 && Math.abs(a[0] - b[0]) > pitch * 1.5 ? -76 : graph.edges.some((edge: string[]) => edge[0] === to && edge[1] === from) ? 17 : 0
-          if (Math.abs(b[1] - a[1]) > rowHeight * 1.5) {
-            const direction = b[1] > a[1] ? 1 : -1
-            const routeX = width - 12
-            path = `M${a[0]} ${a[1] + direction * 30} V${a[1] + direction * 61} H${routeX} V${b[1] - direction * 52} H${b[0]} V${b[1] - direction * 33}`
-          } else path = `M${sx} ${sy} Q${(sx + ex) / 2 - dy * bend} ${(sy + ey) / 2 + dx * bend} ${ex} ${ey}`
+      const layout=graphLayout(nodes,graph.edges,graph.labels||{},width,Boolean(graph.directed))
+      plan.width=Math.max(plan.width,layout.width)
+      width=plan.width
+      if(layout.width>width)repair('HORIZONTAL_SCROLL',element.id)
+      const positions=Object.fromEntries(Object.entries(layout.positions).map(([id,[x,y]])=>[id,[x,y+cursor]]))
+      const marker=`arrow-${view.id.replace(/[^a-zA-Z0-9_-]/g,'_')}-${element.id.replace(/[^a-zA-Z0-9_-]/g,'_')}`
+      shapes.push(`<defs><marker id="${marker}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#64748b"/></marker></defs>`)
+      for(const [from,to] of graph.edges as string[][]){
+        const a=positions[from],b=positions[to];if(!a||!b){fail('INVALID_GEOMETRY',element.id);continue}
+        const dx=b[0]-a[0],dy=b[1]-a[1];let path:string
+        if(from===to)path=`M${a[0]-12} ${a[1]-20} C${a[0]-60} ${a[1]-62} ${a[0]+60} ${a[1]-62} ${a[0]+12} ${a[1]-20}`
+        else{
+          const cut=(w:number)=>1/Math.max(Math.abs(dx)/(w/2+3),Math.abs(dy)/23)
+          const t=cut(layout.widths[from]),u=cut(layout.widths[to]);
+          const sx=a[0]+dx*t,sy=a[1]+dy*t,ex=b[0]-dx*u,ey=b[1]-dy*u
+          const reciprocal=graph.edges.some((e:string[])=>e[0]===to&&e[1]===from)
+          if(reciprocal){const len=Math.hypot(dx,dy);path=`M${sx} ${sy} Q${(sx+ex)/2-dy/len*22} ${(sy+ey)/2+dx/len*22} ${ex} ${ey}`}
+          else path=`M${sx} ${sy} L${ex} ${ey}`
         }
-        shapes.push(`<path d="${path}" fill="none" stroke="#64748b" stroke-width="1.8"${graph.directed ? ` marker-end="url(#${marker})"` : ''}/>`)
+        shapes.push(`<path d="${path}" fill="none" stroke="#718b94" stroke-width="1.6"${graph.directed?` marker-end="url(#${marker})"`:''}/>`)
       }
-      for (const node of visibleNodes) {
-        const [x, y] = positions[node], id = `${element.id}.${node}`, label = String(graph.labels?.[node] ?? node), active = values.active === node || (Array.isArray(values.active) && values.active.includes(node))
-        const labelLines = wrap(label, Math.min(112, pitch - 16), 13)
-        if (labelLines.length > 3) fail('TEXT_TOO_DENSE', id)
-        if (labelLines.length > 1) repair('WRAP_TEXT', id)
-        const boxWidth = Math.min(120, pitch - 12), boxHeight = Math.max(44, labelLines.length * 17 + 14)
-        const body = rectangle(x - boxWidth / 2, y - boxHeight / 2, boxWidth, boxHeight, active ? '#ffedd5' : '#eff6ff', active ? '#c2410c' : '#93c5fd') + labelLines.map((line, i) => text(x, y - (labelLines.length - 1) * 8.5 + i * 17 + 4, line, 13, 'middle')).join('')
-        shapes.push(selectable(id, label, body, node)); object(id, label, x - boxWidth / 2, y - boxHeight / 2, boxWidth, boxHeight, 'none', node)
+      for(const node of visibleNodes){
+        const[x,y]=positions[node],id=`${element.id}.${node}`,label=String(graph.labels?.[node]??node),active=values.active===node||(Array.isArray(values.active)&&values.active.includes(node))
+        const boxWidth=layout.widths[node],font=boxWidth<100?12:13,parts=label.match(/^(.*?)\s*(\[.*\])$/),lines=parts&&widthOf(label,font)>boxWidth-12?[parts[1].trim(),...wrap(parts[2],boxWidth-8,font)]:wrap(label,boxWidth-12,font),boxHeight=Math.max(38,lines.length*17+12)
+        const body=rectangle(x-boxWidth/2,y-boxHeight/2,boxWidth,boxHeight,active?'#ffedd5':'#f3f8f6',active?'#c2410c':'#aac5bb')+lines.map((line,i)=>text(x,y-(lines.length-1)*8.5+i*17+4,line,font,'middle')).join('')
+        shapes.push(selectable(id,label,body,node));object(id,label,x-boxWidth/2,y-boxHeight/2,boxWidth,boxHeight,'none',node)
       }
-      cursor += Math.ceil(nodes.length / Math.max(1, columns)) * rowHeight + 4
-      shapes.push(text(24, cursor, graph.directed ? '箭头表示有向关系' : '线段表示无向关系', 11, 'start', '#64748b')); cursor += 28
+      cursor+=layout.height+8
     } else if (element.kind === 'table') {
       const columns: string[] = values.columns || [], rows: unknown[][] = values.rows || []
       const columnWidth = (width - 48) / Math.max(1, columns.length)

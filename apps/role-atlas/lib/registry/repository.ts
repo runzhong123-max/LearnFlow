@@ -96,9 +96,13 @@ export async function listRegistryPackages(input: { query?: string; visibility?:
     JOIN package_artifacts a ON a.root_hash=r.artifact_root_hash WHERE r.status='published' AND r.published_at IS NOT NULL
     AND json_extract(a.content, '$.manifest.visibility')='public'`).all<{ id: string }>() : null;
   const hubEligibleIds = new Set(hubEligible?.results.map(row => row.id) || []);
+  const forkRuns = input.ownerSubjectId ? await getD1().prepare("SELECT b.project_id,b.input_json FROM build_runs b JOIN projects p ON p.id=b.project_id WHERE p.owner_subject_id=? AND p.deleted_at IS NULL AND json_valid(b.input_json) AND json_extract(b.input_json,'$.kind')='hub_fork'").bind(input.ownerSubjectId).all<{ project_id: string; input_json: string }>() : null;
+  const forkOrigins = new Map((forkRuns?.results || []).filter(row => ownedIds.has(row.project_id))
+    .map(row => [row.project_id, safeJson<{ upstream?: import("@/lib/hub/fork-plan").ForkOrigin }>(row.input_json, {}).upstream]));
   const visibleLines = new Set(visibleReleases.map(row => row.packageLineId));
   return filtered.filter(line => (!input.ownerSubjectId && !publicOnly) || visibleLines.has(line.id)).map((line) => ({
     ...line,
+    forkOrigin: visibleReleases.filter(row => row.packageLineId === line.id && row.projectId).map(row => forkOrigins.get(row.projectId!)).find(Boolean) || null,
     canManageHub: Boolean(line.recommendedReleaseId && hubEligibleIds.has(line.recommendedReleaseId) && input.ownerSubjectId && releases.some(row => row.packageLineId === line.id)
       && releases.filter(row => row.packageLineId === line.id).every(row => row.projectId && ownedIds.has(row.projectId))),
     scope: safeJson(line.scopeJson, {}),

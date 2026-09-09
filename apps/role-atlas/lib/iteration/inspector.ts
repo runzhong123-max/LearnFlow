@@ -3,6 +3,8 @@ import type { AuditIssue, ColdStartBuildResult, ResearchTopic } from "@/lib/buil
 import { auditRoleSnapshot } from "@/lib/risk/audit";
 import type { RiskIssue, RiskProfile } from "@/lib/risk/types";
 import type { AgentProbe, IterationFinding, IterationFindingLayer, SnapshotInspection } from "./types";
+import { learningCoverage, processCoverage } from "./learning-health";
+import { capabilityCoverage } from "@/lib/build/capability-coverage";
 
 const HARD_PROTOCOL_CODES = new Set([
   "MISSING_ROLE_ROOT",
@@ -11,6 +13,19 @@ const HARD_PROTOCOL_CODES = new Set([
   "ILLEGAL_CYCLE",
   "INVALID_SNAPSHOT_TIME",
 ]);
+
+const INSPECTION_CODES = new Set([
+  "TASK_SKILL_GAP", "TASK_LEARNING_KIND_GAP", "TASK_PROCESS_INCOMPLETE", "SKILL_COVERAGE_SPARSE", "CAPABILITY_NOT_CROSS_TASK",
+  "TASK_CAPABILITY_GAP", "TASK_CAPABILITY_UNIT_GAP",
+  "CAPABILITY_UNIT_CULTIVATION_GAP", "LEARNING_PATH_AMBIGUOUS", "LEARNING_PATH_GRAPH_GAP",
+  "AGENT_ROLE_ROOT", "AGENT_GRAPH_TRAVERSAL", "AGENT_EVIDENCE_RESOLUTION", "AGENT_SNAPSHOT_CONTEXT",
+]);
+
+/** Stable defect identity; labels and imported projection IDs may change. */
+export function findingIdentity(finding: Pick<IterationFinding, "code" | "targetIds" | "detail" | "title">) {
+  return JSON.stringify([finding.code, [...new Set(finding.targetIds)].sort(),
+    finding.code === "LANE_FALLBACK" ? finding.detail : !finding.targetIds.length ? finding.title : ""]);
+}
 
 const LAYER_BY_PROFILE: Record<RiskProfile, IterationFindingLayer> = {
   structural: "protocol",
@@ -131,25 +146,16 @@ function agentProbes(result: ColdStartBuildResult): AgentProbe[] {
 
 function coverageFindings(result: ColdStartBuildResult) {
   const findings: IterationFinding[] = [];
-  const tasks = result.semantic.nodes.filter((node) => node.type === "task");
-  const skills = result.semantic.nodes.filter((node) => node.type === "knowledge_skill");
-  const skillIds = new Set(skills.map((node) => node.id));
-  const taskSkills = new Map<string, string[]>();
-  for (const task of tasks) {
-    const related = result.semantic.edges
-      .filter((edge) => edge.source === task.id && skillIds.has(edge.target) && /skill|knowledge/u.test(edge.type))
-      .map((edge) => edge.target);
-    taskSkills.set(task.id, unique(related));
-  }
-  const tasksWithoutSkills = tasks.filter((task) => !(taskSkills.get(task.id) || []).length);
+  const { tasks, skills, tasksWithoutSkills, taskCoverage } = learningCoverage(result);
   for (const task of tasksWithoutSkills) {
+    const coverage = taskCoverage.find(item => item.taskId === task.id)!;
     findings.push(customFinding({
       layer: "coverage",
       classification: "research",
       severity: "warning",
-      code: "TASK_SKILL_GAP",
+      code: coverage.linkedPointCount ? "TASK_LEARNING_KIND_GAP" : "TASK_SKILL_GAP",
       title: `任务缺少可学习知识技能：${task.label}`,
-      detail: "该任务没有连接到能够解释其实施、调试或验收的具体知识技能。",
+      detail: `该任务仍缺少有资料依据、适用边界及评价规格的${coverage.missingKinds.map(kind => kind === "knowledge" ? "知识点" : "技能点").join("、")}；泛化能力、混合领域或单一维度不能代替完整支撑。`,
       impact: "Agent 无法组装可靠学习路径，教师也难以据此形成实训和评价入口。",
       targetIds: [task.id],
       evidenceBindingIds: task.evidenceBindingIds,
@@ -174,16 +180,42 @@ function coverageFindings(result: ColdStartBuildResult) {
       hardBlocker: false,
     }));
   }
+  for (const item of processCoverage(result).filter(item => item.hasBridge && !item.complete)) {
+    const task = tasks.find(task => task.id === item.taskId)!;
+    findings.push(customFinding({ layer: "process", classification: "research", severity: "warning", code: "TASK_PROCESS_INCOMPLETE",
+      title: `任务工作过程尚未闭合：${task.label}`, detail: "已有桥接但仍缺真实场景、触发与结果、至少两个相连行动或判断及交付物，需要依据工作实践补齐。",
+      impact: "无法据此解释任务如何执行和验收。", targetIds: [task.id], evidenceBindingIds: task.evidenceBindingIds,
+      confidence: 0.95, suggestedAction: "research", hardBlocker: false }));
+  }
   return { findings, tasks, skills, tasksWithoutSkills };
 }
 
 function pedagogyFindings(result: ColdStartBuildResult) {
   const findings: IterationFinding[] = [];
-  const taskIds = new Set(result.semantic.nodes.filter((node) => node.type === "task").map((node) => node.id));
-  const capabilities = result.semantic.nodes.filter((node) => node.type === "capability");
-  const units = result.semantic.nodes.filter((node) => node.type === "capability_unit");
+  const activeNodes = result.semantic.nodes.filter(node => node.lifecycle !== "rejected");
+  const activeEdges = result.semantic.edges.filter(edge => edge.lifecycle !== "rejected");
+  const taskIds = new Set(activeNodes.filter((node) => node.type === "task").map((node) => node.id));
+  const capabilities = activeNodes.filter((node) => node.type === "capability");
+  const units = activeNodes.filter((node) => node.type === "capability_unit");
+  const coverage = capabilityCoverage({ roleSummary: result.brief.roleTitle,
+    nodes: activeNodes.map(node => ({ ...node, tempId: node.id })),
+    edges: activeEdges.map(edge => ({ ...edge, sourceTempId: edge.source, targetTempId: edge.target })),
+  });
+  const linkedTasks = new Set(activeEdges.filter(edge => edge.type === "requires_capability" && capabilities.some(capability => capability.id === edge.target)).map(edge => edge.source));
+  for (const task of activeNodes.filter(node => coverage.uncoveredTaskIds.includes(node.id))) {
+    const hasCapability = linkedTasks.has(task.id);
+    findings.push(customFinding({
+      layer: "coverage", classification: "research", severity: "warning",
+      code: hasCapability ? "TASK_CAPABILITY_UNIT_GAP" : "TASK_CAPABILITY_GAP",
+      title: hasCapability ? `任务能力链缺少可观察单元：${task.label}` : `任务缺少岗位能力支撑：${task.label}`,
+      detail: hasCapability ? "任务已关联岗位能力，但该能力尚未连接到可训练、可观察、可评价的能力单元。" : "任务尚未通过 requires_capability 关联到岗位能力，已有其他任务的能力不能替代本任务的支撑关系。",
+      impact: "岗位包无法解释完成该任务需要的综合能力及其培养与评价入口。",
+      targetIds: [task.id], evidenceBindingIds: task.evidenceBindingIds,
+      confidence: 0.95, suggestedAction: "research", hardBlocker: false,
+    }));
+  }
   for (const capability of capabilities) {
-    const supportedTasks = new Set(result.semantic.edges
+    const supportedTasks = new Set(activeEdges
       .filter((edge) => edge.target === capability.id && taskIds.has(edge.source) && edge.type === "requires_capability")
       .map((edge) => edge.source));
     if (taskIds.size > 1 && supportedTasks.size < 2) findings.push(customFinding({
@@ -194,7 +226,7 @@ function pedagogyFindings(result: ColdStartBuildResult) {
       confidence: 0.9, suggestedAction: "research", hardBlocker: false,
     }));
   }
-  for (const unit of units.filter((node) => !node.cultivation)) findings.push(customFinding({
+  for (const unit of units.filter((node) => !node.cultivation || Object.values(node.cultivation).some(value => !value.trim()))) findings.push(customFinding({
     layer: "coverage", classification: "core_usability", severity: "warning", code: "CAPABILITY_UNIT_CULTIVATION_GAP",
     title: `能力单元缺少日常培养设计：${unit.label}`,
     detail: "尚未说明微练习、频率、反馈、学习证据、递进与独立完成标准。",
@@ -221,12 +253,14 @@ function pedagogyFindings(result: ColdStartBuildResult) {
  * visible and become iteration work instead of deleting the candidate.
  */
 export function inspectSnapshot(result: ColdStartBuildResult, options?: { targetIds?: string[]; now?: string }): SnapshotInspection {
-  const audit = auditRoleSnapshot(result, { targetIds: options?.targetIds, now: options?.now });
+  const audit = auditRoleSnapshot({ ...result, audit: { ...result.audit,
+    issues: result.audit.issues.filter(issue => !INSPECTION_CODES.has(issue.code)),
+  } }, { targetIds: options?.targetIds, now: options?.now });
   const findings = audit.issues.map(findingFromRisk);
   const coverage = coverageFindings(result);
   findings.push(...coverage.findings);
   findings.push(...pedagogyFindings(result));
-  const deduplicated = [...new Map(findings.map((finding) => [finding.id, finding])).values()];
+  const deduplicated = [...new Map(findings.map((finding) => [findingIdentity(finding), finding])).values()];
   const probes = agentProbes(result);
   for (const probe of probes.filter((item) => item.status === "failed")) {
     const existing = deduplicated.some((finding) => finding.targetIds.some((id) => probe.targetIds.includes(id)) && finding.layer === "protocol");
@@ -254,7 +288,7 @@ export function inspectSnapshot(result: ColdStartBuildResult, options?: { target
   const acceptedNodes = result.semantic.nodes.filter((node) => node.lifecycle === "stable");
   const boundTargets = new Set(result.sources.evidenceBindings.map((binding) => binding.targetId));
   const unsupportedAccepted = acceptedNodes.filter((node) => !boundTargets.has(node.id));
-  const tasksWithoutProcess = coverage.tasks.filter((task) => !result.process.bridges.some((bridge) => bridge.type === "realizes_task" && bridge.semanticNodeId === task.id));
+  const tasksWithoutProcess = processCoverage(result).filter(item => !item.complete);
   const semanticCoreTypes = ["task", "capability", "knowledge_skill"];
   const presentSemanticCoreTypes = semanticCoreTypes.filter((type) => result.semantic.nodes.some((node) => node.type === type)).length;
   const semanticCoreCoverage = presentSemanticCoreTypes / semanticCoreTypes.length;
@@ -322,6 +356,7 @@ export function inspectionToBuildAudit(inspection: SnapshotInspection): { issues
 /** Re-materialize the snapshot-facing audit projection after graph changes. */
 export function applyInspectionToSnapshot(result: ColdStartBuildResult, inspection: SnapshotInspection): ColdStartBuildResult {
   const candidate = structuredClone(result);
+  const oldLearningMessages = new Set(candidate.audit.issues.filter(i => i.code === "TASK_SKILL_GAP").map(i => i.title));
   const inspected = inspectionToBuildAudit(inspection);
   // Iteration findings describe the current candidate. Keeping compiler issues
   // that have already been resolved would make the next snapshot self-contradictory.
@@ -346,7 +381,18 @@ export function applyInspectionToSnapshot(result: ColdStartBuildResult, inspecti
   }
   candidate.validation.structural.passed = inspection.protocolValid;
   candidate.validation.structural.issues = inspection.hardBlockers.map((finding) => finding.title);
-  candidate.validation.publishable = candidate.validation.publishable && inspection.protocolValid;
+  const learningGaps = inspection.findings.filter(f => f.code === "TASK_SKILL_GAP");
+  candidate.validation.semantic.issues = unique([
+    ...candidate.validation.semantic.issues.filter(message => !oldLearningMessages.has(message)),
+    ...learningGaps.map(f => f.title),
+  ]);
+  candidate.validation.semantic.passed = candidate.validation.semantic.issues.length === 0;
+  if (learningGaps.length) {
+    if (candidate.build?.enrichment) candidate.build.enrichment.status = "degraded";
+  }
+  candidate.validation.publishable = inspection.protocolValid
+    && [candidate.validation.structural, candidate.validation.semantic, candidate.validation.evidence, candidate.validation.temporal, candidate.validation.process].every(report => report.passed)
+    && inspection.findings.every(finding => finding.severity !== "error");
   if (!inspection.protocolValid) {
     candidate.snapshot.status = "candidate";
     candidate.packages.rolePackage.status = "candidate";

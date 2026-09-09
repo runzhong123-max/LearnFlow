@@ -34,3 +34,15 @@ class CurriculumCommit(Base):
     graph: Mapped[dict] = mapped_column(JSON)
     receipt: Mapped[dict] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class CurriculumAutomaticOperation(Base):
+    """Replay handle for an authorized production run; batches use existing commits."""
+    __tablename__ = "curriculum_automatic_operations"
+    __table_args__ = (UniqueConstraint("learner_id", "request_id"),)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    learner_id: Mapped[int] = mapped_column(Integer, index=True)
+    request_id: Mapped[str] = mapped_column(String(128))
+    body_hash: Mapped[str] = mapped_column(String(64))
+    response: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

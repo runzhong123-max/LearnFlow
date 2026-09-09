@@ -46,6 +46,9 @@ type Props = {
   onDragStart: (node: RoleCardNode) => void;
   onDragEnd: () => void;
   onOpenEvidence: (nodes: RoleCardNode[]) => void;
+  onConvert?: (task: RoleCardNode) => void;
+  converting?: boolean;
+  conversionHint?: string;
 };
 
 const includedTypes = new Set(["task", "capability", "capability_unit", "knowledge_skill"]);
@@ -230,6 +233,9 @@ export default function TaskWorkspace({
   onDragStart,
   onDragEnd,
   onOpenEvidence,
+  onConvert,
+  converting = false,
+  conversionHint,
 }: Props) {
   const tasks = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -263,9 +269,11 @@ export default function TaskWorkspace({
             <p>{bundle.task.summary}</p>
           </div>
           <div className="task-detail-actions">
+            {onConvert && <button type="button" disabled={converting} onClick={() => onConvert(bundle.task)}>{converting ? "正在准备转换…" : "转为学习任务 →"}</button>}
             <button className="secondary" onClick={() => onOpenEvidence(bundle.nodes)}><BookOpenCheck size={13} /> 查看证据</button>
             <button draggable onDragStart={() => onDragStart(bundle.task)} onDragEnd={onDragEnd} onClick={() => onReference(bundle.task)}><Plus size={13} /> 引用任务</button>
           </div>
+          {conversionHint && <p className="task-conversion-hint">{conversionHint}</p>}
           <div className="task-detail-facts">
             <span><ShieldCheck size={12} /><b>{bundle.task.evidence_summary.max_confidence.toFixed(2)}</b><small>任务置信</small></span>
             <span><Network size={12} /><b>{relationCount}</b><small>结构关系</small></span>

@@ -129,3 +129,28 @@ def test_native_svg_story_publish_cancel_and_explicit_fresh(monkeypatch):
         assert [item['job_id'] for item in recoverable]==[invalid['job_id']]
         other=TestClient(app);register(other,'visual_store_story_other')
         assert not call(other,'search',{'query':'重复状态'})['jobs']
+
+
+def test_svg_story_optional_step_identity_and_precise_diagnostics():
+    import copy
+    from learnflow_core.visuals.svg_story import compile_svg_story
+    import pytest
+    source = {'story_version': '1', 'title': '合并过程', 'goal': '追踪状态',
+              'nodes': [{'id': 'a', 'label': 'A'}, {'id': 'b', 'label': 'B'}], 'edges': [],
+              'steps': [{'id': 'start', 'title': '开始', 'note': '观察 A', 'active_nodes': ['a'], 'active_edges': []},
+                        {'id': 'next', 'title': '下一步', 'note': '观察 B', 'active_nodes': ['b'], 'active_edges': []}]}
+    # A persisted candidate with harmless step identifiers must compile unchanged.
+    assert compile_svg_story(source, 'animation')['source'] == source
+    invalid = copy.deepcopy(source)
+    invalid['steps'][1]['unexpected'] = True
+    del invalid['steps'][1]['note']
+    with pytest.raises(ValueError, match=r"/steps/1: missing fields \['note'\]; unknown fields \['unexpected'\]"):
+        compile_svg_story(invalid, 'animation')
+    invalid = copy.deepcopy(source)
+    invalid['steps'][1]['id'] = 'start'
+    with pytest.raises(ValueError, match='/steps/1/id: invalid or duplicate'):
+        compile_svg_story(invalid, 'animation')
+    invalid = copy.deepcopy(source)
+    invalid['steps'][1]['active_nodes'] = ['missing']
+    with pytest.raises(ValueError, match='/steps/1/active_nodes: references invalid'):
+        compile_svg_story(invalid, 'animation')

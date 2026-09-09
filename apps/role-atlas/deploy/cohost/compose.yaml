@@ -8,7 +8,7 @@ services:
     restart: unless-stopped
     environment: &learning_backend_environment
       DATABASE_URL: sqlite+aiosqlite:////data/learnflow.db
-      CORS_ORIGINS: https://${LEARNFLOW_HOST}
+      CORS_ORIGINS: https://${LEARNFLOW_HOST},https://${WORK_TASK_HOST:-w2ltask.learnflow.club}
       AUTH_COOKIE_SECURE: "true"
       AUTH_COOKIE_DOMAIN: ${AUTH_COOKIE_DOMAIN:?set shared cookie domain}
       AUTH_RUNTIME_BRIDGE_TOKEN: ${AUTH_RUNTIME_BRIDGE_TOKEN:?set runtime bridge token}
@@ -107,6 +107,7 @@ services:
       LEARNFLOW_PUBLIC_URL: https://${LEARNFLOW_HOST}
       ROLE_ATLAS_PUBLIC_URL: https://${ROLE_ATLAS_HOST}
       GRAPH_HUB_PUBLIC_URL: https://${GRAPH_HUB_HOST}
+      WORK_TASK_PUBLIC_URL: https://${WORK_TASK_HOST:-w2ltask.learnflow.club}
       ROLE_PACKAGE_LAUNCH_SECRET: ${ROLE_PACKAGE_LAUNCH_SECRET:?set package launch secret}
       ROLE_ATLAS_GATEWAY_SECRET: ${ROLE_ATLAS_GATEWAY_SECRET:?set ecosystem gateway secret}
       MIMO_API_KEY: ${MIMO_API_KEY:-}
@@ -123,6 +124,19 @@ services:
       - role-atlas-state:/app/apps/role-atlas/.wrangler
       - ../../output/graph-hub:/app/apps/role-atlas/output/graph-hub
 
+  role-atlas-job-worker:
+    image: node:22-bookworm-slim
+    restart: unless-stopped
+    command: node /worker/job-worker.mjs
+    environment:
+      ROLE_ATLAS_INTERNAL_URL: http://role-atlas:3000
+      ROLE_ATLAS_GATEWAY_SECRET: ${ROLE_ATLAS_GATEWAY_SECRET:?set ecosystem gateway secret}
+    volumes:
+      - ../../scripts/job-worker.mjs:/worker/job-worker.mjs:ro
+    depends_on:
+      - role-atlas
+    stop_grace_period: 30s
+
   role-atlas-launch-proxy:
     image: node:22-bookworm-slim
     restart: unless-stopped
@@ -134,9 +148,11 @@ services:
       LEARNFLOW_PUBLIC_URL: https://${LEARNFLOW_HOST}
       ROLE_ATLAS_PUBLIC_URL: https://${ROLE_ATLAS_HOST}
       GRAPH_HUB_PUBLIC_URL: https://${GRAPH_HUB_HOST}
+      WORK_TASK_PUBLIC_URL: https://${WORK_TASK_HOST:-w2ltask.learnflow.club}
       ROLE_PACKAGE_LAUNCH_SECRET: ${ROLE_PACKAGE_LAUNCH_SECRET:?set package launch secret}
     volumes:
       - ./launch-proxy.mjs:/proxy/launch-proxy.mjs:ro
+      - ./task-launch-core.mjs:/proxy/task-launch-core.mjs:ro
     depends_on:
       - role-atlas
       - learnflow-backend
@@ -152,6 +168,7 @@ services:
       LEARNFLOW_HOST: ${LEARNFLOW_HOST}
       ROLE_ATLAS_HOST: ${ROLE_ATLAS_HOST}
       GRAPH_HUB_HOST: ${GRAPH_HUB_HOST}
+      WORK_TASK_HOST: ${WORK_TASK_HOST:-w2ltask.learnflow.club}
       ROOT_HOST: ${ROOT_HOST}
     ports:
       - "80:80"

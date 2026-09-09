@@ -18,6 +18,15 @@ bash start.sh demo
 
 ## 文档索引
 
+- [教育记忆与规划 v2 升级及消融](EDUCATION_MEMORY_V2_REPORT.md)：局部控制解析、有效期与取消、真实学习过程投影、组件干预和可追溯计划；结果区分工程行为、证据交付与尚未验证的教学价值。
+
+- [计算机专业群学习者画像测试集](../../evals/computing_learner_profile/README.md)：9 个方向、72 个任务族、216 道题和 1,584 条合成轨迹；独立答案校验、任务族划分与待教师审核标签。已用于联合记忆评测与新版消融，尚未证明真实学习收益。
+
+- [教育记忆升级与同场景复验](EDUCATION_MEMORY_UPDATE_REPORT.md)：收紧掌握证据与规划约束；双端原协议复验，保留中间退步、残余失败和完整来源。
+
+- [教育学习者画像与记忆消融实验](EDUCATION_MEMORY_ABLATION_REPORT.md)：数学、物理、编程、生物的真实服务链路，双端 9,184 次读取/规划调用；分别报告画像形成、信息交付和规划采用，保留失败。
+- [记忆系统扩展消融实验报告](MEMORY_ABLATION_REPORT.md)：35 类读取场景、新旧同数据对照、失败边界与复现证据；不代表教育画像效果。
+
 - `DEMO_RUNBOOK.md`：3–5 分钟讲解和故障切换。
 - `SUBMISSION_CHECKLIST.md`：按比赛材料编号维护交付物。
 - `USER_TEST_TEMPLATE.md`：2–3 名学生或教师试用的证据模板。
@@ -25,6 +34,8 @@ bash start.sh demo
 - `../ARCHITECTURE_AUTHORITY.md`：架构维护边界和变更规则。
 - `../FUSION_CATALOG.md`：两仓库并行参考时的能力映射与去重决策。
 - `../DESKTOP_WORKSPACE_SECURITY.md`：桌面文件工作区、sidecar、路径和证据边界。
+
+> 2026-09-08 实查补充：当前 Web 的 `/review`、`/demo` 未自动登录演示账号，仍停在统一登录页；后端隔离模式与架构接口已通过。浏览器闭环尚未完成，详见升级报告，不能仅凭下列服务测试声称现场演示已验收。
 
 ## 可复现验收
 

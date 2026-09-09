@@ -1,0 +1,160 @@
+{
+  "assistance_fidelity_note": "69 repeated_original cases remain a trace-fidelity mismatch: the driver passed the requested assistance, and the native phase3 grading entry forced guided for same-item retry. This is not an adapter-invented assistance change; interpretation needs review.",
+  "descriptive_supplement": true,
+  "freshness_command": [
+    "/Users/a1-6/LearnFlow/backend/venv/bin/python",
+    "scripts/audit_education_episode_freshness.py",
+    "--raw",
+    "evals/education_memory_v2/runs/default-budget-2900/education-00/raw.jsonl.gz",
+    "evals/education_memory_v2/runs/default-budget-2900/education-01/raw.jsonl.gz",
+    "evals/education_memory_v2/runs/default-budget-2900/education-02/raw.jsonl.gz",
+    "evals/education_memory_v2/runs/default-budget-2900/education-03/raw.jsonl.gz",
+    "--variants",
+    "full",
+    "--output",
+    "evals/education_memory_v2/runs/default-budget-2900/freshness"
+  ],
+  "freshness_result": [
+    {
+      "budget": 2900,
+      "conditions": 1584,
+      "failure_patterns": {},
+      "freshness_denominator": 1311,
+      "freshness_pass_numerator": 1311,
+      "freshness_pass_rate": 1.0,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 273
+      },
+      "stale_references": 0,
+      "stale_with_different_action": 0,
+      "status_counts": {
+        "not_applicable": 273,
+        "pass": 1311
+      },
+      "variant": "full"
+    }
+  ],
+  "freshness_summary_sha256": "908c29513005dfd8e8c5f794875a9bb16b84d5d67c589e050e8ccde1ae9283c5",
+  "learning_outcome_claim": "No teacher rating or real student benefit measured.",
+  "metadata_sha256": "a839e368377464d1043af1a2d20cccd0ea7f2bbcf1a6802e9e8341576f252686",
+  "policy_comparison": {
+    "changed_field": "token_budget",
+    "id": "checkpoint_tutor",
+    "method": "For each case compare every actual packet manifest.policy key/value after removing token_budget; other parameters exactly equal. Frozen policy declaration sets checkpoint_tutor default token_budget=2900, and policy_for(full) overrides only token_budget.",
+    "other_parameters_identical": 1584,
+    "paired_cases": 1584,
+    "raw_input_sha256": {
+      "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/default-budget-2900/education-00/raw.jsonl.gz": "e38cfa2af71a47478fd42189e833069bcb5c3fc2ef3ffb051529b775b82aebb6",
+      "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/default-budget-2900/education-01/raw.jsonl.gz": "8aa99bed74a487735d82d2ed243bc4b709fd69915acd819a8272d63ccab1a068",
+      "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/default-budget-2900/education-02/raw.jsonl.gz": "cbf120150df5372d95ef3f10ceae5a6c5292528fd21284ec2e707c594787e1de",
+      "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/default-budget-2900/education-03/raw.jsonl.gz": "716bbf4d9ac94803f07dcfaad505c751abad7ef5dc203596cacaf90b6e77b2f7",
+      "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-03/education-00/raw.jsonl.gz": "cc93016f6cc27a77ddbf8e5a0461272e16791fa62ef1010bfe4b0cf8ff2db64a",
+      "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-03/education-01/raw.jsonl.gz": "26bc80450484def23859a07645427549c2627494a0217ed69aa158bd2415ab9a",
+      "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-03/education-02/raw.jsonl.gz": "50d071a08187fdf4bd6f80c496518e25527d19914f82c31fa15900b70cd70a49",
+      "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-03/education-03/raw.jsonl.gz": "19fd5a4a7b842e1dbc3d314607c6b6b2e05ce4fafdc62fa6c69f2d1d9f76a5b7"
+    },
+    "reference_formal03_full": 3200,
+    "supplement": 2900
+  },
+  "schema": "learnflow.default-budget-validation-evidence.v1",
+  "shards": [
+    {
+      "blocked_network_attempts": 0,
+      "case_count": 396,
+      "changed_sources": [],
+      "error_file_bytes": 0,
+      "error_file_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "formation_sha256": "29230ee4f0cf5301bd3f6a4e49addca4e2630179679b9705f98eaa8b560f3e7d",
+      "id": "education-00",
+      "manifest_sha256": "e7968cfd4a43c4e5680a7aa3058f794c1c7bba9aaa68653e796d0e69a6b9d7cc",
+      "raw_sha256": "e38cfa2af71a47478fd42189e833069bcb5c3fc2ef3ffb051529b775b82aebb6",
+      "real_calls": {
+        "offline_planner": 396,
+        "setup_control_selection_retrieval": 396,
+        "trial_memory_retrieval": 396
+      },
+      "runtime_failures": 0,
+      "source_file_count": 199,
+      "source_map_sha256": "2741db63d4a58470fa1161aa75e9c58fde0a7c25f984a24b80ab6cdb4b8ed953",
+      "status": "completed",
+      "summary_sha256": "cf7ad4fbc4c904416e382f6fc1490e95b8efdeaed4095b01e438aa8de515d61e",
+      "trial_count": 396,
+      "trials_sha256": "cdfb99cccaafdb8902d811a16585ebd8fe0294ed4ad0f025a7fc8b441c414438"
+    },
+    {
+      "blocked_network_attempts": 0,
+      "case_count": 396,
+      "changed_sources": [],
+      "error_file_bytes": 0,
+      "error_file_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "formation_sha256": "ec48913a69bd4ff7702fef87e41c79b14023a2c1991c372f26e6db2cfc5d2570",
+      "id": "education-01",
+      "manifest_sha256": "ad1221d42953f8440e60ba2db0fa46e3f56a20e087e6c8f93d69d6d780e0ea9e",
+      "raw_sha256": "8aa99bed74a487735d82d2ed243bc4b709fd69915acd819a8272d63ccab1a068",
+      "real_calls": {
+        "offline_planner": 396,
+        "setup_control_selection_retrieval": 396,
+        "trial_memory_retrieval": 396
+      },
+      "runtime_failures": 0,
+      "source_file_count": 199,
+      "source_map_sha256": "2741db63d4a58470fa1161aa75e9c58fde0a7c25f984a24b80ab6cdb4b8ed953",
+      "status": "completed",
+      "summary_sha256": "4bbf87ac57ef358735f13ed54bedeb1829f3905e90e1da05ccf19ba72c4d4785",
+      "trial_count": 396,
+      "trials_sha256": "8015b7dc88b2c3c4de1fc0ce3fc439bef2813703b4fd71231fa7c2e67bdb4593"
+    },
+    {
+      "blocked_network_attempts": 0,
+      "case_count": 396,
+      "changed_sources": [],
+      "error_file_bytes": 0,
+      "error_file_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "formation_sha256": "47d8bfd1d0e493ac5b966c78ef3402c16dc0e1122e18186abbc086b37934c7c3",
+      "id": "education-02",
+      "manifest_sha256": "b0f00173b8f59ce28d1e94b4b77d252d0a6dbcf0215879196b2f576d61637c14",
+      "raw_sha256": "cbf120150df5372d95ef3f10ceae5a6c5292528fd21284ec2e707c594787e1de",
+      "real_calls": {
+        "offline_planner": 396,
+        "setup_control_selection_retrieval": 396,
+        "trial_memory_retrieval": 396
+      },
+      "runtime_failures": 0,
+      "source_file_count": 199,
+      "source_map_sha256": "2741db63d4a58470fa1161aa75e9c58fde0a7c25f984a24b80ab6cdb4b8ed953",
+      "status": "completed",
+      "summary_sha256": "d31fa64ecc1ff2da4c0226e1aeb9572de504cb28a55415af564c730fbf4764fd",
+      "trial_count": 396,
+      "trials_sha256": "02d3781348e1f10bac9654342b642ad9c83d77ba4414945a887059858044ab48"
+    },
+    {
+      "blocked_network_attempts": 0,
+      "case_count": 396,
+      "changed_sources": [],
+      "error_file_bytes": 0,
+      "error_file_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "formation_sha256": "92a1c0911f7eeb2353095f4426b727a9967e6abddecf982815b7ab25a3b8e277",
+      "id": "education-03",
+      "manifest_sha256": "3b7d640c52212a55ccf65a0ee79f414c3524f0363ce0c1c2ac9c3fbd4b5cfeb3",
+      "raw_sha256": "716bbf4d9ac94803f07dcfaad505c751abad7ef5dc203596cacaf90b6e77b2f7",
+      "real_calls": {
+        "offline_planner": 396,
+        "setup_control_selection_retrieval": 396,
+        "trial_memory_retrieval": 396
+      },
+      "runtime_failures": 0,
+      "source_file_count": 199,
+      "source_map_sha256": "2741db63d4a58470fa1161aa75e9c58fde0a7c25f984a24b80ab6cdb4b8ed953",
+      "status": "completed",
+      "summary_sha256": "43f7c04d43202fc05b76e1c6d4a4779247c9530c8392001565b84e9ea7454830",
+      "trial_count": 396,
+      "trials_sha256": "d101f9218e4935959a786e03af346509848f0d5000988f5df8eaaea988a28036"
+    }
+  ],
+  "summary_command": [
+    "/Users/a1-6/LearnFlow/backend/venv/bin/python",
+    "evals/education_memory_v2/runs/default-budget-2900/summarize.py"
+  ],
+  "summary_sha256": "820f0e1dd500aa0fabefa9207ef86b52a7fd66b8445cc3139fdf1edf7b71c3c0",
+  "validated": true
+}

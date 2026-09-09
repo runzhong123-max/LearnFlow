@@ -1,0 +1,11 @@
+# Add after the existing Compose configuration chain; credentials stay on the server.
+services:
+  learnflow-backend:
+    environment:
+      LEARNING_TASK_XFYUN_CREDENTIALS_PATH: /run/secrets/learning_task_xfyun
+      LEARNING_TASK_CONVERSION_BASE_URL: ${LEARNING_TASK_CONVERSION_BASE_URL:?set trusted artifact HTTPS origin}
+    secrets:
+      - learning_task_xfyun
+secrets:
+  learning_task_xfyun:
+    file: ${LEARNING_TASK_XFYUN_SECRET_FILE:?set absolute server credential file path}

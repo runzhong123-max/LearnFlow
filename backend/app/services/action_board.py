@@ -13,6 +13,9 @@ class ActionDefinition:
 
 ACTION_BOARD = {
     item.capability: item for item in (
+        ActionDefinition("prepare_work_task_conversion", "保存并澄清项目创建前的工作任务", "proposal", "explicit_or_click", {}, ("generate_work_task_conversion",)),
+        ActionDefinition("generate_work_task_conversion", "生成固定任务版本的三类方案候选", "artifact", "explicit", {}, ("handoff_work_task_conversion",)),
+        ActionDefinition("handoff_work_task_conversion", "确认方案并接续 Tutor 或正式项目", "write", "explicit", {}, ("read_project_workflow",)),
         ActionDefinition("prepare_project_guidance", "准备实验或带教项目候选", "proposal", "explicit_or_click", {}, ("confirm_project_guidance",)),
         ActionDefinition("confirm_project_guidance", "确认固定候选并创建正式项目", "write", "explicit", {}, ("read_project_workflow",)),
         ActionDefinition("record_project_device_report", "保存设备上报的实验操作摘要", "write", "explicit", {}, ("read_project_device_report", "submit_project_delivery")),
@@ -29,7 +32,7 @@ ACTION_BOARD = {
         ActionDefinition("evaluate_visual_prediction", "校验视觉探索预测", "evidence", "explicit", {}, ()),
         ActionDefinition("query_role_ecosystem", "查询岗位图谱与岗位助手", "artifact", "explicit_or_auto", {}, ("resolve_role_learning_points",)),
         ActionDefinition("resolve_role_learning_points", "预览岗位知识技能挂载", "artifact", "explicit_or_auto", {}, ("commit_role_learning_points",)),
-        ActionDefinition("commit_role_learning_points", "确认岗位知识技能源图扩展", "artifact", "explicit", {}, ("resolve_role_learning_points",)),
+        ActionDefinition("commit_role_learning_points", "确认岗位知识技能源图扩展", "artifact", "explicit_or_authorized_production", {}, ("resolve_role_learning_points",)),
         ActionDefinition(
             "search_projects", "匹配已有学习项目", "none", "none",
             {"structure": "project_match"},

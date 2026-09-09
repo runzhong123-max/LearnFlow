@@ -1,0 +1,75 @@
+--- a/packages/learning-core/src/learnflow_core/memory_episode.py
++++ b/packages/learning-core/src/learnflow_core/memory_episode.py
+@@ -179,7 +179,6 @@
+         groups[attempt.id].append((node, fact, event))
+     rank = {identifier: index for index, identifier in enumerate(anchor_ids)}
+     episodes = []
+-    evaluation_order = {}
+     for attempt_id, members in groups.items():
+         # At least one independently validated member must be a ranked anchor.
+         # A forged anchor cannot drag unrelated siblings into a new episode.
+@@ -219,7 +218,6 @@
+         if any(o['source_text'].get('qualifier_spans_omitted') for o in observations):
+             limitations.append('source_qualifiers_omitted')
+         stats['fact_limit_omitted'] += omitted
+-        evaluation_order[attempt_id] = (event.occurred_at, event.id)
+         episodes.append({'schema_version': EPISODE_SCHEMA_VERSION, 'attempt_id': attempt_id,
+             'task': {'item_type': attempt.item_type, 'item_id': attempt.item_id, 'canonical_item_id': None,
+                      'attempt_kind': attempt.attempt_role if attempt.attempt_role in ('original', 'retry', 'variant') else None},
+@@ -231,9 +229,7 @@
+             'source_mutation_ids': sorted({f.source_mutation_id for _, f, _ in members}),
+             'source_fact_ids': [n.id for n, _, _ in members], 'observations': observations,
+             'limitations': limitations})
+-    # Relevance still bounds the anchor pool. Within its validated episodes,
+-    # the latest real assessment must precede older success evidence.
+-    episodes.sort(key=lambda e: evaluation_order[e['attempt_id']], reverse=True)
++    episodes.sort(key=lambda e: (min(rank[i] for i in e['anchor_fact_ids']), e['attempt_id']))
+     stats['eligible'] = len(episodes)
+     stats['rejected'] = dict(rejected)
+     return episodes, stats
+--- a/packages/learning-core/src/learnflow_core/five_kernel_context.py
++++ b/packages/learning-core/src/learnflow_core/five_kernel_context.py
+@@ -1223,16 +1223,13 @@
+
+     # Episodes are atomic: provenance, qualifiers and explicit unknowns travel
+     # with observations. Never trim just the assistance or limitation fields.
+-    for index, episode in enumerate(episode_candidates):
++    for episode in episode_candidates:
+         if len(learning_episodes) >= policy.max_episodes:
+             break
+         learning_episodes.append(episode)
+         if current_packet_tokens() > policy.token_budget:
+             learning_episodes.pop()
+-            # Candidates are newest first. Never replace an omitted recent
+-            # assessment with an older, shorter success and call it current.
+-            retrieval_diagnostics['episodes']['budget_omitted'] += len(episode_candidates) - index
+-            break
++            retrieval_diagnostics['episodes']['budget_omitted'] += 1
+     retrieval_diagnostics['episodes']['selected'] = len(learning_episodes)
+     retrieval_diagnostics['episodes']['limit_omitted'] = max(0, len(episode_candidates) - len(learning_episodes)
+         - retrieval_diagnostics['episodes']['budget_omitted'])
+--- a/packages/learning-core/src/learnflow_core/planning_guidance.py
++++ b/packages/learning-core/src/learnflow_core/planning_guidance.py
+@@ -46,8 +46,7 @@
+                        for key in ("source_fact_ids", "source_mutation_ids"))
+                 or not isinstance(row.get("outcome"), dict) or not isinstance(row.get("task"), dict)):
+             continue
+-        # Attempt allocation order is not assessment event chronology.
+-        valid.append((when, max(refs), row))
++        valid.append((when, row["attempt_id"], row))
+     if not valid:
+         return None, None
+     when, _, row = max(valid, key=lambda value: value[:2])
+@@ -285,9 +284,9 @@
+             if practice.get("kind") == "practice":
+                 practice["purpose"] = "记录正式尝试与真实帮助等级，再按原验收条件继续。"
+             prepare(practice, {
+-                "supported_success": "记录显示这次尝试在支持下完成；先逐步撤除提示，再尝试一个无提示小变式，并保留真实帮助等级。",
+-                "independent_success": "记录中有一次明确的独立成功，接下来做无提示小变式或解释理由的检查；这仍不等于稳定掌握。",
+-                "success_assistance_unspecified": "记录显示通过但帮助情况未知，先确认辅助程度，再安排无提示小检查；不声称独立完成。",
++                "supported_success": "本次在支持下完成；先逐步撤除提示，再尝试一个无提示小变式，并保留真实帮助等级。",
++                "independent_success": "本次已有独立成功，接下来做无提示小变式或解释理由的检查；不把旧受助记录当成本次状态。",
++                "success_assistance_unspecified": "本次通过但帮助情况未知，先确认辅助程度，再安排无提示小检查；不声称独立完成。",
+                 "evaluated_error": "先定位第一个错误步骤，给一个针对性提示后重试，并通过正式纠错闭环验证。",
+                 "incomplete_attempt": "先确认是不会、跳过还是未提交，再提供起步支持；不把缺失回答当作答错。",
+             }[feedback])

@@ -1,0 +1,9 @@
+# Version only these authored synthetic fixtures; runtime data stays ignored.
+!data/
+data/*
+!data/cases.jsonl
+!data/rubrics.jsonl
+!data/pairs.jsonl
+!data/splits.jsonl
+!data/teacher_review_queue.csv
+!data/manifest.json

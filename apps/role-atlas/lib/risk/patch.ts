@@ -1,6 +1,7 @@
 import { stableHash } from "@/lib/build/compiler";
 import type { ColdStartBuildResult, SemanticNode } from "@/lib/build/types";
 import type { GraphPatch, GraphPatchOperation, RiskAuditReport, SemanticDiff } from "./types";
+import { sameSemanticMergeDimension } from "./audit";
 
 function unique<T>(values: T[]) {
   return [...new Set(values)];
@@ -55,7 +56,7 @@ export function proposeSafePatch(input: {
     }
     if (issue.code === "EXACT_DUPLICATE") {
       const nodes = issue.targetIds.map((id) => semanticNodes.get(id)).filter(Boolean) as SemanticNode[];
-      if (nodes.length < 2 || new Set(nodes.map((node) => node.type)).size !== 1) continue;
+      if (nodes.length < 2 || nodes.some((node) => !sameSemanticMergeDimension(nodes[0], node))) continue;
       const sorted = [...nodes].sort((left, right) => evidenceWeight(right) - evidenceWeight(left) || left.id.localeCompare(right.id));
       const canonical = sorted[0];
       const mergedIds = sorted.slice(1).map((node) => node.id).filter((id) => id !== canonical.id);
@@ -106,6 +107,19 @@ function dedupeById<T extends { id: string }>(values: T[]) {
 }
 
 export function applyGraphPatch(result: ColdStartBuildResult, patch: GraphPatch) {
+  // Validate before building migrations: skipping an invalid merge later would
+  // still delete its source node and redirect references through that map.
+  const originalNodes = new Map(result.semantic.nodes.map((node) => [node.id, node]));
+  for (const operation of patch.operations) {
+    if (operation.op !== "merge_semantic_nodes") continue;
+    const target = originalNodes.get(operation.canonicalId);
+    if (!target) throw new Error("SEMANTIC_MERGE_TARGET_NOT_FOUND");
+    for (const id of operation.mergedIds) {
+      const source = originalNodes.get(id);
+      if (!source) throw new Error("SEMANTIC_MERGE_SOURCE_NOT_FOUND");
+      if (!sameSemanticMergeDimension(source, target)) throw new Error("SEMANTIC_MERGE_DIMENSION_MISMATCH");
+    }
+  }
   const candidate = cloneResult(result);
   const migrations = new Map<string, string>();
   const referenceMigrations = new Map<string, string>();
@@ -127,7 +141,7 @@ export function applyGraphPatch(result: ColdStartBuildResult, patch: GraphPatch)
   for (const [from, to] of migrations) {
     const source = nodeMap.get(from);
     const target = nodeMap.get(to);
-    if (!source || !target || source.type !== target.type) continue;
+    if (!source || !target || !sameSemanticMergeDimension(source, target)) throw new Error("SEMANTIC_MERGE_DIMENSION_MISMATCH");
     target.aliases = unique([...target.aliases, source.label, ...source.aliases]).filter((alias) => alias !== target.label);
     target.summary = target.summary.length >= source.summary.length ? target.summary : source.summary;
     target.evidenceSegmentIds = unique([...target.evidenceSegmentIds, ...source.evidenceSegmentIds]);

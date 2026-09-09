@@ -16,10 +16,13 @@ from app.core.config import (
     settings,
 )
 from app.db.database import get_db
-from app.models.learning import AuthSession, Learner, LearnerProfile, UserAccount
+from app.models.learning import AuthApiKey, AuthSession, Learner, LearnerProfile, UserAccount
 from app.models.project import Project
 from app.schemas.auth import (
     AdminAccountProjection,
+    ApiKeyCreateRequest,
+    ApiKeyCreateResponse,
+    ApiKeyListResponse,
     AuthenticatedAccountResponse,
     CsrfTokenResponse,
     LoginRequest,
@@ -70,6 +73,67 @@ router = APIRouter(tags=["Authentication"])
 dev_router = APIRouter(prefix="/dev", tags=["Development"])
 
 
+async def _cookie_account(current: CurrentLearner = Depends(get_current_learner)):
+    if current.auth_method != "cookie":
+        raise HTTPException(403, "API key 管理需要使用网页登录账号")
+    return current
+
+
+@router.post("/auth/api-keys", response_model=ApiKeyCreateResponse, status_code=201)
+async def create_api_key(
+    data: ApiKeyCreateRequest, request: Request, response: Response,
+    current: CurrentLearner = Depends(_cookie_account), db: AsyncSession = Depends(get_db),
+):
+    from app.services.api_keys import issue_api_key, metadata
+    account_key, ip_key = login_request_keys(request, current.account.username_normalized)
+    delay = await login_backoff_seconds(db, account_key, ip_key)
+    if delay:
+        _raise_login_backoff(delay)
+    try:
+        verification = await verify_password_async(data.password, current.account.password_hash)
+    except PasswordKDFBusy:
+        _raise_kdf_busy()
+    if not verification.valid:
+        await _reject_login(db, account_key, ip_key)
+    token, key = await issue_api_key(db, current.account, data.name, data.expires_in_days)
+    await clear_login_failures(db, account_key)
+    await db.commit()
+    response.headers["Cache-Control"] = "no-store"
+    return {"api_key": token, "metadata": metadata(key)}
+
+
+@router.get("/auth/api-keys", response_model=ApiKeyListResponse)
+async def list_api_keys(
+    response: Response, current: CurrentLearner = Depends(_cookie_account),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.services.api_keys import metadata
+    keys = (await db.execute(select(AuthApiKey).where(
+        AuthApiKey.user_id == current.account.id,
+    ).order_by(AuthApiKey.created_at.desc(), AuthApiKey.id.desc()))).scalars().all()
+    response.headers["Cache-Control"] = "no-store"
+    return {"api_keys": [metadata(key) for key in keys]}
+
+
+@router.delete("/auth/api-keys/{key_id}")
+async def revoke_api_key(
+    key_id: int, response: Response, current: CurrentLearner = Depends(_cookie_account),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.services.api_keys import revoke_api_key as revoke_owned_key
+    key = await revoke_owned_key(db, current.account.id, key_id)
+    await db.commit()
+    response.headers["Cache-Control"] = "no-store"
+    return {"status": "revoked", "api_key_id": key.id}
+
+
+@router.get("/auth/api-key/verify", status_code=204)
+async def verify_api_key(current: CurrentLearner = Depends(get_current_learner)):
+    if current.auth_method != "api_key":
+        raise HTTPException(401, "此入口必须使用 API key")
+    return Response(status_code=204, headers={"Cache-Control": "no-store"})
+
+
 def _account_view(current: CurrentLearner, desktop_auth_token: str | None = None) -> dict:
     credit_limit = int(current.account.credit_limit if current.account.credit_limit is not None else -1)
     credit_used = max(0, int(current.account.credit_used or 0))
@@ -80,7 +144,7 @@ def _account_view(current: CurrentLearner, desktop_auth_token: str | None = None
         "username": current.account.username,
         "display_name": current.learner.display_name,
         "learner_id": current.learner.id,
-        "role": current.account.role,
+        "role": "user" if current.auth_method == "api_key" else current.account.role,
         "status": current.account.status,
         "must_change_password": bool(current.account.must_change_password),
         "is_legacy_demo": bool(current.account.is_legacy_demo),
@@ -448,6 +512,10 @@ async def change_password(
     current.account.auth_epoch = int(current.account.auth_epoch or 0) + 1
     current.account.must_change_password = False
     current.account.password_changed_at = now
+    await db.execute(update(AuthApiKey).where(
+        AuthApiKey.user_id == current.account.id,
+        AuthApiKey.revoked_at.is_(None),
+    ).values(revoked_at=now, revoked_reason="password_changed"))
     await db.execute(update(AuthSession).where(
         AuthSession.user_id == current.account.id,
         AuthSession.revoked_at.is_(None),

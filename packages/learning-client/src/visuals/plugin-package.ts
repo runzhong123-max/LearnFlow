@@ -22,6 +22,7 @@ export function createEducationalVisualsPlugin<Package>(api:PluginAPI<Package>):
     while(new TextEncoder().encode(JSON.stringify(value)).length>36*1024){
       if(value.results?.length)value={...value,results:value.results.slice(0,-1)}
       else if(value.catalog?.length)value={...value,catalog:value.catalog.slice(0,-1)}
+      else if(value.curriculum_sessions?.length)value={...value,curriculum_sessions:value.curriculum_sessions.slice(0,-1)}
       else if(value.jobs?.length)value={...value,jobs:value.jobs.slice(0,-1)}
       else throw new Error('visual_work_reference_too_large')
     }
@@ -61,7 +62,7 @@ export function createEducationalVisualsPlugin<Package>(api:PluginAPI<Package>):
       skills:[{
         id:'visual_workflow',title:'图解与动画工作流',description:'Tutor协调下的learning_design视觉产物工作流。',
         whenToUse:'用户明确要求可视化、查找图解、修改或恢复图解作品。',whenNotToUse:'普通讲解不强制激活；不负责评分、学习者画像或掌握判定。',
-        instructions:'保留用户输入与来源模式。已有revision修改用iterate，已有job继续用resume，不能新建替代。新作品由create完成检索、精确选源、VisualSpec或SVGStory构建、有限修复和后端发布；不要求先完成长篇文字讲解。维护库没命中仍保留从零生成。ready仅表示服务端已保存作品，检查范围读取verification；paused说明进度已存储，提示继续或修改，不能声称生成成功。插件没有独立主Agent控制权，不写五核，不把生成、观看或交互当成掌握证据。',
+        instructions:'保留用户输入与来源模式。已有revision修改用iterate，已有job继续用resume，不能新建替代。新作品由create完成检索、精确选源、VisualSpec或SVGStory构建、有限修复和后端发布；不要求先完成长篇文字讲解。内部Hub按模块、章节和session组织；curriculum_sessions中的planned只是待制作选题，不能称为现成作品。interactive_html为维护专用版本，只可精确复用，画面内参数可交互；新建和改编使用生成builder。维护库没命中仍保留从零生成。ready仅表示服务端已保存作品，检查范围读取verification；paused说明进度已存储，提示继续或修改，不能声称生成成功。插件没有独立主Agent控制权，不写五核，不把生成、观看或交互当成掌握证据。',
         tools:['create','search','open','iterate','resume','cancel'],objectTypes:['visual_work'],
       }],
       renderers:[{id:'visual_work',title:'图解与动画工作区',description:'按版本引用读取并呈现图解、动画和可恢复工作状态。'}],

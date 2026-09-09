@@ -2,17 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import { createEcosystemClient, citationLabels, newEcosystemRequestId, type AgentRun, type CatalogItem, type RolePackage, type ResolutionPreview, type CommitReceipt } from './ecosystem-client.ts'
 import type { PathNodeV2 } from './learning-path-contract-v2.ts'
 import { isDesktopRuntime } from './runtime-client.ts'
+import { exactEntryNodeId, readEcosystemEntry } from './ecosystem-entry.ts'
 import './ecosystem.css'
 const api = createEcosystemClient()
 const kinds: Record<string, string> = { task: '工作任务', capability: '岗位能力', capability_unit: '能力单元', knowledge_skill: '知识技能点', role: '岗位' }
 const unresolvedReasons: Record<string, string> = { needs_decomposition: '该对象还需要拆分出明确的知识或技能要求。', needs_definition: '需要补充适用范围和可检查的考核要求。', needs_evidence: '缺少可追溯的岗位证据。', ambiguous_definition: '名称相近，但定义或适用范围不能确定为相同。', needs_anchor: '需要确定应归属的课程或知识领域。' }
 const relations: Record<string, string> = { equivalent: '语义等价', narrower_than: '岗位要求更具体', related: '相关，尚不等价' }
 function textError(error: unknown) { return error instanceof Error ? error.message : '服务暂不可用，请稍后重试。' }
-export default function GraphHubRedirect() {
-  return <section className="page-loading"><h1>岗位图谱</h1><p>在 Graph Hub 浏览岗位与知识技能。</p><a href="https://graphs.learnflow.club/hub" target="_blank" rel="noopener noreferrer">打开 Graph Hub ↗</a></section>
-}
-
-export function EcosystemPage() {
+export default function EcosystemPage() {
+  const [entrySearch] = useState(() => typeof window === 'undefined' ? '' : window.location.search)
   const [query, setQuery] = useState('')
   const [items, setItems] = useState<CatalogItem[]>([])
   const [searched, setSearched] = useState(false)
@@ -34,18 +32,33 @@ export function EcosystemPage() {
   const resolveAttempt = useRef<{ key: string; id: string }>()
   const commitAttempt = useRef<{ key: string; id: string }>()
   const mounted = useRef(true)
+  const connectionGeneration = useRef(0)
+  const actionGeneration = useRef(0)
   const selected = pkg?.result.semantic.nodes.find(node => node.id === nodeId)
   async function act(key: string, action: () => Promise<void>) {
+    const generation = ++actionGeneration.current
     setBusy(key); setError('')
-    try { await action() } catch (e) { if (mounted.current) { setError(textError(e)); if (key === 'connect') { setService('无法连接岗位服务，请刷新重试。'); setOperations([]) } } } finally { if (mounted.current) setBusy('') }
+    try { await action() } catch (e) { if (mounted.current && generation === actionGeneration.current) { setError(textError(e)); if (key === 'connect') { setService('无法连接岗位服务，请刷新重试。'); setOperations([]) } } } finally { if (mounted.current && generation === actionGeneration.current) setBusy('') }
   }
-  async function connect() {
-    const caps = await api.capabilities()
+  async function connect(openEntry = false) {
+    const generation = ++connectionGeneration.current
+    const entry = openEntry ? readEcosystemEntry(entrySearch) : undefined
+    const [caps, current] = await Promise.all([api.capabilities(), api.graph()])
+    if (!mounted.current || generation !== connectionGeneration.current) return
     setOperations(caps.available ? caps.operations : [])
-    setService(caps.available ? '已配置岗位服务。搜索后选择一个固定版本。' : isDesktopRuntime() ? '当前使用桌面本地身份，无法访问中央岗位服务。请在 LearnFlow 网页端使用中央账号登录；桌面中央登录尚未接入。' : '岗位服务尚未配置，请联系维护者连接 Graph Hub 与 Role Atlas。')
-    const current = await api.graph(); setGraphVersion(current.graph.revision); setGraphNodes(current.graph.nodes); resolveAttempt.current = undefined
+    setService(caps.available ? '已连接岗位服务。选择固定版本后可预览挂载。' : isDesktopRuntime() ? '当前身份无法访问中央岗位服务，请在 LearnFlow 网页端使用中央账号登录。' : '岗位服务尚未配置，请联系维护者连接 Graph Hub 与 Role Atlas。')
+    setGraphVersion(current.graph.revision); setGraphNodes(current.graph.nodes); resolveAttempt.current = undefined
+    setPreview(undefined); setReceipt(undefined); commitAttempt.current = undefined
+    if (entry) {
+      if (!caps.available || !caps.operations.includes('package.resolve')) throw new Error('当前连接无法读取指定岗位包，请恢复服务后重试。')
+      const loaded = await api.package(entry.packageRef)
+      const selectedId = exactEntryNodeId(entry, loaded.result.semantic.nodes)
+      if (!mounted.current || generation !== connectionGeneration.current) return
+      setPkg(loaded); setNodeId(selectedId); setEvidence(undefined); setRun(undefined)
+      setService('已打开 Role Atlas 指定的岗位包版本。请先预览挂载，再决定是否应用。')
+    }
   }
-  useEffect(() => { mounted.current = true; void act('connect', connect); return () => { mounted.current = false } }, [])
+  useEffect(() => { mounted.current = true; void act('connect', () => connect(true)); return () => { mounted.current = false; connectionGeneration.current++ } }, [])
   useEffect(() => {
     if (run?.status !== 'running' || !operations.includes('agent.get_run')) return
     let cancelled = false; let count = 0; let timer: ReturnType<typeof setTimeout>
@@ -73,7 +86,7 @@ export function EcosystemPage() {
   const evidenceData = evidence?.data?.data ?? evidence?.data ?? evidence
   return <section className="projects-page ecosystem-page">
     <header className="projects-hero"><span className="eyebrow">ROLE KNOWLEDGE</span><h1>岗位图谱</h1><p>浏览岗位任务与知识技能，查看依据，再将合适的知识技能挂载到学习路径。</p></header>
-    <div className="ecosystem-status"><span>{service}</span><button disabled={!!busy} onClick={() => void act('connect', connect)}>刷新连接与路径</button>{graphVersion && <small>学习路径版本：{graphVersion}</small>}</div>
+    <div className="ecosystem-status"><span>{service}</span><button disabled={!!busy} onClick={() => void act('connect', () => connect(!pkg))}>刷新连接与路径</button>{graphVersion && <small>学习路径版本：{graphVersion}</small>}<a href="https://graphs.learnflow.club/hub" target="_blank" rel="noopener noreferrer">浏览 Graph Hub ↗</a></div>
     {error && <p className="project-error" role="alert">{error}</p>}
     <form className="ecosystem-search" onSubmit={e => { e.preventDefault(); void act('search', async () => { const result = await api.search(query); setItems(result.items); setTotal(result.total); setSearched(true) }) }}>
       <label htmlFor="role-search">查找岗位包</label><input id="role-search" value={query} onChange={e => setQuery(e.target.value)} placeholder="例如：软件测试工程师" /><button disabled={!!busy || !can('catalog.search')}>搜索 Graph Hub</button>
@@ -96,3 +109,5 @@ export function EcosystemPage() {
     </>}
   </section>
 }
+
+export { EcosystemPage }

@@ -3,6 +3,7 @@ export type JobClaim = {
   id: string; kind: string; threadId: string; owner: string; projectId?: string;
   conversationId?: string; baseSnapshotId?: string; baseVersionId?: string;
   phase: string; payloadJson: string; now: string; expiresAt: string;
+  insertionFence?: { sql: string; bindings: string[] };
 };
 
 export function roleJobClaimStatements(d1: D1Database, input: JobClaim) {
@@ -18,9 +19,10 @@ export function roleJobClaimStatements(d1: D1Database, input: JobClaim) {
       SELECT ?,?,?,?,?,?,?,'queued',?,0,?,?,?
       WHERE (? IS NULL OR EXISTS(SELECT 1 FROM projects WHERE id=? AND deleted_at IS NULL))
         AND (? IS NULL OR EXISTS(SELECT 1 FROM conversations WHERE id=? AND project_id=? AND mode='iteration' AND version_id IS ?))
-        AND NOT EXISTS(SELECT 1 FROM role_jobs WHERE conversation_id=? AND id!=? AND status IN ('running','waiting_user'))`)
+        AND NOT EXISTS(SELECT 1 FROM role_jobs WHERE conversation_id=? AND id!=? AND status IN ('queued','running','waiting_user'))
+        ${input.insertionFence ? `AND (${input.insertionFence.sql})` : ""}`)
       .bind(input.id, input.kind, input.threadId, ...scope, input.phase, input.payloadJson, input.now, input.now,
-        input.projectId || null, input.projectId || null, input.conversationId || null, input.conversationId || null, input.projectId || null, input.baseVersionId || null, input.conversationId || null, input.id),
+        input.projectId || null, input.projectId || null, input.conversationId || null, input.conversationId || null, input.projectId || null, input.baseVersionId || null, input.conversationId || null, input.id, ...(input.insertionFence?.bindings || [])),
     d1.prepare(`UPDATE role_jobs SET status='running', attempt=attempt+1, lease_owner=?, lease_expires_at=?,
       error=NULL, completed_at=NULL, updated_at=?
       WHERE id=? AND kind=? AND thread_id=? AND project_id IS ? AND conversation_id IS ? AND base_snapshot_id IS ? AND base_version_id IS ?
@@ -29,7 +31,7 @@ export function roleJobClaimStatements(d1: D1Database, input: JobClaim) {
         AND (? IS NULL OR EXISTS(SELECT 1 FROM projects WHERE id=? AND deleted_at IS NULL))
         AND (? IS NULL OR EXISTS(SELECT 1 FROM conversations WHERE id=? AND project_id=? AND mode='iteration' AND version_id IS ?))
         AND NOT EXISTS(SELECT 1 FROM role_jobs other WHERE other.conversation_id=role_jobs.conversation_id
-          AND other.id!=role_jobs.id AND other.status IN ('running','waiting_user'))`)
+          AND other.id!=role_jobs.id AND other.status IN ('queued','running','waiting_user'))`)
       .bind(input.owner, input.expiresAt, input.now, input.id, input.kind, input.threadId, ...scope, input.payloadJson,
         input.now, input.projectId || null, input.projectId || null, input.conversationId || null, input.conversationId || null, input.projectId || null, input.baseVersionId || null),
   ];

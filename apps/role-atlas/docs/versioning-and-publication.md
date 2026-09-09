@@ -373,3 +373,15 @@ Agent 不应把“我保存了一下”同时解释为以上多个动作，也�
 `PATCH /api/releases` 新增 `withdraw_from_hub` / `restore_to_hub`，参数为 `packageLineId`、`expectedReleaseId`、`expectedRegistryVersion`。沿用所有者身份和整条包线写权限检查；D1 batch 原子写入可见性及 `release.hub_withdrawn` / `release.hub_restored` 事件，推进 registry_version。重复目标状态不重复写事件；版本冲突返回 409，要求刷新后重试。
 
 Contract impact：新增兼容的 Role Atlas 发布动作和发布事件；不改变不可变岗位包协议、不新增数据库字段，不涉及 LearnFlow 五核或 EvidenceEvent。
+
+## 15. Fork 公开岗位包到个人空间
+
+Graph Hub 仓库详情的“Fork 到我的岗位包”会把当前公开 Release 复制为登录用户自己的项目、会话、快照和私有岗位包，并打开个人工作台。它复用 import 类型的版本提交和私有 Release 登记，不自动公开、不复制上游项目的私有会话或草稿。
+
+同一账户和源 Release 对应唯一 Fork；重复点击返回已有副本，不覆盖其后续迭代或推荐版。不同账户或不同源版本拥有独立身份。已放入回收站的副本需要先恢复，不能通过再次 Fork 隐式恢复。中途失败可以重试，已完成的版本提交被幂等复用。
+
+来源记录保存在初始 import 运行的 `input_json.upstream` 中，包括仓库、Release、packageId、packageVersion、快照、内容哈希和许可。“我的岗位包”显示来源及“打开并维护”。个人副本保留上游许可，默认私有 v1.0.0；后续独立迭代，若要公开自己的版本，按正常发布流程选择新版本号（例如 v1.0.1）。上游更新不会自动覆盖个人内容；来源撤回后不再允许新 Fork，已获得的独立副本仍可维护。
+
+`POST /api/hub/fork` 只接受 `releaseId`，目标所有者由身份桥取得。服务端重新验证公开可见性、published 状态、active 包线和制品哈希；客户端不能指定他人所有者、目标项目或私有来源。公开导入读取和个人项目写入是两个权限边界，不授予 Fork 者对上游的写权限。
+
+Contract impact：新增兼容的 Role Atlas API，沿用 import ProjectVersion、version.created 和私有发布事件；无数据库字段迁移、不改变岗位包制品协议及 LearnFlow 五核语义。

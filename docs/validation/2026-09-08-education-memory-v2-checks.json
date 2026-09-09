@@ -1,0 +1,177 @@
+{
+  "web": {
+    "log_path": "/private/tmp/learnflow-upgrade-web-regression-freshness-final.log",
+    "log_sha256": "6cccf56e5ffdc598b4a86bdfdd5cd0aa0e9bbfa2deb71b67ee4d863f28e071e1",
+    "summary": "1015 passed, 1 skipped, 178078 warnings in 150.01s (0:02:30)"
+  },
+  "desktop": {
+    "log_path": "/private/tmp/learnflow-upgrade-desktop-regression-freshness-final.log",
+    "log_sha256": "4c0fa3d77d17f6a51938d75ee300ff277dfe4bb3a38ebd87e0dd23de5b19fcc7",
+    "summary": "1068 passed, 180807 warnings in 163.10s (0:02:43)"
+  },
+  "calibration": {
+    "log_path": "/private/tmp/learnflow-upgrade-eval-calibration.log",
+    "log_sha256": "a587cf2016dece7b55c99b0080b0833d78f7d04d498878f2f91285db3d0b8fd4",
+    "summary": [
+      "Ran 80 tests in 0.016s",
+      "OK"
+    ]
+  },
+  "demo": {
+    "/health": {},
+    "/api/demo/status": {
+      "enabled": true,
+      "offline": true
+    },
+    "/api/architecture/validate": {
+      "valid": true,
+      "schema_valid": true,
+      "implementation_valid": true,
+      "errors": []
+    },
+    "/api/architecture/registry": {
+      "valid": true,
+      "schema_valid": true,
+      "implementation_valid": true,
+      "version": "2026-09-08.9",
+      "digest": "65de5e1e682765e2a775d83db6294dcdf712b1b9eff8e9300e0a7495e7bb2c39",
+      "errors": []
+    },
+    "browser": {
+      "routes": [
+        "/",
+        "/review",
+        "/demo"
+      ],
+      "has_content": true,
+      "error_overlay": false,
+      "page_errors": [],
+      "seeded_loop_verified": false,
+      "reason": "existing_unified_login_gate"
+    }
+  },
+  "pre_freshness_fix": {
+    "web": {
+      "log_path": "/private/tmp/learnflow-upgrade-web-regression-final.log",
+      "log_sha256": "3de12790a11be57e49e04b4a09c9cf4ab01c039fdf37522a4b21fc5983e10c24",
+      "summary": "1009 passed, 1 skipped, 177585 warnings in 188.34s (0:03:08)"
+    },
+    "desktop": {
+      "log_path": "/private/tmp/learnflow-upgrade-desktop-regression-final.log",
+      "log_sha256": "85f93d0dde0ac1b2d9079a5110e205fd03a79a0db4c209707e76f6e14c16216d",
+      "summary": "1062 passed, 180305 warnings in 213.81s (0:03:33)"
+    }
+  },
+  "private_teacher_packaging": {
+    "passed": 10,
+    "failed": 0,
+    "source_sha256": "73a2dfa081a7a3f3d2bd0fa41326763b8d1b9109753d904eb87882031fd90082",
+    "formal_02_export_cases": 198,
+    "formal_02_export_conditions": 4752,
+    "ratings_filled": 0,
+    "review_status": "pending",
+    "formal_03_export_cases": 198,
+    "formal_03_export_conditions": 4752,
+    "reviewer_archive_sha256": "c5828f143d84a55646728e5f05171075068c0d7465a41e9081f6d119e6faf35b",
+    "reviewer_archive_bytes": 981434,
+    "reviewer_archive_verified": true,
+    "coordinator_mapping_published": false
+  },
+  "initial_freshness_audit_calibration": {
+    "passed": 17,
+    "failed": 0,
+    "limitation": "Subsequent independent review found delivered-packet binding and cross-session transient filtering gaps. Preserve initial artifacts; corrected audit is reported separately."
+  },
+  "final_freshness_audit_calibration": {
+    "passed": 24,
+    "failed": 0,
+    "log_path": "/private/tmp/learnflow-freshness-audit-v2-tests.log",
+    "log_sha256": "66ceb4c5f5060b9ef581d4b4632e11162ccffd528ed055bde066825182bde22e",
+    "script_sha256": "6f64f93547ac6f8c282db08250fe3361171479599e634ab2d4a453e2a7b69596"
+  },
+  "demo_after_freshness_fix": {
+    "port": 8011,
+    "/api/demo/status": {
+      "enabled": true,
+      "offline": true
+    },
+    "/api/architecture/validate": {
+      "valid": true,
+      "schema_valid": true,
+      "implementation_valid": true,
+      "errors": []
+    },
+    "/api/architecture/registry": {
+      "valid": true,
+      "schema_valid": true,
+      "implementation_valid": true,
+      "version": "2026-09-08.9",
+      "digest": "65de5e1e682765e2a775d83db6294dcdf712b1b9eff8e9300e0a7495e7bb2c39",
+      "errors": []
+    },
+    "startup_log_sha256": "882f3e64612295ad6191dac094893a183452d411822044ba0412f93317205ace",
+    "browser_loop_rerun": false
+  },
+  "final_formal_matrix": {
+    "source_commit_is_run_baseline": true,
+    "frozen_source_files": 186,
+    "current_files_checked": 186,
+    "differences": [],
+    "full_coverage_verified": true,
+    "all_processes_succeeded": true,
+    "execution_errors": 0,
+    "run_source_drift": [],
+    "education_conditions": 38016,
+    "locomo_conditions": 27804,
+    "suite_sha256": "8591131a22a3116c02a7379394a3306926b9c366362c68f764106edcf4be9b77",
+    "evidence_manifest_sha256": "bc5ab23b5f11f2bf212a58f836ab53509822ffbdff7222e8a91af4a88dee1533",
+    "suite_path": "evals/education_memory_v2/results/formal-03/suite.json",
+    "results_path": "evals/education_memory_v2/results/formal-03/REPORT.md"
+  },
+  "final_freshness_audit_result": {
+    "conditions": 38016,
+    "passed": 23066,
+    "failed": 0,
+    "invalid": 0,
+    "not_applicable": 14950,
+    "summary_path": "evals/education_memory_v2/results/formal-03-freshness-v2/summary.json",
+    "full_1800": {
+      "passed": 1003,
+      "stale": 0,
+      "not_applicable": 581
+    },
+    "paired_stale_before_192": {
+      "became_pass": 63,
+      "became_no_action": 129
+    },
+    "interpretation": "Post-hoc source and temporal consistency audit. NA is not a successful teaching decision."
+  },
+  "locomo_cross_run_check": {
+    "new_conditions": 27804,
+    "common_conditions": 27804,
+    "independent_packet_payload_unchanged": 27804,
+    "independent_packet_hash_matches_recorded_old": 27804,
+    "independent_packet_hash_matches_recorded_new": 27804,
+    "non_latency_metric_difference_counts": {},
+    "non_timing_trial_field_difference_counts": {},
+    "latency_metric_changed_conditions": 23832
+  },
+  "default_budget_supplement": {
+    "conditions": 1584,
+    "budget": 2900,
+    "variant": "full",
+    "descriptive_only": true,
+    "formal_matrix_unchanged": true,
+    "execution_errors": 0,
+    "source_drift": [],
+    "budget_passed": 1584,
+    "other_policy_parameters_identical_cases": 1584,
+    "freshness_passed": 1311,
+    "freshness_na": 273,
+    "stale": 0,
+    "invalid": 0,
+    "latest_failed_diagnose_with_latest_source": "138/138",
+    "summary_path": "evals/education_memory_v2/results/default-budget-2900/descriptive-summary.json",
+    "summary_sha256": "820f0e1dd500aa0fabefa9207ef86b52a7fd66b8445cc3139fdf1edf7b71c3c0"
+  }
+}

@@ -11,7 +11,7 @@ import { bundleFromJson, bundleFromZip } from "./archive";
 import { putPackageArtifact } from "./artifact-store";
 import { reconstructBuildResult } from "./compiler";
 import type { StaticRolePackageBundle } from "./types";
-import { validatePackageBundle } from "./validator";
+import { validateReleaseArtifact } from "@/lib/releases/quality";
 
 const MAX_IMPORT_BYTES = 20 * 1024 * 1024;
 
@@ -22,7 +22,7 @@ export async function importStaticRolePackage(input: {
 }) {
   if (input.bytes.byteLength > MAX_IMPORT_BYTES) throw new Error("PACKAGE_TOO_LARGE");
   const bundle = input.format === "zip" ? bundleFromZip(input.bytes) : bundleFromJson(input.bytes);
-  const validation = await validatePackageBundle(bundle);
+  const validation = await validateReleaseArtifact(bundle);
   if (!validation.valid) throw new Error(`PACKAGE_INVALID:${validation.hardErrors.join("|")}`);
   const result = reconstructBuildResult(bundle);
   const stored = await getStoredSnapshot(result.snapshot.id);
@@ -60,7 +60,8 @@ export async function importStaticRolePackage(input: {
     snapshotAsOf: bundle.manifest.snapshotAsOf,
     packageVersion: bundle.manifest.packageVersion,
     protocolVersion: bundle.manifest.protocolVersion,
-    status: "ready" as const,
+    status: validation.publishable ? "ready" as const : "failed" as const,
+    error: validation.publishable ? null : (validation.publicationBlockers || []).join("\n"),
     artifactRootHash: artifact.rootHash,
     validationReportHash,
   };

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="660" height="350" preserveAspectRatio="xMinYMin meet" viewBox="0 0 660 350" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="660" height="350"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-350)" style="clip-path: url(#clip)">
+		<g transform="">
+			<g transform="">
+				<g transform="">
+					<rect x="80.75" y="67.0" width="95.0" height="136.29999999999998" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1; fill: rgb(13%,34%,53%); fill-rule: evenodd;"/>
+					<rect x="223.25" y="67.0" width="95.0" height="145.435" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1; fill: rgb(13%,34%,53%); fill-rule: evenodd;"/>
+					<rect x="365.75" y="67.0" width="95.0" height="190.09500000000003" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1; fill: rgb(13%,34%,53%); fill-rule: evenodd;"/>
+					<rect x="508.25" y="67.0" width="95.0" height="190.09500000000003" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1; fill: rgb(13%,34%,53%); fill-rule: evenodd;"/>
+					<rect x="80.75" y="203.29999999999998" width="95.0" height="27.840000000000003" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1; fill: rgb(78%,41%,16%); fill-rule: evenodd;"/>
+					<rect x="80.75" y="231.14" width="95.0" height="65.53999999999996" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1; fill: rgb(83%,85%,87%); fill-rule: evenodd;"/>
+					<rect x="223.25" y="212.435" width="95.0" height="84.24499999999995" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1; fill: rgb(83%,85%,87%); fill-rule: evenodd;"/>
+					<rect x="365.75" y="257.095" width="95.0" height="39.58499999999992" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1; fill: rgb(83%,85%,87%); fill-rule: evenodd;"/>
+					<rect x="508.25" y="257.095" width="95.0" height="39.58499999999992" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1; fill: rgb(83%,85%,87%); fill-rule: evenodd;"/>
+					<g transform=""/>
+				</g>
+				<g transform="">
+					<g transform="">
+						<path d="M 57,67 L 627,67 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<path d="M 57,67 L 57,62 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 199.5,67 L 199.5,62 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 342,67 L 342,62 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 484.5,67 L 484.5,62 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 627,67 L 627,62 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<g transform=" matrix(1,0,0,1,128.25,62)">
+							<text x="-24.855" y="-10.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-20) scale(1,-1)">Before 1800</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,270.75,62)">
+							<text x="-21.8" y="-10.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-20) scale(1,-1)">After 1800</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,413.25,62)">
+							<text x="-24.855" y="-10.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-20) scale(1,-1)">Before 3200</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,555.75,62)">
+							<text x="-21.8" y="-10.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-20) scale(1,-1)">After 3200</text>
+						</g>
+					</g>
+				</g>
+				<g transform="">
+					<g transform="">
+						<path d="M 57,67 L 57,299 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<path d="M 57,67 L 52,67 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 57,125 L 52,125 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 57,183 L 52,183 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 57,241 L 52,241 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 57,299 L 52,299 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<g transform=" matrix(1,0,0,1,52,67)">
+							<text x="-5.0" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">0</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,52,125)">
+							<text x="-15.0" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">400</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,52,183)">
+							<text x="-15.0" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">800</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,52,241)">
+							<text x="-20.0" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">1200</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,52,299)">
+							<text x="-20.0" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">1600</text>
+						</g>
+					</g>
+				</g>
+			</g>
+			<text x="119.076" y="131.15" style="font-family: Helvetica-Bold; font-size: 11px;fill: rgb(100%,100%,100%); stroke:none;" transform="translate(0,262) scale(1,-1)">940</text>
+			<text x="119.076" y="213.22" style="font-family: Helvetica-Bold; font-size: 11px;fill: rgb(6%,6%,6%); stroke:none;" transform="translate(0,426) scale(1,-1)">192</text>
+			<text x="119.076" y="259.90999999999997" style="font-family: Helvetica-Bold; font-size: 11px;fill: rgb(6%,6%,6%); stroke:none;" transform="translate(0,519) scale(1,-1)">452</text>
+			<text x="258.518" y="135.7175" style="font-family: Helvetica-Bold; font-size: 11px;fill: rgb(100%,100%,100%); stroke:none;" transform="translate(0,271) scale(1,-1)">1003</text>
+			<text x="261.576" y="250.5575" style="font-family: Helvetica-Bold; font-size: 11px;fill: rgb(6%,6%,6%); stroke:none;" transform="translate(0,501) scale(1,-1)">581</text>
+			<text x="401.018" y="158.0475" style="font-family: Helvetica-Bold; font-size: 11px;fill: rgb(100%,100%,100%); stroke:none;" transform="translate(0,316) scale(1,-1)">1311</text>
+			<text x="404.076" y="272.8875" style="font-family: Helvetica-Bold; font-size: 11px;fill: rgb(6%,6%,6%); stroke:none;" transform="translate(0,545) scale(1,-1)">273</text>
+			<text x="543.518" y="158.0475" style="font-family: Helvetica-Bold; font-size: 11px;fill: rgb(100%,100%,100%); stroke:none;" transform="translate(0,316) scale(1,-1)">1311</text>
+			<text x="546.576" y="272.8875" style="font-family: Helvetica-Bold; font-size: 11px;fill: rgb(6%,6%,6%); stroke:none;" transform="translate(0,545) scale(1,-1)">273</text>
+			<text x="57" y="325" style="font-family: Helvetica-Bold; font-size: 13px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,650) scale(1,-1)">Temporal audit outcome counts</text>
+			<rect x="57" y="21" width="12" height="12" style="stroke: rgb(13%,34%,53%); stroke-linecap: butt; stroke-width: 1; fill: rgb(13%,34%,53%); fill-rule: evenodd;"/>
+			<text x="76" y="23" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,46) scale(1,-1)">Consistent action</text>
+			<rect x="252" y="21" width="12" height="12" style="stroke: rgb(78%,41%,16%); stroke-linecap: butt; stroke-width: 1; fill: rgb(78%,41%,16%); fill-rule: evenodd;"/>
+			<text x="271" y="23" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,46) scale(1,-1)">Stale action</text>
+			<rect x="417" y="21" width="12" height="12" style="stroke: rgb(83%,85%,87%); stroke-linecap: butt; stroke-width: 1; fill: rgb(83%,85%,87%); fill-rule: evenodd;"/>
+			<text x="436" y="23" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,46) scale(1,-1)">No assessment action</text>
+		</g>
+	</g>
+</svg>

@@ -1,0 +1,27 @@
+# Enable only after a trusted production certificate with this IP SAN exists.
+https://8.148.28.98 {
+    tls /etc/learnflow/ip-certificates/live/learnflow-ip-8.148.28.98/fullchain.pem /etc/learnflow/ip-certificates/live/learnflow-ip-8.148.28.98/privkey.pem
+    header Cache-Control "no-store"
+    handle /api/* {
+        # GET verification accepts a LearnFlow API key, never a browser cookie.
+        # forward_auth passes the original method/URI to the verifier.
+        forward_auth learnflow-backend:8010 {
+            uri /api/auth/api-key/verify
+        }
+        @tutor path /api/tutor*
+        handle @tutor {
+            reverse_proxy learnflow-frontend:4174 {
+                flush_interval -1
+            }
+        }
+        handle {
+            # Ordinary APIs and SSE reach the backend without Node buffering.
+            reverse_proxy learnflow-backend:8010 {
+                flush_interval -1
+            }
+        }
+    }
+    handle {
+        respond 404
+    }
+}

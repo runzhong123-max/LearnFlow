@@ -1,3 +1,4 @@
+import { automaticMountSchema, automaticRepairSchema } from "@/lib/learning-path/automatic-schema";
 type ColumnInfo = { name: string };
 
 type RuntimeMigration = {
@@ -285,7 +286,17 @@ export const conversationJobsMigration: RuntimeMigration = {
   },
 };
 
-const runtimeMigrations: RuntimeMigration[] = [versioningRegistryMigration, pinLegacyConversationsMigration, registryMetadataV2Migration, registryMaintenancePolicyBackfill, durableRoleJobsMigration, unifiedRolePackageProtocolMigration, projectLifecycleMigration, conversationJobsMigration];
+const automaticLearningMountMigration: RuntimeMigration = {
+  id: "2026-09-09-automatic-learning-mount-v1",
+  async apply(d1) {
+    await d1.batch([d1.prepare(automaticMountSchema), d1.prepare("CREATE INDEX IF NOT EXISTS idx_learning_mount_pending ON role_learning_mounts(status,available_at,lease_expires_at)")]);
+  },
+};
+const automaticLearningRepairMigration: RuntimeMigration = {
+  id: "2026-09-09-automatic-learning-repair-v1",
+  async apply(d1) { await d1.prepare(automaticRepairSchema).run(); },
+};
+const runtimeMigrations: RuntimeMigration[] = [versioningRegistryMigration, pinLegacyConversationsMigration, registryMetadataV2Migration, registryMaintenancePolicyBackfill, durableRoleJobsMigration, unifiedRolePackageProtocolMigration, projectLifecycleMigration, conversationJobsMigration, automaticLearningMountMigration, automaticLearningRepairMigration];
 
 /**
  * Runtime migration runner for local/D1 preview environments. Production can

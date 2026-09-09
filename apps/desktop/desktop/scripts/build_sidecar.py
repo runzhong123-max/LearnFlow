@@ -100,7 +100,8 @@ def main() -> None:
         "--hidden-import=backports.tarfile",
     ]
     # Registry drift checks inspect exact frontend binding sources. Bundle those
-    # source assets without env files, dependencies or arbitrary runtime data.
+    # source assets (including registered native handoff handlers) without env
+    # files, dependencies or arbitrary runtime data.
     probe = (
         "import json; from app.services.architecture_registry import IMPLEMENTATION_BINDINGS, resolve_frontend_binding_path; "
         "paths = sorted({b.path for b in IMPLEMENTATION_BINDINGS.values() "
@@ -111,7 +112,7 @@ def main() -> None:
     for relative, source_path in bound_paths.items():
         source = Path(source_path)
         allowed_source = source.is_relative_to(REPO_ROOT) or source.is_relative_to(MONOREPO_ROOT / "packages" / "learning-client" / "src")
-        if not allowed_source or Path(relative).is_absolute() or ".." in Path(relative).parts or source.suffix not in {".ts", ".tsx"} or not source.is_file():
+        if not allowed_source or Path(relative).is_absolute() or ".." in Path(relative).parts or source.suffix not in {".ts", ".tsx", ".rs"} or not source.is_file():
             raise RuntimeError(f"Invalid registry source asset: {relative}")
         pyinstaller_args.extend(["--add-data", f"{source}{data_separator}{Path(relative).parent.as_posix()}"])
     plugin_dist = REPO_ROOT / "plugins" / "dist"

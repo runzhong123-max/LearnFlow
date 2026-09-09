@@ -29,8 +29,9 @@ export const snapshotIterationRequestSchema = z.object({
   targetAsOf: z.string().max(40).optional(),
   supplementalSources: z.array(sourceInputSchema).max(20).default([]),
   learningPathGraph: learningPathGraphInputSchema,
+  learningMountFeedback: z.array(z.object({ roleNodeId: z.string().min(1).max(220), reason: z.string().max(1_000), researchGoal: z.string().max(1_500) })).max(40).default([]),
   webResearch: z.boolean().default(true),
-  maxRounds: z.number().int().min(1).max(2).default(2),
+  maxRounds: z.number().int().min(1).max(6).default(4),
   sourceLimit: z.number().int().min(4).max(20).default(12),
   maxWorkItems: z.number().int().min(3).max(16).default(10),
 });
@@ -39,7 +40,8 @@ export type InitiativeProfile = z.infer<typeof initiativeProfileSchema>;
 export type IterationMode = z.infer<typeof iterationModeSchema>;
 export type IterationIntent = z.infer<typeof iterationIntentSchema>;
 export type IterationFindingLayer = z.infer<typeof iterationFindingLayerSchema>;
-export type SnapshotIterationRequest = Omit<z.infer<typeof snapshotIterationRequestSchema>, "mode"> & {
+export type SnapshotIterationRequest = Omit<z.infer<typeof snapshotIterationRequestSchema>, "mode" | "learningMountFeedback"> & {
+  learningMountFeedback?: Array<{ roleNodeId: string; reason: string; researchGoal: string }>;
   /** Optional for callers created before the three-mode product contract. */
   mode?: IterationMode;
 };
@@ -49,6 +51,7 @@ export type IterationContract = {
   initiativeProfile: InitiativeProfile;
   mode: IterationMode;
   objective: string;
+  learningMountFeedback?: Array<{ roleNodeId: string; reason: string; researchGoal: string }>;
   targetIds: string[];
   targetAsOf: string;
   changeIntents: IterationIntent[];

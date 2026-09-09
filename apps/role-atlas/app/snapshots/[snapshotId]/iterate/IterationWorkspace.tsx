@@ -171,8 +171,8 @@ function FinalResultMessage({ result, resultHref, resultLinkLabel, onAccept }: {
         <h3>{result.createdSnapshot ? "本轮迭代完成，已形成新的静态快照" : "本轮研究已完成，当前快照保持不变"}</h3>
         <p>{result.summary.slice(0, 3).join(" ")}</p>
         <div className="iteration-result-facts">
-          <span><b>{result.evaluation.informationGain.score.toFixed(1)}</b><small>信息增量</small></span>
-          <span><b>{selectedSources}</b><small>新增来源</small></span>
+          <span><b>{result.evaluation.informationGain.score.toFixed(1)}</b><small>{result.createdSnapshot ? "信息增量" : "未采用候选增量"}</small></span>
+          <span><b>{selectedSources}</b><small>本轮读取来源</small></span>
           <span><b>{result.workItems.filter((item) => item.status === "completed").length}</b><small>完成工作项</small></span>
           <span><b>{result.knownGaps.length}</b><small>保留缺口</small></span>
         </div>
@@ -181,7 +181,7 @@ function FinalResultMessage({ result, resultHref, resultLinkLabel, onAccept }: {
           : <Link href={resultHref}>{resultLinkLabel}<ChevronRight size={13} /></Link>}<code>{result.candidateSnapshotId}</code></div> : null}
         <div className="iteration-result-disclosures">
           <details>
-            <summary><ShieldCheck size={14} /><span><b>结构体检</b><small>{result.inspectionAfter.findings.length} 项发现 · {result.inspectionAfter.hardBlockers.length} 个协议阻断</small></span><ChevronDown size={13} /></summary>
+            <summary><ShieldCheck size={14} /><span><b>{result.createdSnapshot ? "结构体检" : "未采用候选体检"}</b><small>{result.inspectionAfter.findings.length} 项发现 · {result.inspectionAfter.hardBlockers.length} 个协议阻断</small></span><ChevronDown size={13} /></summary>
             <div className="iteration-axis-grid">{Object.entries(result.inspectionAfter.axes).map(([key, after]) => { const before = result.inspectionBefore.axes[key as keyof typeof result.inspectionBefore.axes]; return <article key={key}><span>{axisLabels[key as keyof typeof axisLabels]}</span><b>{Math.round(after)}</b><small>{Math.round(before)} <ChevronRight size={9} /> {Math.round(after)}</small></article>; })}</div>
             <div className="iteration-finding-list">{result.inspectionAfter.findings.slice(0, 10).map((finding) => <article key={finding.id} className={finding.severity}><span><b>{finding.title}</b><small>{finding.detail}</small></span><em>{finding.hardBlocker ? "协议阻断" : finding.suggestedAction === "research" ? "后续研究" : "已记录"}</em></article>)}</div>
           </details>
@@ -293,7 +293,7 @@ export default function IterationWorkspace({ snapshotId, projectId, versionId, c
         method: "POST",
         headers: { "content-type": "application/json" },
         signal: controller.signal,
-        body: JSON.stringify({ iteration: { runId: crypto.randomUUID(), snapshotRef: workspace.reference, projectId: workspace.reference.projectId, conversationId: workspace.reference.projectId ? conversationId : undefined, initiativeProfile, mode, prompt: prompt.trim(), targetIds: parsedTargetIds, targetAsOf: targetAsOf || undefined, supplementalSources, learningPathGraph, webResearch, maxRounds: 2, sourceLimit: 12, maxWorkItems: 10 }, providerConfig, searchConfig }),
+        body: JSON.stringify({ iteration: { runId: crypto.randomUUID(), snapshotRef: workspace.reference, projectId: workspace.reference.projectId, conversationId: workspace.reference.projectId ? conversationId : undefined, initiativeProfile, mode, prompt: prompt.trim(), targetIds: parsedTargetIds, targetAsOf: targetAsOf || undefined, supplementalSources, learningPathGraph, webResearch, maxRounds: 4, sourceLimit: 20, maxWorkItems: 16 }, providerConfig, searchConfig }),
       });
       if (!response.ok || !response.body) throw new Error((await response.json().catch(() => ({})) as { error?: string }).error || `请求失败（${response.status}）`);
       const reader = response.body.getReader();

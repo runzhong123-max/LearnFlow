@@ -1,9 +1,11 @@
 # 冷启动 Agent 编排与候选图谱设计 v0.5
 
-状态：`workflow v4.2 已实现；任务屏障后立即返回岗位内核，能力、知识技能依赖与事理森林在工作台后台形成两个增量版本；Durable Runner 跨 isolate 恢复仍待实现`\
+状态：`workflow v4.4 已实现；真实任务屏障后返回内核，无任务时有限补研；知识与能力按任务检查覆盖`\
 目标：把模糊岗位输入和可选工作区转化为可发布的 Static Role Package\
 运行时方向：LangGraph 阶段图 + Durable Runner + 领域事件日志
 关联研究：`cold-start-graph-algorithms.md`、`work-process-event-graph-research.md`
+
+v4.4 的来源资格、无任务补研、能力补齐和提交门槛见 [功能审计与修复](research-quality-audit-20260908.md)。v4.3 的上下文预算、逐任务补齐与质量事件见 [知识技能覆盖修复](knowledge-learning-repair.md)。以下 v4.2 编排为基础设计记录；后台持久化与恢复的现状以 [JOB_RECOVERY.md](JOB_RECOVERY.md) 为准。
 
 ## 0. v4.2 的用户关键路径
 

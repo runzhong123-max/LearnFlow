@@ -1,3 +1,4 @@
+mod conversion_handoff;
 use base64::{
     engine::general_purpose::{STANDARD as BASE64, URL_SAFE_NO_PAD},
     Engine as _,
@@ -7,8 +8,6 @@ use std::net::TcpListener;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Mutex;
-#[cfg(target_os = "windows")]
-use std::thread;
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{
@@ -19,20 +18,13 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutEvent, S
 use tauri_plugin_shell::process::CommandChild;
 use tauri_plugin_shell::ShellExt;
 #[cfg(target_os = "windows")]
-use windows_sys::Win32::Foundation::{
-    CloseHandle, GetLastError, ERROR_ALREADY_EXISTS, HANDLE, WAIT_OBJECT_0,
-};
-#[cfg(target_os = "windows")]
-use windows_sys::Win32::System::Threading::{
-    CreateEventW, GetCurrentProcessId, SetEvent, WaitForMultipleObjects, INFINITE,
-};
+use windows_sys::Win32::System::Threading::GetCurrentProcessId;
 const PET_TRAY_TOGGLE_ID: &str = "desktop-pet-toggle";
 const PLATFORM_TRAY_OPEN_ID: &str = "platform-workspace-open";
 const PET_TRAY_OPEN_MAIN_ID: &str = "desktop-pet-open-main";
 const PET_TRAY_DISABLE_MOUSE_THROUGH_ID: &str = "desktop-pet-disable-mouse-through";
 const PET_TRAY_QUIT_ID: &str = "desktop-pet-quit";
 const PET_REQUEST_EVENT: &str = "learnflow:desktop-pet-requested";
-#[cfg(target_os = "windows")]
 const INSTANCE_ACTIVATED_EVENT: &str = "learnflow:desktop-instance-activated";
 const PET_HIDDEN_EVENT: &str = "learnflow:desktop-pet-hidden";
 const PET_OCR_MAX_BYTES: u64 = 12 * 1024 * 1024;
@@ -829,85 +821,6 @@ fn configure_system_tray(app: &tauri::App) -> tauri::Result<()> {
     Ok(())
 }
 
-#[cfg(target_os = "windows")]
-struct SingleInstanceGuard {
-    activation_event: HANDLE,
-    shutdown_event: HANDLE,
-    listener: Option<thread::JoinHandle<()>>,
-}
-
-#[cfg(target_os = "windows")]
-impl SingleInstanceGuard {
-    fn acquire() -> Result<Option<Self>, String> {
-        let name: Vec<u16> = "Local\\LearnFlowDesktopActivation-v1"
-            .encode_utf16()
-            .chain(std::iter::once(0))
-            .collect();
-        let activation_event = unsafe { CreateEventW(std::ptr::null(), 0, 0, name.as_ptr()) };
-        if activation_event.is_null() {
-            return Err(format!("无法创建 LearnFlow 单实例事件：{}", unsafe {
-                GetLastError()
-            }));
-        }
-        if unsafe { GetLastError() } == ERROR_ALREADY_EXISTS {
-            unsafe {
-                SetEvent(activation_event);
-                CloseHandle(activation_event);
-            }
-            return Ok(None);
-        }
-        let shutdown_event = unsafe { CreateEventW(std::ptr::null(), 0, 0, std::ptr::null()) };
-        if shutdown_event.is_null() {
-            unsafe {
-                CloseHandle(activation_event);
-            }
-            return Err(format!("无法创建 LearnFlow 退出事件：{}", unsafe {
-                GetLastError()
-            }));
-        }
-        Ok(Some(Self {
-            activation_event,
-            shutdown_event,
-            listener: None,
-        }))
-    }
-
-    fn start(&mut self, app: tauri::AppHandle) {
-        let activation_event = self.activation_event as usize;
-        let shutdown_event = self.shutdown_event as usize;
-        self.listener = Some(thread::spawn(move || {
-            let handles = [activation_event as HANDLE, shutdown_event as HANDLE];
-            loop {
-                let signaled = unsafe {
-                    WaitForMultipleObjects(handles.len() as u32, handles.as_ptr(), 0, INFINITE)
-                };
-                if signaled == WAIT_OBJECT_0 {
-                    let _ = show_desktop_main(&app);
-                    let _ = app.emit_to("main", INSTANCE_ACTIVATED_EVENT, ());
-                } else {
-                    break;
-                }
-            }
-        }));
-    }
-}
-
-#[cfg(target_os = "windows")]
-impl Drop for SingleInstanceGuard {
-    fn drop(&mut self) {
-        unsafe {
-            SetEvent(self.shutdown_event);
-        }
-        if let Some(listener) = self.listener.take() {
-            let _ = listener.join();
-        }
-        unsafe {
-            CloseHandle(self.activation_event);
-            CloseHandle(self.shutdown_event);
-        }
-    }
-}
-
 fn request_desktop_pet_selection_capture(app: &tauri::AppHandle) -> Result<(), String> {
     let Some(window) = app.get_webview_window("pet") else {
         return Ok(());
@@ -1214,16 +1127,13 @@ fn ensure_model_credential_kek(settings_path: &Path) -> Result<String, String> {
 }
 
 pub fn run() {
-    #[cfg(target_os = "windows")]
-    let mut single_instance = match SingleInstanceGuard::acquire() {
-        Ok(Some(guard)) => guard,
-        Ok(None) => return,
-        Err(error) => {
-            eprintln!("LearnFlow 单实例保护不可用：{error}");
-            return;
-        }
-    };
     let app = tauri::Builder::default()
+        .manage(conversion_handoff::PendingConversions::default())
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            let _ = show_desktop_main(app);
+            let _ = app.emit_to("main", INSTANCE_ACTIVATED_EVENT, ());
+        }))
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_http::init())
         .plugin(
@@ -1239,6 +1149,9 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             desktop_runtime_config,
+            conversion_handoff::desktop_pending_conversion,
+            conversion_handoff::clear_desktop_pending_conversion,
+            conversion_handoff::choose_conversion_parent,
             open_platform_workspace,
             desktop_pet_preferences,
             update_desktop_pet_preferences,
@@ -1256,6 +1169,7 @@ pub fn run() {
             desktop_pet_auth_token,
         ])
         .setup(|app| {
+            conversion_handoff::initialize(app.handle())?;
             configure_system_tray(app)?;
             let port = reserve_loopback_port();
             let port_argument = port.to_string();
@@ -1284,13 +1198,16 @@ pub fn run() {
             std::fs::create_dir_all(&plugin_artifact_dir)?;
             let pet_preferences_path = app_data_dir.join("desktop-pet-settings.json");
             let pet_preferences = load_desktop_pet_preferences(&pet_preferences_path);
+            let api_origin = validated_platform_url(
+                option_env!("LEARNFLOW_API_ORIGIN").unwrap_or("https://8.148.28.98")
+            ).map_err(std::io::Error::other)?.origin().ascii_serialization();
             let command = app
                 .shell()
                 .sidecar("learnflow-backend")?
                 .args(["--host", "127.0.0.1", "--port", port_argument.as_str()])
                 .env("DESKTOP_MODE", "true")
                 .env("DESKTOP_TOKEN", &token)
-                .env("CLOUD_PLATFORM_URL", option_env!("LEARNFLOW_PLATFORM_URL").unwrap_or("https://learn.learnflow.club"))
+                .env("CLOUD_PLATFORM_URL", &api_origin)
                 .env("DATABASE_URL", database_url)
                 .env("SOURCE_CACHE_DIR", source_cache_dir.to_string_lossy().as_ref())
                 .env("REPO_FILES_DIR", source_cache_dir.to_string_lossy().as_ref())
@@ -1313,7 +1230,7 @@ pub fn run() {
                 config: DesktopRuntimeConfig {
                     api_base_url: format!("http://127.0.0.1:{port}/api"),
                     desktop_token: token,
-                    cloud_origin: option_env!("LEARNFLOW_PLATFORM_URL").unwrap_or("https://learn.learnflow.club").to_string(),
+                    cloud_origin: api_origin,
                 },
                 sidecar: Mutex::new(Some(child)),
                 pet_capability_token: Mutex::new(None),
@@ -1333,9 +1250,6 @@ pub fn run() {
         })
         .build(tauri::generate_context!())
         .expect("error while building LearnFlow desktop application");
-
-    #[cfg(target_os = "windows")]
-    single_instance.start(app.handle().clone());
 
     app.run(|handle, event| match event {
         RunEvent::WindowEvent {
@@ -1367,6 +1281,7 @@ mod platform_workspace_tests {
     #[test]
     fn validates_pinned_https_authority() {
         assert!(validated_platform_url("https://learn.example.com").is_ok());
+        assert!(validated_platform_url("https://8.148.28.98").is_ok());
         for url in ["http://learn.example.com", "file:///tmp/a", "https://user:pass@learn.example.com", "https://learn.example.com/?token=secret", "https://learn.example.com/#token", "https://learn.example.com/other"] {
             assert!(validated_platform_url(url).is_err(), "{url}");
         }

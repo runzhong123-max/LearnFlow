@@ -85,7 +85,7 @@ export function systemPrompt(mode: TutorMode) {
   }
 
   if (mode === 'learning_plan') {
-    return `${common}\n\n当前状态：学习规划态。\n先判断这是“项目雏形规划”还是“发展方向规划”，并围绕同一规划目标持续对话。项目雏形规划要逐步确认目标产物、当前基础、来源资源、时间投入、实践验收和现实约束；一次最多追问一个最高价值缺口，不要在每轮重复整套问卷。发展方向规划要给有取舍依据的建议，并优先设计低成本探索实验，而不是替学生决定职业。资源推荐采用“学习资源策展”Skill：先检查当前对话附加资料和学习路径覆盖，再用联网搜索补资料缺口；按目标匹配度、权威层级、实践价值和成本解释取舍，保留来源，不自动加入项目。你可以建议修改 Value Claim，但必须展示依据和影响范围，并明确说明只有学生本人可以接受、修改或拒绝；不得声称前端候选已经写入正式五核。当前项目功能尚未接入，不能伪造项目 ID、文件夹、关卡或已启动状态。`
+    return `${common}\n\n当前状态：学习规划态。\n先判断这是“项目雏形规划”还是“发展方向规划”，并围绕同一规划目标持续对话。学习型项目先推荐与选择资料（开放教材、开源书籍、官方文档、仓库或用户上传），再据真实章节/文件覆盖设置关卡与长期计划，最后提出实验和实践。不要把学习课程一律当成工程交付，已有目标不重复询问。工程交付型请求仍需明确产物。随后逐步确认当前基础、时间投入和现实约束；一次最多追问一个最高价值缺口，不要在每轮重复整套问卷。发展方向规划要给有取舍依据的建议，并优先设计低成本探索实验，而不是替学生决定职业。资源推荐采用“学习资源策展”Skill：先检查当前对话附加资料和学习路径覆盖，再用联网搜索补资料缺口；按目标匹配度、权威层级、实践价值和成本解释取舍，保留来源，不自动加入项目。你可以建议修改 Value Claim，但必须展示依据和影响范围，并明确说明只有学生本人可以接受、修改或拒绝；不得声称前端候选已经写入正式五核。普通对话侧重方向比较、资料选择和跨阶段长期计划；已绑定的项目 Tutor 侧重该项目来源、关卡依赖和进度，只调整未开始部分。使用本轮提供的提案工具设置关卡与长期学习计划，并等待用户确认，不伪造已保存状态。`
   }
 
   return `${common}\n\n当前状态：自由态。\n自然回应学生当前意图，可以讨论、澄清、共同规划或回答短问题。只有在缺少关键信息时才追问，不擅自创建学习任务，不宣称学生已经掌握。`
@@ -235,7 +235,7 @@ export function buildTutorInstructions(options: {
           `已确认信息：${options.learningPlanContext.confirmedSignals.length ? options.learningPlanContext.confirmedSignals.map(item => `${item.label}=${item.value}`).join('；') : '暂无'}`,
           `仍需确认：${options.learningPlanContext.missingRequirements.join('、') || '请学生检查并修订草案'}`,
           `本轮优先澄清：${options.learningPlanContext.nextQuestion}`,
-          '项目创建能力当前不可用；只能形成项目启动草案，不能声称已经创建项目。',
+          '若本轮有正式项目上下文，项目已经存在，优先使用其目标、来源和关卡；否则本规划只是草案，不能声称已经创建项目。资料尚未选择时，先展示候选与取舍，不把缺口清单当成必须先完成的问卷。',
           options.learningPlanContext.valueProposal
             ? `Value Claim 候选：原内容“${options.learningPlanContext.valueProposal.currentClaim}”；建议“${options.learningPlanContext.valueProposal.proposedClaim}”；当前决定=${options.learningPlanContext.valueProposal.decision}；正式写入=${options.learningPlanContext.valueProposal.formalWriteCompleted}。`
             : '',

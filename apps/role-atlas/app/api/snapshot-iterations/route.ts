@@ -1,8 +1,13 @@
+import { enqueueRoleJob, isDispatchedRoleJob } from "@/lib/jobs/dispatch";
+import { readAutomaticMountResearchFeedback } from "@/lib/learning-path/automatic";
+import { iterationOutcome } from "@/lib/jobs/iteration-outcome";
+import { rememberResearchRequester } from "@/lib/research-collection/store";
 import { startRoleJobExecution } from "@/lib/jobs/execution";
 import { projectVersionHeadState } from "@/lib/versioning/commit";
 import { authorizeApiRequest, requestActor } from "@/lib/access";
 import { z } from "zod/v4";
-import { createModelInvoker, type ModelInvoker } from "@/lib/agent/model";
+import type { ModelInvoker } from "@/lib/agent/model";
+import { createRecordedModelInvoker } from "@/lib/research-collection/model";
 import { createSnapshotIterationSkill } from "@/lib/iteration/graph";
 import { iterationBriefError } from "@/lib/iteration/brief";
 import { iterationTargetNodes } from "@/lib/iteration/targets";
@@ -25,7 +30,7 @@ import { resolveProviderConfig, resolveSearchProviderConfig } from "@/lib/server
 import { resolveSnapshot } from "@/lib/snapshots/resolver";
 import { workerRuntimeBindings } from "@/lib/worker-runtime-bindings";
 import { createDurableJobStream, durableJobResponse } from "@/lib/jobs/runtime";
-import { appendRoleJobEvent, assertRoleJobLease, checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob } from "@/lib/jobs/repository";
+import { lastRoleEventSequence, appendRoleJobEvent, assertRoleJobLease, checkpointRoleJob, claimRoleJob, completeRoleJob, failRoleJob } from "@/lib/jobs/repository";
 
 export const runtime = "edge";
 
@@ -70,6 +75,7 @@ function inactiveModel(): ModelInvoker {
 export async function GET(request: Request) {
   const denied = await authorizeApiRequest(request);
   if (denied) return denied;
+  await rememberResearchRequester(request);
   const snapshotId = new URL(request.url).searchParams.get("snapshotId");
   if (!snapshotId) return Response.json({ error: "缺少 snapshotId。" }, { status: 400 });
   try {
@@ -108,14 +114,20 @@ export async function POST(request: Request) {
     }
   }
 
+  // Keep external mount observations fixed in the queued request; worker retries must not change input identity.
+  const learningMountFeedback = !isDispatchedRoleJob(request) && resolved.reference.versionId
+    ? (await readAutomaticMountResearchFeedback(projectId, resolved.reference.versionId)).map(({ roleNodeId, reason, researchGoal }) => ({ roleNodeId, reason, researchGoal }))
+    : parsed.iteration.learningMountFeedback;
   const iterationRequest = {
     ...parsed.iteration,
+    learningMountFeedback,
     targetIds: [...new Set(parsed.iteration.targetIds)],
     targetAsOf: parsed.iteration.targetAsOf || (parsed.iteration.mode === "freshness" ? new Date().toISOString().slice(0, 10) : undefined),
     snapshotRef: resolved.reference,
     projectId,
   };
-  const mayRebuild = iterationRequest.webResearch || iterationRequest.supplementalSources.length > 0;
+  const mayRebuild = iterationRequest.webResearch || iterationRequest.supplementalSources.length > 0
+    || resolved.result.sources.assets.some(asset => asset.kind !== "user_brief" && resolved.result.sources.segments.some(segment => segment.sourceId === asset.id && segment.text.trim()));
   let model = inactiveModel();
   let modelLabel: string | undefined;
   let searchConfig;
@@ -123,7 +135,7 @@ export async function POST(request: Request) {
     const bindings = workerRuntimeBindings();
     if (mayRebuild) {
       const modelConfig = resolveProviderConfig(parsed.providerConfig, bindings);
-      model = createModelInvoker(modelConfig);
+      model = createRecordedModelInvoker(modelConfig,{projectId,runId:iterationRequest.runId});
       modelLabel = `${modelConfig.provider}/${modelConfig.model}`;
     }
     if (iterationRequest.webResearch) searchConfig = resolveSearchProviderConfig(parsed.searchConfig, bindings);
@@ -140,7 +152,7 @@ export async function POST(request: Request) {
   const jobKind = iterationRequest.initiativeProfile === "user_directed" && iterationRequest.targetIds.length > 0
     ? "node_deepening" as const
     : "snapshot_iteration" as const;
-  const job = await claimRoleJob({
+  const claimInput = {
     conversationId: iterationRequest.conversationId,
     baseVersionId: resolved.reference.versionId,
     id: iterationRequest.runId,
@@ -151,7 +163,10 @@ export async function POST(request: Request) {
     phase: "contract",
     owner: jobOwner,
     payload: { iteration: iterationRequest },
-  }).catch(() => null);
+  };
+  const queued = await enqueueRoleJob(request, claimInput, { ...parsed, iteration: iterationRequest });
+  if (queued) return queued;
+  const job = await claimRoleJob(claimInput).catch(() => null);
   if (!job?.claimed) return Response.json({ error: "同一岗位快照迭代仍由另一个执行器处理。", code: "JOB_LEASE_HELD" }, { status: 409 });
 
   try {
@@ -166,12 +181,12 @@ export async function POST(request: Request) {
   const graph = createSnapshotIterationSkill({
     model,
     modelLabel,
+    initialSeq: await lastRoleEventSequence(iterationRequest.runId),
     searchConfig,
     onCheckpoint: async (phase, state) => {
-      await Promise.all([
-        saveIterationCheckpoint(iterationRequest.runId, phase, state),
-        checkpointRoleJob({ jobId: iterationRequest.runId, owner: jobOwner, kind: jobKind, phase, state }),
-      ]);
+      await assertRoleJobLease(iterationRequest.runId, jobOwner);
+      if (!await checkpointRoleJob({ jobId: iterationRequest.runId, owner: jobOwner, kind: jobKind, phase, state })) throw new Error("JOB_LEASE_LOST");
+      await saveIterationCheckpoint(iterationRequest.runId, phase, state);
     },
   });
   const recovered = (job.job?.attempt || 1) > 1 && job.checkpoint?.state && typeof job.checkpoint.state === "object"
@@ -207,6 +222,7 @@ export async function POST(request: Request) {
     ),
     persist: async (event) => { await appendIterationEvent(event); await appendRoleJobEvent(iterationRequest.runId, event); },
     handle: async (raw, journal) => {
+      await assertRoleJobLease(iterationRequest.runId, jobOwner);
       const event = raw as IterationEvent;
       if (event.kind !== "iteration.run.completed" || !event.payload.result) {
         journal.publish(event);
@@ -250,10 +266,11 @@ export async function POST(request: Request) {
       } else {
         await journal.commit({ ...event, payload: { ...event.payload, result, projectVersionId } });
       }
-      await completeRoleJob({ jobId: iterationRequest.runId, owner: jobOwner, phase: "completed", result: { candidateSnapshotId, projectVersionId, ...headState } });
+      await completeRoleJob({ jobId: iterationRequest.runId, owner: jobOwner, phase: "completed", result: { candidateSnapshotId, projectVersionId, ...headState, outcome: iterationOutcome(result) } });
     },
     onFailure: async (error, journal) => {
       const event = failureEvent(iterationRequest, error);
+      event.seq = await lastRoleEventSequence(iterationRequest.runId) + 1;
       await journal.commit(event, () => failSnapshotIteration(
         iterationRequest.runId,
         String(event.payload.message || "迭代失败"),

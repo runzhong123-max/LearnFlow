@@ -1,0 +1,394 @@
+{
+  "common_conditions": 27804,
+  "groups": [
+    {
+      "attribution_errors": 0,
+      "budget": 1800,
+      "budget_pass": 1986,
+      "conditions": 1986,
+      "main_complete_numerator": 650,
+      "main_full_text_recall": 0.4881336713047422,
+      "main_n": 1438,
+      "multi_hop_complete_numerator": 12,
+      "multi_hop_n": 278,
+      "scoring_status": {
+        "adversarial_no_qa_score": 446,
+        "invalid_annotation": 13,
+        "valid": 1527
+      },
+      "variant": "full"
+    },
+    {
+      "attribution_errors": 0,
+      "budget": 1800,
+      "budget_pass": 1986,
+      "conditions": 1986,
+      "main_complete_numerator": 650,
+      "main_full_text_recall": 0.4881336713047422,
+      "main_n": 1438,
+      "multi_hop_complete_numerator": 12,
+      "multi_hop_n": 278,
+      "scoring_status": {
+        "adversarial_no_qa_score": 446,
+        "invalid_annotation": 13,
+        "valid": 1527
+      },
+      "variant": "no_aliases"
+    },
+    {
+      "attribution_errors": 0,
+      "budget": 1800,
+      "budget_pass": 1986,
+      "conditions": 1986,
+      "main_complete_numerator": 605,
+      "main_full_text_recall": 0.45210938481196883,
+      "main_n": 1438,
+      "multi_hop_complete_numerator": 8,
+      "multi_hop_n": 278,
+      "scoring_status": {
+        "adversarial_no_qa_score": 446,
+        "invalid_annotation": 13,
+        "valid": 1527
+      },
+      "variant": "no_bm25"
+    },
+    {
+      "attribution_errors": 0,
+      "budget": 1800,
+      "budget_pass": 1986,
+      "conditions": 1986,
+      "main_complete_numerator": 650,
+      "main_full_text_recall": 0.486429916089165,
+      "main_n": 1438,
+      "multi_hop_complete_numerator": 12,
+      "multi_hop_n": 278,
+      "scoring_status": {
+        "adversarial_no_qa_score": 446,
+        "invalid_annotation": 13,
+        "valid": 1527
+      },
+      "variant": "no_fuzzy"
+    },
+    {
+      "attribution_errors": 0,
+      "budget": 1800,
+      "budget_pass": 1986,
+      "conditions": 1986,
+      "main_complete_numerator": 0,
+      "main_full_text_recall": 0.0,
+      "main_n": 1438,
+      "multi_hop_complete_numerator": 0,
+      "multi_hop_n": 278,
+      "scoring_status": {
+        "adversarial_no_qa_score": 446,
+        "invalid_annotation": 13,
+        "valid": 1527
+      },
+      "variant": "no_memory"
+    },
+    {
+      "attribution_errors": 0,
+      "budget": 1800,
+      "budget_pass": 1986,
+      "conditions": 1986,
+      "main_complete_numerator": 650,
+      "main_full_text_recall": 0.4881336713047422,
+      "main_n": 1438,
+      "multi_hop_complete_numerator": 12,
+      "multi_hop_n": 278,
+      "scoring_status": {
+        "adversarial_no_qa_score": 446,
+        "invalid_annotation": 13,
+        "valid": 1527
+      },
+      "variant": "no_temporal"
+    },
+    {
+      "attribution_errors": 0,
+      "budget": 1800,
+      "budget_pass": 1986,
+      "conditions": 1986,
+      "main_complete_numerator": 28,
+      "main_full_text_recall": 0.02087755898787302,
+      "main_n": 1438,
+      "multi_hop_complete_numerator": 1,
+      "multi_hop_n": 278,
+      "scoring_status": {
+        "adversarial_no_qa_score": 446,
+        "invalid_annotation": 13,
+        "valid": 1527
+      },
+      "variant": "recent_facts"
+    },
+    {
+      "attribution_errors": 0,
+      "budget": 3200,
+      "budget_pass": 1986,
+      "conditions": 1986,
+      "main_complete_numerator": 765,
+      "main_full_text_recall": 0.5799998030014134,
+      "main_n": 1438,
+      "multi_hop_complete_numerator": 23,
+      "multi_hop_n": 278,
+      "scoring_status": {
+        "adversarial_no_qa_score": 446,
+        "invalid_annotation": 13,
+        "valid": 1527
+      },
+      "variant": "full"
+    },
+    {
+      "attribution_errors": 0,
+      "budget": 3200,
+      "budget_pass": 1986,
+      "conditions": 1986,
+      "main_complete_numerator": 765,
+      "main_full_text_recall": 0.5799998030014134,
+      "main_n": 1438,
+      "multi_hop_complete_numerator": 23,
+      "multi_hop_n": 278,
+      "scoring_status": {
+        "adversarial_no_qa_score": 446,
+        "invalid_annotation": 13,
+        "valid": 1527
+      },
+      "variant": "no_aliases"
+    },
+    {
+      "attribution_errors": 0,
+      "budget": 3200,
+      "budget_pass": 1986,
+      "conditions": 1986,
+      "main_complete_numerator": 721,
+      "main_full_text_recall": 0.5432572533242324,
+      "main_n": 1438,
+      "multi_hop_complete_numerator": 21,
+      "multi_hop_n": 278,
+      "scoring_status": {
+        "adversarial_no_qa_score": 446,
+        "invalid_annotation": 13,
+        "valid": 1527
+      },
+      "variant": "no_bm25"
+    },
+    {
+      "attribution_errors": 0,
+      "budget": 3200,
+      "budget_pass": 1986,
+      "conditions": 1986,
+      "main_complete_numerator": 763,
+      "main_full_text_recall": 0.5769052272016916,
+      "main_n": 1438,
+      "multi_hop_complete_numerator": 24,
+      "multi_hop_n": 278,
+      "scoring_status": {
+        "adversarial_no_qa_score": 446,
+        "invalid_annotation": 13,
+        "valid": 1527
+      },
+      "variant": "no_fuzzy"
+    },
+    {
+      "attribution_errors": 0,
+      "budget": 3200,
+      "budget_pass": 1986,
+      "conditions": 1986,
+      "main_complete_numerator": 0,
+      "main_full_text_recall": 0.0,
+      "main_n": 1438,
+      "multi_hop_complete_numerator": 0,
+      "multi_hop_n": 278,
+      "scoring_status": {
+        "adversarial_no_qa_score": 446,
+        "invalid_annotation": 13,
+        "valid": 1527
+      },
+      "variant": "no_memory"
+    },
+    {
+      "attribution_errors": 0,
+      "budget": 3200,
+      "budget_pass": 1986,
+      "conditions": 1986,
+      "main_complete_numerator": 765,
+      "main_full_text_recall": 0.5801736555744315,
+      "main_n": 1438,
+      "multi_hop_complete_numerator": 23,
+      "multi_hop_n": 278,
+      "scoring_status": {
+        "adversarial_no_qa_score": 446,
+        "invalid_annotation": 13,
+        "valid": 1527
+      },
+      "variant": "no_temporal"
+    },
+    {
+      "attribution_errors": 0,
+      "budget": 3200,
+      "budget_pass": 1986,
+      "conditions": 1986,
+      "main_complete_numerator": 31,
+      "main_full_text_recall": 0.023543298440816925,
+      "main_n": 1438,
+      "multi_hop_complete_numerator": 1,
+      "multi_hop_n": 278,
+      "scoring_status": {
+        "adversarial_no_qa_score": 446,
+        "invalid_annotation": 13,
+        "valid": 1527
+      },
+      "variant": "recent_facts"
+    }
+  ],
+  "independent_packet_hash_matches_recorded_new": 27804,
+  "independent_packet_hash_matches_recorded_old": 27804,
+  "independent_packet_payload_unchanged": 27804,
+  "inputs": [
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-02/locomo-00/trials.jsonl",
+      "sha256": "6fc4fcfa2c931be8e00f71e9c424fd9cc7c3e1df6ddeb8a8a3db179f08ba7e3f"
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-02/locomo-00/summary.json",
+      "sha256": "2a8a810bf135c54923018b2340bc218110a3ab9e0ed8c38a4ce359fb9ba2360e"
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-02/locomo-00/packets.jsonl.gz",
+      "sha256": "b645fe4db1d5ca4643b3307b1500079cf7b7f53446b5579cbd597ce654f317a7"
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-02/locomo-01/trials.jsonl",
+      "sha256": "0ea3887388ca96cadce9e404f7099e254caba5cc1fe08140a0f5e898e672ee96"
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-02/locomo-01/summary.json",
+      "sha256": "97394411c19b0d128453f85dfa05f8158f47bfe7b8f09ec6322d31254aaa46d1"
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-02/locomo-01/packets.jsonl.gz",
+      "sha256": "cdd015dca67b69544dbbd6b844e6437ea776ad2c152b656786997fc7b840fe67"
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-03/locomo-00/trials.jsonl",
+      "sha256": "4d78991e86fb84dd20c2d370eb16013802e9f1db8bae764b4f9f6447106085ef"
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-03/locomo-00/summary.json",
+      "sha256": "9a9207de3ac61e9d900e46477383cf756bce41f718360fdaa8057b4fe26f6755"
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-03/locomo-00/packets.jsonl.gz",
+      "sha256": "c3e232f1f46767c8a59588a596c85f74a70d013d209ce0e9d882c3d928c1a3bb"
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-03/locomo-01/trials.jsonl",
+      "sha256": "6de00fa82c1dd2dd07945e0b78487acea81a60eb0bc840d8ba314b19f805b267"
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-03/locomo-01/summary.json",
+      "sha256": "2ad18e19cf4f8467bb069698aad0081ccf482412771567b15d17d06c2dc896c7"
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-03/locomo-01/packets.jsonl.gz",
+      "sha256": "455922e939e335937ff028f3dd99d38993e2ce17d9b5cfb80a9ce7d141be28f4"
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-03/locomo-02/trials.jsonl",
+      "sha256": "d7f60c1c5c28a5af58087d534c53de1d3cd2a9b14a5beed1e39d7f243ed43480"
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-03/locomo-02/summary.json",
+      "sha256": "246a1283d590c409fe8de42ee148a2878a68784a14ef2dc1bc39499f93f0b939"
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-03/locomo-02/packets.jsonl.gz",
+      "sha256": "6ccd8e5241e4114c0f66213d033511ced10bc7ef937736eadcd9e7e913997e8d"
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-03/locomo-03/trials.jsonl",
+      "sha256": "232b281b33a4311a5bce37eed3405a90bc50f7146cd65f2b5d6b64f8856c1db3"
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-03/locomo-03/summary.json",
+      "sha256": "ae1fc72514a55b9846e5f5b18523268207c5e18d557bd2c16ffe190a0bdbac24"
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-03/locomo-03/packets.jsonl.gz",
+      "sha256": "c753ac277610c45a24013fb2e23d6d9b1c4e85219700400ec982847db90c3cd6"
+    }
+  ],
+  "inputs_unchanged": true,
+  "latency_metric_changed_conditions": 23832,
+  "limitations": [
+    "Only one repetition per condition; this is a cross-run consistency audit, not a repeated-trial variance estimate.",
+    "Latency and job timings are descriptive and differ with shard concurrency.",
+    "No generated QA answer accuracy or actual learner benefit is measured."
+  ],
+  "method": "Match case_id/variant/budget. Compare all metric fields except latency_ms and every trial field except metrics/repetition_latency_ms. Independently reconstruct and hash the exact charged packet body, including delivered text, paths, diagnostics and component policy; compare both to recorded fingerprints and across runs.",
+  "new_actual_retrieval_calls": 23832,
+  "new_conditions": 27804,
+  "new_execution_error_conditions": 0,
+  "new_network_attempts": [
+    [],
+    [],
+    [],
+    []
+  ],
+  "new_only": 0,
+  "new_run": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-03",
+  "new_shards": [
+    {
+      "conditions": 8918,
+      "conversations": [
+        "conv-26",
+        "conv-43",
+        "conv-49"
+      ],
+      "questions": 637
+    },
+    {
+      "conditions": 6538,
+      "conversations": [
+        "conv-30",
+        "conv-44",
+        "conv-50"
+      ],
+      "questions": 467
+    },
+    {
+      "conditions": 5362,
+      "conversations": [
+        "conv-41",
+        "conv-47"
+      ],
+      "questions": 383
+    },
+    {
+      "conditions": 6986,
+      "conversations": [
+        "conv-42",
+        "conv-48"
+      ],
+      "questions": 499
+    }
+  ],
+  "new_shards_source_unchanged": [
+    true,
+    true,
+    true,
+    true
+  ],
+  "new_source_maps_identical_across_shards": true,
+  "non_latency_metric_difference_counts": {},
+  "non_timing_trial_field_difference_counts": {},
+  "old_conditions": 27804,
+  "old_only": 0,
+  "old_run": "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-02",
+  "old_shards_source_unchanged": [
+    true,
+    true
+  ],
+  "post_hoc_audit": true,
+  "schema": "learnflow.locomo-run-comparison.v1",
+  "script_sha256": "a0e7089ecffb2039036aef97875c4b166c2c88027e5a6c2fdff67e9a122113c3"
+}

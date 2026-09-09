@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="518.740157480315pt" height="264pt" preserveAspectRatio="xMinYMin meet" viewBox="0 0 518.740157480315 264" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>时序审计及配对迁移</title>
+	<desc>Original vector figure from retained LearnFlow measurements. See manuscript caption for denominators and statistical scope.</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="518.740157480315" height="264"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-264)" style="clip-path: url(#clip)">
+		<g transform="">
+			<rect x="0" y="0" width="518.740157480315" height="264" style="stroke: none; stroke-linecap: butt; stroke-width: 0.5; fill: rgb(100%,100%,100%); fill-rule: evenodd;"/>
+			<text x="8" y="250" style="font-family: Arial-Bold; font-size: 8px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,500) scale(1,-1)">a</text>
+			<text x="22" y="250" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,500) scale(1,-1)">全体案例的时序审计</text>
+			<text x="41.5380859375" y="211" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,422) scale(1,-1)">1,800 修正前</text>
+			<rect x="90" y="203" width="148.35858585858585" height="18" style="stroke: none; stroke-linecap: butt; stroke-width: 0.5; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<text x="158.75680757773043" y="209" style="font-family: Arial; font-size: 6.5px;fill: rgb(100%,100%,100%); stroke:none;" transform="translate(0,418) scale(1,-1)">940</text>
+			<rect x="238.35858585858585" y="203" width="30.30303030303031" height="18" style="stroke: none; stroke-linecap: butt; stroke-width: 0.5; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="248.0876156585385" y="209" style="font-family: Arial; font-size: 6.5px;fill: rgb(100%,100%,100%); stroke:none;" transform="translate(0,418) scale(1,-1)">192</text>
+			<rect x="268.66161616161617" y="203" width="71.33838383838383" height="18" style="stroke: none; stroke-linecap: butt; stroke-width: 0.5; fill: rgb(85%,87%,88%); fill-rule: evenodd;"/>
+			<text x="298.9083227292456" y="209" style="font-family: Arial; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,418) scale(1,-1)">452</text>
+			<text x="41.5380859375" y="177" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,354) scale(1,-1)">1,800 修正后</text>
+			<rect x="90" y="169" width="158.30176767676767" height="18" style="stroke: none; stroke-linecap: butt; stroke-width: 0.5; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<text x="161.92090336963383" y="175" style="font-family: Arial; font-size: 6.5px;fill: rgb(100%,100%,100%); stroke:none;" transform="translate(0,350) scale(1,-1)">1003</text>
+			<rect x="248.30176767676767" y="169" width="91.69823232323233" height="18" style="stroke: none; stroke-linecap: butt; stroke-width: 0.5; fill: rgb(85%,87%,88%); fill-rule: evenodd;"/>
+			<text x="288.72839848682133" y="175" style="font-family: Arial; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,350) scale(1,-1)">581</text>
+			<text x="41.5380859375" y="143" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,286) scale(1,-1)">3,200 修正前</text>
+			<rect x="90" y="135" width="206.91287878787875" height="18" style="stroke: none; stroke-linecap: butt; stroke-width: 0.5; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<text x="186.22645892518938" y="141" style="font-family: Arial; font-size: 6.5px;fill: rgb(100%,100%,100%); stroke:none;" transform="translate(0,282) scale(1,-1)">1311</text>
+			<rect x="296.91287878787875" y="135" width="43.08712121212119" height="18" style="stroke: none; stroke-linecap: butt; stroke-width: 0.5; fill: rgb(85%,87%,88%); fill-rule: evenodd;"/>
+			<text x="313.0339540423769" y="141" style="font-family: Arial; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,282) scale(1,-1)">273</text>
+			<text x="41.5380859375" y="109" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,218) scale(1,-1)">3,200 修正后</text>
+			<rect x="90" y="101" width="206.91287878787875" height="18" style="stroke: none; stroke-linecap: butt; stroke-width: 0.5; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<text x="186.22645892518938" y="107" style="font-family: Arial; font-size: 6.5px;fill: rgb(100%,100%,100%); stroke:none;" transform="translate(0,214) scale(1,-1)">1311</text>
+			<rect x="296.91287878787875" y="101" width="43.08712121212119" height="18" style="stroke: none; stroke-linecap: butt; stroke-width: 0.5; fill: rgb(85%,87%,88%); fill-rule: evenodd;"/>
+			<text x="313.0339540423769" y="107" style="font-family: Arial; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,214) scale(1,-1)">273</text>
+			<path d="M 90,77 L 90,74 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.5;"/>
+			<text x="88.1925048828125" y="64" style="font-family: Arial; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,128) scale(1,-1)">0</text>
+			<path d="M 153.131313,77 L 153.131313,74 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.5;"/>
+			<text x="147.70882777975064" y="64" style="font-family: Arial; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,128) scale(1,-1)">400</text>
+			<path d="M 216.262626,77 L 216.262626,74 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.5;"/>
+			<text x="210.84014091106377" y="64" style="font-family: Arial; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,128) scale(1,-1)">800</text>
+			<path d="M 279.393939,77 L 279.393939,74 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.5;"/>
+			<text x="272.1639589251894" y="64" style="font-family: Arial; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,128) scale(1,-1)">1200</text>
+			<path d="M 340,77 L 340,74 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.5;"/>
+			<text x="332.77001953125" y="64" style="font-family: Arial; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,128) scale(1,-1)">1584</text>
+			<path d="M 90,77 L 340,77 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.5;"/>
+			<text x="204.5" y="50" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,100) scale(1,-1)">案例数</text>
+			<rect x="90" y="29" width="7" height="7" style="stroke: none; stroke-linecap: butt; stroke-width: 0.5; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<text x="101" y="30" style="font-family: Arial Unicode MS; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,60) scale(1,-1)">时序一致</text>
+			<rect x="177" y="29" width="7" height="7" style="stroke: none; stroke-linecap: butt; stroke-width: 0.5; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="188" y="30" style="font-family: Arial Unicode MS; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,60) scale(1,-1)">过时</text>
+			<rect x="240" y="29" width="7" height="7" style="stroke: none; stroke-linecap: butt; stroke-width: 0.5; fill: rgb(85%,87%,88%); fill-rule: evenodd;"/>
+			<text x="251" y="30" style="font-family: Arial Unicode MS; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,60) scale(1,-1)">无评估动作 NA</text>
+			<text x="366" y="250" style="font-family: Arial-Bold; font-size: 8px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,500) scale(1,-1)">b</text>
+			<text x="380" y="250" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,500) scale(1,-1)">原有过时案例的去向</text>
+			<text x="406.68798828125" y="224" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,448) scale(1,-1)">192 个过时案例</text>
+			<text x="367" y="199" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,398) scale(1,-1)">转为时序一致</text>
+			<rect x="367" y="172" width="42.984375" height="19" style="stroke: none; stroke-linecap: butt; stroke-width: 0.5; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<text x="414.984375" y="178" style="font-family: Arial; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,356) scale(1,-1)">63</text>
+			<text x="367" y="147" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,294) scale(1,-1)">转为无评估动作</text>
+			<rect x="367" y="120" width="88.015625" height="19" style="stroke: none; stroke-linecap: butt; stroke-width: 0.5; fill: rgb(85%,87%,88%); fill-rule: evenodd;"/>
+			<text x="460.015625" y="126" style="font-family: Arial; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,252) scale(1,-1)">129</text>
+			<path d="M 367,77 L 367,74 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.5;"/>
+			<text x="365.1925048828125" y="64" style="font-family: Arial; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,128) scale(1,-1)">0</text>
+			<path d="M 432.5,77 L 432.5,74 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.5;"/>
+			<text x="428.885009765625" y="64" style="font-family: Arial; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,128) scale(1,-1)">96</text>
+			<path d="M 498,77 L 498,74 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.5;"/>
+			<text x="492.5775146484375" y="64" style="font-family: Arial; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,128) scale(1,-1)">192</text>
+			<path d="M 367,77 L 498,77 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.5;"/>
+			<text x="415.0" y="50" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,100) scale(1,-1)">配对案例数</text>
+			<text x="366" y="24" style="font-family: Arial Unicode MS; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,48) scale(1,-1)">仅分析预算 1,800</text>
+		</g>
+	</g>
+</svg>

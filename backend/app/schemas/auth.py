@@ -124,6 +124,39 @@ class CsrfTokenResponse(BaseModel):
     csrf_token: str
 
 
+class ApiKeyCreateRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    password: str = Field(min_length=1, max_length=128, repr=False)
+    expires_in_days: int = Field(default=30, ge=1, le=90, strict=True)
+
+    @field_validator("name")
+    @classmethod
+    def clean_name(cls, value: str) -> str:
+        value = value.strip()
+        if not value or any(ord(character) < 32 for character in value):
+            raise ValueError("请填写有效的 API key 名称")
+        return value
+
+
+class ApiKeyMetadata(BaseModel):
+    id: int
+    name: str
+    key_hint: str
+    created_at: datetime
+    expires_at: datetime
+    last_used_at: datetime | None
+    revoked_at: datetime | None
+
+
+class ApiKeyCreateResponse(BaseModel):
+    api_key: str = Field(repr=False)
+    metadata: ApiKeyMetadata
+
+
+class ApiKeyListResponse(BaseModel):
+    api_keys: list[ApiKeyMetadata]
+
+
 class ModelCredentialUpdateRequest(BaseModel):
     # Empty/whitespace means "keep the current encrypted key". Deletion is an
     # explicit DELETE so masked form submissions cannot erase a credential.

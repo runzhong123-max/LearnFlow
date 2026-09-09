@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   if (denied) return denied;
   try {
     const actor = await requestActor(request);
-    return Response.json({ projects: await listProjects(actor.subjectId) }, { headers: { "Cache-Control": "private, no-store" } });
+    return Response.json({ projects: await listProjects(actor.subjectId), actorSubjectId: actor.subjectId }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : "项目列表读取失败。" }, { status: 500 });
   }

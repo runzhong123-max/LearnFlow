@@ -210,6 +210,9 @@ async def update_task(
         if key == "success_criteria" and value is not None:
             value = [str(item).strip()[:500] for item in value if str(item).strip()]
         setattr(task, key, value)
+    if patch.get("estimated_minutes") is not None:
+        # An explicit task edit replaces the uncapped estimate used by later replans.
+        task.plan = {**(task.plan or {}), "planning_basis_minutes": patch["estimated_minutes"]}
     task.version += 1
     view = await learning_task_view(db, task)
     await db.commit()

@@ -5,6 +5,7 @@ scoped and audited; only the existing graded-attempt runtime can establish learn
 """
 from __future__ import annotations
 from typing import Any
+from copy import deepcopy
 from pathlib import Path
 from fastapi import HTTPException
 from sqlalchemy import select, update
@@ -20,6 +21,7 @@ from app.services.learning_tasks import ensure_all_checkpoint_learning_tasks, le
 from app.services.teaching_contract import normalize_teaching_contract
 from app.services.practice_cases import CASE_ID, digest, get_case, case_summary, evaluate_case
 from learnflow_core.project_stage_support import SUPPORT_VERSION, assistance_view, help_guidance, stage_support
+from learnflow_core.work_task_designs import SCHEMA_VERSION as DESIGN_SCHEMA, validate_design, evaluate_design_stage
 
 SCHEMA_VERSION = "learnflow.project-workflow.v1"
 
@@ -109,12 +111,28 @@ async def _record(db: AsyncSession, project: Project, action_id: str, kind: str,
     return action
 
 
+def _workflow_case(state: ProjectWorkflowState) -> dict:
+    ref = state.case_ref
+    if ref.get("schema_version") == DESIGN_SCHEMA:
+        design = ref.get("compiled_design", {})
+        if not validate_design(design)["valid"] or design.get("root_hash") != ref.get("root_hash"):
+            raise HTTPException(409, "固定专业设计校验失败，不能改用其他版本继续")
+        return design
+    return get_case(ref["id"], ref["version"], ref["root_hash"])
+
+
+def _public_case_ref(state: ProjectWorkflowState | None) -> dict | None:
+    if not state or not state.case_ref:
+        return None
+    return {key: deepcopy(value) for key, value in state.case_ref.items() if key != "compiled_design"}
+
+
 def _stage_for(checkpoint: Checkpoint, state: ProjectWorkflowState | None, project: Project) -> dict:
     key = str((checkpoint.brief or {}).get("checkpoint_key") or "")
     if state and state.case_ref:
-        case = get_case(state.case_ref["id"], state.case_ref["version"], state.case_ref["root_hash"])
+        case = _workflow_case(state)
         stage = next((stage for stage in case["stages"] if stage["key"] == key), {})
-        return {**stage, **stage_support("practice", key, bundled_case=case["id"] == CASE_ID)}
+        return {**stage_support(project.project_mode or "practice", key, bundled_case=case["id"] == CASE_ID), **stage}
     stage = next((stage for stage in _default_stages(project.project_mode or "learning", project)
                   if stage["key"] == key and (checkpoint.brief or {}).get("workflow_template") == SCHEMA_VERSION), None)
     stage = stage or {"key": key or f"checkpoint-{checkpoint.id}", "title": checkpoint.title,
@@ -157,9 +175,10 @@ async def workflow_view(db: AsyncSession, project: Project, *, compact: bool = F
                            "support_version": SUPPORT_VERSION,
                            **{name: stage.get(name, []) if visible else [] for name in
                               ("student_tasks", "mentor_support", "shared_tasks", "related_files")},
-                           "assistance": _assistance_from_actions(actions, checkpoint.id) if visible and checkpoint.id not in accepted else None,
+                           "assistance": _assistance_from_actions(actions, checkpoint.id) if visible and checkpoint.id not in accepted and not stage.get("independent_validation") else None,
                            "assistance_guidance": _assistance_guidance_from_actions(actions, checkpoint.id) if visible else None,
-                           "hint_levels": 2 if visible else 0,
+                           "hint_levels": 2 if visible and not stage.get("independent_validation") else 0,
+                           "independent_validation": bool(stage.get("independent_validation")),
                            "hints_used": [{"level": action.payload["level"], "body": action.feedback["body"]}
                                           for action in actions if visible and action.kind == "hint" and action.checkpoint_id == checkpoint.id],
                            "submission": _submission_view(submissions[-1]) if submissions and visible else None,
@@ -170,7 +189,7 @@ async def workflow_view(db: AsyncSession, project: Project, *, compact: bool = F
             "revision": state.revision if state else 0, "initialized": bool(state and state.initialized),
             "brief": project.project_brief or {},
             "workbench": state.workbench if state else WorkbenchState().model_dump(),
-            "milestones": milestones, "case_ref": state.case_ref if state else None,
+            "milestones": milestones, "case_ref": _public_case_ref(state),
             "reading_records": readings[-100:], "mastery_inference": False,
             "activity": [{"id": item.id, "kind": item.kind, "checkpoint_id": item.checkpoint_id,
                           "created_at": item.created_at.isoformat()} for item in actions[-50:]]}
@@ -186,7 +205,7 @@ async def workflow_view(db: AsyncSession, project: Project, *, compact: bool = F
     return view
 
 
-async def initialize_workflow(db: AsyncSession, project: Project, data: dict) -> dict:
+async def initialize_workflow(db: AsyncSession, project: Project, data: dict, *, compiled_design: dict | None = None) -> dict:
     payload = {"operation": "initialize", **data}
     if await _replay(db, project, data["client_action_id"], payload):
         return await workflow_view(db, project)
@@ -194,7 +213,13 @@ async def initialize_workflow(db: AsyncSession, project: Project, data: dict) ->
     if state.initialized:
         raise HTTPException(409, "项目工作流已经初始化；不能替换进行中的案例或路线")
     case = None
-    if project.project_mode == "practice":
+    if compiled_design is not None:
+        if not validate_design(compiled_design)["valid"]:
+            raise HTTPException(422, "专业设计不是当前受支持的固定维护版本")
+        if compiled_design["project_mode"] != project.project_mode:
+            raise HTTPException(422, "设计模式与项目模式不一致")
+        case = deepcopy(compiled_design)
+    elif project.project_mode == "practice":
         if not all(data.get(key) for key in ("case_id", "case_version", "case_root_hash")):
             raise HTTPException(422, "实践项目需要明确确认案例及其版本摘要")
         case = get_case(data["case_id"], data["case_version"], data["case_root_hash"])
@@ -241,11 +266,27 @@ async def initialize_workflow(db: AsyncSession, project: Project, data: dict) ->
                            provenance={"service": "project_workflows", "explicit_click": True, "proposal_origin": "bundled_template"},
                            client_event_id=f"workflow:{project.id}:{data['client_action_id']}:roadmap")
     state.initialized = True
-    state.case_ref = case_summary(case) if case else None
+    state.case_ref = ({**case_summary(case), "recipe_id": case["recipe_id"],
+                       "project_mode": case["project_mode"], "compiled_design": case}
+                      if case and case.get("schema_version") == DESIGN_SCHEMA else case_summary(case) if case else None)
     state.revision += 1
     await _record(db, project, data["client_action_id"], "initialize", payload,
                   event_type="project_workflow_initialized")
     return await workflow_view(db, project)
+
+
+async def materialize_design(db: AsyncSession, project: Project, design: dict, client_action_id: str) -> dict:
+    """Called after owner-scoped explicit candidate confirmation; no commit or file execution.
+
+    Full immutable design is stored only in server-side workflow state. Initialization
+    action/event payload contains the hash reference, never future assessments.
+    """
+    if not project.learner_id or not validate_design(design)["valid"]:
+        raise HTTPException(422, "缺少项目归属或专业设计校验失败")
+    return await initialize_workflow(db, project, {
+        "client_action_id": client_action_id, "design_root_hash": design["root_hash"],
+        "design_id": design["id"], "design_version": design["version"],
+    }, compiled_design=design)
 
 
 async def save_workbench(db: AsyncSession, project: Project, data: dict) -> dict:
@@ -397,7 +438,7 @@ async def deliver_checkpoint(db: AsyncSession, project: Project, checkpoint_id: 
         checks.append({"key": key, "label": label, "passed": passed, "detail": detail})
     validator = stage.get("validator")
     if state.case_ref:
-        checks.extend(evaluate_case(stage, answers))
+        checks.extend(evaluate_design_stage(stage, answers) if stage.get("validator") == "authored_design_exact_json_v1" else evaluate_case(stage, answers))
     elif validator == "source":
         add("source", "固定来源版本", any(ref["kind"] == "source_version" for ref in data["artifact_refs"]), "请选择本项目已处理的来源版本作为依据。")
     elif validator == "reading":
@@ -430,6 +471,10 @@ async def deliver_checkpoint(db: AsyncSession, project: Project, checkpoint_id: 
     if engineering_assisted:
         observed_assistance.append("together")
     effective_assistance = max(observed_assistance, key=assistance_order.__getitem__)
+    if stage.get("independent_validation"):
+        add("independent_delivery", "本次独立复核", effective_assistance == "independent",
+            "末阶段不提供解题帮助；已有受助记录的结果不能记作独立复核，可在正式学习任务中重新安排独立验证。")
+        passed = all(item["passed"] for item in checks)
     feedback = {"accepted": passed, "checks": checks, "review_required": True,
                 "effective_assistance_level": effective_assistance, "engineering_assisted": engineering_assisted,
                 "summary": "交付检查通过；解释与设计质量仍需导师评审。" if passed else "交付尚有未满足项，请按检查结果修改后重新提交。",
@@ -492,6 +537,8 @@ async def _assistance_scope(db: AsyncSession, project: Project, checkpoint_id: i
     accepted = {item.checkpoint_id for item in actions if item.kind == "delivery" and item.feedback.get("accepted")}
     if checkpoint_id in accepted or any(parent not in accepted for parent in checkpoint.prerequisites or []):
         raise HTTPException(409, "只能使用当前尚未完成阶段的帮助")
+    if _stage_for(checkpoint, state, project).get("independent_validation"):
+        raise HTTPException(409, "独立复核阶段不开放解题提示或工程助手")
     return state, checkpoint, actions
 
 
@@ -524,6 +571,8 @@ async def _request_assistance(db: AsyncSession, project: Project, checkpoint_id:
     if not legacy_hint and data["expected_revision"] != current["revision"]:
         raise HTTPException(409, "帮助档位已在另一处变化，请重新读取后选择")
     stage = _stage_for(checkpoint, state, project)
+    if stage.get("independent_validation"):
+        raise HTTPException(409, "当前是独立复核阶段，不开放解题提示；可以返回已完成材料复习或在正式任务中安排后续验证")
     body = help_guidance(stage, mode)
     feedback = {"body": body, "mastery_inference": False, "mode": mode,
                 "execution_mode": assistance_view(mode)["execution_mode"],

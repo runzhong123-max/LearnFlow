@@ -1,3 +1,5 @@
+import { backendIdentityHeaders, backendWriteHeaders } from './backend-identity.ts'
+import { conversionContextReference } from '../../packages/learning-client/src/work-task-conversion/context.ts'
 import { compactProjectWorkflow } from '../../packages/learning-client/src/project-guidance/workflow-context.ts'
 import type { VisualAuthoringTransport } from './visualize-authoring.ts'
 import { compactTeachingGuidance } from '../src/teaching-guidance-context.ts'
@@ -561,6 +563,8 @@ export type TutorAgentToolRuntimeOptions = {
   }
   backendBase?: string
   requestCookie?: string
+  requestAuthorization?: string
+  requestDesktopToken?: string
   onVisualStage?: (stage: import('./visual-spec/types.ts').VisualGenerationStage) => void
 }
 
@@ -635,6 +639,7 @@ function compactFormalWorkspaceContext(value: unknown) {
   return {
     authority: compactText(packet.authority, 240),
     scope: packet.scope || {},
+    work_task_conversion: conversionContextReference(packet, packet.scope?.session_id),
     recent_attempts: (Array.isArray(packet.recent_attempts) ? packet.recent_attempts : []).slice(0, 12),
     open_remediations: (Array.isArray(packet.open_remediations) ? packet.open_remediations : []).slice(0, 8),
     review: {
@@ -828,21 +833,9 @@ function requirePracticeTaskScope(options: TutorAgentToolRuntimeOptions, request
 }
 
 async function formalBackendWriteHeaders(options: TutorAgentToolRuntimeOptions) {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (!options.requestCookie) return headers
-  if (!options.backendBase) throw new Error('正式学习后端未连接')
-  headers.Cookie = options.requestCookie
-  const response = await fetch(`${options.backendBase}/api/auth/csrf`, {
-    headers: { Cookie: options.requestCookie },
-    signal: AbortSignal.timeout(AI_LATENCY_BUDGETS.formalApi),
-  })
-  const payload = await response.json().catch(() => ({})) as Record<string, unknown>
-  if (!response.ok || typeof payload.csrf_token !== 'string' || !payload.csrf_token) {
-    throw new Error('无法验证当前登录，请重新登录后重试')
-  }
-  headers['X-CSRF-Token'] = payload.csrf_token
-  return headers
+  return backendWriteHeaders(options, AbortSignal.timeout(AI_LATENCY_BUDGETS.formalApi))
 }
+
 
 async function callFormalPracticeApi(
   options: TutorAgentToolRuntimeOptions,
@@ -873,7 +866,7 @@ async function readActiveLearningFile(options: TutorAgentToolRuntimeOptions) {
       ? `/api/learning-files/practice/${encodeURIComponent(artifact.ref)}`
       : `/api/knowledge-library/sources/${encodeURIComponent(artifact.ref)}/paper`
   const response = await fetch(`${options.backendBase}${path}`, {
-    headers: options.requestCookie ? { Cookie: options.requestCookie } : {},
+    headers: backendIdentityHeaders(options),
     signal: AbortSignal.timeout(AI_LATENCY_BUDGETS.formalApi),
   })
   const payload = await response.json().catch(() => ({})) as any
@@ -961,7 +954,7 @@ async function captureFormalWebEvidence(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(options.requestCookie ? { Cookie: options.requestCookie } : {}),
+      ...(backendIdentityHeaders(options)),
     },
     body: JSON.stringify({
       query: evidence.query,
@@ -1810,21 +1803,13 @@ export async function executeTutorAgentTool(
 
 
 /** The authenticated host owns catalog, template versions and verification. */
-export function createVisualHostTransport(options: {backendBase?: string; requestCookie?: string}): VisualAuthoringTransport {
-  let csrfToken: string | undefined
+export function createVisualHostTransport(options: {backendBase?: string; requestCookie?: string; requestAuthorization?: string; requestDesktopToken?: string}): VisualAuthoringTransport {
   return async (action, payload) => {
     if (!options.backendBase) throw new Error('visual_host_required')
-    if (!csrfToken) {
-      const response = await fetch(`${options.backendBase}/api/auth/csrf`, {
-        headers: options.requestCookie ? {Cookie: options.requestCookie} : {}, signal: AbortSignal.timeout(10_000),
-      })
-      const result = await response.json()
-      if (!response.ok || typeof result.csrf_token !== 'string') throw new Error('visual_auth_required')
-      csrfToken = result.csrf_token
-    }
+    const signal = AbortSignal.timeout(action === 'catalog' ? 10_000 : 30_000)
     const response = await fetch(`${options.backendBase}/api/visuals/${action}`, {
-      method: 'POST', headers: {'Content-Type':'application/json', 'X-CSRF-Token':csrfToken, ...(options.requestCookie ? {Cookie:options.requestCookie} : {})},
-      body: JSON.stringify(payload), signal: AbortSignal.timeout(action === 'catalog' ? 10_000 : 30_000),
+      method: 'POST', headers: await backendWriteHeaders(options, signal),
+      body: JSON.stringify(payload), signal,
     })
     const result = await response.json()
     if (!response.ok) {

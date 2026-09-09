@@ -6,7 +6,7 @@ import VersionReleaseWorkspace, { type ReleaseRow, type TagRow, type VersionSumm
 
 type Project = { id: string; title: string; headVersionId: string | null; currentReleaseId: string | null };
 
-export default function InlineVersionCenter({ project, conversationId, initialSection = "history", onClose, onAdopted }: { project: Project; conversationId?: string; initialSection?: "history" | "publish"; onClose: () => void; onAdopted?: (conversationId: string) => void }) {
+export default function InlineVersionCenter({ project, conversationId, initialSection = "history", initialVersionId, onClose, onAdopted }: { project: Project; conversationId?: string; initialSection?: "history" | "publish"; initialVersionId?: string; onClose: () => void; onAdopted?: (conversationId: string) => void }) {
   const [data, setData] = useState<{ versions: VersionSummary[]; tags: TagRow[]; releases: ReleaseRow[] } | null>(null);
   const [currentProject, setCurrentProject] = useState(project);
   const [error, setError] = useState("");
@@ -38,5 +38,5 @@ export default function InlineVersionCenter({ project, conversationId, initialSe
   useEffect(() => { void load(); }, [load]);
   if (error) return <div className="inline-operation-state error"><AlertTriangle size={17} /><b>{error}</b><button onClick={() => void load()}>重试</button><button onClick={onClose}>返回工作台</button></div>;
   if (!data) return <div className="inline-operation-state"><LoaderCircle className="spin" size={18} /><b>正在读取版本、Tag 与 Release…</b></div>;
-  return <VersionReleaseWorkspace key={revision} project={currentProject} conversationId={conversationId} initialSection={initialSection} initialVersions={data.versions} initialTags={data.tags} initialReleases={data.releases} embedded onClose={onClose} onChanged={() => void load()} onAdopted={(id) => { if (id) onAdopted?.(id); else void load(); }} />;
+  return <VersionReleaseWorkspace key={revision} project={currentProject} conversationId={conversationId} initialSection={initialSection} initialVersionId={initialVersionId} initialVersions={data.versions} initialTags={data.tags} initialReleases={data.releases} embedded onClose={onClose} onChanged={() => void load()} onAdopted={(id) => { if (id) onAdopted?.(id); else void load(); }} />;
 }

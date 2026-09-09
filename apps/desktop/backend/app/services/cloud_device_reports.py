@@ -98,13 +98,10 @@ async def _publish_receipt(session, project_id: int, storage: Path, request_id: 
         previous = {"source_fingerprint": source_fingerprint, "fingerprint": digest(payload), "payload": payload}
         reports[request_id] = previous
         save(journal, reports)
-    if not getattr(session, "csrf", ""):
-        csrf = await session.client.get("/api/auth/csrf")
-        if csrf.status_code != 200:
-            return JSONResponse({"detail": "云端会话已过期，请重新登录"}, 401)
-        session.csrf = csrf.json()["csrf_token"]
+    from app.services.cloud_connection import cloud_mutation_headers
+    mutation_headers = await cloud_mutation_headers(session)
     response = await session.client.post(f"/api/vnext-projects/{project_id}/device-reports", json=payload,
-                                         headers={"X-CSRF-Token": session.csrf})
+                                         headers=mutation_headers)
     if response.status_code not in {200, 201}:
         return JSONResponse(response.json(), response.status_code)
     result = response.json()

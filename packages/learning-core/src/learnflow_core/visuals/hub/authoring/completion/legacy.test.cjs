@@ -1,0 +1,22 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const lessons=[],ctx=vm.createContext({register:lesson=>lessons.push(lesson)});
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../completion-runtime.js'),'utf8'),ctx);
+for(const file of ['legacy.js','batch2.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,file),'utf8'),ctx);
+const run=(id,p)=>{const l=lessons.find(l=>l.id===id);return l.compute({...Object.fromEntries(l.controls.map(c=>[c.id,c.value])),...p}).frames;};
+const clean=x=>JSON.parse(JSON.stringify(x));
+test('legacy storyboards now distinguish causal alternatives and preserve numerical mechanisms',()=>{
+ const safe=run('data_structures.linked_list.insert',{order:'safe'}).at(-1).values;
+ const bad=run('data_structures.linked_list.insert',{order:'bad'}).at(-1).values;
+ assert.deepEqual(clean(safe.next),{A:'N',N:'B',B:null});assert.equal(safe.lost,false);assert.equal(bad.next.N,'N');assert.equal(bad.lost,true);
+ assert.equal(run('database.transaction.dirty_read',{level:'committed',finish:'rollback'}).at(-1).values.read,100);
+ assert.equal(run('database.transaction.dirty_read',{level:'uncommitted',finish:'rollback'}).at(-1).values.read,60);
+ assert.deepEqual(clean(run('networking.tcp.handshake',{lost:'ack'}).at(-1).values),{client:'ESTABLISHED',server:'SYN-RECEIVED'});
+ const cnn=run('deep_learning.cnn.mechanism',{digit:'7',shift:0});assert.match(cnn[1].svg,/空白未计算/);assert.match(cnn[1].svg,/fill="#fff"/);
+ assert.equal(cnn.at(-1).values.prediction,7);assert.equal(run('deep_learning.cnn.mechanism',{digit:'1'}).at(-1).values.prediction,1);
+ assert.ok(Math.abs(cnn.at(-1).values.probabilities.reduce((a,b)=>a+b,0)-1)<1e-12);
+ const km=run('lab2-kmeans',{input:1});assert.ok(new Set(km.map(f=>JSON.stringify(f.values))).size>=3,'Kmeans must actually move and reassign');
+ const riemann=run('lab2-riemann',{input:6});assert.ok(Math.abs(riemann.at(-1).values.result-55/216)<1e-12);assert.ok(riemann.every(f=>f.svg.includes('坐标固定')));
+ assert.equal(run('lab2-fifo',{input:3}).at(-1).values.result,9);assert.equal(run('lab2-fifo',{input:4}).at(-1).values.result,10);
+ assert.deepEqual(clean(run('lab2-bfs',{input:0}).at(-1).values.distance),[0,1,1,2,2,3]);
+ assert.equal(run('lab2-huffman',{input:5}).at(-1).values.result,189);
+});

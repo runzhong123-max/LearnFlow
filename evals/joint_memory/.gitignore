@@ -1,0 +1,4 @@
+# Original public corpus and full local trial traces are reconstructed by hash.
+runs/
+__pycache__/
+*.pyc

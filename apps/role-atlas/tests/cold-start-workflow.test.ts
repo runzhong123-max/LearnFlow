@@ -246,7 +246,8 @@ test("任务派生组超时后只二分重跑该组，并把完全恢复的父�
     if (system.includes("任务导向的知识技能规范化器")) {
       const tasks = payload.tasks as Array<{ id: string; label: string }>;
       if (tasks.length > 1) throw new Error("simulated oversized knowledge group");
-      yield { type: "text", delta: JSON.stringify({ skills: [{ tempId: "skill", label: `${tasks[0].label}的验收方法`, summary: "用于验证任务交付质量。", learningOutcome: "能解释验收标准", practiceArtifact: "验收记录", assessment: "完成一次验证", taskTempIds: [tasks[0].id], mentionIds: [], confidence: 0.7 }] }) };
+      const segment = (payload.evidenceSegments as Array<{ id: string; text: string }>)[0];
+      yield { type: "text", delta: JSON.stringify({ skills: [{ tempId: "skill", label: `${tasks[0].label}的验收方法`, summary: "用于验证任务交付质量。", learningKind: "knowledge", learningDefinition: { scopeNote: "针对给定接口交付的验收方法。", assessmentCriteria: ["解释接口契约与测试结论的对应关系"] }, evidenceSpans: [{ segmentId: segment.id, quote: segment.text }], learningOutcome: "能解释验收标准", practiceArtifact: "验收记录", assessment: "完成一次验证", taskTempIds: [tasks[0].id], mentionIds: [], confidence: 0.7 }] }) };
       return;
     }
     if (system.includes("跨任务能力归纳器")) {
@@ -288,6 +289,7 @@ test("任务派生组超时后只二分重跑该组，并把完全恢复的父�
   assert.equal(result.process.scenarios.length, 2);
   assert.ok(result.build!.workItems.some((item) => item.stage === "task-knowledge-derivation" && item.status === "recovered"));
   assert.ok(result.build!.workItems.some((item) => item.stage === "task-process-expansion" && item.status === "recovered"));
-  assert.ok(result.build!.workItems.every((item) => item.maxOutputTokens <= 3_800), "任何模型工作项都必须保持有界输出预算");
-  assert.equal(result.audit.issues.some((issue) => issue.code === "LANE_FALLBACK"), false);
+  assert.ok(result.build!.workItems.every((item) => item.maxOutputTokens <= (item.stage === "task-knowledge-derivation" ? 5_600 : item.stage === "cross-task-capability-derivation" ? 4_800 : 3_800)), "知识、能力培养规格和过程各自遵守有界输出预算");
+  assert.equal(result.audit.issues.some((issue) => issue.code === "LANE_FALLBACK" && /派生失败|展开失败/u.test(issue.detail)), false);
+  assert.ok(result.audit.issues.some((issue) => issue.detail.includes("知识技能覆盖缺口")), "局部恢复只产出知识，没有实操技能时仍保留质量缺口");
 });

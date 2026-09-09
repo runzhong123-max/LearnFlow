@@ -1,5 +1,5 @@
 import { projectReleasePackageId } from "@/lib/releases/package-identity";
-import { resolveLearnFlowIdentity } from "@/lib/integrations/learnflow/auth";
+import { resolveLearnFlowIdentity, type LearnFlowIdentity } from "@/lib/integrations/learnflow/auth";
 import type { ProjectActor } from "@/lib/projects/lifecycle";
 import { bundledRoleSnapshot } from "@/lib/snapshots/bundled-role-adapter";
 
@@ -13,7 +13,7 @@ export class AccessError extends Error {
 }
 export type AccessActor = ProjectActor;
 type ProjectRow = { id: string; owner_subject_id: string | null; deleted_at: string | null };
-const actorCache = new WeakMap<Request, Promise<AccessActor>>();
+const actorCache = new WeakMap<Request, Promise<LearnFlowIdentity>>();
 
 export function accessErrorResponse(error: unknown) {
   const known = error instanceof AccessError;
@@ -23,7 +23,7 @@ export function accessErrorResponse(error: unknown) {
 }
 
 /** Only the verified identity bridge establishes an actor. Names and request body IDs never do. */
-export function requestActor(request: Request): Promise<AccessActor> {
+export function requestActor(request: Request): Promise<LearnFlowIdentity> {
   let pending = actorCache.get(request);
   if (!pending) {
     pending = (async () => {
@@ -44,6 +44,11 @@ export function requestActor(request: Request): Promise<AccessActor> {
     actorCache.set(request, pending);
   }
   return pending;
+}
+
+/** Only the authenticated internal dispatcher supplies this server-created Request. */
+export function bindJobActor(request: Request, actor: LearnFlowIdentity) {
+  actorCache.set(request, Promise.resolve(actor));
 }
 
 export function mayAccessOwnedProject(owner: string | null, actor: AccessActor, maintenance = false) {

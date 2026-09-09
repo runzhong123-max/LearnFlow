@@ -1,6 +1,6 @@
 [package]
 name = "learnflow-desktop"
-version = "0.2.0"
+version = "0.3.1"
 description = "LearnFlow trusted local desktop workspace"
 authors = ["LearnFlow contributors"]
 edition = "2021"
@@ -17,6 +17,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-dialog = "2"
+tauri-plugin-deep-link = "2"
+tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-http = "2"
 tauri-plugin-notification = "2.3.3"

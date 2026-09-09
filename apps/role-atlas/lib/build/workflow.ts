@@ -1,4 +1,6 @@
 import { stableHash } from "./compiler";
+import { COLD_START_WORKFLOW_VERSION } from "./workflow-version";
+export { COLD_START_WORKFLOW_VERSION } from "./workflow-version";
 import type {
   BuildWorkItemSummary,
   ConceptMention,
@@ -8,8 +10,7 @@ import type {
   SourceSegment,
 } from "./types";
 import type { SemanticDraft } from "./model";
-
-export const COLD_START_WORKFLOW_VERSION = "4.2" as const;
+import { researchRoleTitle } from "../search/role-query";
 
 /**
  * Only evidence roles that can describe current work are allowed onto the
@@ -78,9 +79,9 @@ export function qualifySource(asset: SourceAsset, segments: SourceSegment[]): So
   const noisy = /(报名|招生|加微信|付费课程|限时优惠|领取资料|面经|简历模板|零基础速成|保姆级教程)/u.test(text);
   const officialHost = /(^|\.)gov\.cn$|(^|\.)moe\.gov\.cn$/i.test(host);
   const standardText = /(国家|行业|职业|专业教学|课程)标准|职业分类|规范|产业政策/u.test(text);
-  const jobText = /岗位职责|任职要求|职位描述|工作职责|招聘职位/u.test(text);
-  const practiceText = /项目复盘|工作流程|典型任务|交付物|上线|发布|验收|故障|运维|研发流程|事故复盘/u.test(text);
-  const learningText = /学习路径|课程|培训|教程|面试|求职|应聘|招生/u.test(text);
+  const jobText = /岗位职责|任职要求|职位描述|工作职责|招聘职位|\bresponsibilities\b|\bjob description\b|\bqualifications\b/iu.test(text);
+  const practiceText = /项目复盘|工作流程|典型任务|交付物|上线|发布|验收|故障|运维|研发流程|事故复盘|\bpostmortem\b|\bincident response\b|\bdeliverables\b|\bproduction deployment\b/iu.test(text);
+  const learningText = /学习路径|课程|培训|教程|面试|求职|应聘|招生|\btraining\b|\bcourse\b|\btutorial\b|\blearning path\b/iu.test(text);
   const technicalPrimaryHost = /(^|\.)(docs|developer|developers|learn)\./i.test(host) || /github\.com$|arxiv\.org$|doi\.org$/i.test(host);
   const technicalText = /技术文档|架构|接口|API|SDK|框架|模型|算法|工程实践|reference|documentation/iu.test(text);
 
@@ -88,7 +89,9 @@ export function qualifySource(asset: SourceAsset, segments: SourceSegment[]): So
     if ((officialHost || asset.sourceTier === "authoritative" || asset.sourceTier === "primary") && standardText) roles.push("official_standard");
     else reasons.push("未满足正式标准来源条件，不能作为官方标准使用");
   }
-  if (categories.has("job_market") && jobText) roles.push("job_market");
+  // Search categories describe how a source was found, not what its body can
+  // substantiate. A JD found through a technology query is still a JD.
+  if (jobText && !noisy) roles.push("job_market");
   if (categories.has("work_practice")) {
     if (practiceText && !(learningText && !/项目复盘|工作流程|交付物|故障|事故复盘/u.test(text))) roles.push("work_practice");
     else reasons.push("缺少真实工作触发、行动或交付结果，不能作为工作实践使用");
@@ -99,12 +102,13 @@ export function qualifySource(asset: SourceAsset, segments: SourceSegment[]): So
   }
   if (categories.has("education") && /课程|实训|教学|学习成果|技能评价|人才培养/u.test(text)) roles.push("education");
   if (categories.has("future_signal") && /趋势|变化|影响|演进|未来|增长|替代|自动化/u.test(text)) roles.push("future_signal");
-  if (!categories.size && jobText) roles.push("job_market");
-  if (!categories.size && practiceText && !learningText) roles.push("work_practice");
+  if (practiceText && !learningText && !noisy) roles.push("work_practice");
+  if (technicalPrimaryHost && technicalText) roles.push("technology_primary");
+  if (!categories.size && learningText && technicalPrimaryHost) roles.push("education");
   if (asset.kind === "private_document" && practiceText) roles.push("work_practice");
 
   const evidenceRoles = unique(roles);
-  if (noisy && contextual && evidenceRoles.length === 0) {
+  if (noisy && !officialHost && !technicalPrimaryHost && !jobText) {
     return { status: "quarantined", evidenceRoles: [], reasons: [...reasons, "营销、求职或教程噪声较强，已从事实抽取上下文隔离"] };
   }
   if (evidenceRoles.length === 0) {
@@ -167,7 +171,7 @@ export function createSourceShards(input: {
 }
 
 function roleAnchor(roleTitle: string) {
-  const stripped = roleTitle
+  const stripped = researchRoleTitle(roleTitle)
     .replace(/(?:高级|资深|初级|助理)?(?:工程师|开发者|程序员|架构师|设计师|分析师|管理员|运维员|操作员|专员|顾问|经理|负责人)$/u, "")
     .replace(/\b(?:senior|junior|lead|principal|staff)?\s*(?:engineer|developer|architect|analyst|administrator|operator|specialist|consultant|manager)\b$/iu, "");
   const normalized = normalizeConcept(stripped);
@@ -186,7 +190,7 @@ export function selectKernelSourceShards(input: {
   maxPublicShards?: number;
 }) {
   const assets = new Map(input.assets.map((asset) => [asset.id, asset]));
-  const fullRole = normalizeConcept(input.roleTitle);
+  const fullRole = normalizeConcept(researchRoleTitle(input.roleTitle));
   const anchor = roleAnchor(input.roleTitle);
   const shortAnchor = anchor.length >= 4 ? anchor.slice(0, 4) : anchor;
   const eligible: SourceShard[] = [];
@@ -223,12 +227,13 @@ export function selectKernelSourceShards(input: {
     const asset = assets.get(shards[0].sourceId);
     const roles = new Set(shards[0].qualification.evidenceRoles);
     return (asset?.sourceTier === "authoritative" ? 40 : asset?.sourceTier === "primary" ? 32 : 0)
+      + (normalizeConcept(`${asset?.title || ""} ${shards[0].segments.map(segment => segment.text).join(" ")}`).includes(fullRole) ? 40 : 0)
       + (shards[0].qualification.status === "accepted" ? 14 : 0)
       + (roles.has("official_standard") ? 30 : roles.has("job_market") ? 24 : roles.has("work_practice") ? 20 : 8)
       + (asset?.retrievalScore || 0) * 20;
   };
   const rankedGroups = [...publicGroups.values()].sort((left, right) => sourceScore(right) - sourceScore(left));
-  const publicLimit = Math.max(1, Math.min(input.maxPublicShards || 4, 8));
+  const publicLimit = Math.max(1, Math.min(input.maxPublicShards || 6, 8));
   const publicSelected: SourceShard[] = [];
   let round = 0;
   while (publicSelected.length < publicLimit) {
@@ -278,7 +283,7 @@ export function createWorkItem(input: {
     estimatedInputTokens: input.estimatedInputTokens,
     maxOutputTokens: input.maxOutputTokens,
     outputRefs: [],
-    cacheKey: `cache:${stableHash(`cold-start-v3:${input.stage}:${input.cachePayload}`)}`,
+    cacheKey: `cache:${stableHash(`cold-start-${COLD_START_WORKFLOW_VERSION}:${input.stage}:${input.cachePayload}`)}`,
   };
 }
 

@@ -2,7 +2,10 @@
 from __future__ import annotations
 from dataclasses import dataclass
 
-SHARED_CORE_VERSION = "0.2.1"
+SHARED_CORE_VERSION = "0.2.5"
+CONCEPT_EVIDENCE_POLICY_VERSION = "concept-evidence.v2"
+PLANNING_GUIDANCE_POLICY_VERSION = "learning-plan-guidance.v2"
+MEMORY_RETRIEVAL_VERSION = "relevance-budget.v3"
 
 EVENT_SCHEMA_VERSION = "learnflow.evidence.v1"
 
@@ -14,6 +17,48 @@ FRONTEND_SKILL_MANIFEST_REGISTRY_VERSION = "2026-09-07.4"
 
 
 KERNEL_NAMES = ("structure", "knowledge", "human", "value", "practice")
+
+# These are learner policies, not source-data import contracts or new tools.
+EDUCATION_MEMORY_POLICIES = {
+    "ordinary_concept": {
+        "version": CONCEPT_EVIDENCE_POLICY_VERSION, "owner": "practice_agent",
+        "event": "concept_attempt_evaluated", "ordinary_success_is_stable": False,
+        "stable_review_policy": "review-policy-v1", "historical_backfill": False,
+        "write_path": "EvidenceEvent -> reducer -> KernelMutation -> KernelState",
+    },
+    "planning_guidance": {
+        "version": PLANNING_GUIDANCE_POLICY_VERSION, "owner": "learning_design_agent",
+        "tool": "learning_task_planner", "kernel_reads": KERNEL_NAMES,
+        "kernel_write_path": "none", "enforce_after_model": True, "decision_trace_is_evidence": False,
+        "authority_path": "docs/implementation/EDUCATION_MEMORY_POLICY.md",
+    },
+    "teaching_controls": {
+        "version": "teaching-guidance.v2", "reads_versions": ("teaching-guidance.v1", "teaching-guidance.v2"),
+        "owner": "tutor_agent", "event": "vnext_teaching_input_received",
+        "parser": "clause-local-explicit-controls", "default_lifetime": "session",
+        "default_window_hours": 8, "max_explicit_window_hours": 168,
+        "cross_session_requires_explicit_deadline": True,
+        "write_path": "EvidenceEvent -> reducer -> KernelMutation -> KernelState",
+        "source_scope_immutable": True, "historical_backfill": False,
+        "expiry_bases": ("explicit_timezone_iso", "inherited_cancelled_window"),
+    },
+    "learning_episode": {
+        "version": "learnflow.learning-episode.v1", "owner": "tutor_agent",
+        "tool": "five_kernel_retriever", "kernel_reads": KERNEL_NAMES,
+        "kernel_write_path": "none", "authority": "Fact -> KernelMutation -> EvidenceEvent -> owned Attempt",
+        "events": ("concept_attempt_evaluated", "exercise_attempt_evaluated"),
+        "unknown_assistance_is_independent": False, "contains_answers": False,
+        "max_episodes": 3, "max_facts_per_episode": 6,
+    },
+    "retrieval_components": {
+        "version": MEMORY_RETRIEVAL_VERSION, "owner": "tutor_agent",
+        "tool": "context_packet_assembler", "kernel_reads": KERNEL_NAMES, "kernel_write_path": "none",
+        "switches": ("enable_episodes", "enable_bm25", "enable_aliases", "enable_fuzzy",
+                     "enable_temporal", "enable_summary_boost"),
+        "semantic_embeddings": False, "diagnostics_are_evidence": False,
+        "budget_includes_episode_and_diagnostics": True,
+    },
+}
 
 
 LIFECYCLE_STATES = ("implemented", "optional_unimplemented", "deprecated")

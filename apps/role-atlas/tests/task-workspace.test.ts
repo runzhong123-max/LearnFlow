@@ -41,6 +41,9 @@ test("典型任务工作台提供关系雷达、事理流程、证据与引用�
     onDragStart() {},
     onDragEnd() {},
     onOpenEvidence() {},
+    onConvert() {},
+    converting: true,
+    conversionHint: "当前版本仅保存为私有岗位包",
   }));
 
   assert.match(html, /典型工作任务/);
@@ -48,5 +51,7 @@ test("典型任务工作台提供关系雷达、事理流程、证据与引用�
   assert.match(html, /事理流程/);
   assert.match(html, /查看证据/);
   assert.match(html, /引用任务/);
+  assert.match(html, /disabled="">正在准备转换/);
+  assert.match(html, /当前版本仅保存为私有岗位包/);
   assert.match(html, /知识点 \/ 技能点/);
 });

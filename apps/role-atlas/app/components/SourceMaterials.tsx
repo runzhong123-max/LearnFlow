@@ -43,7 +43,17 @@ export default function SourceMaterials({ value, onChange, disabled, onBusyChang
       concurrency: 3,
       load: async (input, signal) => {
         signal.throwIfAborted();
-        if (input.mode === "file") return parseMaterialFile(input.file, input.kind);
+        if (input.mode === "file") {
+          let source: SourceInput | undefined, failure: unknown;
+          try { source=await parseMaterialFile(input.file,input.kind); } catch(error) { failure=error; }
+          const form=new FormData();form.set("file",input.file);
+          if(source)form.set("source",JSON.stringify(source));else form.set("error",failure instanceof Error?failure.message:"读取失败");
+          const response=await fetch("/api/research-materials",{method:"POST",body:form,signal:AbortSignal.any([signal,AbortSignal.timeout(30_000)])});
+          const saved=await response.json() as {attachmentId?:string;error?:string};
+          if(!response.ok)throw new Error(saved.error||"附件存档失败，请重试。");
+          if(!source)throw failure;
+          return sourceInputSchema.parse({...source,attachmentId:saved.attachmentId});
+        }
         let response: Response;
         try {
           response = await fetch("/api/source-materials", { method: "POST", headers: { "content-type": "application/json" },

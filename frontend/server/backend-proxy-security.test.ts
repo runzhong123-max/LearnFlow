@@ -3,7 +3,7 @@ import test from 'node:test'
 
 import { buildBackendProxyHeaders } from './backend-proxy-security.ts'
 
-test('formal backend proxy preserves the browser authentication protocol', () => {
+test('formal backend proxy preserves security metadata and gives explicit Authorization precedence', () => {
   const headers = buildBackendProxyHeaders({
     cookie: 'learnflow_session=session-token',
     authorization: 'Bearer desktop-token',
@@ -22,7 +22,6 @@ test('formal backend proxy preserves the browser authentication protocol', () =>
 
   assert.deepEqual(headers, {
     'Content-Type': 'application/json',
-    Cookie: 'learnflow_session=session-token',
     Authorization: 'Bearer desktop-token',
     Origin: 'http://127.0.0.1:4174',
     Referer: 'http://127.0.0.1:4174/chat/1',

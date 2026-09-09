@@ -33,8 +33,8 @@ KernelState + Memory Graph
   -> capability ContextPolicy
   -> FiveKernelRetriever
        1. ownership + exact scope
-       2. subject + lexical + salience
-       3. allow-listed one-hop relation
+       2. subject + normalized lexical/fuzzy + temporal quotas
+       3. allow-listed relation + bounded causal second hop
   -> FiveKernelContextPacket
   -> Tutor / Learning Design / Practice / Workbench
 ```
@@ -130,13 +130,15 @@ ContextPolicy 是 capability 级读取契约，不是模型自己决定的路由
 1. 校验 learner ownership。
 2. 过滤 project/checkpoint/session、有效时间和当前状态；排除 superseded 当前项。
 3. 使用 review item、concept、checkpoint、project 等 subject key 精确召回。
-4. 使用本地词项重合、salience、scope 精确度、节点类型和新近度排序。
-5. 在选中节点周围展开一跳白名单关系。
+4. 使用版本化术语别名、唯一单编辑错拼与本地词项重合；时序请求预留同主题最早/中间/最新 Fact 候选，再按相关性、任务意图、salience、scope 与新近度排序。
+5. 在选中节点周围展开白名单关系；仅 BLOCKS/ENABLES 最多扩展两跳，整条前缀共同入包，每跳重做 scope、归档、敏感与深读核过滤。
 6. 组装预算内项目；答案、solution、expected、test cases 等字段在进入包前过滤。
 
-一跳关系只允许：SAME_SUBJECT、SUPPORTS、CONTRADICTS、REFINES、SUPERSEDES、
+第一跳关系只允许：SAME_SUBJECT、SUPPORTS、CONTRADICTS、REFINES、SUPERSEDES、
 MOTIVATES、ADDRESSES、BLOCKS、ENABLES、CONSOLIDATED_INTO。被替代声明不会作为当前
 item 返回，但可以在 SUPERSEDES/CONTRADICTS 路径中作为历史冲突出现。
+
+当前读取策略为 `relevance-budget.v2`（共享核心 0.2.3），`ContextPolicy.max_hops` 默认 2，可设为 0/1。节点正文最多 640 字符，查询窗口与原文限定分段入包；`detail.source_text` 保留完整正文 SHA256、字符数与偏移区间，未装入的限定另行计数。图候选、窗口和分支限制是显式读取预算，不代表全图搜索。细节见 [长尾检索升级](implementation/MEMORY_LONG_TAIL_RETRIEVAL.md)。
 
 ## 7. ContextPacket
 

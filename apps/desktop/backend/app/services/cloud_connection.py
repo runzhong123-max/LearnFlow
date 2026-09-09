@@ -1,4 +1,4 @@
-"""Per-process cloud sessions. Cloud cookies never reach the local webview.
+"""Per-process API-key sessions. Remote credentials never reach the local webview.
 
 The shell chooses one HTTPS authority. This adapter never converts a local
 learner into a cloud learner, stores passwords, or retries mutations.
@@ -6,6 +6,7 @@ learner into a cloud learner, stores passwords, or retries mutations.
 from __future__ import annotations
 
 import asyncio
+import json
 import secrets
 import re
 import time
@@ -21,6 +22,7 @@ from app.services.auth import valid_desktop_request
 
 router = APIRouter()
 MAX_BODY = 32 * 1024 * 1024
+API_KEY_PATTERN = re.compile(r"lfak_[A-Za-z0-9_-]{43}")
 
 
 def cloud_origin(value: str) -> str:
@@ -37,6 +39,36 @@ class CloudSession:
     client: httpx.AsyncClient
     csrf: str = ""
     learner_id: int = 0
+    auth_method: str = "api_key"
+
+
+class CloudApiKeyAuth(httpx.Auth):
+    """Apply the key only to our fixed TLS authority, never to redirects/cookies."""
+    def __init__(self, origin: str, api_key: str):
+        self.origin = httpx.URL(origin)
+        self._api_key = api_key
+
+    def auth_flow(self, request):
+        if ((request.url.scheme, request.url.host, request.url.port) !=
+                (self.origin.scheme, self.origin.host, self.origin.port)
+                or not request.url.path.startswith("/api/")):
+            raise ValueError("请求超出已连接服务器范围")
+        request.headers["Authorization"] = "Bearer " + self._api_key
+        for name in ("Cookie", "X-CSRF-Token", "X-LearnFlow-Desktop-Token"):
+            request.headers.pop(name, None)
+        yield request
+
+
+async def cloud_mutation_headers(session) -> dict[str, str]:
+    if getattr(session, "auth_method", "cookie") == "api_key":
+        return {}
+    # Compatibility for explicitly constructed legacy device adapters. New
+    # cloud connections can only create an API-key session.
+    if not getattr(session, "csrf", ""):
+        response = await session.client.get("/api/auth/csrf")
+        response.raise_for_status()
+        session.csrf = response.json()["csrf_token"]
+    return {"X-CSRF-Token": session.csrf}
 
 
 class CloudConnection:
@@ -46,17 +78,26 @@ class CloudConnection:
         self.sessions: dict[str, CloudSession] = {}
         self.pet_handles: dict[str, tuple[str, float]] = {}
         self.login_lock = asyncio.Lock()
+        self.generation = 0
 
-    def client(self):
+    def client(self, api_key: str):
         return httpx.AsyncClient(base_url=self.origin, follow_redirects=False,
                                 trust_env=False, transport=self.transport,
+                                auth=CloudApiKeyAuth(self.origin, api_key),
                                 timeout=httpx.Timeout(900, connect=15),
-                                headers={"Origin": self.origin, "Referer": self.origin + "/"})
+                                headers={"Accept": "application/json"})
 
     async def close(self):
+        self.generation += 1
         sessions, self.sessions = self.sessions, {}
         self.pet_handles.clear()
         for session in sessions.values():
+            await session.client.aclose()
+
+    async def revoke_handle(self, token: str):
+        session = self.sessions.pop(token, None)
+        self.pet_handles = {k: v for k, v in self.pet_handles.items() if v[0] != token}
+        if session:
             await session.client.aclose()
 
     async def forward(self, request: Request, path: str):
@@ -64,7 +105,8 @@ class CloudConnection:
             return JSONResponse({"detail": "仅允许本机 LearnFlow 客户端连接"}, 403)
         if any(part in {".", ".."} for part in path.split("/")) or "\\" in path or path.startswith("/"):
             return JSONResponse({"detail": "无效 API 路径"}, 400)
-        if path.startswith("dev/") or "/internal/" in "/" + path:
+        if (path.startswith(("dev/", "admin/", "auth/api-keys", "auth/model-credential"))
+                or "/internal/" in "/" + path):
             return JSONResponse({"detail": "此接口不向桌面客户端开放"}, 403)
         body = bytearray()
         async for chunk in request.stream():
@@ -82,37 +124,66 @@ class CloudConnection:
             if not allowed:
                 return JSONResponse({'detail': '桌宠无权执行此操作，请在主窗口操作'}, 403)
         session = self.sessions.get(token)
-        if path in {"auth/login", "auth/register"} and request.method == "POST":
+        if path == "auth/logout" and request.method == "POST":
+            # Disconnect is local and must work even when the server is offline.
+            # A stale handle cannot disconnect a more recent account.
+            if session is not None or not token or not self.sessions:
+                await self.close()
+            return JSONResponse({"ok": True}, headers={"Cache-Control": "no-store"})
+        if path in {"auth/login", "auth/register", "demo/login", "auth/csrf"}:
+            return JSONResponse({"detail": "云端连接请使用个人 API Key"}, 403)
+        if path == "auth/api-key/connect" and request.method == "POST":
+            try:
+                data = json.loads(body)
+                api_key = data.get("api_key") if isinstance(data, dict) else None
+                if (not isinstance(data, dict) or set(data) != {"api_key"}
+                        or not isinstance(api_key, str) or not API_KEY_PATTERN.fullmatch(api_key)):
+                    raise ValueError("invalid key")
+            except (ValueError, TypeError):
+                return JSONResponse({"detail": "请输入有效的个人 API Key（lfak_ 开头）"}, 422)
+            # Capture before waiting: a disconnect cancels queued connections too.
+            generation = self.generation
             async with self.login_lock:
-                client = self.client()
+                if generation != self.generation:
+                    return JSONResponse({"detail": "连接操作已取消，请重新连接"}, 409)
+                client = self.client(api_key)
                 try:
-                    response = await client.post("/api/" + path, content=bytes(body),
-                                                 headers={"Content-Type": "application/json"})
+                    response = await client.get("/api/auth/me")
                     if response.status_code != 200:
                         await client.aclose()
-                        return JSONResponse(response.json(), response.status_code)
+                        if response.status_code in {401, 403}:
+                            return JSONResponse({"detail": "API Key 无效、已过期或已撤销，请更换后连接"}, 401)
+                        return JSONResponse({"detail": "服务器暂时无法验证 API Key，请稍后重试"}, 503)
                     account = response.json()
-                    if not isinstance(account.get("learner_id"), int):
-                        raise ValueError("云端未返回有效学习者身份")
-                    # A successful account switch revokes every local handle.
+                    learner_id = account.get("learner_id") if isinstance(account, dict) else None
+                    if not isinstance(learner_id, int) or isinstance(learner_id, bool) or learner_id <= 0:
+                        raise ValueError("invalid learner identity")
+                    if generation != self.generation:
+                        await client.aclose()
+                        return JSONResponse({"detail": "连接操作已取消，请重新连接"}, 409)
+                    # Only the actual server account becomes the learning identity.
                     await self.close()
+                    if self.generation != generation + 1:
+                        await client.aclose()
+                        return JSONResponse({"detail": "连接操作已取消，请重新连接"}, 409)
                     handle = secrets.token_urlsafe(48)
-                    self.sessions[handle] = CloudSession(client, learner_id=account["learner_id"])
+                    self.sessions[handle] = CloudSession(client, learner_id=learner_id)
                     pet_handle = 'lfpet_cloud_' + secrets.token_urlsafe(48)
                     self.pet_handles[pet_handle] = (handle, time.monotonic() + 600)
                     account["desktop_auth_token"] = handle
                     account['desktop_pet_capability_token'] = pet_handle
                     account["identity_authority"] = self.origin
+                    account["auth_method"] = "api_key"
                     return JSONResponse(account, headers={"Cache-Control": "no-store"})
                 except (httpx.HTTPError, ValueError):
                     await client.aclose()
-                    return JSONResponse({"detail": "无法连接云端认证服务，请检查网络后重试；不会改用本地账号"}, 503)
+                    return JSONResponse({"detail": "无法安全连接服务器，请检查网络和服务器证书后重试"}, 503)
         if session is None:
             if path == "auth/status":
                 return JSONResponse({"authenticated": False, "identity_authority": self.origin})
             if path == "demo/status":
                 return JSONResponse({"enabled": False})
-            return JSONResponse({"detail": "请使用网页端同一账号登录"}, 401)
+            return JSONResponse({"detail": "请先使用个人 API Key 连接服务器"}, 401)
         headers = {k: v for k, v in request.headers.items()
                    if k.lower() in {"accept", "content-type", "range", "if-none-match"}}
         try:
@@ -141,17 +212,14 @@ class CloudConnection:
                     'tasks': task_value if isinstance(task_value, list) else task_value.get('tasks', []),
                     'review': {'due': reviews.json()['due'], 'focus_subjects': [], 'mastery_unchanged': True},
                     'model': {'configured': True, 'status': 'ready'}})
+            conversion = re.fullmatch(r'desktop/conversions/([A-Za-z0-9_-]{32,128})/import', path)
+            if conversion and request.method == 'POST' and not pet:
+                from app.services.cloud_conversion_import import import_handoff
+                return await import_handoff(session, self.origin, conversion[1], bytes(body))
             device = re.fullmatch(r'projects/(\d+)/(workspace|experiments|local-agent)/(.*)', path)
             if device and not pet:
                 from app.services.cloud_device import device_request
                 return await device_request(session, self.origin, int(device[1]), device[2], device[3], request.method, bytes(body))
-            if request.method not in {"GET", "HEAD", "OPTIONS"}:
-                if not session.csrf:
-                    csrf = await session.client.get("/api/auth/csrf")
-                    if csrf.status_code != 200:
-                        return JSONResponse({"detail": "云端会话已过期，请重新登录"}, 401)
-                    session.csrf = csrf.json()["csrf_token"]
-                headers["X-CSRF-Token"] = session.csrf
             url = "/api/" + path
             if request.url.query:
                 url += "?" + request.url.query
@@ -170,15 +238,11 @@ class CloudConnection:
                         yield chunk
                 finally:
                     await upstream.aclose()
-                    if path == "auth/logout" or upstream.status_code == 401:
-                        self.sessions.pop(token, None)
-                        await session.client.aclose()
+                    if upstream.status_code == 401:
+                        await self.revoke_handle(token)
 
             return StreamingResponse(chunks(), status_code=upstream.status_code, headers=response_headers)
         except (httpx.HTTPError, ValueError, KeyError):
-            if path == 'auth/logout':
-                self.sessions.pop(token, None)
-                await session.client.aclose()
             return JSONResponse({"detail": "云端连接中断。请检查网络；提交结果请刷新确认后再重试"}, 503)
 
 

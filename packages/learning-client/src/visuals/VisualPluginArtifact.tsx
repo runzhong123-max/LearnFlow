@@ -3,6 +3,7 @@ import VisualizeArtifact, {type VisualViewState} from './VisualizeArtifact'
 import {VisualMore, VisualPlayback, VisualStages} from './VisualPlayerChrome'
 import type {VisualBundle} from './types'
 import './VisualPluginArtifact.css'
+import InteractiveHtmlPlayer from './InteractiveHtmlPlayer'
 
 export type VisualArtifactHost = {request: (operation: string, payload: Record<string, unknown>) => Promise<any>}
 type RecordValue = Record<string, any>
@@ -10,10 +11,10 @@ type Scene = {title: string; note?: string; svg: string; snapshot_ref: string}
 type Work = {
   artifact_id: string; revision_id: string; run_id?: string; builder: string; title: string;
   kind: 'diagram'|'animation'; verification?: RecordValue; source_mode?: string;
-  parent_revision_id?: string; source?: RecordValue; bundle?: VisualBundle; scenes?: Scene[];
+  parent_revision_id?: string; source?: RecordValue; bundle?: VisualBundle; scenes?: Scene[]; html?: string;
   view_state?: Partial<VisualViewState>;
 }
-type Props = {reference: RecordValue; result?: RecordValue; host?: VisualArtifactHost; onPrompt?: (prompt: string) => void}
+type Props = {allowQuestions?: boolean; reference: RecordValue; result?: RecordValue; host?: VisualArtifactHost; onPrompt?: (prompt: string) => void}
 const record = (value: unknown): RecordValue => value && typeof value === 'object' && !Array.isArray(value) ? value as RecordValue : {}
 const message = (error: unknown) => error instanceof Error ? error.message : '作品暂时无法打开，请重试。'
 const sourceLabels: Record<string, string> = {adapt:'个人改编',maintained_library: '维护作品', reused: '复用作品', reuse: '复用作品', adapted_library: '基于维护作品调整', adapted: '个人改编', generated: '本次生成', fresh: '本次生成'}
@@ -29,10 +30,11 @@ function validWork(value: unknown): Work {
   if (!item.revision_id || !item.artifact_id) throw new Error('作品引用不完整，请重新打开。')
   if (item.builder === 'visual_spec' && (!item.bundle?.frames?.length || item.bundle.verification?.status !== 'pass')) throw new Error('没有可展示的计算结果；已保存的作品引用仍然保留。')
   if (item.builder === 'svg_story' && (!Array.isArray(item.scenes) || !item.scenes.length || item.scenes.some((scene: Scene) => typeof scene.svg !== 'string' || !/^\s*<svg[\s>]/.test(scene.svg) || !scene.snapshot_ref))) throw new Error('分镜缺少可展示的画面或状态引用。')
+  if (item.builder === 'interactive_html' && (typeof item.html !== 'string' || !item.html.startsWith('<!doctype html>'))) throw new Error('维护作品内容缺失。')
   return item as Work
 }
 
-function StoryPlayer({work, onPrompt, onViewChange, secondaryActions}: {secondaryActions?: ReactNode; work: Work; onPrompt?: Props['onPrompt']; onViewChange: (state: VisualViewState) => void}) {
+function StoryPlayer({work, onPrompt, onViewChange, secondaryActions, allowQuestions}: {allowQuestions: boolean; secondaryActions?: ReactNode; work: Work; onPrompt?: Props['onPrompt']; onViewChange: (state: VisualViewState) => void}) {
   const scenes = work.scenes || []
   const [step, setStep] = useState(Math.max(0, Math.min(scenes.length - 1, Number(work.view_state?.step) || 0)))
   const [speed, setSpeed] = useState([0.5, 1, 1.5, 2].includes(work.view_state?.speed || 0) ? work.view_state!.speed! : 1)
@@ -65,7 +67,7 @@ function StoryPlayer({work, onPrompt, onViewChange, secondaryActions}: {secondar
     <figcaption className="visualize-heading"><span className="visualize-kind">{work.kind === 'animation' ? '动画演示' : '交互图解'} · 教学示意</span><strong>{work.title}</strong></figcaption>
     <VisualStages stages={scenes.map((item, index) => ({step: index, title: item.title}))} step={step} onMove={move}/>
     {/* SVG stays in an image document. Never insert generated markup into the host DOM. */}
-    <img className="visual-plugin-image" src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(scene.svg)}`} alt={`${scene.title}${scene.note ? `：${scene.note}` : ''}`} />
+    <div className="visual-story-viewport"><img className="visual-plugin-image" src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(scene.svg)}`} alt={`${scene.title}${scene.note ? `：${scene.note}` : ''}`} /></div>
     <div className="visualize-caption" aria-live={playing ? 'off' : 'polite'}><strong>{scene.title}</strong>{scene.note && <p>{scene.note}</p>}</div>
     <VisualPlayback step={step} count={scenes.length} playing={playing} speed={speed} animation={work.kind === 'animation'} reduced={reduced} onMove={move} onSpeed={setSpeed} sliderLabel="当前分镜" onPlay={() => {
       if (playing) setPlaying(false)
@@ -75,14 +77,14 @@ function StoryPlayer({work, onPrompt, onViewChange, secondaryActions}: {secondar
     {reduced && work.kind === 'animation' && <p>已减少动态效果，可逐步查看。</p>}
     <VisualMore>
       <div className="visual-plugin-actions"><button type="button" onClick={() => downloadable(scene.svg, 'image/svg+xml', `${work.revision_id}-${step + 1}.svg`)}>导出当前 SVG</button><button type="button" onClick={() => downloadable(JSON.stringify({format: 'learnflow-visual-work-snapshot/v1', artifact_id: work.artifact_id, revision_id: work.revision_id, run_id: work.run_id, builder: work.builder, verification: work.verification, step, scene}, null, 2), 'application/json', `${work.revision_id}-${step + 1}.json`)}>导出当前状态</button></div>
-      <div className="visual-plugin-question"><label>关注内容<input maxLength={200} value={focus} onChange={event => setFocus(event.target.value)} placeholder="例如：请求如何到达缓存"/></label><label>围绕当前画面追问<input maxLength={1000} value={question} onChange={event => setQuestion(event.target.value)} placeholder="这一步为什么发生？" onKeyDown={event => {if (event.key === 'Enter' && onPrompt) ask()}}/></label><button type="button" disabled={!onPrompt} onClick={ask}>问 Tutor</button></div>
+      {allowQuestions && <div className="visual-plugin-question"><label>关注内容<input maxLength={200} value={focus} onChange={event => setFocus(event.target.value)} placeholder="例如：请求如何到达缓存"/></label><label>围绕当前画面追问<input maxLength={1000} value={question} onChange={event => setQuestion(event.target.value)} placeholder="这一步为什么发生？" onKeyDown={event => {if (event.key === 'Enter' && onPrompt) ask()}}/></label><button type="button" disabled={!onPrompt} onClick={ask}>问 Tutor</button></div>}
       <p className="visual-plugin-boundary">这是逐帧教学示意。结构与渲染检查不等同于算法或数值过程已经计算验证。</p>
       {secondaryActions}
     </VisualMore>
   </figure>
 }
 
-export default function VisualPluginArtifact({reference, result, host, onPrompt}: Props) {
+export default function VisualPluginArtifact({reference, result, host, onPrompt, allowQuestions = true}: Props) {
   const [work, setWork] = useState<Work | null>(null)
   const [job, setJob] = useState<RecordValue>(reference)
   const [loading, setLoading] = useState(false)
@@ -193,7 +195,7 @@ export default function VisualPluginArtifact({reference, result, host, onPrompt}
       return <li key={`${entry.id}-${entry.version}`}><strong>{entry.title}</strong>{entry.description && <p>{entry.description}</p>}{Array.isArray(nodes) && <small>课程：{nodes.map((node: RecordValue) => node.title).join(' · ')}</small>}{Array.isArray(metadata.questions) && metadata.questions.length > 0 && <p>适合回答：{metadata.questions.slice(0, 2).join('；')}</p>}<div className="visual-plugin-actions">{(['diagram', 'animation'] as const).filter(kind => !Array.isArray(entry.kind) || entry.kind.includes(kind)).map(kind => <button key={kind} type="button" disabled={!onPrompt} onClick={() => onPrompt?.(`复用维护图解 template_id=${entry.id} template_version=${entry.version} kind=${kind}\n${entry.title}`)}>{kind === 'animation' ? '观看动画' : '打开图解'}</button>)}</div></li>
     })}</ul></section>}
     {work && <>
-      {work.builder === 'visual_spec' && work.bundle ? <VisualizeArtifact secondaryActions={secondaryActions} key={work.revision_id} initial={work.bundle} storageScope={`artwork:${work.artifact_id}`} mode={work.kind} transport={transport} initialViewState={work.view_state} onRun={rerun} onViewChange={saveView} onAsk={prompt => onPrompt?.(`${prompt}\n作品版本：${work.revision_id}；作品：${work.artifact_id}。`)}/> : work.builder === 'svg_story' ? <StoryPlayer secondaryActions={secondaryActions} key={work.revision_id} work={work} onPrompt={onPrompt} onViewChange={storyView}/> : <p>当前宿主暂不支持此作品的展示方式，作品版本已保留。</p>}
+      {work.builder === 'visual_spec' && work.bundle ? <VisualizeArtifact secondaryActions={secondaryActions} key={work.revision_id} initial={work.bundle} storageScope={`artwork:${work.artifact_id}`} mode={work.kind} transport={transport} initialViewState={work.view_state} onRun={rerun} onViewChange={saveView} onAsk={allowQuestions ? prompt => onPrompt?.(`${prompt}\n作品版本：${work.revision_id}；作品：${work.artifact_id}。`) : undefined}/> : work.builder === 'svg_story' ? <StoryPlayer allowQuestions={allowQuestions} secondaryActions={secondaryActions} key={work.revision_id} work={work} onPrompt={onPrompt} onViewChange={storyView}/> : work.builder === 'interactive_html' && work.html ? <InteractiveHtmlPlayer key={work.revision_id} html={work.html} title={work.title}/> : <p>当前宿主暂不支持此作品的展示方式，作品版本已保留。</p>}
 
       {viewError && <p role="status">{viewError}</p>}
     </>}

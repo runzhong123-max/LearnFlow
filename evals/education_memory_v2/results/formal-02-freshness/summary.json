@@ -1,0 +1,556 @@
+{
+  "schema": "learnflow.education-episode-freshness-audit.v1",
+  "post_hoc_audit": true,
+  "audit_completed": true,
+  "created_at": "2026-09-08T15:58:55.291354+00:00",
+  "conditions": 38016,
+  "formation_cases": 1584,
+  "variants_selected": [
+    "facts_only",
+    "full",
+    "no_aliases",
+    "no_bm25",
+    "no_episodes",
+    "no_fuzzy",
+    "no_guidance",
+    "no_memory",
+    "no_relations",
+    "no_summary_boost",
+    "no_temporal",
+    "recent_facts"
+  ],
+  "audit_script_sha256": "3fb05c049c62fcad49aff7aa734965db464414663fc8a79c8c811b7699346186",
+  "raw_sources": {
+    "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-02/education-00/raw.jsonl.gz": {
+      "sha256": "44b99149dd5b92700e01eec2e17ddb371378d7eb430fa1550d164697e746a7ae",
+      "bytes": 7479902,
+      "formation_manifest_sha256": "57ec1c0ab3caad5e60b498891b4dc0e6ebb779f9cef5aae776e5765ff65482f2",
+      "declared_run_status": "completed",
+      "declared_changed_sources": [],
+      "product_and_driver_source_hashes_sha256": "22f469e61017c35d591e5036cd08c1835c2f70d348999cebf79c5b7c0ed6fb5f"
+    },
+    "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-02/education-01/raw.jsonl.gz": {
+      "sha256": "65751db8963f989e629c53e0e648fcf86a67b55250ee577f5003dc7a71ff7d7c",
+      "bytes": 7420963,
+      "formation_manifest_sha256": "91be66f3f7f85fa6ec4029554f1cfc2a52244048fdf80d65864c9d0d186f90a7",
+      "declared_run_status": "completed",
+      "declared_changed_sources": [],
+      "product_and_driver_source_hashes_sha256": "22f469e61017c35d591e5036cd08c1835c2f70d348999cebf79c5b7c0ed6fb5f"
+    },
+    "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-02/education-02/raw.jsonl.gz": {
+      "sha256": "97d54ff2907b652fbedac1d22e2e1dd7c2d1298105430a91055e6ad13d28913e",
+      "bytes": 7209863,
+      "formation_manifest_sha256": "e7325a749a7a9c316ed8891fd70c25d73d27c3f5e1cc121107250e492cc807f7",
+      "declared_run_status": "completed",
+      "declared_changed_sources": [],
+      "product_and_driver_source_hashes_sha256": "22f469e61017c35d591e5036cd08c1835c2f70d348999cebf79c5b7c0ed6fb5f"
+    },
+    "/Users/a1-6/LearnFlow/evals/education_memory_v2/runs/formal-02/education-03/raw.jsonl.gz": {
+      "sha256": "13d7f5d92af52f11955db6787d33ddb67f97a64938b84be5bf64856f6ae2c13f",
+      "bytes": 6974854,
+      "formation_manifest_sha256": "73e30e82f0475cc02a29ccd054aa614d190baacc5f2e360447846083af77fb2e",
+      "declared_run_status": "completed",
+      "declared_changed_sources": [],
+      "product_and_driver_source_hashes_sha256": "22f469e61017c35d591e5036cd08c1835c2f70d348999cebf79c5b7c0ed6fb5f"
+    }
+  },
+  "ordering": [
+    "EvidenceEvent.occurred_at",
+    "EvidenceEvent.id"
+  ],
+  "query_time_source": "same-scope current input receipt occurred_at; naive database UTC timestamps interpreted as UTC",
+  "groups": [
+    {
+      "budget": 1800,
+      "variant": "facts_only",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 954,
+        "fail": 193,
+        "not_applicable": 437
+      },
+      "freshness_pass_numerator": 954,
+      "freshness_denominator": 1147,
+      "freshness_pass_rate": 0.8317349607672189,
+      "stale_references": 193,
+      "stale_with_different_action": 193,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 437
+      },
+      "failure_patterns": {
+        "repeated_original": 63,
+        "gap_unresolved": 65,
+        "source_retraction": 65
+      }
+    },
+    {
+      "budget": 1800,
+      "variant": "full",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 940,
+        "fail": 192,
+        "not_applicable": 452
+      },
+      "freshness_pass_numerator": 940,
+      "freshness_denominator": 1132,
+      "freshness_pass_rate": 0.8303886925795053,
+      "stale_references": 192,
+      "stale_with_different_action": 192,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 452
+      },
+      "failure_patterns": {
+        "repeated_original": 64,
+        "gap_unresolved": 64,
+        "source_retraction": 64
+      }
+    },
+    {
+      "budget": 1800,
+      "variant": "no_aliases",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 939,
+        "fail": 192,
+        "not_applicable": 453
+      },
+      "freshness_pass_numerator": 939,
+      "freshness_denominator": 1131,
+      "freshness_pass_rate": 0.830238726790451,
+      "stale_references": 192,
+      "stale_with_different_action": 192,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 453
+      },
+      "failure_patterns": {
+        "repeated_original": 64,
+        "gap_unresolved": 64,
+        "source_retraction": 64
+      }
+    },
+    {
+      "budget": 1800,
+      "variant": "no_bm25",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 982,
+        "fail": 152,
+        "not_applicable": 450
+      },
+      "freshness_pass_numerator": 982,
+      "freshness_denominator": 1134,
+      "freshness_pass_rate": 0.8659611992945326,
+      "stale_references": 152,
+      "stale_with_different_action": 152,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 450
+      },
+      "failure_patterns": {
+        "repeated_original": 50,
+        "gap_unresolved": 51,
+        "source_retraction": 51
+      }
+    },
+    {
+      "budget": 1800,
+      "variant": "no_episodes",
+      "conditions": 1584,
+      "status_counts": {
+        "not_applicable": 1584
+      },
+      "freshness_pass_numerator": 0,
+      "freshness_denominator": 0,
+      "freshness_pass_rate": null,
+      "stale_references": 0,
+      "stale_with_different_action": 0,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 1584
+      },
+      "failure_patterns": {}
+    },
+    {
+      "budget": 1800,
+      "variant": "no_fuzzy",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 949,
+        "fail": 190,
+        "not_applicable": 445
+      },
+      "freshness_pass_numerator": 949,
+      "freshness_denominator": 1139,
+      "freshness_pass_rate": 0.8331870061457419,
+      "stale_references": 190,
+      "stale_with_different_action": 190,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 445
+      },
+      "failure_patterns": {
+        "repeated_original": 64,
+        "gap_unresolved": 63,
+        "source_retraction": 63
+      }
+    },
+    {
+      "budget": 1800,
+      "variant": "no_guidance",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 940,
+        "fail": 192,
+        "not_applicable": 452
+      },
+      "freshness_pass_numerator": 940,
+      "freshness_denominator": 1132,
+      "freshness_pass_rate": 0.8303886925795053,
+      "stale_references": 192,
+      "stale_with_different_action": 192,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 452
+      },
+      "failure_patterns": {
+        "repeated_original": 64,
+        "gap_unresolved": 64,
+        "source_retraction": 64
+      }
+    },
+    {
+      "budget": 1800,
+      "variant": "no_memory",
+      "conditions": 1584,
+      "status_counts": {
+        "not_applicable": 1584
+      },
+      "freshness_pass_numerator": 0,
+      "freshness_denominator": 0,
+      "freshness_pass_rate": null,
+      "stale_references": 0,
+      "stale_with_different_action": 0,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 1584
+      },
+      "failure_patterns": {}
+    },
+    {
+      "budget": 1800,
+      "variant": "no_relations",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 941,
+        "fail": 192,
+        "not_applicable": 451
+      },
+      "freshness_pass_numerator": 941,
+      "freshness_denominator": 1133,
+      "freshness_pass_rate": 0.8305383936451898,
+      "stale_references": 192,
+      "stale_with_different_action": 192,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 451
+      },
+      "failure_patterns": {
+        "repeated_original": 64,
+        "gap_unresolved": 64,
+        "source_retraction": 64
+      }
+    },
+    {
+      "budget": 1800,
+      "variant": "no_summary_boost",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 938,
+        "fail": 192,
+        "not_applicable": 454
+      },
+      "freshness_pass_numerator": 938,
+      "freshness_denominator": 1130,
+      "freshness_pass_rate": 0.8300884955752212,
+      "stale_references": 192,
+      "stale_with_different_action": 192,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 454
+      },
+      "failure_patterns": {
+        "repeated_original": 64,
+        "gap_unresolved": 64,
+        "source_retraction": 64
+      }
+    },
+    {
+      "budget": 1800,
+      "variant": "no_temporal",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 934,
+        "fail": 196,
+        "not_applicable": 454
+      },
+      "freshness_pass_numerator": 934,
+      "freshness_denominator": 1130,
+      "freshness_pass_rate": 0.8265486725663717,
+      "stale_references": 196,
+      "stale_with_different_action": 196,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 454
+      },
+      "failure_patterns": {
+        "repeated_original": 68,
+        "gap_unresolved": 64,
+        "source_retraction": 64
+      }
+    },
+    {
+      "budget": 1800,
+      "variant": "recent_facts",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 885,
+        "fail": 197,
+        "not_applicable": 502
+      },
+      "freshness_pass_numerator": 885,
+      "freshness_denominator": 1082,
+      "freshness_pass_rate": 0.8179297597042514,
+      "stale_references": 197,
+      "stale_with_different_action": 193,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 502
+      },
+      "failure_patterns": {
+        "repeated_original": 63,
+        "gap_unresolved": 65,
+        "source_retraction": 65,
+        "gap_followup_success": 4
+      }
+    },
+    {
+      "budget": 3200,
+      "variant": "facts_only",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 1311,
+        "not_applicable": 273
+      },
+      "freshness_pass_numerator": 1311,
+      "freshness_denominator": 1311,
+      "freshness_pass_rate": 1.0,
+      "stale_references": 0,
+      "stale_with_different_action": 0,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 273
+      },
+      "failure_patterns": {}
+    },
+    {
+      "budget": 3200,
+      "variant": "full",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 1311,
+        "not_applicable": 273
+      },
+      "freshness_pass_numerator": 1311,
+      "freshness_denominator": 1311,
+      "freshness_pass_rate": 1.0,
+      "stale_references": 0,
+      "stale_with_different_action": 0,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 273
+      },
+      "failure_patterns": {}
+    },
+    {
+      "budget": 3200,
+      "variant": "no_aliases",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 1311,
+        "not_applicable": 273
+      },
+      "freshness_pass_numerator": 1311,
+      "freshness_denominator": 1311,
+      "freshness_pass_rate": 1.0,
+      "stale_references": 0,
+      "stale_with_different_action": 0,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 273
+      },
+      "failure_patterns": {}
+    },
+    {
+      "budget": 3200,
+      "variant": "no_bm25",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 1311,
+        "not_applicable": 273
+      },
+      "freshness_pass_numerator": 1311,
+      "freshness_denominator": 1311,
+      "freshness_pass_rate": 1.0,
+      "stale_references": 0,
+      "stale_with_different_action": 0,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 273
+      },
+      "failure_patterns": {}
+    },
+    {
+      "budget": 3200,
+      "variant": "no_episodes",
+      "conditions": 1584,
+      "status_counts": {
+        "not_applicable": 1584
+      },
+      "freshness_pass_numerator": 0,
+      "freshness_denominator": 0,
+      "freshness_pass_rate": null,
+      "stale_references": 0,
+      "stale_with_different_action": 0,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 1584
+      },
+      "failure_patterns": {}
+    },
+    {
+      "budget": 3200,
+      "variant": "no_fuzzy",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 1311,
+        "not_applicable": 273
+      },
+      "freshness_pass_numerator": 1311,
+      "freshness_denominator": 1311,
+      "freshness_pass_rate": 1.0,
+      "stale_references": 0,
+      "stale_with_different_action": 0,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 273
+      },
+      "failure_patterns": {}
+    },
+    {
+      "budget": 3200,
+      "variant": "no_guidance",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 1311,
+        "not_applicable": 273
+      },
+      "freshness_pass_numerator": 1311,
+      "freshness_denominator": 1311,
+      "freshness_pass_rate": 1.0,
+      "stale_references": 0,
+      "stale_with_different_action": 0,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 273
+      },
+      "failure_patterns": {}
+    },
+    {
+      "budget": 3200,
+      "variant": "no_memory",
+      "conditions": 1584,
+      "status_counts": {
+        "not_applicable": 1584
+      },
+      "freshness_pass_numerator": 0,
+      "freshness_denominator": 0,
+      "freshness_pass_rate": null,
+      "stale_references": 0,
+      "stale_with_different_action": 0,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 1584
+      },
+      "failure_patterns": {}
+    },
+    {
+      "budget": 3200,
+      "variant": "no_relations",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 1311,
+        "not_applicable": 273
+      },
+      "freshness_pass_numerator": 1311,
+      "freshness_denominator": 1311,
+      "freshness_pass_rate": 1.0,
+      "stale_references": 0,
+      "stale_with_different_action": 0,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 273
+      },
+      "failure_patterns": {}
+    },
+    {
+      "budget": 3200,
+      "variant": "no_summary_boost",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 1311,
+        "not_applicable": 273
+      },
+      "freshness_pass_numerator": 1311,
+      "freshness_denominator": 1311,
+      "freshness_pass_rate": 1.0,
+      "stale_references": 0,
+      "stale_with_different_action": 0,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 273
+      },
+      "failure_patterns": {}
+    },
+    {
+      "budget": 3200,
+      "variant": "no_temporal",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 1311,
+        "not_applicable": 273
+      },
+      "freshness_pass_numerator": 1311,
+      "freshness_denominator": 1311,
+      "freshness_pass_rate": 1.0,
+      "stale_references": 0,
+      "stale_with_different_action": 0,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 273
+      },
+      "failure_patterns": {}
+    },
+    {
+      "budget": 3200,
+      "variant": "recent_facts",
+      "conditions": 1584,
+      "status_counts": {
+        "pass": 1242,
+        "not_applicable": 342
+      },
+      "freshness_pass_numerator": 1242,
+      "freshness_denominator": 1242,
+      "freshness_pass_rate": 1.0,
+      "stale_references": 0,
+      "stale_with_different_action": 0,
+      "na_reasons": {
+        "no_actual_assessment_feedback_action": 342
+      },
+      "failure_patterns": {}
+    }
+  ],
+  "limitations": [
+    "Post-hoc diagnostic introduced after observing formal-02; not a preregistered score or independent holdout.",
+    "Current-feedback applicability uses the declared current query projection and exact owned checkpoint scope; query-intent semantics are not independently judged.",
+    "The reference is the latest available valid same-checkpoint assessment, ordered by occurred_at then Event ID; it does not prove stable mastery or the best pedagogical action.",
+    "Project/item ownership tables are absent from the saved snapshot; this audit checks the saved Event/Attempt/Fact/Node scope chain, not an independent database ownership query.",
+    "No practice action, no valid applicable assessment, missing query time or non-current/non-checkpoint query is NA, never a pass.",
+    "Assistance and independence use explicit event fields only; absent independence remains unknown. Original retry feedback stays conservative.",
+    "Results identify pipeline freshness failures; no teacher ratings, real learners, learning gains or official QA accuracy are inferred."
+  ],
+  "output_sha256": {
+    "conditions.jsonl": "f12519f175606252b32ed834f359ce769ea17a3b08ee067368bd3ca37d26bb80",
+    "issues.jsonl": "386ee4c67733bd82182ede733409733492f48c8912549bc00ea79a432a24ac74"
+  }
+}

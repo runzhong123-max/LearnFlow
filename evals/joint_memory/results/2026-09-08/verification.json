@@ -1,0 +1,45 @@
+{
+  "schema": "learnflow-joint-memory-verification.v1",
+  "formal_conditions": 30924,
+  "full_coverage_verified": true,
+  "unit_tests": {
+    "command": "python3 -m unittest discover -s evals/joint_memory -p '*test*.py' -v",
+    "passed": 54,
+    "failed": 0
+  },
+  "syntax_check": {
+    "files": [
+      "report_tables.py",
+      "audit_locomo_results.py",
+      "collect.py",
+      "run_suite.py"
+    ],
+    "exit_code": 0
+  },
+  "production_sources_verified_unchanged": 166,
+  "formal_run_source_drift": [],
+  "offline_network_attempts": 0,
+  "post_run_existing_frozen_files_edited": [
+    "evals/joint_memory/README.md",
+    "evals/joint_memory/environment.md"
+  ],
+  "post_run_edit_reason": "README adds report slicing reproduction; environment corrects two-track wording to six processes. Production, drivers, scorers, frozen protocol and gold are unchanged. Added reports and read-only audit/slicing tools are post-run artifacts.",
+  "not_executed": [
+    "LLM QA",
+    "official QA evaluator",
+    "teacher quality assessment",
+    "real student study",
+    "desktop full suite",
+    "full backend pytest",
+    "frontend build",
+    "deployment"
+  ],
+  "contract_impact": "none",
+  "education_analysis_archive": {
+    "path": "education-analysis.json.gz",
+    "uncompressed_sha256": "b7a10624360b5d5da7ca4d58099205b46cd1af748b158528c2b95c21c4f1fc3c",
+    "gzip_sha256": "5a7411d0747c7e0c0fe49d6140fd90e6777d0f15027a1e327b4e3677d8b13063",
+    "round_trip_equal": true,
+    "reason": "Lossless archive of 279860-line derived analysis; all metrics retained"
+  }
+}

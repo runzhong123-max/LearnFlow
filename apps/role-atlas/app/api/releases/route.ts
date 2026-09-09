@@ -2,9 +2,16 @@ import { ensureAppSchema, getD1 } from "@/db";
 import { changeHubPublication } from "@/lib/releases/hub-publication";
 import { authorizeApiRequest } from "@/lib/access";
 import { z } from "zod/v4";
-import { deprecateRelease, listProjectReleases, prepareRelease, publishProjectVersionToHub, publishRelease, rollbackRelease } from "@/lib/releases/service";
+import { deprecateRelease, describeRelease, listProjectReleases, prepareRelease, publishProjectVersionToHub, publishRelease, rollbackRelease } from "@/lib/releases/service";
 
 export const runtime = "edge";
+
+function releaseError(message: string) {
+  if (message.startsWith("RELEASE_QUALITY_BLOCKED:")) return `岗位包质量校验未通过：${message.slice("RELEASE_QUALITY_BLOCKED:".length).trim()}`;
+  if (message === "RELEASE_VISIBILITY_CONFLICT") return "操作的可见范围与编译产物不一致，请按所需范围重新编译。";
+  if (message === "RELEASE_NOT_READY") return "岗位包尚未通过校验，请先完善项目并重新编译。";
+  return message;
+}
 
 const releaseInputSchema = z.object({
   projectId: z.string().min(4).max(100),
@@ -43,7 +50,8 @@ const actionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("withdraw_from_hub"), packageLineId: z.string().min(4).max(220), expectedReleaseId: z.string().min(4).max(220), expectedRegistryVersion: z.number().int().nonnegative() }),
   z.object({ action: z.literal("restore_to_hub"), packageLineId: z.string().min(4).max(220), expectedReleaseId: z.string().min(4).max(220), expectedRegistryVersion: z.number().int().nonnegative() }),
 
-  z.object({ action: z.literal("publish"), releaseId: z.string().min(4).max(220) }),
+  z.object({ action: z.literal("publish"), releaseId: z.string().min(4).max(220), expectedVisibility: z.enum(["private", "unlisted", "public"]).optional() }),
+  z.object({ action: z.literal("save_private"), releaseId: z.string().min(4).max(220) }),
   z.object({ action: z.literal("rollback"), packageLineId: z.string().min(4).max(220), targetReleaseId: z.string().min(4).max(220), expectedCurrentReleaseId: z.string().max(220).nullable().optional() }),
   z.object({ action: z.literal("deprecate"), releaseId: z.string().min(4).max(220), reason: z.string().max(1_000).optional() }),
 ]);
@@ -64,10 +72,10 @@ export async function POST(request: Request) {
     const release = input.action === "publish_to_hub"
       ? await publishProjectVersionToHub(input)
       : await prepareRelease(input);
-    return Response.json({ release }, { status: release.status === "failed" ? 422 : 201 });
+    return Response.json({ release: await describeRelease(release) }, { status: release.status === "failed" ? 422 : 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "岗位包编译失败。";
-    return Response.json({ error: message }, { status: message === "VERSION_NOT_FOUND" ? 404 : /UNIQUE|CONFLICT/u.test(message) ? 409 : 400 });
+    return Response.json({ error: releaseError(message), code: message.split(":")[0] }, { status: message === "VERSION_NOT_FOUND" ? 404 : /UNIQUE|CONFLICT/u.test(message) ? 409 : /QUALITY_BLOCKED|NOT_READY/u.test(message) ? 422 : 400 });
   }
 }
 
@@ -80,12 +88,12 @@ export async function PATCH(request: Request) {
       await ensureAppSchema();
       return Response.json({ publication: await changeHubPublication(getD1(), input) }, { headers: { "Cache-Control": "private, no-store" } });
     }
-    if (input.action === "publish") return Response.json({ release: await publishRelease(input) });
+    if (input.action === "publish" || input.action === "save_private") return Response.json({ release: await describeRelease(await publishRelease({ ...input, ...(input.action === "save_private" ? { expectedVisibility: "private" as const } : {}) })) });
     if (input.action === "rollback") return Response.json({ release: await rollbackRelease(input) });
     return Response.json({ release: await deprecateRelease(input) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "发布操作失败。";
-    const status = /NOT_FOUND/u.test(message) ? 404 : /CONFLICT/u.test(message) ? 409 : 400;
-    return Response.json({ error: message }, { status });
+    const status = /NOT_FOUND/u.test(message) ? 404 : /CONFLICT/u.test(message) ? 409 : /QUALITY_BLOCKED|NOT_READY/u.test(message) ? 422 : 400;
+    return Response.json({ error: releaseError(message), code: message.split(":")[0] }, { status });
   }
 }

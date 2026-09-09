@@ -1,0 +1,14 @@
+{
+  "frozen_files": 186,
+  "changed_files": [
+    "packages/learning-core/src/learnflow_core/memory_episode.py",
+    "packages/learning-core/src/learnflow_core/five_kernel_context.py",
+    "packages/learning-core/src/learnflow_core/planning_guidance.py"
+  ],
+  "restored_snapshot_hash_mismatches": [],
+  "restore_patch_sha256": "f5072e66f3b2ba6ee4d25c6e8306d1c2d3f9a8b0c01a7d74739cee8bd5e4fb8a",
+  "interpretation": "source_commit is the base checkout; the measured uncommitted source is identified by all per-file SHA values. Apply the restore patch to the final source to reconstruct the pre-fix snapshot.",
+  "restore_applied_in_isolated_directory": true,
+  "all_frozen_hashes_verified_after_restore": true,
+  "patch_format_note": "One whitespace-only context line normalized to an empty line; git apply output verified against all 186 frozen source hashes."
+}

@@ -1,3 +1,4 @@
+import TaskConversionButton from "./TaskConversionButton";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArrowLeft, BadgeCheck, Box, CalendarClock, CheckCircle2, ChevronRight, CircleDot, FileCode2, GitBranch, Network, PackageOpen, ShieldCheck } from "lucide-react";
@@ -48,8 +49,8 @@ export default async function HubRepositoryPage({ params }: { params: Promise<{ 
               <div className="hub-readme-badges"><span><BadgeCheck size={12} /> 已验证</span><span><ShieldCheck size={12} /> {bundle.manifest.evidencePolicy} evidence</span><span>protocol {bundle.manifest.protocolVersion}</span></div>
               <h3 id="graph">图谱包含什么</h3>
               <div className="hub-graph-summary"><span><b>{overview.tasks.length}</b>典型任务</span><span><b>{overview.capabilities.length}</b>能力节点</span><span><b>{overview.knowledge.length}</b>知识技能</span><span><b>{overview.scenarios.length}</b>工作场景</span><span><b>{overview.assets.length}</b>证据来源</span></div>
-              {overview.tasks.length ? <><h3>典型任务</h3><ul>{overview.tasks.slice(0, 8).map((node) => <li key={text(node.id)}><CircleDot size={13} /><span><b>{text(node.label, text(node.id))}</b>{text(node.summary) ? <small>{text(node.summary)}</small> : null}</span></li>)}</ul></> : null}
-              {overview.scenarios.length ? <><h3>工作场景</h3><ul>{overview.scenarios.slice(0, 6).map((node) => <li key={text(node.id)}><GitBranch size={13} /><span><b>{text(node.label, text(node.id))}</b>{text(node.summary) ? <small>{text(node.summary)}</small> : null}</span></li>)}</ul></> : null}
+              {overview.tasks.length ? <><h3>典型任务</h3><ul>{overview.tasks.slice(0, 8).map((node) => <li key={text(node.id)}><CircleDot size={13} /><span><b>{text(node.label, text(node.id))}</b>{text(node.summary) ? <small>{text(node.summary)}</small> : null}</span>{release && <TaskConversionButton releaseId={release.id} taskNodeId={text(node.id)} />}</li>)}</ul></> : null}
+              {overview.scenarios.length ? <><h3>工作场景</h3><ul>{overview.scenarios.slice(0, 6).map((node) => <li key={text(node.id)}><GitBranch size={13} /><span><b>{text(node.label, text(node.id))}</b>{text(node.summary) ? <small>{text(node.summary)}</small> : null}</span>{release && <TaskConversionButton releaseId={release.id} taskNodeId={text(node.id)} />}</li>)}</ul></> : null}
               <h3>不可变身份</h3><pre><code>{`package:  ${bundle.manifest.packageId}@${bundle.manifest.packageVersion}\nsnapshot: ${bundle.manifest.snapshotId}\nroot:     ${bundle.manifest.rootHash}`}</code></pre>
             </div>
           </article>

@@ -10,7 +10,13 @@ from datetime import datetime, timedelta, timezone
 import re
 from typing import Any
 
-GUIDANCE_VERSION = "teaching-guidance.v1"
+from .teaching_control_parser import (
+    PARSER_VERSION, CONTROL_POLICY_LIMITS, DEFAULT_SESSION_HOURS,
+    MAX_EXPLICIT_WINDOW_HOURS, parse_text_controls,
+)
+
+GUIDANCE_VERSION = "teaching-guidance.v2"
+SUPPORTED_GUIDANCE_VERSIONS = frozenset({"teaching-guidance.v1", GUIDANCE_VERSION})
 GUIDANCE_EVENT_TYPES = frozenset({
     "user_message", "vnext_teaching_input_received",
     "vnext_human_adaptation_requested", "semantic_observation_proposed",
@@ -61,20 +67,6 @@ def _same_scope(left: dict, right: dict) -> bool:
     return all(left.get(key) == right.get(key) for key in _SCOPE_KEYS)
 
 
-def _minutes(value: str) -> int:
-    if value.isdigit():
-        return int(value)
-    digits = dict(zip("零一二三四五六七八九", range(10)))
-    digits["两"] = 2
-    if value in digits:
-        return digits[value]
-    if "十" in value:
-        tens, units = value.split("十", 1)
-        if (not tens or tens in digits) and (not units or units in digits):
-            return digits.get(tens, 1) * 10 + digits.get(units, 0)
-    return 0
-
-
 def _items(states: dict, kernel: str, storage: str, key: str) -> list[dict]:
     values = ((states.get(kernel) or {}).get(storage) or {}).get(key)
     return deepcopy([item for item in values if isinstance(item, dict)]) if isinstance(values, list) else []
@@ -113,37 +105,65 @@ def reduce_teaching_guidance(event: Any, states: dict) -> dict:
 
     def put(kernel: str, slot: str, instruction: str, *, lifetime: str = "session",
             evidence_kind: str = "explicit_request", item_key: str | None = None,
-            status: str = "active", details: dict | None = None) -> None:
+            status: str = "active", details: dict | None = None,
+            source_span: list[int] | None = None, window: dict | None = None) -> None:
         persistent = lifetime == "persistent"
         if not persistent and not any(scope.values()):
             return
-        # Turn-lifetime instructions cannot safely be consumed without a session.
         if lifetime == "turn" and scope.get("session_id") is None:
             return
         storage = "long_term" if persistent else "short_term"
-        entry_scope = {key: None for key in _SCOPE_KEYS} if persistent else scope
+        entry_scope = {key: None for key in _SCOPE_KEYS} if persistent else dict(scope)
+        expiration = None if persistent else (at + timedelta(hours=DEFAULT_SESSION_HOURS)).isoformat()
+        if window:
+            # Source identity is retained. Only this explicit, bounded window can
+            # have a different application session, never a different project.
+            if type(scope.get("project_id")) is not int or scope["project_id"] <= 0 or scope.get("session_id") is None:
+                status, instruction = "uncertain", ""
+                details = {**(details or {}), "diagnostic_only": True, "diagnostic_reason": "explicit_window_requires_project_session"}
+            else:
+                entry_scope["session_id"] = None
+                lifetime = "project_window"
+                expiration = window["expires_at"]
         values = get(kernel, storage)
+        diagnostic_only = bool((details or {}).get("diagnostic_only"))
         matching = [entry for entry in values if entry.get("slot") == slot
                     and entry.get("item_key") == item_key
-                    and _same_scope(entry.get("scope") or {}, entry_scope)]
-        if any((_time(entry.get("occurred_at")) or at) > at for entry in matching):
-            return  # A delayed event must not replace a newer explicit correction.
-        values = [entry for entry in values if entry not in matching]
+                    and bool(entry.get("diagnostic_only")) == diagnostic_only
+                    and _same_scope(entry.get("application_scope") or entry.get("scope") or {}, entry_scope)]
+        order = (at, int(event_id or 0), (source_span or [0])[0])
+        def entry_order(entry):
+            return (_time(entry.get("occurred_at")) or datetime.min.replace(tzinfo=timezone.utc),
+                    int(entry.get("source_event_id") or 0), (entry.get("source_span") or [0])[0])
+        if any(entry_order(entry) > order for entry in matching):
+            return
         entry = {
             "kernel": kernel, "slot": slot, "instruction": instruction,
-            "scope": deepcopy(entry_scope), "source_event_id": event_id,
-            "occurred_at": at.isoformat(),
-            "expires_at": None if persistent else (at + timedelta(hours=8)).isoformat(),
+            "scope": deepcopy(entry_scope), "source_scope": deepcopy(scope),
+            "application_scope": deepcopy(entry_scope), "source_event_id": event_id,
+            "source_span": deepcopy(source_span), "parser_version": PARSER_VERSION,
+            "occurred_at": at.isoformat(), "expires_at": expiration,
             "lifetime": lifetime, "evidence_kind": evidence_kind, "status": status,
             "policy_version": GUIDANCE_VERSION, "priority": _PRIORITY[slot],
             "mastery_inference": False,
         }
+        if window and lifetime == "project_window":
+            entry.update(expiry_basis=window.get("expiry_basis", "explicit_timezone_iso"), deadline_source_span=window.get("span"))
         if item_key is not None:
             entry["item_key"] = item_key
         if details:
             entry.update(details)
+        # Re-delivery of the same source/span is an exact no-op. Prior successful
+        # controls remain auditable within the existing bounded control storage.
+        values = [value for value in values if not (value.get("source_event_id") == event_id
+                  and value.get("source_span") == source_span and value.get("slot") == slot
+                  and value.get("item_key") == item_key)]
+        for value in values:
+            if value in matching and value.get("status") != "superseded":
+                value["status"] = "superseded"
+                value["superseded_by_event_id"] = event_id
         values.append(entry)
-        values.sort(key=lambda entry: str(entry.get("occurred_at") or ""))
+        values.sort(key=entry_order)
         save(kernel, values[-(8 if persistent else 24):], storage)
 
     if event_type in _USER_EVENTS:
@@ -156,89 +176,48 @@ def reduce_teaching_guidance(event: Any, states: dict) -> dict:
                     entry.get("lifetime") == "turn"
                     and (entry.get("scope") or {}).get("session_id") == scope["session_id"]
                     and entry.get("source_event_id") != event_id
-                    and (_time(entry.get("occurred_at")) or at) <= at
+                    and _entry_order(entry)[:2] < (at, int(event_id or 0))
                 )])
-        text = str(payload.get("text") or payload.get("content") or "").strip()[:4000]
-        # Conservative whole-message guard: quoted/third-party/testing statements
-        # are not learner facts. Negative teaching requests remain supported below.
-        if not text or re.search(r"[“”‘’\"「」『』]|假设|假如|假定|假装|如果|测试(?:一下|用例|消息)|我(?:的)?(?:同学|朋友|老师|学生)|他说|她说|有人说|举例来说|例如|比如|举个例子|^(?:他|她|他们|她们|同学|朋友|老师)|不是|并非|不代表", text):
-            return patches
-        clauses = re.split(r"[，。；\n]", text)
-        durable_clauses = [clause for clause in clauses if re.search(r"以后|今后|一直|长期", clause)]
-        language_pattern = r"(?i)(Python|JavaScript|TypeScript|Java|C\+\+|SQL|Rust|Go)(?:\s*(?:代码)?(?:示例|例子))?"
-        for clause in durable_clauses:
-            if re.search(r"可能|也许|或许|考虑|不一定|[?？]|吗(?:[。！!]|$)", clause):
+        raw = str(payload.get("text") or payload.get("content") or "")
+        parsed = parse_text_controls(raw, at)
+        for action in parsed["actions"]:
+            if action["lifetime"] != "persistent" and scope.get("session_id") is None:
                 continue
-            language = re.search(language_pattern, clause)
-            if language and re.search(r"示例|例子", clause):
-                cancel = bool(re.search(r"不用|不要|不再用|取消|别用", clause))
-                affirmative = bool(re.search(r"优先|请用|都用|用.*(?:示例|例子)|示例.*用|例子.*用", clause))
-                if cancel or affirmative:
-                    put("human", "code_language", f"学生已取消默认使用 {language.group(1)} 示例的偏好；不要继续沿用旧默认，按当前任务选择语言。" if cancel else f"代码示例优先使用 {language.group(1)}；具体任务约束优先。",
-                        lifetime="persistent", evidence_kind="explicit_cancellation" if cancel else "explicit_request",
-                        details={"language": language.group(1), "cancelled": cancel})
-        # Durable format defaults are explicit requests, not inferred learning styles.
-        format_requests = [
-            (r"先(?:举例|给例子|看例子|讲例子).{0,5}再(?:讲|解释)(?:原理|理论)", "representation", "先举一个小例子，再讲对应原理。"),
-            (r"(?:讲解|讲得|说得|节奏|讲)(?:请)?慢(?:一点|一些|点)?", "pace", "适当放慢讲解节奏，每次推进一个步骤并检查理解。"),
-            (r"(?:回答|解释|讲解)(?:请)?(?:简短|简洁|短一点)(?:些|点)?", "response_length", "回答简洁，先给关键点，保留必要判断依据。"),
-        ]
-        for clause in durable_clauses:
-            if re.search(r"可能|也许|或许|考虑|不一定|[?？]|吗(?:[。！!]|$)", clause):
+            if action["details"].get("cancel_project_window"):
+                values = get(action["kernel"])
+                if any(entry.get("source_event_id") == event_id and entry.get("source_span") == action["source_span"]
+                       and entry.get("slot") == action["slot"] for entry in values):
+                    continue
+                matching = [entry for entry in values if entry.get("policy_version") == GUIDANCE_VERSION
+                    and entry.get("lifetime") == "project_window" and entry.get("slot") == action["slot"]
+                    and entry.get("status") == "active" and not entry.get("cancelled")
+                    and _v2_scope_reason(entry, "short_term") is None
+                    and all((entry.get("application_scope") or {}).get(key) == scope.get(key) for key in ("project_id", "checkpoint_id"))
+                    and _entry_order(entry) <= (at, int(event_id or 0), action["source_span"][0])
+                    and (_strict_time(entry.get("expires_at")) or at) > at]
+                if matching:
+                    original = max(matching, key=_entry_order)
+                    action["window"] = {"expires_at": original["expires_at"], "expiry_basis": "inherited_cancelled_window"}
+                    action["details"].update(cancelled_window_source_event_id=original["source_event_id"],
+                        cancelled_window_expires_at=original["expires_at"])
+                    put(**action)
+                else:
+                    put(action["kernel"], action["slot"], "", status="uncertain", source_span=action["source_span"],
+                        details={"diagnostic_only": True, "diagnostic_reason": "no_matching_project_window"})
                 continue
-            for pattern, slot, instruction in format_requests:
-                if re.search(pattern, clause):
-                    cancelled = bool(re.search(r"不用|不要|不再|取消|别", clause))
-                    put("human", slot, f"学生已取消此前的默认讲解要求（{instruction}）；按当前任务安排，不沿用旧默认。" if cancelled else instruction,
-                        lifetime="persistent", evidence_kind="explicit_cancellation" if cancelled else "explicit_request",
-                        details={"cancelled": cancelled})
-        # A durable request and today's exception may coexist in the same message.
-        text = "，".join(clause for clause in clauses if clause not in durable_clauses)
-        language = re.search(language_pattern, text)
-        # Session-free chat is never promoted to project/global temporary guidance.
-        if scope.get("session_id") is None:
-            return patches
-        gap_matches = list(re.finditer(r"(?:我|这一步|这里|这个|这一段|这个问题)[^，。；]{0,12}(?:没看懂|没听懂|没懂|不懂|不明白|不理解|没理解)|这一步不会|^(?:没懂|不懂|没看懂|没听懂|不明白)[。！!]?$", text))
-        acknowledgment_matches = list(re.finditer(r"我(?:已经)?(?:明白了|懂了|理解了)|这个问题(?:已经)?解决了|^(?:明白了|懂了|理解了)[。！!]?$", text))
-        if gap_matches:
-            put("knowledge", "current_blocker", "学生明确表示当前这一步尚未理解。先拆解这一小步，用小例子解释，再请学生判断或复述；不要据此判定长期能力。",
-                evidence_kind="self_reported_gap")
-        if acknowledgment_matches and (not gap_matches or acknowledgment_matches[-1].start() > gap_matches[-1].start()):
-            save("knowledge", [entry for entry in get("knowledge") if not (
-                entry.get("slot") == "current_blocker" and _same_scope(entry.get("scope") or {}, scope)
-                and (_time(entry.get("occurred_at")) or at) <= at
-            )])
-            put("knowledge", "current_blocker", "学生自述当前卡点已解决。停止重复讲解，用一个小检查衔接下一步；这不等于稳定掌握。",
-                lifetime="turn", evidence_kind="self_reported_resolution")
-        minutes = re.search(r"(?:今天|现在|这次|我).{0,8}(?:只有|剩下|剩|有)\s*(\d{1,3}|[零一二两三四五六七八九十]{1,3})\s*分钟", text)
-        half_hour = re.search(r"(?:今天|现在|这次|我).{0,8}(?:只有|剩下|剩|有)\s*半(?:个)?小时", text)
-        budget = _minutes(minutes.group(1)) if minutes else 30 if half_hour else 0
-        if 0 < budget <= 480:
-            put("human", "time_budget", f"本次学习可用时间约 {budget} 分钟。缩小任务，只推进一个可完成目标，并预留收尾。", details={"minutes": budget})
-        if re.search(r"(?:今天|这次|现在|暂时).{0,8}(?:不想|不要|不).{0,3}(?:写代码|编程)|(?:别|不要)(?:再)?(?:给|写|用)(?:我)?(?:代码|代码例子)", text):
-            put("human", "code_participation", "本次先不用写代码或代码例子，改用口头推演、图示或概念判断；不要扩展为长期偏好。", details={"allow_code": False})
-        elif re.search(r"(?:今天|这次|现在).{0,4}(?:可以|想|要)(?:开始)?(?:写代码|编程)|(?:请)?给我(?:一个|个)?代码例子", text):
-            put("human", "code_participation", "学生当前明确希望使用代码；可恢复最小代码例子或动手练习，不继续沿用此前的暂不写代码要求。", details={"allow_code": True})
-        if re.search(r"(?:别|不要|不想)(?:再)?(?:用|看|讲|使用)(?:这个|这种|刚才的)(?:例子|示例)", text):
-            put("human", "example_selection", "立即停止沿用刚才的例子，换一个不同的小例子，并检查是否更清楚。")
-        if re.search(r"(?:这次|本次|这轮|这一轮|这个回答).{0,10}(?:简短|简洁|短一点)|(?:回答|讲得|说得)(?:请)?(?:简短|简洁|短一点)", text) and not re.search(r"(?:不|别|不要).{0,4}(?:简短|简洁|短一点)", text):
-            put("human", "response_length", "这一次回答保持简短，先给关键点；不省略必要的判断依据。", lifetime="turn")
-        if re.search(r"(?:示例|例子).{0,5}(?:用|改成)\s*(?:Python|JavaScript|TypeScript|Java|C\+\+|SQL|Rust|Go)|(?:用|改成)\s*(?:Python|JavaScript|TypeScript|Java|C\+\+|SQL|Rust|Go).{0,5}(?:示例|例子)", text, re.I):
-            if language and not re.search(r"不用|不要|不再用|别用", text):
-                put("human", "code_language", f"本次代码示例使用 {language.group(1)}。", details={"language": language.group(1)})
-        for pattern, slot, instruction in format_requests:
-            if slot != "response_length" and re.search(pattern, text) and not re.search(r"不用|不要|不再|取消|别", text):
-                put("human", slot, instruction)
-        starting = re.search(r"我(?:已经)?(?:会|学过|接触过)\s*([^，。；！!?？\n]{1,60})", text)
-        if starting and not re.search(r"我(?:还)?不会|我没学过|我没接触过|我会不会|我会吗|[?？]|吗(?:[。！!]|$)", text):
-            put("knowledge", "starting_point", f"学生自述已接触或会用：{starting.group(1)}。减少重复入门介绍，必要时用一个简短问题校准；这不是掌握验证。", evidence_kind="self_reported")
-        anchor = re.search(r"先回到\s*([^，。；！!?？\n]{1,60})|先补\s*([^，。；！!?？\n]{1,60}?)\s*再继续", text)
-        if anchor and not re.search(r"(?:不想|不要|别)先(?:回到|补)", text):
-            topic = anchor.group(1) or anchor.group(2)
-            put("structure", "return_anchor", f"先回到或补充：{topic}。完成这一小步后再衔接原任务；保留原学习位置。", details={"requested_anchor": topic})
-        priority = re.search(r"(?:今天|这次|现在)?先(?:学|完成)\s*([^，。；！!?？\n]{1,60})", text)
-        if priority and not re.search(r"(?:不想|不要|别)先", text):
-            put("value", "current_priority", f"本次优先推进：{priority.group(1)}。据此安排下一步，不覆盖长期目标。", details={"requested_priority": priority.group(1)})
+            if action["evidence_kind"] == "self_reported_resolution":
+                save("knowledge", [entry for entry in get("knowledge") if not (
+                    entry.get("slot") == "current_blocker" and _same_scope(entry.get("scope") or {}, scope)
+                    and _entry_order(entry) <= (at, int(event_id or 0), action["source_span"][0])
+                )])
+            put(**action)
+        # Unsafe/no-request text keeps the old empty-patch behavior. An explicit
+        # but malformed control window is retained as metadata-only uncertainty.
+        for diagnostic in parsed["diagnostics"]:
+            if diagnostic.get("slot") and scope.get("session_id") is not None:
+                put({"time_budget": "human", "current_priority": "value", "return_anchor": "structure"}[diagnostic["slot"]], diagnostic["slot"], "",
+                    status="uncertain", source_span=diagnostic["source_span"],
+                    details={"diagnostic_only": True, "diagnostic_reason": diagnostic["reason"]})
     elif event_type == "vnext_human_adaptation_requested":
         if payload.get("explicit", True) is not True or scope.get("session_id") is None:
             return patches
@@ -292,16 +271,75 @@ def reduce_teaching_guidance(event: Any, states: dict) -> dict:
     return patches
 
 
-def select_teaching_guidance(states: dict, *, project_id=None, checkpoint_id=None,
-                             session_id=None, now=None, archived_paths=(), item_key=None) -> list[dict]:
-    """Select at most eight current controls without consuming or mutating them."""
+def _entry_order(entry: dict) -> tuple:
+    source_id = entry.get("source_event_id")
+    span = entry.get("source_span")
+    offset = span[0] if isinstance(span, list) and span and type(span[0]) is int else 0
+    return (_time(entry.get("occurred_at")) or datetime.min.replace(tzinfo=timezone.utc),
+            source_id if type(source_id) is int else 0, offset)
+
+
+def _strict_time(value: Any) -> datetime | None:
+    if not isinstance(value, str) or not re.search(r"(?:Z|[+-]\d{2}:\d{2})$", value):
+        return None
+    return _time(value)
+
+
+def _v2_scope_reason(entry: dict, storage: str) -> str | None:
+    source, application = entry.get("source_scope"), entry.get("application_scope")
+    for scope in (source, application):
+        if not isinstance(scope, dict) or set(scope) != set(_SCOPE_KEYS):
+            return "invalid_scope_schema"
+        if any(value is not None and (type(value) is not int or value <= 0) for value in scope.values()):
+            return "invalid_scope_identity"
+    if entry.get("scope") != application:
+        return "scope_alias_mismatch"
+    lifetime = entry.get("lifetime")
+    if lifetime == "persistent":
+        if storage != "long_term" or any(application.values()) or entry.get("expires_at") is not None:
+            return "invalid_persistent_scope"
+    elif lifetime == "project_window":
+        if (storage != "short_term" or source["project_id"] is None or source["session_id"] is None
+                or application["project_id"] != source["project_id"]
+                or application["checkpoint_id"] != source["checkpoint_id"]
+                or application["session_id"] is not None):
+            return "invalid_project_window_scope"
+        occurred, expiry = _strict_time(entry.get("occurred_at")), _strict_time(entry.get("expires_at"))
+        basis = entry.get("expiry_basis")
+        inherited = basis == "inherited_cancelled_window" and entry.get("cancelled") is True
+        if inherited and (type(entry.get("cancelled_window_source_event_id")) is not int
+                          or entry["cancelled_window_source_event_id"] <= 0
+                          or entry["cancelled_window_source_event_id"] == entry.get("source_event_id")
+                          or entry.get("cancelled_window_expires_at") != entry.get("expires_at")):
+            return "invalid_window_cancellation_link"
+        if ((basis != "explicit_timezone_iso" and not inherited) or occurred is None or expiry is None
+                or not timedelta(0) < expiry - occurred <= timedelta(hours=MAX_EXPLICIT_WINDOW_HOURS)):
+            return "invalid_project_window_expiry"
+    elif lifetime not in {"session", "turn", "task"} or source != application or storage != "short_term":
+        return "invalid_scoped_lifetime"
+    else:
+        occurred, expiry = _strict_time(entry.get("occurred_at")), _strict_time(entry.get("expires_at"))
+        if occurred is None or expiry is None or not timedelta(0) < expiry - occurred <= timedelta(hours=DEFAULT_SESSION_HOURS):
+            return "invalid_session_expiry"
+    return None
+
+
+def _guidance_selection(states: dict, *, project_id=None, checkpoint_id=None,
+                        session_id=None, now=None, archived_paths=(), item_key=None) -> tuple[list[dict], list[dict]]:
     at = _time(now) if now is not None else datetime.now(timezone.utc)
     if at is None:
-        return []
-    requested_scope = {"project_id": project_id, "checkpoint_id": checkpoint_id, "session_id": session_id}
+        return [], [{"status": "uncertain", "reason": "invalid_read_time"}]
+    requested = {"project_id": project_id, "checkpoint_id": checkpoint_id, "session_id": session_id}
     archives = [tuple(path.split(".")) if isinstance(path, str) else tuple(path) for path in archived_paths]
+    diagnostics, candidates = [], []
 
-    def archived(kernel: str, storage: str, entry: dict) -> bool:
+    def note(entry, status, reason):
+        diagnostics.append({key: deepcopy(entry[key]) for key in (
+            "kernel", "slot", "source_event_id", "policy_version", "parser_version", "source_span",
+            "cancelled_window_source_event_id", "superseded_by_event_id"
+        ) if key in entry} | {"status": status, "reason": reason})
+
+    def archived(kernel, storage, entry):
         key = "teaching_preferences" if storage == "long_term" else "teaching_directives"
         related = {key} | _ARCHIVE_KEYS.get(entry.get("slot"), set())
         return any(path and path[0] == kernel and (
@@ -310,55 +348,139 @@ def select_teaching_guidance(states: dict, *, project_id=None, checkpoint_id=Non
             (len(path) >= 3 and path[2] in related - {key})
         ) for path in archives)
 
-    candidates = []
     for kernel in states:
         for storage, key in (("short_term", "teaching_directives"), ("long_term", "teaching_preferences")):
             for entry in _items(states, kernel, storage, key):
-                if entry.get("policy_version") != GUIDANCE_VERSION or archived(kernel, storage, entry):
+                entry["kernel"] = kernel
+                version = entry.get("policy_version")
+                if version not in SUPPORTED_GUIDANCE_VERSIONS:
+                    note(entry, "uncertain", "unsupported_policy_version")
+                    continue
+                invalid = _v2_scope_reason(entry, storage) if version == GUIDANCE_VERSION else None
+                if invalid:
+                    note(entry, "uncertain", invalid)
+                    continue
+                scope = entry.get("scope")
+                if not isinstance(scope, dict):
+                    note(entry, "uncertain", "invalid_scope_schema")
+                    continue
+                mismatch = any(value is not None and requested.get(name) != value
+                               for name, value in scope.items() if name in _SCOPE_KEYS)
+                if entry.get("lifetime") == "project_window":
+                    mismatch = mismatch or any(requested[name] != scope.get(name) for name in ("project_id", "checkpoint_id"))
+                if mismatch:
+                    note(entry, "scope_mismatch", "application_scope_mismatch")
+                    continue
+                if archived(kernel, storage, entry):
+                    note(entry, "scope_mismatch", "archived_control")
                     continue
                 if item_key is not None and entry.get("item_key") not in {None, item_key}:
-                    continue
-                entry_scope = entry.get("scope") or {}
-                if any(value is not None and requested_scope.get(name) != value for name, value in entry_scope.items() if name in _SCOPE_KEYS):
+                    note(entry, "scope_mismatch", "item_scope_mismatch")
                     continue
                 persistent = storage == "long_term" and entry.get("lifetime") == "persistent"
-                if not persistent:
-                    expiration = _time(entry.get("expires_at"))
-                    if not any(entry_scope.get(name) is not None for name in _SCOPE_KEYS) or expiration is None or expiration <= at:
-                        continue
-                    if entry.get("lifetime") == "turn" and entry_scope.get("session_id") is None:
-                        continue
-                occurred = _time(entry.get("occurred_at"))
-                if occurred is None or occurred > at:
+                time_reader = _strict_time if version == GUIDANCE_VERSION else _time
+                occurred = time_reader(entry.get("occurred_at"))
+                if occurred is None or occurred > at or type(entry.get("source_event_id")) is not int or entry["source_event_id"] <= 0:
+                    note(entry, "uncertain", "invalid_source_identity_or_time")
                     continue
-                entry["kernel"] = kernel
-                # Priority is policy-controlled, never accepted from stored/model text.
-                entry["priority"] = _PRIORITY.get(entry.get("slot"), 0)
+                if not persistent:
+                    expiration = time_reader(entry.get("expires_at"))
+                    if expiration is None or not any(scope.get(name) is not None for name in _SCOPE_KEYS):
+                        note(entry, "uncertain", "invalid_expiry_or_scope")
+                        continue
+                    if expiration <= at:
+                        note(entry, "expired", "validity_ended")
+                        continue
+                    if entry.get("lifetime") == "turn" and scope.get("session_id") is None:
+                        note(entry, "uncertain", "turn_requires_session")
+                        continue
+                if entry.get("diagnostic_only") or entry.get("status") == "uncertain":
+                    note(entry, "uncertain", entry.get("diagnostic_reason", "uncertain_control"))
+                    continue
+                if entry.get("status") == "superseded":
+                    note(entry, "superseded", "newer_control_recorded")
+                    continue
+                if entry.get("status") not in {"active", "cancelled"} or not entry.get("instruction") or entry.get("slot") not in _PRIORITY:
+                    note(entry, "uncertain", "invalid_control_status_or_slot")
+                    continue
+                entry["priority"] = _PRIORITY[entry["slot"]]
                 candidates.append(entry)
-    # A local override beats a durable default; a cancellation tombstone suppresses
-    # its old same-slot default even when legacy duplicate versions are present.
-    candidates.sort(key=lambda entry: (
-        entry.get("lifetime") != "persistent",
-        sum(value is not None for value in (entry.get("scope") or {}).values()),
-        str(entry.get("occurred_at") or ""),
-    ), reverse=True)
-    selected, seen = [], set()
+    grouped = {}
     for entry in candidates:
-        identity = (entry["kernel"], entry.get("slot"), entry.get("item_key"))
-        if identity in seen:
-            continue
-        seen.add(identity)
-        if entry.get("status") not in {"active", "cancelled"} or not entry.get("instruction"):
-            continue
-        selected.append(entry)
-    no_code = any(entry.get("slot") == "code_participation" and entry.get("allow_code") is not True for entry in selected)
+        grouped.setdefault((entry["kernel"], entry["slot"], entry.get("item_key")), []).append(entry)
+    selected = []
+    for entries in grouped.values():
+        cancellations = [entry for entry in entries if entry.get("cancelled") or entry.get("status") == "cancelled"]
+        cutoff = max((_entry_order(entry) for entry in cancellations), default=None)
+        eligible = [entry for entry in entries if cutoff is None or _entry_order(entry) >= cutoff]
+        winner = max(eligible, key=lambda entry: (entry.get("lifetime") != "persistent", _entry_order(entry),
+                     sum(value is not None for value in entry["scope"].values())))
+        selected.append(winner)
+        for entry in entries:
+            if entry is not winner:
+                note(entry, "superseded", "newer_or_local_control_selected")
+    no_code = any(entry["slot"] == "code_participation" and entry.get("allow_code") is not True for entry in selected)
     if no_code:
-        selected = [entry for entry in selected if entry.get("slot") != "code_language"
-                    and not (entry.get("slot") == "representation" and entry.get("format") == "code")]
+        for entry in list(selected):
+            if entry["slot"] == "code_language" or (entry["slot"] == "representation" and entry.get("format") == "code"):
+                selected.remove(entry)
+                note(entry, "superseded", "current_code_participation_control")
     if item_key is None:
-        feedback = [entry for entry in selected if entry.get("slot") == "practice_feedback"]
-        if feedback:
-            latest = max(feedback, key=lambda entry: (entry["occurred_at"], str(entry.get("source_event_id") or "")))
-            selected = [entry for entry in selected if entry.get("slot") != "practice_feedback" or entry is latest]
-    selected.sort(key=lambda entry: (entry["priority"], entry.get("lifetime") != "persistent", entry["occurred_at"]), reverse=True)
-    return selected[:8]
+        feedback = [entry for entry in selected if entry["slot"] == "practice_feedback"]
+        latest = max(feedback, key=_entry_order) if feedback else None
+        for entry in feedback:
+            if entry is not latest:
+                selected.remove(entry)
+                note(entry, "superseded", "latest_practice_feedback_selected")
+    selected.sort(key=lambda entry: (entry["priority"], entry.get("lifetime") != "persistent", _entry_order(entry)), reverse=True)
+    for entry in selected[8:]:
+        note(entry, "superseded", "selection_limit")
+    selected = selected[:8]
+    for entry in selected:
+        note(entry, "cancelled" if entry.get("cancelled") or entry.get("status") == "cancelled" else "selected", "explicit_cancellation" if entry.get("cancelled") else "applicable_control")
+    return selected, diagnostics
+
+
+def select_teaching_guidance(states: dict, *, project_id=None, checkpoint_id=None,
+                             session_id=None, now=None, archived_paths=(), item_key=None) -> list[dict]:
+    """Read v1 as recorded and v2 under its explicit scope and lifetime policy."""
+    return _guidance_selection(states, project_id=project_id, checkpoint_id=checkpoint_id,
+        session_id=session_id, now=now, archived_paths=archived_paths, item_key=item_key)[0]
+
+
+def diagnose_teaching_guidance(states: dict, *, project_id=None, checkpoint_id=None,
+                               session_id=None, now=None, archived_paths=(), item_key=None,
+                               input_event=None) -> dict:
+    """Read-only bounded diagnostics. Never return Human instruction or raw text.
+
+    Like the selector, this consumes an ownership-checked learner projection. An
+    optional event must be from that same learner and the exact requested scope.
+    """
+    selected, diagnostics = _guidance_selection(states, project_id=project_id, checkpoint_id=checkpoint_id,
+        session_id=session_id, now=now, archived_paths=archived_paths, item_key=item_key)
+    # Preserve the current input's rejection reason before truncating historical
+    # diagnostics; another project's controls must not crowd it out.
+    prior_diagnostics, diagnostics = diagnostics, []
+    if input_event is not None:
+        requested = {"project_id": project_id, "checkpoint_id": checkpoint_id, "session_id": session_id}
+        if not _same_scope(_scope(input_event), requested):
+            diagnostics.append({"status": "scope_mismatch", "reason": "input_event_scope_mismatch"})
+        elif getattr(input_event, "event_type", None) in _USER_EVENTS:
+            payload = getattr(input_event, "payload", {}) or {}
+            at = _time(getattr(input_event, "occurred_at", None))
+            if at is not None and isinstance(payload, dict):
+                parsed = parse_text_controls(str(payload.get("text") or payload.get("content") or ""), at)
+                for entry in parsed["diagnostics"]:
+                    diagnostics.append({**entry, "source_event_id": getattr(input_event, "id", None), "policy_version": GUIDANCE_VERSION, "parser_version": PARSER_VERSION})
+                if not parsed["actions"] and not parsed["diagnostics"]:
+                    diagnostics.append({"status": "no_request", "reason": "no_supported_control", "source_event_id": getattr(input_event, "id", None), "policy_version": GUIDANCE_VERSION})
+    diagnostics.extend(prior_diagnostics)
+    if not diagnostics:
+        diagnostics.append({"status": "no_request", "reason": "no_control_projection"})
+    counts = {}
+    for entry in diagnostics:
+        counts[entry["status"]] = counts.get(entry["status"], 0) + 1
+    limit = CONTROL_POLICY_LIMITS["max_diagnostics"]
+    return {"policy_version": GUIDANCE_VERSION, "status": "selected" if selected else "uncertain" if counts.get("uncertain") else diagnostics[0]["status"],
+            "selected_event_ids": sorted({entry["source_event_id"] for entry in selected}),
+            "counts": counts, "diagnostics": diagnostics[:limit], "omitted": max(0, len(diagnostics) - limit)}

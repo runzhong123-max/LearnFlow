@@ -1,7 +1,11 @@
+import { backendIdentityFromHeaders, backendIdentityHeaders, verifyBackendApiIdentity } from './server/backend-identity.ts'
+import { Readable } from 'node:stream'
+import { pipeline } from 'node:stream/promises'
 import { explicitProjectGuidanceMode, hasProjectGuidanceConversation, projectGuidanceDirectRequest } from '../packages/learning-client/src/project-guidance/contract.ts'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'node:path'
+import { SITE_ORIGINS } from './src/site-auth.ts'
 import {
   buildProviderRequest,
   errorFromTutorProviderResponse,
@@ -266,6 +270,8 @@ function tutorProxy(mode: string, backendBase: string): Plugin {
         return
       }
       try {
+        const identity = backendIdentityFromHeaders(request.headers)
+        await verifyBackendApiIdentity(backendBase, identity, AbortSignal.timeout(5_000))
         const keyConfiguration = await resolveAccountKey(request)
         sendJson(response, 200, {
           configured: Boolean(keyConfiguration.apiKey),
@@ -295,6 +301,15 @@ function tutorProxy(mode: string, backendBase: string): Plugin {
     const origin = request.headers.origin
     if (origin && !allowedOrigins.has(origin)) {
       sendJson(response, 403, { error: '拒绝非本地页面请求' })
+      return
+    }
+
+    let identity
+    try {
+      identity = backendIdentityFromHeaders(request.headers)
+      await verifyBackendApiIdentity(backendBase, identity, AbortSignal.timeout(5_000))
+    } catch {
+      sendJson(response, 401, { error: 'API key 无效或已失效' })
       return
     }
 
@@ -482,7 +497,7 @@ function tutorProxy(mode: string, backendBase: string): Plugin {
         if (formalScope.checkpointId) params.set('checkpoint_id', String(formalScope.checkpointId))
         if (formalScope.sessionId) params.set('session_id', String(formalScope.sessionId))
         const result = await fetch(`${backendBase}/api/learner-state/context?${params}`, {
-          headers: request.headers.cookie ? { Cookie: request.headers.cookie } : {},
+          headers: backendIdentityHeaders(identity),
           signal: AbortSignal.timeout(4_000),
         })
         if (!result.ok) throw new Error('学习记忆暂时不可用')
@@ -498,7 +513,7 @@ function tutorProxy(mode: string, backendBase: string): Plugin {
         const projectResponse = await fetch(
           `${backendBase}/api/vnext-projects/${formalScope.projectId}/agent-context?${projectQuery}`,
           {
-            headers: request.headers.cookie ? { Cookie: request.headers.cookie } : {},
+            headers: backendIdentityHeaders(identity),
             signal: AbortSignal.timeout(5_000),
           },
         )
@@ -515,7 +530,7 @@ function tutorProxy(mode: string, backendBase: string): Plugin {
           const workspaceResponse = await fetch(
             `${backendBase}/api/learner-state/agent-workspace-context?${workspaceQuery}`,
             {
-              headers: request.headers.cookie ? { Cookie: request.headers.cookie } : {},
+              headers: backendIdentityHeaders(identity),
               signal: AbortSignal.timeout(4_000),
             },
           )
@@ -531,7 +546,7 @@ function tutorProxy(mode: string, backendBase: string): Plugin {
           source_ids: domainSourceIds.join(','),
         })
         const domainResponse = await fetch(`${backendBase}/api/knowledge-library/context?${domainQuery}`, {
-          headers: request.headers.cookie ? { Cookie: request.headers.cookie } : {},
+          headers: backendIdentityHeaders(identity),
           signal: AbortSignal.timeout(4_000),
         })
         if (domainResponse.ok) formalDomainKnowledgeContext = await domainResponse.json()
@@ -542,7 +557,7 @@ function tutorProxy(mode: string, backendBase: string): Plugin {
         try {
           const reviewQuery = new URLSearchParams({ query: latestMessage.slice(0, 1800), limit: '8' })
           const reviewResponse = await fetch(`${backendBase}/api/review/agent-context?${reviewQuery}`, {
-            headers: request.headers.cookie ? { Cookie: request.headers.cookie } : {},
+            headers: backendIdentityHeaders(identity),
             signal: AbortSignal.timeout(4_000),
           })
           if (reviewResponse.ok) formalReviewContext = await reviewResponse.json()
@@ -597,7 +612,7 @@ function tutorProxy(mode: string, backendBase: string): Plugin {
         formalReviewContext,
         formalProjectContext: formalProjectContext as any,
         backendBase,
-        requestCookie: typeof request.headers.cookie === 'string' ? request.headers.cookie : undefined,
+        ...identity,
         clientTurnId: typeof input.clientTurnId === 'string' ? input.clientTurnId.slice(0,160) : undefined,
         formalSessionId: formalScope.sessionId,
         conversationId: typeof input.conversationId === 'string' ? input.conversationId.slice(0, 160) : undefined,
@@ -684,8 +699,22 @@ function backendApiProxy(backendBase: string): Plugin {
       response.setHeader('Cache-Control', 'no-store')
       const setCookie = upstream.headers.get('set-cookie')
       if (setCookie) response.setHeader('Set-Cookie', setCookie)
-      response.end(await upstream.text())
+      const contentType = upstream.headers.get('content-type') || ''
+      if (upstream.body && /text\/event-stream|application\/x-ndjson/.test(contentType)) {
+        response.setHeader('Cache-Control', 'no-store, no-transform')
+        response.setHeader('X-Accel-Buffering', 'no')
+        response.flushHeaders?.()
+        await pipeline(Readable.fromWeb(upstream.body as any), response)
+      } else response.end(await upstream.text())
     } catch (error) {
+      if (response.headersSent || response.destroyed) {
+        if (!response.destroyed) response.end()
+        return
+      }
+      if (error instanceof Error && error.message === 'API key 无效') {
+        sendJson(response, 401, { detail: 'API key 无效' })
+        return
+      }
       sendJson(response, 503, {
         detail: error instanceof Error && error.name === 'TimeoutError'
           ? '正式后端请求超时'
@@ -711,7 +740,7 @@ export default defineConfig(({ mode }) => {
     strictPort: true,
   },
   preview: {
-    allowedHosts: ['learn.learnflow.club', 'learnflow.club'],
+    allowedHosts: SITE_ORIGINS.map(origin => new URL(origin).hostname),
   },
   }
 })

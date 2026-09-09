@@ -1,0 +1,8 @@
+{
+  "file": "education-analysis.json.gz",
+  "compression": "gzip; deterministic header; exact original JSON bytes",
+  "decompressed_sha256": "ef675da9b0187d35dfa7c24007b3c957f92dcdd1d2db8ff2ce0d3f6c360968a5",
+  "compressed_sha256": "c6b954646d652013670abec2c832178b592077ea0dac923e233d246766151a67",
+  "decompressed_bytes": 35883779,
+  "compressed_bytes": 497386
+}

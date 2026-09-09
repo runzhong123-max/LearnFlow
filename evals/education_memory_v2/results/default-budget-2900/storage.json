@@ -1,0 +1,52 @@
+{
+  "compression": "gzip; exact source bytes; education rows concatenated in education-00..03 shard order",
+  "descriptive_supplement": true,
+  "files": [
+    {
+      "file": "education-trials.jsonl.gz",
+      "decompressed_sha256": "ba99c9693d6dd949944aefbf7ec35ff661d9485f1f99992404558fa4a33abae6",
+      "compressed_sha256": "e334019f8353091a54a31d3594760b7318cc560ff4af7e72de7d0d38c001fdc5",
+      "decompressed_bytes": 7862988,
+      "compressed_bytes": 285472,
+      "source_files": {
+        "evals/education_memory_v2/runs/default-budget-2900/education-00/trials.jsonl": "cdfb99cccaafdb8902d811a16585ebd8fe0294ed4ad0f025a7fc8b441c414438",
+        "evals/education_memory_v2/runs/default-budget-2900/education-01/trials.jsonl": "8015b7dc88b2c3c4de1fc0ce3fc439bef2813703b4fd71231fa7c2e67bdb4593",
+        "evals/education_memory_v2/runs/default-budget-2900/education-02/trials.jsonl": "02d3781348e1f10bac9654342b642ad9c83d77ba4414945a887059858044ab48",
+        "evals/education_memory_v2/runs/default-budget-2900/education-03/trials.jsonl": "d101f9218e4935959a786e03af346509848f0d5000988f5df8eaaea988a28036"
+      }
+    },
+    {
+      "file": "education-formation.jsonl.gz",
+      "decompressed_sha256": "6703ecb6752fa3c0d3813539ee2876a7b06c9bb88b5dc9ba3b517eb1a4c49366",
+      "compressed_sha256": "6bf9a702b7e069290b3287b07e419c8c0cfe24ad6572f703dfc80e6683edec39",
+      "decompressed_bytes": 8943074,
+      "compressed_bytes": 466490,
+      "source_files": {
+        "evals/education_memory_v2/runs/default-budget-2900/education-00/formation.jsonl": "29230ee4f0cf5301bd3f6a4e49addca4e2630179679b9705f98eaa8b560f3e7d",
+        "evals/education_memory_v2/runs/default-budget-2900/education-01/formation.jsonl": "ec48913a69bd4ff7702fef87e41c79b14023a2c1991c372f26e6db2cfc5d2570",
+        "evals/education_memory_v2/runs/default-budget-2900/education-02/formation.jsonl": "47d8bfd1d0e493ac5b966c78ef3402c16dc0e1122e18186abbc086b37934c7c3",
+        "evals/education_memory_v2/runs/default-budget-2900/education-03/formation.jsonl": "92a1c0911f7eeb2353095f4426b727a9967e6abddecf982815b7ab25a3b8e277"
+      }
+    },
+    {
+      "file": "freshness-conditions.jsonl.gz",
+      "decompressed_sha256": "3b6ca62ae4648b5e9f2ede8b2bfdf2c73fac979f087192375d7111ad59d915aa",
+      "compressed_sha256": "2af308fd1ba143ad445801cf731615f2a963cbd8d32fcdae87ffc6f269e147af",
+      "decompressed_bytes": 2360089,
+      "compressed_bytes": 75752,
+      "source_files": {
+        "evals/education_memory_v2/runs/default-budget-2900/freshness/conditions.jsonl": "3b6ca62ae4648b5e9f2ede8b2bfdf2c73fac979f087192375d7111ad59d915aa"
+      }
+    },
+    {
+      "file": "freshness-issues.jsonl.gz",
+      "decompressed_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "decompressed_bytes": 0,
+      "compressed_bytes": 20,
+      "source_files": {
+        "evals/education_memory_v2/runs/default-budget-2900/freshness/issues.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ]
+}
