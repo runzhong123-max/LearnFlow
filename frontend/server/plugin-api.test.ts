@@ -197,9 +197,15 @@ test('a plugin handler cannot hold the Tutor turn beyond the host signal', async
   const plugin = fixturePlugin({ defaultEnabled: true })
   plugin.handlers.read_graph = async () => new Promise(() => undefined)
   const registry = new LearnFlowPluginRegistry([plugin])
-  await assert.rejects(() => registry.execute('fixture_graph__read_graph', { query: 'x' }, {
-    mode: 'free', scope: { mode: 'free' }, signal: AbortSignal.timeout(10),
-  }), /plugin_tool_timeout/)
+  const controller = new AbortController()
+  const deadline = setTimeout(() => controller.abort(), 10)
+  try {
+    await assert.rejects(() => registry.execute('fixture_graph__read_graph', { query: 'x' }, {
+      mode: 'free', scope: { mode: 'free' }, signal: controller.signal,
+    }), /plugin_tool_timeout/)
+  } finally {
+    clearTimeout(deadline)
+  }
 })
 
 test('duplicate plugin ids and cross-plugin object forgery are rejected', async () => {
