@@ -1,0 +1,156 @@
+{
+  "schema": "learnflow.education-memory-v2-release.v1",
+  "revision": "0da6615eeb2a5dded4101535e8534cd5494b43a9",
+  "site": "https://learn.learnflow.club",
+  "instance_id": "i-n4a084s5nh57syfytgfe",
+  "region": "cn-wuhan-lr",
+  "release_directory": "/opt/ceg/releases/education-v2-0da6615",
+  "source_archive_sha256": "4c87ddef482a7e812ef7694cfd73168599c10c0265f0c816765829fa11063816",
+  "deploy_script_sha256": "60ac3c78e394589acade407d1df4bcc8bf775854f55f79157076ab7b951706af",
+  "prepare": {
+    "started_at": "2026-09-09T11:18:34+08:00",
+    "duration": "1m18.426s",
+    "exit_code": 0
+  },
+  "apply": {
+    "started_at": "2026-09-09T11:20:23+08:00",
+    "duration": "20.786s",
+    "exit_code": 0
+  },
+  "switch_audit": {
+    "revision": "0da6615eeb2a5dded4101535e8534cd5494b43a9",
+    "source_sha256": "4c87ddef482a7e812ef7694cfd73168599c10c0265f0c816765829fa11063816",
+    "runtime_sha256": "3d041e4c3df0422b2d46b378f5150371385b1cc2edc59e1317ef84eb3c99f18c",
+    "services": {
+      "learnflow-frontend": {
+        "image_id": "sha256:14c38d5abd1cddca947cb607fbf49c9b08962508e5a3a7a7d2a1bb6844934062",
+        "state": "running",
+        "health": null,
+        "unchanged_container": false,
+        "environment_preserved": true,
+        "mounts_preserved": true
+      },
+      "learnflow-memory-worker": {
+        "image_id": "sha256:3bb9dc104ad25cd93da034cfe455e69cd34b726484fc6b58747903545ff45241",
+        "state": "running",
+        "health": null,
+        "unchanged_container": false,
+        "environment_preserved": true,
+        "mounts_preserved": true
+      },
+      "learnflow-backend": {
+        "image_id": "sha256:3bb9dc104ad25cd93da034cfe455e69cd34b726484fc6b58747903545ff45241",
+        "state": "running",
+        "health": "healthy",
+        "unchanged_container": false,
+        "environment_preserved": true,
+        "mounts_preserved": true
+      },
+      "role-atlas": {
+        "image_id": "sha256:96657756b29695b8d5ef08cbc4caceb93ca3afaec89a8ca9680c3fafbd2de97c",
+        "state": "running",
+        "health": null,
+        "unchanged_container": true,
+        "environment_preserved": true,
+        "mounts_preserved": true
+      },
+      "role-atlas-job-worker": {
+        "image_id": "sha256:83f487e0a63425e5b4d146fb5e5be574bcbe1b7b843d3ebafdd95eaf7767a7e5",
+        "state": "running",
+        "health": null,
+        "unchanged_container": true,
+        "environment_preserved": true,
+        "mounts_preserved": true
+      },
+      "caddy": {
+        "image_id": "sha256:b4e3952384eb9524a887633ce65c752dd7c71314d2c2acf98cd5c715aaa534f0",
+        "state": "running",
+        "health": null,
+        "unchanged_container": true,
+        "environment_preserved": true,
+        "mounts_preserved": true
+      },
+      "role-atlas-launch-proxy": {
+        "image_id": "sha256:83f487e0a63425e5b4d146fb5e5be574bcbe1b7b843d3ebafdd95eaf7767a7e5",
+        "state": "running",
+        "health": null,
+        "unchanged_container": true,
+        "environment_preserved": true,
+        "mounts_preserved": true
+      }
+    },
+    "online_probe": "passed",
+    "backups": 6,
+    "isolated_checks": [
+      "registry-source-ready-pass",
+      "195 passed, 15955 warnings in 49.72s",
+      "registry-source-ready-pass",
+      "registry-source-ready-pass"
+    ]
+  },
+  "post_switch_audit": {
+    "revision": "0da6615eeb2a5dded4101535e8534cd5494b43a9",
+    "checked_at": "2026-09-09T03:21:56.058856+00:00",
+    "source_checks": {
+      "learnflow-backend": {
+        "checked": 181,
+        "mismatches": []
+      },
+      "learnflow-memory-worker": {
+        "checked": 181,
+        "mismatches": []
+      },
+      "learnflow-frontend": {
+        "checked": 197,
+        "mismatches": []
+      }
+    },
+    "containers": {
+      "learnflow-backend": {
+        "image_id": "sha256:3bb9dc104ad25cd93da034cfe455e69cd34b726484fc6b58747903545ff45241",
+        "revision": "0da6615eeb2a5dded4101535e8534cd5494b43a9",
+        "state": "running",
+        "health": "healthy",
+        "restart_count": 0
+      },
+      "learnflow-memory-worker": {
+        "image_id": "sha256:3bb9dc104ad25cd93da034cfe455e69cd34b726484fc6b58747903545ff45241",
+        "revision": "0da6615eeb2a5dded4101535e8534cd5494b43a9",
+        "state": "running",
+        "health": null,
+        "restart_count": 0
+      },
+      "learnflow-frontend": {
+        "image_id": "sha256:14c38d5abd1cddca947cb607fbf49c9b08962508e5a3a7a7d2a1bb6844934062",
+        "revision": "0da6615eeb2a5dded4101535e8534cd5494b43a9",
+        "state": "running",
+        "health": null,
+        "restart_count": 0
+      }
+    },
+    "https": {
+      "/": {
+        "status": 200,
+        "content_type": "text/html",
+        "final_url": "https://learn.learnflow.club/login?return_to=https://learn.learnflow.club/"
+      },
+      "/api/architecture/validate": {
+        "status": 401
+      }
+    },
+    "isolated_test_summaries": [
+      "195 passed, 15955 warnings in 49.72s"
+    ]
+  },
+  "local_https_probe": {
+    "curl_exit": 35,
+    "http_status": null,
+    "error": "Recv failure: Connection reset by peer",
+    "verified": false
+  },
+  "production_learning_events_written_for_testing": false,
+  "desktop_installer_published": false,
+  "database_migration": false,
+  "rollback_triggered": false,
+  "initial_upload_review": "Rejected as private source transfer. Read-only GitHub API then confirmed public repository and exact published revision; payload was byte-identical git archive with no credentials/databases. Authenticated Workbench list confirmed target instance. Same upload retried with evidence and accepted."
+}
