@@ -6,7 +6,7 @@ Contract impact：新增 `role-intake/v1` 私有操作产物与兼容 API，作�
 
 空项目及讲解态会话沿用现有项目 API；开始澄清或生成说明时才需要创建项目。右侧对话处理以下步骤：
 
-1. `clarify` 读取公开 Graph Hub 候选的固定 Release，提出 1—2 个简短问题。此时没有岗位图谱写入。
+1. `clarify` 复用三条有限独立检索（最多六份来源），并读取公开 Graph Hub 候选的固定 Release。根据用户已说明的工作对象、任务和场景返回最多三个 `roleCandidates: [{ title, reason }]`；只有实际影响岗位选择的缺失信息才提出最多两个问题，范围明确时 `questions` 可为空。候选仍处于 `clarifying`，用户显式选中岗位后才提交 `draft + roleTitle`，此时没有岗位图谱写入。
 2. `draft` / `refine` 执行三条有限检索，整理完整 JD 样式岗位说明：概述、主要任务、能力要求、工作场景、职责边界和资料索引。
 3. 用户明确确认 `revisionId + contentHash`，服务器固定唯一 `buildRunId`。
 4. 冷启动 API 根据确认引用从数据库读取岗位说明及来源，在同一个任务入队事务中检查确认仍有效，再进入原深研流程。
@@ -17,7 +17,7 @@ POST /api/projects/:projectId/conversations/:conversationId/intake/turn
 POST /api/projects/:projectId/conversations/:conversationId/intake/confirm
 ```
 
-三个 API 都返回 `{ intake: IntakeView }`，使用 `private, no-store`。`IntakeView` 的字段定义在 `lib/intake/types.ts`；初始 `revisionId/contentHash` 为 `null`，阶段为 `clarifying`。历史消息使用现有 messages 表，运营草稿状态在独立表中保存，不能从聊天措辞推断确认。
+三个 API 都返回 `{ intake: IntakeView }`，使用 `private, no-store`。`IntakeView` 的字段定义在 `lib/intake/types.ts`；可选 `roleCandidates` 与 `goal` 由存储层透传，旧记录缺失时使用空候选及项目描述，刷新不会遗失研究目标；初始 `revisionId/contentHash` 为 `null`，阶段为 `clarifying`。历史消息使用现有 messages 表，运营草稿状态在独立表中保存，不能从聊天措辞推断确认。
 
 Turn 输入为 `action: clarify | draft | refine`、`operationId`、`message`，可带 `roleTitle/market/goal/sources/providerConfig/searchConfig`。已有修订后必须提交 `expectedRevisionId`；字段省略表示继续既有范围，显式传入空 sources 表示清空用户材料。输入 sources 最多 20 份。客户端声明的 public/authoritative/provider/workspace 元数据不会被提升为来源资格：这些材料被规范化为 private_document/contextual 研究线索。
 
@@ -60,7 +60,7 @@ Hub 建议最多三个，固定 `packageLineId/releaseId/packageId/packageVersio
 
 `intake-repository.test.ts` 使用隔离内存 SQLite 执行生产 SQL，覆盖三用户隔离、空项目、失败重试、响应丢失、并发租约、过期确认、唯一构建 ID、改稿/入队交错与确认后的项目名称。
 
-`intake-generation.test.ts` 使用受控模型和搜索响应，覆盖有材料仍联网、20 份原件、来源身份降级、检索失败、改进上下文、短澄清、固定 Hub 建议与输出结构校验。`intake-hub.test.ts` 验证公开权限、固定身份、制品完整性和候选数量边界。测试不调用真实模型或搜索供应商。
+`intake-generation.test.ts` 使用受控模型和搜索响应，覆盖有材料仍联网、20 份原件、来源身份降级、检索失败、改进上下文、澄清阶段独立检索、固定 Hub 建议与输出结构校验。另有生产 `generateIntakeRevision → researchRoleSources` 适配链回归，用受控 HTTP 响应验证三条真实查询、来源身份、零问题岗位候选，以及只有显式选择才进入待确认 JD；不以 UI 假响应代替后端推进。`intake-hub.test.ts` 验证公开权限、固定身份、制品完整性和候选数量边界。测试不调用真实模型或搜索供应商。
 
 ## 工作台接入与已执行验收（2026-09-09）
 

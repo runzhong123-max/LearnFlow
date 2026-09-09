@@ -32,3 +32,21 @@ export const eligibleAutomaticMount = `p.deleted_at IS NULL AND p.owner_subject_
 export const supersedeAutomaticMounts = `UPDATE role_learning_mounts SET status='superseded',updated_at=? WHERE status IN ('queued','retry') AND conversation_id IS NOT NULL
   AND EXISTS(SELECT 1 FROM conversations c JOIN role_learning_mounts next ON next.project_version_id=c.version_id AND next.conversation_id=c.id
     WHERE c.id=role_learning_mounts.conversation_id AND c.project_id=role_learning_mounts.project_id AND next.owner_subject_id=role_learning_mounts.owner_subject_id AND next.rowid>role_learning_mounts.rowid)`;
+
+export const automaticRepairSchema = `CREATE TABLE IF NOT EXISTS role_learning_repairs (
+  origin_mount_id TEXT PRIMARY KEY REFERENCES role_learning_mounts(id) ON DELETE CASCADE,
+  job_id TEXT NOT NULL UNIQUE, source_job_id TEXT,
+  status TEXT NOT NULL DEFAULT 'pending', attempt INTEGER NOT NULL DEFAULT 0,
+  lease_owner TEXT, lease_expires_at TEXT, error TEXT,
+  created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+)`;
+
+/** A repair's own resulting versions mount normally, but can never start a second repair. */
+export const eligibleAutomaticRepair = `m.status IN ('partial','needs_research') AND m.result_json IS NOT NULL
+  AND (json_extract(CASE WHEN json_valid(m.result_json) THEN m.result_json ELSE '{}' END,'$.reason')='no_learning_points'
+    OR EXISTS(SELECT 1 FROM json_each(CASE WHEN json_valid(m.result_json) THEN m.result_json ELSE '{}' END,'$.unresolved') gap
+      WHERE json_extract(CASE WHEN gap.type='object' THEN gap.value ELSE '{}' END,'$.reason') IN ('needs_definition','needs_decomposition','needs_evidence')))
+  AND p.owner_subject_id=m.owner_subject_id AND p.deleted_at IS NULL
+  AND c.id=m.conversation_id AND c.project_id=m.project_id AND c.version_id=m.project_version_id AND c.mode='iteration'
+  AND NOT EXISTS(SELECT 1 FROM role_learning_repairs ancestor WHERE ancestor.job_id=m.source_run_id)
+  AND NOT EXISTS(SELECT 1 FROM role_jobs active WHERE active.conversation_id=c.id AND active.status IN ('queued','running','waiting_user'))`;

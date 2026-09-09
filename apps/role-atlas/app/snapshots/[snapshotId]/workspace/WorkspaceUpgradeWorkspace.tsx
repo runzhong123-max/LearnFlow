@@ -230,7 +230,7 @@ export default function WorkspaceUpgradeWorkspace({ snapshotId, projectId, versi
             maxObservations: 16,
             redactPersonalData: true,
           },
-          iteration: { prompt: prompt.trim(), webResearch, maxRounds: 1, sourceLimit: 8, maxWorkItems: 10 },
+          iteration: { prompt: prompt.trim(), webResearch, maxRounds: 4, sourceLimit: 20, maxWorkItems: 16 },
           providerConfig,
           searchConfig,
         }),

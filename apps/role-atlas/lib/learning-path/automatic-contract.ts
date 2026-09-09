@@ -20,6 +20,7 @@ export type AutomaticMountRecord = {
   id: string; projectVersionId: string; snapshotId: string;
   status: "queued" | "running" | "retry" | "completed" | "partial" | "needs_research" | "failed" | "superseded";
   result?: AutomaticMountResult; error?: string; attempt: number;
+  repair?: { jobId: string; status: string; error?: string };
 };
 
 export const mountReason = (reason?: string) => ({
@@ -34,4 +35,9 @@ export const mountReason = (reason?: string) => ({
 export function learningMountFeedback(record: AutomaticMountRecord | null) {
   return record?.result?.unresolved.map(point => ({ roleNodeId: point.roleNodeId, reason: point.reason,
     researchGoal: mountReason(point.reason), candidates: point.candidates || [] })) || [];
+}
+
+
+export function needsAutomaticResearch(result?: AutomaticMountResult) {
+  return result?.reason === "no_learning_points" || Boolean(result?.unresolved.some(point => ["needs_definition","needs_decomposition","needs_evidence"].includes(point.reason)));
 }

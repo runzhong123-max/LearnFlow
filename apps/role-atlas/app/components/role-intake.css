@@ -21,3 +21,5 @@
 .snapshot-research-details { margin: 8px 16px; padding: 10px 14px; border: 1px solid #dbe2d9; border-radius: 9px; color: #65786b; font-size: 12px; line-height: 1.6; }
 .snapshot-research-details summary { cursor: pointer; }
 .role-intake button:disabled { opacity: .5; cursor: default; }
+.intake-role-candidate { display:grid; gap:6px; width:100%; padding:12px; text-align:left; border:1px solid var(--line); border-radius:10px; background:var(--panel); color:var(--text); }
+.intake-role-candidate span { display:flex; gap:4px; align-items:center; font-size:12px; color:var(--accent); }

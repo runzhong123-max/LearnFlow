@@ -37,6 +37,36 @@ function signature(node: Pick<SemanticNode, "summary" | "learningDefinition">) {
     assessmentCriteria: node.learningDefinition!.assessmentCriteria.map(normalize).sort() });
 }
 
+const hashLengths = [24, 32, 40, 48, 56, 64] as const;
+const stableCompare = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0;
+const pointHash = (kind: string, label: string, definition: Pick<SemanticNode, "summary" | "learningDefinition">) =>
+  sha256Hex(`${kind}:${lexical(label)}:${signature(definition)}`);
+function contentAddressedPoint(id: string, hash: string): boolean {
+  return hashLengths.some(length => id === `point:${hash.slice(0, length)}`)
+    || id.startsWith(`point:${hash}:`) && /^[1-9][0-9]*$/u.test(id.slice(`point:${hash}:`.length));
+}
+async function automaticCanonical(equivalents: PathNodeV2[], existing: PathNodeV2[], namespace: string): Promise<PathNodeV2 | undefined> {
+  const ranked = await Promise.all(equivalents.map(async node => ({ node,
+    rank: existing.includes(node) && node.namespace === namespace
+      && contentAddressedPoint(node.id, await pointHash(node.kind, node.title, { summary: node.summary, learningDefinition: node.atomic }))
+      ? 0 : node.ownership.catalog === "official" ? 1 : 2,
+  })));
+  return ranked.sort((a, b) => a.rank - b.rank || stableCompare(a.node.namespace, b.node.namespace) || stableCompare(a.node.id, b.node.id))[0]?.node;
+}
+function availablePointId(hash: string, occupied: Set<string>, automatic: boolean): string | undefined {
+  for (const length of automatic ? hashLengths : [24]) {
+    const id = `point:${hash.slice(0, length)}`;
+    if (!occupied.has(id)) return id;
+  }
+  if (!automatic) return undefined;
+  // Even deliberately occupied full digests must not overwrite another statement.
+  // Distinct numeric suffixes guarantee an available ID after finitely many occupied keys.
+  for (let suffix = 1; ; suffix++) {
+    const id = `point:${hash}:${suffix}`;
+    if (!occupied.has(id)) return id;
+  }
+}
+
 /** The caller must first verify bundle hashes and actor visibility. IDs come only from that bundle. */
 export function packageLearningSource(result: ColdStartBuildResult, packageRef: RolePackageRef): RoleAlignmentSource {
   const sources = new Set(result.sources.assets.map(s => s.id));
@@ -98,12 +128,13 @@ export async function resolveRoleLearningPoints(input: {
     const compatible = [...graph.nodes, ...newNodes].filter(n => n.kind === point.learningKind && n.atomic);
     const sameName = compatible.filter(n => [n.title, ...n.aliases].some(name => [point.label, ...point.aliases].some(label => lexical(name) === lexical(label))));
     const equivalents = sameName.filter(n => signature({ summary: n.summary, learningDefinition: n.atomic }) === signature(point));
-    if (equivalents.length > 1 || sameName.length && !equivalents.length && !input.allowStandaloneRoots) { fail("ambiguous_definition", sameName.slice(0, 4).map(nodeRef)); continue; }
-    let canonical = equivalents[0];
+    if (!input.allowStandaloneRoots && (equivalents.length > 1 || sameName.length && !equivalents.length)) { fail("ambiguous_definition", sameName.slice(0, 4).map(nodeRef)); continue; }
+    let canonical = input.allowStandaloneRoots ? await automaticCanonical(equivalents, graph.nodes, input.namespace) : equivalents[0];
     let pending = canonical ? newNodes.includes(canonical) : false;
     if (!canonical) {
-      const id = `point:${(await sha256Hex(`${point.learningKind}:${lexical(point.label)}:${signature(point)}`)).slice(0, 24)}`;
-      if (graph.nodes.some(n => n.namespace === input.namespace && n.id === id)) { fail("ambiguous_definition"); continue; }
+      const occupied = new Set([...graph.nodes, ...newNodes].filter(n => n.namespace === input.namespace).map(n => n.id));
+      const id = availablePointId(await pointHash(point.learningKind, point.label, point), occupied, Boolean(input.allowStandaloneRoots));
+      if (!id) { fail("ambiguous_definition"); continue; }
       const best = anchors[0];
       let parent = best && best.score >= 0.65 && (!anchors[1] || best.score - anchors[1].score >= 0.12) ? best.n : undefined;
       if (!parent && !input.allowStandaloneRoots) { fail("needs_anchor"); continue; }

@@ -155,3 +155,8 @@ async function queueCompletedBuildFollowups() {
     }
   }
 }
+
+/** Only the verified mount worker calls this; caller-supplied credentials are not accepted. */
+export async function enqueueLearningMountResearch(mountId: string) {
+  return (await import("@/lib/learning-path/automatic-research")).enqueueLearningMountResearch(mountId);
+}

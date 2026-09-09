@@ -134,6 +134,7 @@ export async function POST(request: Request) {
   }
   const execution = startRoleJobExecution(parsed.build.runId, jobOwner);
   const commitExecution = { jobId: parsed.build.runId, jobOwner };
+  let savedPartial: { snapshotId: string; candidateSnapshotId: string; projectVersionId: string; partial: true } | undefined;
   const model = createRecordedModelInvoker(providerConfig,{projectId:parsed.build.projectId,runId:parsed.build.runId});
   const modelLabel = `${providerConfig.provider}/${providerConfig.model}`;
   const graph = createColdStartSkill(model, {
@@ -163,6 +164,7 @@ export async function POST(request: Request) {
           await assertRoleJobLease(parsed.build.runId, jobOwner);
           const committed = await completeEnrichmentBuildSnapshot(result, parsed.conversationId, "semantic", { ...commitExecution, parentVersionId });
           parentVersionId = committed.id;
+          savedPartial = { snapshotId: result.snapshot.id, candidateSnapshotId: result.snapshot.id, projectVersionId: committed.id, partial: true };
         });
         return;
       }
@@ -173,8 +175,11 @@ export async function POST(request: Request) {
           await assertRoleJobLease(parsed.build.runId, jobOwner);
           const committed = await completeEnrichmentBuildSnapshot(result, parsed.conversationId, "full", { ...commitExecution, parentVersionId });
           parentVersionId = committed.id;
+          savedPartial = { snapshotId: result.snapshot.id, candidateSnapshotId: result.snapshot.id, projectVersionId: committed.id, partial: true };
           await completeBuildStageRun(parsed.build.runId, parsed.build.projectId, result);
         });
+        let finalCandidate = result;
+        let finalProjectVersionId = parentVersionId;
         try {
           let deepResult: Awaited<ReturnType<typeof runAutomaticSnapshotIteration>> | undefined;
           if (searchConfig) {
@@ -196,6 +201,8 @@ export async function POST(request: Request) {
                 modelLabel,
                 searchConfig,
               });
+              finalCandidate = deepResult.candidate;
+              finalProjectVersionId = deepResult.projectVersionId || finalProjectVersionId;
               journal.publish({ ...event, seq: event.seq + 2, time: new Date().toISOString(), kind: "build.followup.deep_research.completed", profile: "system", payload: { result: deepResult, snapshotId: deepResult.candidateSnapshotId || deepResult.candidate.snapshot.id } });
             } catch (deepError) {
               journal.publish({ ...event, seq: event.seq + 2, time: new Date().toISOString(), kind: "build.followup.deep_research.skipped", profile: "system", payload: { message: deepError instanceof Error ? deepError.message : "重要问题深研失败", baseSnapshotId: result.snapshot.id } });
@@ -223,9 +230,11 @@ export async function POST(request: Request) {
             searchConfig,
           });
           const finalSnapshotId = repairResult.candidateSnapshotId || repairResult.candidate.snapshot.id;
+          finalCandidate = repairResult.candidate;
+          finalProjectVersionId = repairResult.projectVersionId || finalProjectVersionId;
           const quality = snapshotQualitySummary(repairResult.candidate);
           await journal.commit({ ...event, seq: event.seq + 4, time: new Date().toISOString(), kind: "build.followup.risk_repair.completed", profile: "system", payload: { result: repairResult, snapshotId: finalSnapshotId, quality, deepResearchStatus: deepResult ? deepResult.status : "skipped" } }, async () => {
-            await completeRoleJob({ jobId: parsed.build.runId, owner: jobOwner, phase: deepResult && !quality.needsResearch ? "followup.completed" : "followup.degraded", result: { snapshotId: finalSnapshotId, candidateSnapshotId: finalSnapshotId, quality, projectVersionId: repairResult.projectVersionId, ...await projectVersionHeadState(parsed.build.projectId, repairResult.projectVersionId || ""), deepResearchRunId: deepResult?.runId, riskRepairRunId: repairResult.runId } });
+            await completeRoleJob({ jobId: parsed.build.runId, owner: jobOwner, phase: deepResult && !quality.needsResearch ? "followup.completed" : "followup.degraded", result: { snapshotId: finalSnapshotId, candidateSnapshotId: finalSnapshotId, quality, projectVersionId: finalProjectVersionId, ...await projectVersionHeadState(parsed.build.projectId, finalProjectVersionId || ""), deepResearchRunId: deepResult?.runId, riskRepairRunId: repairResult.runId } });
           });
         } catch (followupError) {
           await journal.commit({
@@ -235,7 +244,7 @@ export async function POST(request: Request) {
             kind: "build.followup.failed",
             profile: "system",
             payload: { message: followupError instanceof Error ? followupError.message : "自动深研或风险修复失败", coldStartSnapshotId: result.snapshot.id },
-          }, () => completeRoleJob({ jobId: parsed.build.runId, owner: jobOwner, phase: "followup.degraded", result: { snapshotId: result.snapshot.id, quality: snapshotQualitySummary(result), followupError: followupError instanceof Error ? followupError.message : "自动深研或风险修复失败" } }));
+          }, async () => completeRoleJob({ jobId: parsed.build.runId, owner: jobOwner, phase: "followup.degraded", result: { snapshotId: finalCandidate.snapshot.id, candidateSnapshotId: finalCandidate.snapshot.id, projectVersionId: finalProjectVersionId, ...await projectVersionHeadState(parsed.build.projectId, finalProjectVersionId || ""), quality: snapshotQualitySummary(finalCandidate), followupError: followupError instanceof Error ? followupError.message : "自动深研或风险修复失败" } }));
         }
         return;
       }
@@ -244,7 +253,7 @@ export async function POST(request: Request) {
     onFailure: async (error, journal) => {
       const event = failureEvent(parsed.build, error);
       await journal.commit(event, () => failBuildRun(parsed.build.runId, parsed.build.projectId, String(event.payload.message || "后台增量失败"), false)).catch(() => undefined);
-      await failRoleJob({ jobId: parsed.build.runId, owner: jobOwner, error: String(event.payload.message || "后台增量失败"), retryable: true }).catch(() => undefined);
+      await failRoleJob({ jobId: parsed.build.runId, owner: jobOwner, error: String(event.payload.message || "后台增量失败"), retryable: true, result: savedPartial }).catch(() => undefined);
     },
     onFinally: execution.stop,
     keepAlive: execution.keepAlive,

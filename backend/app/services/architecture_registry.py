@@ -163,7 +163,7 @@ DATA_CONTRACTS = {
         "authority_path": "backend/app/services/role_learning_automatic.py",
         "binding_ids": ["py:curriculum.automatic", "api:ecosystem.automatic"],
         "kernel_reads": [], "kernel_write_path": "none",
-        "compatibility": "additive central-only reverse signed API and replay table; explicit manual commit remains; production-start authorization permits bounded CAS source commits with zero mastery targets; desktop connects through central account",
+        "compatibility": "additive central-only reverse signed API and replay table; explicit manual commit remains; production-start authorization permits bounded CAS source commits and at most one original-actor research follow-up (2 rounds, 12 sources, 8 work items) under the same owner/conversation/version fence; zero mastery targets; desktop connects through central account",
     },
     "learning_path_source_v2": {
         "schema_version": "learnflow-learning-path/v2",

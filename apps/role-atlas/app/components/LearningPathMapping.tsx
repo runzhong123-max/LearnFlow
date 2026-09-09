@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ColdStartBuildResult } from "@/lib/build/types";
 import { LearningReleaseRequired, learningMountUrl, learningPointPreview, readLearningMountPackage } from "@/lib/learning-path/presentation";
 import "./learning-path-mapping.css";
-import { mountReason, type AutomaticMountRecord } from "@/lib/learning-path/automatic-contract";
+import { mountReason, needsAutomaticResearch, type AutomaticMountRecord } from "@/lib/learning-path/automatic-contract";
 
 export default function LearningPathMapping({ result, projectId, projectVersionId, selectedNodeId, onPreparePackage, learnFlowBaseUrl }: {
   result: ColdStartBuildResult;
@@ -34,7 +34,7 @@ export default function LearningPathMapping({ result, projectId, projectVersionI
         if (controller.signal.aborted) return;
         if (payload.mount && payload.mount.snapshotId !== result.snapshot.id) throw new Error("正在展示运行预览，正式挂载对应已保存版本。");
         setMount(payload.mount); setMountError("");
-        if (payload.mount && ["queued", "running", "retry"].includes(payload.mount.status)) timer = setTimeout(() => void read(), 4000);
+        if (payload.mount && (["queued", "running", "retry"].includes(payload.mount.status) || (needsAutomaticResearch(payload.mount.result) && !payload.mount.repair) || ["pending", "preparing", "queued"].includes(payload.mount.repair?.status || ""))) timer = setTimeout(() => void read(), 4000);
       } catch (cause) {
         if (!controller.signal.aborted) { setMountError(cause instanceof Error ? cause.message : "挂载状态读取失败。"); timer = setTimeout(() => void read(), 8000); }
       }
@@ -72,6 +72,7 @@ export default function LearningPathMapping({ result, projectId, projectVersionI
     {mount && ["queued", "running", "retry"].includes(mount.status) && <p role="status">{mount.status === "retry" ? "服务暂不可用，后台将继续重试。" : "后台正在核对并保存学习路径，关闭页面后仍会继续。"}</p>}
     {mount?.result && <p role="status">复用已有节点 {mount.result.points.filter(point => point.status === "existing").length} 个 · 新增知识技能节点 {mount.result.points.filter(point => point.status === "created").length} 个 · 待补全 {mount.result.unresolved.length} 个</p>}
     {mount?.result?.reason && <p role="status">{mountReason(mount.result.reason)}</p>}
+    {mount?.repair && <p role="status">{["pending", "preparing", "queued"].includes(mount.repair.status) ? "正在原对话中自动补研知识技能缺口；完成后会再核对新版本的挂载。" : mount.repair.status === "completed" ? "自动补研已完成，请查看本对话最新版本及其挂载结果。" : mount.repair.error || "本轮自动补研已停止，尚未解决的缺口已保留。"}</p>}
     {mount?.status === "superseded" && <p>本轮后续研究已保存更新版本，自动挂载使用该对话的最终版本。</p>}
     {mount?.error && <p role="alert">{mount.error}</p>}
     {mountError && <p role="alert">{mountError}</p>}

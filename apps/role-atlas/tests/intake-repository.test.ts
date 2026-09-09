@@ -235,7 +235,10 @@ test("clarification results cannot be confirmed or substituted across same-owner
   const h = await harness();
   try {
     const begun = await h.repository.begin(alice, turn({ action: "clarify" })); assert.ok("claim" in begun);
-    const view = await h.repository.complete(alice, begun.claim, content({ phase: "clarifying", questions: ["更偏研发还是运维？"] }));
+    const view = await h.repository.complete(alice, begun.claim, content({ phase: "clarifying", goal: "只研究云平台故障处置", questions: [], roleCandidates: [{ title: "云运维工程师", reason: "工作对象与日常告警处置相符" }] }));
+    const restored = await h.repository.get(alice);
+    assert.deepEqual(restored.roleCandidates, view.roleCandidates); assert.equal(restored.roleCandidates?.[0].title, "云运维工程师");
+    assert.equal(restored.goal, "只研究云平台故障处置"); assert.deepEqual(restored.questions, []);
     const ref = { revisionId: view.revisionId!, contentHash: view.contentHash!, operationId: "confirm-one" };
     await assert.rejects(h.repository.confirm(alice, ref), { code: "INTAKE_NOT_REVIEWABLE" });
     await assert.rejects(h.repository.confirm({ ...alice, conversationId: "chat-a2" }, ref), { code: "INTAKE_NOT_FOUND" });

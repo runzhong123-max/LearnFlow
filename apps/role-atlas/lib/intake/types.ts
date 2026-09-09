@@ -11,9 +11,12 @@ export type IntakeView = {
   contentHash: string | null;
   roleTitle: string;
   market: string;
+  goal?: string;
   description: string;
   assistantMessage: string;
   questions: string[];
+  /** Suggestions require an explicit user selection before a JD draft is generated. */
+  roleCandidates?: Array<{ title: string; reason: string }>;
   sources: SourceInput[];
   hubMatches: IntakeHubMatch[];
   history: IntakeHistoryItem[];

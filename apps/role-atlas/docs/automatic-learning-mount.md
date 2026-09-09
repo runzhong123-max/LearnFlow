@@ -18,7 +18,11 @@ UI 通过 owner-scoped `/api/projects/:projectId/learning-mounts?versionId=...` 
 
 `readAutomaticMountResearchFeedback(projectId,versionId)` 返回原 roleNodeId、reason、researchGoal 与候选，用于定向补全。needs_definition / needs_evidence / needs_decomposition 不算正式成功，不能通过伪造定义或来源消除。最终挂载不能反向宣称岗位研究质量全通过。
 
-相同类型、名称/别名与显式 scopeNote + assessmentCriteria 复用节点；纯摘要更新不重复建点。定义变化是不同点，历史节点与学习记录保留。找不到可靠容器时建立本人 graph_extension 命名空间下的岗位学习域，通过 standaloneRoots 明确声明并连接新原子点；不强行等价或虚构官方归属。
+可研究的三类缺口或 no_learning_points 会由原 worker 在同一 owner、conversation 和精确 version 上最多接续一个研究任务，预算 maxRounds=2、sourceLimit=12、maxWorkItems=8。持久 role_learning_repairs 保存稳定子任务 ID；无活动任务、对话仍处迭代态且仍固定该版本时才能原子入队。中断准备可租约恢复，最多三次准备尝试；真正研究仍只有一个子任务。子任务产出的新版本再次正式挂载，但通过 source_run_id 血缘阻止继续生出下一轮补研。版本或归属变化、切换讲解、缺失原授权、中央撤权均停止接续，并留下可见原因。
+
+补研复用完成生产任务保存的服务端身份记录，并通过原挂载回执重放重新验证中央活动账号与私有包权限。冷启动已提交部分版本后失败时，只有服务端任务结果明确记录 partial=true 且 projectVersionId/snapshotId 与该挂载精确一致，才可接续；失败状态保留，不泛化授权其他失败任务。供应商配置来自原密封配置；完成任务已清理密封配置时使用既有服务端配置，不伪造凭据，也不转发浏览器 Cookie 或授权头。只构造固定内部 snapshot-iterations 请求，走同进程可信 dispatcher，再由原执行路由验证 scope。原任务关闭联网时不会自动打开联网，而是复用该版本已核验的来源文本。发现 GET 仅查库；中央复核与入队在既有 mount POST worker 槽执行。missing_resolution 等协议缺口不会反复消耗研究预算。
+
+相同类型、名称/别名与显式 scopeNote + assessmentCriteria 复用节点；纯摘要更新不重复建点。自动模式下多个完全等价候选按已持久同主体内容 ID、官方节点、namespace/id 稳定顺序选择；手动歧义预览保持原行为。新节点内容 ID 碰撞时依次延长哈希，再使用稳定后缀，检查源图和本批节点并在后续重用，不覆盖旧节点。定义变化是不同点，历史节点与学习记录保留。找不到可靠容器时建立本人 graph_extension 命名空间下的岗位学习域，通过 standaloneRoots 明确声明并连接新原子点；不强行等价或虚构官方归属。
 
 ## 部署和数据边界
 
@@ -29,4 +33,4 @@ UI 通过 owner-scoped `/api/projects/:projectId/learning-mounts?versionId=...` 
 
 ## 验证
 
-Role 测试覆盖签名正文、主体、有效期、固定源站、凭据隔离、错误回执、真实 SQLite outbox 与会话末版合并、私有制品恢复/发布门禁、无锚点合法容器、精确复用与定义变更保留旧节点。中央测试覆盖 active account、CSRF/浏览器凭据拒绝、真实源图落库、权限重检、161 点分批、幂等/响应丢失/并发 CAS、零 KernelMutation 及回执重放。测试使用隔离数据库与 mock 网关，不调用生产账号写入。
+Role 测试覆盖签名正文、主体、有效期、固定源站、凭据隔离、错误回执、真实 SQLite outbox 与会话末版合并、私有制品恢复/发布门禁、无锚点合法容器、精确复用与定义变更保留旧节点。自动补研使用真实 SQLite、生产 dispatcher 与入队事务验证并发 CAS、密封配置、可信请求身份、执行正文一致、重启恢复和一次后代限制；不调用真实模型。中央测试覆盖 active account、CSRF/浏览器凭据拒绝、真实源图落库、权限重检、161 点分批、幂等/响应丢失/并发 CAS、零 KernelMutation 及回执重放。测试使用隔离数据库与 mock 网关，不调用生产账号写入。

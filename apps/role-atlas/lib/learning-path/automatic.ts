@@ -15,7 +15,15 @@ export async function readAutomaticMount(projectId: string, projectVersionId: st
   await ensureAppSchema();
   const row = await getD1().prepare("SELECT m.* FROM role_learning_mounts m JOIN projects p ON p.id=m.project_id WHERE m.project_id=? AND m.project_version_id=? AND m.policy_version=? AND p.owner_subject_id=m.owner_subject_id AND p.deleted_at IS NULL")
     .bind(projectId, projectVersionId, AUTOMATIC_MOUNT_POLICY).first<MountRow>();
-  return row ? toRecord(row) : null;
+  if (!row) return null;
+  const repair = await getD1().prepare("SELECT origin_mount_id,job_id,status,error FROM role_learning_repairs WHERE origin_mount_id=? OR job_id=? ORDER BY CASE WHEN origin_mount_id=? THEN 0 ELSE 1 END LIMIT 1")
+    .bind(row.id,row.source_run_id,row.id).first<{origin_mount_id:string;job_id:string;status:string;error:string|null}>();
+  const ownRepair = repair?.origin_mount_id === row.id;
+  const repairView = repair && (ownRepair || ["partial","needs_research"].includes(row.status)) ? {
+    jobId:repair.job_id,status:ownRepair ? repair.status : "exhausted",
+    ...(!ownRepair ? {error:"本轮已自动补研一次，剩余缺口仍需更多可核验资料。"} : repair.error ? {error:repair.error} : {}),
+  } : undefined;
+  return {...toRecord(row),...(repairView ? {repair:repairView} : {})};
 }
 /** Consumed by the next research run; only operational gaps, never learner evidence. */
 export async function readAutomaticMountResearchFeedback(projectId: string, versionId: string) {
@@ -33,11 +41,14 @@ export async function listAutomaticMounts() {
   await getD1().prepare(supersedeAutomaticMounts).bind(now).run();
   const rows = await getD1().prepare(`SELECT m.id FROM role_learning_mounts m JOIN projects p ON p.id=m.project_id JOIN project_versions v ON v.id=m.project_version_id
     WHERE ${eligibleAutomaticMount} ORDER BY m.created_at,m.id LIMIT 8`).bind(now, now).all<{ id: string }>();
-  return rows.results.map(row => row.id);
+  const repairs = await (await import("./automatic-research")).listPendingAutomaticMountResearch();
+  return [...new Set([...rows.results.map(row => row.id),...repairs])].slice(0,8);
 }
 
 export async function executeAutomaticMount(id: string) {
   await ensureAppSchema(); const d1 = getD1(), lease = crypto.randomUUID(), now = new Date().toISOString();
+  const prior = await d1.prepare("SELECT status FROM role_learning_mounts WHERE id=?").bind(id).first<{status:string}>();
+  if (prior && ["partial","needs_research"].includes(prior.status)) return (await import("@/lib/jobs/dispatch")).enqueueLearningMountResearch(id);
   const claim = await d1.prepare(`UPDATE role_learning_mounts SET status='running',attempt=attempt+1,lease_owner=?,lease_expires_at=?,updated_at=?,error=NULL
     WHERE id=? AND id IN (SELECT m.id FROM role_learning_mounts m JOIN projects p ON p.id=m.project_id JOIN project_versions v ON v.id=m.project_version_id WHERE ${eligibleAutomaticMount})
     AND NOT EXISTS(SELECT 1 FROM role_learning_mounts other WHERE other.owner_subject_id=role_learning_mounts.owner_subject_id AND other.id!=role_learning_mounts.id AND other.status='running' AND other.lease_expires_at>?)`)

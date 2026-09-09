@@ -74,7 +74,7 @@ export default function RoleIntakePane({ projectId, conversationId, actorSubject
         setIntake(payload.intake || null);
         if (payload.intake && !hasLocalDraft.current) {
           const restored = payload.intake;
-          setDraft(current => ({ ...current, title: restored.roleTitle || current.title, market: restored.market || current.market, materials: restored.sources || [] }));
+          setDraft(current => ({ ...current, title: restored.roleTitle || current.title, market: restored.market || current.market, goal: restored.goal ?? current.goal, materials: (restored.sources || []).filter(source => source.kind !== "public_document") }));
         }
       }
     }).catch(cause => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : "岗位说明暂时无法读取。"); })
@@ -100,13 +100,13 @@ export default function RoleIntakePane({ projectId, conversationId, actorSubject
     if (!projectId) window.history.replaceState(null, "", `/projects/new?project=${encodeURIComponent(scope.projectId)}&conversation=${encodeURIComponent(scope.conversationId)}`);
     return scope;
   }
-  async function turn(action: "clarify" | "draft" | "refine", message = reply, recovery?: Omit<IntakeTurnInput, "providerConfig" | "searchConfig">) {
+  async function turn(action: "clarify" | "draft" | "refine", message = reply, recovery?: Omit<IntakeTurnInput, "providerConfig" | "searchConfig">, roleTitle = draft.title) {
     if (locked || materialsBusy) return;
     setBusy(true); setError(""); setProgress(action === "clarify" ? "正在查找岗位方向与已有图谱…" : "正在检索并整理岗位任务、能力和工作场景…");
     try {
       const scope = await ensureScope();
       if (!alive.current) return;
-      const input = recovery || { action, expectedRevisionId: intake?.revisionId || undefined, message, roleTitle: draft.title, market: draft.market, goal: draft.goal, sources: draft.materials };
+      const input = recovery || { action, expectedRevisionId: intake?.revisionId || undefined, message, roleTitle, market: draft.market, goal: draft.goal, sources: draft.materials };
       const payload = await json(await fetch(`${base(scope)}/turn`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...input, operationId: recovery?.operationId || operationId(JSON.stringify(input)), providerConfig: config(PROVIDER_SESSION_KEY), searchConfig: config(SEARCH_PROVIDER_SESSION_KEY) }) }));
       if (!alive.current) return;
       const next = payload.intake as IntakeView;
@@ -169,6 +169,10 @@ export default function RoleIntakePane({ projectId, conversationId, actorSubject
     </article>}
     {intake?.revisionId && (!reviewing || improving) && <div className="chat-tool-form intake-reply">
       {improving && <header><b>改进岗位说明</b><button aria-label="取消改进" onClick={() => setImproving(false)} disabled={locked}><X size={14} /></button></header>}
+      {!reviewing && <>
+        {intake.roleCandidates?.map(candidate => <button className="intake-role-candidate" key={candidate.title} disabled={locked || materialsBusy} onClick={() => void turn("draft", reply, undefined, candidate.title)}><b>{candidate.title}</b><small>{candidate.reason}</small><span>按此岗位整理说明 <ChevronRight size={12} /></span></button>)}
+        <label>或填写岗位方向<div className="intake-role-input"><input value={draft.title} maxLength={120} disabled={locked} placeholder="例如：云平台实施运维工程师" onChange={event => setDraft(current => ({ ...current, title: event.target.value }))} /><button disabled={locked || materialsBusy || draft.title.trim().length < 2 || draft.title === "待明确的岗位"} onClick={() => void turn("draft")}>整理说明</button></div></label>
+      </>}
       <label>{improving ? "希望调整哪些内容" : "你的想法"}<textarea value={reply} onChange={event => setReply(event.target.value)} disabled={locked} maxLength={4000} placeholder={improving ? "例如：面向高职毕业生，侧重实施交付，补充真实工作场景…" : "例如：我学的是计算机网络，想做云平台部署和故障处理…"} /></label>
       <details><summary>补充资料 · {draft.materials.length} 份</summary><SourceMaterials value={draft.materials} onChange={materials => setDraft(current => ({ ...current, materials }))} disabled={locked} onBusyChange={setMaterialsBusy} /></details>
       <button className="tool-submit" disabled={locked || materialsBusy || (!reply.trim() && !draft.materials.length)} onClick={() => void turn(improving ? "refine" : "clarify")}><Send size={13} />{improving ? "更新岗位说明" : "继续明确岗位"}</button>

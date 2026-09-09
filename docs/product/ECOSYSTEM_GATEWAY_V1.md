@@ -99,6 +99,8 @@ resolution
 
 `role-learning-auto/v1` 属于既有 `curriculum_source_runtime`，由 Learning Design 所有。Role Atlas 与不可变版本同事务写入 outbox；已有持久 worker 等会话生产与后续 enrichment 空闲，只处理该会话最终版本。中间待处理项标记 superseded，已完成回执保持不变。制品按精确版本自动准备为 private/metadata；制品完整性仍必须通过，公共发布质量门禁和显式发布动作不变。
 
+可修复的定义、分类、证据缺口允许复用原生产身份与密封供应商配置，自动接续最多一个原会话研究任务（2 轮、12 来源、8 工作项）。入队时原子复核 owner、精确 version、迭代模式与无活动任务；先重放正式挂载请求复核中央账号和私有包权限，原任务关闭联网时沿用关闭状态。子任务版本重新挂载，血缘记录禁止后代循环。复用既有 snapshot-iterations 与可信内部 dispatcher，无新增外部授权头或模型 API；仅源图补全，零学习状态写入。自动模式下完全等价候选与内容 ID 碰撞由确定性选择/扩展 ID 处理，不触发模型补研，也不改变手动预览的歧义边界。
+
 反向委托只使用固定源站 `POST /api/ecosystem/learning-path/automatic`：`X-Role-Atlas-Delegation` 为 `base64url(claims).hex(HMAC-SHA256(secret,segment))`，claims 严格包含 `{v:1,iss:"role-atlas",aud:"learnflow-curriculum",sub,iat,exp,requestId,bodyHash}`，最长 60 秒。签名绑定实际 UTF-8 正文与 `learnflow:learner:<id>`；使用现有仅服务端共享密钥，方向与 audience 独立于前向网关。拒绝 Cookie、Authorization、Origin、Sec-Fetch 和桌面 token，不转发登录凭据。中央重新读取 active account/learner 并复核包权限，完成回执重放也不能绕过撤权。
 
 正文为 `{requestId,packageRef,projectId,projectVersionId,sourceRunId,policyVersion}`，不接受用户节点、图谱、namespace、外部目标 URL 或任意操作。服务读取固定制品内全部 knowledge_skill，以 25 点一批复用 `curriculum_catalog.resolve/commit`。批次提交键跨 source revision 稳定，预览键绑定当前 graphRef；遇 stale_graph 重新解析，最多四轮后交给持久 outbox 重试。独立操作表保存最终结果；超时、响应丢失和并行重试不会重复建点。
