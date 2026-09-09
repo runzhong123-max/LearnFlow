@@ -1,5 +1,8 @@
 mod conversion_handoff;
-use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
+use base64::{
+    engine::general_purpose::{STANDARD as BASE64, URL_SAFE_NO_PAD},
+    Engine as _,
+};
 use serde::{Deserialize, Serialize};
 use std::net::TcpListener;
 use std::path::{Path, PathBuf};
@@ -1086,6 +1089,43 @@ fn reserve_loopback_port() -> u16 {
         .port()
 }
 
+/// 读取账户模型凭据的信封加密密钥，缺失时首次生成并持久化。
+///
+/// 桌面端是单机本地环境，没有运维去配置这个部署密钥；缺少它时账号级
+/// API Key 无法加密保存，用户会在设置页直接被拒绝。密钥一旦生成就不能
+/// 更换，否则已加密的凭据将永久无法解开，因此这里只在确实缺失时写入，
+/// 并保留操作员或迁移流程已经填好的值。
+fn ensure_model_credential_kek(settings_path: &Path) -> Result<String, String> {
+    const KEK_KEY: &str = "AUTH_API_KEY_KEK";
+    let existing = std::fs::read_to_string(settings_path).unwrap_or_default();
+    for line in existing.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('#') {
+            continue;
+        }
+        if let Some(value) = trimmed.strip_prefix(KEK_KEY).and_then(|rest| rest.strip_prefix('=')) {
+            let value = value.trim();
+            if !value.is_empty() {
+                return Ok(value.to_string());
+            }
+        }
+    }
+    // UUID v4 的随机字节由操作系统 CSPRNG 提供；两个 UUID 正好组成后端
+    // 要求的 32 字节，再按 URL-safe Base64 编码交给 sidecar。
+    let mut material = Vec::with_capacity(32);
+    material.extend_from_slice(uuid::Uuid::new_v4().as_bytes());
+    material.extend_from_slice(uuid::Uuid::new_v4().as_bytes());
+    let generated = URL_SAFE_NO_PAD.encode(&material);
+    let mut contents = existing;
+    if !contents.is_empty() && !contents.ends_with('\n') {
+        contents.push('\n');
+    }
+    contents.push_str(&format!("{KEK_KEY}={generated}\n"));
+    std::fs::write(settings_path, contents)
+        .map_err(|error| format!("无法写入桌面设置文件：{error}"))?;
+    Ok(generated)
+}
+
 pub fn run() {
     let app = tauri::Builder::default()
         .manage(conversion_handoff::PendingConversions::default())
@@ -1153,6 +1193,7 @@ pub fn run() {
                 database_path.to_string_lossy().replace('\\', "/")
             );
             let settings_path = app_data_dir.join("settings.env");
+            let model_credential_kek = ensure_model_credential_kek(&settings_path)?;
             let plugin_artifact_dir = app_data_dir.join("plugin-artifacts");
             std::fs::create_dir_all(&plugin_artifact_dir)?;
             let pet_preferences_path = app_data_dir.join("desktop-pet-settings.json");
@@ -1173,6 +1214,9 @@ pub fn run() {
                 .env("SOURCE_UPLOADS_DIR", source_uploads_dir.to_string_lossy().as_ref())
                 .env("RUNTIME_DIR", runtime_dir.to_string_lossy().as_ref())
                 .env("LEARNFLOW_SETTINGS_PATH", settings_path.to_string_lossy().as_ref())
+                // 单机桌面环境没有运维配置部署密钥；应用自持 KEK 才能让
+                // 账号级模型凭据完成信封加密保存。
+                .env("AUTH_API_KEY_KEK", &model_credential_kek)
                 .env("PLUGIN_ARTIFACT_DIR", plugin_artifact_dir.to_string_lossy().as_ref())
                 // A learner-visible memory graph must continuously consume
                 // eligible Fact batches into versioned Module/Claim nodes.
