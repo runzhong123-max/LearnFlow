@@ -115,6 +115,8 @@ const plugin = defineLearnFlowPlugin({
           type: 'object',
           properties: {
             query: { type: 'string', minLength: 1, maxLength: 500, description: '学习目标、岗位方向、课程或知识主题，例如“Agent 评测学习路线”。' },
+            target: { type: 'string', enum: ['all', 'role', 'task'], description: '公开岗位库检索对象：role 按岗位名称和别名，task 按典型任务，all 综合检索。无足够相关内容返回空结果。' },
+            roleQuery: { type: 'string', maxLength: 500, description: '可选岗位限制，例如云运维工程师；任务检索时避免跨岗位推荐。' },
             graphTypes: { type: 'array', items: { type: 'string', enum: ['learning_path', 'role_semantic', 'role_process', 'knowledge', 'custom'] }, maxItems: 5, description: '可选图谱类型过滤；省略表示全部类型。' },
             topK: { type: 'integer', minimum: 1, maximum: 10, description: '返回候选数，默认 5。' },
           },
@@ -287,7 +289,7 @@ const plugin = defineLearnFlowPlugin({
       const types = Array.isArray(input.graphTypes) ? input.graphTypes.map(String) : []
       const rolesRequested = !types.length || types.some(type => ['role_semantic', 'role_process'].includes(type))
       const hub = rolesRequested ? await discoverPublicRolePackages({ baseUrl: process.env.LEARNFLOW_GRAPH_HUB_BASE_URL,
-        query, limit: Number(input.topK || 5), signal: context.signal }) : undefined
+        query, target: (input.target || 'all') as 'all' | 'role' | 'task', roleQuery: typeof input.roleQuery === 'string' ? input.roleQuery : undefined, limit: Number(input.topK || 5), signal: context.signal }) : undefined
       // Retain scoped personal/non-role catalog access; its ownership and hash validation are never bypassed.
       let local
       try {
@@ -318,7 +320,7 @@ const plugin = defineLearnFlowPlugin({
     research_role_node_risks: input => rolePackageRuntime.researchNodeRisks(packageSelector(input), String(input.objectId), String(input.question || ''), Number(input.maxNodes || 16)),
     list_role_packages: async (input, context) => {
       const query = typeof input.query === 'string' ? input.query : ''
-      const hub = await discoverPublicRolePackages({ baseUrl: process.env.LEARNFLOW_GRAPH_HUB_BASE_URL, query, signal: context.signal })
+      const hub = await discoverPublicRolePackages({ baseUrl: process.env.LEARNFLOW_GRAPH_HUB_BASE_URL, query, target: 'role', signal: context.signal })
       return withHubDiscovery(rolePackageRuntime.listPackages(query), hub, query)
     },
     reference_role_package: input => rolePackageRuntime.referencePackage({

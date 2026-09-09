@@ -45,7 +45,9 @@ def _read_env_file(path: str) -> dict:
     config = {}
     if not os.path.exists(path):
         return config
-    with open(path, "r") as f:
+    # Env templates carry non-ASCII comments; the platform locale (GBK on
+    # Chinese Windows) would otherwise decide whether this file can be read.
+    with open(path, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#"):
@@ -122,7 +124,7 @@ def _write_env(updates: dict):
     lines = []
 
     if source_path:
-        with open(source_path, "r") as f:
+        with open(source_path, "r", encoding="utf-8") as f:
             for line in f:
                 stripped = line.strip()
                 if not stripped or stripped.startswith("#") or "=" not in stripped:
@@ -140,7 +142,7 @@ def _write_env(updates: dict):
         lines.append(f"{key}={updates[key]}\n")
 
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         f.writelines(lines)
 
     for env_key, value in updates.items():

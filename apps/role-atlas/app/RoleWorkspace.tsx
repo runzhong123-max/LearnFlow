@@ -1,4 +1,6 @@
 "use client";
+import { formatIntakeDescription } from "@/lib/intake/presentation";
+import { normalizeCitations, citationCaption, type CitationView } from "@/lib/presentation/citations";
 import { snapshotQualitySummary } from "@/lib/iteration/learning-health";
 
 import {
@@ -107,19 +109,6 @@ type Activity = {
   label: string;
   detail: string;
   status: "running" | "done" | "failed";
-};
-
-type CitationView = {
-  handle: string;
-  targetId: string;
-  label: string;
-  lifecycle: string;
-  confidence: number;
-  sourceIds: string[];
-  sourceTitles: string[];
-  temporalStatus: string;
-  artifactKind?: "role_semantic" | "work_process";
-  knowledgeState?: string;
 };
 
 type PackageStatus = {
@@ -354,7 +343,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
       reasoning: String(message.reasoning || ""),
       references: restoreChatReferences(Array.isArray(message.references) ? message.references : [], [...(graphData?.nodes || []), ...processNodeMap.values()], packageStatus?.snapshotId),
       activities: Array.isArray(message.activities) ? message.activities as Activity[] : [],
-      citations: Array.isArray(message.citations) ? message.citations as CitationView[] : [],
+      citations: normalizeCitations(message.citations),
       status: ["running", "done", "failed", "cancelled"].includes(String(message.status)) ? message.status as Message["status"] : "done",
     }));
     return restored.length ? restored : initialMessages;
@@ -1104,7 +1093,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
         }, { id: "generation", label: "模型原样输出", detail: "供应商响应已完整接收", status: "done" });
       }
       if (event.kind === "citation.registry") {
-        const citations = Array.isArray(event.payload.citations) ? event.payload.citations as CitationView[] : [];
+        const citations = normalizeCitations(event.payload.citations);
         return { ...message, citations };
       }
       if (event.kind === "run.failed") {
@@ -1639,16 +1628,17 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
                   <MarkdownContent className="reasoning-content" text={message.reasoning} />
                 </details>
               ) : null}
-              {message.text ? <MarkdownContent className="answer-text" text={message.text} /> : message.status === "running" ? <p className="answer-pending">正在等待模型返回思考过程与正文…</p> : null}
+              {message.text ? <MarkdownContent className={message.id.startsWith("intake:") ? "answer-text intake-answer" : "answer-text"} text={message.id.startsWith("intake:") ? formatIntakeDescription(message.text) : message.text} /> : message.status === "running" ? <p className="answer-pending">正在等待模型返回思考过程与正文…</p> : null}
               {message.citations && message.citations.length > 0 ? (
                 <div className="citation-list">
-                  <div className="citation-heading"><FileSearch size={12} /> 本轮引用注册表 <span>{message.citations.length}</span></div>
+                  <div className="citation-heading"><FileSearch size={12} /> 本轮引用与来源 <span>{message.citations.length}</span></div>
                   {message.citations.slice(0, 8).map((citation) => {
                     const node = nodeMap.get(citation.targetId) || processNodeMap.get(citation.targetId);
+                    if (citation.kind === "source") return <div className="citation" key={`source:${citation.handle}:${citation.label}`}><span>[{citation.handle}] {citation.url ? <a href={citation.url} target="_blank" rel="noopener noreferrer">{citation.label}</a> : citation.label}</span><em>检索资料</em></div>;
                     return (
                       <button className="citation" key={`${citation.handle}:${citation.targetId}`} disabled={!node} onClick={() => { if (node) selectAndFocus(node); }}>
                         <span><i>[{citation.handle}]</i> {citation.label}</span>
-                        <em>{citation.artifactKind === "work_process" ? "事理" : "语义"} · {citation.lifecycle === "accepted" ? "已接受" : "候选"} · {citation.confidence.toFixed(2)}</em>
+                        <em>{citationCaption(citation)}</em>
                       </button>
                     );
                   })}

@@ -79,3 +79,17 @@ test('plugin tool integrates public discovery even when no matching local packag
     else process.env.LEARNFLOW_GRAPH_HUB_BASE_URL = previous
   }
 })
+
+test('task queries use the shared endpoint and preserve task identity together with its release', async () => {
+  const matchedTasks = [{ id: 'task:backup', label: '数据库备份恢复', type: 'task', summary: '校验恢复结果' }]
+  const result = await discoverPublicRolePackages({ baseUrl: 'https://graphs.example.test', query: '数据库备份恢复', target: 'task', roleQuery: '云运维工程师', fetchImpl: async url => {
+    assert.equal(new URL(String(url)).searchParams.get('target'), 'task')
+    assert.equal(new URL(String(url)).searchParams.get('role'), '云运维工程师')
+    return Response.json({ protocol: 'graph-hub.discovery.v1', status: 'available', total: 1, items: [{ ...item, matchedTasks, matchedTaskCount: 8 }] })
+  } })
+  assert.deepEqual(result.candidates[0].matchedTasks, matchedTasks)
+  assert.equal(result.candidates[0].matchedTaskCount, 8)
+  assert.equal(result.candidates[0].snapshotId, item.release.snapshotId)
+  const oldServer = await discoverPublicRolePackages({ baseUrl: 'https://graphs.example.test', query: '数据库备份恢复', target: 'task', fetchImpl: async () => Response.json({ protocol: 'graph-hub.discovery.v1', status: 'available', total: 1, items: [item] }) })
+  assert.equal(oldServer.status, 'unavailable')
+})

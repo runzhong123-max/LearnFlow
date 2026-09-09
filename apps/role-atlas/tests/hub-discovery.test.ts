@@ -52,3 +52,37 @@ test("线上五个岗位按岗位本身分类，历史行业和描述不污染�
   assert.equal(searchHub(entries, { category: "人工智能", query: "Agent" }).items[0].entry.id, "agent");
   assert.deepEqual(entries[0].categories, ["计算机与人工智能"]);
 });
+
+test("role precision rejects generic engineer suffixes and incidental cloud skills", () => {
+  const llm = entry("llm", { title: "大模型应用工程师", summary: "云部署与数据库应用开发", nodeIndex: [
+    { id: "skill:cloud", label: "云计算部署", type: "knowledge_skill", aliases: [] }] });
+  const cloud = entry("cloud", { title: "云计算/云维护运维工程师", aliases: ["Cloud Operations Engineer"] });
+  for (const query of ["云计算工程师（实施与运维方向）", "云平台工程师", "Cloud Operations Engineer"]) {
+    assert.equal(searchHub([llm], { query, target: "role" }).total, 0);
+    assert.equal(searchHub([llm], { query, target: "all" }).total, 0);
+    assert.equal(searchHub([llm, cloud], { query, target: "role" }).items[0]?.entry.id, "cloud");
+  }
+  for (const query of ["工程师", "我想了解相关岗位", "量子通信工程师", "DevOps Engineer"]) assert.equal(searchHub([llm, cloud], { query, target: "role" }).total, 0);
+});
+test("tasks return stable task IDs and release pins; role constraints are conjunctive", () => {
+  const entries = [entry("ops", { title: "云运维工程师", nodeIndex: [
+    { id: "task:restore", label: "备份数据库并验证恢复", summary: "恢复后校验业务数据完整性", type: "task", aliases: ["数据库备份恢复"] },
+    { id: "skill:restore", label: "数据库备份恢复", type: "knowledge_skill", aliases: [] },
+    { id: "task:other", label: "培训客户使用软件", type: "task", aliases: [] },
+  ] }), entry("test", { title: "软件测试工程师", nodeIndex: [
+    { id: "task:test", label: "编写自动化回归测试", type: "typical_task", aliases: [] },
+  ] })];
+  const result = searchHub(entries, { query: "数据库备份恢复", target: "task", roleQuery: "云运维工程师" });
+  assert.equal(result.total, 1); assert.equal(result.strategy, "field-coverage.v2");
+  assert.deepEqual(result.items[0].matchedTasks.map(task => task.id), ["task:restore"]);
+  assert.equal(result.items[0].entry.release.rootHash, "a".repeat(64));
+  assert.equal(searchHub(entries, { query: "数据库备份恢复", target: "task", roleQuery: "软件测试工程师" }).total, 0);
+  assert.equal(searchHub(entries, { query: "编写自动化回归测试", target: "task" }).items[0].entry.id, "test");
+  assert.equal(searchHub(entries, { query: "数据库备份恢复", target: "role" }).total, 0);
+});
+
+test("cloud maintenance retains its cloud scope and direct package identity still resolves", () => {
+  const sys = entry("system", { title: "系统运维工程师" });
+  assert.equal(searchHub([sys], { query: "云维护工程师", target: "role" }).total, 0);
+  assert.equal(searchHub([sys], { query: sys.packageId, target: "role" }).items[0].entry.id, sys.id);
+});
