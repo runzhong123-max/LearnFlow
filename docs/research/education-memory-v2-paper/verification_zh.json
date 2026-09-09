@@ -1,0 +1,54 @@
+{
+  "scope": "Chinese manuscript and scientific figures only",
+  "product_contract_impact": "none",
+  "new_experiments_run": false,
+  "product_tests_rerun": false,
+  "retained_derived_results_recomputed": "passed; identical to existing derived_results.json",
+  "retained_input_hash_validation": "passed",
+  "table_data_assertions": {
+    "education_rows": 24,
+    "locomo_rows": 14,
+    "status": "passed"
+  },
+  "references_numbered": 13,
+  "docx_tables": 4,
+  "docx_figures": 4,
+  "rendered_docx_pages": 14,
+  "visual_review": {
+    "status": "passed",
+    "pages_inspected": 14,
+    "checks": [
+      "Chinese glyph rendering",
+      "title line breaks",
+      "table pagination",
+      "figure labels and captions",
+      "references",
+      "absence of clipping and overlap"
+    ],
+    "final_render_equivalence": "Pages 1-9 and 13-14 hash-identical to reviewed release render; final pages 10-12 inspected after figure 3 resize."
+  },
+  "figure_formats": [
+    "editable SVG",
+    "vector PDF",
+    "450 dpi PNG"
+  ],
+  "source_validation_scope": "Retained experiment snapshot 0da6615eeb2a5dded4101535e8534cd5494b43a9; not concurrent workspace changes.",
+  "files_sha256": {
+    "LearnFlow_Educational_Memory_Manuscript_ZH.docx": "6ebed9bc24a9bd305f0770dcc8427f7f6e3a45f06eb38e85bea75d27d6a4e160",
+    "manuscript_zh.md": "2cb1214958130414307dc15e5e243fb47142ad35a1962e1c5b68e2dc60030da7",
+    "build_paper_zh.py": "37ccdde46e27f993a87d6f085999fac7edfb6d1a71e4cecead65a6a7d07cb273",
+    "图表设计与复现说明.md": "41acc8b8676cdaddbf62de1800232b24c15ecf8b1bfe85652b55070cfdb95e97",
+    "figures_zh/fig1_architecture.pdf": "9fa7a3db7a117c848b6b3e34189fa7110420bb35530776a3a02436785192f43d",
+    "figures_zh/fig1_architecture.png": "ac153b05900b510e924240cbb55283ce39760de0929548795ff1e7073fa0ee5e",
+    "figures_zh/fig1_architecture.svg": "0ca44495524d423574429698d548876333371be74137c8da01886c41921a5f7a",
+    "figures_zh/fig2_temporal.pdf": "3867a84fd597612fb1e9cf276422035f0017d917b3cabc403ef7692e511ad4ac",
+    "figures_zh/fig2_temporal.png": "b73443bd8bd246ed62450d3d97d1764a1b013c20b2a6c1bbbf977921eb11e2e7",
+    "figures_zh/fig2_temporal.svg": "c97103f554ce5ecc82f4bba4e3493d248fce5d3462be03f40e4f00e046ba20a4",
+    "figures_zh/fig3_education.pdf": "6c48576dff3c951991f8997870f70ab64b17df7976bd91d188cd0f3f26090b87",
+    "figures_zh/fig3_education.png": "0e1a1d451cdb66cd8fb2c129998c374a1df47e3ed84f2d8897fa98cea8098064",
+    "figures_zh/fig3_education.svg": "2310f8c20a82db6edea9ac62e50acc85eda436b82ab1cda0b35a298348c8d5cd",
+    "figures_zh/fig4_locomo.pdf": "0714c1e15de0adec9787bd7d04f3594904e33562ae5725c10b58d31acefb9b7b",
+    "figures_zh/fig4_locomo.png": "476e7967a24c674d9354bd9ce11d26cdaf3b829187fc0ab64e18bdd3ff0f2b8b",
+    "figures_zh/fig4_locomo.svg": "599744256558aec46d2fb933779b0ada6ea8e2eb63c3b44c21139a24a389afe3"
+  }
+}
