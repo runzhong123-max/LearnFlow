@@ -320,6 +320,80 @@ async def _invoke_plain_tutor_reply(
     return decoded
 
 
+JSON_TUTOR_REPLY_PROMPT = """
+本轮使用 json 兼容输出。只返回一个 json 对象，不要包裹代码块，不要在对象前后添加解释。
+json 对象的字段与结构化契约一致，示例格式：
+{"reply": "给学习者看的自然中文回复", "observations": [], "project_opportunity": null,
+ "learning_task_opportunity": null, "learning_intent": null, "major_event_candidates": [],
+ "local_agent_task": null}
+reply 必填且不能为空；其余字段没有内容时保持空数组或 null。保持当前 Chat Mode 和教学边界，
+不要声称已经掌握。
+""".strip()
+
+
+def _json_tutor_messages(messages: list[Any]) -> list[Any]:
+    """Ask for the structured contract as plain json text.
+
+    Provider-native structured output depends on function calling or json mode,
+    which differs per vendor and is documented to return empty content on some
+    of them. Requesting json in the prompt only needs ordinary text generation,
+    so every OpenAI-compatible model can satisfy it, and the reply keeps the
+    structured fields that a plain-text fallback would discard.
+    """
+    if not messages or not isinstance(messages[0], SystemMessage):
+        return messages
+    system_content = str(messages[0].content or "")
+    return [
+        SystemMessage(content=f"{system_content}\n\n{JSON_TUTOR_REPLY_PROMPT}"),
+        *messages[1:],
+    ]
+
+
+async def _invoke_json_tutor_reply(
+    llm: Any,
+    messages: list[Any],
+    deadline: float,
+) -> tuple[str, list[dict], dict | None, dict | None, list[dict], dict | None]:
+    response = await invoke_before_deadline(
+        lambda: llm.ainvoke(_json_tutor_messages(messages)),
+        deadline,
+    )
+    content = response.content if isinstance(response.content, str) else str(response.content)
+    reply, observations, opportunity, learning_intent, major_events, local_agent_task = (
+        _decode_tutor_content(content)
+    )
+    reply = str(reply or "").strip()
+    if not reply:
+        raise ValueError("empty_json_tutor_reply")
+    # Decoded json is only shape-checked, while the native structured path is
+    # schema-validated. Proposal and task creation downstream must not see the
+    # weaker contract, so validate here too and keep just the reply when the
+    # extra fields do not hold up.
+    try:
+        validated = TutorModelOutput.model_validate({
+            "reply": reply,
+            "observations": observations,
+            "project_opportunity": opportunity,
+            "learning_intent": learning_intent,
+            "major_event_candidates": major_events,
+            "local_agent_task": local_agent_task,
+        })
+    except Exception as validation_error:
+        logger.info(
+            "json Tutor reply kept text only after schema validation failed: %s",
+            type(validation_error).__name__,
+        )
+        return reply, [], None, None, [], None
+    return (
+        validated.reply.strip(),
+        [item.model_dump() for item in validated.observations],
+        validated.project_opportunity.model_dump() if validated.project_opportunity else None,
+        validated.learning_intent.model_dump() if validated.learning_intent else None,
+        [item.model_dump() for item in validated.major_event_candidates],
+        validated.local_agent_task.model_dump() if validated.local_agent_task else None,
+    )
+
+
 def _tutor_model_failure_message(error: Exception, *, budget_seconds: float) -> str:
     if isinstance(error, InteractiveModelBudgetExceeded):
         return (
@@ -2299,8 +2373,12 @@ async def _generate_tutor_reply(
                 )
             ), [], None, None, [], None, None
 
-    fallback_reserve = min(10.0, model_budget * (2 / 3))
-    structured_budget = max(0.01, model_budget - fallback_reserve)
+    # Three tiers share the budget: provider-native structured output first,
+    # then prompt-based json, then plain text. The json tier needs a real window
+    # because it regenerates the whole reply; reserving a fixed few seconds for
+    # it made the tier unusable for long planning turns.
+    structured_budget = max(0.01, model_budget * 0.4)
+    json_budget = max(0.01, model_budget * 0.4)
     structured_deadline = min(deadline, model_deadline(structured_budget))
     try:
         structured = llm.with_structured_output(TutorModelOutput)
@@ -2331,6 +2409,20 @@ async def _generate_tutor_reply(
             "structured Tutor response failed within shared budget: %s",
             type(structured_error).__name__,
         )
+        # A budget timeout means the provider is simply too slow this turn, so
+        # regenerating the same reply as json would time out again and consume
+        # the window the plain tier still needs. Only retry as json when the
+        # structured contract itself was rejected or came back empty.
+        if not isinstance(structured_error, InteractiveModelBudgetExceeded):
+            try:
+                json_deadline = min(deadline, model_deadline(json_budget))
+                decoded = await _invoke_json_tutor_reply(llm, messages, json_deadline)
+                return (*decoded, None)
+            except Exception as json_error:
+                logger.info(
+                    "prompt-based json Tutor response failed: %s",
+                    type(json_error).__name__,
+                )
         try:
             decoded = await _invoke_plain_tutor_reply(plain_llm, messages, deadline)
             return (*decoded, None)

@@ -14,6 +14,7 @@ API layer for transactional apply. The LLM never emits full roadmap JSON
 inside chat text — output pressure is reduced by design.
 """
 import json
+import logging
 from typing import List, Optional, Dict, Any
 
 from langchain_openai import ChatOpenAI
@@ -24,6 +25,9 @@ from pydantic import BaseModel, Field
 from app.core.config import settings
 
 MAX_TOOL_ROUNDS = 12
+
+
+logger = logging.getLogger(__name__)
 
 
 class SubmittedCheckpoint(BaseModel):
@@ -44,6 +48,56 @@ class ArchivedCheckpoint(BaseModel):
 class SubmittedRoadmap(BaseModel):
     checkpoints: List[SubmittedCheckpoint]
     archives: List[ArchivedCheckpoint] = Field(default_factory=list)
+
+
+JSON_ROADMAP_PROMPT = """
+本轮使用 json 兼容输出。只返回一个 json 对象，不要包裹代码块，不要在对象前后添加解释。
+示例格式：
+{"checkpoints": [{"title": "关卡标题", "description": "关卡说明", "order": 1,
+ "prerequisites": [], "files": [], "key_concepts": [], "estimated_effort": ""}],
+ "archives": []}
+checkpoints 必填且至少两项；archives 没有内容时保持空数组。
+""".strip()
+
+
+async def _invoke_roadmap_submission(llm: Any, messages: List) -> SubmittedRoadmap:
+    """Return a validated roadmap without depending on provider structured output.
+
+    Native structured output goes through function calling or json mode, which
+    each vendor implements differently and which is documented to return empty
+    content on some of them. Asking for json in the prompt only needs ordinary
+    text generation, so it keeps this path usable on any OpenAI-compatible model.
+    """
+    try:
+        return await llm.with_structured_output(SubmittedRoadmap).ainvoke(messages)
+    except Exception as structured_error:
+        logger.info(
+            "structured roadmap submission failed, retrying as json: %s",
+            type(structured_error).__name__,
+        )
+    system_message, *rest = messages
+    json_messages = [
+        SystemMessage(content=f"{system_message.content}\n\n{JSON_ROADMAP_PROMPT}"),
+        *rest,
+    ]
+    response = await llm.ainvoke(json_messages)
+    content = response.content if isinstance(response.content, str) else str(response.content)
+    text = content.strip()
+    if text.startswith("```"):
+        lines = text.splitlines()[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        text = "\n".join(lines).strip()
+    object_start = text.find("{")
+    for candidate in ([text, text[object_start:]] if object_start > 0 else [text]):
+        try:
+            payload, _ = json.JSONDecoder().raw_decode(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(payload, dict):
+            return SubmittedRoadmap.model_validate(payload)
+    raise ValueError("路线生成未返回可解析的结构化结果")
+
 
 SYSTEM_PROMPT = """你是一名学习路线规划专家。你的任务是帮助用户为特定学习主题规划一条循序渐进的学习路线。
 
@@ -465,8 +519,7 @@ class RoadmapAgent:
             else:
                 messages.append(AIMessage(content=item["content"]))
         messages.append(HumanMessage(content=message))
-        structured = self.llm.with_structured_output(SubmittedRoadmap)
-        output = await structured.ainvoke(messages)
+        output = await _invoke_roadmap_submission(self.llm, messages)
 
         checkpoints = []
         for index, item in enumerate(output.checkpoints[:12], start=1):
