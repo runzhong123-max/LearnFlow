@@ -28,7 +28,7 @@ test("supplied material still triggers three bounded independent queries before 
   assert.ok(queries.every(query => query.includes("云运维工程师")));
   assert.equal(calls.length, 1);
   assert.equal(calls[0].maxCompletionTokens, 4_200);
-  assert.equal(calls[0].totalTimeoutMs, 55_000);
+  assert.ok(calls[0].totalTimeoutMs! > 0 && calls[0].totalTimeoutMs! <= 55_000);
   assert.equal(result.phase, "review");
   assert.equal(result.researchStatus, "complete");
   for (const title of ["岗位概述", "主要任务", "能力要求", "典型工作场景", "职责边界", "资料索引"]) assert.ok(result.description.includes(title));
@@ -105,6 +105,77 @@ test("malformed model output and cancellation remain failures instead of a confi
   let modelCalled = false;
   await assert.rejects(generateIntakeRevision({ ...args(), signal: controller.signal, dependencies: { model: async function* () { modelCalled = true; yield { type: "text", delta: "{}" }; } } }), /cancelled/);
   assert.equal(modelCalled, false);
+});
+
+test("a malformed JD is corrected once with its exact schema and existing retrieved evidence", async () => {
+  const calls: Array<Parameters<ModelInvoker>[0]> = []; let searches = 0;
+  const overlong = { ...jd(), boundaries: Array.from({ length: 5 }, (_, i) => `第${i + 1}项职责边界`) };
+  const result = await generateIntakeRevision({ ...args(), dependencies: {
+    research: async () => { searches++; return { sources: [retrieved], report: report() }; },
+    model: async function* (input) {
+      calls.push(input);
+      const request = JSON.parse(input.user);
+      assert.equal(request.outputSchema.properties.boundaries.maxItems, 4);
+      assert.equal(request.outputSchema.properties.tasks.items.properties.sourceIndexes.maxItems, 5);
+      if (calls.length === 1) yield { type: "text", delta: JSON.stringify(overlong) };
+      else {
+        assert.match(input.system, /旧输出仅是待修正数据/);
+        assert.equal(request.formatRepair.issues[0].code, "too_big");
+        assert.deepEqual(request.formatRepair.issues[0].path, ["boundaries"]);
+        assert.deepEqual(JSON.parse(request.formatRepair.previousOutput), overlong);
+        assert.ok(request.sources.some((source: { title: string }) => source.title === retrieved.title));
+        yield { type: "text", delta: JSON.stringify(jd()) };
+      }
+    },
+  } });
+  assert.equal(calls.length, 2); assert.equal(searches, 1);
+  assert.ok(calls[1].totalTimeoutMs! <= calls[0].totalTimeoutMs!);
+  assert.equal(result.phase, "review"); assert.match(result.description, /来源 2/);
+});
+
+test("format repair handles incomplete JSON, stays bounded and never retries supplier errors", async () => {
+  let calls = 0;
+  const result = await generateIntakeRevision({ ...args(turn({ action: "clarify" })), dependencies: {
+    model: async function* (input) {
+      calls++;
+      if (calls === 1) yield { type: "text", delta: '{"assistantMessage":' };
+      else {
+        assert.equal(JSON.parse(input.user).formatRepair.issues[0].code, "invalid_json");
+        yield { type: "text", delta: JSON.stringify({ assistantMessage: "请选择岗位方向。", questions: ["主要工作对象是什么？"] }) };
+      }
+    },
+  } });
+  assert.equal(calls, 2); assert.equal(result.phase, "clarifying");
+  calls = 0;
+  await assert.rejects(generateIntakeRevision({ ...args(), dependencies: { model: async function* () { calls++; yield { type: "text", delta: "{}" }; } } }));
+  assert.equal(calls, 2);
+  calls = 0;
+  await assert.rejects(generateIntakeRevision({ ...args(), dependencies: { model: async function* () { calls++; throw new Error("HTTP 429"); } } }), /HTTP 429/);
+  assert.equal(calls, 1);
+});
+
+test("cancellation after malformed output prevents a repair call", async () => {
+  const controller = new AbortController(); let calls = 0;
+  await assert.rejects(generateIntakeRevision({ ...args(), signal: controller.signal, dependencies: {
+    model: async function* () { calls++; yield { type: "text", delta: "{}" }; controller.abort(new Error("left page")); },
+  } }), /left page/);
+  assert.equal(calls, 1);
+});
+
+test("supplier response-envelope parsing failures are not model-output repair candidates", async () => {
+  let calls = 0;
+  await assert.rejects(generateIntakeRevision({ ...args(), dependencies: {
+    model: async function* () { calls++; throw new SyntaxError("supplier envelope is not JSON"); },
+  } }), /supplier envelope/);
+  assert.equal(calls, 1);
+});
+
+test("cancellation after a valid final token cannot return a confirmable description", async () => {
+  const controller = new AbortController(); let calls = 0;
+  await assert.rejects(generateIntakeRevision({ ...args(), signal: controller.signal, dependencies: {
+    model: async function* () { calls++; yield { type: "text", delta: JSON.stringify(jd()) }; controller.abort(new Error("left after final token")); },
+  } }), /left after final token/);
+  assert.equal(calls, 1);
 });
 
 test("intake query identities are stable, scoped and contain no private source content", async () => {
