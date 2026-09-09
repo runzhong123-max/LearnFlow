@@ -149,7 +149,7 @@ def test_safe_snapshot_records_git_secrets_symlinks_and_manifest(tmp_path):
     (nested / ".git" / "config").write_text("source git metadata\n", encoding="utf-8")
     source_file = root / "src" / "main.py"
     source_file.parent.mkdir()
-    source_file.write_text("print('safe')\n", encoding="utf-8")
+    source_file.write_bytes(b"print('safe')\n")
     outside = tmp_path / "outside-secret.txt"
     outside.write_text("outside\n", encoding="utf-8")
     symlink_created = True

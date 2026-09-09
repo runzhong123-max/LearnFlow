@@ -10,8 +10,16 @@ import {executeLearningVisual} from './visual-tool-execution.ts'
 import {renderView,describeFrame} from '../src/visualize-presentation.ts'
 let root=dirname(fileURLToPath(import.meta.url));while(!existsSync(join(root,'packages/learning-core')))root=dirname(root)
 const example=(name:string)=>JSON.parse(readFileSync(join(root,`docs/design/visualize/source/examples/${name}.visualspec.json`),'utf8'))
+function pythonExecutable() {
+ const configured=process.env.LEARNFLOW_PYTHON
+ if(configured)return configured
+ const virtualenv=process.platform==='win32'?join(root,'backend/venv/Scripts/python.exe'):join(root,'backend/venv/bin/python')
+ if(existsSync(virtualenv))return virtualenv
+ return process.platform==='win32'?'python':'python3'
+}
 function compile(spec:any,params={}) {
- const result=spawnSync(join(root,'backend/venv/bin/python'),['-c',`import sys,json;sys.path.insert(0,sys.argv[1]);from learnflow_core.visuals.engine import compile_visual;s=json.load(sys.stdin);print(json.dumps(compile_visual(s['spec'],s['params'])))`,join(root,'packages/learning-core/src')],{input:JSON.stringify({spec,params}),encoding:'utf8'})
+ const input=JSON.stringify({spec,params}).replace(/[^\x00-\x7F]/g,character=>`\\u${character.charCodeAt(0).toString(16).padStart(4,'0')}`)
+ const result=spawnSync(pythonExecutable(),['-c',`import sys,json;sys.path.insert(0,sys.argv[1]);from learnflow_core.visuals.engine import compile_visual;s=json.load(sys.stdin);print(json.dumps(compile_visual(s['spec'],s['params'])))`,join(root,'packages/learning-core/src')],{input,encoding:'utf8',env:{...process.env,PYTHONIOENCODING:'utf-8',PYTHONUTF8:'1'}})
  assert.equal(result.status,0,result.stderr);return {...JSON.parse(result.stdout),owner_scope:'test'}
 }
 test('three real host traces render through shared primitives without geometry diagnostics',async()=>{
