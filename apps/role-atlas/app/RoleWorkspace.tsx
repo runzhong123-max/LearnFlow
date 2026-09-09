@@ -44,7 +44,7 @@ import TaskWorkspace, { type TaskPerspective } from "@/app/components/TaskWorksp
 import WorkspaceSkillLauncher from "@/app/components/WorkspaceSkillLauncher";
 import { iterationTargetNodes } from "@/lib/iteration/targets";
 import ProjectToolPane from "@/app/components/ProjectToolPane";
-import NewProjectDialog from "@/app/components/NewProjectDialog";
+import RoleIntakePane from "@/app/components/RoleIntakePane";
 import { useConversationState } from "@/app/components/useConversationState";
 import { useConversationDraft } from "@/app/components/useConversationDraft";
 import { chatDraftKey, requireAgentStream, restoreChatReferences } from "@/lib/chat/workspace-state";
@@ -146,7 +146,7 @@ type ProjectWorkspaceEnvelope = {
 
 type ViewKey = "semantic" | "tasks" | "cards" | "evidence";
 type SemanticDensity = "kernel" | "complete";
-type WorkspaceOperation = "new-project" | "versions" | "publish" | "registry" | "settings";
+type WorkspaceOperation = "versions" | "publish" | "registry" | "settings";
 
 const viewOptions: Array<{ key: ViewKey; label: string }> = [
   { key: "semantic", label: "总雷达" },
@@ -238,7 +238,7 @@ function toReadableValue(value: unknown) {
 type RoleWorkspaceProps = { projectId?: string; initialConversationId?: string; initialNewProject?: boolean; newProjectBrief?: { role?: string; description?: string; market?: string } };
 export default function RoleWorkspace(props: RoleWorkspaceProps) {
   // Client routing may reuse the component for a same-named role; identity is the project ID.
-  return <RoleWorkspaceSession key={props.projectId || "bundled-role"} {...props} />;
+  return <RoleWorkspaceSession key={props.projectId || (props.initialNewProject ? "new-role" : "bundled-role")} {...props} />;
 }
 function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProject = false, newProjectBrief }: RoleWorkspaceProps) {
   const [researchAdmin,setResearchAdmin]=useState(false);
@@ -249,6 +249,8 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
   const [toolInstances, setToolInstances] = useState<Record<string, { tool: RoleSkillId | null; context: import("@/lib/skills/workspace").WorkspaceSkillContext; promptSeed?: { text: string; nonce: number }; targetSeed?: { ids: string[]; nonce: number } }>>({});
   const [toolBusy, setToolBusy] = useState<Record<string, boolean>>({});
   const [modeSaving, setModeSaving] = useState(false);
+  const [intakeDismissed, setIntakeDismissed] = useState(false);
+  const [intakeBusy, setIntakeBusy] = useState(false);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const [graphData, setGraphData] = useState<GraphPayload | null>(null);
   const [workProcessData, setWorkProcessData] = useState<WorkProcessPayload | null>(null);
@@ -284,12 +286,12 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
   const [chatCollapsed, setChatCollapsed] = useState(false);
   const [projects, setProjects] = useState<StoredProjectSummary[]>([]);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
-  const [workspaceTitle, setWorkspaceTitle] = useState(projectId ? "正在打开项目…" : "大模型应用工程师");
+  const [workspaceTitle, setWorkspaceTitle] = useState(projectId ? "正在打开项目…" : initialNewProject ? "新建岗位包" : "大模型应用工程师");
   const [projectResult, setProjectResult] = useState<ColdStartBuildResult | null>(null);
   const [projectBrief, setProjectBrief] = useState({ description: "", market: "中国大陆" });
   const [projectStatus, setProjectStatus] = useState<"draft" | "building" | "ready" | "failed">("draft");
   const [enrichmentState, setEnrichmentState] = useConversationState<{ running: boolean; label: string; error?: string }>(activeConversationId, { running: false, label: "" });
-  const [activeOperation, setActiveOperation] = useState<WorkspaceOperation | null>(initialNewProject ? "new-project" : null);
+  const [activeOperation, setActiveOperation] = useState<WorkspaceOperation | null>(null);
   const [learningMountVersionId, setLearningMountVersionId] = useState<string | undefined>();
   const containerRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<G6Graph | null>(null);
@@ -391,6 +393,16 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
       }).finally(() => { if (!controller.signal.aborted) setConversationLoading(false); });
       return () => controller.abort();
     }
+    if (initialNewProject) {
+      void fetchChecked("/api/projects", "json").then((payload) => {
+        if (controller.signal.aborted) return;
+        const envelope = payload as { actorSubjectId?: string; projects?: StoredProjectSummary[] };
+        setActorSubjectId(envelope.actorSubjectId || ""); setProjects(envelope.projects || []);
+        setGraphData(null); setPackageStatus(null); setSelectedId(""); setWorkspaceTitle("新建岗位包");
+      }).catch((cause) => { if (!controller.signal.aborted) setWorkspaceError(cause instanceof Error ? cause.message : "暂时无法读取个人空间。"); })
+        .finally(() => { if (!controller.signal.aborted) setConversationLoading(false); });
+      return () => controller.abort();
+    }
     Promise.all([
       fetchChecked("/data/graph.json", "json"),
       fetchChecked("/data/object-index.jsonl", "text"),
@@ -425,7 +437,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
       if (error instanceof Error && error.name !== "AbortError") setWorkspaceError("岗位包装载失败，请检查同步产物和服务状态。");
     }).finally(() => { if (!controller.signal.aborted) setConversationLoading(false); });
     return () => controller.abort();
-  }, [applyProjectWorkspace, initialConversationId, projectId]);
+  }, [applyProjectWorkspace, initialConversationId, initialNewProject, projectId]);
 
   useEffect(() => {
     const expired = (event: Event) => {
@@ -1135,7 +1147,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
     const text = chatInput.trim();
     const selectedReferences = references.length > 0 ? references : (!text && selectedNode ? [selectedNode] : []);
     if (!text && selectedReferences.length === 0) return;
-    if (projectId && conversations.find((item) => item.id === activeConversationId)?.mode === "iteration") {
+    if (projectId && (!packageStatus || conversations.find((item) => item.id === activeConversationId)?.mode === "iteration")) {
       if (await launchTool(packageStatus ? (selectedReferences.length ? "node-deepening" : "snapshot-iteration") : "cold-start-role-package", text)) setChatInput("");
       return;
     }
@@ -1355,7 +1367,11 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
 
   async function launchTool(tool: RoleSkillId, prompt?: string) {
     if (!projectId || !activeConversationId || conversationLoading || toolBusy[activeConversationId]) return false;
-    if (conversations.find((item) => item.id === activeConversationId)?.mode !== "iteration" && !await changeMode("iteration")) return false;
+    if (tool === "cold-start-role-package") {
+      if (prompt) setProjectBrief(current => ({ ...current, description: prompt }));
+      setIntakeDismissed(false);
+    }
+    if (tool !== "cold-start-role-package" && conversations.find((item) => item.id === activeConversationId)?.mode !== "iteration" && !await changeMode("iteration")) return false;
     setChatCollapsed(false);
     setToolInstances((current) => ({ ...current, [activeConversationId]: { tool, ...(tool === "node-deepening" ? { targetSeed: { ids: references.length ? references.map((node) => node.id) : selectedNode ? [selectedNode.id] : [], nonce: Date.now() } } : {}), context: { ...skillContext, selectedNodeIds: references.length ? references.map((node) => node.id) : selectedNode ? [selectedNode.id] : [] }, ...(prompt !== undefined ? { promptSeed: { text: prompt, nonce: Date.now() } } : {}) } }));
     return true;
@@ -1394,11 +1410,12 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
     market: projectResult?.brief.market || projectBrief.market,
   };
 
+  const showIntake = !conversationLoading && !intakeDismissed && !packageStatus && projectStatus !== "building" && !toolBusy[activeConversationId] && (initialNewProject || Boolean(projectId));
   return (
     <main className={`workspace-shell ${chatCollapsed ? "chat-collapsed" : ""}`}>
       <aside className="sidebar">
         <div className="brand"><span className="brand-mark"><Network size={17} /></span><span>Role Atlas</span></div>
-        <button className="new-project" type="button" onClick={() => setActiveOperation("new-project")}><Plus size={15} /> 新建岗位项目</button>
+        <button className="new-project" type="button" onClick={() => { try { const key = `role-atlas.intake-draft:${JSON.stringify([actorSubjectId, "new", "new"])}`; sessionStorage.removeItem(key); sessionStorage.removeItem(`${key}:creation`); } catch { /* optional */ } window.location.assign("/projects/new"); }}><Plus size={15} /> 新建岗位项目</button>
 
         <div className="side-section">
           <div className="side-label">浏览当前岗位</div>
@@ -1432,7 +1449,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
 
       <section className="graph-pane">
         <header className="pane-header">
-          <div><span className="eyebrow">{projectId ? "我的项目 · 私有研究空间" : "公开只读示例"}</span><h1>{workspaceTitle}</h1></div>
+          <div><span className="eyebrow">{projectId || initialNewProject ? "我的项目 · 私有研究空间" : "公开只读示例"}</span><h1>{workspaceTitle}</h1></div>
           <div className="package-header-actions">
             {projectId && <><button type="button" title="历史版本与比较" onClick={() => setActiveOperation("versions")}><History size={14} />版本历史</button><button type="button" onClick={() => setActiveOperation("publish")}><Upload size={14} />发布</button><div className="project-menu-wrap"><button type="button" onClick={() => setProjectMenuOpen((value) => !value)} aria-label="项目操作" aria-expanded={projectMenuOpen}><MoreHorizontal size={18} /></button>{projectMenuOpen && <div className="project-header-menu"><ProjectManagement projectId={projectId} title={workspaceTitle} variant="delete" /></div>}</div></>}
 
@@ -1467,14 +1484,16 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
           <span><b>{enrichmentState.label}</b><small>{enrichmentState.error || (enrichmentState.running ? "当前岗位结构可立即使用；新节点、依赖和事理场景会按不可变子版本自动并入。" : "节点引用仍固定到具体快照；新会话默认使用最新版本。")}</small></span>
         </div> : null}
 
-        {projectResult && !enrichmentState.running && snapshotQualitySummary(projectResult).needsResearch && <div className="enrichment-banner error" role="status" data-testid="snapshot-quality-status">
-          <AlertTriangle size={14} /><span><b>{snapshotQualitySummary(projectResult).label}</b><small>流程结束不代表知识技能齐全。请在迭代工具中补研缺口；学习路径挂载需另行核对与提交。</small></span>
-        </div>}
+        {projectResult && !enrichmentState.running && snapshotQualitySummary(projectResult).needsResearch && <details className="snapshot-research-details" data-testid="snapshot-quality-status">
+          <summary>研究覆盖与后续完善</summary><p>{snapshotQualitySummary(projectResult).label}</p>
+          <p>后续研究会优先补充缺少的知识、技能、工作过程和来源。</p>
+          {projectId && <button disabled={Boolean(toolBusy[activeConversationId])} onClick={() => void launchTool("snapshot-iteration", "补充当前岗位各任务缺少的知识和技能，完善工作过程与能力单元，核对来源并更新学习路径挂载。")}>继续完善</button>}
+        </details>}
 
         {projectResult && <LearningPathMapping key={projectResult.snapshot.id} result={projectResult} projectId={projectId} projectVersionId={skillContext.versionId} selectedNodeId={selectedId} onPreparePackage={() => { setLearningMountVersionId(skillContext.versionId); setActiveOperation("publish"); }} />}
 
         <div data-testid="workspace-stage" className={`graph-stage ${view === "tasks" ? "tasks-mode" : view === "evidence" ? "evidence-mode" : view === "cards" ? "cards-mode" : ""}`}>
-          {projectId && !graphData && !conversationLoading ? <div className="empty-project-stage"><Network size={38} /><h2>{workspaceError ? "暂时无法打开项目" : "岗位图谱将在这里逐步形成"}</h2><p>{workspaceError || "从右侧对话选择冷启动工具。研究、迭代和资料接入的成果都会呈现在这个展示台。"}</p>{workspaceError ? <a href={loginHref || `https://learn.learnflow.club/login?return_to=${encodeURIComponent(typeof window === "undefined" ? "https://roles.learnflow.club/" : window.location.href)}`}>重新登录</a> : <button onClick={() => void launchTool("cold-start-role-package")}><Sparkles size={14} />开始岗位研究</button>}</div> : view === "evidence" ? (
+          {(projectId || initialNewProject) && !graphData && !conversationLoading ? <div className="empty-project-stage"><Network size={38} /><h2>{workspaceError ? "暂时无法打开项目" : "岗位图谱将在这里逐步形成"}</h2><p>{workspaceError || "在右侧明确岗位并确认说明后，图谱和学习路径会在这里逐步形成。"}</p>{workspaceError ? <a href={loginHref || `https://learn.learnflow.club/login?return_to=${encodeURIComponent(typeof window === "undefined" ? "https://roles.learnflow.club/" : window.location.href)}`}>重新登录</a> : !showIntake && <button onClick={() => { setIntakeDismissed(false); void launchTool("cold-start-role-package"); }}><Sparkles size={14} />开始岗位研究</button>}</div> : view === "evidence" ? (
             <EvidenceSourceView
               sources={evidenceSources}
               query={searchQuery}
@@ -1572,29 +1591,30 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
         <header className="chat-header">
           <div className="chat-header-copy"><b>{projectId
             ? conversations.find((conversation) => conversation.id === activeConversationId)?.title || "岗位项目对话"
-            : "内置示例问答"}</b><span><Sparkles size={11} /> {conversationLoading ? "正在切换会话快照…" : "证据化运行过程 · 推理通道可展开"}</span></div>
+            : initialNewProject ? "明确岗位与生成图谱" : "内置示例问答"}</b><span><Sparkles size={11} /> {conversationLoading ? "正在切换会话快照…" : "证据化运行过程 · 推理通道可展开"}</span></div>
           <div className="chat-header-actions">
-            {projectId && <button data-testid="project-new-conversation" className="chat-new-conversation" disabled={conversationLoading} onClick={() => void createNewConversation()} aria-label="新建对话" title="在此项目新建独立对话"><Plus size={17} /></button>}
+            {projectId && <button data-testid="project-new-conversation" className="chat-new-conversation" disabled={conversationLoading || intakeBusy} onClick={() => void createNewConversation()} aria-label="新建对话" title="在此项目新建独立对话"><Plus size={17} /></button>}
             <button className="chat-collapse-button" onClick={() => setChatCollapsed(true)} aria-label="收起对话侧栏" title="收起对话侧栏"><PanelRightClose size={14} /></button>
             <button type="button" className={`model-chip ${modelSummary.configured ? "configured" : ""}`} onClick={() => setActiveOperation("settings")}><Settings size={12} /> {modelSummary.label}</button>
           </div>
         </header>
-        {projectId && <div className="conversation-controls"><select aria-label="切换项目对话" value={activeConversationId} disabled={conversationLoading} onChange={(e) => void switchConversation(e.target.value)}>{conversations.map((item) => <option key={item.id} value={item.id}>{item.title}{toolBusy[item.id] ? " · 运行中" : ""}</option>)}</select><div className="conversation-mode" data-testid="conversation-modes">{(["explanation", "iteration"] as const).map((mode) => <button key={mode} data-testid={`conversation-mode-${mode}`} aria-pressed={(conversations.find((item) => item.id === activeConversationId)?.mode || "explanation") === mode} disabled={conversationLoading || modeSaving || isRunning || toolBusy[activeConversationId]} onClick={() => void changeMode(mode)}>{mode === "explanation" ? "讲解" : "迭代"}</button>)}</div></div>}
+        {projectId && <div className="conversation-controls"><select aria-label="切换项目对话" value={activeConversationId} disabled={conversationLoading || intakeBusy} onChange={(e) => void switchConversation(e.target.value)}>{conversations.map((item) => <option key={item.id} value={item.id}>{item.title}{toolBusy[item.id] ? " · 运行中" : ""}</option>)}</select><div className="conversation-mode" data-testid="conversation-modes">{(["explanation", "iteration"] as const).map((mode) => <button key={mode} data-testid={`conversation-mode-${mode}`} aria-pressed={(conversations.find((item) => item.id === activeConversationId)?.mode || "explanation") === mode} disabled={conversationLoading || intakeBusy || modeSaving || isRunning || toolBusy[activeConversationId]} onClick={() => void changeMode(mode)}>{mode === "explanation" ? "讲解" : "迭代"}</button>)}</div></div>}
         {projectId && <div className="conversation-baseline"><GitBranch size={11} /><span>{packageStatus ? `本对话基于 v${packageStatus.packageVersion}` : "本对话尚无岗位版本"}</span><small>{(conversations.find((item) => item.id === activeConversationId)?.mode || "explanation") === "explanation" ? "讲解态 · 仅讨论与查询" : "迭代态 · 工具任务可生成新版本"}</small></div>}
-        <WorkspaceSkillLauncher context={skillContext} onLaunch={(skillId) => void launchTool(skillId)} />
+        {!initialNewProject && <WorkspaceSkillLauncher context={skillContext} onLaunch={(skillId) => void launchTool(skillId)} />}
         {!modelSummary.configured && (
           <div className="model-banner"><AlertTriangle size={15} /><span><b>还不能发起真实回答</b><small>选择 MiMo V2.5 或 DeepSeek V4 Flash，并保存会话级 API Key。</small></span><button type="button" onClick={() => setActiveOperation("settings")}>去配置</button></div>
         )}
         <div className="messages">
+          {showIntake && <RoleIntakePane key={`${actorSubjectId}:${projectId || "new"}:${activeConversationId}`} actorSubjectId={actorSubjectId} projectId={projectId} conversationId={activeConversationId || undefined} initialTitle={newProjectBrief?.role || (projectId ? workspaceTitle : "")} initialDescription={newProjectBrief?.description || projectBrief.description} initialMarket={newProjectBrief?.market || projectBrief.market} onBusyChange={setIntakeBusy} onClose={initialNewProject ? undefined : () => setIntakeDismissed(true)} onStarted={(scope) => window.location.assign(`/projects/${encodeURIComponent(scope.projectId)}?conversation=${encodeURIComponent(scope.conversationId)}`)} />}
           {projectId && conversations.filter((conversation) => conversation.id === activeConversationId || toolInstances[conversation.id] || toolBusy[conversation.id]).map((conversation) => {
             const instance = toolInstances[conversation.id];
             const context = instance?.context || { ...skillContext, conversationId: conversation.id, snapshotId: conversation.snapshotId || undefined, versionId: conversation.versionId || undefined };
-            return <div key={conversation.id} hidden={conversation.id !== activeConversationId}><ProjectToolPane context={context} currentSelectedNodeIds={conversation.id === activeConversationId ? skillContext.selectedNodeIds : undefined} activeTool={instance?.tool || null} promptSeed={instance?.promptSeed} targetSeed={instance?.targetSeed} onClose={() => setToolInstances((current) => current[conversation.id] ? { ...current, [conversation.id]: { ...current[conversation.id], tool: null } } : current)} onBusyChange={(busy) => setToolBusy((current) => current[conversation.id] === busy ? current : { ...current, [conversation.id]: busy })} onPreview={(result) => {
+            return <div key={conversation.id} hidden={conversation.id !== activeConversationId}><ProjectToolPane context={context} currentSelectedNodeIds={conversation.id === activeConversationId ? skillContext.selectedNodeIds : undefined} activeTool={instance?.tool === "cold-start-role-package" ? null : instance?.tool || null} promptSeed={instance?.promptSeed} targetSeed={instance?.targetSeed} onClose={() => setToolInstances((current) => current[conversation.id] ? { ...current, [conversation.id]: { ...current[conversation.id], tool: null } } : current)} onBusyChange={(busy) => setToolBusy((current) => current[conversation.id] === busy ? current : { ...current, [conversation.id]: busy })} onPreview={(result) => {
               if (activeConversationRef.current !== conversation.id) return;
               applyProjectWorkspace({ project: { title: result.brief.roleTitle, status: "building" }, conversations, result });
             }} onComplete={(id) => void refreshConversationResult(id)} onViewVersion={(versionId) => { setLearningMountVersionId(versionId); setActiveOperation("versions"); }} /></div>;
           })}
-          {messages.map((message) => message.role === "user" ? (
+          {!showIntake && messages.map((message) => message.role === "user" ? (
             <div className="message user" key={message.id}>
               {message.references && message.references.length > 0 ? <div className="message-refs">{message.references.map((node) => <button key={node.id} onClick={() => selectAndFocus(node)}>{typeLabels[node.type] || node.type} · {node.label}</button>)}</div> : null}
               {message.text}
@@ -1640,7 +1660,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
           <div ref={messagesEndRef} />
         </div>
         {draggingNode && <div className="drag-bridge"><Layers3 size={14} /> 正在引用「{draggingNode.label}」</div>}
-        <div
+        {!showIntake && <div
           className={`composer ${draggingNode ? "drop-ready" : ""}`}
         >
           {references.length > 0 && <div className="ref-list">{references.map((node) => <div className="ref-chip" key={node.id}>{typeLabels[node.type]} · {node.label}<button onClick={() => setReferences((current) => current.filter((item) => item.id !== node.id))}><X size={11} /></button></div>)}</div>}
@@ -1650,11 +1670,10 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
               ? <button className="send-button cancel" onClick={cancelRun}><Square size={11} /> 停止</button>
               : <button className="send-button" disabled={conversationLoading} onClick={() => void sendMessage()}><Send size={13} /> 发送</button>}
           </div>
-        </div>
+        </div>}
       </section>
-      {activeOperation && <div className={`workspace-modal-backdrop ${activeOperation === "new-project" ? "compact" : ""}`} onClick={(event) => { if (event.target === event.currentTarget) void closeWorkspaceOperation(); }}><div className="workspace-dialog-surface" role={activeOperation === "new-project" ? undefined : "dialog"} aria-modal={activeOperation === "new-project" ? undefined : true} aria-label={activeOperation === "registry" ? "我的岗位包" : activeOperation === "settings" ? "模型与设置" : "版本历史与发布"}>
-        {activeOperation === "new-project" ? <NewProjectDialog onClose={() => setActiveOperation(null)} initialTitle={newProjectBrief?.role} initialDescription={newProjectBrief?.description} initialMarket={newProjectBrief?.market} />
-        : activeOperation === "settings" ? <ModelSettings embedded onClose={() => void closeWorkspaceOperation()} />
+      {activeOperation && <div className="workspace-modal-backdrop" onClick={(event) => { if (event.target === event.currentTarget) void closeWorkspaceOperation(); }}><div className="workspace-dialog-surface" role="dialog" aria-modal="true" aria-label={activeOperation === "registry" ? "我的岗位包" : activeOperation === "settings" ? "模型与设置" : "版本历史与发布"}>
+        {activeOperation === "settings" ? <ModelSettings embedded onClose={() => void closeWorkspaceOperation()} />
         : activeOperation === "registry" ? <InlineRegistryCenter onClose={() => void closeWorkspaceOperation()} />
         : projectId ? <InlineVersionCenter project={{ id: projectId, title: workspaceTitle, headVersionId: projects.find((item) => item.id === projectId)?.headVersionId || null, currentReleaseId: projects.find((item) => item.id === projectId)?.currentReleaseId || null }} conversationId={activeConversationId} initialVersionId={learningMountVersionId} initialSection={activeOperation === "publish" ? "publish" : "history"} onClose={() => void closeWorkspaceOperation()} onAdopted={(id) => { setActiveOperation(null); void refreshConversationResult(id); }} /> : null}
       </div></div>}

@@ -1,4 +1,4 @@
-import { compileRolePackage } from "@/lib/build/compiler";
+import { compileRolePackage, stableHash } from "@/lib/build/compiler";
 import type { ColdStartBuildResult, ColdStartRequest, EvidenceSpan } from "@/lib/build/types";
 
 /** Re-extraction may add evidence and objects; it cannot silently erase prior facts. */
@@ -34,7 +34,7 @@ function retainEvidence<T extends { id: string; evidenceBindingIds: string[]; ev
   }), incoming);
 }
 
-export function preserveIterationGraph(base: ColdStartBuildResult, rebuilt: ColdStartBuildResult, request: ColdStartRequest): ColdStartBuildResult {
+export function preserveIterationGraph(base: ColdStartBuildResult, rebuilt: ColdStartBuildResult, request: ColdStartRequest, options?: { learningDefinitionTargetIds?: string[] }): ColdStartBuildResult {
   const next = structuredClone(rebuilt);
   // Source IDs include their input position. Reordering the same documents must
   // neither fabricate new sources nor break the old immutable evidence spans.
@@ -61,16 +61,42 @@ export function preserveIterationGraph(base: ColdStartBuildResult, rebuilt: Cold
   mapped.sources.evidenceBindings = mapped.sources.evidenceBindings.map((b, i) => ({ ...b, id: bindingIds.get(next.sources.evidenceBindings[i].id)! }));
   const assets = retain(base.sources.assets, mapped.sources.assets);
   const segments = retain(base.sources.segments, mapped.sources.segments);
+  const teachingBindings: ColdStartBuildResult["sources"]["evidenceBindings"] = [];
+  const explicitDefinitionTargets = new Set(options?.learningDefinitionTargetIds || []);
+  const retainedNodes = base.semantic.nodes.map(old => {
+    const next = mapped.semantic.nodes.find(node => node.id === old.id && node.type === old.type && node.label === old.label && node.learningKind === old.learningKind);
+    if (!next) return old;
+    const definition = old.type === "knowledge_skill" && explicitDefinitionTargets.has(old.id)
+      && next.learningDefinition?.scopeNote.trim() && next.learningDefinition.assessmentCriteria.some(item => item.trim())
+      && JSON.stringify(old.learningDefinition) !== JSON.stringify(next.learningDefinition);
+    const cultivation = old.type === "capability_unit" && (!old.cultivation || Object.values(old.cultivation).some(value => !value.trim()))
+      && next.cultivation && Object.values(next.cultivation).every(value => value.trim());
+    if (!definition && !cultivation) return old;
+    const supporting = mapped.sources.evidenceBindings.filter(binding => binding.targetId === next.id && binding.supportRole !== "contradicts"
+      && assets.some(asset => asset.id === binding.sourceId && asset.kind !== "user_brief" && asset.qualification?.status !== "quarantined")
+      && segments.some(segment => segment.id === binding.segmentId && segment.sourceId === binding.sourceId && segment.text.trim()
+        && (!definition || (binding.evidenceSpan?.quote.trim() && binding.evidenceSpan.segmentId === segment.id && segment.text.includes(binding.evidenceSpan.quote)))));
+    if (!supporting.length) return old;
+    const fieldPath = definition ? "learningDefinition" : "cultivation";
+    // These are source-grounded teaching specifications, not a replacement of
+    // the old factual summary and never evidence of learner mastery.
+    const additions = supporting.map(binding => ({ ...binding, id: `ev:${stableHash(`${binding.id}:${fieldPath}:${JSON.stringify(definition ? next.learningDefinition : next.cultivation)}`)}`,
+      fieldPath, support: "inferred" as const, assertionType: "research_inference" as const, confidence: Math.min(binding.confidence, .65) }));
+    teachingBindings.push(...additions);
+    return { ...old, ...(definition ? { learningDefinition: next.learningDefinition } : { cultivation: next.cultivation }),
+      evidenceBindingIds: [...new Set([...old.evidenceBindingIds, ...additions.map(binding => binding.id)])],
+      evidenceSegmentIds: [...new Set([...old.evidenceSegmentIds, ...additions.map(binding => binding.segmentId)])] };
+  });
   const oldObjects = new Map([...base.semantic.nodes, ...base.semantic.edges, ...base.semantic.claims, ...base.process.scenarios, ...base.process.nodes, ...base.process.edges].map(o => [o.id, o]));
   const changedStatements = new Set([...mapped.semantic.nodes, ...mapped.semantic.edges, ...mapped.semantic.claims, ...mapped.process.scenarios, ...mapped.process.nodes, ...mapped.process.edges].filter(o => oldObjects.has(o.id) && !sameStatement(oldObjects.get(o.id)!, o)).map(o => o.id));
   // Evidence about a rewritten statement is not evidence for the retained one.
-  const bindings = retain(base.sources.evidenceBindings, mapped.sources.evidenceBindings.filter(b => !changedStatements.has(b.targetId)));
+  const bindings = retain(base.sources.evidenceBindings, [...mapped.sources.evidenceBindings.filter(b => !changedStatements.has(b.targetId)), ...teachingBindings]);
   const result = compileRolePackage({
     request,
     brief: { ...base.brief, snapshotAsOf: request.snapshotAsOf },
     assets, segments,
     semantic: {
-      nodes: retainEvidence(base.semantic.nodes, mapped.semantic.nodes),
+      nodes: retainEvidence(retainedNodes, mapped.semantic.nodes),
       edges: retainEvidence(base.semantic.edges, mapped.semantic.edges),
       claims: retainEvidence(base.semantic.claims, mapped.semantic.claims),
       bindings, tempToId: new Map(),

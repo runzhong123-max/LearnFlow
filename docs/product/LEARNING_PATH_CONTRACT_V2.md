@@ -60,9 +60,9 @@
 
 特殊节点的 `ownership.system = learnflow`、`ownership.catalog = graph_extension`，命名空间形式为 `learnflow:extension:<scope>`。它既不是 `official` 节点，也不是学习者 personal overlay。来源仍可追溯至 Role Atlas 岗位包；“由谁生成”和“由谁维护语义”是两个字段维度。
 
-`validateGraphExtensionProposalV2(input, baseGraph, source)` 校验包身份和证据 ID、作用域一致、初始 revision、合并后唯一 ID、端点、来源、关系类型及环。每个新增连通分量必须接到已有图谱；不能只提交一团与路径无关的新点。批次只允许新增，不允许覆盖现有节点或偷偷编辑已有节点之间的边。返回校验结果并复制合法输入，不修改 baseGraph，不存储幂等键，不分配下一图谱版本。
+`validateGraphExtensionProposalV2(input, baseGraph, source)` 校验包身份和证据 ID、作用域一致、初始 revision、合并后唯一 ID、端点、来源、关系类型及环。每个新增连通分量须接到已有图谱，或接到显式声明的 `standaloneRoots` 新课程/技能领域容器。standaloneRoots 是可选的 PathNodeKey 数组：只允许本批新增且属于当前 graph_extension namespace 的 course/skill_domain、不可重复、不可有 incoming contains；原子知识技能不能独立充当根。所有子节点继续通过 contains 可达与包证据校验，不能借此创建无归属散点。批次只允许新增，不允许覆盖现有节点或偷偷编辑已有节点之间的边。返回校验结果并复制合法输入，不修改 baseGraph，不存储幂等键，不分配下一图谱版本。
 
-未来确定性接收服务还必须负责：认证主体与 namespace 授权、包完整性及证据支持性检查、语义去重、幂等持久化、当前 revision 的并发检查、分配下一版本和审计回执。这些不是本次纯契约校验器已实现的能力。授权范围内的特殊节点可自动进入组织扩展图；成为官方公共节点应走既有维护与发布权限。
+确定性接收服务负责：认证主体与 namespace 授权、包完整性及证据支持性检查、语义去重、幂等持久化、当前 revision 的并发检查、分配下一版本和审计回执。这些由已实现的 curriculum_catalog 承担，纯契约校验器不写数据库。授权范围内的特殊节点可自动进入组织扩展图；成为官方公共节点应走既有维护与发布权限。
 
 ## 兼容和调用
 
@@ -88,3 +88,6 @@ if (!checked.valid) throw new Error(JSON.stringify(checked.issues))
 ## 已实现的运行接入
 
 `/api/ecosystem/learning-path/*` 现已提供主体作用域源图读取、v2 解析、原子追加与幂等回执；Role Atlas 导入本文件引用的同一 TS 校验器。旧 v1 matcher 保持兼容，不能用于自动 equivalent。后端打包副本 `backend/app/contracts/official-learning-path.v2.json` 由同步脚本同时生成。运行权限、基线固定策略及桌面中央身份限制见 [ECOSYSTEM_GATEWAY_V1](ECOSYSTEM_GATEWAY_V1.md)。
+
+
+2026-09-09 兼容扩展：`GraphExtensionProposalV2.standaloneRoots?` 为授权生产建立本人学习域提供明确容器契约。旧提案省略此字段保持原行为；新字段需要中央接收服务与 Role Atlas 共享校验器同步部署，旧严格校验器会拒绝，不能静默降级。协议 v2 与既有稳定节点 ID 不变；中央 registry 2026-09-09.1 登记反向自动入口，所有 source 写入仍是零核目标。

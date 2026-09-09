@@ -1182,3 +1182,6 @@ Web 独立 Hub 地址为 `/visualize`，侧栏直接跳转，保留 `/visual-hub
 ## 典型工作任务转换（2026-09-08）
 
 项目创建前的转换工作台复用三类主 Agent 和共享事件权威。`work_task_conversion_gateway` 管理 learner 所有的任务说明、版本、来源与确认接续；`work_task_design_compiler` 提供固定版本专业设计与待审核长尾方案。新增操作事件均为零核目标，生成与设备执行结果不等于掌握证据。运行与兼容性详见 [工作任务转换](implementation/WORK_TASK_CONVERSION.md)。
+
+
+岗位生产自动挂载（Contract impact，2026-09-09.1）：既有 Learning Design 的 curriculum_source_runtime 增加 `role-learning-auto/v1` 反向短时签名入口与持久操作回执。用户启动岗位生产流程授权其知识技能追加到本人 source graph；中央复核真实账号及包权限，复用 resolve/commit/CAS，官方节点不覆写。无锚点可通过 v2 可选 standaloneRoots 创建本人岗位学习域。旧手动确认路径保留，现有 learning_path_extension_committed 仍零 target，生成和挂载均不代表掌握，不新增主 Agent 或五核写入。范围、兼容性及部署见 [服务契约](product/ECOSYSTEM_GATEWAY_V1.md)。

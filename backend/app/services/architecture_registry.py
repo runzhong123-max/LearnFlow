@@ -47,7 +47,7 @@ from learnflow_core.registry_core import (
 REGISTRY_VERSION = "2026-09-09.1"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
-# Pure source-data validators/exporters, not Agent-callable tools or learner writers.
+# Source-data contracts, not Agent-callable tools or learner-state writers.
 # The referenced TypeScript module owns field semantics; this registry owns discovery.
 DATA_CONTRACTS = {
     "work_task_conversion_context_v1": {
@@ -156,6 +156,14 @@ DATA_CONTRACTS = {
         "binding_ids": ["py:ecosystem.dispatch", "api:ecosystem.dispatch"],
         "kernel_reads": [], "kernel_write_path": "none",
         "compatibility": "additive API; central authentication required; desktop local identity is not delegated",
+    },
+    "role_learning_automatic_v1": {
+        "schema_version": "role-learning-auto/v1", "owner": "learning_design_agent",
+        "origin": "builtin", "mode": "authorized_production_source_commit", "lifecycle": "implemented",
+        "authority_path": "backend/app/services/role_learning_automatic.py",
+        "binding_ids": ["py:curriculum.automatic", "api:ecosystem.automatic"],
+        "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "additive central-only reverse signed API and replay table; explicit manual commit remains; production-start authorization permits bounded CAS source commits and at most one original-actor research follow-up (2 rounds, 12 sources, 8 work items) under the same owner/conversation/version fence; zero mastery targets; desktop connects through central account",
     },
     "learning_path_source_v2": {
         "schema_version": "learnflow-learning-path/v2",
@@ -296,7 +304,7 @@ TOOLS = {
         ToolContract("ecosystem_gateway", "Role Atlas and Graph Hub Gateway", "tutor_agent", "learnflow", "orchestration",
                      (), (), "central authenticated actor -> signed fixed-origin read-only package/graph/Agent operations; scoped durable run records, no learner-state write"),
         ToolContract("curriculum_source_runtime", "Role-linked Learning Path Source Runtime", "learning_design_agent", "learnflow", "artifact",
-                     (), (), "verified package -> typed resolution -> explicit source commit with CAS and idempotent receipt; zero-target audit; no mastery or personal plan write"),
+                     (), (), "verified package -> typed resolution -> explicit manual or authorized production source commit with CAS and durable idempotent receipts; reverse delegation checks active central learner; zero-target audit; no mastery or personal plan write"),
         ToolContract("graph_hub_reader", "Scoped Graph Hub Search and Recommender", "tutor_agent", "vnext", "read",
                      (), (), "authenticated LearnFlow learner scope + content-addressed Graph Hub catalog -> official, approved-personal, and owner-only pending-personal graph recommendations with bounded node matches; zero learner-state write"),
         ToolContract("learning_file_service", "Managed Lecture and Practice File Service", "tutor_agent", "vnext", "artifact",
@@ -1400,6 +1408,7 @@ _PYTHON_BINDING_TARGETS = {
     "py:curriculum.read": ("app.services.curriculum_catalog", "read_graph"),
     "py:curriculum.resolve": ("app.services.curriculum_catalog", "resolve"),
     "py:curriculum.commit": ("app.services.curriculum_catalog", "commit"),
+    "py:curriculum.automatic": ("app.services.role_learning_automatic", "automatic_mount"),
     "py:action_board.execute": ("app.services.tutor_service", "execute_action"),
     "py:tutor.process_turn": ("app.services.tutor_service", "process_turn"),
     "py:tutor.context": ("app.services.tutor_service", "get_session_state_summary"),
@@ -1516,6 +1525,7 @@ _API_BINDING_TARGETS = {
     "api:ecosystem.dispatch": ("app.api.ecosystem", "/ecosystem/dispatch", "POST", "dispatch"),
     "api:ecosystem.resolve": ("app.api.ecosystem", "/ecosystem/learning-path/resolve", "POST", "resolve"),
     "api:ecosystem.commit": ("app.api.ecosystem", "/ecosystem/learning-path/commit", "POST", "commit"),
+    "api:ecosystem.automatic": ("app.api.ecosystem", "/ecosystem/learning-path/automatic", "POST", "automatic_mount"),
     "api:learner_state.path_status": ("app.api.learner_state", "/learner-state/learning-path/status", "POST", "set_learning_path_status"),
     "api:learner_state.personal_node": ("app.api.learner_state", "/learner-state/learning-path/personal-nodes", "POST", "add_personal_learning_path_node"),
     "api:learner_state.path_plan": ("app.api.learner_state", "/learner-state/learning-path/plans", "POST", "commit_learning_path_plan"),
@@ -1717,7 +1727,7 @@ _TOOL_BINDING_IDS = {
     "local_work_case_catalog": ("py:work_case.catalog", "py:work_case.validate"),
     "golden_role_workspace": ("py:golden_role.workspace",),
     "ecosystem_gateway": ("py:ecosystem.dispatch", "api:ecosystem.dispatch"),
-    "curriculum_source_runtime": ("py:curriculum.read", "py:curriculum.resolve", "py:curriculum.commit", "api:ecosystem.resolve", "api:ecosystem.commit", "frontend:path.extensions"),
+    "curriculum_source_runtime": ("py:curriculum.read", "py:curriculum.resolve", "py:curriculum.commit", "py:curriculum.automatic", "api:ecosystem.resolve", "api:ecosystem.commit", "api:ecosystem.automatic", "frontend:path.extensions"),
     "action_board": ("py:action_board.execute",),
     "tutor_context": ("py:tutor.context",),
     "chat_mode_runtime": ("py:chat_modes.classify",),

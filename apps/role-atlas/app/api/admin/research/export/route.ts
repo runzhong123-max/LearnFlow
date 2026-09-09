@@ -2,7 +2,7 @@ import { AccessError, accessErrorResponse } from "@/lib/access";
 import { requireResearchAdmin } from "@/lib/research-collection/access";
 import { collectionDb, adminEvent, attachmentBytes } from "@/lib/research-collection/store";
 import { exportArchive, type ExportScope } from "@/lib/research-collection/export";
-import { runKind, runTables } from "@/lib/research-collection/query";
+import { runKind, runTables, hasCollectionTable } from "@/lib/research-collection/query";
 export async function GET(request:Request) {
  try {
   const actor=await requireResearchAdmin(request),q=new URL(request.url).searchParams,db=await collectionDb();
@@ -19,8 +19,9 @@ export async function GET(request:Request) {
   if(!["all","inputs","calls","results","releases"].includes(section))throw new AccessError(400,"INVALID_SECTION");
   const scope:ExportScope={section:section as ExportScope["section"],projectId:q.get("projectId")||undefined,runId:q.get("runId")||undefined};
   if(scope.runId) {
-   if(!["cold_start","iteration","workspace","risk","legacy_risk"].includes(q.get("kind")||""))throw new AccessError(400,"INVALID_RUN_KIND");
+   if(!["intake","cold_start","iteration","workspace","risk","legacy_risk"].includes(q.get("kind")||""))throw new AccessError(400,"INVALID_RUN_KIND");
    scope.kind=runKind(q.get("kind")!);
+   if(scope.kind==="intake"&&!await hasCollectionTable(db,runTables.intake))throw new AccessError(404,"RUN_NOT_FOUND");
    const row=await db.prepare(`SELECT project_id FROM ${runTables[scope.kind]} WHERE id=?`).bind(scope.runId).first<{project_id:string}>();
    if(!row||(scope.projectId&&scope.projectId!==row.project_id))throw new AccessError(404,"RUN_NOT_FOUND");scope.projectId=row.project_id;
   }

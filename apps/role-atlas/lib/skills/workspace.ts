@@ -36,7 +36,7 @@ export const roleSkillDefinitions: RoleSkillDefinition[] = [
   {
     id: "cold-start-role-package",
     label: "冷启动岗位包",
-    description: "从岗位边界与来源建立首个证据化岗位包",
+    description: "明确岗位、确认说明，再深度研究并生成图谱",
     scope: "project_creation",
     execution: "durable_job",
     disclosure: "metadata_first",

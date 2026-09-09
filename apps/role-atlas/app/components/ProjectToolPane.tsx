@@ -27,8 +27,7 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
   onComplete: (conversationId: string) => void; onBusyChange: (busy: boolean) => void;
   onViewVersion: (versionId: string) => void;
 }) {
-  const [prompt, setPrompt] = useState(activeTool === "cold-start-role-package" ? context.roleDescription || "" : "");
-  const [market, setMarket] = useState(context.market || "中国大陆");
+  const [prompt, setPrompt] = useState("");
   const [materials, setMaterials] = useState<SourceInput[]>([]);
   const [materialsBusy, setMaterialsBusy] = useState(false);
   const [webResearch, setWebResearch] = useState(true);
@@ -119,7 +118,7 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
   }
 
   async function start() {
-    if (!activeTool || !context.projectId || !context.conversationId || blocked || materialsBusy) return;
+    if (!activeTool || activeTool === "cold-start-role-package" || !context.projectId || !context.conversationId || blocked || materialsBusy) return;
     setError("");
     if (briefError) { setError(briefError); return; }
     let parsedWorkspace: unknown;
@@ -143,12 +142,9 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
       preparation.current = controller;
       const learningPathGraph = await readOfficialLearningPath(fetch, controller.signal);
       preparation.current = null;
-      if (activeTool === "cold-start-role-package") {
-        endpoint = "/api/build-runs";
-        body = { ...common, conversationId: context.conversationId, webResearch, build: { runId: id, projectId: context.projectId, roleTitle: context.roleTitle, roleDescription: prompt || context.roleDescription || "", market, audience: ["岗位研究者"], snapshotAsOf: new Date().toISOString().slice(0, 10), sources: materials, learningPathGraph } };
-      } else if (activeTool === "workspace-instantiation") {
+      if (activeTool === "workspace-instantiation") {
         endpoint = "/api/workspace-upgrades";
-        body = { ...common, snapshotRef, conversationId: context.conversationId, workspace: { runId: id, projectId: context.projectId, connection: { adapterId, payload: parsedWorkspace, roleHint: context.roleTitle, visibility: "project_private", provenance: { capturedAt: new Date().toISOString() } }, maxObservations: 16, redactPersonalData: true }, iteration: { prompt, webResearch, learningPathGraph, maxRounds: 1, sourceLimit: 8, maxWorkItems: 10 } };
+        body = { ...common, snapshotRef, conversationId: context.conversationId, workspace: { runId: id, projectId: context.projectId, connection: { adapterId, payload: parsedWorkspace, roleHint: context.roleTitle, visibility: "project_private", provenance: { capturedAt: new Date().toISOString() } }, maxObservations: 16, redactPersonalData: true }, iteration: { prompt, webResearch, learningPathGraph, maxRounds: 4, sourceLimit: 20, maxWorkItems: 16 } };
       } else {
         const iteration = conversationIterationRequest({ runId: id, context, draft: iterationDraft, prompt, materials, webResearch, learningPathGraph: learningPathGraph! });
         setSubmittedBrief(iterationRunBrief(iteration));
@@ -196,12 +192,11 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
   }
 
   return <div className="project-tool-pane">
-    {definition && <section className="chat-tool-form" aria-label={`${definition.label}工具`}>
+    {definition && activeTool !== "cold-start-role-package" && <section className="chat-tool-form" aria-label={`${definition.label}工具`}>
       <header><Wrench size={14} /><b>{definition.label}</b><button type="button" onClick={onClose} aria-label="收起工具"><X size={14} /></button></header>
-      <p>{activeTool === "node-deepening" ? "围绕指定节点和目标补充证据与结构，可在下方调整研究范围。" : activeTool === "cold-start-role-package" ? `为「${context.roleTitle}」建立首个岗位包。` : definition.description}</p>
+      <p>{activeTool === "node-deepening" ? "围绕指定节点和目标补充证据与结构，可在下方调整研究范围。" : definition.description}</p>
       {isIteration && <IterationOptions value={iterationDraft} onChange={(draft) => setIterationDrafts((current) => ({ ...current, [activeTool!]: draft }))} disabled={blocked} nodes={context.availableNodes} selectedNodeIds={currentSelectedNodeIds || context.selectedNodeIds} />}
-      {activeTool === "cold-start-role-package" && <label>市场范围<input value={market} onChange={(e) => setMarket(e.target.value)} disabled={blocked} /></label>}
-      <label>{activeTool === "cold-start-role-package" ? "想重点了解什么" : "本次工作目标"}<textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} disabled={blocked} maxLength={4000} placeholder={isIteration && iterationDraft.initiativeProfile === "autonomous" ? "可以留空，由 Agent 检查全岗位并发现研究机会" : "描述你希望补充、核实或修正的内容…"} /></label>
+      <label>本次工作目标<textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} disabled={blocked} maxLength={4000} placeholder={isIteration && iterationDraft.initiativeProfile === "autonomous" ? "可以留空，由 Agent 检查全岗位并发现研究机会" : "描述你希望补充、核实或修正的内容…"} /></label>
       {activeTool === "workspace-instantiation" ? <>
         <label>工作资料类型<select value={adapterId} disabled={blocked} onChange={(e) => setAdapterId(e.target.value)}>{[["event_log", "工单与过程日志"], ["github_trace", "GitHub 工作链"], ["telemetry_case", "可观测性案例"], ["soc_case", "安全运营案例"], ["generic_package", "标准工作区包"], ["devgpt", "AI 开发会话"], ["swebench", "SWE-bench 案例"], ["bug_benchmark", "缺陷基准案例"]].map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
         <label>导入脱敏的 JSON 文件<input type="file" accept=".json,application/json" disabled={blocked} onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; if (file.size > 5_000_000) { setError("文件不能超过 5 MB。"); return; } setWorkspaceJson(await file.text()); }} /></label>
@@ -210,7 +205,7 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
         <small>原始资料保留为项目私有。请包含事件经过、处理结果或交付物正文；只有标题的资料不会生成岗位更新。重建时会对齐 LearnFlow 学习路径。</small>
       </> : <details><summary>添加资料（可选） · {materials.length} 份</summary><SourceMaterials value={materials} onChange={setMaterials} disabled={blocked} onBusyChange={setMaterialsBusy} /></details>}
       <label className="tool-checkbox"><input type="checkbox" checked={webResearch} disabled={blocked} onChange={(e) => setWebResearch(e.target.checked)} />联网研究与来源核对</label>
-      {isIteration && <small>重建时会带入 LearnFlow 学习路径进行对齐。关闭联网且无附加资料时，仅做确定性检查与修复。</small>}
+      {isIteration && <small>重建时会带入 LearnFlow 学习路径进行对齐。开启联网会继续检索独立来源；关闭联网时结合已有资料研究与修复。知识技能会同步到学习路径。</small>}
       <small>基于本对话固定版本。结果保存在本对话；与其他对话并行时会保留独立候选版本。</small>
       {briefError && <small role="status">{briefError}</small>}
       {!blocked && <button className="tool-submit" disabled={materialsBusy || Boolean(briefError)} onClick={() => void start()}><Play size={13} />开始执行</button>}

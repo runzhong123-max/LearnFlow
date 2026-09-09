@@ -87,6 +87,8 @@ export type GraphExtensionProposalV2 = {
   sources: PathSourceV2[]
   nodes: PathNodeV2[]
   edges: PathEdgeV2[]
+  /** Explicit learner-owned curriculum roots; never an inferred connection to an official course. */
+  standaloneRoots?: PathNodeKey[]
 }
 export type ContractIssue = { path: string; code: string; message: string }
 export type ContractValidation<T> = { valid: true; value: T; issues: [] } | { valid: false; issues: ContractIssue[] }
@@ -325,7 +327,7 @@ export function validateRoleLearningAlignmentV2(input: unknown, graph: LearningP
 export function validateGraphExtensionProposalV2(input: unknown, baseGraph: LearningPathGraphV2, source: RolePackageEvidenceContext): ContractValidation<GraphExtensionProposalV2> {
   const c = new Check(), base = validateLearningPathGraphV2(baseGraph)
   if (!base.valid) return { valid: false, issues: base.issues.map(i => ({ ...i, path: `base${i.path}` })) }
-  if (c.object(input, '$', ['protocolVersion', 'idempotencyKey', 'baseGraphRef', 'packageRef', 'namespace', 'sources', 'nodes', 'edges'])) {
+  if (c.object(input, '$', ['protocolVersion', 'idempotencyKey', 'baseGraphRef', 'packageRef', 'namespace', 'sources', 'nodes', 'edges', 'standaloneRoots'])) {
     c.choice(input.protocolVersion, '$.protocolVersion', [GRAPH_EXTENSION_PROPOSAL_V2])
     c.text(input.idempotencyKey, '$.idempotencyKey'); checkGraphRef(c, input.baseGraphRef, '$.baseGraphRef')
     checkPackage(c, input.packageRef, '$.packageRef')
@@ -333,6 +335,7 @@ export function validateGraphExtensionProposalV2(input: unknown, baseGraph: Lear
     c.array(input.sources, '$.sources', (v, p) => checkSource(c, v, p))
     c.array(input.nodes, '$.nodes', (v, p) => checkNode(c, v, p), 1)
     c.array(input.edges, '$.edges', (v, p) => checkEdge(c, v, p), 1)
+    if (input.standaloneRoots !== undefined) c.array(input.standaloneRoots, '$.standaloneRoots', (v, p) => checkKey(c, v, p), 1)
   }
   if (!c.issues.length) {
     const proposal = input as GraphExtensionProposalV2
@@ -355,7 +358,17 @@ export function validateGraphExtensionProposalV2(input: unknown, baseGraph: Lear
     proposal.edges.forEach((edge, i) => {
       if (!added.has(pathNodeKey(edge.from)) && !added.has(pathNodeKey(edge.to))) c.issue(`$.edges[${i}]`, 'existing_edge_edit', 'An extension edge must touch a new node')
     })
-    // Every new node must be connected, possibly through other new nodes, to the existing catalog.
+    // Standalone roots require an explicit proposal. Atomic points cannot become unanchored roots.
+    const roots = proposal.standaloneRoots || []
+    unique(c, roots.map(pathNodeKey), '$.standaloneRoots')
+    for (const root of roots) {
+      const node = proposal.nodes.find(n => pathNodeKey(n) === pathNodeKey(root))
+      if (!node || node.namespace !== proposal.namespace || !['course', 'skill_domain'].includes(node.kind)
+        || node.ownership.catalog !== 'graph_extension' || proposal.edges.some(e => e.kind === 'contains' && pathNodeKey(e.to) === pathNodeKey(root))) {
+        c.issue('$.standaloneRoots', 'root_scope', 'Standalone roots must be new scoped curriculum containers without a parent')
+      }
+    }
+    // Every addition reaches the existing catalog or an explicitly proposed learner-owned root.
     const reached = new Set(baseGraph.nodes.map(pathNodeKey)), neighbors = new Map<string, string[]>()
     for (const edge of proposal.edges) {
       const a = pathNodeKey(edge.from), b = pathNodeKey(edge.to)
@@ -363,6 +376,14 @@ export function validateGraphExtensionProposalV2(input: unknown, baseGraph: Lear
     }
     const queue = [...reached]
     for (let i = 0; i < queue.length; i++) for (const key of neighbors.get(queue[i]) ?? []) if (!reached.has(key)) { reached.add(key); queue.push(key) }
+    const contained = new Set(roots.map(pathNodeKey)), children = new Map<string, string[]>()
+    for (const edge of proposal.edges) if (edge.kind === 'contains') {
+      const from = pathNodeKey(edge.from)
+      children.set(from, [...(children.get(from) ?? []), pathNodeKey(edge.to)])
+    }
+    const rootQueue = [...contained]
+    for (let i = 0; i < rootQueue.length; i++) for (const key of children.get(rootQueue[i]) ?? []) if (!contained.has(key)) { contained.add(key); rootQueue.push(key) }
+    for (const key of contained) reached.add(key)
     for (const key of added) if (!reached.has(key)) c.issue('$.nodes', 'unanchored', `New node ${key} is disconnected from the catalog`)
     const combined = validateLearningPathGraphV2({ ...baseGraph, sources: [...baseGraph.sources, ...proposal.sources], nodes: [...baseGraph.nodes, ...proposal.nodes], edges: [...baseGraph.edges, ...proposal.edges] })
     if (!combined.valid) c.issues.push(...combined.issues)

@@ -88,3 +88,18 @@ test("a changed conversation baseline cannot start a stale job after another tas
     assert.equal(claim({ baseVersionId: "v2" }), 1);
   } finally { db.close(); }
 });
+
+test("confirmation admission is checked in the job insert transaction, while an admitted job keeps its immutable input", () => {
+  const { db, claim } = setup();
+  try {
+    db.exec("CREATE TABLE confirmed_briefs(revision TEXT, run_id TEXT); INSERT INTO confirmed_briefs VALUES('r2','j1')");
+    const fence = (revision: string) => ({ sql: "EXISTS(SELECT 1 FROM confirmed_briefs WHERE revision=? AND run_id=?)", bindings: [revision, "j1"] });
+    assert.equal(claim({ insertionFence: fence("r1") }), 0);
+    assert.equal(db.prepare("SELECT count(*) n FROM role_jobs").get()?.n, 0);
+    assert.equal(claim({ insertionFence: fence("r2") }), 1);
+    // A later revision cannot retroactively rewrite a previously admitted job.
+    db.exec("UPDATE confirmed_briefs SET revision='r3'; UPDATE role_jobs SET status='failed',lease_owner=NULL");
+    assert.equal(claim({ owner: "durable-retry" }), 1);
+    assert.equal(db.prepare("SELECT input_json FROM role_jobs").get()?.input_json, "{}");
+  } finally { db.close(); }
+});

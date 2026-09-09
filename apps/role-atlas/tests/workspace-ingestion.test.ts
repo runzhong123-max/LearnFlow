@@ -41,7 +41,7 @@ const workspaceUpgradeModel: ModelInvoker = async function* ({ system, user }) {
   if (system.includes("任务导向的知识技能规范化器")) {
     const tasks = payload.tasks as Array<{ id: string }>;
     const mentions = payload.knowledgeMentions as Array<{ id: string }>;
-    yield { type: "text", delta: JSON.stringify({ skills: [{ tempId: "skill-state", label: "LangGraph 状态持久化", summary: "设计 thread 与 checkpoint 命名空间并执行回归验证。", learningKind: "skill", learningDefinition: { scopeNote: "配置 thread 与 checkpoint 命名空间，不涉及无关存储系统。", assessmentCriteria: ["复现状态回归并提供验证结果"] }, learningOutcome: "解释持久化契约", practiceArtifact: "回归测试", assessment: "复现并修复状态回归", taskTempIds: tasks.map((item) => item.id), mentionIds: mentions.map((item) => item.id), confidence: 0.78 }] }) };
+    yield { type: "text", delta: JSON.stringify({ skills: (["knowledge", "skill"] as const).map(kind => ({ tempId: `state-${kind}`, label: kind === "knowledge" ? "thread 与 checkpoint 命名空间规则" : "配置命名空间并执行回归验证", summary: "设计 thread 与 checkpoint 命名空间并执行回归验证。", learningKind: kind, learningDefinition: { scopeNote: "配置 thread 与 checkpoint 命名空间，不涉及无关存储系统。", assessmentCriteria: [kind === "knowledge" ? "解释命名空间隔离规则" : "复现状态回归并提供验证结果"] }, learningOutcome: "解释持久化契约", practiceArtifact: "回归测试", assessment: "复现并修复状态回归", taskTempIds: tasks.map((item) => item.id), mentionIds: mentions.map((item) => item.id), confidence: 0.78 })) }) };
     return;
   }
   if (system.includes("跨任务能力归纳器")) {
@@ -233,7 +233,7 @@ test("工作区观察进入统一 instantiate 迭代，并在回退评估前保�
   const result = completed.payload.result as SnapshotIterationResult;
   assert.ok(result.contract.changeIntents.includes("instantiate"));
   assert.ok(result.opportunities.some((opportunity) => opportunity.origin === "workspace"));
-  assert.ok(result.candidate.sources.assets.some((asset) => asset.workspaceEvidence?.workspacePackageId === ingestion.package.id));
+  assert.ok(result.candidate.sources.assets.some((asset) => asset.workspaceEvidence?.workspacePackageId === ingestion.package.id), result.summary.join("\n"));
   assert.ok(result.candidate.process.scenarios.length > 0);
   assert.ok(result.candidate.process.scenarios.some((scenario) => scenario.knowledgeState === "observed_pattern"), "工作区观察可支持 observed pattern，但仍不等于岗位共性");
   assert.ok(events.some((event) => event.kind === "iteration.evaluation.completed"), "必须经过回退与信息增量评估后才可形成版本");

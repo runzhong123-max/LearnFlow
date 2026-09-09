@@ -35,6 +35,8 @@ export async function prepareRelease(input: {
   visibility?: PackageVisibility;
   evidencePolicy?: EvidencePolicy;
   registry?: RegistryMetadata;
+  /** Internal learning-source preparation remains private and cannot bypass publication checks. */
+  sourceUse?: "learning_path";
 }) {
   if (!SEMVER.test(input.packageVersion)) throw new Error("INVALID_SEMVER");
   const version = await getProjectVersionRecord(input.projectId, input.projectVersionId);
@@ -44,6 +46,7 @@ export async function prepareRelease(input: {
     visibility: input.visibility || input.registry?.visibility || "private",
     evidencePolicy: input.evidencePolicy || input.registry?.evidencePolicy || "metadata",
   };
+  if (input.sourceUse && (metadata.visibility !== "private" || metadata.evidencePolicy !== "metadata")) throw new Error("LEARNING_SOURCE_MUST_BE_PRIVATE");
   const packageId = await projectReleasePackageId(getD1(), input);
   const line = await ensureRegistryPackageLine({ result: version.result, packageId, metadata });
   const db = getDb();
@@ -56,19 +59,21 @@ export async function prepareRelease(input: {
     // same source and disclosure policy, even when the mutable line has changed.
     const artifact = duplicate.artifactRootHash ? await getPackageArtifact(duplicate.artifactRootHash) : null;
     const manifest = artifact?.bundle.manifest;
-    if (duplicate.projectId !== input.projectId || duplicate.sourceProjectVersionId !== input.projectVersionId
-      || !manifest || manifest.rootHash !== duplicate.artifactRootHash
+    if (duplicate.projectId !== input.projectId || duplicate.sourceProjectVersionId !== input.projectVersionId || duplicate.snapshotId !== version.snapshotId) throw new Error("RELEASE_VERSION_CONFLICT");
+    // A terminated private source compiler may leave its claim without an artifact. Recompile only that exact source.
+    const resumableSource = input.sourceUse === "learning_path" && !manifest && ["compiling", "validating", "failed"].includes(duplicate.status);
+    if (!resumableSource && (!manifest || manifest.rootHash !== duplicate.artifactRootHash
       || manifest.packageId !== line.packageId || manifest.packageVersion !== input.packageVersion
       || manifest.sourceProjectVersionId !== input.projectVersionId || manifest.sourceRootHash !== version.rootHash
       || manifest.snapshotId !== version.snapshotId || duplicate.snapshotId !== version.snapshotId
-      || manifest.visibility !== metadata.visibility || manifest.evidencePolicy !== metadata.evidencePolicy) {
+      || manifest.visibility !== metadata.visibility || manifest.evidencePolicy !== metadata.evidencePolicy)) {
       throw new Error("RELEASE_VERSION_CONFLICT");
     }
-    return duplicate;
+    if (!resumableSource) return duplicate;
   }
 
-  const id = domainId("release");
-  await db.insert(packageReleases).values({
+  const id = duplicate?.id || domainId("release");
+  if (!duplicate) await db.insert(packageReleases).values({
     id,
     packageLineId: line.id,
     projectId: input.projectId,
@@ -99,7 +104,7 @@ export async function prepareRelease(input: {
     });
     await putPackageArtifact(compiled.bundle);
     const validationReportHash = await sha256Hex(canonicalStringify(compiled.validation));
-    if (!compiled.validation.valid || !compiled.validation.publishable) {
+    if (!compiled.validation.valid || (!compiled.validation.publishable && input.sourceUse !== "learning_path")) {
       await db.update(packageReleases).set({
         status: "failed",
         artifactRootHash: compiled.bundle.manifest.rootHash,

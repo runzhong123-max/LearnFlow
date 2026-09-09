@@ -99,7 +99,7 @@ test("public metadata and redacted artifacts remove private raw quotes as well a
 
 async function serviceHarness(result = reviewedResult(), visibility: "private" | "public" = "private") {
   const compiled = await compile(result, visibility);
-  const state = { release: { id: "release-1", packageLineId: "line-1", projectId: "project-1", sourceProjectVersionId: "version-1", status: "ready", artifactRootHash: compiled.bundle.manifest.rootHash }, line: { id: "line-1", packageId: "role-package:project:test", visibility, recommendedReleaseId: null as string | null }, compiled, batches: [] as unknown[][] };
+  const state = { artifactAvailable: true, compileCount: 0, release: { id: "release-1", packageLineId: "line-1", projectId: "project-1", sourceProjectVersionId: "version-1", status: "ready", artifactRootHash: compiled.bundle.manifest.rootHash }, line: { id: "line-1", packageId: "role-package:project:test", visibility, recommendedReleaseId: null as string | null }, compiled, batches: [] as unknown[][] };
   const key = `__releaseQuality${Math.random().toString(36).slice(2)}`;
   (globalThis as unknown as Record<string, unknown>)[key] = { state, validateReleaseArtifact, assertReleaseQuality };
   let code = (await readFile(resolve("lib/releases/service.ts"), "utf8")).replace(/^import[\s\S]*?;\n/gmu, "");
@@ -117,12 +117,12 @@ async function serviceHarness(result = reviewedResult(), visibility: "private" |
       state.batches.push(statements); state.release.status = "published"; state.line.recommendedReleaseId = state.release.id;
       return statements.map(() => ({ meta: { changes: 1 } }));
     } });
-    const getPackageArtifact = async () => ({ bundle: state.compiled.bundle });
-    const putPackageArtifact = async () => {};
+    const getPackageArtifact = async () => state.artifactAvailable ? ({ bundle: state.compiled.bundle }) : null;
+    const putPackageArtifact = async () => { state.artifactAvailable = true; };
     const getProjectVersionRecord = async () => ({ id: "version-1", snapshotId: "snapshot-1", result: state.compiled.result });
     const projectReleasePackageId = async () => state.line.packageId;
     const ensureRegistryPackageLine = async () => state.line;
-    const compileStaticRolePackage = async () => state.compiled;
+    const compileStaticRolePackage = async () => { state.compileCount++; return state.compiled; };
     const canonicalStringify = JSON.stringify, sha256Hex = async () => "hash", domainId = () => "prepared-new";
     ${code}`;
   const compiledCode = ts.transpileModule(code, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
@@ -173,5 +173,37 @@ test("rolling back a previously public artifact cannot silently undo its current
     await h.service.rollbackRelease({ packageLineId: "line-1", targetReleaseId: "release-1" });
     const lineWrite = h.state.batches[0][0] as { args: unknown[] };
     assert.equal(lineWrite.args[1], "private");
+  } finally { h.cleanup(); }
+});
+
+
+test("authorized learning source prepares a valid private artifact without weakening publication quality", async () => {
+  const h = await serviceHarness(rootOnlyResult());
+  try {
+    assert.equal(h.state.compiled.validation.valid, true);
+    assert.equal(h.state.compiled.validation.publishable, false);
+    const input = { projectId: "project-1", projectVersionId: "version-1", packageVersion: "1.0.0", sourceUse: "learning_path" as const };
+    await assert.rejects(h.service.prepareRelease({ ...input, visibility: "public" }), /LEARNING_SOURCE_MUST_BE_PRIVATE/u);
+    await assert.rejects(h.service.prepareRelease({ ...input, evidencePolicy: "full" }), /LEARNING_SOURCE_MUST_BE_PRIVATE/u);
+    const release = await h.service.prepareRelease(input);
+    assert.equal(release.status, "ready");
+    assert.equal(h.state.compiled.bundle.manifest.visibility, "private");
+    assert.equal(h.state.batches.length, 0);
+    await assert.rejects(h.service.publishRelease({ releaseId: release.id }), /RELEASE_QUALITY_BLOCKED/u);
+    assert.equal(h.state.batches.length, 0, "source readiness never publishes the package or changes its recommendation");
+  } finally { h.cleanup(); }
+});
+
+test("an interrupted private source compilation resumes only the exact original version", async () => {
+  const h = await serviceHarness(reviewedResult());
+  try {
+    Object.assign(h.state.release, { status: "validating", snapshotId: "snapshot-1", packageVersion: "1.0.0", artifactRootHash: null });
+    h.state.artifactAvailable = false;
+    const input = { projectId: "project-1", projectVersionId: "version-1", packageVersion: "1.0.0", sourceUse: "learning_path" as const };
+    await assert.rejects(h.service.prepareRelease({ ...input, projectVersionId: "other-version" }), /RELEASE_VERSION_CONFLICT/u);
+    assert.equal(h.state.compileCount, 0);
+    const release = await h.service.prepareRelease(input);
+    assert.equal(release.id, "release-1"); assert.equal(release.status, "ready"); assert.equal(h.state.compileCount, 1);
+    assert.ok(release.artifactRootHash); assert.equal(h.state.batches.length, 0);
   } finally { h.cleanup(); }
 });

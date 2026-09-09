@@ -3,7 +3,7 @@ import type { AuditIssue, ColdStartBuildResult, ResearchTopic } from "@/lib/buil
 import { auditRoleSnapshot } from "@/lib/risk/audit";
 import type { RiskIssue, RiskProfile } from "@/lib/risk/types";
 import type { AgentProbe, IterationFinding, IterationFindingLayer, SnapshotInspection } from "./types";
-import { learningCoverage } from "./learning-health";
+import { learningCoverage, processCoverage } from "./learning-health";
 import { capabilityCoverage } from "@/lib/build/capability-coverage";
 
 const HARD_PROTOCOL_CODES = new Set([
@@ -15,7 +15,7 @@ const HARD_PROTOCOL_CODES = new Set([
 ]);
 
 const INSPECTION_CODES = new Set([
-  "TASK_SKILL_GAP", "SKILL_COVERAGE_SPARSE", "CAPABILITY_NOT_CROSS_TASK",
+  "TASK_SKILL_GAP", "TASK_LEARNING_KIND_GAP", "TASK_PROCESS_INCOMPLETE", "SKILL_COVERAGE_SPARSE", "CAPABILITY_NOT_CROSS_TASK",
   "TASK_CAPABILITY_GAP", "TASK_CAPABILITY_UNIT_GAP",
   "CAPABILITY_UNIT_CULTIVATION_GAP", "LEARNING_PATH_AMBIGUOUS", "LEARNING_PATH_GRAPH_GAP",
   "AGENT_ROLE_ROOT", "AGENT_GRAPH_TRAVERSAL", "AGENT_EVIDENCE_RESOLUTION", "AGENT_SNAPSHOT_CONTEXT",
@@ -146,15 +146,16 @@ function agentProbes(result: ColdStartBuildResult): AgentProbe[] {
 
 function coverageFindings(result: ColdStartBuildResult) {
   const findings: IterationFinding[] = [];
-  const { tasks, skills, tasksWithoutSkills } = learningCoverage(result);
+  const { tasks, skills, tasksWithoutSkills, taskCoverage } = learningCoverage(result);
   for (const task of tasksWithoutSkills) {
+    const coverage = taskCoverage.find(item => item.taskId === task.id)!;
     findings.push(customFinding({
       layer: "coverage",
       classification: "research",
       severity: "warning",
-      code: "TASK_SKILL_GAP",
+      code: coverage.linkedPointCount ? "TASK_LEARNING_KIND_GAP" : "TASK_SKILL_GAP",
       title: `任务缺少可学习知识技能：${task.label}`,
-      detail: "该任务没有连接到能够解释其实施、调试或验收的具体知识技能。",
+      detail: `该任务仍缺少有资料依据、适用边界及评价规格的${coverage.missingKinds.map(kind => kind === "knowledge" ? "知识点" : "技能点").join("、")}；泛化能力、混合领域或单一维度不能代替完整支撑。`,
       impact: "Agent 无法组装可靠学习路径，教师也难以据此形成实训和评价入口。",
       targetIds: [task.id],
       evidenceBindingIds: task.evidenceBindingIds,
@@ -178,6 +179,13 @@ function coverageFindings(result: ColdStartBuildResult) {
       suggestedAction: "research",
       hardBlocker: false,
     }));
+  }
+  for (const item of processCoverage(result).filter(item => item.hasBridge && !item.complete)) {
+    const task = tasks.find(task => task.id === item.taskId)!;
+    findings.push(customFinding({ layer: "process", classification: "research", severity: "warning", code: "TASK_PROCESS_INCOMPLETE",
+      title: `任务工作过程尚未闭合：${task.label}`, detail: "已有桥接但仍缺真实场景、触发与结果、至少两个相连行动或判断及交付物，需要依据工作实践补齐。",
+      impact: "无法据此解释任务如何执行和验收。", targetIds: [task.id], evidenceBindingIds: task.evidenceBindingIds,
+      confidence: 0.95, suggestedAction: "research", hardBlocker: false }));
   }
   return { findings, tasks, skills, tasksWithoutSkills };
 }
@@ -218,7 +226,7 @@ function pedagogyFindings(result: ColdStartBuildResult) {
       confidence: 0.9, suggestedAction: "research", hardBlocker: false,
     }));
   }
-  for (const unit of units.filter((node) => !node.cultivation)) findings.push(customFinding({
+  for (const unit of units.filter((node) => !node.cultivation || Object.values(node.cultivation).some(value => !value.trim()))) findings.push(customFinding({
     layer: "coverage", classification: "core_usability", severity: "warning", code: "CAPABILITY_UNIT_CULTIVATION_GAP",
     title: `能力单元缺少日常培养设计：${unit.label}`,
     detail: "尚未说明微练习、频率、反馈、学习证据、递进与独立完成标准。",
@@ -280,7 +288,7 @@ export function inspectSnapshot(result: ColdStartBuildResult, options?: { target
   const acceptedNodes = result.semantic.nodes.filter((node) => node.lifecycle === "stable");
   const boundTargets = new Set(result.sources.evidenceBindings.map((binding) => binding.targetId));
   const unsupportedAccepted = acceptedNodes.filter((node) => !boundTargets.has(node.id));
-  const tasksWithoutProcess = coverage.tasks.filter((task) => !result.process.bridges.some((bridge) => bridge.type === "realizes_task" && bridge.semanticNodeId === task.id));
+  const tasksWithoutProcess = processCoverage(result).filter(item => !item.complete);
   const semanticCoreTypes = ["task", "capability", "knowledge_skill"];
   const presentSemanticCoreTypes = semanticCoreTypes.filter((type) => result.semantic.nodes.some((node) => node.type === type)).length;
   const semanticCoreCoverage = presentSemanticCoreTypes / semanticCoreTypes.length;

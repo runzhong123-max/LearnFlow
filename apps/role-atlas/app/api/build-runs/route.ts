@@ -1,8 +1,10 @@
-import { enqueueRoleJob } from "@/lib/jobs/dispatch";
+import { enqueueRoleJob, isDispatchedRoleJob } from "@/lib/jobs/dispatch";
 import { rememberResearchRequester } from "@/lib/research-collection/store";
 import { startRoleJobExecution } from "@/lib/jobs/execution";
 import { projectVersionHeadState } from "@/lib/versioning/commit";
-import { authorizeApiRequest } from "@/lib/access";
+import { authorizeApiRequest, requestActor } from "@/lib/access";
+import { requireConfirmedIntake } from "@/lib/intake/server";
+import { intakeBuildGuard } from "@/lib/intake/build-guard";
 import { z } from "zod/v4";
 import { createRecordedModelInvoker } from "@/lib/research-collection/model";
 import { createColdStartSkill } from "@/lib/build/graph";
@@ -31,6 +33,7 @@ function pruneWorkItemCache(limit = 800) {
 
 const requestSchema = z.object({
   build: coldStartRequestSchema,
+  intakeConfirmation: z.object({ revisionId: z.string().min(4).max(220), contentHash: z.string().regex(/^[a-f0-9]{64}$/) }).optional(),
   conversationId: z.string().min(4).max(100),
   providerConfig: z.unknown().optional(),
   searchConfig: z.unknown().optional(),
@@ -75,9 +78,21 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, error: "冷启动项目简报、资料或模型配置无效。", detail: error instanceof Error ? error.message : undefined }, { status: 400 });
   }
 
+  // Only the saved user confirmation defines the research brief. Workers replay sealed, immutable input.
+  if (!isDispatchedRoleJob(request)) {
+    if (!parsed.intakeConfirmation) return Response.json({ error: "请先在右侧对话确认岗位说明，再开始生成图谱。", code: "INTAKE_CONFIRMATION_REQUIRED" }, { status: 409 });
+    try {
+      const confirmed = await requireConfirmedIntake({ actor: await requestActor(request), projectId: parsed.build.projectId, conversationId: parsed.conversationId, runId: parsed.build.runId, ...parsed.intakeConfirmation });
+      parsed.build = coldStartRequestSchema.parse({ ...parsed.build, roleTitle: confirmed.roleTitle, roleDescription: confirmed.description, market: confirmed.market, sources: confirmed.sources });
+      parsed.webResearch = true;
+      parsed.reuseProjectSources = false;
+    } catch {
+      return Response.json({ error: "岗位说明已更新或尚未确认，请查看最新说明后再确定。", code: "INTAKE_CONFIRMATION_STALE" }, { status: 409 });
+    }
+  }
   let buildRequest = parsed.build;
   let existingResearchReport: ColdStartBuildResult["sources"]["research"];
-  if (parsed.reuseProjectSources) {
+  if (parsed.reuseProjectSources && !isDispatchedRoleJob(request)) {
     const workspace = await getProjectWorkspace(parsed.build.projectId).catch(() => null);
     const previous = workspace?.result;
     if (!previous) return Response.json({ ok: false, error: "当前项目还没有可复用的来源索引。" }, { status: 409 });
@@ -152,9 +167,11 @@ export async function POST(request: Request) {
     projectId: buildRequest.projectId,
     phase: "kernel",
     owner: jobOwner,
-    payload: { build: buildRequest, conversationId: parsed.conversationId, webResearch: parsed.webResearch },
+    payload: { build: buildRequest, conversationId: parsed.conversationId, webResearch: parsed.webResearch, ...(parsed.intakeConfirmation ? { intakeConfirmation: parsed.intakeConfirmation } : {}) },
   };
-  const queued = await enqueueRoleJob(request, claimInput, { ...parsed, build: buildRequest });
+  const insertionFence = parsed.intakeConfirmation && !isDispatchedRoleJob(request)
+    ? intakeBuildGuard({ ...parsed.intakeConfirmation, projectId: buildRequest.projectId, conversationId: parsed.conversationId, runId: buildRequest.runId, subjectId: (await requestActor(request)).subjectId }) : undefined;
+  const queued = await enqueueRoleJob(request, claimInput, { ...parsed, build: buildRequest }, { forceDurable: true, insertionFence });
   if (queued) return queued;
   const job = await claimRoleJob(claimInput).catch(() => null);
   if (!job?.claimed) return Response.json({ ok: false, code: "JOB_LEASE_HELD", error: "同一冷启动仍由另一个执行器处理。" }, { status: 409 });
