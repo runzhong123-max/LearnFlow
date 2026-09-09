@@ -16,7 +16,7 @@ export async function GET(request:Request) {
   }
   if(q.has("runId")) {
    const kind=q.get("kind")||"";
-   if(!["cold_start","iteration","workspace","risk","legacy_risk"].includes(kind))throw new AccessError(400,"INVALID_RUN_KIND");
+   if(!["intake","cold_start","iteration","workspace","risk","legacy_risk"].includes(kind))throw new AccessError(400,"INVALID_RUN_KIND");
    const data=await detail(runKind(kind),q.get("runId")!);if(!data)throw new AccessError(404,"RUN_NOT_FOUND");
    await adminEvent(actor.subjectId,"run.read",{id:q.get("runId"),kind});return reply(data);
   }
