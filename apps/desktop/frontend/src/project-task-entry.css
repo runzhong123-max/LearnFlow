@@ -1,0 +1,45 @@
+.project-task-entry {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px 28px;
+  padding: 22px 26px;
+  margin: 0 0 22px;
+  border: 1px solid #cbded2;
+  border-radius: 18px;
+  background: #edf5ef;
+}
+.project-task-entry-copy { flex: 1 1 320px; min-width: 0; }
+.project-task-entry h2 { margin: 0 0 8px; font-size: 18px; letter-spacing: -.02em; }
+.project-task-entry p { margin: 0; color: #587063; font-size: 13px; line-height: 1.7; }
+.project-task-entry-actions { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.project-task-entry-actions a { color: #216a4d; text-decoration: none; font-size: 12px; }
+.project-task-entry-actions a:hover { text-decoration: underline; }
+.project-task-entry-actions .project-task-entry-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 20px;
+  border-radius: 10px;
+  padding: 13px 18px;
+  background: #087d55;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+.project-task-entry-primary:hover { background: #076b49; }
+.project-task-entry-actions a:focus-visible, .project-manual-entry>summary:focus-visible { outline: 2px solid #087d55; outline-offset: 4px; }
+.project-task-entry-actions a[aria-disabled=true] { opacity: .6; cursor: wait; }
+.project-task-entry-actions small { font-size: 11px; color: #62796c; }
+.project-task-entry ol { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 17px 0 0; padding: 0; list-style: none; counter-reset: task-step; }
+.project-task-entry li { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #42604f; counter-increment: task-step; }
+.project-task-entry li::before { content: counter(task-step); display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #dcebe0; font-size: 10px; }
+.project-task-entry .project-task-entry-error { flex-basis: 100%; color: #a13535; overflow-wrap: anywhere; }
+.project-manual-entry { margin: 0 0 34px; }
+.project-manual-entry>summary { width: fit-content; cursor: pointer; color: #587063; font-size: 13px; padding: 3px 0 14px; }
+.project-manual-entry .project-create-card { margin-bottom: 0; }
+@media(max-width:700px) {
+  .project-task-entry { padding: 20px; gap: 18px; }
+  .project-task-entry-actions { align-items: flex-start; width: 100%; }
+  .project-task-entry-actions .project-task-entry-primary { justify-content: space-between; width: 100%; }
+  .project-task-entry ol { flex-direction: column; }
+}

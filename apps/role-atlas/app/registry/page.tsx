@@ -1,15 +1,14 @@
-import { serverActor } from "@/lib/access-server";
 import type { Metadata } from "next";
-import { listRegistryPackages } from "@/lib/registry/repository";
-import RegistryCatalog from "./RegistryCatalog";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import InlineRegistryCenter from "@/app/components/InlineRegistryCenter";
+import "@/app/components/project-workspace.css";
 
-export const metadata: Metadata = { title: "岗位包中心 · Role Atlas" };
+export const metadata: Metadata = { title: "我的岗位包 · Role Atlas" };
 
-export default async function RegistryPage() {
-  const actor = await serverActor();
-  return <RegistryCatalog
-    initialPackages={actor ? await listRegistryPackages({ ownerSubjectId: actor.subjectId }) : []}
-    roleAtlasBaseUrl={process.env.ROLE_ATLAS_PUBLIC_URL || ""}
-    graphHubBaseUrl={process.env.GRAPH_HUB_PUBLIC_URL || ""}
-  />;
+export default function RegistryPage() {
+  return <main className="personal-registry-page">
+    <Link className="personal-registry-return" href="/"><ArrowLeft size={14} /> 返回工作台</Link>
+    <InlineRegistryCenter standalone />
+  </main>;
 }
