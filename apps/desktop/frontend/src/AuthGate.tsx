@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 
 import {
   activateFormalIdentity,
+  connectFormalApiKey,
   getFormalAuthStatus,
   getFormalDemoStatus,
   invalidateFormalIdentity,
@@ -67,10 +68,10 @@ export default function AuthGate({ children }: AuthGateProps) {
       if (status.authenticated) {
         activateFormalIdentity(status)
         setAccount(status)
-        setDevLoginEnabled(status.dev_test_login_enabled === true)
+        setDevLoginEnabled(!isCloudDesktopRuntime() && status.dev_test_login_enabled === true)
       } else {
         const isReviewEntry = typeof window !== 'undefined' && window.location.pathname === '/review'
-        if (isReviewEntry) {
+        if (isReviewEntry && !isCloudDesktopRuntime()) {
           const demo = await getFormalDemoStatus()
           if (demo.enabled) {
             const demoAccount = await loginFormalDemoAccount()
@@ -81,7 +82,7 @@ export default function AuthGate({ children }: AuthGateProps) {
         }
         invalidateFormalIdentity()
         setAccount(undefined)
-        setDevLoginEnabled(status.dev_test_login_enabled === true)
+        setDevLoginEnabled(!isCloudDesktopRuntime() && status.dev_test_login_enabled === true)
       }
     } catch (probeError) {
       invalidateFormalIdentity()
@@ -104,14 +105,14 @@ export default function AuthGate({ children }: AuthGateProps) {
       setBusy(false)
       setMode('login')
       setDevLoginEnabled(false)
-      setError('登录已失效，请重新登录。')
+      setError(isCloudDesktopRuntime() ? '连接已失效，请重新输入 API Key。' : '登录已失效，请重新登录。')
     }
     window.addEventListener('learnflow:unauthorized', handleUnauthorized)
     return () => window.removeEventListener('learnflow:unauthorized', handleUnauthorized)
   }, [])
 
   useEffect(() => {
-    if (!devLoginEnabled || account) {
+    if (isCloudDesktopRuntime() || !devLoginEnabled || account) {
       setDevAccounts([])
       return
     }
@@ -133,7 +134,26 @@ export default function AuthGate({ children }: AuthGateProps) {
   const authenticate = (nextAccount: FormalAccount) => {
     setError('')
     setAccount(nextAccount)
-    setDevLoginEnabled(nextAccount.dev_test_login_enabled === true)
+    setDevLoginEnabled(!isCloudDesktopRuntime() && nextAccount.dev_test_login_enabled === true)
+  }
+
+  const submitApiKey = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const apiKey = field(new FormData(event.currentTarget), 'api_key')
+    event.currentTarget.reset()
+    setError('')
+    if (!apiKey) {
+      setError('请输入个人 API Key。')
+      return
+    }
+    setBusy(true)
+    try {
+      authenticate(await connectFormalApiKey(apiKey))
+    } catch (connectionError) {
+      setError(errorMessage(connectionError, '连接失败，请检查 API Key 后重试。'))
+    } finally {
+      setBusy(false)
+    }
   }
 
   const submitLogin = async (event: FormEvent<HTMLFormElement>) => {
@@ -206,6 +226,19 @@ export default function AuthGate({ children }: AuthGateProps) {
   }
 
   const signOut = async () => {
+    if (isCloudDesktopRuntime()) {
+      try {
+        await logoutFormalAccount()
+      } finally {
+        invalidateFormalIdentity()
+        setAccount(undefined)
+        setDevLoginEnabled(false)
+        setChecking(false)
+        setBusy(false)
+        setError('')
+      }
+      return
+    }
     await logoutFormalAccount()
     setAccount(undefined)
     setDevLoginEnabled(false)
@@ -228,6 +261,30 @@ export default function AuthGate({ children }: AuthGateProps) {
 
   if (account) return children({ account, signOut })
 
+  if (isCloudDesktopRuntime()) return (
+    <main className={`${styles.shell} ${styles.cloudShell}`}>
+      <section className={`${styles.card} ${styles.cloudCard}`} aria-labelledby="cloud-connect-title">
+        <div className={styles.brand}><span className={styles.brandMark}>LF</span><strong>LearnFlow</strong></div>
+        <header className={styles.cloudHeader}>
+          <h1 id="cloud-connect-title">连接 LearnFlow</h1>
+          <p>使用个人 API Key，继续你的项目和学习记录。</p>
+        </header>
+        <form className={styles.form} onSubmit={submitApiKey} autoComplete="off">
+          <label><span>服务器</span><input value={getRuntimeClientState().cloudOrigin || ''} readOnly aria-readonly="true" /></label>
+          <label><span>API Key</span><input name="api_key" type="password" autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} required maxLength={128} disabled={busy} autoFocus aria-describedby="cloud-key-help" /></label>
+          <p id="cloud-key-help" className={styles.cloudHelp}>使用账号管理员签发的个人 API Key，仅在本次运行中保存。退出应用后需重新输入。</p>
+          {error && <p className={styles.error} role="alert">{error}</p>}
+          <button className={styles.primary} type="submit" disabled={busy}>{busy ? '正在连接…' : '连接'}</button>
+        </form>
+        <details className={styles.legacyWorkspace}>
+          <summary>旧本地工作区</summary>
+          <p>本机原有账号和数据独立保留。</p>
+          <button type="button" disabled={busy} onClick={() => switchDesktopWorkspace(false)}>打开旧本地工作区</button>
+        </details>
+      </section>
+    </main>
+  )
+
   return (
     <main className={styles.shell}>
       <section className={styles.hero}>
@@ -246,12 +303,12 @@ export default function AuthGate({ children }: AuthGateProps) {
 
         {mode === 'login' ? (
           <form className={styles.form} onSubmit={submitLogin}>
-            <header><p className={styles.eyebrow}>{isCloudDesktopRuntime() ? 'LEARNFLOW CLOUD' : 'WELCOME BACK'}</p><h2 id="auth-title">{isCloudDesktopRuntime() ? '登录你的 LearnFlow 账号' : '继续本地学习'}</h2><span>{isCloudDesktopRuntime() ? `使用网页端同一账号与密码，项目和学习记录保存在 ${getRuntimeClientState().cloudOrigin}。` : '此处使用本机旧账号，与云端账号独立。'}</span></header>
+            <header><p className={styles.eyebrow}>WELCOME BACK</p><h2 id="auth-title">继续本地学习</h2><span>此处使用本机旧账号，与云端账号独立。</span></header>
             <label><span>用户名</span><input name="username" autoComplete="username" required maxLength={32} autoFocus /></label>
             <label><span>密码</span><input name="password" type="password" autoComplete="current-password" required maxLength={128} /></label>
             {error ? <p className={styles.error} role="alert">{error}</p> : null}
             <button className={styles.primary} type="submit" disabled={busy}>{busy ? '正在登录…' : '登录 LearnFlow'}</button>
-            {isDesktopRuntime() && <button type="button" disabled={busy} onClick={() => switchDesktopWorkspace(!isCloudDesktopRuntime())}>{isCloudDesktopRuntime() ? '打开旧本地工作区（保留原数据）' : '返回云端账号登录'}</button>}
+            {isDesktopRuntime() && <button type="button" disabled={busy} onClick={() => switchDesktopWorkspace(true)}>返回云端连接</button>}
           </form>
         ) : (
           <form className={styles.form} onSubmit={submitRegistration}>

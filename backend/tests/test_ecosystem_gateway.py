@@ -26,7 +26,19 @@ REF = {"packageId": "test-role", "packageVersion": "1", "snapshotId": "snapshot-
 
 
 def current(learner_id=1):
-    return SimpleNamespace(learner=SimpleNamespace(id=learner_id), account=SimpleNamespace(role="user"))
+    return SimpleNamespace(learner=SimpleNamespace(id=learner_id), account=SimpleNamespace(role="user"), auth_method="cookie")
+
+
+def test_api_key_delegation_preserves_subject_without_admin_privileges(monkeypatch):
+    monkeypatch.setattr(settings, "role_atlas_gateway_secret", "test-server-secret-" * 3)
+    actor = current(7)
+    actor.account.role = "admin"
+    for method, expected_role in (("cookie", "admin"), ("api_key", "user")):
+        actor.auth_method = method
+        encoded = gw.delegation_token(actor, "request-1", b"{}", now=1).split(".")[0]
+        claims = json.loads(base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4)))
+        assert claims["sub"] == "learnflow:learner:7"
+        assert claims["role"] == expected_role
 
 
 @pytest.fixture

@@ -789,6 +789,7 @@ test('assessment blueprint tool persists a zero-target deterministic grading con
   const originalFetch = globalThis.fetch
   let requestBody: any
   globalThis.fetch = async (_input, init) => {
+    assert.equal(new Headers(init?.headers).get('Authorization'), `Bearer lfak_${'a'.repeat(43)}`)
     requestBody = JSON.parse(String(init?.body || '{}'))
     return new Response(JSON.stringify({
       id: 19,
@@ -814,6 +815,7 @@ test('assessment blueprint tool persists a zero-target deterministic grading con
       formalProjectContext: { checkpoint_id: 45 } as any,
       learningTaskContext: { formalTaskId: 81 } as any,
       backendBase: 'http://formal.example.test',
+      requestAuthorization: `Bearer lfak_${'a'.repeat(43)}`,
       generate: async () => 'unused',
     })
     assert.equal(result.run.kind, 'assessment')
@@ -854,6 +856,7 @@ test('dynamic practice generation receives an item-sized output budget', async (
       formalProjectContext: { checkpoint_id: 45 } as any,
       learningTaskContext: { formalTaskId: 81 } as any,
       backendBase: 'http://formal.example.test',
+      requestAuthorization: `Bearer lfak_${'a'.repeat(43)}`,
       generate: async (_instructions, _input, timeoutMs, maxTokens) => {
         observedTimeout = Number(timeoutMs)
         observedMaxTokens = Number(maxTokens)

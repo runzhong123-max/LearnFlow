@@ -158,13 +158,10 @@ async def import_handoff(session, origin: str, ticket: str, body: bytes):
         runtime = Path(runtime_root(create=True)).resolve()
         parent = checked_parent(payload['parent_path'], runtime)
         async with _lock:
-            if not session.csrf:
-                response = await session.client.get('/api/auth/csrf')
-                if response.status_code != 200:
-                    return JSONResponse({'detail': '云端会话已过期，请重新登录'}, 401)
-                session.csrf = response.json()['csrf_token']
+            from app.services.cloud_connection import cloud_mutation_headers
+            mutation_headers = await cloud_mutation_headers(session)
             confirmation = {k: payload[k] for k in ('client_action_id', 'expected_root_hash', 'confirmed')}
-            consumed_response = await session.client.post(endpoint, json=confirmation, headers={'X-CSRF-Token': session.csrf})
+            consumed_response = await session.client.post(endpoint, json=confirmation, headers=mutation_headers)
             if consumed_response.status_code != 200:
                 return JSONResponse({'detail': '云端项目导入未完成，请刷新预览后重试'}, consumed_response.status_code if consumed_response.status_code in {401, 403, 404, 409, 410, 422} else 503)
             result = consumed_response.json()

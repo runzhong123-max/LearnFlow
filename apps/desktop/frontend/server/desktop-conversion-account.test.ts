@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { initializeRuntimeClient, runtimeFetch } from '../src/runtime-client.ts'
-import { getFormalAuthStatus, loginFormalAccount, logoutFormalAccount } from '../src/formal-runtime.ts'
+import { connectFormalApiKey, getFormalAuthStatus, logoutFormalAccount } from '../src/formal-runtime.ts'
 import { validateConversionPreview } from '../src/desktop-conversion.ts'
 
 // Exercise AuthGate's real logout/login functions through native runtime HTTP,
@@ -42,8 +42,8 @@ test('wrong-account recovery logs out, requires explicit login, and retains only
     if (path === '/health') return new Response('{}')
     const headers = new Headers(init?.headers)
     assert.equal(headers.get('X-LearnFlow-Desktop-Token'), 'native-session')
-    if (path === '/cloud/api/auth/login') {
-      loggedIn = JSON.parse(String(init?.body)).username === 'owner' ? 7 : 8
+    if (path === '/cloud/api/auth/api-key/connect') {
+      loggedIn = JSON.parse(String(init?.body)).api_key === 'lfak_' + 'o'.repeat(43) ? 7 : 8
       return Response.json({ id: loggedIn, learner_id: loggedIn, username: loggedIn === 7 ? 'owner' : 'other', desktop_auth_token: 'handle-' + loggedIn })
     }
     if (path === '/cloud/api/auth/logout') { assert.equal(headers.get('Authorization'), 'Bearer handle-8'); loggedIn = 0; return Response.json({ status: 'ok' }) }
@@ -58,7 +58,7 @@ test('wrong-account recovery logs out, requires explicit login, and retains only
   try {
     await initializeRuntimeClient()
     const { invoke } = await import('@tauri-apps/api/core')
-    await loginFormalAccount('other', 'user-entered-password')
+    await connectFormalApiKey('lfak_' + 'x'.repeat(43))
     assert.equal((await runtimeFetch('/api/work-task-conversions/handoff/' + ticket)).status, 404)
     // The modal's new recovery action calls auth.signOut, which invokes this.
     await logoutFormalAccount()
@@ -66,9 +66,9 @@ test('wrong-account recovery logs out, requires explicit login, and retains only
     assert.equal(loggedIn, 0)
     assert.equal(values.has('learnflow.desktop.auth-token'), false)
     assert.equal(await invoke('desktop_pending_conversion'), ticket)
-    assert.equal(requests.filter(path => path.endsWith('/auth/login')).length, 1)
+    assert.equal(requests.filter(path => path.endsWith('/auth/api-key/connect')).length, 1)
     // Only an explicit new login can proceed; the original ticket was never consumed/cleared.
-    const owner = await loginFormalAccount('owner', 'another-user-entered-password')
+    const owner = await connectFormalApiKey('lfak_' + 'o'.repeat(43))
     const resumed = await runtimeFetch('/api/work-task-conversions/handoff/' + await invoke('desktop_pending_conversion'))
     assert.equal((await validateConversionPreview(await resumed.json(), owner.learner_id)).root_hash, proposal.root_hash)
     await new Promise(resolve => setTimeout(resolve, 0))

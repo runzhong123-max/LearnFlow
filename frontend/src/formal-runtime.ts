@@ -1080,10 +1080,10 @@ export async function createFormalProjectFreeSession(projectId: number, title = 
   })
 }
 
-export async function addFormalProjectUrl(projectId: number, url: string) {
+export async function addFormalProjectUrl(projectId: number, url: string, type: 'url' | 'github' = 'url') {
   await ensureFormalIdentity()
   return jsonRequest<{ id: number; status: string }>(`/api/projects/${projectId}/sources`, {
-    method: 'POST', body: JSON.stringify({ type: 'url', url }),
+    method: 'POST', body: JSON.stringify({ type, url }),
   })
 }
 

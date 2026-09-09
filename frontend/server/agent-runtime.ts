@@ -1,3 +1,4 @@
+import { backendIdentityHeaders, backendWriteHeaders } from './backend-identity.ts'
 import { conversionContextMessage } from '../../packages/learning-client/src/work-task-conversion/context.ts'
 import { explicitProjectGuidanceMode, hasProjectGuidanceConversation, projectGuidanceDirectRequest, projectGuidanceConfirmation, projectGuidanceObjects } from '../../packages/learning-client/src/project-guidance/contract.ts'
 import { VISUAL_PLUGIN_PLANNER_INSTRUCTIONS, visualPluginRequest, visualPluginReferences } from '../../packages/learning-client/src/visuals/plugin-host.ts'
@@ -213,6 +214,8 @@ export type TutorAgentRuntimeInput = {
   referencedPluginObjects?: LearnFlowPluginObject[]
   backendBase?: string
   requestCookie?: string
+  requestAuthorization?: string
+  requestDesktopToken?: string
   generate: TutorAgentToolRuntimeOptions['generate']
   searchConfiguration?: SearchProviderConfiguration
   invokeProvider: ProviderInvoke
@@ -340,25 +343,11 @@ export async function requestProjectPluginIntegration(options: {
   const requestBody = projectPluginIntegrationRequestBody(route, body)
   if (route.localCase === 'catalog') path = '/api/practice-cases'
   if (route.guidance === 'prepare') path = '/api/project-guidance/prepare'
-  let csrfToken = ''
-  if (route.method === 'POST') {
-    const csrfResponse = await fetch(`${options.input.backendBase}/api/auth/csrf`, {
-      headers: options.input.requestCookie ? { Cookie: options.input.requestCookie } : {},
-      signal: options.signal,
-    })
-    const csrfBody = await csrfResponse.json().catch(() => ({})) as Record<string, unknown>
-    csrfToken = typeof csrfBody.csrf_token === 'string' ? csrfBody.csrf_token : ''
-    if (!csrfResponse.ok || !csrfToken) {
-      throw new Error(`plugin_integration_error:csrf_unavailable:无法取得项目集成写请求所需的 CSRF 令牌`)
-    }
-  }
   const response = await fetch(`${options.input.backendBase}${path}`, {
     method: route.method,
-    headers: {
-      ...(route.method === 'POST' ? { 'Content-Type': 'application/json' } : {}),
-      ...(options.input.requestCookie ? { Cookie: options.input.requestCookie } : {}),
-      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
-    },
+    headers: route.method === 'POST'
+      ? await backendWriteHeaders(options.input, options.signal)
+      : backendIdentityHeaders(options.input),
     ...(route.method === 'POST' ? { body: JSON.stringify(requestBody) } : {}),
     signal: options.signal,
   })
@@ -714,6 +703,7 @@ function envelopePrompt(envelope: AgentContextEnvelope, limits: {
     '搜索或读取返回 partial、empty、coverage gaps、circuit_open 时必须在回答中显式保留证据缺口；不得用模型常识伪装成已检索证据。',
     '评估目标、题型组合或成功条件不清时，先调用 design_assessment_blueprint；它返回可检查的蓝图与确定性量表，但不评分。动态习题工具只可在带领学习态且绑定正式 LearningTask/Checkpoint 时调用；生成题目是零目标 artifact 事件，不得声称形成掌握。需要动态练习、诊断或变式验证时，可生成正式练习文件，再让学习者在答案安全工作台提交。',
     '处于项目 scope 时，所有规划、来源选择、讲义与练习都必须锚定 envelope.scope.projectId 对应的项目主题；不得偷换为通用课程规划。',
+    '学习规划先检查现有来源；学习型项目来源不足时，优先检索开放教材、开源书籍、官方文档与仓库，读取候选后解释适配性、章节覆盖和许可核验状态，让学习者在资料工作台选择或上传。只搜索到概念网页时明确教材/仓库缺口。选择不是掌握证据。资料确定后再提关卡、长期计划及实验；项目 Tutor 复用当前项目目标与路线，普通对话比较方向并提供可确认的长期路径草案。',
     '若学习者观察中存在 Claim 冲突，必须明确说明冲突并把纠正留给学习者确认；不得静默选择一边或声称已经改写画像。',
     '若工作区观察含 sourceConstraint，路线和讲解必须受当前项目来源覆盖范围约束；超出范围只能标为资料缺口，并在检索到新证据后补充。',
     '工作区中没有 Attempt 只表示当前作用域没有可见记录，不能推断学生第一次学习、从未练习或没有相关经历。',
@@ -1180,6 +1170,8 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
     activeArtifactContext: input.activeArtifactContext,
     backendBase: input.backendBase,
     requestCookie: input.requestCookie,
+    requestAuthorization: input.requestAuthorization,
+    requestDesktopToken: input.requestDesktopToken,
     onVisualStage: stage => {
       const labels: Record<string, string> = {
         compiling: '正在尝试确定性视觉编译',
@@ -1231,7 +1223,7 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
         },
         signal: pluginSignal,
         ...(registered.pluginId === 'educational_visuals' ? {artifactHost: serverArtifactHost({
-          pluginId:registered.pluginId, backendBase:input.backendBase, cookie:input.requestCookie,
+          pluginId:registered.pluginId, backendBase:input.backendBase, cookie:input.requestCookie, authorization:input.requestAuthorization, desktopToken:input.requestDesktopToken,
           projectId:activation.projectId, sessionId:input.formalSessionId,
           signal:pluginSignal,
           context:`${visualPlannerContext(input.messages)}\n<recent_visual_references>${JSON.stringify(visualPluginReferences(input.messages))}</recent_visual_references>`,

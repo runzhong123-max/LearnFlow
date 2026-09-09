@@ -45,10 +45,17 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-08.9-desktop"
+REGISTRY_VERSION = "2026-09-09.2-desktop"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 DATA_CONTRACTS = {
+    "desktop_api_key_v1": {
+        "schema_version": "learnflow.desktop-api-key.v1", "owner": "tutor_agent", "origin": "builtin",
+        "mode": "scoped_account_authentication", "lifecycle": "implemented",
+        "authority_path": "../../../../docs/implementation/DESKTOP_IP_API_KEY.md",
+        "binding_ids": ['py:cloud.connection', 'py:cloud.device', 'frontend:cloud.identity'], "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "additive account-bound hashed credentials; IP HTTPS key-only gateway; legacy browser cookies and explicit local workspace retained; credentials never become learning evidence",
+    },
     "work_task_conversion_context_v1": {
         "schema_version": "learnflow.work-task-conversion-context.v1", "owner": "tutor_agent", "origin": "builtin",
         "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "docs/implementation/WORK_TASK_CONVERSION_CONTEXT.md",

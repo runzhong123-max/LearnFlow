@@ -45,7 +45,7 @@ def test_registry_has_three_agents_five_kernels_and_no_drift():
     assert set(ACTION_BOARD) == set(CAPABILITY_OWNERS)
     assert validate_registry() == []
     manifest = registry_manifest()
-    assert REGISTRY_VERSION == "2026-09-08.9-desktop"
+    assert REGISTRY_VERSION == "2026-09-09.2-desktop"
     cloud_contract = next(item for item in manifest['data_contracts'] if item['id'] == 'desktop_cloud_connection_v1')
     assert cloud_contract['kernel_write_path'] == 'none'
     assert manifest["schema_valid"] is True
@@ -791,3 +791,12 @@ def test_memory_read_contract_versions_and_helpers_are_shared():
     assert CONTEXT_PACKET_VERSION == "five-kernel-context.v2"
     assert QUERY_PLAN_VERSION == "memory-query.v1"
     assert ContextPolicy.__dataclass_fields__["max_hops"].default == 2
+
+
+def test_desktop_api_keys_remain_account_authentication_not_learning_evidence():
+    from app.services.architecture_registry import DATA_CONTRACTS
+    contract = DATA_CONTRACTS["desktop_api_key_v1"]
+    assert contract["schema_version"] == "learnflow.desktop-api-key.v1"
+    assert contract["kernel_reads"] == []
+    assert contract["kernel_write_path"] == "none"
+    assert contract["mode"] == "scoped_account_authentication"

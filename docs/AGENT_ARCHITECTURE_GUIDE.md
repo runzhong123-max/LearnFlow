@@ -1,5 +1,7 @@
 # LearnFlow 智能体架构与协作指南
 
+Contract impact（2026-09-09.2 / 2026-09-09.2-desktop）：桌面默认通过裸公网 IP 的可信 HTTPS 与账户绑定 API Key 连接。新增独立 hash-only 认证表、签发/撤销及 key-only 网关合同；旧浏览器 Cookie 与本地工作区兼容，账号/learner ownership 沿用原入口。鉴权不写学习事件或五核，三类 Agent、评分与核心共享 schema 不变。详见 [IP 与 API Key 连接契约](implementation/DESKTOP_IP_API_KEY.md)。
+
 > Contract impact（2026-09-08.9 / desktop 对应版本，共享核心 0.2.5）：教育记忆读取升级为 relevance-budget.v3。教学控制 v2 保留来源 scope 与应用 scope，采用分句解析、默认会话 8 小时及显式有时区期限的最长 168 小时窗口，兼容读取 v1。只读 learning-episode.v1 通过 Fact → Mutation → Event → owned Attempt 验证真实评分来源；规划 v2 消费该投影并附加确定性决策依据。事件稳定 ID、EvidenceEvent v1、三类 Agent、五核、评分和掌握门槛不变，不迁移历史库。详见 [教育记忆 v2 实现](implementation/EDUCATION_MEMORY_V2.md)；实验结果单独报告，不以新增字段或回归通过证明学习收益。
 
 Contract impact（`2026-09-08.8`）：共享核心 0.2.4 收紧普通概念评分，取消多题 ID 直接升级稳定掌握；既有间隔复习与显式迁移门保留。双端规划确定性消费带来源的当前时间、困难和受助指导，约束离线与模型最终输出。事件/计划 v1 增量兼容，不回填历史画像、不迁移数据库。实现与限制见 [教育记忆策略](implementation/EDUCATION_MEMORY_POLICY.md)。
@@ -1052,7 +1054,7 @@ Action Board 原子创建项目、绑定接受快照与证据引用，并进入 
 
 ### 来源阶段
 
-Project Tutor 推荐真实候选仓库。用户选择来源后，来源入库并异步处理。选择完成时，Tutor 概述路线安排逻辑并集中询问仍需确认的少量问题。
+网页学习型项目先在对话资料工作台推荐真实的开放教材、书籍、官方文档与仓库，允许学习者直接上传资料。用户选择后复用来源入库与处理链；失败保留错误，不把检索片段或许可未核验资料冒充已读教材。选择完成后，Project Tutor 围绕已绑定项目设置关卡与长期安排，最后提出对应实验和实践。普通对话侧重方向比较、资料选择和长期阶段草案，不假称项目已创建。详见 implementation/PLANNING_RESOURCE_WORKBENCH.md。
 
 ### 正式路线
 

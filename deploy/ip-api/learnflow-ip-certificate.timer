@@ -1,0 +1,11 @@
+[Unit]
+Description=Check LearnFlow six-day IP certificate four times daily
+
+[Timer]
+OnCalendar=*-*-* 00,06,12,18:00:00
+RandomizedDelaySec=10min
+Persistent=true
+Unit=learnflow-ip-certificate.service
+
+[Install]
+WantedBy=timers.target

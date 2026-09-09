@@ -98,10 +98,15 @@ export function resolveRuntimeUrl(input: RequestInfo | URL) {
 
 export async function refreshDesktopPetAuthToken(): Promise<void> {
   if (!isDesktopPetWindow()) return
+  const generation = runtimeAuthGeneration
   try {
     const { invoke } = await import('@tauri-apps/api/core')
     const token = await invoke<string>('desktop_pet_auth_token')
+    if (generation !== runtimeAuthGeneration) return
     if (typeof token === 'string' && token) {
+      let previous: string | null = null
+      try { previous = sessionStorage.getItem(DESKTOP_AUTH_STORAGE_KEY) } catch { /* no persistent fallback */ }
+      if (previous !== token) resetRuntimeCsrfToken()
       runtime.cloud = token.startsWith('lfpet_cloud_')
       try { sessionStorage.setItem(DESKTOP_AUTH_STORAGE_KEY, token) } catch { /* no persistent fallback */ }
     }
@@ -116,8 +121,10 @@ export function captureRuntimeAuth(payload: unknown) {
   }
   const petCapability = (payload as Record<string, unknown>).desktop_pet_capability_token
   if (typeof petCapability === 'string' && petCapability) {
+    const generation = runtimeAuthGeneration
     void import('@tauri-apps/api/core')
-      .then(({ invoke }) => invoke('store_desktop_pet_capability', { token: petCapability }))
+      .then(({ invoke }) => generation === runtimeAuthGeneration
+        ? invoke('store_desktop_pet_capability', { token: petCapability }) : undefined)
       .catch(() => undefined)
   }
 }
@@ -251,6 +258,12 @@ export async function runtimeFetch(input: RequestInfo | URL, init: RequestInit =
   if (runtime.kind === 'desktop' && (typeof input !== 'string' || !(input === '/api' || input.startsWith('/api/')))) {
     return new Response(JSON.stringify({ detail: '桌面认证请求只能访问 LearnFlow API' }), { status: 400, headers: { 'Content-Type': 'application/json' } })
   }
+  const identityBoundRequest = isCloudDesktopRuntime() || isDesktopPetWindow()
+  const generation = runtimeAuthGeneration
+  const staleIdentity = () => identityBoundRequest && generation !== runtimeAuthGeneration
+  const identityChanged = () => new Response(JSON.stringify({ detail: '身份已切换，请重新发起请求。' }), {
+    status: 409, headers: { 'Content-Type': 'application/json' },
+  })
   const method = String(init.method || (typeof Request !== 'undefined' && input instanceof Request ? input.method : 'GET')).toUpperCase()
   const headers = new Headers(init.headers)
   if (runtime.kind === 'desktop' && runtime.desktopToken) {
@@ -270,13 +283,42 @@ export async function runtimeFetch(input: RequestInfo | URL, init: RequestInit =
     }
     headers.set('X-CSRF-Token', csrf.token || '')
   }
+  if (staleIdentity()) return identityChanged()
   const response = await fetch(resolveRuntimeUrl(input), {
     ...init,
     method,
     headers,
     credentials: init.credentials || 'include',
   })
-  if (response.status === 401) notifyUnauthorized()
+  if (staleIdentity()) {
+    await response.body?.cancel().catch(() => undefined)
+    return identityChanged()
+  }
+  if (response.status === 401) {
+    notifyUnauthorized()
+    return response
+  }
+  // Fetch resolves at the headers. Keep the body bound to the same identity,
+  // including JSON and Tutor streams that finish after a pet/account switch.
+  if (identityBoundRequest && response.body) {
+    const reader = response.body.getReader()
+    const body = new ReadableStream<Uint8Array>({
+      async pull(controller) {
+        try {
+          if (staleIdentity()) throw new Error('身份已切换，请重新发起请求。')
+          const next = await reader.read()
+          if (staleIdentity()) throw new Error('身份已切换，请重新发起请求。')
+          if (next.done) controller.close()
+          else controller.enqueue(next.value)
+        } catch (error) {
+          controller.error(error)
+          await reader.cancel(error).catch(() => undefined)
+        }
+      },
+      cancel(reason) { return reader.cancel(reason) },
+    })
+    return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers })
+  }
   return response
 }
 

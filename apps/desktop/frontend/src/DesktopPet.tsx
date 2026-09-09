@@ -18,7 +18,7 @@ import {
   type FormalTutorMessage,
   type FormalTutorSession,
 } from './formal-runtime.ts'
-import { readDesktopPetSession, runtimeFetch, isCloudDesktopRuntime } from './runtime-client.ts'
+import { clearRuntimeAuth, readDesktopPetSession, refreshDesktopPetAuthToken, runtimeFetch, isCloudDesktopRuntime } from './runtime-client.ts'
 import PetAvatar, { type PetAvatarState } from './PetAvatar.tsx'
 import styles from './DesktopPet.module.css'
 
@@ -202,6 +202,7 @@ export default function DesktopPet() {
   const outbox = useRef<PetOutbox | null>(readOutbox())
   const activeSessionId = useRef<number | undefined>(undefined)
   const requestedSessionId = useRef<number | undefined>(undefined)
+  const identityEpoch = useRef(0)
   const contextStore = useRef<FormalDesktopPetContext[]>([])
   const turnAbortController = useRef<AbortController | undefined>(undefined)
   const preferencesStore = useRef<DesktopPetPreferences>()
@@ -333,8 +334,9 @@ export default function DesktopPet() {
     return () => { unlisten?.() }
   }, [compactView, session?.id, pending, busyKey])
 
-  const loadSession = async (sessionId: number, nextBootstrap?: FormalDesktopPetBootstrap) => {
+  const loadSession = async (sessionId: number, nextBootstrap?: FormalDesktopPetBootstrap, epoch = identityEpoch.current) => {
     const selected = await loadFormalTutorSession(sessionId)
+    if (epoch !== identityEpoch.current || requestedSessionId.current !== sessionId) return
     activeSessionId.current = sessionId
     setSession(selected)
     setMessages((selected.messages || []).slice(-8))
@@ -342,6 +344,7 @@ export default function DesktopPet() {
   }
 
   const notifyDueReviews = async (nextBootstrap: FormalDesktopPetBootstrap) => {
+    const epoch = identityEpoch.current
     const currentPreferences = preferencesStore.current
     const due = nextBootstrap.review.due
     if (!currentPreferences?.reviewRemindersEnabled || due < 1) return
@@ -351,6 +354,7 @@ export default function DesktopPet() {
     try {
       const { isPermissionGranted, sendNotification } = await import('@tauri-apps/plugin-notification')
       if (!await isPermissionGranted()) return
+      if (epoch !== identityEpoch.current) return
       const focusSubjects = nextBootstrap.review.focus_subjects.slice(0, 2).map(item => item.subject).join('、')
       sendNotification({
         title: 'LearnFlow 复习提醒',
@@ -364,11 +368,13 @@ export default function DesktopPet() {
   }
 
   const clearSessionScopedState = async (nextSessionId?: number) => {
+    const epoch = identityEpoch.current
     turnAbortController.current?.abort()
     clearPastedImage()
     clearSelectionText()
     const removable = contextStore.current.map(item => item.id)
     await Promise.all(removable.map(id => deleteFormalDesktopPetContext(id).catch(() => undefined)))
+    if (epoch !== identityEpoch.current) return
     contextStore.current = []
     setContexts([])
     if (outbox.current?.sessionId !== nextSessionId) {
@@ -378,13 +384,16 @@ export default function DesktopPet() {
   }
 
   const refresh = async (reloadCurrentSession = true) => {
+    const epoch = identityEpoch.current
     const next = await loadFormalDesktopPetBootstrap()
+    if (epoch !== identityEpoch.current) return
     setBootstrap(next)
     void notifyDueReviews(next)
     const previousSessionId = activeSessionId.current
     const targetId = requestedSessionId.current
     if (!targetId) {
       await clearSessionScopedState()
+      if (epoch !== identityEpoch.current) return
       activeSessionId.current = undefined
       setSession(undefined)
       setMessages([])
@@ -393,6 +402,7 @@ export default function DesktopPet() {
     }
     if (previousSessionId !== targetId) {
       await clearSessionScopedState(targetId)
+      if (epoch !== identityEpoch.current || requestedSessionId.current !== targetId) return
       activeSessionId.current = undefined
     }
     if (!reloadCurrentSession && previousSessionId === targetId) {
@@ -400,9 +410,9 @@ export default function DesktopPet() {
       return
     }
     try {
-      await loadSession(targetId, next)
+      await loadSession(targetId, next, epoch)
     } catch (error) {
-      if (requestedSessionId.current !== targetId) return
+      if (epoch !== identityEpoch.current || requestedSessionId.current !== targetId) return
       activeSessionId.current = undefined
       setSession(undefined)
       setMessages([])
@@ -412,14 +422,15 @@ export default function DesktopPet() {
 
   useEffect(() => {
     let active = true
+    const epoch = identityEpoch.current
     void readDesktopPetSession()
       .then(sessionId => {
-        if (!active) return
+        if (!active || epoch !== identityEpoch.current) return
         requestedSessionId.current = sessionId
         return refresh()
       })
       .catch(error => {
-        if (active) setStatus(displayError(error))
+        if (active && epoch === identityEpoch.current) setStatus(displayError(error))
       })
     return () => { active = false }
   }, [])
@@ -456,23 +467,39 @@ export default function DesktopPet() {
     void import('@tauri-apps/api/event')
       .then(async ({ listen }) => {
         unlistenUpdated = await listen('learnflow:pet-identity-updated', () => {
-          void refresh(false).catch(error => setStatus(displayError(error)))
+          const epoch = ++identityEpoch.current
+          clearRuntimeAuth()
+          turnAbortController.current?.abort()
+          turnAbortController.current = undefined
+          setPending(false)
+          setBusyKey('')
+          void refreshDesktopPetAuthToken()
+            .then(() => epoch === identityEpoch.current ? refresh(false) : undefined)
+            .catch(error => { if (epoch === identityEpoch.current) setStatus(displayError(error)) })
         })
         unlistenSession = await listen<number | null>('learnflow:desktop-pet-session-updated', event => {
+          const epoch = identityEpoch.current
           requestedSessionId.current = Number.isSafeInteger(event.payload) && Number(event.payload) > 0
             ? Number(event.payload)
             : undefined
-          void refresh().catch(error => setStatus(displayError(error)))
+          void refresh().catch(error => { if (epoch === identityEpoch.current) setStatus(displayError(error)) })
         })
         unlistenCleared = await listen('learnflow:pet-identity-cleared', () => {
+          identityEpoch.current += 1
+          clearRuntimeAuth()
           requestedSessionId.current = undefined
+          activeSessionId.current = undefined
           turnAbortController.current?.abort()
           outbox.current = null
           saveOutbox(null)
+          contextStore.current = []
           setBootstrap(undefined)
           setSession(undefined)
           setMessages([])
           setContexts([])
+          setDraft('')
+          setPending(false)
+          setBusyKey('')
           clearPastedImage()
           clearSelectionText()
           setStatus('请先在 LearnFlow 主窗口登录。')
@@ -734,6 +761,7 @@ export default function DesktopPet() {
   const send = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!session || pending) return
+    const epoch = identityEpoch.current
     const retry = outbox.current?.sessionId === session.id ? outbox.current : null
     const content = (retry?.content || draft).trim()
     if (!content && !pastedImageStore.current) return
@@ -824,7 +852,7 @@ export default function DesktopPet() {
       if (!response.ok || typeof reply !== 'string') {
         throw new Error(typeof payload?.detail === 'string' ? payload.detail : `Tutor 返回 HTTP ${response.status}`)
       }
-      if (activeSessionId.current !== sendingSessionId) return
+      if (epoch !== identityEpoch.current || activeSessionId.current !== sendingSessionId) return
       setMessages(previous => previous.some(item => item.id === `${turn.clientTurnId}:reply`)
         ? previous
         : [...previous, { id: `${turn.clientTurnId}:reply`, role: 'assistant', content: reply, created_at: new Date().toISOString() }])
@@ -836,12 +864,12 @@ export default function DesktopPet() {
       }
       setStatus('')
     } catch (error) {
-      if (activeSessionId.current !== sendingSessionId) return
+      if (epoch !== identityEpoch.current || activeSessionId.current !== sendingSessionId) return
       setDraft(message)
       setStatus(`${displayError(error)} 可直接重试，本次回合会复用原幂等 ID。`)
     } finally {
       if (turnAbortController.current === abortController) turnAbortController.current = undefined
-      setPending(false)
+      if (epoch === identityEpoch.current) setPending(false)
     }
   }
 

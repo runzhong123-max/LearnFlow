@@ -34,7 +34,7 @@ test('account credential resolver forwards only identity material and keeps brid
   assert.deepEqual(result, { apiKey: 'sk-account-only', source: '平台后台统一模型配置' })
   const headers = new Headers(observed?.headers)
   assert.equal(headers.get('X-LearnFlow-Runtime-Bridge-Token'), BRIDGE)
-  assert.equal(headers.get('Cookie'), 'learnflow_session=opaque')
+  assert.equal(headers.get('Cookie'), null, 'explicit Authorization must not forward a second identity')
   assert.equal(headers.get('Authorization'), 'Bearer desktop-session')
   assert.equal(headers.get('Origin'), null)
 })

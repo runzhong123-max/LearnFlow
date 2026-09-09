@@ -45,7 +45,7 @@ def test_registry_has_three_agents_five_kernels_and_no_drift():
     assert set(ACTION_BOARD) == set(CAPABILITY_OWNERS)
     assert validate_registry() == []
     manifest = registry_manifest()
-    assert REGISTRY_VERSION == "2026-09-09.1"
+    assert REGISTRY_VERSION == "2026-09-09.2"
     assert manifest["schema_valid"] is True
     assert manifest["valid"] is (
         manifest["schema_valid"] and manifest["implementation_valid"]
@@ -101,7 +101,7 @@ def test_learning_path_data_contracts_are_bound_but_never_learner_writers():
     assert {row["id"] for row in manifest["data_contracts"]} == set(DATA_CONTRACTS)
     root = Path(__file__).resolve().parents[2]
     for contract_id, contract in DATA_CONTRACTS.items():
-        assert contract["owner"] == ("tutor_agent" if contract_id in {"work_task_conversion_v1", "work_task_conversion_context_v1", "role_job_delivery_v1", "ecosystem_gateway_v1", "teaching_response_v1", "golden_role_workspace_v1", "learning_platform_v1", "project_guidance_v1", "project_device_report_v1", "project_workflow_v1", "project_stage_support_v1", "workspace_recommendations_v1", "engineering_provenance_v1", "role_research_archive_v1"} else "learning_design_agent")
+        assert contract["owner"] == ("tutor_agent" if contract_id in {"work_task_conversion_v1", "work_task_conversion_context_v1", "role_job_delivery_v1", "ecosystem_gateway_v1", "teaching_response_v1", "golden_role_workspace_v1", "learning_platform_v1", "project_guidance_v1", "project_device_report_v1", "project_workflow_v1", "project_stage_support_v1", "workspace_recommendations_v1", "engineering_provenance_v1", "role_research_archive_v1", "desktop_api_key_v1"} else "learning_design_agent")
         assert contract["kernel_reads"] == []
         assert contract["kernel_write_path"] == "none"
         assert contract["schema_version"] in (root / contract["authority_path"]).read_text()
@@ -761,3 +761,12 @@ def test_memory_read_contract_versions_and_helpers_are_shared():
     assert CONTEXT_PACKET_VERSION == "five-kernel-context.v2"
     assert QUERY_PLAN_VERSION == "memory-query.v1"
     assert ContextPolicy.__dataclass_fields__["max_hops"].default == 2
+
+
+def test_desktop_api_keys_remain_account_authentication_not_learning_evidence():
+    from app.services.architecture_registry import DATA_CONTRACTS
+    contract = DATA_CONTRACTS["desktop_api_key_v1"]
+    assert contract["schema_version"] == "learnflow.desktop-api-key.v1"
+    assert contract["kernel_reads"] == []
+    assert contract["kernel_write_path"] == "none"
+    assert contract["mode"] == "scoped_account_authentication"

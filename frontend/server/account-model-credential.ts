@@ -1,3 +1,5 @@
+import { backendIdentityFromHeaders, backendIdentityHeaders } from './backend-identity.ts'
+
 export type ModelCredential = {
   apiKey: string
   source: string
@@ -16,20 +18,8 @@ type CredentialResolverOptions = {
   timeoutMs?: number
 }
 
-function firstHeader(value: string | string[] | undefined): string {
-  return Array.isArray(value) ? String(value[0] || '') : String(value || '')
-}
-
 function forwardedIdentityHeaders(request: AccountCredentialRequest): Record<string, string> {
-  const headers = request.headers || {}
-  const cookie = firstHeader(headers.cookie)
-  const authorization = firstHeader(headers.authorization)
-  const desktopToken = firstHeader(headers['x-learnflow-desktop-token'])
-  return {
-    ...(cookie ? { Cookie: cookie } : {}),
-    ...(authorization ? { Authorization: authorization } : {}),
-    ...(desktopToken ? { 'X-LearnFlow-Desktop-Token': desktopToken } : {}),
-  }
+  return backendIdentityHeaders(backendIdentityFromHeaders(request.headers || {}))
 }
 
 async function responseDetail(response: Response): Promise<string> {
@@ -63,6 +53,7 @@ export function createAccountCredentialResolver(options: CredentialResolverOptio
           ...forwardedIdentityHeaders(request),
         },
         signal: AbortSignal.timeout(timeoutMs),
+        redirect: 'error',
       })
       if (upstream.ok) {
         const payload = await upstream.json() as { api_key?: unknown }

@@ -44,12 +44,19 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-09.1"
+REGISTRY_VERSION = "2026-09-09.2"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Source-data contracts, not Agent-callable tools or learner-state writers.
 # The referenced TypeScript module owns field semantics; this registry owns discovery.
 DATA_CONTRACTS = {
+    "desktop_api_key_v1": {
+        "schema_version": "learnflow.desktop-api-key.v1", "owner": "tutor_agent", "origin": "builtin",
+        "mode": "scoped_account_authentication", "lifecycle": "implemented",
+        "authority_path": "docs/implementation/DESKTOP_IP_API_KEY.md",
+        "binding_ids": ['py:auth.api_key_identity', 'api:auth.api_key_create', 'api:auth.api_key_verify'], "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "additive account-bound hashed credentials; IP HTTPS key-only gateway; legacy browser cookies and explicit local workspace retained; credentials never become learning evidence",
+    },
     "work_task_conversion_context_v1": {
         "schema_version": "learnflow.work-task-conversion-context.v1", "owner": "tutor_agent", "origin": "builtin",
         "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "docs/implementation/WORK_TASK_CONVERSION_CONTEXT.md",
@@ -1373,6 +1380,7 @@ _REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 
 
 _PYTHON_BINDING_TARGETS = {
+    "py:auth.api_key_identity": ("app.services.auth", "current_learner_from_request"),
     "py:work_task_conversion.context": ("learnflow_core.agent_observations", "read_work_task_conversion_context"),
     "py:work_task_conversion.projection": ("learnflow_core.work_task_conversion_context", "conversion_context_projection"),
     "py:work_task_conversion.create": ("learnflow_core.work_task_conversions", "create"),
@@ -1481,6 +1489,8 @@ _PYTHON_MEMBER_BINDING_TARGETS = {
 
 
 _API_BINDING_TARGETS = {
+    "api:auth.api_key_create": ("app.api.auth", "/auth/api-keys", "POST", "create_api_key"),
+    "api:auth.api_key_verify": ("app.api.auth", "/auth/api-key/verify", "GET", "verify_api_key"),
     "api:work_task_conversion.create": ("app.api.work_task_conversions", "/work-task-conversions", "POST", "create_conversion"),
     "api:work_task_conversion.list": ("app.api.work_task_conversions", "/work-task-conversions", "GET", "list_conversions"),
     "api:work_task_conversion.read": ("app.api.work_task_conversions", "/work-task-conversions/{conversion_id}", "GET", "get_conversion"),
@@ -1653,6 +1663,7 @@ _FRONTEND_COMPONENT_TARGETS = {
     "workbench:role_research_admin": ("apps/role-atlas/app/admin/research/page.tsx", "ResearchAdminPage", "/admin/research"),
     "frontend:learning.verification": ("frontend/src/LearningVerificationPanel.tsx", "LearningVerificationPanel", "/chat/"),
     "frontend:learning.remediation": ("frontend/src/RemediationPanel.tsx", "RemediationPanel", "/files/practice/"),
+    "frontend:planning.resources": ("frontend/src/PlanningResourceWorkbench.tsx", "PlanningResourceWorkbench", "/chat/"),
     "frontend:path.extensions": ("frontend/src/PathSourceExtensions.tsx", "PathSourceExtensions", "/learning-path"),
     "workbench:ecosystem": ("frontend/src/EcosystemPage.tsx", "EcosystemPage", "/ecosystem"),
     "workbench:vnext_chat": ("frontend/src/main.tsx", "App", "/chat/"),
@@ -1786,7 +1797,7 @@ _TOOL_BINDING_IDS = {
     "vnext_five_kernel_explicit_editor": ("api:profile.update", "api:learner_state.value_claim"),
     "workspace_lifecycle": ("py:workspace.delete_conversation", "py:workspace.delete_project"),
     "checkpoint_context": ("py:checkpoint.context",),
-    "source_ingestion": ("py:source.processor", "api:vnext_projects.source_promote"),
+    "source_ingestion": ("frontend:planning.resources", "py:source.processor", "api:vnext_projects.source_promote"),
     "repository_knowledge_domains": ("py:source.domains",),
     "hierarchical_rag": ("py:lecture.agent",),
     "content_generation": ("py:roadmap.agent", "py:lecture.agent", "py:concept.agent", "py:exercise.agent"),

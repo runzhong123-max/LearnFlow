@@ -42,6 +42,7 @@ class CurrentLearner:
     is_dev_login: bool = False
     session_id: int | None = None
     auth_method: str = "internal"
+    api_key_id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -555,6 +556,12 @@ async def enforce_browser_request_security(request: Request) -> None:
         return
     if _desktop_bearer_token(request):
         return
+    if "authorization" in request.headers:
+        from app.services.api_keys import api_token_from_request, resolve_api_key
+        token = api_token_from_request(request)
+        async with async_session() as db:
+            await resolve_api_key(db, token)
+        return
     if _is_unannotated_in_process_test_request(request):
         return
     _validate_browser_source(request)
@@ -594,6 +601,21 @@ async def current_learner_from_request(
     required: bool = True,
 ) -> CurrentLearner | None:
     bearer_token = _desktop_bearer_token(request)
+    if not bearer_token and "authorization" in request.headers:
+        from app.services.api_keys import api_token_from_request, resolve_api_key
+        token = api_token_from_request(request)
+        key, account, learner, profile = await resolve_api_key(db, token)
+        path = request.url.path.rstrip("/")
+        if (path.startswith("/api/admin/") or path == "/api/admin"
+                or path.startswith("/api/auth/api-keys")
+                or path in {"/api/auth/password", "/api/auth/csrf"}
+                or (path.startswith("/api/auth/model-credential") and path != _RUNTIME_BRIDGE_PATH)):
+            raise HTTPException(403, "此操作需要使用网页登录账号，API key 无权访问")
+        now = datetime.utcnow()
+        if key.last_used_at is None or (now - key.last_used_at).total_seconds() >= 60:
+            key.last_used_at = now
+            await db.commit()
+        return CurrentLearner(account, learner, profile, auth_method="api_key", api_key_id=key.id)
     raw_token = bearer_token or request.cookies.get(settings.auth_cookie_name)
     auth_method = "desktop_bearer" if bearer_token else "cookie"
     if not raw_token:
@@ -763,7 +785,7 @@ async def get_current_learner(
 async def require_admin(
     current: CurrentLearner = Depends(get_current_learner),
 ) -> CurrentLearner:
-    if current.account.role != "admin":
+    if current.auth_method == "api_key" or current.account.role != "admin":
         raise HTTPException(403, "需要管理员权限")
     return current
 

@@ -1,5 +1,9 @@
 # LearnFlow 架构权威与维护边界
 
+Contract impact（2026-09-09.2 / 2026-09-09.2-desktop）：桌面默认通过裸公网 IP 的可信 HTTPS 与账户绑定 API Key 连接。新增独立 hash-only 认证表、签发/撤销及 key-only 网关合同；旧浏览器 Cookie 与本地工作区兼容，账号/learner ownership 沿用原入口。鉴权不写学习事件或五核，三类 Agent、评分与核心共享 schema 不变。详见 [IP 与 API Key 连接契约](implementation/DESKTOP_IP_API_KEY.md)。
+
+Contract impact（2026-09-09.1）：网页学习规划在既有对话工作台内增加资料选择界面，复用 source_ingestion、项目来源和个人资料库 API，来源搜索复用现有 Tutor 工具。学习型规划先选资料，项目 Tutor 复用已绑定目标与关卡；普通对话侧重方向和长期计划草案。不新增 Agent、事件、五核字段或数据库迁移；桌面入口本轮不启用。见 implementation/PLANNING_RESOURCE_WORKBENCH.md。
+
 > Contract impact（2026-09-08.9 / desktop 对应版本，共享核心 0.2.5）：教育记忆读取升级为 relevance-budget.v3。教学控制 v2 保留来源 scope 与应用 scope，采用分句解析、默认会话 8 小时及显式有时区期限的最长 168 小时窗口，兼容读取 v1。只读 learning-episode.v1 通过 Fact → Mutation → Event → owned Attempt 验证真实评分来源；规划 v2 消费该投影并附加确定性决策依据。事件稳定 ID、EvidenceEvent v1、三类 Agent、五核、评分和掌握门槛不变，不迁移历史库。详见 [教育记忆 v2 实现](implementation/EDUCATION_MEMORY_V2.md)；实验结果单独报告，不以新增字段或回归通过证明学习收益。
 
 Contract impact（`2026-09-08.8`）：共享核心 0.2.4 收紧普通概念评分，取消多题 ID 直接升级稳定掌握；既有间隔复习与显式迁移门保留。双端规划确定性消费带来源的当前时间、困难和受助指导，约束离线与模型最终输出。事件/计划 v1 增量兼容，不回填历史画像、不迁移数据库。实现与限制见 [教育记忆策略](implementation/EDUCATION_MEMORY_POLICY.md)。

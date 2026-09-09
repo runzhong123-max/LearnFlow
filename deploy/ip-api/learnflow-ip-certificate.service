@@ -1,0 +1,14 @@
+[Unit]
+Description=Renew LearnFlow IP HTTPS certificate and reload Caddy when needed
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+ConditionPathExists=/opt/ceg/ip-api/caddy/enabled/20-https.caddy
+
+[Service]
+Type=oneshot
+User=root
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/ceg/ip-api/bin/ip_api_tls.py renew --root /opt/ceg/ip-api
+TimeoutStartSec=15min
+Nice=10

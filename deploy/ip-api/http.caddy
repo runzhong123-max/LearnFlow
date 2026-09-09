@@ -1,0 +1,15 @@
+# Bootstrap and renewal only. Never redirect an IP API request to a domain.
+http://8.148.28.98 {
+    handle /.well-known/acme-challenge/* {
+        root * /var/www/learnflow-ip-acme
+        file_server
+    }
+    @api path /api /api/*
+    handle @api {
+        header Cache-Control "no-store"
+        respond "HTTPS is required for API credentials." 426
+    }
+    handle {
+        respond 404
+    }
+}
