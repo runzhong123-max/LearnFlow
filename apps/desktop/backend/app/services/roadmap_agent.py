@@ -151,6 +151,7 @@ class RoadmapAgent:
             temperature=0.7,
             timeout=180,
             max_retries=0,
+            max_tokens=8000,
         )
         self._existing_roadmap: Optional[Dict] = None
         self._last_submitted_roadmap: Optional[Dict] = None

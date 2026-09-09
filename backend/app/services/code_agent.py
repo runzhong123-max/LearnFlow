@@ -56,6 +56,7 @@ class CodeAgent:
             temperature=0.3,
             timeout=120,
             max_retries=0,
+            max_tokens=4000,
         )
 
     async def review(self, code: str, exercise_context: str) -> str:

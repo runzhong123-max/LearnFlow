@@ -2310,6 +2310,10 @@ async def _generate_tutor_reply(
         settings.llm_model,
         thinking_enabled=False,
     )
+    # Output caps follow the wall-clock budget rather than a fixed number: a
+    # tier that can emit more tokens than its window allows just times out, and
+    # one capped too low leaves a reasoning model no room for visible text
+    # after its thinking pass.
     llm = ChatOpenAI(
         model=settings.llm_model,
         api_key=settings.llm_api_key,
@@ -2317,6 +2321,7 @@ async def _generate_tutor_reply(
         temperature=0.45,
         timeout=max(1.0, model_budget),
         max_retries=0,
+        max_tokens=4000,
         **provider_kwargs,
     )
     plain_llm = ChatOpenAI(
@@ -2326,7 +2331,7 @@ async def _generate_tutor_reply(
         temperature=0.45,
         timeout=max(1.0, model_budget),
         max_retries=0,
-        max_tokens=512,
+        max_tokens=2000,
         **provider_kwargs,
     )
     if workflow_instruction:
