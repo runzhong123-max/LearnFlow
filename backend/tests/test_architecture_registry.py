@@ -45,7 +45,7 @@ def test_registry_has_three_agents_five_kernels_and_no_drift():
     assert set(ACTION_BOARD) == set(CAPABILITY_OWNERS)
     assert validate_registry() == []
     manifest = registry_manifest()
-    assert REGISTRY_VERSION == "2026-09-08.9"
+    assert REGISTRY_VERSION == "2026-09-09.1"
     assert manifest["schema_valid"] is True
     assert manifest["valid"] is (
         manifest["schema_valid"] and manifest["implementation_valid"]
@@ -683,6 +683,10 @@ def test_ecosystem_source_commit_remains_zero_target_and_service_owned():
     assert event.kernel_targets == ()
     assert event.reducer_binding is None
     assert ACTION_BOARD["commit_role_learning_points"].evidence_target == {}
+    assert ACTION_BOARD["commit_role_learning_points"].confirmation_policy == "explicit_or_authorized_production"
+    assert DATA_CONTRACTS["role_learning_automatic_v1"]["kernel_write_path"] == "none"
+    assert "api:ecosystem.automatic" in DATA_CONTRACTS["role_learning_automatic_v1"]["binding_ids"]
+    assert TOOL_MODEL_EXPOSURE["curriculum_source_runtime"] == "not_model_callable"
     assert CAPABILITY_OWNERS["commit_role_learning_points"][0] == "learning_design_agent"
     assert PUBLICATIONS["tools"]["ecosystem_gateway"].lifecycle == "implemented"
 

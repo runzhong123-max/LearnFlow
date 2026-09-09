@@ -9,7 +9,8 @@ import { createEcosystemRepository } from "../lib/ecosystem/repository-core";
 import { resolveRoleLearningPoints } from "../lib/learning-path/resolution";
 import { bundledRoleSnapshot } from "../lib/snapshots/bundled-role-adapter";
 import { sha256Hex } from "../lib/versioning/canonical";
-import type { LearningPathGraphV2 } from "../lib/learning-path/contract";
+import { validateGraphExtensionProposalV2, validateLearningPathGraphV2, validateRoleLearningAlignmentV2, type GraphExtensionProposalV2, type PathNodeV2, type LearningPathGraphV2 } from "../lib/learning-path/contract";
+import { packageLearningSource } from "../lib/learning-path/resolution";
 const actor = { sub: "learnflow:learner:1", role: "user" as const };
 const packageRef = { packageId: "role:test", packageVersion: "1.0.0", snapshotId: "snapshot:test", rootHash: "a".repeat(64) };
 const secret = "fixture-secret-with-at-least-32-characters";
@@ -67,6 +68,32 @@ test("coarse legacy nodes, missing evidence and missing definitions remain expli
   assert.equal((await resolveRoleLearningPoints(input)).unresolved[0].reason, "needs_definition");
   point.learningDefinition = { scopeNote: "关系数据库", assessmentCriteria: ["解释读现象"] }; point.evidenceBindingIds = [];
   assert.equal((await resolveRoleLearningPoints(input)).unresolved[0].reason, "needs_evidence");
+});
+test("authorized automatic resolution creates a scoped learning domain without a false official anchor", async () => {
+  const { result, graph, point } = fixture(); graph.nodes[0].title = "互不相关的专业容器";
+  result.brief.roleTitle = "异领域专业工作";
+  const input = { result, graph, packageRef, namespace: "learnflow:extension:test", targetIds: [point.id] };
+  assert.equal((await resolveRoleLearningPoints(input)).unresolved[0].reason, "needs_anchor");
+  const resolved = await resolveRoleLearningPoints({ ...input, allowStandaloneRoots: true });
+  assert.equal(resolved.unresolved.length, 0); assert.equal(resolved.pendingBindings.length, 1);
+  const proposal = resolved.extensionProposal!;
+  assert.equal(proposal.standaloneRoots?.length, 1);
+  assert.equal(proposal.nodes.filter(n => n.kind === "skill_domain").length, 1);
+  assert.ok(proposal.edges.every(e => e.from.namespace === input.namespace && e.to.namespace === input.namespace));
+  assert.equal(validateGraphExtensionProposalV2(proposal, graph, packageLearningSource(result, packageRef)).valid, true);
+  assert.equal(validateGraphExtensionProposalV2({ ...proposal, standaloneRoots: undefined }, graph, packageLearningSource(result, packageRef)).valid, false);
+  const pointKey = { namespace: input.namespace, id: proposal.nodes.find(n => n.kind === "knowledge")!.id };
+  assert.equal(validateGraphExtensionProposalV2({ ...proposal, standaloneRoots: [pointKey] }, graph, packageLearningSource(result, packageRef)).valid, false);
+  assert.equal(validateGraphExtensionProposalV2({ ...proposal, edges: proposal.edges.map(edge => ({ ...edge, kind: "co_learning" })) }, graph, packageLearningSource(result, packageRef)).valid, false);
+  const merged = { ...graph, nodes: [...graph.nodes, ...proposal.nodes], edges: [...graph.edges, ...proposal.edges], sources: [...graph.sources, ...proposal.sources] };
+  const repeated = await resolveRoleLearningPoints({ ...input, graph: merged, allowStandaloneRoots: true });
+  assert.equal(repeated.alignment.bindings.length, 1); assert.equal(repeated.extensionProposal, undefined);
+  point.summary = "对相同范围与验收边界的另一段讲解摘要";
+  assert.equal((await resolveRoleLearningPoints({ ...input, graph: merged, allowStandaloneRoots: true })).extensionProposal, undefined);
+  point.learningDefinition!.scopeNote = "新的明确范围";
+  const distinct = await resolveRoleLearningPoints({ ...input, graph: merged, allowStandaloneRoots: true });
+  assert.equal(distinct.alignment.bindings.length, 0); assert.equal(distinct.pendingBindings.length, 1);
+  assert.notEqual(distinct.pendingBindings[0].target.id, repeated.alignment.bindings[0].target.id);
 });
 test("agent request claims one execution and returns status independently of client lifetime", async () => {
   let executions = 0; let stored: AgentRun | undefined; let fingerprint = ""; let work: Promise<unknown> | undefined;
@@ -149,4 +176,85 @@ test("package resolver verifies every consumed component against the exact pinne
   compiled.bundle.components[m.entrypoints.semanticGraph] += " ";
   await assert.rejects(repo.load(actor, pinned), /PACKAGE_INTEGRITY_FAILED/);
   sql.close();
+});
+
+
+function materialize(graph: LearningPathGraphV2, proposal: GraphExtensionProposalV2): LearningPathGraphV2 {
+  return { ...graph, nodes: [...graph.nodes, ...proposal.nodes], sources: [...graph.sources, ...proposal.sources], edges: [...graph.edges, ...proposal.edges] };
+}
+
+test("automatic exact equivalence chooses existing scoped content identity, then official, then stable namespace/id", async () => {
+  const { result, graph, point } = fixture();
+  const input = { result, graph, packageRef, namespace: "learnflow:extension:test", targetIds: [point.id] };
+  const initial = await resolveRoleLearningPoints(input);
+  const own = initial.extensionProposal!.nodes.find(n => n.kind === "knowledge")!;
+  const official: PathNodeV2 = { ...own, namespace: "learnflow:official", id: "official-point",
+    ownership: { system: "learnflow", catalog: "official" }, provenance: graph.nodes[0].provenance };
+  const foreignA: PathNodeV2 = { ...own, namespace: "learnflow:extension:aaa", id: "a-point" };
+  const foreignZ: PathNodeV2 = { ...own, namespace: "learnflow:extension:aaa", id: "z-point" };
+  const localOther: PathNodeV2 = { ...own, id: "locally-authored-point" };
+  const source = packageLearningSource(result, packageRef);
+  const cases: Array<{ nodes: PathNodeV2[]; expected: PathNodeV2 }> = [
+    { nodes: [foreignZ, official, localOther, foreignA, own], expected: own },
+    { nodes: [foreignZ, localOther, foreignA, official], expected: official },
+    { nodes: [localOther, foreignZ, foreignA], expected: foreignA },
+  ];
+  for (const row of cases) {
+    for (const nodes of [row.nodes, [...row.nodes].reverse()]) {
+      const base = { ...graph, sources: [...graph.sources, ...initial.extensionProposal!.sources], nodes: [...graph.nodes, ...nodes] };
+      assert.equal(validateLearningPathGraphV2(base).valid, true);
+      const before = structuredClone(base);
+      const automatic = await resolveRoleLearningPoints({ ...input, graph: base, allowStandaloneRoots: true });
+      assert.deepEqual(automatic.unresolved, []);
+      assert.equal(automatic.extensionProposal, undefined);
+      assert.deepEqual(automatic.alignment.bindings.map(b => b.target), [{ namespace: row.expected.namespace, id: row.expected.id, revision: row.expected.revision }]);
+      assert.equal(validateRoleLearningAlignmentV2(automatic.alignment, base, source).valid, true);
+      const manual = await resolveRoleLearningPoints({ ...input, graph: base });
+      assert.equal(manual.unresolved[0].reason, "ambiguous_definition");
+      assert.equal(manual.alignment.bindings.length, 0);
+      assert.deepEqual(base, before);
+    }
+  }
+});
+
+test("automatic collision fallback lengthens the content ID without equating or overwriting occupied nodes and is reused", async () => {
+  const { result, graph, point } = fixture();
+  const input = { result, graph, packageRef, namespace: "learnflow:extension:test", targetIds: [point.id] };
+  const initial = await resolveRoleLearningPoints(input);
+  const original = initial.extensionProposal!.nodes.find(n => n.kind === "knowledge")!;
+  let base = { ...graph, nodes: [...graph.nodes], sources: [...graph.sources, ...initial.extensionProposal!.sources] };
+  const source = packageLearningSource(result, packageRef);
+  let fullHash = "", collisionSuffix = 0;
+  for (const length of [24, 32, 40, 48, 56, 64, 66, 66]) {
+    const before = structuredClone(base);
+    const resolved = await resolveRoleLearningPoints({ ...input, graph: base, allowStandaloneRoots: true });
+    assert.deepEqual(resolved.unresolved, []);
+    assert.equal(resolved.alignment.bindings.length, 0);
+    assert.equal(resolved.pendingBindings.length, 1);
+    const proposal = resolved.extensionProposal!;
+    assert.equal(validateGraphExtensionProposalV2(proposal, base, source).valid, true);
+    const created = proposal.nodes.find(n => n.kind === "knowledge")!;
+    if (length <= 64) {
+      assert.equal(created.id.length, "point:".length + length);
+      assert.ok(created.id.startsWith(original.id));
+      if (length === 64) fullHash = created.id;
+    } else {
+      assert.equal(created.id, `${fullHash}:${++collisionSuffix}`);
+    }
+    assert.ok(!base.nodes.some(n => n.namespace === input.namespace && n.id === created.id));
+    const merged = materialize(base, proposal);
+    assert.equal(validateLearningPathGraphV2(merged).valid, true);
+    assert.equal(validateRoleLearningAlignmentV2({ ...resolved.alignment, bindings: resolved.pendingBindings }, merged, source).valid, true);
+    const official: PathNodeV2 = { ...created, namespace: "learnflow:official", id: "same-official-point",
+      ownership: { system: "learnflow", catalog: "official" }, provenance: graph.nodes[0].provenance };
+    const replay = await resolveRoleLearningPoints({ ...input, graph: { ...merged, nodes: [...merged.nodes, official] }, allowStandaloneRoots: true });
+    assert.equal(replay.extensionProposal, undefined);
+    assert.equal(replay.alignment.bindings[0].target.id, created.id);
+    assert.equal(replay.alignment.bindings[0].target.namespace, input.namespace);
+    assert.deepEqual(base, before);
+    // Materialize a DIFFERENT statement at this ID to force the next candidate.
+    base = { ...base, nodes: [...base.nodes, { ...created, title: "另一个占用标识的概念", aliases: [],
+      atomic: { scopeNote: "不等价的不同范围", assessmentCriteria: ["执行另一项不同考核"] } } as PathNodeV2] };
+    assert.equal((await resolveRoleLearningPoints({ ...input, graph: base })).unresolved[0].reason, "ambiguous_definition");
+  }
 });

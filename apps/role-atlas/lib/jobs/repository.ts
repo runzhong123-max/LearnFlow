@@ -141,12 +141,12 @@ export async function completeRoleJob(input: { jobId: string; owner: string; pha
   await archiveJobAttempt(input.jobId);
 }
 
-export async function failRoleJob(input: { jobId: string; owner: string; error: string; retryable: boolean }) {
+export async function failRoleJob(input: { jobId: string; owner: string; error: string; retryable: boolean; result?: unknown }) {
   await ensureAppSchema();
   const now = new Date().toISOString();
-  await getD1().prepare(`UPDATE role_jobs SET status=?, lease_owner=NULL, lease_expires_at=NULL, error=?,
+  await getD1().prepare(`UPDATE role_jobs SET status=?, lease_owner=NULL, lease_expires_at=NULL, error=?, result_json=COALESCE(?,result_json),
     completed_at=?, updated_at=? WHERE id=? AND lease_owner=? AND status='running'`)
-    .bind("failed", input.error, now, now, input.jobId, input.owner).run();
+    .bind("failed", input.error, input.result ? JSON.stringify(input.result) : null, now, now, input.jobId, input.owner).run();
   await archiveJobAttempt(input.jobId);
 }
 

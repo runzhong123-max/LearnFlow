@@ -164,7 +164,7 @@ for (const freshEvidence of [false, true]) test(`使用${freshEvidence ? "本轮
   assert.equal(new Set(calls).size, 4);
   assert.equal(result.createdSnapshot, true, result.summary.join("\n"));
   assert.equal(result.inspectionAfter.coverage.tasksWithoutSkills, 0);
-  assert.equal(result.researchPlans.length, 1, "没有可改变的搜索策略时不重复空跑第二轮");
+  assert.equal(result.researchPlans.length, 2, "知识补齐后仍需尝试已发现的过程与能力缺口，并在预算内停止");
   for (const taskId of taskIds) {
     const points = result.candidate.semantic.edges.filter(edge => edge.source === taskId && edge.type === "requires_skill")
       .map(edge => result.candidate.semantic.nodes.find(node => node.id === edge.target)!);
@@ -219,13 +219,13 @@ test("第一轮部分修复后继续研究剩余任务，空搜索仍在两轮�
   } finally { globalThis.fetch = previousFetch; }
 });
 
-test("模型没有补出有依据的知识时工作项仍为缺口；关闭联网且无附件不调用模型", async () => {
+test("模型没有补出有依据的知识时工作项仍为缺口；关闭联网仍可研究已存原文", async () => {
   const { base } = fixture();
   for (const webResearch of [true, false]) {
     let calls = 0;
     const model: ModelInvoker = async function* () { calls++; yield { type: "text", delta: "{}" }; };
     const output = await createSnapshotIterationSkill({ model }).invoke({ request: { ...iteration(base), webResearch }, base, candidate: base });
-    assert.equal(calls > 0, webResearch);
+    assert.ok(calls > 0, "联网与资料内研究均需执行真实模型工作");
     assert.equal(output.result!.createdSnapshot, false);
     assert.equal(output.result!.workItems.some(item => item.status === "completed"), false);
     assert.equal(output.result!.candidate.snapshot.id, base.snapshot.id);

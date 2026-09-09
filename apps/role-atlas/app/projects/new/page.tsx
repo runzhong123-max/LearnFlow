@@ -19,5 +19,5 @@ export default async function NewProjectPage({
   }>;
 }) {
   const query = await searchParams;
-  return <RoleWorkspace projectId={query.project} initialConversationId={query.conversation} initialNewProject={!query.project} newProjectBrief={query} />;
+  return <RoleWorkspace projectId={query.project} initialConversationId={query.conversation} initialNewProject newProjectBrief={query} />;
 }

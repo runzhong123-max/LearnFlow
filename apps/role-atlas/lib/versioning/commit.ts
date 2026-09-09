@@ -7,6 +7,7 @@ import { canonicalStringify, domainId, projectVersionLabel, sha256Hex } from "./
 import { preserveStableIdentities } from "./identity";
 import type { ProjectVersionRecord, ProjectVersionSourceKind } from "./types";
 import { versionAdoptionStatements, versionCommitStatements } from "./commit-transaction";
+import { automaticMountEnqueueStatement } from "@/lib/learning-path/automatic-schema";
 
 function parseResult(value: string) {
   return normalizeRolePackage(JSON.parse(value) as ColdStartBuildResult);
@@ -159,13 +160,13 @@ export async function commitProjectVersion(input: {
   const status = result.snapshot.status === "ready" ? "ready" : "candidate";
   const d1 = getD1();
   try {
-    const committed = await d1.batch(versionCommitStatements(d1, {
+    const committed = await d1.batch([...versionCommitStatements(d1, {
       id, projectId: input.projectId, sourceRunId: input.sourceRunId, sourceKind: input.sourceKind,
       sourceInput: JSON.stringify(input.sourceInput || { kind: input.sourceKind }), parentVersionId,
       expectedHeadId: parentVersionId, version, snapshotId: result.snapshot.id,
       rootHash: snapshot.contentHash, status, message: input.message, authorKind: input.authorKind || "agent",
       packageJson: canonicalStringify(result), now, conversationId: input.conversationId, jobId: input.jobId, jobOwner: input.jobOwner,
-    }));
+    }), automaticMountEnqueueStatement(d1, { projectId: input.projectId, versionId: id, conversationId: input.conversationId, now })]);
     if (!committed[1].meta.changes) throw new Error("BUILD_RUN_PROJECT_CONFLICT");
   } catch (error) {
     // The unique project/source-run constraint is the idempotency authority, not the earlier read.

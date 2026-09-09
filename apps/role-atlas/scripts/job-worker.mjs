@@ -7,6 +7,7 @@ const secret = process.env.ROLE_ATLAS_GATEWAY_SECRET || "";
 if (secret.length < 32 || base.protocol !== "http:" || !["role-atlas", "localhost", "127.0.0.1"].includes(base.hostname)) throw new Error("JOB_WORKER_CONFIGURATION_INVALID");
 const signingKey = createHash("sha256").update(`role-job-sign:v1:${secret}`).digest();
 const active = new Map();
+const mounts = new Map();
 let stopping = false;
 for (const signal of ["SIGTERM", "SIGINT"]) process.on(signal, () => { stopping = true; });
 function request(path, method, collect = false) {
@@ -28,14 +29,22 @@ console.log("Role job consumer started (concurrency=2, automatic recovery <=3 de
 while (!stopping) {
   try {
     const response = await request("/api/internal/role-jobs", "GET", true);
-    if (response.status === 200) for (const id of JSON.parse(response.body).jobs || []) {
+    const pending = response.status === 200 ? JSON.parse(response.body) : {};
+    for (const id of pending.jobs || []) {
       if (active.size >= 2) break;
       if (active.has(id)) continue;
       active.set(id, request(`/api/internal/role-jobs/${encodeURIComponent(id)}`, "POST")
         .catch(() => console.error("Job connection lost; persisted lease determines recovery", id))
         .finally(() => active.delete(id)));
     }
+    // A separate bounded slot lets saved versions finish mounting while production jobs run.
+    for (const id of pending.learningMounts || []) {
+      if (mounts.size >= 1) break;
+      mounts.set(id, request(`/api/internal/learning-mounts/${encodeURIComponent(id)}`, "POST")
+        .catch(() => console.error("Learning mount interrupted; durable receipt will be recovered", id))
+        .finally(() => mounts.delete(id)));
+    }
   } catch { console.error("Job service unavailable; retrying discovery"); }
   await delay(5000);
 }
-await Promise.allSettled(active.values());
+await Promise.allSettled([...active.values(), ...mounts.values()]);
