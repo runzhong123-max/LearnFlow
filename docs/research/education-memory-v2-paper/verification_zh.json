@@ -1,5 +1,5 @@
 {
-  "scope": "Chinese manuscript and scientific figures only",
+  "scope": "Chinese literature review expansion with DeepTutor; retained experiments unchanged",
   "product_contract_impact": "none",
   "new_experiments_run": false,
   "product_tests_rerun": false,
@@ -10,22 +10,21 @@
     "locomo_rows": 14,
     "status": "passed"
   },
-  "references_numbered": 13,
-  "docx_tables": 4,
+  "references_numbered": 18,
+  "docx_tables": 5,
   "docx_figures": 4,
-  "rendered_docx_pages": 14,
+  "rendered_docx_pages": 17,
   "visual_review": {
     "status": "passed",
-    "pages_inspected": 14,
+    "pages_inspected": 17,
     "checks": [
-      "Chinese glyph rendering",
-      "title line breaks",
-      "table pagination",
+      "Chinese glyphs",
+      "table headers and pagination",
       "figure labels and captions",
-      "references",
-      "absence of clipping and overlap"
+      "all reference entries",
+      "no clipping or overlap"
     ],
-    "final_render_equivalence": "Pages 1-9 and 13-14 hash-identical to reviewed release render; final pages 10-12 inspected after figure 3 resize."
+    "final_render_equivalence": "All 17 pages reviewed; final render differs only on page 15 from reviewed predecessor, re-inspected after restoring the unchanged registry version."
   },
   "figure_formats": [
     "editable SVG",
@@ -34,10 +33,10 @@
   ],
   "source_validation_scope": "Retained experiment snapshot 0da6615eeb2a5dded4101535e8534cd5494b43a9; not concurrent workspace changes.",
   "files_sha256": {
-    "LearnFlow_Educational_Memory_Manuscript_ZH.docx": "6ebed9bc24a9bd305f0770dcc8427f7f6e3a45f06eb38e85bea75d27d6a4e160",
-    "manuscript_zh.md": "2cb1214958130414307dc15e5e243fb47142ad35a1962e1c5b68e2dc60030da7",
-    "build_paper_zh.py": "37ccdde46e27f993a87d6f085999fac7edfb6d1a71e4cecead65a6a7d07cb273",
-    "图表设计与复现说明.md": "41acc8b8676cdaddbf62de1800232b24c15ecf8b1bfe85652b55070cfdb95e97",
+    "LearnFlow_Educational_Memory_Manuscript_ZH.docx": "7f1a0f6602dbdf9a144f5f6beb3b183270ee9a4c2dc0f0fec0397bebe3179b59",
+    "manuscript_zh.md": "0a595556efd6d7c53b976bf93195874bc0aa1d7dc577aad78687d9f5cd2c48c6",
+    "build_paper_zh.py": "f7d4572e99ca74651d5e5c91b2ab1fb3228ab9bff978869bbdbfcbd2f86632c1",
+    "图表设计与复现说明.md": "4735e4f4b1511b326e84c2645ced27bd61b9a49139642a104499fd5e75603c29",
     "figures_zh/fig1_architecture.pdf": "9fa7a3db7a117c848b6b3e34189fa7110420bb35530776a3a02436785192f43d",
     "figures_zh/fig1_architecture.png": "ac153b05900b510e924240cbb55283ce39760de0929548795ff1e7073fa0ee5e",
     "figures_zh/fig1_architecture.svg": "0ca44495524d423574429698d548876333371be74137c8da01886c41921a5f7a",
@@ -49,6 +48,18 @@
     "figures_zh/fig3_education.svg": "2310f8c20a82db6edea9ac62e50acc85eda436b82ab1cda0b35a298348c8d5cd",
     "figures_zh/fig4_locomo.pdf": "0714c1e15de0adec9787bd7d04f3594904e33562ae5725c10b58d31acefb9b7b",
     "figures_zh/fig4_locomo.png": "476e7967a24c674d9354bd9ce11d26cdaf3b829187fc0ab64e18bdd3ff0f2b8b",
-    "figures_zh/fig4_locomo.svg": "599744256558aec46d2fb933779b0ada6ea8e2eb63c3b44c21139a24a389afe3"
+    "figures_zh/fig4_locomo.svg": "599744256558aec46d2fb933779b0ada6ea8e2eb63c3b44c21139a24a389afe3",
+    "references_zh.bib": "8742ee7627255a68971692faa4f25f52f73fe825a4a3f5c3fc4b6e0ce42ad58a",
+    "literature_review_sources.md": "1bc257f3efd03bbd1be918641ebead8e2d05892e52d18681fefd5d52371b526a"
+  },
+  "literature_review": {
+    "sections": 6,
+    "comparison_table_rows": 7,
+    "new_references": 5,
+    "primary_source_checks": "passed within disclosed public-access scope",
+    "deeptutor_version": "2604.26962v1",
+    "external_results_reproduced": false,
+    "methods_results_discussion_comparison": "unchanged except table numbers",
+    "all_12_figure_files": "unchanged"
   }
 }

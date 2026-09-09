@@ -224,7 +224,8 @@ def docx():
             rows=[line]
             while i<len(lines) and lines[i].startswith('|'):rows.append(lines[i]);i+=1
             vals=[[c.strip() for c in r.strip('|').split('|')] for r in rows if not re.match(r'^\|\s*---',r)]
-            n=len(vals[0]);widths=([35,31,38,31,38] if n==5 else ([38,114,21] if vals[0][1]=='干预定义' else [57,58,58]))
+            n=len(vals[0]);text_table=vals[0][0]=='研究路径'
+            widths=([32,45,46,50] if text_table else ([35,31,38,31,38] if n==5 else ([38,114,21] if vals[0][1]=='干预定义' else [57,58,58])))
             table=doc.add_table(rows=0,cols=n);table.autofit=False;table.alignment=WD_TABLE_ALIGNMENT.CENTER
             for col,w in zip(table.columns,widths):col.width=Mm(w)
             # Journal-style three-rule table, per requested scientific visual direction.
@@ -237,8 +238,8 @@ def docx():
                 if ri==0:pr.append(OxmlElement('w:tblHeader'))
                 for ci,(cell,txt,w) in enumerate(zip(row.cells,v,widths)):
                     cell.width=Mm(w);cell.vertical_alignment=WD_CELL_VERTICAL_ALIGNMENT.CENTER
-                    p=cell.paragraphs[0];p.paragraph_format.first_line_indent=Pt(0);p.paragraph_format.space_before=Pt(3);p.paragraph_format.space_after=Pt(3);p.paragraph_format.line_spacing=1.04
-                    p.alignment=WD_ALIGN_PARAGRAPH.LEFT if ci==0 or vals[0][1]=='干预定义' else WD_ALIGN_PARAGRAPH.CENTER
+                    p=cell.paragraphs[0];p.paragraph_format.first_line_indent=Pt(0);p.paragraph_format.space_before=Pt(2 if vals[0][1]=='预算 1,800' else 3);p.paragraph_format.space_after=Pt(2 if vals[0][1]=='预算 1,800' else 3);p.paragraph_format.line_spacing=1.04
+                    p.alignment=WD_ALIGN_PARAGRAPH.LEFT if ci==0 or text_table or vals[0][1]=='干预定义' else WD_ALIGN_PARAGRAPH.CENTER
                     r=p.add_run(txt);r.font.size=Pt(9);r.bold=ri==0
                     if ri==0:
                         b=OxmlElement('w:tcBorders');e=OxmlElement('w:bottom');e.set(qn('w:val'),'single');e.set(qn('w:sz'),'4');e.set(qn('w:color'),'777777');b.append(e);cell._tc.get_or_add_tcPr().append(b)
@@ -279,9 +280,13 @@ def verify_data(d):
     for arm in ['full','no_bm25','no_aliases','no_fuzzy','no_temporal','recent_facts','no_memory']:
         a,b=[d['locomo'][f'{arm}:{v}'] for v in (1800,3200)]
         assert f"| {arm} | {a['recall']:.2%} | {a['complete']} / 1,438 | {b['recall']:.2%} | {b['complete']} / 1,438 |" in md
-    refs=re.findall(r'^\[(\d+)\]',md,re.M);assert refs==list(map(str,range(1,14)))
+    refs=re.findall(r'^\[(\d+)\]',md,re.M);assert refs==list(map(str,range(1,19)))
     assert '129 个转为无评估动作' in md
     assert '95%' in md
+    assert '注册表 2026-09-08.9' in md
+    assert '### 2.4 DeepTutor' in md and '3.91/5' in md and '3.80/5' in md
+    assert '本文没有运行 TutorBench 或 DeepTutor 基线' in md
+    assert re.findall(r'^表 ([1-9]) [^\n]+\n\n\|', md, re.M)==list(map(str,range(1,6)))
     print('Chinese table, negative-result and citation checks passed.')
 
 if __name__=='__main__':
