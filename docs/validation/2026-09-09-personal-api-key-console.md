@@ -29,3 +29,7 @@ Contract impact：新增 `auth_api_key_secrets` 表、`copy_available` 元数据
 本次未部署生产、未重装桌面、未跑 seeded demo（不涉及学习闭环）、未跑桌面回归（未修改桌面或共享包）。当前 HTTPS 裸 IP 根路径仍不提供网页登录；不能把此签发台的源码完成当成公网入口已开放。生产启用前须有受保护的网页登录入口、稳定且备份过的 AUTH_API_KEY_KEK，并同时发布 Web 前后端。
 
 回退可恢复旧代码并保留新表与 KEK，原哈希鉴权兼容。勿删除新表或直接更换 KEK，避免破坏再次复制能力。
+
+## 后续生产发布
+
+2026-09-09 已完成 main 集成及生产发布，独立 HTTPS IP 入口已开放。上述未部署状态属于初次源码验收时点；当前状态与生产证据见 [生产发布记录](2026-09-09-personal-api-key-production-release.md)。

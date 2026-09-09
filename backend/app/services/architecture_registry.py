@@ -44,7 +44,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-09.5"
+REGISTRY_VERSION = "2026-09-09.6"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Source-data contracts, not Agent-callable tools or learner-state writers.
@@ -311,7 +311,7 @@ TOOLS = {
         ToolContract("ecosystem_gateway", "Role Atlas and Graph Hub Gateway", "tutor_agent", "learnflow", "orchestration",
                      (), (), "central authenticated actor -> signed fixed-origin read-only package/graph/Agent operations; scoped durable run records, no learner-state write"),
         ToolContract("curriculum_source_runtime", "Role-linked Learning Path Source Runtime", "learning_design_agent", "learnflow", "artifact",
-                     (), (), "verified package -> course-first resolution (role-course/v1), narrower_than contextual applications and shared course targets; old receipts replay unchanged -> explicit manual or authorized production source commit with CAS and durable idempotent receipts; reverse delegation checks active central learner; zero-target audit; no mastery or personal plan write"),
+                     (), (), "verified package -> scoped catalog-first semantic course planning (role-course/v2), verified target membership and uncovered requirement grouping, narrower_than contextual applications and shared course targets; old receipts replay unchanged -> explicit manual or authorized production source commit with CAS and durable idempotent receipts; reverse delegation checks active central learner; zero-target audit; no mastery or personal plan write"),
         ToolContract("graph_hub_reader", "Scoped Graph Hub Search and Recommender", "tutor_agent", "vnext", "read",
                      (), (), "public role/task discovery.v1 field-coverage.v2 API with explicit target and role filter, stable task IDs and fixed release pins; scoped personal/non-role catalog retains ownership checks; zero learner-state write"),
         ToolContract("learning_file_service", "Managed Lecture and Practice File Service", "tutor_agent", "vnext", "artifact",

@@ -1,0 +1,7 @@
+.research-stages { flex: 0 0 auto; padding: 10px 16px; border-bottom: 1px solid #dce3db; background: #f6f8f3; }
+.research-stages ol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 12px; list-style: none; margin: 0; padding: 0; }
+.research-stages li { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #7b857b; }
+.research-stages li i { font-style: normal; width: 17px; height: 17px; border: 1px solid #d2dcd2; border-radius: 50%; text-align: center; line-height: 15px; }
+.research-stages li.active { color: #315b45; font-weight: 600; }
+.research-stages li.active i, .research-stages li.done i { background: #315b45; color: white; border-color: #315b45; }
+.research-stages p { font-size: 11px; color: #576859; margin: 8px 0 0; overflow-wrap: anywhere; }

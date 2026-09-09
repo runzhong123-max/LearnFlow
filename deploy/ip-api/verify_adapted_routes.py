@@ -48,7 +48,9 @@ def verify(config):
     desk = next(route for route in outer if route.get("match") == [{"path": ["/account-api/*"]}])
     desk_handles = list(handles(desk))
     assert sum(item["handler"] == "reverse_proxy" for item in desk_handles) == 1
-    assert any(item.get("status_code") == 403 for item in desk_handles)
+    denied = next(i for i, item in enumerate(desk_handles) if item.get("status_code") == 403)
+    proxied = next(i for i, item in enumerate(desk_handles) if item["handler"] == "reverse_proxy")
+    assert denied < proxied, "Authorization rejection must run before account proxy"
     assert any(item.get("status_code") == 404 for item in desk_handles)
     def matchers(value):
         if isinstance(value, dict):

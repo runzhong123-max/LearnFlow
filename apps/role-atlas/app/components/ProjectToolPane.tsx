@@ -1,5 +1,6 @@
 "use client";
 
+import { progressForJob, researchStage, researchStages, type ResearchProgress } from "@/lib/jobs/research-progress";
 import { jobDisplayStatus, jobConnectionMessage } from "@/lib/jobs/presentation";
 import { iterationOutcomePresentation, type IterationOutcome } from "@/lib/jobs/iteration-outcome";
 import { useEffect, useRef, useState } from "react";
@@ -20,12 +21,13 @@ const phaseLabels: Record<string, string> = { queued: "等待执行", recovering
 function sessionValue(key: string) { try { return JSON.parse(sessionStorage.getItem(key) || "null") || undefined; } catch { return undefined; } }
 
 /** One instance per conversation; hidden conversations keep their request and draft. */
-export default function ProjectToolPane({ context, currentSelectedNodeIds, activeTool, promptSeed, targetSeed, onClose, onPreview, onComplete, onViewVersion, onBusyChange }: {
+export default function ProjectToolPane({ context, currentSelectedNodeIds, activeTool, promptSeed, targetSeed, onClose, onPreview, onComplete, onViewVersion, onBusyChange, onProgress }: {
   context: WorkspaceSkillContext; activeTool: RoleSkillId | null; promptSeed?: { text: string; nonce: number };
   currentSelectedNodeIds?: string[]; targetSeed?: { ids: string[]; nonce: number };
   onClose: () => void; onPreview: (result: ColdStartBuildResult) => void;
   onComplete: (conversationId: string) => void; onBusyChange: (busy: boolean) => void;
   onViewVersion: (versionId: string) => void;
+  onProgress?: (progress: ResearchProgress) => void;
 }) {
   const [prompt, setPrompt] = useState("");
   const [materials, setMaterials] = useState<SourceInput[]>([]);
@@ -46,8 +48,10 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
   const cursors = useRef(new Map<string, number>());
   const [resuming, setResuming] = useState<string>();
   const completed = useRef(new Set<string>());
-  const callbacks = useRef({ onPreview, onComplete, onBusyChange });
-  callbacks.current = { onPreview, onComplete, onBusyChange };
+  const progressJobId = useRef("");
+  const stageProgress = useRef<ResearchProgress | undefined>(undefined);
+  const callbacks = useRef({ onPreview, onComplete, onBusyChange, onProgress });
+  callbacks.current = { onPreview, onComplete, onBusyChange, onProgress };
   const definition = roleSkillDefinitions.find((skill) => skill.id === activeTool);
   const pending = jobs.some((job) => activeStatuses.has(job.status));
   const blocked = running || pending;
@@ -62,10 +66,13 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
   useEffect(() => {
     if (!context.projectId || !context.conversationId) return;
     let disposed = false;
+    const controller = new AbortController();
+    const fetchHistory = (url: string) => fetch(url, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(12_000)]) });
     let timer: ReturnType<typeof setTimeout>;
     const load = async () => {
+      let catchUp = false;
       try {
-        const response = await fetch(`/api/projects/${encodeURIComponent(context.projectId!)}/jobs?conversationId=${encodeURIComponent(context.conversationId!)}`);
+        const response = await fetchHistory(`/api/projects/${encodeURIComponent(context.projectId!)}/jobs?conversationId=${encodeURIComponent(context.conversationId!)}`);
         const payload = await response.json() as { jobs?: Job[]; error?: string };
         if (!response.ok) throw new Error(payload.error || "任务历史暂时无法读取。");
         if (disposed) return;
@@ -76,16 +83,25 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
         setJobs(list); setHistoryError("");
         if (list.some(job => job.id === submittedId.current && !["failed", "interrupted"].includes(job.status))) setError("");
         // Reconnect using the durable cursor, including events produced while this view was closed.
-        const recent = list.slice(0, 1);
+        const latestJob = list.find(job => activeStatuses.has(job.status)) || list[0];
+        const recent = latestJob ? [latestJob] : [];
+        if (latestJob) {
+          if (progressJobId.current !== latestJob.id) stageProgress.current = undefined;
+          progressJobId.current = latestJob.id;
+          stageProgress.current = progressForJob(latestJob, stageProgress.current);
+        }
         for (const job of recent) {
           const after = cursors.current.get(job.id) || 0;
-          const replay = await fetch(`/api/projects/${encodeURIComponent(context.projectId!)}/jobs/${encodeURIComponent(job.id)}?after=${after}`);
+          const replay = await fetchHistory(`/api/projects/${encodeURIComponent(context.projectId!)}/jobs/${encodeURIComponent(job.id)}?after=${after}&view=progress`);
           if (!replay.ok) throw new Error("执行记录暂时无法读取，正在重连。");
-          const saved = await replay.json() as { events: RunEvent[]; cursor: number };
+          const saved = await replay.json() as { events: RunEvent[]; cursor: number; hasMore?: boolean };
           if (disposed) return;
           for (const event of saved.events) applyEvent(event);
           cursors.current.set(job.id, saved.cursor);
+          catchUp ||= saved.hasMore === true;
         }
+        if (latestJob) stageProgress.current = progressForJob(latestJob, stageProgress.current);
+        if (stageProgress.current) callbacks.current.onProgress?.(stageProgress.current);
         const latest = list.filter((job) => ["completed", "complete"].includes(job.status)).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 1);
         for (const job of latest) {
           if (["completed", "complete"].includes(job.status) && !completed.current.has(job.id)) {
@@ -93,11 +109,15 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
             callbacks.current.onComplete(context.conversationId!);
           }
         }
-      } catch (cause) { if (!disposed) setHistoryError(jobConnectionMessage(cause)); }
-      finally { if (!disposed) timer = setTimeout(load, 6000); }
+      } catch (cause) { if (!disposed) {
+        const message = jobConnectionMessage(cause);
+        setHistoryError(message);
+        if (stageProgress.current) callbacks.current.onProgress?.({ ...stageProgress.current, message });
+      } }
+      finally { if (!disposed) timer = setTimeout(load, catchUp ? 50 : 6000); }
     };
     void load();
-    return () => { disposed = true; clearTimeout(timer); };
+    return () => { disposed = true; controller.abort(); clearTimeout(timer); };
   }, [context.projectId, context.conversationId]);
 
   function applyEvent(event: RunEvent) {
@@ -105,6 +125,11 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
     const summary = String(event.payload.message || event.payload.title || event.payload.phase || "");
     const label = event.kind.includes("search") ? "正在检索与核对来源" : event.kind.includes("semantic") ? "岗位结构正在更新" : event.kind.includes("process") ? "正在补充典型工作过程" : event.kind.includes("completed") ? "阶段结果已保存" : "正在分析并构建岗位内容";
     setProgress(summary || label);
+    const stage = researchStage(event.kind, event.payload);
+    if (stageProgress.current && stage !== undefined) {
+      const next = Math.max(stageProgress.current.stage, stage);
+      stageProgress.current = { ...stageProgress.current, stage: next, message: summary || researchStages[next] };
+    }
     setEvents((current) => [...current.slice(-19), summary || label]);
     const result = event.payload.result as ColdStartBuildResult | undefined;
     if (result?.semantic && result?.snapshot && result?.packages) callbacks.current.onPreview(result);

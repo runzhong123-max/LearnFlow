@@ -40,7 +40,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Graph as G6Graph, IElementDragEvent, IElementEvent } from "@antv/g6";
 import type { AgentEvent } from "@/lib/agent/events";
-import type { BuildEvent } from "@/lib/build/events";
 import { PROVIDERS, PROVIDER_SESSION_KEY, type ProviderConfig } from "@/lib/providers";
 import EvidenceSourceView, { type EvidenceSourceItem } from "@/app/components/EvidenceSourceView";
 import MarkdownContent from "@/app/components/MarkdownContent";
@@ -48,6 +47,8 @@ import RoleCardView, { type RoleCardNode } from "@/app/components/RoleCardView";
 import TaskWorkspace, { type TaskPerspective } from "@/app/components/TaskWorkspace";
 import WorkspaceSkillLauncher from "@/app/components/WorkspaceSkillLauncher";
 import { iterationTargetNodes } from "@/lib/iteration/targets";
+import ResearchStages from "@/app/components/ResearchStages";
+import type { ResearchProgress } from "@/lib/jobs/research-progress";
 import ProjectToolPane from "@/app/components/ProjectToolPane";
 import RoleIntakePane from "@/app/components/RoleIntakePane";
 import { useConversationState } from "@/app/components/useConversationState";
@@ -60,11 +61,10 @@ import InlineVersionCenter from "@/app/components/InlineVersionCenter";
 import LearningPathMapping from "@/app/components/LearningPathMapping";
 import ProjectManagement from "@/app/components/ProjectManagement";
 import { toProcessReference, type ProcessReferenceNode, type WorkProcessPayload } from "@/app/components/WorkProcessForestView";
-import type { ColdStartBuildResult, LearningPathGraphInput } from "@/lib/build/types";
+import type { ColdStartBuildResult } from "@/lib/build/types";
 import { projectGraphPayload, projectObjectIndex, projectWorkProcessPayload } from "@/lib/projects/presentation";
 import type { StoredProjectSummary } from "@/lib/projects/repository";
 import type { RuntimeConfigStatus } from "@/lib/runtime-config";
-import { SEARCH_PROVIDER_SESSION_KEY, type SearchProviderConfig } from "@/lib/search/providers";
 import type { RoleSkillId, WorkspaceSkillId } from "@/lib/skills/workspace";
 import { graphFocusStates } from "@/lib/hub/graph-focus";
 import { readLearnFlowLaunchResponse } from "@/lib/integrations/learnflow/launch-response";
@@ -282,6 +282,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
   const [projectResult, setProjectResult] = useState<ColdStartBuildResult | null>(null);
   const [projectBrief, setProjectBrief] = useState({ description: "", market: "中国大陆" });
   const [projectStatus, setProjectStatus] = useState<"draft" | "building" | "ready" | "failed">("draft");
+  const [researchProgress, setResearchProgress] = useState<Record<string, ResearchProgress>>({});
   const [enrichmentState, setEnrichmentState] = useConversationState<{ running: boolean; label: string; error?: string }>(activeConversationId, { running: false, label: "" });
   const [activeOperation, setActiveOperation] = useState<WorkspaceOperation | null>(null);
   const [learningMountVersionId, setLearningMountVersionId] = useState<string | undefined>();
@@ -293,8 +294,6 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
   const conversationLoadRef = useRef<AbortController | null>(null);
   const sessionIdRef = useRef("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const enrichmentRunRef = useRef(new Set<string>());
-  const enrichmentAbortRef = useRef(new Map<string, AbortController>());
   const taskUrlHydratedRef = useRef(false);
 
   const applyProjectWorkspace = useCallback((workspace: ProjectWorkspaceEnvelope) => {
@@ -509,167 +508,8 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
     }
   };
 
-  useEffect(() => {
-    if (!projectId || !projectResult || conversationLoading) return;
-    const enrichment = projectResult.build?.enrichment;
-    if (!enrichment || !["queued", "running"].includes(enrichment.status)) return;
-    const conversationId = activeConversationId || initialConversationId || conversations[0]?.id;
-    const conversation = conversations.find((item) => item.id === conversationId);
-    if (!conversationId || !conversation || conversation.snapshotId !== projectResult.snapshot.id || conversation.mode !== "iteration" || enrichmentRunRef.current.has(conversationId)) return;
-    const applyEnrichmentWorkspace = (workspace: ProjectWorkspaceEnvelope) => { if (activeConversationRef.current === conversationId) applyProjectWorkspace(workspace); };
-    const pendingKey = `role-atlas.pending-enrichment:${projectId}:${conversationId}`;
-    const legacyPendingKey = `role-atlas.pending-enrichment:${projectId}`;
-    let pending: { baseSnapshotId?: string; enrichmentRunId?: string; roleTitle?: string; roleDescription?: string; market?: string; webResearch?: boolean } = {};
-    try { pending = JSON.parse(sessionStorage.getItem(pendingKey) || sessionStorage.getItem(legacyPendingKey) || "{}") as typeof pending; }
-    catch { sessionStorage.removeItem(pendingKey); }
-    if (pending.baseSnapshotId !== projectResult.snapshot.id) pending = {};
-    else sessionStorage.removeItem(legacyPendingKey);
-    const baseSnapshotId = projectResult.snapshot.id;
-    let providerConfig: ProviderConfig | undefined;
-    let searchConfig: SearchProviderConfig | undefined;
-    try {
-      if (enrichment.status === "queued") {
-        providerConfig = JSON.parse(sessionStorage.getItem(PROVIDER_SESSION_KEY) || "null") as ProviderConfig | undefined;
-        searchConfig = JSON.parse(sessionStorage.getItem(SEARCH_PROVIDER_SESSION_KEY) || "null") as SearchProviderConfig | undefined;
-      }
-    } catch {
-      setEnrichmentState({ running: false, label: "后台增量等待有效的模型或搜索配置", error: "会话配置无法解析" });
-      return;
-    }
-    enrichmentRunRef.current.add(conversationId);
-    const controller = new AbortController();
-    enrichmentAbortRef.current.set(conversationId, controller);
-    const signal = controller.signal;
-    setProjectStatus("building");
-    setEnrichmentState({ running: true, label: "正在后台生成能力、知识技能依赖与事理森林" });
-    const runId = pending.enrichmentRunId || `${crypto.randomUUID()}:enrichment`;
-    if (!pending.enrichmentRunId) {
-      pending.baseSnapshotId = baseSnapshotId;
-      pending.enrichmentRunId = runId;
-      sessionStorage.setItem(pendingKey, JSON.stringify(pending));
-    }
-    void (async () => {
-      const reconnect = async () => {
-        for (let attempt = 0; attempt < 180; attempt += 1) {
-          signal.throwIfAborted();
-          const workspaceResponse = await fetch(`/api/projects/${encodeURIComponent(projectId)}?conversation=${encodeURIComponent(conversationId)}`, { signal });
-          if (workspaceResponse.ok) {
-            const workspace = await workspaceResponse.json() as ProjectWorkspaceEnvelope;
-            applyEnrichmentWorkspace(workspace);
-            if (workspace.project.status === "failed" || !workspace.result) throw new Error("本轮增量尚未形成可用版本，请查看执行记录后重试。");
-            const status = workspace.result.build?.enrichment?.status;
-            if (status === "complete" || status === "degraded" || !["queued", "running"].includes(String(status))) {
-              sessionStorage.removeItem(pendingKey);
-              setEnrichmentState({ running: false, label: status === "degraded" ? "后台增量已完成，部分分支保留为研究缺口" : "后台增量完成，已载入本对话的最新版本" });
-              return;
-            }
-          }
-          await new Promise((resolve) => setTimeout(resolve, 2_000));
-        }
-        throw new Error("后台增量仍在运行，可稍后重新打开项目查看最新版本。");
-      };
-      try {
-        // A running result can already be a semantic sub-version, not the kernel baseline.
-        // Reconnect without resubmitting it as a new enrichment request.
-        if (enrichment.status === "running") {
-          setEnrichmentState({ running: true, label: "后台增量仍在运行，正在重新接入本对话进度" });
-          await reconnect();
-          return;
-        }
-        const learningPathGraph = await fetch("/data/learnflow-learning-path.json", { signal })
-          .then(async (pathResponse) => pathResponse.ok ? await pathResponse.json() as LearningPathGraphInput : undefined)
-          .catch(() => undefined);
-        const response = await fetch("/api/build-runs/enrich", {
-          method: "POST",
-          headers: { "content-type": "application/json", prefer: "respond-async" },
-          signal,
-          body: JSON.stringify({
-            build: {
-              runId,
-              projectId,
-              roleTitle: pending.roleTitle || projectResult.brief.roleTitle,
-              roleDescription: pending.roleDescription ?? projectResult.brief.roleDescription,
-              market: pending.market || projectResult.brief.market,
-              audience: projectResult.brief.audience,
-              snapshotAsOf: projectResult.snapshot.asOf,
-              sources: [],
-              learningPathGraph,
-            },
-            baseSnapshotId,
-            conversationId,
-            providerConfig,
-            searchConfig,
-            webResearch: pending.webResearch ?? Boolean(projectResult.sources.research),
-          }),
-        });
-        if (response.status === 202 || !response.ok || !response.body) {
-          const payload = await response.json().catch(() => ({})) as { error?: string; code?: string };
-          if (response.status === 202 || response.status === 409 && (payload.code === "ENRICHMENT_ALREADY_RUNNING" || payload.code === "ENRICHMENT_ALREADY_COMPLETED")) {
-            setEnrichmentState({ running: true, label: payload.code === "ENRICHMENT_ALREADY_RUNNING" ? "后台增量仍在运行，正在重新接入版本进度" : "后台增量已完成，正在载入最新版本" });
-            await reconnect();
-            return;
-          }
-          throw new Error(payload.error || `后台增量请求失败（${response.status}）`);
-        }
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-        const refresh = async () => {
-          const workspaceResponse = await fetch(`/api/projects/${encodeURIComponent(projectId)}?conversation=${encodeURIComponent(conversationId)}`, { signal });
-          if (!workspaceResponse.ok) return;
-          applyEnrichmentWorkspace(await workspaceResponse.json() as ProjectWorkspaceEnvelope);
-        };
-        const applyBuildEvent = async (event: BuildEvent) => {
-          if (event.kind === "build.targeted_research.started") setEnrichmentState({ running: true, label: "正在为知识技能缺口定点补研" });
-          else if (event.kind === "build.work_item.started") {
-            const item = event.payload.workItem as { stage?: string } | undefined;
-            if (item?.stage === "skill-dependency-derivation") setEnrichmentState({ running: true, label: "正在判定知识技能前置与共生关系" });
-            else if (item?.stage === "task-process-expansion") setEnrichmentState({ running: true, label: "正在按任务并行展开事理场景" });
-          } else if (event.kind === "build.enrichment.semantic.completed") {
-            setEnrichmentState({ running: true, label: "知识技能与依赖子版本已形成；事理森林继续生成" });
-            await refresh();
-          } else if (event.kind === "build.enrichment.process.completed") {
-            setEnrichmentState({ running: true, label: "事理森林已形成；正在执行跨产物结构检查" });
-          } else if (event.kind === "build.run.completed") {
-            sessionStorage.removeItem(pendingKey);
-            setEnrichmentState({ running: true, label: "完整冷启动版本已形成；正在选择 3—5 个重要问题做深度研究" });
-            await refresh();
-          } else if (event.kind === "build.followup.deep_research.started") {
-            setEnrichmentState({ running: true, label: "正在选择 3—5 个重要问题做深度研究" });
-          } else if (event.kind === "build.followup.deep_research.completed") {
-            setEnrichmentState({ running: true, label: "重要问题深度研究完成；正在准备全量风险修复" });
-            await refresh();
-          } else if (event.kind === "build.followup.deep_research.skipped") {
-            setEnrichmentState({ running: true, label: "重要问题深研未完成；仍将继续执行全量风险修复", error: String(event.payload.message || "深研未执行") });
-          } else if (event.kind === "build.followup.risk_repair.started") {
-            setEnrichmentState({ running: true, label: "正在执行全量风险扫描与可验证修复" });
-          } else if (event.kind === "build.followup.risk_repair.completed") {
-            const quality = event.payload.quality as { label?: string } | undefined;
-            setEnrichmentState({ running: false, label: quality?.label || "本轮研究与风险检查已结束，请查看当前快照的待解决问题" });
-            await refresh();
-          } else if (event.kind === "build.followup.failed") {
-            setEnrichmentState({ running: false, label: "完整冷启动版本可用；自动深研或风险修复尚未完成", error: String(event.payload.message || "自动后处理失败") });
-            await refresh();
-          } else if (event.kind === "build.run.failed") {
-            setEnrichmentState({ running: false, label: "后台增量暂停；岗位内核仍可使用", error: String(event.payload.message || "增量失败") });
-          }
-        };
-        while (true) {
-          const { value, done } = await reader.read();
-          buffer += decoder.decode(value, { stream: !done });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
-          for (const line of lines.filter(Boolean)) await applyBuildEvent(JSON.parse(line) as BuildEvent);
-          if (done) break;
-        }
-        if (buffer.trim()) await applyBuildEvent(JSON.parse(buffer) as BuildEvent);
-      } catch (error) {
-        if (!signal.aborted) setEnrichmentState({ running: false, label: "后台增量暂停；岗位内核仍可使用", error: error instanceof Error ? error.message : "未知错误" });
-      } finally {
-        enrichmentAbortRef.current.delete(conversationId);
-      }
-    })();
-  }, [activeConversationId, applyProjectWorkspace, conversationLoading, conversations, initialConversationId, projectId, projectResult]);
+  // Durable jobs own enrichment scheduling. The browser only consumes their
+  // journal; submitting a second job here races the worker's kernel follow-up.
 
   useEffect(() => {
     if (!projectId || !activeConversationId || isRunning || conversationLoading) return;
@@ -684,7 +524,6 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
 
   useEffect(() => () => {
     conversationLoadRef.current?.abort();
-    for (const controller of enrichmentAbortRef.current.values()) controller.abort();
     for (const controller of abortRefs.current.values()) controller.abort();
   }, []);
 
@@ -1606,12 +1445,16 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
         {!modelSummary.configured && (
           <div className="model-banner"><AlertTriangle size={15} /><span><b>还不能发起真实回答</b><small>选择 MiMo V2.5 或 DeepSeek V4 Flash，并保存会话级 API Key。</small></span><button type="button" onClick={() => setActiveOperation("settings")}>去配置</button></div>
         )}
+        {projectId && <ResearchStages progress={researchProgress[activeConversationId]} mount={courseMount?.snapshotId === projectResult?.snapshot.id ? courseMount : undefined} />}
         <div className="messages">
           {showIntake && <RoleIntakePane key={`${actorSubjectId}:${projectId || "new"}:${activeConversationId}`} actorSubjectId={actorSubjectId} projectId={projectId} conversationId={activeConversationId || undefined} initialTitle={newProjectBrief?.role || (projectId ? workspaceTitle : "")} initialDescription={newProjectBrief?.description || projectBrief.description} initialMarket={newProjectBrief?.market || projectBrief.market} onBusyChange={setIntakeBusy} onClose={initialNewProject ? undefined : () => setIntakeDismissed(true)} onStarted={(scope) => window.location.assign(`/projects/${encodeURIComponent(scope.projectId)}?conversation=${encodeURIComponent(scope.conversationId)}`)} />}
           {projectId && conversations.filter((conversation) => conversation.id === activeConversationId || toolInstances[conversation.id] || toolBusy[conversation.id]).map((conversation) => {
             const instance = toolInstances[conversation.id];
             const context = instance?.context || { ...skillContext, conversationId: conversation.id, snapshotId: conversation.snapshotId || undefined, versionId: conversation.versionId || undefined };
-            return <div key={conversation.id} hidden={conversation.id !== activeConversationId}><ProjectToolPane context={context} currentSelectedNodeIds={conversation.id === activeConversationId ? skillContext.selectedNodeIds : undefined} activeTool={instance?.tool === "cold-start-role-package" ? null : instance?.tool || null} promptSeed={instance?.promptSeed} targetSeed={instance?.targetSeed} onClose={() => setToolInstances((current) => current[conversation.id] ? { ...current, [conversation.id]: { ...current[conversation.id], tool: null } } : current)} onBusyChange={(busy) => setToolBusy((current) => current[conversation.id] === busy ? current : { ...current, [conversation.id]: busy })} onPreview={(result) => {
+            return <div key={conversation.id} hidden={conversation.id !== activeConversationId}><ProjectToolPane context={context} currentSelectedNodeIds={conversation.id === activeConversationId ? skillContext.selectedNodeIds : undefined} activeTool={instance?.tool === "cold-start-role-package" ? null : instance?.tool || null} promptSeed={instance?.promptSeed} targetSeed={instance?.targetSeed} onProgress={(progress) => {
+              setResearchProgress(current => ({ ...current, [conversation.id]: progress }));
+              if (activeConversationRef.current === conversation.id) setEnrichmentState({ running: progress.active, label: progress.message });
+            }} onClose={() => setToolInstances((current) => current[conversation.id] ? { ...current, [conversation.id]: { ...current[conversation.id], tool: null } } : current)} onBusyChange={(busy) => setToolBusy((current) => current[conversation.id] === busy ? current : { ...current, [conversation.id]: busy })} onPreview={(result) => {
               if (activeConversationRef.current !== conversation.id) return;
               applyProjectWorkspace({ project: { title: result.brief.roleTitle, status: "building" }, conversations, result });
             }} onComplete={(id) => void refreshConversationResult(id)} onViewVersion={(versionId) => { setLearningMountVersionId(versionId); setActiveOperation("versions"); }} /></div>;
