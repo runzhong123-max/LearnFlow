@@ -1,3 +1,4 @@
+import type { CoursePlanner } from "./course-planner";
 import { courseTheme, courseMatchScore, courseNameKey } from "./course-organization";
 import type { ColdStartBuildResult, SemanticNode } from "@/lib/build/types";
 import { canonicalStringify, sha256Hex } from "@/lib/versioning/canonical";
@@ -87,6 +88,7 @@ export async function resolveRoleLearningPoints(input: {
   namespace: string; targetIds?: string[];
   allowStandaloneRoots?: boolean;
   groupByCourse?: boolean;
+  planCourses?: CoursePlanner;
 }): Promise<RoleLearningResolution> {
   const checked = validateLearningPathGraphV2(input.graph);
   if (!checked.valid) throw new Error(`PATH_CONTRACT_INVALID:${JSON.stringify(checked.issues)}`);
@@ -117,6 +119,12 @@ export async function resolveRoleLearningPoints(input: {
   const standaloneRoots: NonNullable<GraphExtensionProposalV2["standaloneRoots"]> = [];
   const packageSourceId = `role-evidence:${input.packageRef.rootHash}`;
   const evidenceIds = new Set(source.evidenceIds);
+  const coursePlan = input.groupByCourse && input.planCourses
+    ? await input.planCourses(input.result.semantic.nodes.filter(point => point.type === "knowledge_skill" && (point.learningKind === "knowledge" || point.learningKind === "skill")
+      && point.learningDefinition?.scopeNote.trim() && point.learningDefinition.assessmentCriteria.length
+      && point.learningDefinition.assessmentCriteria.every(text => text.trim())
+      && input.result.sources.evidenceBindings.some(binding => binding.targetId === point.id && point.evidenceBindingIds.includes(binding.id) && evidenceIds.has(binding.id))), graph, input.result.brief.roleTitle)
+    : undefined;
   for (const point of points) {
     const anchors = graph.nodes.filter(n => n.kind === "course" || n.kind === "skill_domain")
       .map(n => ({ n, score: Math.max(...[n.title, ...n.aliases].map(name => Math.max(overlap(point.label, name), overlap(input.result.brief.roleTitle, name) * 0.9))) }))
@@ -129,7 +137,9 @@ export async function resolveRoleLearningPoints(input: {
     const evidence = input.result.sources.evidenceBindings.filter(b => b.targetId === point.id && point.evidenceBindingIds.includes(b.id) && evidenceIds.has(b.id)).map(b => b.id);
     if (!evidence.length) { fail("needs_evidence"); continue; }
     if (input.groupByCourse) {
-      const theme = courseTheme(point, input.result.brief.roleTitle);
+      const planned = coursePlan?.get(point.id);
+      if (coursePlan && !planned) { fail("needs_anchor"); continue; }
+      const theme = planned?.theme || courseTheme(point, input.result.brief.roleTitle);
       const matches = [...graph.nodes, ...newNodes].filter(n => n.kind === "course")
         .map(n => ({ n, score: courseMatchScore(theme, point, [n.title, ...n.aliases]) }))
         .filter(row => row.score > 0).sort((a, b) => b.score - a.score
@@ -137,11 +147,11 @@ export async function resolveRoleLearningPoints(input: {
           || stableCompare(pathNodeKey(a.n), pathNodeKey(b.n)));
       // Equal names from different catalogs are safe organizational targets;
       // competing subject names need disambiguation instead of arbitrary reuse.
-      if (matches[1] && matches[0].score === matches[1].score
+      if (!planned && matches[1] && matches[0].score === matches[1].score
         && courseNameKey(matches[0].n.title) !== courseNameKey(matches[1].n.title)) {
         fail("ambiguous_definition", matches.slice(0, 4).map(row => nodeRef(row.n))); continue;
       }
-      let course = matches[0]?.n;
+      let course = planned ? planned.existing || newNodes.find(node => courseNameKey(node.title) === courseNameKey(theme.title)) : matches[0]?.n;
       if (!course) {
         if (!input.allowStandaloneRoots) { fail("needs_anchor"); continue; }
         const id = `course:${(await sha256Hex(courseNameKey(theme.title))).slice(0, 40)}`;
@@ -161,7 +171,7 @@ export async function resolveRoleLearningPoints(input: {
         roleNodeId: point.id, roleNodeKind: point.learningKind, target: key(course), relation: "narrower_than",
         requiredLevel: point.learningKind === "skill" ? "apply" : "understand",
         context: `${input.result.brief.roleTitle}：${point.label}。${point.applicability || ""} 范围：${point.learningDefinition.scopeNote.trim()}`,
-        rationale: `作为“${course.title}”的岗位应用展开；验收：${point.learningDefinition.assessmentCriteria.join("；")}。课程归属不表示已掌握。`,
+        rationale: `${planned?.rationale ? planned.rationale + "。" : ""}作为“${course.title}”的岗位应用展开；验收：${point.learningDefinition.assessmentCriteria.join("；")}。课程归属不表示已掌握。`,
         evidenceRefs: evidence,
       };
       (pending ? resolution.pendingBindings : resolution.alignment.bindings).push(binding);

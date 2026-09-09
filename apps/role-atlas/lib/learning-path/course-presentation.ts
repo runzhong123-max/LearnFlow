@@ -22,7 +22,7 @@ export function courseGroups(result: ColdStartBuildResult, mount?: AutomaticMoun
 export function courseGraphPayload(result: ColdStartBuildResult, mount?: AutomaticMountRecord | null) {
   const graph = projectGraphPayload(result);
   const memberToCourse = new Map<string, string>();
-  const courses = courseGroups(result, mount).map(group => {
+  const courses = courseGroups(result, mount).filter(group => group.mounted).map(group => {
     for (const { node } of group.members) memberToCourse.set(node.id, group.id);
     const members = group.members.map(({ node }) => graph.nodes.find(n => n.id === node.id)!);
     const sourceRefs = [...new Set(members.flatMap(n => n.evidence_summary.source_refs))];
@@ -37,8 +37,10 @@ export function courseGraphPayload(result: ColdStartBuildResult, mount?: Automat
       data: { ...members[0].data, courseMemberIds: members.map(n => n.id) },
     };
   });
+  const unmounted = new Set(graph.nodes.filter(node => node.type === "knowledge_skill" && !memberToCourse.has(node.id)).map(node => node.id));
   const edges = new Map<string, typeof graph.edges[number]>();
   for (const edge of graph.edges) {
+    if (unmounted.has(edge.source) || unmounted.has(edge.target)) continue;
     const source = memberToCourse.get(edge.source) || edge.source, target = memberToCourse.get(edge.target) || edge.target;
     // A relationship between two fine points is not a course prerequisite.
     if (source === target || memberToCourse.has(edge.source) && memberToCourse.has(edge.target)) continue;

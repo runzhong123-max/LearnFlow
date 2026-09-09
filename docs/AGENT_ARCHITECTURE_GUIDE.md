@@ -1192,3 +1192,6 @@ Web 独立 Hub 地址为 `/visualize`，侧栏直接跳转，保留 `/visual-hub
 
 
 Contract impact（2026-09-09.3）：Graph Hub 公开岗位与典型任务复用 discovery.v1 接口和 field-coverage.v2 检索服务，冷启动与 LearnFlow 插件使用相同相关性门槛。新增 target、role 过滤及稳定任务/发布引用，旧响应字段保留。网页来源与图谱引用分型显示，不伪造置信度，不写五核。见 [统一检索契约](implementation/GRAPH_HUB_SEARCH.md)。
+
+
+Contract impact（2026-09-09.6）：既有 curriculum_source_runtime 的课程组织升级为 role-course/v2。经签名委托和固定岗位包校验后，模型先阅读 scoped 课程目录并整批判断包含关系，只为未覆盖要求提出合并课程；代码校验目录引用、要求覆盖、证据与 v2 契约后沿既有源图提交链保存。模型调用有硬时限，失败进入原挂载重试，不按细项臆造节点。历史回执、三类 Agent、五核及零 target 审计语义不变。阶段展示订阅后台日志，浏览器不再重复启动增量研究。详见 ECOSYSTEM_GATEWAY_V1.md。

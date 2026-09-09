@@ -1,3 +1,4 @@
+import type { CoursePlanner } from "@/lib/learning-path/course-planner";
 import { z } from "zod/v4";
 import type { ColdStartBuildResult } from "@/lib/build/types";
 import { canonicalStringify, sha256Hex } from "@/lib/versioning/canonical";
@@ -17,7 +18,7 @@ export interface GatewayRepository {
 export type AgentRunner = (loaded: LoadedPackage, message: string, targetIds: string[], runId: string) => Promise<{ answer: string; citations: unknown[]; packageRef: RolePackageRef }>;
 const targets = z.array(z.string().min(1).max(256)).max(25).default([]);
 const graphInput = (input: unknown): LearningPathGraphV2 => { const valid = validateLearningPathGraphV2(input); if (!valid.valid) throw new GatewayError("PATH_CONTRACT_INVALID"); return valid.value; };
-export async function dispatchGateway(request: GatewayRequest, actor: Actor, deps: { repository: GatewayRepository; runAgent: AgentRunner; keepAlive?: (execution: Promise<unknown>) => void }) {
+export async function dispatchGateway(request: GatewayRequest, actor: Actor, deps: { repository: GatewayRepository; runAgent: AgentRunner; coursePlanner?: (loaded: LoadedPackage) => CoursePlanner; keepAlive?: (execution: Promise<unknown>) => void }) {
   const repo = deps.repository;
   switch (request.operation) {
     case "catalog.search": return repo.search(actor, z.object({ query: z.string().max(300).default(""), offset: z.number().int().min(0).max(10000).default(0), limit: z.number().int().min(1).max(30).default(20) }).strict().parse(request.payload));
@@ -32,7 +33,7 @@ export async function dispatchGateway(request: GatewayRequest, actor: Actor, dep
       const namespace = `learnflow:extension:${(await sha256Hex(actor.sub)).slice(0, 20)}`;
       if (p.namespace !== namespace) throw new GatewayError("NAMESPACE_FORBIDDEN", 403);
       const loaded = await repo.load(actor, p.packageRef);
-      return resolveRoleLearningPoints({ ...loaded, graph: graphInput(p.graph), namespace, targetIds: p.targetIds, allowStandaloneRoots: p.allowStandaloneRoots, groupByCourse: p.groupByCourse });
+      return resolveRoleLearningPoints({ ...loaded, graph: graphInput(p.graph), namespace, targetIds: p.targetIds, allowStandaloneRoots: p.allowStandaloneRoots, groupByCourse: p.groupByCourse, planCourses: p.groupByCourse ? deps.coursePlanner?.(loaded) : undefined });
     }
     case "learning.validate_extension": {
       const p = z.object({ proposal: z.unknown(), graph: z.unknown() }).strict().parse(request.payload);

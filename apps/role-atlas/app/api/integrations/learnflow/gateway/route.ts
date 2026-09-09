@@ -1,3 +1,5 @@
+import { createRecordedModelInvoker } from "@/lib/research-collection/model";
+import { createCoursePlanner } from "@/lib/learning-path/course-planner";
 import { getRequestExecutionContext } from "vinext/shims/request-context";
 import { workerRuntimeBindings } from "@/lib/worker-runtime-bindings";
 import { resolveProviderConfig } from "@/lib/server-runtime-config";
@@ -19,7 +21,9 @@ export async function POST(request: Request) {
     const actor = await verifyDelegation(request.headers.get("X-LearnFlow-Delegation"), raw, input.data, String(bindings.ROLE_ATLAS_GATEWAY_SECRET || process.env.ROLE_ATLAS_GATEWAY_SECRET || ""));
     const context = getRequestExecutionContext();
     const data = await dispatchGateway(input.data, actor, {
-      repository: ecosystemRepository, keepAlive: context ? promise => context.waitUntil(promise) : undefined,
+      repository: ecosystemRepository,
+      coursePlanner: loaded => createCoursePlanner(createRecordedModelInvoker(resolveProviderConfig(undefined, bindings), { projectId: loaded.result.projectId, runId: `course-plan:${requestId}` })),
+      keepAlive: context ? promise => context.waitUntil(promise) : undefined,
       runAgent: async (loaded, message, targetIds, runId) => {
         const invoke = createModelInvoker(resolveProviderConfig(undefined, bindings));
         const agent = createRoleAgent(input => invoke({ ...input, maxCompletionTokens: 4096, totalTimeoutMs: 22_000 }), new SnapshotRoleRuntime(loaded.result));

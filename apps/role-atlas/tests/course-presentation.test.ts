@@ -34,7 +34,8 @@ test("legacy receipts are retained and never misrepresented as committed courses
   const { result, mount } = fixture(); for (const point of mount.result!.points) delete point.course;
   assert.equal(courseGroups(result, mount).length, 1);
   assert.ok(courseGroups(result, mount).every(group => !group.mounted));
-  assert.match(courseGraphPayload(result, mount).nodes[1].summary, /尚无课程挂载回执/);
+  assert.equal(courseGraphPayload(result, mount).nodes.filter(node => node.type === "knowledge_skill").length, 0);
+  assert.equal(courseGraphPayload(result, mount).edges.length, 0);
   mount.snapshotId = "other-snapshot";
   assert.ok(courseGroups(result, mount).every(group => !group.mounted));
 });

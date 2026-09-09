@@ -8,5 +8,5 @@ export async function GET(request: Request, context: { params: Promise<{ project
   const job = await getRoleJob(jobId);
   if (!job || job.projectId !== projectId) return Response.json({ error: "任务不存在。" }, { status: 404 });
   const after = Math.max(0, Number(new URL(request.url).searchParams.get("after")) || 0);
-  return Response.json({ job, ...await readRoleJobEvents(jobId, after) }, { headers: { "cache-control": "no-store" } });
+  return Response.json({ job, ...await readRoleJobEvents(jobId, after, new URL(request.url).searchParams.get("view") === "progress") }, { headers: { "cache-control": "no-store" } });
 }

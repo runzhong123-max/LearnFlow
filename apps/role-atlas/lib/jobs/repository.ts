@@ -1,3 +1,4 @@
+import { roleJobEventsQuery } from "./journal-query";
 import { dispatchSchema } from "./dispatch-schema";
 import { linkRunAttachments, archiveJobAttempt } from "@/lib/research-collection/store";
 import { ensureAppSchema, getD1 } from "@/db";
@@ -188,12 +189,11 @@ export async function appendRoleJobEvent(jobId: string, event: { runId: string; 
     VALUES(?,?,?,?,?)`).bind(jobId, event.runId, event.seq, event.kind, JSON.stringify(event)).run();
 }
 
-export async function readRoleJobEvents(jobId: string, after = 0) {
+export async function readRoleJobEvents(jobId: string, after = 0, progressOnly = false) {
   await ensureAppSchema();
-  const rows = await getD1().prepare(`SELECT cursor,event_json FROM role_job_events WHERE job_id=? AND cursor>?
-    ORDER BY cursor LIMIT 200`).bind(jobId, after).all<{ cursor: number; event_json: string }>();
+  const rows = await getD1().prepare(roleJobEventsQuery(progressOnly)).bind(jobId, after).all<{ cursor: number; event_json: string }>();
   return { events: rows.results.flatMap(row => { const event = parseJson(row.event_json); return event ? [event] : []; }),
-    cursor: rows.results.at(-1)?.cursor || after };
+    cursor: rows.results.at(-1)?.cursor || after, hasMore: rows.results.length === 200 };
 }
 
 export async function cancelRoleJob(jobId: string, projectId: string) {

@@ -72,7 +72,7 @@ export default function LearningPathMapping({ result, projectId, projectVersionI
     } finally { if (request.current === controller) { request.current = null; setBusy(""); } }
   }
   return <details className="learning-path-mapping">
-    <summary>学习路径挂载 <span>{mount?.result?.reason === "no_learning_points" ? "知识技能待补全" : mount?.result ? hasLegacy ? `${courseGroups(result, mount).length} 个课程主题 · 历史细项挂载` : `${courseGroups(result, mount).filter(group => group.mounted).length} 门已挂载课程 · ${points.length} 条岗位要求` : mount && ["queued", "running", "retry"].includes(mount.status) ? "自动挂载中" : `${groups.length} 个课程主题 · ${points.length} 条岗位要求`}</span></summary>
+    <summary>学习路径挂载 <span>{mount?.result?.reason === "no_learning_points" ? "知识技能待补全" : mount?.result ? hasLegacy ? `${courseGroups(result, mount).length} 个课程主题 · 历史细项挂载` : `${courseGroups(result, mount).filter(group => group.mounted).length} 门已挂载课程 · ${points.length} 条岗位要求` : mount && ["queued", "running", "retry"].includes(mount.status) ? mount.status === "queued" ? "等待研究保存后匹配课程" : mount.status === "retry" ? "正在重试课程匹配" : "正在匹配与合并课程" : `${groups.length} 个课程主题 · ${points.length} 条岗位要求`}</span></summary>
     <p>优先复用已有课程，缺少时新建课程。具体操作、场景与验收要求在课程内展开，挂载不会改变掌握状态。</p>
     {mount && ["queued", "running", "retry"].includes(mount.status) && <p role="status">{mount.status === "retry" ? "服务暂不可用，后台将继续重试。" : "后台正在核对并保存学习路径，关闭页面后仍会继续。"}</p>}
     {mount?.result && <p role="status">复用已有{hasLegacy ? "路径节点" : "课程"} {counts.existing} 个 · 新增{hasLegacy ? "路径节点" : "课程"} {counts.created} 个 · 待补全 {mount.result.unresolved.length} 个</p>}
