@@ -13,10 +13,14 @@ Contract impact：新增 AuthApiKey 表、身份认证字段和 `learnflow.deskt
 - 网页后端首次全量：1,048 passed、1 failed、1 existing skip；失败是测试遗漏新契约 owner 预期，补齐后 registry 27 passed，未删除断言。
 - 网页前端全量：525 passed，生产构建通过。最初因沙箱不允许 127.0.0.1 监听而失败，允许本机测试服务后重跑通过。
 - 桌面 registry 26 passed；跨端共享契约检查通过（148 common events）。
-- Rust IP/HTTPS 来源测试通过；PyInstaller sidecar 与 Tauri 0.3.1 构建通过，ad-hoc 签名和严格签名验证通过。
+- Rust IP/HTTPS 来源测试通过；PyInstaller sidecar 与 Tauri 0.3.1 构建通过，ad-hoc 签名和严格签名验证通过。打包后的程序实际导入 registry/shared core、核对默认 IP，并经 ASGI 验证无效 Key 返回 422。最初 smoke 将通配路由误写成具体注册路由，修正检查方式后通过；未改动产品代码。
 - 部署脚本 12 项离线测试通过；现有 Caddy 2.9.1 仅通过 stdin adapt 候选配置，真实适配 JSON 的 gate 顺序与路由校验通过。未加载到生产。
 - 浏览器使用实际 AuthGate 与隔离响应夹具检查：IP 可见、Key 掩码、提交立即清空、错误显示、连接成功、断网退出、展开旧本地工作区；控制台无错误或警告。无真实账号或凭据参与。
 - 独立安全复核确认管理员 Key 在 /auth/me 和岗位委托中降为 user，未发现其他可证实的阻断问题。
+
+## 最新远程合并
+
+源实现提交 `1081d24`，与远程 `9ef3d4c` 普通合并为 `b6e531f`，保留资料规划工作台。只有架构文档顶部的两条新增说明发生冲突，已同时保留。合并后网页后端全量 1,049 passed、1 existing skip（140.27 秒）；相交的 Tutor/资料规划测试 62 passed，网页构建通过；桌面和共享包内容与候选打包时一致。
 
 ## 尚未执行
 
