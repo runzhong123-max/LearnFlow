@@ -23,6 +23,7 @@ export function compactTeachingGuidance(value: unknown, now = Date.now()) {
   }).slice(0, 8).map(entry => Object.fromEntries([
     'instruction', 'kernel', 'slot', 'lifetime', 'scope', 'source_event_id', 'occurred_at',
     'expires_at', 'evidence_kind', 'status', 'priority', 'policy_version',
+    'source_scope', 'application_scope', 'source_span', 'parser_version',
   ].filter(key => entry[key] !== undefined).map(key => [key, key === 'instruction' ? String(entry[key]).slice(0, 700) : entry[key]])))
 }
 

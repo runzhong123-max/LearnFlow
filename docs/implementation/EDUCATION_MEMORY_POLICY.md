@@ -1,5 +1,7 @@
 # 教育记忆证据与规划消费升级
 
+> 本文记录 0.2.4 的首次证据门与规划修复。当前 0.2.5 对解析、控制期限、读取过程和计划依据的增量变更见 [EDUCATION_MEMORY_V2.md](EDUCATION_MEMORY_V2.md)；下文“本轮未调整”指首次修复，不能用作当前版本状态。
+
 Contract impact：registry `2026-09-08.8`，共享核心 `0.2.4`；新增确定性策略 `concept-evidence.v2` 与 `learning-plan-guidance.v1`。三类 Agent、五核、事件稳定 ID、EvidenceEvent v1 和 LearningTask plan v1 保持兼容，无数据库迁移。只读规划策略不形成学习证据。
 
 ## 修复的证据缺口

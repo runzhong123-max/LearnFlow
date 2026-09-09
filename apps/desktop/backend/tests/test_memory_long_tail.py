@@ -21,7 +21,7 @@ from test_memory_retrieval_budget import node, summary
 
 
 async def exercise(build, *, query, subjects=(), budget=2800, max_items=12,
-                   max_hops=2, max_paths=6, deep_kernels=None):
+                   max_hops=2, max_paths=6, deep_kernels=None, component_options=None):
     engine = create_async_engine('sqlite+aiosqlite:///:memory:')
     try:
         async with engine.begin() as conn:
@@ -36,6 +36,7 @@ async def exercise(build, *, query, subjects=(), budget=2800, max_items=12,
             await db.flush()
             policy_options = dict(token_budget=budget, max_items=max_items,
                                   max_paths=max_paths, max_hops=max_hops)
+            policy_options.update(component_options or {})
             if deep_kernels is not None:
                 policy_options['deep_kernels'] = deep_kernels
             kwargs = dict(learner_id=1, project_id=1,
@@ -46,7 +47,10 @@ async def exercise(build, *, query, subjects=(), budget=2800, max_items=12,
             assert first['snapshot_id'] == second['snapshot_id']
             body = dict(heads=first['kernel_heads'], items=first['items'], paths=first['relation_paths'],
                         personal_concept_graph=first['personal_concept_graph'],
-                        adaptation_directives=first['adaptation_directives'], teaching_guidance=first['teaching_guidance'])
+                        adaptation_directives=first['adaptation_directives'], teaching_guidance=first['teaching_guidance'],
+                        learning_episodes=first['learning_episodes'], retrieval_diagnostics=first['retrieval_diagnostics'],
+                        component_policy={k:v for k,v in first['manifest']['policy'].items()
+                            if k.startswith('enable_') or k in ('max_episodes','max_episode_facts')})
             assert _token_estimate(body) == first['manifest']['token_estimate'] <= budget
             return first, expected
     finally:

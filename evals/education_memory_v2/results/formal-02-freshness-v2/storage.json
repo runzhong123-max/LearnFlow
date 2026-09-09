@@ -1,0 +1,21 @@
+{
+  "compression": "gzip; exact original JSONL bytes; original summaries unchanged",
+  "files": [
+    {
+      "file": "conditions.jsonl.gz",
+      "original_file": "conditions.jsonl",
+      "decompressed_sha256": "cbf06f4efa326fcc51abca658c96be802958ca5edb11b121884aea6b7326e5be",
+      "compressed_sha256": "63a881588ae31bcc44551b5699373f1d4e5610d14536d7da3051e08cdf9de131",
+      "decompressed_bytes": 47670049,
+      "compressed_bytes": 581649
+    },
+    {
+      "file": "issues.jsonl.gz",
+      "original_file": "issues.jsonl",
+      "decompressed_sha256": "82eedf0392f26b9069be46276ba7b6fb08d7eac69c5d6e680507bf5ec0379787",
+      "compressed_sha256": "50b1bdeca34ec6ee7cec07e5cc240827fdbd82b37b867841ac085b2a7d955ca3",
+      "decompressed_bytes": 3244957,
+      "compressed_bytes": 35386
+    }
+  ]
+}

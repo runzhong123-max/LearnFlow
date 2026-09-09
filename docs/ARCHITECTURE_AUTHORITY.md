@@ -1,5 +1,7 @@
 # LearnFlow 架构权威与维护边界
 
+> Contract impact（2026-09-08.9 / desktop 对应版本，共享核心 0.2.5）：教育记忆读取升级为 relevance-budget.v3。教学控制 v2 保留来源 scope 与应用 scope，采用分句解析、默认会话 8 小时及显式有时区期限的最长 168 小时窗口，兼容读取 v1。只读 learning-episode.v1 通过 Fact → Mutation → Event → owned Attempt 验证真实评分来源；规划 v2 消费该投影并附加确定性决策依据。事件稳定 ID、EvidenceEvent v1、三类 Agent、五核、评分和掌握门槛不变，不迁移历史库。详见 [教育记忆 v2 实现](implementation/EDUCATION_MEMORY_V2.md)；实验结果单独报告，不以新增字段或回归通过证明学习收益。
+
 Contract impact（`2026-09-08.8`）：共享核心 0.2.4 收紧普通概念评分，取消多题 ID 直接升级稳定掌握；既有间隔复习与显式迁移门保留。双端规划确定性消费带来源的当前时间、困难和受助指导，约束离线与模型最终输出。事件/计划 v1 增量兼容，不回填历史画像、不迁移数据库。实现与限制见 [教育记忆策略](implementation/EDUCATION_MEMORY_POLICY.md)。
 
 Contract impact（`2026-09-08.6`）：共享核心 0.2.3 / `relevance-budget.v2` 增加可审计查询归一、保留限定的原文片段、时间候选配额、最多两跳的因果依赖与按任务选择摘要。ContextPacket v2 增量增加来源 hash/偏移、查询计划、证据缺口和有界图统计；三类 Agent、稳定工具 ID、事件 schema、五核写入与证据等级保持兼容，无数据库迁移。见 [长尾检索升级](implementation/MEMORY_LONG_TAIL_RETRIEVAL.md)。

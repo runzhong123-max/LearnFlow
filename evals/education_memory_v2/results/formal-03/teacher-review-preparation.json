@@ -1,0 +1,66 @@
+{
+  "schema": "learnflow.teacher-review-preparation-evidence.v1",
+  "source_run": "formal-03",
+  "review_status": "pending",
+  "ratings_filled": 0,
+  "synthetic_cases": 198,
+  "actual_plan_conditions": 4752,
+  "export_manifest": {
+    "schema": "learnflow.teacher-review-export.v1",
+    "review_status": "pending",
+    "ratings_filled": 0,
+    "synthetic_cases": 198,
+    "actual_plan_conditions": 4752,
+    "selection": "deterministic per domain-pattern stratum from supplied saved actual runs",
+    "seed": 20260908,
+    "per_stratum": 1,
+    "raw_source_hashes": {
+      "evals/education_memory_v2/runs/formal-03/education-00/raw.jsonl.gz": "cc93016f6cc27a77ddbf8e5a0461272e16791fa62ef1010bfe4b0cf8ff2db64a",
+      "evals/education_memory_v2/runs/formal-03/education-01/raw.jsonl.gz": "26bc80450484def23859a07645427549c2627494a0217ed69aa158bd2415ab9a",
+      "evals/education_memory_v2/runs/formal-03/education-02/raw.jsonl.gz": "50d071a08187fdf4bd6f80c496518e25527d19914f82c31fa15900b70cd70a49",
+      "evals/education_memory_v2/runs/formal-03/education-03/raw.jsonl.gz": "19fd5a4a7b842e1dbc3d314607c6b6b2e05ce4fafdc62fa6c69f2d1d9f76a5b7"
+    },
+    "dataset_hashes": {
+      "cases.jsonl": "1a13f915e14445e73122c87fb3f0a3ff193a88b4d67481754a1e6a4bb0d5a224",
+      "rubrics.jsonl": "4ae854f3d5d7d7d7326ade6308f486c8aea07e2251d2a8bd0ba7191e7665e888"
+    },
+    "limitations": [
+      "Export does not constitute teacher review or demonstrate learning gain",
+      "Cases and former holdout are author-seen; no blind-test claim",
+      "Do not reveal COORDINATOR_ONLY_key.csv until independent ratings are locked"
+    ]
+  },
+  "reviewer_manifest": {
+    "schema": "learnflow.private-teacher-review-package.v1",
+    "review_status": "pending",
+    "ratings_filled": 0,
+    "synthetic_cases": 198,
+    "actual_plan_conditions": 4752,
+    "identity_method": "independent random identifiers; no public derivation seed",
+    "limitations": [
+      "Distribute reviewer directory only",
+      "Behavior may reveal or suggest conditions",
+      "Author-seen synthetic cases; teacher review and learning benefits not established"
+    ]
+  },
+  "export_script_sha256": "7a7f7fa642d03054e774cb3be1fe912238650dd346c549ec1f056953861c0898",
+  "private_package_script_sha256": "73a2dfa081a7a3f3d2bd0fa41326763b8d1b9109753d904eb87882031fd90082",
+  "reviewer_file_sha256": {
+    "reviewer/README.md": "766db8aec55c1ae9917b627766b823ca2abf6f36c552cfc08f983096eaaaaa0b",
+    "reviewer/manifest.json": "41981c2b1e425412b0949f6e025406e807f853e78426e10e5b4e4601d9e14943",
+    "reviewer/stage_a_evidence.jsonl": "94e23bed8c2391fc300841f9e785919c45eb2abe7cb35d67ff9d4b316588917a",
+    "reviewer/stage_a_reviews.csv": "0405ecc72d69139cc9bda46358cc690276364bd66e518771ae80e514c71498f8",
+    "reviewer/stage_b_blind_plans.jsonl": "0f53ec4e41acafaa705ace33bde4c421cb2a1af9204c47e5ad76fa41493d2b88",
+    "reviewer/stage_b_reviews.csv": "7db7aba628ea5db758f168a51906c6eefb6935f48e3c21342898a2427eb702b1"
+  },
+  "local_distribution_archive": "evals/education_memory_v2/runs/teacher-review-private-formal-03/reviewer-only.zip",
+  "archive_sha256": "c5828f143d84a55646728e5f05171075068c0d7465a41e9081f6d119e6faf35b",
+  "archive_bytes": 981434,
+  "archive_verified_against_reviewer_files": true,
+  "coordinator_mapping_published": false,
+  "limitations": [
+    "Package prepared from actual saved plans; no teacher rating has occurred.",
+    "Randomized identifiers do not guarantee reviewers cannot infer condition from behavior.",
+    "Source sample is synthetic and author-seen; 4752 plan conditions are not independent learners."
+  ]
+}

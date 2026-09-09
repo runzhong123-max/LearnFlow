@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "learnflow-core"
-version = "0.2.4"
+version = "0.2.5"
 description = "Shared LearnFlow evidence, memory and deterministic teaching implementation"
 requires-python = ">=3.10"
 

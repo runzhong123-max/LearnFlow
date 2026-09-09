@@ -1,0 +1,53 @@
+{
+  "post_hoc_audit": true,
+  "before_conditions_sha256": "63a881588ae31bcc44551b5699373f1d4e5610d14536d7da3051e08cdf9de131",
+  "after_conditions_sha256": "5391c3306afec4bd803c2df448b8cc10112cf118e37c038dc1dcdcdb1cca9921",
+  "identity": "case_id,budget,variant",
+  "groups": [
+    {
+      "budget": 1800,
+      "variant": "full",
+      "paired_cases": 1584,
+      "transitions": [
+        {
+          "before": "fail",
+          "after": "not_applicable",
+          "cases": 129
+        },
+        {
+          "before": "fail",
+          "after": "pass",
+          "cases": 63
+        },
+        {
+          "before": "not_applicable",
+          "after": "not_applicable",
+          "cases": 452
+        },
+        {
+          "before": "pass",
+          "after": "pass",
+          "cases": 940
+        }
+      ]
+    },
+    {
+      "budget": 3200,
+      "variant": "full",
+      "paired_cases": 1584,
+      "transitions": [
+        {
+          "before": "not_applicable",
+          "after": "not_applicable",
+          "cases": 273
+        },
+        {
+          "before": "pass",
+          "after": "pass",
+          "cases": 1311
+        }
+      ]
+    }
+  ],
+  "interpretation": "NA remains absence of an actual assessment action; not a success. Before and after use the same corrected v2 diagnostic."
+}

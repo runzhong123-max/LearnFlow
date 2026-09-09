@@ -18,6 +18,7 @@ from sqlalchemy import Integer, and_, case, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.learning import (
+    EvidenceEvent,
     KernelHead,
     KernelState,
     MemoryClaim,
@@ -29,11 +30,12 @@ from app.models.learning import (
 )
 from app.services.architecture_registry import KERNEL_NAMES
 from learnflow_core.registry_core import MEMORY_RETRIEVAL_VERSION
-from learnflow_core.memory_query import plan_query, tokenize, fuzzy_probes, resolve_fuzzy
+from learnflow_core.memory_query import plan_query, tokenize, fuzzy_probes, resolve_fuzzy, bm25_scores
 from learnflow_core.memory_excerpt import excerpt
 from learnflow_core.memory_paths import collect_path_bundles
+from learnflow_core.memory_episode import collect_learning_episodes
 from app.services.personal_concept_graph import build_personal_concept_context
-from app.services.teaching_guidance import GUIDANCE_VERSION, select_teaching_guidance
+from app.services.teaching_guidance import GUIDANCE_VERSION, select_teaching_guidance, diagnose_teaching_guidance
 
 
 MEMORY_SCHEMA_VERSION = "memory-item.v2"
@@ -48,6 +50,7 @@ SENSITIVE_FIELDS = {
     "answer", "answers", "answer_indexes", "correct_answer", "correct_indexes",
     "expected", "expected_output", "solution", "solutions", "test_cases",
     "judge_config", "private", "hidden_tests",
+    "correct_response", "gold", "submission", "hidden_answer", "gold_answer", "answer_key",
 }
 ALERT_KINDS = {
     "blocker", "gap", "misconception", "retention", "affect", "load",
@@ -71,6 +74,27 @@ class ContextPolicy:
     scope_mode: str
     relations: tuple[str, ...] = DEFAULT_RELATIONS
     max_hops: int = 2
+    enable_episodes: bool = True
+    max_episodes: int = 3
+    max_episode_facts: int = 6
+    enable_bm25: bool = True
+    enable_aliases: bool = True
+    enable_fuzzy: bool = True
+    enable_temporal: bool = True
+    enable_summary_boost: bool = True
+
+    def __post_init__(self):
+        for name in COMPONENT_POLICY_FIELDS:
+            if name.startswith('enable_') and type(getattr(self, name)) is not bool:
+                raise ValueError(f'{name} must be a Boolean')
+        if type(self.max_episodes) is not int or not 0 <= self.max_episodes <= 6:
+            raise ValueError('max_episodes must be between 0 and 6')
+        if type(self.max_episode_facts) is not int or not 1 <= self.max_episode_facts <= 12:
+            raise ValueError('max_episode_facts must be between 1 and 12')
+
+
+COMPONENT_POLICY_FIELDS = ('enable_episodes', 'max_episodes', 'max_episode_facts', 'enable_bm25',
+                           'enable_aliases', 'enable_fuzzy', 'enable_temporal', 'enable_summary_boost')
 
 
 CONTEXT_POLICIES = {
@@ -222,6 +246,23 @@ def _compact(value: Any, limit: int = 260) -> str:
 def _token_estimate(value: Any) -> int:
     rendered = json.dumps(value, ensure_ascii=False, sort_keys=True, default=str)
     return max(1, math.ceil(len(rendered) / 3.2))
+
+
+def context_budget_payload(packet: dict) -> dict:
+    """Public budget body: legacy controls plus every new read projection.
+
+    The newly visible policy component fields are charged even when disabled.
+    This remains an estimate, not a tokenizer or model usage measurement.
+    """
+    return {'heads': packet.get('kernel_heads', {}), 'items': packet.get('items', []),
+            'paths': packet.get('relation_paths', []),
+            'personal_concept_graph': packet.get('personal_concept_graph', {}),
+            'adaptation_directives': packet.get('adaptation_directives', []),
+            'teaching_guidance': packet.get('teaching_guidance', []),
+            'learning_episodes': packet.get('learning_episodes', []),
+            'retrieval_diagnostics': packet.get('retrieval_diagnostics', {}),
+            'component_policy': {name: (packet.get('manifest', {}).get('policy', {}) or {}).get(name)
+                                 for name in COMPONENT_POLICY_FIELDS}}
 
 
 def _optional_int(value: Any) -> int | None:
@@ -530,7 +571,11 @@ def _in_scope(
         allow_superseded and node.status == "superseded"
     ):
         return False
-    if node.valid_to is not None and node.valid_to <= datetime.utcnow():
+    now = datetime.utcnow()
+    if node.valid_to is not None and node.valid_to <= now:
+        return False
+    if (node.valid_from is not None and node.valid_from > now
+            or node.occurred_at is not None and node.occurred_at > now):
         return False
     if node.status == "transient":
         if session_id is None or node.session_id != session_id:
@@ -553,6 +598,8 @@ def _scope_filters(policy: ContextPolicy, project_id, checkpoint_id, session_id,
     filters = [
         model.status.in_(("active", "transient", "legacy", "superseded") if history else ("active", "transient", "legacy")),
         or_(model.valid_to.is_(None), model.valid_to > datetime.utcnow()),
+        or_(model.valid_from.is_(None), model.valid_from <= datetime.utcnow()),
+        or_(model.occurred_at.is_(None), model.occurred_at <= datetime.utcnow()),
         or_(model.status != "transient", model.session_id == session_id)
         if session_id is not None else model.status != "transient",
     ]
@@ -629,14 +676,23 @@ def _sensitive_node(node: MemoryNode, fact: MemoryFact | None) -> bool:
     key = str((node.payload or {}).get("key") or "").casefold()
     path_tokens = set(re.split(r"[.:/_\-]+", predicate)) | set(re.split(r"[.:/_\-]+", key))
     payload_keys: set[str] = set()
-    stack = [node.payload or {}]
+    stack = [node.payload or {}, fact.object_value if fact else {}]
+    inspected = 0
     while stack:
+        inspected += 1
+        if inspected > 2048:
+            # An uninspected tail must never be treated as answer-free.
+            return True
         value = stack.pop()
         if isinstance(value, dict):
+            if len(value) + len(stack) > 2048 - inspected:
+                return True
             payload_keys.update(str(item).casefold() for item in value)
             stack.extend(value.values())
         elif isinstance(value, list):
-            stack.extend(value[:20])
+            if len(value) + len(stack) > 2048 - inspected:
+                return True
+            stack.extend(value)
     return bool((path_tokens | payload_keys) & SENSITIVE_FIELDS)
 
 
@@ -736,7 +792,7 @@ async def build_five_kernel_context(
     if isinstance(policy, str):
         policy = CONTEXT_POLICIES[policy]
     explicit_subjects = {str(item) for item in subject_keys if str(item)}
-    query_plan = plan_query(query)
+    query_plan = plan_query(query, enable_aliases=policy.enable_aliases)
     query_terms = set(query_plan.terms)
     focused = bool(explicit_subjects or str(query).strip())
     document_terms: dict[int, set[str]] = {}
@@ -753,12 +809,30 @@ async def build_five_kernel_context(
     guidance_states = (await db.execute(select(KernelState).where(
         KernelState.learner_id == learner_id,
     ))).scalars().all()
-    teaching_guidance = select_teaching_guidance(
-        {row.kernel_name: {"short_term": dict(row.short_term or {}),
-                           "long_term": dict(row.long_term or {})} for row in guidance_states},
-        project_id=project_id, checkpoint_id=checkpoint_id, session_id=session_id,
-        archived_paths={(entry.kernel_name, entry.memory_scope, entry.memory_key) for entry in archives},
-    )
+    control_states = {row.kernel_name: {"short_term": dict(row.short_term or {}),
+                                      "long_term": dict(row.long_term or {})} for row in guidance_states}
+    control_scope = dict(project_id=project_id, checkpoint_id=checkpoint_id, session_id=session_id)
+    control_args = {**control_scope, "now": datetime.utcnow(),
+        "archived_paths": {(entry.kernel_name, entry.memory_scope, entry.memory_key) for entry in archives}}
+    teaching_guidance = select_teaching_guidance(control_states, **control_args)
+    # Inspect only the latest original user input in this exact owned scope.
+    # Its text stays inside the deterministic parser; diagnostics never copy it.
+    latest_input = await db.scalar(select(EvidenceEvent).where(
+        EvidenceEvent.learner_id == learner_id,
+        EvidenceEvent.event_type.in_(("user_message", "vnext_teaching_input_received")),
+        EvidenceEvent.occurred_at <= control_args["now"],
+        *(getattr(EvidenceEvent, name).is_(None) if value is None else getattr(EvidenceEvent, name) == value
+          for name, value in control_scope.items()),
+    ).order_by(EvidenceEvent.occurred_at.desc(), EvidenceEvent.id.desc()).limit(1))
+    control_diagnostics = diagnose_teaching_guidance(control_states, **control_args, input_event=latest_input)
+    # Other scopes, archives and malformed rows contribute counts only; they
+    # cannot disclose foreign-scope event references through this read packet.
+    safe_diagnostics = [row for row in control_diagnostics["diagnostics"]
+                        if row.get("source_event_id") == getattr(latest_input, "id", None)
+                        and row.get("status") in {"no_request", "uncertain"}] if latest_input else []
+    control_diagnostics = {"status": control_diagnostics["status"], "counts": control_diagnostics["counts"],
+                           "diagnostics": safe_diagnostics[:2],
+                           "omitted": control_diagnostics["omitted"] + max(0, len(safe_diagnostics) - 2)}
     guidance_omitted = 0
     while teaching_guidance and _token_estimate(teaching_guidance) > min(800, policy.token_budget // 3):
         teaching_guidance.pop()
@@ -846,6 +920,10 @@ async def build_five_kernel_context(
             },
             "version": int(head.version or 0),
         }
+        if not ordered_refs and (head.kernel_name != 'human' or not head_states):
+            # No evidence-bearing field is discarded: empty navigation facets
+            # have no useful content and should not crowd out actual sources.
+            head_payload[head.kernel_name]['facets'] = {}
     requested_subjects = set(explicit_subjects)
     if project_id is not None:
         requested_subjects.add(f"project:{project_id}")
@@ -867,25 +945,47 @@ async def build_five_kernel_context(
     )
     recent_order = (MemoryNode.occurred_at.desc(), MemoryNode.id.desc())
     nodes_by_id = {}
-    channels = [MemoryNode.subject_key.in_(requested_subjects or {"__none__"}),
-                MemoryNode.id.in_(head_refs or {-1})]
+    channels = [('scope', MemoryNode.subject_key.in_(requested_subjects or {"__none__"})),
+                ('head', MemoryNode.id.in_(head_refs or {-1}))]
     if query_terms:
-        channels.append(or_(*(MemoryNode.text.icontains(term, autoescape=True)
-                              for term in sorted(query_terms)[:48])))
+        channels.append(('literal', or_(*(MemoryNode.text.icontains(term, autoescape=True)
+                              for term in query_plan.literal_terms))))
+        if set(query_plan.terms) != set(query_plan.literal_terms):
+            channels.append(('normalized', or_(*(MemoryNode.text.icontains(term, autoescape=True)
+                                  for term in sorted(query_terms)[:48]))))
     # Rank lexical matches BEFORE the bounded window, so an old precise match
     # is not displaced by hundreds of recent records sharing a generic word.
     lexical_order = sum((case((MemoryNode.text.icontains(term, autoescape=True), 1), else_=0)
                          for term in sorted(query_terms)[:48]), 0)
     candidate_order = (lexical_order.desc(), *recent_order) if query_terms else recent_order
-    for channel in [*channels, None]:
+    channel_stats = {}
+    channel_ids = {}
+    for name, channel in [*channels, ('recent', None)]:
         statement = base.where(channel) if channel is not None else base
         order = candidate_order if channel is not None else recent_order
-        for node in (await db.execute(statement.order_by(*order).limit(240))).scalars():
+        found = list((await db.execute(statement.order_by(*order).limit(241))).scalars())
+        channel_stats[name] = {'candidates': min(240, len(found)), 'truncated': len(found) > 240}
+        channel_ids[name] = {n.id for n in found[:240]}
+        for node in found[:240]:
             nodes_by_id[node.id] = node
+    if policy.enable_bm25 and query_terms:
+        # Per-term quotas let a rare literal term contribute candidates even
+        # when common terms fill the combined 240-node window. SQL substring
+        # matches are candidates only; the common normalized tokenizer ranks.
+        found_ids, truncated = set(), False
+        for term in sorted(query_terms)[:12]:
+            found = list((await db.execute(base.where(MemoryNode.text.icontains(term, autoescape=True))
+                .order_by(*recent_order).limit(25))).scalars())
+            truncated |= len(found) > 24
+            for node in found[:24]:
+                found_ids.add(node.id)
+                nodes_by_id[node.id] = node
+        channel_ids['bm25'] = found_ids
+        channel_stats['bm25'] = {'candidates': len(found_ids), 'truncated': truncated or len(query_terms) > 12}
     # History requests reserve oldest/middle/latest FACT candidates per subject,
     # after the same SQL scope filter. No generated summary becomes an event.
     temporal_slots: dict[int, str] = {}
-    if query_plan.temporal != "current" and (query_terms or explicit_subjects):
+    if policy.enable_temporal and (query_plan.temporal != "current" or query_plan.audit.get('explicit_current')) and (query_terms or explicit_subjects):
         matched = or_(MemoryNode.subject_key.in_(explicit_subjects or {"__none__"}),
                       *(MemoryNode.text.icontains(t, autoescape=True) for t in sorted(query_terms)))
         partition = (MemoryNode.kernel_name, MemoryNode.subject_key)
@@ -902,13 +1002,18 @@ async def build_five_kernel_context(
         )).order_by(history_window.c.position, history_window.c.id).limit(48))).mappings())
         temporal_slots = {r["id"]: "earliest" if r["position"] == 1 else
                           "latest" if r["position"] == r["total"] else "middle" for r in slots}
+        if query_plan.temporal == 'current':
+            temporal_slots = {r['id']: 'latest' for r in slots if r['position'] == r['total']}
         for node in (await db.execute(base.where(MemoryNode.id.in_(temporal_slots or {-1})))).scalars():
             nodes_by_id[node.id] = node
-    probes = fuzzy_probes(query_plan)
+    probes = fuzzy_probes(query_plan) if policy.enable_fuzzy else ()
     if probes:
         # Probes only find a scoped vocabulary. They never qualify an item as relevant.
         fuzzy_filter = or_(*(MemoryNode.text.icontains(t, autoescape=True) for t in probes))
-        for node in (await db.execute(base.where(fuzzy_filter).order_by(*recent_order).limit(240))).scalars():
+        found = list((await db.execute(base.where(fuzzy_filter).order_by(*recent_order).limit(241))).scalars())
+        channel_stats['fuzzy'] = {'candidates': min(240, len(found)), 'truncated': len(found) > 240}
+        channel_ids['fuzzy'] = {n.id for n in found[:240]}
+        for node in found[:240]:
             nodes_by_id[node.id] = node
     nodes = list(nodes_by_id.values())
     facts, claims, modules = await _node_metadata(db, [node.id for node in nodes])
@@ -918,8 +1023,12 @@ async def build_five_kernel_context(
                 and not _sensitive_node(node, fact)
                 and _in_scope(node, policy, project_id=project_id, checkpoint_id=checkpoint_id,
                               session_id=session_id, allow_superseded=history))
-    query_plan = resolve_fuzzy(query_plan, [n.text for n in nodes if permitted(n, facts.get(n.id))])
+    if policy.enable_fuzzy:
+        query_plan = resolve_fuzzy(query_plan, [n.text for n in nodes if permitted(n, facts.get(n.id))])
     query_terms = set(query_plan.terms)
+    bm25, bm25_stats = bm25_scores(query_plan, {
+        n.id: n.text for n in nodes if permitted(n, facts.get(n.id))
+    }) if policy.enable_bm25 else ({}, {'documents': 0, 'matched': 0, 'truncated_documents': 0})
     concept_context = await build_personal_concept_context(
         db,
         learner_id,
@@ -998,7 +1107,7 @@ async def build_five_kernel_context(
             score += 0.2
             reasons.append("session_scope")
         if query_plan.intent == "summary" or not focused:
-            if node.node_type in {"module", "claim"} and node.status == "active":
+            if policy.enable_summary_boost and node.node_type in {"module", "claim"} and node.status == "active":
                 score += 1.25
                 reasons.append("summary_query")
         elif node.node_type == "fact":
@@ -1007,6 +1116,9 @@ async def build_five_kernel_context(
         if node.id in current_update_ids:
             score += 1.2
             reasons.append("current_correction_anchor")
+        if bm25.get(node.id):
+            score += 1.5 * bm25[node.id] / (1 + bm25[node.id])
+            reasons.append('candidate_pool_bm25')
         if node.id in temporal_slots:
             slot = temporal_slots[node.id]
             boost = (3.0 if slot == "earliest" else 0.0) if query_plan.temporal == "earliest" else {
@@ -1051,16 +1163,50 @@ async def build_five_kernel_context(
         node_allowed=permitted, scope_predicates=graph_scope, endpoint=endpoint,
         relevance=lambda node: sum(node_relevance(node)),
     )
+    learning_episodes = []
+    episode_candidates, episode_stats = ([], {'eligible': 0, 'selected': 0, 'budget_omitted': 0})
+    if policy.enable_episodes and policy.max_episodes:
+        episode_candidates, episode_stats = await collect_learning_episodes(
+            db, learner_id=learner_id, anchors=[row[2] for row in ranked if row[2].node_type == 'fact'],
+            node_allowed=permitted,
+            scope_predicates=lambda model: [model.kernel_name.in_(policy.deep_kernels),
+                model.kernel_name != 'human', model.id.not_in(archived_ids or {-1}),
+                *_scope_filters(policy, project_id, checkpoint_id, session_id, model=model)],
+            terms=query_terms, max_facts=policy.max_episode_facts, now=now)
+        if not episode_stats['events_scanned']:
+            episode_stats = {k: v for k, v in episode_stats.items()
+                             if k in ('anchors', 'eligible', 'selected', 'budget_omitted', 'rejected')
+                             or k == 'anchors_omitted' and v}
+    # Counts are activation evidence; a configured flag alone is not a measured
+    # contribution. All these new visible diagnostics are charged to the packet.
+    retrieval_diagnostics = {
+        'teaching_controls': {**control_diagnostics, 'delivered': len(teaching_guidance), 'budget_omitted': guidance_omitted},
+        'channels': channel_stats,
+        'components': {
+            'bm25': {'enabled': policy.enable_bm25, **bm25_stats, 'selected': 0},
+            'aliases': {'enabled': policy.enable_aliases, 'activated': len(query_plan.audit.get('aliases', []))},
+            'fuzzy': {'enabled': policy.enable_fuzzy, 'activated': len(query_plan.audit.get('fuzzy_corrections', []))},
+            'temporal': {'enabled': policy.enable_temporal, 'activated': len(temporal_slots)},
+            'summary_boost': {'enabled': policy.enable_summary_boost,
+                              'activated': sum('summary_query' in row[3] for row in ranked)},
+            'paths': {'enabled': bool(policy.max_paths and policy.max_hops), 'selected': 0,
+                      'eligible_bundles': sum(len(v) for v in bundles_by_anchor.values()),
+                      'root_limit_omitted': max(0, min(len(ranked), max(1, policy.max_items * 3)) - graph_stats['max_roots'])
+                          if policy.max_paths and policy.max_hops else 0,
+                      'candidate_edges': graph_stats['candidate_edges']},
+        },
+        'episodes': {'enabled': bool(policy.enable_episodes and policy.max_episodes), **episode_stats},
+    }
+
+    def budget_body() -> dict:
+        return context_budget_payload({'kernel_heads': head_payload, 'items': items,
+            'relation_paths': relation_paths, 'personal_concept_graph': concept_context,
+            'adaptation_directives': adaptation_directives, 'teaching_guidance': teaching_guidance,
+            'learning_episodes': learning_episodes, 'retrieval_diagnostics': retrieval_diagnostics,
+            'manifest': {'policy': asdict(policy)}})
 
     def current_packet_tokens() -> int:
-        return _token_estimate({
-            "heads": head_payload,
-            "items": items,
-            "paths": relation_paths,
-            "personal_concept_graph": concept_context,
-            "adaptation_directives": adaptation_directives,
-            "teaching_guidance": teaching_guidance,
-        })
+        return _token_estimate(budget_body())
 
     # Reserve the fixed control projection first. For unusually tiny custom
     # budgets, degrade structured fields explicitly, never slice JSON.
@@ -1074,6 +1220,22 @@ async def build_five_kernel_context(
         concept_context["edges"].pop()
     while current_packet_tokens() > policy.token_budget and concept_context.get("nodes"):
         concept_context["nodes"].pop()
+
+    # Episodes are atomic: provenance, qualifiers and explicit unknowns travel
+    # with observations. Never trim just the assistance or limitation fields.
+    for index, episode in enumerate(episode_candidates):
+        if len(learning_episodes) >= policy.max_episodes:
+            break
+        learning_episodes.append(episode)
+        if current_packet_tokens() > policy.token_budget:
+            learning_episodes.pop()
+            # Candidates are newest first. Never replace an omitted recent
+            # assessment with an older, shorter success and call it current.
+            retrieval_diagnostics['episodes']['budget_omitted'] += len(episode_candidates) - index
+            break
+    retrieval_diagnostics['episodes']['selected'] = len(learning_episodes)
+    retrieval_diagnostics['episodes']['limit_omitted'] = max(0, len(episode_candidates) - len(learning_episodes)
+        - retrieval_diagnostics['episodes']['budget_omitted'])
 
     duplicate_count = 0
     selected_path_keys: set[tuple] = set()
@@ -1125,6 +1287,21 @@ async def build_five_kernel_context(
                                       for p in bundle for ep in (p["source"], p["target"])):
                     continue
                 add_bundle(bundle)
+    retrieval_diagnostics['components']['bm25']['selected'] = sum('candidate_pool_bm25' in item['retrieval']['reasons'] for item in items)
+    retrieval_diagnostics['components']['paths']['selected'] = len(relation_paths)
+    # Counters can grow a digit after selection. Charge their final values;
+    # remove whole observations/bundles rather than silently exceed the budget.
+    while current_packet_tokens() > policy.token_budget and relation_paths:
+        root = relation_paths[-1]['root_anchor_id']
+        relation_paths[:] = [p for p in relation_paths if p['root_anchor_id'] != root]
+        retrieval_diagnostics['components']['paths']['selected'] = len(relation_paths)
+    while current_packet_tokens() > policy.token_budget and items:
+        items.pop()
+        retrieval_diagnostics['components']['bm25']['selected'] = sum('candidate_pool_bm25' in item['retrieval']['reasons'] for item in items)
+    while current_packet_tokens() > policy.token_budget and learning_episodes:
+        learning_episodes.pop()
+        retrieval_diagnostics['episodes']['selected'] = len(learning_episodes)
+        retrieval_diagnostics['episodes']['budget_omitted'] += 1
     # If even the fixed envelope cannot fit, reject an impossible policy rather
     # than label an over-budget packet as valid. Built-in policies fit easily.
     if current_packet_tokens() > policy.token_budget:
@@ -1137,10 +1314,12 @@ async def build_five_kernel_context(
     evidence_ids = sorted({
         int(ref) for item in items for ref in item.get("evidence_refs", []) if ref is not None
     } | {int(item["source_event_id"]) for item in teaching_guidance if item.get("source_event_id")}
+      | {ref for episode in learning_episodes for ref in episode['source_event_ids']}
       | {int(path["evidence_event_id"]) for path in relation_paths if path.get("evidence_event_id")}
       | {int(path[side]["source_event_id"]) for path in relation_paths for side in ("source", "target")
          if path[side].get("source_event_id")})
-    represented_kernels = {item["kernel"] for item in items}
+    represented_kernels = {item["kernel"] for item in items} | {
+        observation['kernel'] for episode in learning_episodes for observation in episode['observations']}
     missing_facets = [
         kernel for kernel in policy.deep_kernels
         if kernel not in represented_kernels and not head_payload.get(kernel, {}).get("summary")
@@ -1160,6 +1339,8 @@ async def build_five_kernel_context(
             name: value["version"] for name, value in head_payload.items()
         },
         "teaching_guidance": teaching_guidance,
+        "learning_episodes": learning_episodes,
+        "retrieval_components": {name: getattr(policy, name) for name in COMPONENT_POLICY_FIELDS},
         "item_ids": [item["id"] for item in items],
         "path_keys": [
             [path["source"]["id"], path["relation"], path["target"]["id"], path.get("hop"), path.get("via_node_ids")]
@@ -1191,6 +1372,8 @@ async def build_five_kernel_context(
         "personal_concept_graph": concept_context,
         "adaptation_directives": adaptation_directives,
         "teaching_guidance": teaching_guidance,
+        "learning_episodes": learning_episodes,
+        "retrieval_diagnostics": retrieval_diagnostics,
         "teaching_guidance_version": GUIDANCE_VERSION,
         "missing_facets": missing_facets,
         "conflicts": conflicts,
@@ -1204,7 +1387,7 @@ async def build_five_kernel_context(
             "update_ranking_candidates": len(update_rows),
             "update_ranking_truncated": update_ranking_truncated,
             "graph": graph_stats,
-            "candidate_window_may_be_truncated": len(nodes) >= 240,
+            "candidate_window_may_be_truncated": any(c['truncated'] for c in channel_stats.values()),
             "selected_count": len(items),
             "scope_filtered": excluded_scope,
             "irrelevant_filtered": excluded_irrelevant,
@@ -1217,21 +1400,14 @@ async def build_five_kernel_context(
         "manifest": {
             "policy": asdict(policy),
             "evidence_ids": evidence_ids,
-            "token_estimate": _token_estimate({
-                "heads": head_payload,
-                "items": items,
-                "paths": relation_paths,
-                "personal_concept_graph": concept_context,
-                "adaptation_directives": adaptation_directives,
-                "teaching_guidance": teaching_guidance,
-            }),
+            "token_estimate": current_packet_tokens(),
             "answer_free": True,
             "retrieval_version": RETRIEVAL_VERSION,
             "retrieval_order": ["exact_scope", "audited_query_normalization", "temporal_candidates",
                                 "relevance_tiers", "bounded_two_hop_bundles", "original_excerpts_joint_budget"],
             "query_plan": {"intent": query_plan.intent, "temporal": query_plan.temporal, **query_plan.audit},
-            "direct_memory_evidence": bool(items),
-            "evidence_gap": None if items else "no_direct_memory_for_query",
+            "direct_memory_evidence": bool(items or learning_episodes),
+            "evidence_gap": None if items or learning_episodes else "no_direct_memory_for_query",
             "graph": graph_stats,
             "authority": "read_only_projection_from_evidence_and_memory_graph",
             "personal_concept_graph": (

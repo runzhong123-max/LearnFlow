@@ -756,8 +756,8 @@ def test_memory_read_contract_versions_and_helpers_are_shared():
     from learnflow_core.registry_core import SHARED_CORE_VERSION, MEMORY_RETRIEVAL_VERSION
     from learnflow_core.five_kernel_context import RETRIEVAL_VERSION, CONTEXT_PACKET_VERSION, ContextPolicy
     from learnflow_core.memory_query import QUERY_PLAN_VERSION
-    assert learnflow_core.__version__ == SHARED_CORE_VERSION == "0.2.4"
-    assert RETRIEVAL_VERSION == MEMORY_RETRIEVAL_VERSION == "relevance-budget.v2"
+    assert learnflow_core.__version__ == SHARED_CORE_VERSION == "0.2.5"
+    assert RETRIEVAL_VERSION == MEMORY_RETRIEVAL_VERSION == "relevance-budget.v3"
     assert CONTEXT_PACKET_VERSION == "five-kernel-context.v2"
     assert QUERY_PLAN_VERSION == "memory-query.v1"
     assert ContextPolicy.__dataclass_fields__["max_hops"].default == 2
