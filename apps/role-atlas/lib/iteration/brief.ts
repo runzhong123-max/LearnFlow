@@ -39,7 +39,7 @@ export function conversationIterationRequest(input: {
     initiativeProfile: draft.initiativeProfile, mode: draft.mode, prompt: input.prompt.trim(), targetIds,
     targetAsOf: draft.targetAsOf || undefined, supplementalSources: input.materials,
     learningPathGraph: input.learningPathGraph, webResearch: input.webResearch,
-    maxRounds: 2, sourceLimit: 12, maxWorkItems: 10,
+    maxRounds: 4, sourceLimit: 20, maxWorkItems: 16,
   });
 }
 

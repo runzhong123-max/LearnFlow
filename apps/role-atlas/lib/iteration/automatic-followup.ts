@@ -8,6 +8,8 @@ type FollowupInput = {
   versionId?: string;
   conversationId?: string;
   learningPathGraph?: LearningPathGraphInput;
+  /** Inherit the parent run; omitted by older callers means enabled. */
+  webResearch?: boolean;
 };
 
 export function createColdStartDeepResearchRequest(input: FollowupInput): SnapshotIterationRequest {
@@ -22,10 +24,10 @@ export function createColdStartDeepResearchRequest(input: FollowupInput): Snapsh
     targetIds: [],
     supplementalSources: [],
     learningPathGraph: input.learningPathGraph,
-    webResearch: true,
-    maxRounds: 2,
+    webResearch: input.webResearch ?? true,
+    maxRounds: 4,
     sourceLimit: 16,
-    maxWorkItems: 5,
+    maxWorkItems: 12,
   };
 }
 
@@ -37,13 +39,13 @@ export function createColdStartRiskRepairRequest(input: FollowupInput): Snapshot
     conversationId: input.conversationId,
     initiativeProfile: "autonomous",
     mode: "risk_repair",
-    prompt: "对深度研究后的完整岗位包执行全量风险修复：覆盖协议、同维度重复、维度污染、孤立与悬空关系、失证、任务覆盖、能力迁移、能力单元培养契约、学习路径映射和事理桥接；只应用可验证的最小补丁。",
+    prompt: "对深度研究后的完整岗位包执行全量风险修复：覆盖协议、同维度重复、维度污染、孤立与悬空关系、失证、任务覆盖、能力迁移、能力单元培养契约、学习路径映射和事理桥接；对可研究缺口先检索与交叉核验，再用已有或新增证据补齐知识、技能、能力单元及工作过程；重复检查直到缺口关闭或预算用尽，保留可验证的最小改进。",
     targetIds: [],
     supplementalSources: [],
     learningPathGraph: input.learningPathGraph,
-    webResearch: false,
-    maxRounds: 1,
-    sourceLimit: 4,
+    webResearch: input.webResearch ?? true,
+    maxRounds: 4,
+    sourceLimit: 16,
     maxWorkItems: 16,
   };
 }

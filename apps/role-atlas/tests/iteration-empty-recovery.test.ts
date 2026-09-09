@@ -112,7 +112,7 @@ test("只有新增资料的运行也进行交叉核验，关闭联网才跳过�
     const opportunities = discoverIterationOpportunities({ request, contract, inspection: { ...inspectSnapshot(base), findings: [] } });
     const workItems = planIterationWork({ runId: request.runId, opportunities, contract });
     const sourceWork = workItems.find(item => item.origin === "workspace")!;
-    assert.equal(sourceWork.requiresResearch, webResearch);
+    assert.equal(sourceWork.requiresResearch, true, "关闭联网仅关闭外部检索，资料蒸馏仍是真实研究工作");
     const plan = planIterationResearch({ runId: request.runId, round: 1, result: base, request, contract, workItems });
     assert.equal(plan.queries.length > 0, webResearch);
     assert.ok(plan.queries.every(query => !query.query.includes("敏感机构")));

@@ -38,6 +38,9 @@ const IterationState = new StateSchema({
   base: z.custom<ColdStartBuildResult>(),
   candidate: z.custom<ColdStartBuildResult>(),
   round: z.number().int().default(1),
+  stagnantRounds: z.number().int().default(0),
+  roundBefore: z.custom<SnapshotInspection>().optional(),
+  collectedSources: z.custom<SourceInput[]>().default(() => []),
   contract: z.custom<IterationContract>().optional(),
   inspectionBefore: z.custom<SnapshotInspection>().optional(),
   inspectionWorking: z.custom<SnapshotInspection>().optional(),
@@ -105,8 +108,7 @@ function coldStartRequest(input: {
     runId: `${state.request.runId}:round:${state.round}`.slice(0, 100),
     projectId: state.request.projectId || state.request.snapshotRef.projectId || `snapshot:${stableHash(state.request.snapshotRef.snapshotId)}`,
     roleTitle: state.base.brief.roleTitle,
-    roleDescription: [state.base.brief.roleDescription.slice(0, 1_500), iterationRepairFocus(state)]
-      .filter(Boolean).join("\n本轮迭代目标：").slice(0, 8_000),
+    roleDescription: state.base.brief.roleDescription.slice(0, 8_000),
     market: state.base.brief.market,
     audience: state.base.brief.audience,
     snapshotAsOf: state.contract?.targetAsOf || state.base.snapshot.asOf,
@@ -191,6 +193,9 @@ export function createSnapshotIterationSkill(input: {
     await input.onCheckpoint?.(phase, {
       phase,
       round: state.round,
+      stagnantRounds: state.stagnantRounds,
+      roundBefore: state.roundBefore,
+      collectedSources: state.collectedSources,
       contract: state.contract,
       candidate: state.candidate,
       activeResearchPlan: state.activeResearchPlan,
@@ -264,15 +269,17 @@ export function createSnapshotIterationSkill(input: {
       request: state.request,
       contract: state.contract!,
       workItems: state.workItems,
+      previousPlans: state.researchPlans,
     });
     const enabled = state.request.webResearch && Boolean(input.searchConfig);
     const previousQueries = new Set(state.researchPlans.flatMap(item => item.queries.map(query => `${query.category}:${query.query}`)));
-    const activeResearchPlan = { ...plan, queries: enabled ? plan.queries.filter(query => !previousQueries.has(`${query.category}:${query.query}`)) : [] };
+    const remainingQueryBudget = Math.max(0, 48 - state.researchPlans.reduce((sum, item) => sum + item.queries.length, 0));
+    const activeResearchPlan = { ...plan, queries: enabled ? plan.queries.filter(query => !previousQueries.has(`${query.category}:${query.query}`)).slice(0, remainingQueryBudget) : [] };
     emit(state, "iteration.research.plan.created", "research", {
       plan: activeResearchPlan,
       skippedReason: enabled ? undefined : input.searchConfig ? "本轮关闭联网研究" : "未配置搜索供应商",
     });
-    const update = { activeResearchPlan, researchPlans: [...state.researchPlans, activeResearchPlan] };
+    const update = { roundBefore: state.inspectionWorking || state.inspectionBefore, activeResearchPlan, researchPlans: [...state.researchPlans, activeResearchPlan] };
     await checkpoint("research-plan", state, update);
     return update;
   };
@@ -312,6 +319,7 @@ export function createSnapshotIterationSkill(input: {
     });
     const update = {
       researchedSources: researched.sources,
+      collectedSources: mergeIterationSources(state.collectedSources || [], researched.sources, 80),
       researchReports: [...state.researchReports, researched.report],
       workItems: runningItems,
     };
@@ -320,12 +328,12 @@ export function createSnapshotIterationSkill(input: {
   };
 
   const rebuild = async (state: IterationStateType, config: { signal?: AbortSignal }) => {
-    const incoming = [...state.request.supplementalSources, ...state.researchedSources];
+    const incoming = mergeIterationSources(state.collectedSources || [], [...state.request.supplementalSources, ...state.researchedSources], 80);
     const hasUsableEvidence = state.candidate.sources.assets.some(asset => asset.kind !== "user_brief"
       && asset.qualification?.status !== "quarantined"
       && state.candidate.sources.segments.some(segment => segment.sourceId === asset.id && segment.text.trim()));
     const activeItems = state.workItems.filter(item => item.status !== "completed" && item.status !== "skipped");
-    const reuseEvidence = !incoming.length && state.request.webResearch && hasUsableEvidence && activeItems.some(item => item.requiresResearch);
+    const reuseEvidence = !incoming.length && state.contract?.mode !== "freshness" && hasUsableEvidence && activeItems.some(item => item.requiresResearch);
     if (!incoming.length && !reuseEvidence) {
       const update = { candidate: state.candidate };
       await checkpoint("rebuild", state, update);
@@ -335,11 +343,18 @@ export function createSnapshotIterationSkill(input: {
     const sources = mergeIterationSources(currentSources, incoming, currentSources.length + incoming.length);
     const request = coldStartRequest({ state, sources });
     const hasTaskRepair = state.contract?.mode === "risk_repair" && activeItems.some(item => item.findingIds.some(id =>
-      [...state.inspectionBefore!.findings, ...state.findingHistory].some(finding => finding.id === id && ["TASK_SKILL_GAP", "TASK_CAPABILITY_GAP", "TASK_CAPABILITY_UNIT_GAP"].includes(finding.code))));
+      [...state.inspectionBefore!.findings, ...state.findingHistory].some(finding => finding.id === id && ["TASK_SKILL_GAP", "TASK_LEARNING_KIND_GAP", "TASK_CAPABILITY_GAP", "TASK_CAPABILITY_UNIT_GAP", "TASK_PROCESS_GAP", "TASK_PROCESS_INCOMPLETE", "CAPABILITY_UNIT_CULTIVATION_GAP", "CAPABILITY_NOT_CROSS_TASK"].includes(finding.code))));
     const hasExistingTasks = state.candidate.semantic.nodes.some(node => node.type === "task" && node.lifecycle !== "rejected");
     // Enrichment hydrates tasks from the base and cannot invent that missing
     // layer. A role-only legacy snapshot must re-run source/task extraction.
-    const anchored = hasExistingTasks && (reuseEvidence || hasTaskRepair);
+    const mountRepair = Boolean(state.contract?.learningMountFeedback?.length);
+    const anchored = hasExistingTasks && (reuseEvidence || hasTaskRepair || mountRepair);
+    const taskTargets = new Set(activeItems.flatMap(item => item.targetIds));
+    // A knowledge-point selection must reach its task context without changing
+    // the user's declared scope or interpreting a role hub as every task.
+    for (let depth = 0; depth < 3; depth++) for (const edge of state.candidate.semantic.edges) {
+      if (edge.lifecycle !== "rejected" && taskTargets.has(edge.target) && ["requires_skill", "requires_capability", "contains"].includes(edge.type)) taskTargets.add(edge.source);
+    }
     emit(state, "iteration.candidate.rebuild.started", "rebuild", {
       round: state.round,
       tool: "snapshot.rebuild",
@@ -357,15 +372,18 @@ export function createSnapshotIterationSkill(input: {
     const skill = createColdStartSkill(input.model, {
       existingResearchReport,
       emitEvents: false,
+      // The outer iteration owns fresh-query budgets and changes strategy each round.
+      qualityRepairRounds: 0,
+      learningDefinitionTargetIds: state.contract?.learningMountFeedback?.map(item => item.roleNodeId),
       execution: anchored ? "enrichment" : "full",
-      knowledgeTargetIds: anchored ? activeItems.flatMap(item => item.targetIds).filter(id => state.candidate.semantic.nodes.some(node => node.id === id && node.type === "task")) : undefined,
+      knowledgeTargetIds: anchored ? [...taskTargets].filter(id => state.candidate.semantic.nodes.some(node => node.id === id && node.type === "task")) : undefined,
       iterationObjective: iterationRepairFocus(state),
     });
     const built = await skill.invoke(
       { request, laneFailures: [], ...(anchored ? { baseResult: withIncomingEvidence(state.candidate, request, incoming) } : {}) },
       { configurable: { thread_id: `${state.request.snapshotRef.snapshotId}:${state.request.runId}:iteration:${state.round}` }, signal: config.signal },
     );
-    const candidate = built.result ? preserveIterationGraph(state.candidate, built.result, request) : state.candidate;
+    const candidate = built.result ? preserveIterationGraph(state.candidate, built.result, request, { learningDefinitionTargetIds: state.contract?.learningMountFeedback?.map(item => item.roleNodeId) }) : state.candidate;
     emit(state, "iteration.candidate.rebuilt", "rebuild", {
       round: state.round,
       nodes: candidate.semantic.nodes.length,
@@ -428,24 +446,50 @@ export function createSnapshotIterationSkill(input: {
     });
     emit(state, "iteration.round.completed", "evaluate", { round: state.round, meaningful: evaluation.meaningful });
     const accepted = evaluation.meaningful ? { candidate, inspection: inspectionAfter, evaluation, migrations: state.migrations, patches: state.patches } : state.accepted;
-    const update = { candidate, inspectionAfter, inspectionWorking: inspectionAfter, evaluation, workItems, accepted };
+    const roundBefore = state.roundBefore || state.inspectionBefore!;
+    const remaining = new Set(inspectionAfter.findings.map(findingIdentity));
+    const actualProgress = !evaluation.coreRegression && (roundBefore.findings.some(finding => !remaining.has(findingIdentity(finding)))
+      || inspectionAfter.coverage.tasksWithoutSkills < roundBefore.coverage.tasksWithoutSkills
+      || inspectionAfter.coverage.tasksWithoutProcess < roundBefore.coverage.tasksWithoutProcess);
+    const stagnantRounds = actualProgress ? 0 : (state.stagnantRounds || 0) + 1;
+    const update = { candidate, inspectionAfter, inspectionWorking: inspectionAfter, evaluation, workItems, accepted, stagnantRounds };
     await checkpoint("evaluate", state, update);
     return update;
   };
 
   const routeAfterEvaluation = (state: IterationStateType) => {
-    const hasResearchable = state.workItems.some(item => item.requiresResearch && item.status === "known_gap");
-    if (!state.evaluation?.coreRegression && hasResearchable && state.activeResearchPlan?.queries.length && state.request.webResearch && input.searchConfig && state.round < state.request.maxRounds) return "retry";
-    return "finish";
+    if (state.round >= state.request.maxRounds) return "finish";
+    const baseline = state.evaluation?.coreRegression ? state.accepted?.inspection || state.inspectionBefore! : state.inspectionAfter!;
+    const opportunities = discoverIterationOpportunities({ request: state.request, contract: state.contract!, inspection: baseline });
+    const researchable = opportunities.some(item => item.requiresResearch && item.findingIds.length > 0)
+      || state.workItems.some(item => item.requiresResearch && item.status === "known_gap");
+    const canUseEvidence = state.candidate.sources.assets.some(asset => asset.kind !== "user_brief" && asset.qualification?.status !== "quarantined")
+      || state.request.supplementalSources.length > 0 || state.collectedSources?.length > 0;
+    const hasSearchBudget = state.request.webResearch && Boolean(input.searchConfig)
+      && state.researchPlans.reduce((sum, plan) => sum + plan.queries.length, 0) < 48;
+    const attempted = new Set(state.researchPlans.flatMap(plan => plan.workItemIds));
+    const unattempted = state.workItems.some(item => item.requiresResearch && item.status !== "completed" && !attempted.has(item.id));
+    return researchable && (hasSearchBudget || canUseEvidence) && ((state.stagnantRounds || 0) < 2 || unattempted) ? "retry" : "finish";
   };
 
   const nextRound = async (state: IterationStateType) => {
     const round = state.round + 1;
-    const opportunities = discoverIterationOpportunities({ request: state.request, contract: state.contract!, inspection: state.inspectionAfter! });
+    // A rejected attempt is diagnostic material, never the foundation of the
+    // next attempt. Keep its retrieved documents independently for re-use.
+    const candidate = state.evaluation?.meaningful ? state.candidate : state.accepted?.candidate || state.base;
+    const inspection = inspectSnapshot(snapshotAtTargetDate(candidate, state.contract!.targetAsOf), { targetIds: state.contract!.initiativeProfile === "autonomous" ? [] : state.contract!.targetIds });
+    const opportunities = discoverIterationOpportunities({ request: state.request, contract: state.contract!, inspection });
     const nextItems = planIterationWork({ runId: state.request.runId, opportunities, contract: state.contract! });
-    const workItems = [...new Map([...state.workItems, ...nextItems].map(item => [item.id, item])).values()];
-    const findingHistory = [...new Map([...state.findingHistory, ...state.inspectionAfter!.findings].map(finding => [finding.id, finding])).values()];
-    const update = { round, opportunities, workItems, findingHistory, researchedSources: [] };
+    const live = new Set(inspection.findings.map(finding => finding.id));
+    const previous = state.workItems.map(item => ({ ...item, status: item.findingIds.length && item.findingIds.every(id => !live.has(id)) ? "completed" as const : item.status }));
+    const workItems = [...new Map([...previous, ...nextItems.map(item => {
+      const old = previous.find(previous => previous.id === item.id);
+      return old?.status === "completed" ? old : item;
+    })].map(item => [item.id, item])).values()];
+    const findingHistory = [...new Map([...state.findingHistory, ...inspection.findings].map(finding => [finding.id, finding])).values()];
+    const update = { round, candidate, inspectionWorking: inspection, opportunities, workItems, findingHistory, researchedSources: [],
+      migrations: state.evaluation?.meaningful ? state.migrations : state.accepted?.migrations || {},
+      patches: state.evaluation?.meaningful ? state.patches : state.accepted?.patches || [] };
     await checkpoint("next-round", state, update);
     return update;
   };
@@ -551,5 +595,5 @@ export function createSnapshotIterationSkill(input: {
     .addConditionalEdges("evaluate_candidate", routeAfterEvaluation, { retry: "next_round", finish: "finalize" })
     .addEdge("next_round", "plan_research")
     .addEdge("finalize", END)
-    .compile({ checkpointer: false });
+    .compile({ checkpointer: false }).withConfig({ recursionLimit: 80 });
 }

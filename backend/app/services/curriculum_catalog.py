@@ -60,8 +60,11 @@ def same_request(row, body_hash: str):
         raise gateway.GatewayError("idempotency_conflict", "同一请求标识不能用于不同内容。", 409)
 
 
-async def resolve(db: AsyncSession, current: CurrentLearner, request_id: str, package_ref: dict, target_ids: list[str] | None) -> dict:
-    body_hash = digest({"packageRef": package_ref, "targetIds": target_ids})
+async def resolve(db: AsyncSession, current: CurrentLearner, request_id: str, package_ref: dict, target_ids: list[str] | None, *, automatic: bool = False) -> dict:
+    request_body = {"packageRef": package_ref, "targetIds": target_ids}
+    if automatic:
+        request_body["policyVersion"] = "role-learning-auto/v1"
+    body_hash = digest(request_body)
     previous = (await db.execute(select(CurriculumResolution).where(
         CurriculumResolution.learner_id == current.learner.id, CurriculumResolution.request_id == request_id,
     ))).scalar_one_or_none()
@@ -73,6 +76,8 @@ async def resolve(db: AsyncSession, current: CurrentLearner, request_id: str, pa
     graph = await _ensure_head(db, current)
     namespace = namespace_for(current)
     payload = {"packageRef": package_ref, "graph": graph, "namespace": namespace}
+    if automatic:
+        payload["allowStandaloneRoots"] = True
     if target_ids is not None:
         payload["targetIds"] = target_ids
     result = await gateway.dispatch(current, "learning.resolve", request_id, payload)
@@ -115,7 +120,7 @@ def _assert_additive_graph(base: dict, merged: dict, proposal: dict) -> None:
             raise gateway.GatewayError("invalid_validation_result", "源图校验结果不符合追加提案。")
 
 
-async def commit(db: AsyncSession, current: CurrentLearner, request_id: str, resolution_id: str) -> dict:
+async def commit(db: AsyncSession, current: CurrentLearner, request_id: str, resolution_id: str, *, production_context: dict | None = None) -> dict:
     body_hash = digest({"resolutionId": resolution_id})
     previous = (await db.execute(select(CurriculumCommit).where(
         CurriculumCommit.learner_id == current.learner.id, CurriculumCommit.request_id == request_id,
@@ -173,11 +178,13 @@ async def commit(db: AsyncSession, current: CurrentLearner, request_id: str, res
         db.add(CurriculumCommit(id=receipt_id, learner_id=current.learner.id, request_id=request_id,
                                resolution_id=resolution_id, body_hash=body_hash, graph=graph, receipt=receipt))
         await record_event(db, learner_id=current.learner.id, event_type="learning_path_extension_committed",
-                           source="ecosystem_gateway", actor_type="user", client_event_id="curriculum-commit:" + request_id,
+                           source="ecosystem_gateway", actor_type="system" if production_context else "user", client_event_id="curriculum-commit:" + request_id,
                            payload={"resolution_id": resolution_id, "request_id": request_id, "graph_id": graph["graphId"],
                                     "base_revision": base["revision"], "revision": revision, "package_ref": resolution["packageRef"],
-                                    "added_node_ids": added, "mastery_unchanged": True},
-                           provenance={"contract": gateway.PROTOCOL, "source_kind": "role_package", "package_ref": resolution["packageRef"]})
+                                    "added_node_ids": added, "mastery_unchanged": True,
+                                    **({"production_context": production_context} if production_context else {})},
+                           provenance={"contract": gateway.PROTOCOL, "source_kind": "role_package", "package_ref": resolution["packageRef"],
+                                       **({"authorization": "role_production_start", "production_context": production_context} if production_context else {})})
         await db.commit()
     except (IntegrityError, OperationalError):
         await db.rollback()

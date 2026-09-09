@@ -1,0 +1,23 @@
+.role-intake { display: flex; flex-direction: column; gap: 18px; min-width: 0; padding-bottom: 12px; }
+.role-intake .chat-tool-form { margin: 0; }
+.intake-role-input { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.intake-role-input input { width: 100%; }
+.intake-unclear { padding: 3px 0; color: #48745d; font-size: 12px; border: 0; background: transparent; text-decoration: underline; text-underline-offset: 3px; }
+.intake-description { padding: 18px 4px; line-height: 1.85; color: var(--ink, #253c32); }
+.intake-description p { white-space: pre-wrap; }
+.intake-description .assistant-label { margin-bottom: 14px; }
+.intake-actions { display: flex; gap: 10px; margin-top: 22px; align-items: stretch; }
+.intake-actions .tool-submit { flex: 1; }
+.intake-actions > button:not(.tool-submit), .intake-hub-matches button, .snapshot-research-details button { border: 1px solid #cbd8cf; border-radius: 8px; background: #f7faf7; color: #345642; padding: 9px 16px; }
+.intake-hub-matches { display: grid; gap: 10px; }
+.intake-hub-matches article { border: 1px solid #d3e0d7; background: #f4f8f3; padding: 14px; border-radius: 10px; }
+.intake-hub-matches p, .intake-hub-matches li { font-size: 12px; line-height: 1.7; }
+.intake-hub-matches button { display: inline-flex; gap: 6px; align-items: center; margin-top: 10px; }
+.intake-hub-matches details { margin-top: 10px; font-size: 12px; }
+.intake-progress { display: flex; align-items: center; gap: 8px; color: #3a6951; font-size: 12px; }
+.intake-notice { padding: 10px 12px; border-radius: 8px; background: #f5f1e7; color: #685638; font-size: 12px; line-height: 1.7; }
+.intake-notes { color: #768579; font-size: 11px; }
+.intake-reply small { display: flex; align-items: baseline; gap: 4px; }
+.snapshot-research-details { margin: 8px 16px; padding: 10px 14px; border: 1px solid #dbe2d9; border-radius: 9px; color: #65786b; font-size: 12px; line-height: 1.6; }
+.snapshot-research-details summary { cursor: pointer; }
+.role-intake button:disabled { opacity: .5; cursor: default; }

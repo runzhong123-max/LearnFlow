@@ -213,12 +213,14 @@ export async function POST(request: Request) {
               versionId: deepResult?.projectVersionId || parentVersionId || undefined,
               conversationId: parsed.conversationId,
               learningPathGraph: parsed.build.learningPathGraph,
+              webResearch: Boolean(searchConfig),
             }),
             execution: commitExecution,
             signal: execution.signal,
             base: deepResult?.candidate || result,
             model: createRecordedModelInvoker(providerConfig,{projectId:parsed.build.projectId,runId:`${parsed.build.runId.slice(0,92)}:repair`}),
             modelLabel,
+            searchConfig,
           });
           const finalSnapshotId = repairResult.candidateSnapshotId || repairResult.candidate.snapshot.id;
           const quality = snapshotQualitySummary(repairResult.candidate);

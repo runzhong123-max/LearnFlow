@@ -9,6 +9,8 @@ import { getRoleJob, type claimRoleJob } from "./repository";
 
 type Claim = Parameters<typeof claimRoleJob>[0];
 const executing = new WeakSet<Request>();
+/** Internal identity is established by dispatchRequest, never by a caller-supplied header. */
+export function isDispatchedRoleJob(request: Request) { return executing.has(request); }
 export const jobWorkerSecret = () => process.env.ROLE_ATLAS_GATEWAY_SECRET || "";
 export async function ensureJobDispatch() {
   await ensureAppSchema();
@@ -16,8 +18,8 @@ export async function ensureJobDispatch() {
 }
 
 /** Existing streaming API stays compatible; the workbench explicitly requests durable delivery. */
-export async function enqueueRoleJob(request: Request, claim: Claim, body: unknown): Promise<Response | undefined> {
-  if (executing.has(request) || request.headers.get("prefer") !== "respond-async") return;
+export async function enqueueRoleJob(request: Request, claim: Claim, body: unknown, options: { forceDurable?: boolean; insertionFence?: { sql: string; bindings: string[] } } = {}): Promise<Response | undefined> {
+  if (executing.has(request) || (!options.forceDurable && request.headers.get("prefer") !== "respond-async")) return;
   if (jobWorkerSecret().length < 32) return Response.json({ error: "后台执行服务尚未配置，请联系管理员。" }, { status: 503 });
   await ensureJobDispatch();
   const actor = await requestActor(request);
@@ -26,7 +28,7 @@ export async function enqueueRoleJob(request: Request, claim: Claim, body: unkno
   const envelope = await sealJobEnvelope(body, jobWorkerSecret(), claim.id);
   const d1 = getD1();
   // Insert-only claim statement: keep the job queued until an independent consumer claims it.
-  const insert = roleJobClaimStatements(d1, { ...claim, now, expiresAt: now, payloadJson })[1];
+  const insert = roleJobClaimStatements(d1, { ...claim, now, expiresAt: now, payloadJson, insertionFence: options.insertionFence })[1];
   await d1.batch([insert,
     d1.prepare(`INSERT OR IGNORE INTO role_job_dispatch(job_id,endpoint,actor_json,envelope,available_at,created_at,updated_at)
       SELECT id,?,?,?,?,?,? FROM role_jobs WHERE id=? AND project_id=? AND conversation_id=? AND input_json=? AND status='queued'`)

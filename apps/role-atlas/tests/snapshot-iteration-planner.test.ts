@@ -33,7 +33,7 @@ test("三种发起方式共享契约但具有不同的自动发现边界", () =>
     { id: "finding:unrelated", layer: "coverage", classification: "research", severity: "warning", code: "OTHER_GAP", title: "其他缺口", detail: "其他节点缺口", impact: "影响其他", targetIds: [unrelated], evidenceBindingIds: [], confidence: 0.9, suggestedAction: "research", hardBlocker: false },
     { id: "finding:hard", layer: "protocol", classification: "invariant", severity: "error", code: "DANGLING_SEMANTIC_EDGE", title: "协议错误", detail: "必须处理", impact: "查询失败", targetIds: [unrelated], evidenceBindingIds: [], confidence: 1, suggestedAction: "automatic", hardBlocker: true },
   ];
-  const enriched = { ...inspection, findings: [...inspection.findings, ...additions], hardBlockers: [...inspection.hardBlockers, additions[2]] };
+  const enriched = { ...inspection, findings: additions, hardBlockers: [...inspection.hardBlockers, additions[2]] };
   const directed = request("user_directed", [target]);
   const directedOps = discoverIterationOpportunities({ request: directed, contract: createIterationContract(directed, result), inspection: enriched });
   assert.ok(directedOps.some((item) => item.findingIds.includes("finding:target")));
@@ -71,13 +71,17 @@ test("冷启动后自动串联重要深研与全量风险修复", () => {
   assert.equal(deep.mode, "deep_research");
   assert.equal(deep.initiativeProfile, "autonomous");
   assert.equal(deep.webResearch, true);
-  assert.equal(deep.maxWorkItems, 5);
+  assert.equal(deep.maxWorkItems, 12);
+  assert.equal(deep.maxRounds, 4);
   assert.match(deep.prompt, /3—5 个/u);
 
   const repair = createColdStartRiskRepairRequest({ ...common, snapshotId: "snapshot:researched" });
   assert.equal(repair.snapshotRef.snapshotId, "snapshot:researched");
   assert.equal(repair.mode, "risk_repair");
-  assert.equal(repair.webResearch, false);
+  assert.equal(repair.webResearch, true);
+  assert.equal(repair.maxRounds, 4);
+  assert.equal(createColdStartRiskRepairRequest({ ...common, webResearch: false }).webResearch, false);
+  assert.equal(createColdStartDeepResearchRequest({ ...common, webResearch: false }).webResearch, false);
   assert.equal(repair.maxWorkItems, 16);
   for (const kind of [
     "build.followup.deep_research.started",

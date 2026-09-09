@@ -1,5 +1,6 @@
 """Authenticated API shared by LearnFlow web and centrally connected desktop clients."""
 from uuid import uuid4
+from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -8,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
 from app.services.auth import CurrentLearner, get_current_learner
-from app.services import ecosystem_gateway as gateway, curriculum_catalog as catalog
+from app.services import ecosystem_gateway as gateway, curriculum_catalog as catalog, role_learning_automatic as automatic
 
 
 def envelope(request_id: str, data=None, error: gateway.GatewayError | None = None) -> JSONResponse:
@@ -83,6 +84,14 @@ class CommitRequest(RequestId):
     resolutionId: str = Field(min_length=1, max_length=64)
 
 
+class AutomaticRequest(RequestId):
+    packageRef: PackageRef
+    projectId: str = Field(min_length=1, max_length=256)
+    projectVersionId: str = Field(min_length=1, max_length=256)
+    sourceRunId: str = Field(min_length=1, max_length=256)
+    policyVersion: Literal["role-learning-auto/v1"]
+
+
 @router.get("/capabilities")
 async def capabilities(current: CurrentLearner = Depends(get_current_learner)):
     available, reason = True, None
@@ -117,3 +126,9 @@ async def resolve(body: ResolveRequest, current: CurrentLearner = Depends(get_cu
 @router.post("/learning-path/commit")
 async def commit(body: CommitRequest, current: CurrentLearner = Depends(get_current_learner), db: AsyncSession = Depends(get_db)):
     return envelope(body.requestId, await catalog.commit(db, current, body.requestId, body.resolutionId))
+
+
+@router.post("/learning-path/automatic")
+async def automatic_mount(body: AutomaticRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    current = await automatic.authenticate(request, db, body.requestId)
+    return envelope(body.requestId, await automatic.automatic_mount(db, current, body.model_dump()))

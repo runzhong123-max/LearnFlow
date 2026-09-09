@@ -144,7 +144,7 @@ test("已有一个能力不能跳过其他任务；补齐轮保留任务与可�
     const payload = JSON.parse(user);
     assert.equal(payload.coverage.uncoveredTaskIds.length, 2);
     assert.ok(payload.acceptedCapabilitiesAndUnits.some((item: { label: string }) => item.label === "交付结果核验"));
-    yield { type: "text", delta: JSON.stringify({ capabilities: calls === 1 ? [] : [{ tempId: "cap", label: "交付结果核验", summary: "核验部署与迁移结果", situations: "上线交付前", observableBehaviors: ["记录核验条件并复核结果"], taskTempIds: payload.tasks.map((task: { id: string }) => task.id), units: [{ tempId: "unit", label: "可复核核验记录", summary: "记录条件与结果", observableBehavior: "记录核验步骤与输出" }] }] }) };
+    yield { type: "text", delta: JSON.stringify({ capabilities: calls === 1 ? [] : [{ tempId: "cap", label: "交付结果核验", summary: "核验部署与迁移结果", situations: "上线交付前", observableBehaviors: ["记录核验条件并复核结果"], taskTempIds: payload.tasks.map((task: { id: string }) => task.id), units: [{ tempId: "unit", label: "可复核核验记录", summary: "记录条件与结果", observableBehavior: "记录核验步骤与输出", practiceSituation: "部署与迁移交付", microPractice: "核验一次结果并记录条件", practiceFrequency: "每周", feedbackSignal: "同伴复核记录", evidenceArtifact: "核验记录", progression: "从示范到独立", independenceCriterion: "独立复核差异" }] }] }) };
   };
   const output = await createColdStartSkill(model, { execution: "enrichment" }).invoke({ request: input, baseResult: base, laneFailures: [] });
   assert.equal(calls, 2);

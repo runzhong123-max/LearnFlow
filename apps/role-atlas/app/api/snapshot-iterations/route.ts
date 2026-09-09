@@ -1,4 +1,5 @@
-import { enqueueRoleJob } from "@/lib/jobs/dispatch";
+import { enqueueRoleJob, isDispatchedRoleJob } from "@/lib/jobs/dispatch";
+import { readAutomaticMountResearchFeedback } from "@/lib/learning-path/automatic";
 import { iterationOutcome } from "@/lib/jobs/iteration-outcome";
 import { rememberResearchRequester } from "@/lib/research-collection/store";
 import { startRoleJobExecution } from "@/lib/jobs/execution";
@@ -113,14 +114,20 @@ export async function POST(request: Request) {
     }
   }
 
+  // Keep external mount observations fixed in the queued request; worker retries must not change input identity.
+  const learningMountFeedback = !isDispatchedRoleJob(request) && resolved.reference.versionId
+    ? (await readAutomaticMountResearchFeedback(projectId, resolved.reference.versionId)).map(({ roleNodeId, reason, researchGoal }) => ({ roleNodeId, reason, researchGoal }))
+    : parsed.iteration.learningMountFeedback;
   const iterationRequest = {
     ...parsed.iteration,
+    learningMountFeedback,
     targetIds: [...new Set(parsed.iteration.targetIds)],
     targetAsOf: parsed.iteration.targetAsOf || (parsed.iteration.mode === "freshness" ? new Date().toISOString().slice(0, 10) : undefined),
     snapshotRef: resolved.reference,
     projectId,
   };
-  const mayRebuild = iterationRequest.webResearch || iterationRequest.supplementalSources.length > 0;
+  const mayRebuild = iterationRequest.webResearch || iterationRequest.supplementalSources.length > 0
+    || resolved.result.sources.assets.some(asset => asset.kind !== "user_brief" && resolved.result.sources.segments.some(segment => segment.sourceId === asset.id && segment.text.trim()));
   let model = inactiveModel();
   let modelLabel: string | undefined;
   let searchConfig;

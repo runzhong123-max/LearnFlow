@@ -1,6 +1,7 @@
 import { END, getWriter, START, StateGraph, StateSchema } from "@langchain/langgraph";
 import { z } from "zod/v4";
 import type { ModelInvoker } from "@/lib/agent/model";
+import { learningCoverage, processCoverage } from "@/lib/iteration/learning-health";
 import { inspectSnapshot, inspectionToBuildAudit } from "@/lib/iteration/inspector";
 import { refreshRolePackageManifest } from "@/lib/packages/role-package-manifest";
 import { createRoleSearchPlan } from "@/lib/search/query-planner";
@@ -100,6 +101,12 @@ const BuildState = new StateSchema({
   workItems: z.array(z.custom<BuildWorkItemSummary>()).default(() => []),
   targetedResearchQueries: z.number().default(0),
   taskRecoveryRound: z.number().default(0),
+  qualityRepairRound: z.number().default(0),
+  qualityTaskIds: z.array(z.string()).default(() => []),
+  qualityKnowledgeTaskIds: z.array(z.string()).default(() => []),
+  qualityProcessTaskIds: z.array(z.string()).default(() => []),
+  bestResult: z.custom<ColdStartBuildResult>().optional(),
+  bestQualityScore: z.number().optional(),
   laneFailures: z.array(z.string()).default(() => []),
   result: z.custom<ColdStartBuildResult>().optional(),
 });
@@ -114,7 +121,10 @@ type SkillOptions = {
   execution?: "full" | "kernel" | "enrichment";
   /** Existing immutable task IDs, used only when enriching an iteration base. */
   knowledgeTargetIds?: string[];
+  learningDefinitionTargetIds?: string[];
   iterationObjective?: string;
+  /** Outer iteration owns fresh-query attempts; standalone builds repair twice. */
+  qualityRepairRounds?: number;
 };
 
 const fallbackSemanticDraft: SemanticDraft = { roleSummary: "", nodes: [], edges: [] };
@@ -300,10 +310,10 @@ function prefixProcessDraft(draft: ProcessDraft, prefix: string) {
 
 function mergeProcessDrafts(parts: ProcessDraft[]) {
   return {
-    scenarios: parts.flatMap((part) => part.scenarios).slice(0, 16),
-    nodes: parts.flatMap((part) => part.nodes).slice(0, 120),
-    edges: parts.flatMap((part) => part.edges).slice(0, 240),
-    bridges: parts.flatMap((part) => part.bridges).slice(0, 80),
+    scenarios: parts.flatMap((part) => part.scenarios),
+    nodes: parts.flatMap((part) => part.nodes),
+    edges: parts.flatMap((part) => part.edges),
+    bridges: parts.flatMap((part) => part.bridges),
   } satisfies ProcessDraft;
 }
 
@@ -616,6 +626,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
         const candidateMentionIds = unique(candidateGroup.flatMap((candidate) => candidate.tasks.flatMap((task) => task.mentionIds)));
         const prompt = taskConsolidationPrompt({
           roleTitle: state.request.roleTitle,
+          roleDescription: state.request.roleDescription,
           candidates: candidateGroup,
           mentionPriorities: Object.fromEntries(candidateMentionIds.map((id) => [id, mentionContexts.get(id)?.priority || 0])),
         });
@@ -721,7 +732,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       kernelResult,
       result: kernelResult,
       semanticDraft: kernelDraft,
-      taskGroups: groupTasks(visibleTasks),
+      taskGroups: groupTasks(taskDraft.nodes.filter(node => node.type === "task")),
       workItems,
       relationPropositions: linked.propositions,
       laneFailures: kernelFailures,
@@ -772,10 +783,6 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     const base = state.baseResult;
     if (!base) throw new Error("KERNEL_SNAPSHOT_REQUIRED");
     const taskDraft = semanticDraftFromKernel(base);
-    const visibleTasks = taskDraft.nodes.filter((node) => {
-      if (node.type !== "task") return false;
-      return base.semantic.nodes.find((candidate) => candidate.id === node.tempId)?.defaultVisibility !== false;
-    });
     const prepared: PreparedBuild = { brief: base.brief, assets: base.sources.assets, segments: base.sources.segments };
     emit(state.request, "build.enrichment.started", "system", {
       baseSnapshotId: base.snapshot.id,
@@ -793,7 +800,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       relationPropositions: base.sources.relationPropositions || [],
       taskDraft,
       semanticDraft: taskDraft,
-      taskGroups: groupTasks(visibleTasks),
+      taskGroups: groupTasks(taskDraft.nodes.filter(node => node.type === "task")),
       firstTaskSkeletonMs: base.build?.metrics.firstTaskSkeletonMs,
       kernelResult: base,
       workItems: [...(base.build?.workItems || [])],
@@ -804,9 +811,15 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
 
   const targetedKnowledgeResearch = async (state: typeof BuildState.State, config: { signal?: AbortSignal }, knowledgeGroups: TaskGroup[]) => {
     if (!options?.searchConfig || !knowledgeGroups.length) return {};
-    const needy = knowledgeGroups.filter((group) => taskGroupNeedsKnowledgeResearch(group, state.mentions, state.prepared!.assets, state.prepared!.segments)).slice(0, 3);
+    const budget = Math.max(0, 12 - state.targetedResearchQueries);
+    // A failed quality check overrides pre-extraction heuristics: the presence
+    // of a technical document or mention did not actually close these gaps.
+    const needy = knowledgeGroups.filter(group => state.qualityRepairRound > 0
+      || taskGroupNeedsKnowledgeResearch(group, state.mentions, state.prepared!.assets, state.prepared!.segments)).slice(0, Math.min(4, budget));
     if (!needy.length) return {};
-    const queries: PlannedQuery[] = needy.map((group, index) => ({ id: `targeted:${state.request.runId}:${index + 1}`, category: "technology", query: `${state.request.roleTitle} ${group.tasks.map((task) => task.label).join(" ")} 官方文档 工程实践 知识技能`, priority: 9 - index * 0.1 }));
+    const category = state.qualityRepairRound === 1 ? "work_practice" : state.qualityRepairRound > 1 ? "education" : "technology";
+    const angle = category === "technology" ? "官方文档 原理 操作 验证" : category === "work_practice" ? "项目实践 操作流程 故障诊断 交付 验收" : "实训项目 知识原理 技能练习 评价标准";
+    const queries: PlannedQuery[] = needy.map((group, index) => ({ id: `targeted:${state.request.runId}:${state.qualityRepairRound}:${index + 1}`, category, query: `${researchRoleTitle(state.request.roleTitle)} ${group.tasks.map((task) => task.label).join(" ")} ${angle}`, priority: 9 - index * 0.1 }));
     emit(state.request, "build.targeted_research.started", "evidence", { queryCount: queries.length, taskGroupIds: needy.map((group) => group.id) });
     try {
       const researched = await researchRoleSources({
@@ -849,20 +862,28 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
 
   const deriveLayers = async (state: typeof BuildState.State, config: { signal?: AbortSignal }) => {
     const workItems = [...state.workItems];
-    const failures = [...state.laneFailures];
+    // Execution records retain earlier failures; the final audit describes the
+    // current attempt instead of re-importing already repaired lane warnings.
+    const failures = state.qualityRepairRound ? [] : [...state.laneFailures];
     const stableTaskIds = new Set((state.taskDraft?.nodes || []).filter((node) => node.type === "task").map((node) => node.tempId));
 
     // Presentation folding is not a research boundary: hidden detail tasks need
     // their own learning support too. Two tasks share a bounded context/output.
-    const focusIds = options?.execution === "enrichment" && options.knowledgeTargetIds?.length
-      ? new Set(options.knowledgeTargetIds) : undefined;
-    const knowledgeGroups = groupTasks((state.taskDraft?.nodes || []).filter(node => !focusIds || focusIds.has(node.tempId)), 2);
-    const targetedPromise = targetedKnowledgeResearch(state, config, knowledgeGroups);
+    const focusIds = state.qualityRepairRound && state.qualityTaskIds.length ? new Set(state.qualityTaskIds)
+      : options?.execution === "enrichment" && options.knowledgeTargetIds?.length ? new Set(options.knowledgeTargetIds) : undefined;
+    const knowledgeGroups = groupTasks((state.taskDraft?.nodes || []).filter(node => state.qualityRepairRound
+      ? state.qualityKnowledgeTaskIds.includes(node.tempId) : !focusIds || focusIds.has(node.tempId)), 2);
+    const researchGroups = state.qualityRepairRound ? groupTasks((state.taskDraft?.nodes || []).filter(node => state.qualityTaskIds.includes(node.tempId)), 2) : knowledgeGroups;
+    // All downstream lanes consume the fresh evidence, including process and
+    // capability repair (previously only the knowledge lane saw these sources).
+    const targeted = await targetedKnowledgeResearch(state, config, researchGroups);
+    const evidenceState = { ...state, prepared: targeted.prepared || state.prepared! };
+    const targetedPromise = Promise.resolve(targeted);
     const invokeKnowledgeGroup = async (group: TaskGroup, prefix: string, prepared: PreparedBuild) => {
       const segments = selectKnowledgeContext({ group, segments: prepared.segments, mentions: state.mentions, assets: prepared.assets, maxTokens: 4_800 });
       const mentions = mentionsForSegments(state.mentions, segments.map((segment) => segment.id));
-      const prompt = knowledgeDerivationPrompt({ roleTitle: state.request.roleTitle, group, mentions, segments, assets: prepared.assets, mode: "detail", iterationObjective: options?.iterationObjective });
-      const lane = `knowledge:${group.id}`;
+      const prompt = knowledgeDerivationPrompt({ roleTitle: state.request.roleTitle, roleDescription: state.request.roleDescription, group, mentions, segments, assets: prepared.assets, definitionTargets: (state.semanticDraft?.nodes || []).filter(node => options?.learningDefinitionTargetIds?.includes(node.tempId)), mode: "detail", iterationObjective: options?.iterationObjective });
+      const lane = `knowledge:${group.id}${state.qualityRepairRound ? `:pass-${state.qualityRepairRound}` : ""}`;
       const outputBudget = group.tasks.length > 1 ? 5_600 : 3_600;
       const draft = await runWorkItem({ request: state.request, workItems, stage: "task-knowledge-derivation", lane, inputRefs: [group.id, ...group.tasks.map(task => task.tempId), ...segments.map((segment) => segment.id)], priority: 7, estimatedInputTokens: estimateTokens(prompt.user), maxOutputTokens: outputBudget, cachePayload: JSON.stringify(prompt), profile: "semantic", invoke: (onReasoning) => invokeStructured({ model, ...prompt, schema: knowledgeDerivationSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: outputBudget, timeoutMs: 65_000, totalTimeoutMs: 95_000, onReasoning }) });
       const checked = inspectKnowledgeDerivation({ draft, group, mentions, segments });
@@ -870,7 +891,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       let quality = checked;
       let remainingIssues = checked.issues;
       if (checked.incompleteTaskIds.length || checked.issues.length) {
-        const repairPrompt = knowledgeDerivationPrompt({ roleTitle: state.request.roleTitle, group, mentions, segments, assets: prepared.assets, mode: "detail", iterationObjective: options?.iterationObjective, repair: {
+        const repairPrompt = knowledgeDerivationPrompt({ roleTitle: state.request.roleTitle, roleDescription: state.request.roleDescription, group, mentions, segments, assets: prepared.assets, definitionTargets: (state.semanticDraft?.nodes || []).filter(node => options?.learningDefinitionTargetIds?.includes(node.tempId)), mode: "detail", iterationObjective: options?.iterationObjective, repair: {
           acceptedPoints: accepted.skills.map((point) => ({ label: point.label, learningKind: point.learningKind, scopeNote: point.learningDefinition?.scopeNote, taskTempIds: point.taskTempIds })),
           issues: checked.issues,
           uncoveredTaskIds: checked.uncoveredTaskIds,
@@ -901,7 +922,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       const prepared = targeted.prepared || state.prepared!;
       const partsNested = await mapWithConcurrency(knowledgeGroups, 2, async (group, index) => {
       try {
-        return [await invokeKnowledgeGroup(group, `g${index + 1}:`, prepared)];
+        return [await invokeKnowledgeGroup(group, `q${state.qualityRepairRound}:g${index + 1}:`, prepared)];
       } catch (error) {
         if (config.signal?.aborted) throw error;
         const children = splitTaskGroup(group);
@@ -911,7 +932,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
         }
         const recovered = await mapWithConcurrency(children, 2, async (child, childIndex) => {
           try {
-            return { ok: true as const, draft: await invokeKnowledgeGroup(child, `g${index + 1}r${childIndex + 1}:`, prepared) };
+            return { ok: true as const, draft: await invokeKnowledgeGroup(child, `q${state.qualityRepairRound}:g${index + 1}r${childIndex + 1}:`, prepared) };
           } catch (childError) {
             if (config.signal?.aborted) throw childError;
             failures.push(`任务子组 ${child.id} 的知识技能派生失败：${childError instanceof Error ? childError.message : "未知错误"}`);
@@ -958,7 +979,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       };
     })();
     const capabilityPartPromise = (async () => {
-      if ((state.taskDraft?.nodes.filter((node) => node.type === "task").length || 0) < 2) return fallbackSemanticDraft;
+      if (!(state.taskDraft?.nodes.filter((node) => node.type === "task").length || 0)) return fallbackSemanticDraft;
       const base = state.semanticDraft || state.taskDraft!;
       let combined = base;
       let output = fallbackSemanticDraft;
@@ -966,11 +987,12 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       // tasks. Keep accepted material and retry only the remaining gaps once.
       for (let round = 0; round < 2; round += 1) {
         const coverage = capabilityCoverage(combined);
-        if (!coverage.uncoveredTaskIds.length && !coverage.capabilitiesWithoutUnits.length) break;
-        const prompt = capabilityDerivationPrompt({ roleTitle: state.request.roleTitle, tasks: state.taskDraft!.nodes, mentions: state.mentions, coverage, repairAttempt: round > 0, existing: combined.nodes.filter(node => ["capability", "capability_unit"].includes(node.type)).map(node => ({ id: node.tempId, label: node.label, summary: node.summary })) });
+        if (!coverage.uncoveredTaskIds.length && !coverage.capabilitiesWithoutUnits.length && !coverage.unitsWithoutCultivation.length && !coverage.capabilitiesWithoutTransfer.length) break;
+        const capabilitySegments = selectKnowledgeContext({ group: { id: "capability", tasks: state.taskDraft!.nodes.filter(node => node.type === "task"), evidenceSegmentIds: [] }, segments: evidenceState.prepared.segments, mentions: state.mentions, assets: evidenceState.prepared.assets, maxTokens: 3_600 });
+        const prompt = capabilityDerivationPrompt({ roleTitle: state.request.roleTitle, roleDescription: state.request.roleDescription, segments: capabilitySegments, tasks: state.taskDraft!.nodes, mentions: state.mentions, coverage, repairAttempt: round > 0 || state.qualityRepairRound > 0, existing: combined.nodes.filter(node => ["capability", "capability_unit"].includes(node.type)).map(node => ({ id: node.tempId, label: node.label, summary: node.summary })) });
         try {
           const draft = await runWorkItem({ request: state.request, workItems, stage: "cross-task-capability-derivation", lane: round ? "capability:coverage-repair" : "capability:cross-task", inputRefs: [...stableTaskIds], priority: 8, estimatedInputTokens: estimateTokens(prompt.user), maxOutputTokens: 4_800, cachePayload: prompt.user, profile: "semantic", invoke: (onReasoning) => invokeStructured({ model, ...prompt, schema: capabilityDerivationSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: 4_800, timeoutMs: 65_000, totalTimeoutMs: 95_000, onReasoning }) });
-          const part = prefixDerivedDraft(capabilityToSemanticDraft({ draft, tasks: state.taskDraft!.nodes, mentions: state.mentions }), `cross${round}:`, stableTaskIds);
+          const part = prefixDerivedDraft(capabilityToSemanticDraft({ draft, tasks: state.taskDraft!.nodes, mentions: state.mentions }), `q${state.qualityRepairRound}:cross${round}:`, stableTaskIds);
           output = mergeDerivedSemanticDrafts(output, [part]);
           combined = mergeDerivedSemanticDrafts(base, [output]);
         } catch (error) {
@@ -983,18 +1005,18 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       return output;
     })();
     const invokeProcessGroup = async (group: TaskGroup, prefix: string) => {
-      const segments = selectSegmentsForTaskGroup({ group, segments: state.prepared!.segments, mentions: state.mentions, assets: state.prepared!.assets, purpose: "process", maxTokens: 2_800 });
+      const segments = selectSegmentsForTaskGroup({ group, segments: evidenceState.prepared.segments, mentions: state.mentions, assets: evidenceState.prepared.assets, purpose: "process", maxTokens: 4_000 });
       const mentions = mentionsForSegments(state.mentions, segments.map((segment) => segment.id));
-      const prompt = taskProcessPrompt({ roleTitle: state.request.roleTitle, group, mentions, segments: segments.map((segment) => ({ id: segment.id, sourceKind: sourceKindForSegment(segment, state.prepared!.assets), text: segment.text })) });
-      const lane = `process:${group.id}`;
+      const prompt = taskProcessPrompt({ roleTitle: state.request.roleTitle, roleDescription: state.request.roleDescription, group, mentions, segments: segments.map((segment) => ({ id: segment.id, sourceKind: sourceKindForSegment(segment, evidenceState.prepared.assets), text: segment.text })) });
+      const lane = `process:${group.id}${state.qualityRepairRound ? `:pass-${state.qualityRepairRound}` : ""}`;
       const draft = await runWorkItem({ request: state.request, workItems, stage: "task-process-expansion", lane, inputRefs: [group.id, ...segments.map((segment) => segment.id)], priority: 6, estimatedInputTokens: estimateTokens(prompt.user), maxOutputTokens: 3_800, cachePayload: prompt.user, profile: "process", invoke: (onReasoning) => invokeStructured({ model, ...prompt, schema: processDraftSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: 3_800, timeoutMs: 55_000, totalTimeoutMs: 90_000, normalize: (value) => normalizeProcessDraft(value, { roleTitle: state.request.roleTitle, rejectOffScope: true, maxScenarios: 3, maxNodes: 30, maxEdges: 60 }), onReasoning }) });
       return prefixProcessDraft(draft, prefix);
     };
 
-    const processGroups = state.taskGroups.flatMap((group) => group.tasks.length > 3 ? splitTaskGroup(group) : [group]);
+    const processGroups = (state.qualityRepairRound ? groupTasks((state.taskDraft?.nodes || []).filter(node => state.qualityProcessTaskIds.includes(node.tempId)), 2) : state.taskGroups).flatMap((group) => group.tasks.length > 3 ? splitTaskGroup(group) : [group]);
     const processPartsPromise = mapWithConcurrency(processGroups, 2, async (group, index) => {
       try {
-        return [await invokeProcessGroup(group, `g${index + 1}:`)];
+        return [await invokeProcessGroup(group, `q${state.qualityRepairRound}:g${index + 1}:`)];
       } catch (error) {
         const children = splitTaskGroup(group);
         if (children.length === 1) {
@@ -1003,7 +1025,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
         }
         const recovered = await mapWithConcurrency(children, 2, async (child, childIndex) => {
           try {
-            return { ok: true as const, draft: await invokeProcessGroup(child, `g${index + 1}r${childIndex + 1}:`) };
+            return { ok: true as const, draft: await invokeProcessGroup(child, `q${state.qualityRepairRound}:g${index + 1}r${childIndex + 1}:`) };
           } catch (childError) {
             failures.push(`任务子组 ${child.id} 的事理展开失败：${childError instanceof Error ? childError.message : "未知错误"}`);
             return { ok: false as const, draft: emptyProcessDraft() };
@@ -1027,6 +1049,12 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     const knowledgeParts = knowledgeBranch.parts;
     failures.push(...knowledgeBranch.laneFailures);
     const semanticDraft = mergeDerivedSemanticDrafts(state.semanticDraft || state.taskDraft || fallbackSemanticDraft, [...knowledgeParts, capabilityPart, knowledgeBranch.dependencyPart]);
+    for (const target of semanticDraft.nodes.filter(node => options?.learningDefinitionTargetIds?.includes(node.tempId))) {
+      const normalize = (value: string) => value.normalize("NFKC").toLowerCase().replace(/\s+/gu, "");
+      const repair = knowledgeParts.flatMap(part => part.nodes).find(node => node.type === "knowledge_skill" && node.learningKind === target.learningKind
+        && normalize(node.label) === normalize(target.label) && node.learningDefinition && node.evidenceSpans?.length);
+      if (repair) target.learningDefinition = repair.learningDefinition;
+    }
     const linkedSemantic = materializeRelationPropositions({ draft: semanticDraft, propositions: state.relationPropositions });
     const semanticRequest = { ...state.request, runId: `${state.request.runId}:semantic` };
     const semanticMaterialized = compileSemanticDraft({ request: semanticRequest, draft: linkedSemantic.draft, segments: knowledgeBranch.prepared.segments, assets: knowledgeBranch.prepared.assets });
@@ -1071,7 +1099,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
         updatedAt: new Date().toISOString(),
       },
     };
-    emit(state.request, "build.enrichment.semantic.completed", "semantic", {
+    if (!state.qualityRepairRound) emit(state.request, "build.enrichment.semantic.completed", "semantic", {
       result: semanticResult,
       baseSnapshotId: state.kernelResult?.snapshot.id,
       visibleNodeCount: semanticResult.semantic.nodes.filter((node) => node.defaultVisibility !== false).length,
@@ -1080,7 +1108,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     });
     const processPartsNested = await processPartsPromise;
     const processParts = processPartsNested.flat();
-    const processDraft = mergeProcessDrafts(processParts);
+    const processDraft = mergeProcessDrafts([...(state.processDraft ? [state.processDraft] : []), ...processParts]);
     emit(state.request, "build.lane.completed", "semantic", { lane: "derived-layers", knowledgeNodes: knowledgeParts.flatMap((part) => part.nodes).length, capabilityNodes: capabilityPart.nodes.length, processScenarios: processDraft.scenarios.length, failedWorkItems: workItems.filter((item) => item.status === "failed").length });
     return {
       semanticDraft,
@@ -1160,7 +1188,45 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     for (const section of result.snapshot.sections) emit(state.request, "build.snapshot.section.drafted", "structural", { section });
     emit(state.request, "build.package.compile.completed", "system", { rolePackage: result.packages.rolePackage, namespaces: result.packages.rolePackage.namespaces });
     emit(state.request, "build.package.validation.completed", "system", { validation: result.validation });
-    emit(state.request, "build.run.completed", "system", { result, publishable: result.validation.publishable, metrics });
+    const repairCodes = new Set(["TASK_SKILL_GAP", "TASK_LEARNING_KIND_GAP", "TASK_CAPABILITY_GAP", "TASK_CAPABILITY_UNIT_GAP", "CAPABILITY_UNIT_CULTIVATION_GAP", "CAPABILITY_NOT_CROSS_TASK", "TASK_PROCESS_GAP", "TASK_PROCESS_INCOMPLETE", "NO_PROCESS_SCENARIOS", "SCENARIO_WITHOUT_EVENT", "SCENARIO_WITHOUT_ARTIFACT"]);
+    const repairable = inspection.findings.filter(finding => repairCodes.has(finding.code) && finding.suggestedAction === "research");
+    const score = inspection.hardBlockers.length * 1_000 + inspection.coverage.tasksWithoutSkills * 10 + inspection.coverage.tasksWithoutProcess * 8 + repairable.length;
+    const better = state.bestQualityScore === undefined || score <= state.bestQualityScore;
+    const activeTasks = result.semantic.nodes.filter(node => node.type === "task" && node.lifecycle !== "rejected");
+    const wanted = new Set(repairable.flatMap(finding => finding.targetIds));
+    // Unit/scenario gaps may target child objects. Include their owning task
+    // groups rather than leaving them as an unactionable warning.
+    const expanded = new Set(wanted);
+    for (let step = 0; step < 3; step += 1) for (const edge of result.semantic.edges) if (expanded.has(edge.target)) expanded.add(edge.source);
+    const missingProcess = new Set(processCoverage(result).filter(item => !item.complete).map(item => item.taskId));
+    const selected = activeTasks.filter(task => expanded.has(task.id) || missingProcess.has(task.id));
+    const inverse = new Map([...state.semantic!.tempToId].map(([temp, id]) => [id, temp]));
+    const qualityTaskIds = (selected.length ? selected : repairable.length ? activeTasks : []).map(task => inverse.get(task.id) || task.id);
+    if (repairable.length) {
+      result.build!.enrichment!.status = "degraded";
+      result.validation.publishable = false;
+      result.snapshot.status = "candidate";
+      refreshRolePackageManifest(result, { status: "candidate" });
+    }
+    const qualityKnowledgeTaskIds = learningCoverage(result).tasksWithoutSkills.map(task => inverse.get(task.id) || task.id);
+    const qualityProcessTaskIds = [...missingProcess].map(id => inverse.get(id) || id);
+    return { result, qualityTaskIds, qualityKnowledgeTaskIds, qualityProcessTaskIds, bestResult: better ? result : state.bestResult, bestQualityScore: better ? score : state.bestQualityScore };
+  };
+
+  const routeQuality = (state: typeof BuildState.State) => state.qualityTaskIds.length > 0
+    && state.qualityRepairRound < (options?.qualityRepairRounds ?? 2)
+    && state.prepared!.assets.some(asset => asset.kind !== "user_brief" && asset.qualification?.status !== "quarantined")
+    ? "repair_quality" : "finish_build";
+  const repairQuality = async (state: typeof BuildState.State) => {
+    const round = state.qualityRepairRound + 1;
+    emit(state.request, "build.targeted_research.started", "evidence", { reason: "quality_feedback", round, targetTaskIds: state.qualityTaskIds,
+      message: "检查发现可补齐的任务支撑缺口，正在更换来源角度补研并保留已有成果。" });
+    return { qualityRepairRound: round };
+  };
+  const finishBuild = async (state: typeof BuildState.State) => {
+    const result = state.bestResult || state.result!;
+    emit(state.request, "build.run.completed", "system", { result, publishable: result.validation.publishable, metrics: result.build?.metrics,
+      qualityRepairRounds: state.qualityRepairRound, remainingTaskIds: state.qualityTaskIds, stoppedBecause: state.qualityTaskIds.length ? "research_budget_or_evidence_limit" : "task_support_complete" });
     return { result };
   };
 
@@ -1170,12 +1236,16 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       .addNode("derive_layers", deriveLayers)
       .addNode("materialize_dual_graph", materializeDualGraph)
       .addNode("audit_and_compile", auditAndCompile)
+      .addNode("repair_quality", repairQuality)
+      .addNode("finish_build", finishBuild)
       .addEdge(START, "hydrate_kernel")
       .addEdge("hydrate_kernel", "derive_layers")
       .addEdge("derive_layers", "materialize_dual_graph")
       .addEdge("materialize_dual_graph", "audit_and_compile")
-      .addEdge("audit_and_compile", END)
-      .compile({ checkpointer: false });
+      .addConditionalEdges("audit_and_compile", routeQuality, ["repair_quality", "finish_build"])
+      .addEdge("repair_quality", "derive_layers")
+      .addEdge("finish_build", END)
+      .compile({ checkpointer: false }).withConfig({ recursionLimit: 80 });
   }
   if (options?.execution === "kernel") {
     return new StateGraph(BuildState)
@@ -1192,7 +1262,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       .addConditionalEdges("converge_tasks", needsTaskRecovery, ["build_kernel", "recover_task_evidence"])
       .addEdge("recover_task_evidence", "extract_mentions")
       .addEdge("build_kernel", END)
-      .compile({ checkpointer: false });
+      .compile({ checkpointer: false }).withConfig({ recursionLimit: 80 });
   }
   return new StateGraph(BuildState)
     .addNode("research_sources", researchSources, { retryPolicy: { maxAttempts: 2, initialInterval: 1 } })
@@ -1204,6 +1274,8 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     .addNode("derive_layers", deriveLayers)
     .addNode("materialize_dual_graph", materializeDualGraph)
     .addNode("audit_and_compile", auditAndCompile)
+      .addNode("repair_quality", repairQuality)
+      .addNode("finish_build", finishBuild)
     .addEdge(START, "research_sources")
     .addEdge("research_sources", "prepare_sources")
     .addEdge("prepare_sources", "extract_mentions")
@@ -1213,6 +1285,8 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     .addEdge("build_kernel", "derive_layers")
     .addEdge("derive_layers", "materialize_dual_graph")
     .addEdge("materialize_dual_graph", "audit_and_compile")
-    .addEdge("audit_and_compile", END)
-    .compile({ checkpointer: false });
+    .addConditionalEdges("audit_and_compile", routeQuality, ["repair_quality", "finish_build"])
+      .addEdge("repair_quality", "derive_layers")
+      .addEdge("finish_build", END)
+    .compile({ checkpointer: false }).withConfig({ recursionLimit: 80 });
 }

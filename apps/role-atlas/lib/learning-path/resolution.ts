@@ -32,7 +32,8 @@ function overlap(a: string, b: string) {
 }
 function signature(node: Pick<SemanticNode, "summary" | "learningDefinition">) {
   // Preserve mathematical punctuation: x>=0 and x>0 are different definitions.
-  return canonicalStringify({ summary: normalize(node.summary), scopeNote: normalize(node.learningDefinition!.scopeNote),
+  // The explicit atomic contract is stable across explanatory-summary rewrites.
+  return canonicalStringify({ scopeNote: normalize(node.learningDefinition!.scopeNote),
     assessmentCriteria: node.learningDefinition!.assessmentCriteria.map(normalize).sort() });
 }
 
@@ -52,6 +53,7 @@ export function packageLearningSource(result: ColdStartBuildResult, packageRef: 
 export async function resolveRoleLearningPoints(input: {
   result: ColdStartBuildResult; packageRef: RolePackageRef; graph: LearningPathGraphV2;
   namespace: string; targetIds?: string[];
+  allowStandaloneRoots?: boolean;
 }): Promise<RoleLearningResolution> {
   const checked = validateLearningPathGraphV2(input.graph);
   if (!checked.valid) throw new Error(`PATH_CONTRACT_INVALID:${JSON.stringify(checked.issues)}`);
@@ -79,6 +81,7 @@ export async function resolveRoleLearningPoints(input: {
   };
   if (!points.length) resolution.unresolved.push(...(input.targetIds || []).map(roleNodeId => ({ roleNodeId, reason: "needs_decomposition" as const, candidates: [] })));
   const newNodes: PathNodeV2[] = [], newEdges: GraphExtensionProposalV2["edges"] = [];
+  const standaloneRoots: NonNullable<GraphExtensionProposalV2["standaloneRoots"]> = [];
   const packageSourceId = `role-evidence:${input.packageRef.rootHash}`;
   const evidenceIds = new Set(source.evidenceIds);
   for (const point of points) {
@@ -93,32 +96,45 @@ export async function resolveRoleLearningPoints(input: {
     const evidence = input.result.sources.evidenceBindings.filter(b => b.targetId === point.id && point.evidenceBindingIds.includes(b.id) && evidenceIds.has(b.id)).map(b => b.id);
     if (!evidence.length) { fail("needs_evidence"); continue; }
     const compatible = [...graph.nodes, ...newNodes].filter(n => n.kind === point.learningKind && n.atomic);
-    const sameName = compatible.filter(n => [n.title, ...n.aliases].some(name => lexical(name) === lexical(point.label)));
+    const sameName = compatible.filter(n => [n.title, ...n.aliases].some(name => [point.label, ...point.aliases].some(label => lexical(name) === lexical(label))));
     const equivalents = sameName.filter(n => signature({ summary: n.summary, learningDefinition: n.atomic }) === signature(point));
-    if (equivalents.length > 1 || sameName.length && !equivalents.length) { fail("ambiguous_definition", sameName.slice(0, 4).map(nodeRef)); continue; }
+    if (equivalents.length > 1 || sameName.length && !equivalents.length && !input.allowStandaloneRoots) { fail("ambiguous_definition", sameName.slice(0, 4).map(nodeRef)); continue; }
     let canonical = equivalents[0];
     let pending = canonical ? newNodes.includes(canonical) : false;
     if (!canonical) {
-      const best = anchors[0];
-      if (!best || best.score < 0.65 || anchors[1] && best.score - anchors[1].score < 0.12) { fail("needs_anchor"); continue; }
       const id = `point:${(await sha256Hex(`${point.learningKind}:${lexical(point.label)}:${signature(point)}`)).slice(0, 24)}`;
       if (graph.nodes.some(n => n.namespace === input.namespace && n.id === id)) { fail("ambiguous_definition"); continue; }
+      const best = anchors[0];
+      let parent = best && best.score >= 0.65 && (!anchors[1] || best.score - anchors[1].score >= 0.12) ? best.n : undefined;
+      if (!parent && !input.allowStandaloneRoots) { fail("needs_anchor"); continue; }
+      if (!parent) {
+        const domainId = `role-domain:${(await sha256Hex(input.packageRef.packageId)).slice(0, 24)}`;
+        parent = [...graph.nodes, ...newNodes].find(n => n.namespace === input.namespace && n.id === domainId && n.kind === "skill_domain");
+        if (!parent) {
+          parent = { id: domainId, namespace: input.namespace, revision: 1, kind: "skill_domain", title: `${input.result.brief.roleTitle} · 岗位学习域`,
+            summary: `此学习域收纳“${input.result.brief.roleTitle}”有证据与明确验收边界的岗位知识技能；尚未声明其与官方课程的归属或先修关系。`,
+            aliases: [], domains: ["岗位学习"], audiences: ["self_directed"], stage: "domain", order: 0,
+            ownership: { system: "learnflow", catalog: "graph_extension" },
+            provenance: { method: "role_package_proposal", sourceRefs: [packageSourceId], packageRef: input.packageRef, evidenceRefs: evidence } };
+          newNodes.push(parent); standaloneRoots.push({ namespace: parent.namespace, id: parent.id });
+        }
+      }
       const provenance = { method: "role_package_proposal" as const, sourceRefs: [packageSourceId], packageRef: input.packageRef, evidenceRefs: evidence };
       canonical = {
         id, namespace: input.namespace, revision: 1, title: point.label.trim(), summary: point.summary.trim(), aliases: [...new Set(point.aliases.map(s => s.trim()).filter(Boolean))],
         kind: point.learningKind, atomic: { scopeNote: point.learningDefinition.scopeNote.trim(), assessmentCriteria: [...new Set(point.learningDefinition.assessmentCriteria.map(s => s.trim()))] },
-        domains: [...best.n.domains], audiences: [...best.n.audiences], stage: best.n.stage, order: best.n.order,
+        domains: [...parent.domains], audiences: [...parent.audiences], stage: parent.stage, order: parent.order,
         ownership: { system: "learnflow", catalog: "graph_extension" }, provenance,
       };
       newNodes.push(canonical); pending = true;
-      newEdges.push({ id: `contains:${input.namespace}:${id}`, from: { namespace: best.n.namespace, id: best.n.id },
-        to: { namespace: input.namespace, id }, kind: "contains", rationale: `岗位知识技能属于“${best.n.title}”的具体学习内容；此关系不表示先修或掌握。`, provenance });
+      newEdges.push({ id: `contains:${input.namespace}:${id}`, from: { namespace: parent.namespace, id: parent.id },
+        to: { namespace: input.namespace, id }, kind: "contains", rationale: `岗位知识技能属于“${parent.title}”的具体学习内容；此关系不表示先修或掌握。`, provenance });
     }
     const binding: RoleLearningAlignmentV2["bindings"][number] = {
       id: `alignment:${(await sha256Hex(`${point.id}:${pathNodeKey(canonical)}`)).slice(0, 24)}`, roleNodeId: point.id, roleNodeKind: point.learningKind,
       target: key(canonical), relation: "equivalent", requiredLevel: point.learningKind === "skill" ? "apply" : "understand",
       context: point.applicability?.trim() || input.result.brief.roleTitle,
-      rationale: pending ? "将该岗位点的显式定义与考核边界提议为规范节点，入库后才生效。" : "名称、节点类型、定义、范围和考核条件逐项一致。",
+      rationale: pending ? "将该岗位点的显式定义与考核边界提议为规范节点，入库后才生效。" : "名称或别名、节点类型、范围和考核条件逐项一致；讲解摘要变化不创建重复节点。",
       evidenceRefs: evidence,
     };
     (pending ? resolution.pendingBindings : resolution.alignment.bindings).push(binding);
@@ -129,6 +145,7 @@ export async function resolveRoleLearningPoints(input: {
       baseGraphRef: resolution.graphRef, packageRef: input.packageRef, namespace: input.namespace,
       sources: graph.sources.some(s => s.id === packageSourceId) ? [] : [{ id: packageSourceId, title: `${input.result.brief.roleTitle}岗位包证据索引`, kind: "package_evidence", packageRef: input.packageRef, evidenceRefs: source.evidenceIds }],
       nodes: newNodes, edges: newEdges,
+      ...(standaloneRoots.length ? { standaloneRoots } : {}),
     };
     const valid = validateGraphExtensionProposalV2(proposal, graph, source);
     if (!valid.valid) throw new Error(`PATH_PROPOSAL_INVALID:${JSON.stringify(valid.issues)}`);
