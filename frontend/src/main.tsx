@@ -1,3 +1,4 @@
+import PlanningResourceWorkbench from './PlanningResourceWorkbench'
 import { conversationTitle, recentConversations } from './conversation-display.ts'
 import { readTabLayout, saveTabLayout, consumeLayoutReset, withoutTabLayout } from './workspace-layout.ts'
 import { conversionMessagePresentation } from '../../packages/learning-client/src/work-task-conversion/presentation.ts'
@@ -2243,7 +2244,15 @@ function App({ auth }: { auth: AuthGateSession }) {
         selectionContext: activeSheet(conversation)?.quote,
         activeArtifactContext: activeSheet(conversation)?.artifact,
         learningTaskContext: learningProjection ? learningTaskTutorContext(learningProjection) : undefined,
-        learningPlanContext: planningProjection ? learningPlanTutorContext(planningProjection) : undefined,
+        learningPlanContext: planningProjection ? {
+          ...learningPlanTutorContext(planningProjection),
+          ...(!isDesktopRuntime() ? {
+            kindLabel: conversation.projectId ? '项目学习规划' : '方向与长期学习规划',
+            nextQuestion: conversation.projectSources?.some(source => source.status === 'processed')
+              ? '依据已选资料与已有目标设置关卡和长期安排；只澄清影响安排的基础或时间缺口'
+              : '先读取项目或个人资料库；已有合适资料则规划关卡与时间，否则推荐教材和仓库并邀请选择或上传；不要先逼问工程产物',
+          } : {}),
+        } : undefined,
         learnerPathState: formalSnapshotForTurn
           ? learnerPathStateFromFormal(formalSnapshotForTurn.learning_path)
           : workspace.learningPath,
@@ -3430,6 +3439,15 @@ function App({ auth }: { auth: AuthGateSession }) {
             {hasWorkbench && paperMode === 'stack' && <span className="paper-desktop-hint">点击桌面空白，平铺全部纸张</span>}
           </div>
         </div>
+        {!isDesktopRuntime() && conversation.mode === 'learning_plan' && !activePluginIds.includes('learning_task_conversion') && <PlanningResourceWorkbench
+          key={`${conversation.id}:${conversation.projectId || 'library'}`}
+          projectId={conversation.projectId}
+          topic={formalProjectWorkspaces[conversation.projectId || 0]?.project.name || planProjection?.plan.objective || conversation.title}
+          runs={conversation.messages.flatMap(message => message.toolRuns || [])}
+          pending={Boolean(pendingMode)}
+          onProjectChange={syncProjectWorkspace}
+          onRequest={prompt => { void runTutorTurn(conversation.id, prompt) }}
+        />}
         <div className="composer-dock">
           <form className="composer" onSubmit={event => sendMessage(conversation.id, event)}>
             {planProjection && conversation.mode === 'learning_plan'
@@ -3444,7 +3462,7 @@ function App({ auth }: { auth: AuthGateSession }) {
                       {planProjection.missingRequirements.length ? ` · 待确认 ${planProjection.missingRequirements.slice(0, 2).map(item => item.label).join('、')}` : ' · 草案信息已齐'}
                     </span>
                   </div>
-                  {planProjection.plan.kind === 'project_seed' && <span className="project-stub-badge">项目尚未接入</span>}
+                  {planProjection.plan.kind === 'project_seed' && <span className="project-stub-badge">{conversation.projectId ? '已绑定项目' : '学习计划草案'}</span>}
                   <details className="planning-menu">
                     <summary role="button" aria-label="学习规划详情">•••</summary>
                     <div className="planning-popover">

@@ -44,7 +44,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-08.9"
+REGISTRY_VERSION = "2026-09-09.1"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Pure source-data validators/exporters, not Agent-callable tools or learner writers.
@@ -1643,6 +1643,7 @@ _FRONTEND_COMPONENT_TARGETS = {
     "workbench:role_research_admin": ("apps/role-atlas/app/admin/research/page.tsx", "ResearchAdminPage", "/admin/research"),
     "frontend:learning.verification": ("frontend/src/LearningVerificationPanel.tsx", "LearningVerificationPanel", "/chat/"),
     "frontend:learning.remediation": ("frontend/src/RemediationPanel.tsx", "RemediationPanel", "/files/practice/"),
+    "frontend:planning.resources": ("frontend/src/PlanningResourceWorkbench.tsx", "PlanningResourceWorkbench", "/chat/"),
     "frontend:path.extensions": ("frontend/src/PathSourceExtensions.tsx", "PathSourceExtensions", "/learning-path"),
     "workbench:ecosystem": ("frontend/src/EcosystemPage.tsx", "EcosystemPage", "/ecosystem"),
     "workbench:vnext_chat": ("frontend/src/main.tsx", "App", "/chat/"),
@@ -1776,7 +1777,7 @@ _TOOL_BINDING_IDS = {
     "vnext_five_kernel_explicit_editor": ("api:profile.update", "api:learner_state.value_claim"),
     "workspace_lifecycle": ("py:workspace.delete_conversation", "py:workspace.delete_project"),
     "checkpoint_context": ("py:checkpoint.context",),
-    "source_ingestion": ("py:source.processor", "api:vnext_projects.source_promote"),
+    "source_ingestion": ("frontend:planning.resources", "py:source.processor", "api:vnext_projects.source_promote"),
     "repository_knowledge_domains": ("py:source.domains",),
     "hierarchical_rag": ("py:lecture.agent",),
     "content_generation": ("py:roadmap.agent", "py:lecture.agent", "py:concept.agent", "py:exercise.agent"),
