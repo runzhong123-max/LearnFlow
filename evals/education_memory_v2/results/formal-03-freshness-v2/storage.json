@@ -1,0 +1,22 @@
+{
+  "compression": "gzip; exact original JSONL bytes; original summaries unchanged",
+  "paired_audit_note": "paired-before-after.json after_conditions_sha256 refers to the decompressed conditions.jsonl bytes; before_conditions_sha256 refers to formal-02-freshness-v2/conditions.jsonl.gz compressed bytes.",
+  "files": [
+    {
+      "file": "conditions.jsonl.gz",
+      "original_file": "conditions.jsonl",
+      "decompressed_sha256": "5391c3306afec4bd803c2df448b8cc10112cf118e37c038dc1dcdcdb1cca9921",
+      "compressed_sha256": "44fa9b35c47ae53dadcba22133aa70e02456b14c7a240bd9a6e0db676d4c7fc6",
+      "decompressed_bytes": 46029225,
+      "compressed_bytes": 560992
+    },
+    {
+      "file": "issues.jsonl.gz",
+      "original_file": "issues.jsonl",
+      "decompressed_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "decompressed_bytes": 0,
+      "compressed_bytes": 20
+    }
+  ]
+}

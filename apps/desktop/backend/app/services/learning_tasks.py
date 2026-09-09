@@ -274,6 +274,9 @@ async def _scoped_planner_context(
     # plan must respect the current time budget/support request immediately.
     for guidance in packet.get("teaching_guidance", []):
         context.setdefault(guidance["kernel"], {}).setdefault("teaching_guidance", []).append(guidance)
+    # Read-only evidence bundles have already passed ownership, scope and
+    # provenance validation. They never become independent learner state.
+    context.setdefault("practice", {})["learning_episodes"] = packet.get("learning_episodes", [])
     items = _planner_memory_items(packet)
     facts = {}
     if items:

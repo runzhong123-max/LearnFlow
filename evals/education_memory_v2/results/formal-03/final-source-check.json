@@ -1,0 +1,14 @@
+{
+  "source_commit_is_run_baseline": true,
+  "frozen_source_files": 186,
+  "current_files_checked": 186,
+  "differences": [],
+  "full_coverage_verified": true,
+  "all_processes_succeeded": true,
+  "execution_errors": 0,
+  "run_source_drift": [],
+  "education_conditions": 38016,
+  "locomo_conditions": 27804,
+  "suite_sha256": "8591131a22a3116c02a7379394a3306926b9c366362c68f764106edcf4be9b77",
+  "evidence_manifest_sha256": "bc5ab23b5f11f2bf212a58f836ab53509822ffbdff7222e8a91af4a88dee1533"
+}

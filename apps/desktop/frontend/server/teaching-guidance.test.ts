@@ -223,3 +223,18 @@ test('skill-run transport separates original learner text from enriched turn mes
     assert.equal(bodies[1].direct_user_text, '')
   } finally { globalThis.fetch = originalFetch }
 })
+
+
+test('versioned controls retain source and application scopes without copying raw text', () => {
+  const entry = { ...guidance, policy_version: 'teaching-guidance.v2',
+    source_scope: { project_id: 2, checkpoint_id: 3, session_id: 4 },
+    application_scope: { project_id: 2, checkpoint_id: 3, session_id: null },
+    source_span: [15, 26], parser_version: 'teaching-guidance.v2',
+    raw_text: 'PRIVATE_ORIGINAL_INPUT', expires_at: '2026-09-09T00:00:00Z',
+  }
+  const [result] = compactTeachingGuidance({ teaching_guidance: [entry] }, Date.parse('2026-09-08T00:00:00Z'))
+  assert.deepEqual(result.source_scope, entry.source_scope)
+  assert.deepEqual(result.application_scope, entry.application_scope)
+  assert.deepEqual(result.source_span, [15, 26])
+  assert.doesNotMatch(JSON.stringify(result), /PRIVATE_ORIGINAL_INPUT/)
+})

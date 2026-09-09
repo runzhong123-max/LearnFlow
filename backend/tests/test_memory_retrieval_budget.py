@@ -41,7 +41,10 @@ async def exercise(build, *, query='quasar', subjects=('concept:quasar',), budge
             assert first['manifest']['retrieval_version'] == RETRIEVAL_VERSION
             body = dict(heads=first['kernel_heads'], items=first['items'], paths=first['relation_paths'],
                         personal_concept_graph=first['personal_concept_graph'],
-                        adaptation_directives=first['adaptation_directives'], teaching_guidance=first['teaching_guidance'])
+                        adaptation_directives=first['adaptation_directives'], teaching_guidance=first['teaching_guidance'],
+                        learning_episodes=first['learning_episodes'], retrieval_diagnostics=first['retrieval_diagnostics'],
+                        component_policy={k:v for k,v in first['manifest']['policy'].items()
+                            if k.startswith('enable_') or k in ('max_episodes','max_episode_facts')})
             assert _token_estimate(body) == first['manifest']['token_estimate'] <= budget
             return first, expected
     finally:

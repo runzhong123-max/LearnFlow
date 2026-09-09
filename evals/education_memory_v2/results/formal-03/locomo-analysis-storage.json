@@ -1,0 +1,8 @@
+{
+  "file": "locomo-analysis.json.gz",
+  "compression": "gzip; deterministic header; exact original JSON bytes",
+  "decompressed_sha256": "76e6dfa249630e6abe93bf5cfff5f5c47c6da06c99bdb1839bbb1bbf4a6fadad",
+  "compressed_sha256": "5e3a34899f19b5c2976ede6199dbdfd0b0e183955437d852dd756eea6f70018e",
+  "decompressed_bytes": 1705662,
+  "compressed_bytes": 68869
+}

@@ -7,8 +7,10 @@ must scope/filter those candidates before calling ``resolve_fuzzy``.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from collections import Counter
 from itertools import islice
 import re
+import math
 from typing import Iterable
 import unicodedata
 
@@ -150,11 +152,11 @@ def _aliases(text: str) -> tuple[list[str], list[dict]]:
     return expansions, audit
 
 
-def plan_query(query: str) -> QueryPlan:
+def plan_query(query: str, *, enable_aliases: bool = True) -> QueryPlan:
     normalized = _normalize(query, MAX_QUERY_CHARS)
     tokens = _ordered_tokens(normalized)
     literal = _unique(tokens, MAX_LITERAL_TERMS)
-    expansions, aliases = _aliases(normalized)
+    expansions, aliases = _aliases(normalized) if enable_aliases else ([], [])
     terms = _unique((*literal, *expansions), MAX_TERMS)
     latin = tuple(term for term in literal if _LATIN_RE.fullmatch(term))
     intent = "summary" if any(_contains(normalized, m) for m in _SUMMARY_MARKERS) else "fact"
@@ -169,7 +171,37 @@ def plan_query(query: str) -> QueryPlan:
         "terms_truncated": len(set(tokens)) > MAX_LITERAL_TERMS or len(set((*literal, *expansions))) > MAX_TERMS,
         "aliases": aliases,
         "fuzzy_corrections": [],
+        "explicit_current": any(_contains(normalized, marker) for marker in
+                                ("当前", "现在", "最新", "current", "latest")),
     })
+
+
+def bm25_scores(plan: QueryPlan, documents: dict[int, str]) -> tuple[dict[int, float], dict]:
+    """Lexical BM25 over the already allowed, bounded candidate pool.
+
+    This is not embedding/semantic search and its document frequencies describe
+    this pool, not the whole database. Callers must apply ownership, archive and
+    sensitive-content filters BEFORE supplying documents.
+    """
+    terms = set(plan.terms)
+    counters = {identifier: Counter(_ordered_tokens(_normalize(text, MAX_TEXT_CHARS)))
+                for identifier, text in documents.items()}
+    lengths = {identifier: sum(counts.values()) for identifier, counts in counters.items()}
+    average = sum(lengths.values()) / max(1, len(lengths))
+    frequency = Counter(term for counts in counters.values() for term in terms if counts[term])
+    scores = {}
+    for identifier, counts in counters.items():
+        score = 0.0
+        for term in terms:
+            tf = counts[term]
+            if tf:
+                inverse = math.log(1 + (len(counters) - frequency[term] + .5) / (frequency[term] + .5))
+                score += inverse * tf * 2.2 / (tf + 1.2 * (.25 + .75 * lengths[identifier] / max(1, average)))
+        if score:
+            scores[identifier] = score
+    return scores, {'documents': len(documents), 'matched': len(scores),
+                    'text_limit': MAX_TEXT_CHARS,
+                    'truncated_documents': sum(len(text) > MAX_TEXT_CHARS for text in documents.values())}
 
 
 def _fuzzy_terms(plan: QueryPlan) -> tuple[str, ...]:
