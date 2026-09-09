@@ -23,3 +23,18 @@
 .role-intake button:disabled { opacity: .5; cursor: default; }
 .intake-role-candidate { display:grid; gap:6px; width:100%; padding:12px; text-align:left; border:1px solid var(--line); border-radius:10px; background:var(--panel); color:var(--text); }
 .intake-role-candidate span { display:flex; gap:4px; align-items:center; font-size:12px; color:var(--accent); }
+
+.intake-description .markdown-content { font-size: 14px; line-height: 1.9; overflow-wrap: anywhere; }
+.intake-description .markdown-content h2 { font-size: 19px; line-height: 1.55; margin: 0 0 16px; }
+.intake-description .markdown-content h3 { font-size: 15px; margin: 24px 0 10px; padding-bottom: 7px; border-bottom: 1px solid var(--line, #dbe2d9); }
+.intake-description .markdown-content ol { padding-left: 23px; }
+.intake-description .markdown-content li { padding-left: 4px; margin-bottom: 10px; }
+.intake-history { border: 1px solid var(--line, #dbe2d9); border-radius: 9px; padding: 10px 12px; font-size: 12px; }
+.intake-history summary, .intake-notes summary { cursor: pointer; }
+.intake-history .message { margin-top: 14px; }
+.intake-notes a { color: var(--accent, #345642); text-decoration: underline; }
+
+.intake-description .markdown-content ol, .intake-answer ol { list-style: decimal; padding-left: 23px; }
+.intake-answer h2 { font-size: 18px; margin: 0 0 16px; line-height: 1.5; }
+.intake-answer h3 { font-size: 15px; margin: 22px 0 10px; border-bottom: 1px solid var(--line, #dbe2d9); padding-bottom: 7px; }
+.intake-answer li { margin-bottom: 10px; }

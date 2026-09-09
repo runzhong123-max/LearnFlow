@@ -9,6 +9,8 @@ import { SEARCH_PROVIDER_SESSION_KEY } from "@/lib/search/providers";
 import { readOfficialLearningPath } from "@/lib/learning-path/load";
 import type { SourceInput } from "@/lib/build/types";
 import "./role-intake.css";
+import { formatIntakeDescription, previousIntakeHistory } from "@/lib/intake/presentation";
+import { safeSourceUrl } from "@/lib/presentation/citations";
 import type { IntakeTurnInput, IntakeView } from "@/lib/intake/types";
 
 type Scope = { projectId: string; conversationId: string };
@@ -161,10 +163,11 @@ export default function RoleIntakePane({ projectId, conversationId, actorSubject
         <button className="tool-submit" disabled={locked || materialsBusy || draft.title.trim().length < 2} onClick={() => void turn("draft", draft.goal)}><Sparkles size={14} />生成岗位说明</button>
       </> : <p>{reviewing ? "确认下面的岗位说明后，开始深度研究、生成图谱并挂载学习路径。" : "说说你感兴趣或想从事的工作，我会帮你缩小范围。"}</p>}
     </div>
-    {intake?.history.filter(item => item.text && item.text !== intake.description && item.text !== intake.assistantMessage).slice(-8).map(item => <div key={item.id} className={`message ${item.role}`}><MarkdownContent text={item.text} /></div>)}
-    {intake?.assistantMessage && intake.assistantMessage !== intake.description && <div className="message assistant"><MarkdownContent text={intake.assistantMessage} /></div>}
+    {intake && previousIntakeHistory(intake).length > 0 && <details className="intake-history"><summary>查看之前的输入与讨论</summary>{previousIntakeHistory(intake).map(item => <div key={item.id} className={`message ${item.role}`}><small>{item.role === "user" ? "你的输入" : "岗位助手"}</small><MarkdownContent text={item.text} /></div>)}</details>}
+    {!reviewing && intake?.assistantMessage && <div className="message assistant"><MarkdownContent text={intake.assistantMessage} /></div>}
     {intake?.hubMatches?.length ? <div className="intake-hub-matches"><small>Graph Hub 中已有相关岗位</small>{intake.hubMatches.map(match => <article key={match.releaseId}><b>{match.title}</b><p>{match.summary}</p><details><summary>查看岗位内容</summary>{[["工作任务", match.tasks], ["工作能力", match.capabilities], ["工作场景", match.scenarios]].map(([label, values]) => <div key={String(label)}><b>{String(label)}</b><ul>{(values as string[]).map((text, index) => <li key={index}>{text}</li>)}</ul></div>)}</details><button disabled={locked} onClick={() => void pull(match.releaseId)}><ArrowDownToLine size={13} />拉取并查看</button></article>)}</div> : null}
-    {reviewing && <article className="intake-description"><div className="assistant-label"><Sparkles size={14} /> 岗位说明</div><MarkdownContent text={intake!.description} />
+    {reviewing && <article className="intake-description"><div className="assistant-label"><Sparkles size={14} /> 岗位说明</div><MarkdownContent text={formatIntakeDescription(intake!.description)} />
+      {intake!.sources.length > 0 && <details className="intake-notes"><summary>查看资料原文 · {intake!.sources.length} 份</summary><ul>{intake!.sources.map((source, index) => <li key={index}>{safeSourceUrl(source.locator) ? <a href={safeSourceUrl(source.locator)} target="_blank" rel="noopener noreferrer">{source.title}</a> : source.title}</li>)}</ul></details>}
       {!improving && <div className="intake-actions"><button className="tool-submit" disabled={locked} onClick={() => void confirm()}><Check size={14} />{intake?.phase === "confirmed" ? "继续生成图谱" : "确定，生成图谱"}</button><button disabled={locked} onClick={() => setImproving(true)}>改进</button></div>}
     </article>}
     {intake?.revisionId && (!reviewing || improving) && <div className="chat-tool-form intake-reply">

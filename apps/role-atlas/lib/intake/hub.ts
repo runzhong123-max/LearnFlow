@@ -81,7 +81,7 @@ export async function suggestIntakeHubMatches(
   const dependencies = options.dependencies ?? await productionDependencies();
   // A catalog outage is different from no matches. Let the caller report the unavailable state.
   const entries = await dependencies.listEntries();
-  const candidates = searchHub(entries, { query: text(query, 500), limit: 3 }).items;
+  const candidates = searchHub(entries, { query: text(query, 500), target: "role", limit: 3 }).items;
   const matches: IntakeHubMatch[] = [];
   for (const { entry, reasons } of candidates) {
     try {

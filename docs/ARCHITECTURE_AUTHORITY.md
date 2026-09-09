@@ -710,3 +710,6 @@ Contract impact（2026-09-08.1）：登记 Role Atlas `role_research_archive_v1`
 
 
 岗位生产自动挂载（Contract impact，2026-09-09.1）：既有 Learning Design 的 curriculum_source_runtime 增加 `role-learning-auto/v1` 反向短时签名入口与持久操作回执。用户启动岗位生产流程授权其知识技能追加到本人 source graph；中央复核真实账号及包权限，复用 resolve/commit/CAS，官方节点不覆写。无锚点可通过 v2 可选 standaloneRoots 创建本人岗位学习域。旧手动确认路径保留，现有 learning_path_extension_committed 仍零 target，生成和挂载均不代表掌握，不新增主 Agent 或五核写入。范围、兼容性及部署见 [服务契约](product/ECOSYSTEM_GATEWAY_V1.md)。
+
+
+Contract impact（2026-09-09.3）：Graph Hub 公开岗位与典型任务复用 discovery.v1 接口和 field-coverage.v2 检索服务，冷启动与 LearnFlow 插件使用相同相关性门槛。新增 target、role 过滤及稳定任务/发布引用，旧响应字段保留。网页来源与图谱引用分型显示，不伪造置信度，不写五核。见 [统一检索契约](implementation/GRAPH_HUB_SEARCH.md)。

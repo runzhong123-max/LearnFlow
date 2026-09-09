@@ -1,4 +1,5 @@
 import importlib.util
+import io
 import json
 from pathlib import Path
 import tempfile
@@ -54,8 +55,54 @@ class CertificateLifecycle(unittest.TestCase):
         for option in ("certonly", "--webroot", "--ip-address", "shortlived", tls.PRODUCTION):
             self.assertIn(option, args)
         self.assertNotIn("--standalone", args)
+        self.assertEqual(args[args.index("--email") + 1], "admin@example.test")
+        self.assertNotIn("--register-unsafely-without-email", args)
         self.assertEqual(args[args.index("--ip-address") + 1], tls.IP)
         self.assertFalse(run.call_args.kwargs["staging"])
+
+    def test_without_email_is_explicit_and_preserves_the_certificate_policy(self):
+        for staging in (False, True):
+            with self.subTest(staging=staging), patch.object(tls, "assert_mounts"), patch.object(tls, "certbot") as run:
+                tls.issue(self.root, self.config, without_email=True, staging=staging)
+            args = run.call_args.args[2]
+            self.assertIn("--register-unsafely-without-email", args)
+            self.assertNotIn("--email", args)
+            self.assertEqual(args[args.index("--server") + 1], tls.STAGING if staging else tls.PRODUCTION)
+            self.assertEqual(args[args.index("--preferred-profile") + 1], "shortlived")
+            self.assertEqual(args[args.index("--webroot-path") + 1], "/var/www/acme")
+            self.assertEqual(args[args.index("--ip-address") + 1], tls.IP)
+            self.assertNotIn("--no-verify-ssl", args)
+            self.assertEqual(run.call_args.kwargs["staging"], staging)
+
+    def test_missing_invalid_or_conflicting_contact_never_runs_docker(self):
+        for options in ({}, {"email": "invalid"}, {"email": "admin@example.test", "without_email": True}):
+            with self.subTest(options=options), patch.object(tls, "assert_mounts") as mounts, patch.object(tls, "certbot") as run:
+                with self.assertRaises(ValueError):
+                    tls.issue(self.root, self.config, **options)
+                mounts.assert_not_called()
+                run.assert_not_called()
+
+    def test_cli_rejects_missing_conflicting_or_misplaced_contact_before_installation_access(self):
+        for arguments in (
+            ["issue"], ["issue", "--email", ""],
+            ["issue", "--email", "admin@example.test", "--without-email"],
+            ["renew", "--without-email"], ["initialize", "--email", "admin@example.test"],
+        ):
+            with self.subTest(arguments=arguments), patch("sys.argv", [str(MODULE), *arguments]), patch("sys.stderr", new_callable=io.StringIO), patch.object(tls, "settings") as settings, patch.object(tls, "execute") as execute:
+                with self.assertRaises(SystemExit) as result:
+                    tls.main()
+                self.assertEqual(result.exception.code, 2)
+                settings.assert_not_called()
+                execute.assert_not_called()
+
+    def test_cli_forwards_explicit_without_email_and_reports_only_the_choice(self):
+        with patch("sys.argv", [str(MODULE), "issue", "--root", str(self.root), "--without-email"]), patch("sys.stdout", new_callable=io.StringIO) as output, patch.object(tls, "issue") as run:
+            tls.main()
+        run.assert_called_once_with(self.root.resolve(), self.config, "", staging=False, without_email=True)
+        report = json.loads(output.getvalue())
+        self.assertTrue(report["completed"])
+        self.assertTrue(report["without_email"])
+        self.assertNotIn("email", report)
 
     def test_staging_uses_separate_certificate_store_and_same_challenge_root(self):
         calls = []

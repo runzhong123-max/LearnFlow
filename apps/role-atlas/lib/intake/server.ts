@@ -21,7 +21,14 @@ function scope(input: OwnedInput): IntakeScope {
   return { projectId: input.projectId, conversationId: input.conversationId, subjectId: input.actor.subjectId };
 }
 
-export async function getIntake(input: OwnedInput) { return (await ensureIntakeSchema()).get(scope(input)); }
+export async function getIntake(input: OwnedInput) {
+  const intake = await (await ensureIntakeSchema()).get(scope(input));
+  if (!intake.revisionId || intake.phase === "clarifying") return intake;
+  // Recommendations are a live public projection, not part of the confirmed content.
+  // Re-evaluate old drafts under the current ranking instead of repeating stale suggestions.
+  try { return { ...intake, hubMatches: await suggestIntakeHubMatches(intake.roleTitle) }; }
+  catch { return { ...intake, hubMatches: [], warnings: [...intake.warnings, "Graph Hub 暂时无法读取，岗位说明已保留。"] }; }
+}
 export async function confirmIntake(input: OwnedInput & IntakeConfirmInput) { return (await ensureIntakeSchema()).confirm(scope(input), input); }
 export async function requireConfirmedIntake(input: OwnedInput & { revisionId: string; contentHash: string; runId: string }) {
   return (await ensureIntakeSchema()).requireConfirmed(scope(input), input);

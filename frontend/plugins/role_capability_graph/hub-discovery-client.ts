@@ -3,6 +3,7 @@ import type { PluginJson, PluginToolResult } from '../../src/plugin-api.ts'
 export type PublicRoleCandidate = {
   packageId: string; packageVersion: string; snapshotId: string; rootHash: string
   roleTitle: string; summary: string; repositoryUrl: string; reasons: string[]
+  matchedTasks?: Array<{ id: string; label: string; type: string; summary: string }>; matchedTaskCount?: number
   availability: 'available_not_installed'
 }
 export type HubDiscovery = {
@@ -12,7 +13,7 @@ export type HubDiscovery = {
 
 /** Deployment-owned destination. Public discovery never forwards learner credentials or installs packages. */
 export async function discoverPublicRolePackages(input: {
-  baseUrl?: string; query: string; signal?: AbortSignal; limit?: number; fetchImpl?: typeof fetch
+  baseUrl?: string; query: string; target?: 'role' | 'task' | 'all'; roleQuery?: string; signal?: AbortSignal; limit?: number; fetchImpl?: typeof fetch
 }): Promise<HubDiscovery> {
   if (!input.baseUrl?.trim()) return { status: 'not_configured', candidates: [], total: 0, truncated: false }
   try {
@@ -20,6 +21,8 @@ export async function discoverPublicRolePackages(input: {
     if (!['http:', 'https:'].includes(base.protocol) || base.username || base.password) throw new Error('hub_url_invalid')
     const endpoint = new URL('/api/hub/search', base)
     endpoint.searchParams.set('q', input.query.slice(0, 500))
+    endpoint.searchParams.set('target', input.target || 'all')
+    if (input.roleQuery) endpoint.searchParams.set('role', input.roleQuery.slice(0, 500))
     endpoint.searchParams.set('limit', String(Math.min(10, Math.max(1, input.limit || 5))))
     const timeout = AbortSignal.timeout(8_000)
     const response = await (input.fetchImpl || fetch)(endpoint, { redirect: 'error', credentials: 'omit',
@@ -48,7 +51,14 @@ export async function discoverPublicRolePackages(input: {
       const required = [item.id, item.packageId, item.title, release?.packageVersion, release?.snapshotId, release?.rootHash]
       if (!required.every(value => typeof value === 'string' && value.length > 0 && value.length <= 500)
         || !/^[a-f0-9]{64}$/u.test(String(release?.rootHash))) throw new Error('hub_identity_invalid')
-      return { packageId: String(item.packageId), roleTitle: String(item.title), packageVersion: String(release!.packageVersion),
+      const matchedTasks = (Array.isArray(item.matchedTasks) ? item.matchedTasks : []).slice(0, 6).map(raw => {
+        const task = raw as Record<string, unknown>
+        if (!task || typeof task.id !== 'string' || !task.id || task.id.length > 500 || typeof task.label !== 'string'
+          || !['task', 'typical_task'].includes(String(task.type))) throw new Error('hub_task_invalid')
+        return { id: task.id, label: task.label.slice(0, 500), type: String(task.type), summary: String(task.summary || '').slice(0, 2000) }
+      })
+      if (input.target === 'task' && !matchedTasks.length) throw new Error('hub_task_matches_missing')
+      return { matchedTasks, matchedTaskCount: Number.isInteger(item.matchedTaskCount) && Number(item.matchedTaskCount) >= matchedTasks.length ? Number(item.matchedTaskCount) : matchedTasks.length, packageId: String(item.packageId), roleTitle: String(item.title), packageVersion: String(release!.packageVersion),
         snapshotId: String(release!.snapshotId), rootHash: String(release!.rootHash), summary: String(item.summary || '').slice(0, 2000),
         repositoryUrl: new URL(`/hub/${encodeURIComponent(String(item.id))}`, base).toString(),
         reasons: Array.isArray(item.reasons) ? item.reasons.filter((reason): reason is string => typeof reason === 'string').slice(0, 6).map(reason => reason.slice(0, 500)) : [],
