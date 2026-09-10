@@ -91,6 +91,7 @@ class AuthenticatedAccountResponse(BaseModel):
     must_change_password: bool
     is_legacy_demo: bool
     profile: AuthenticatedProfileResponse
+    avatar: str | None = None
     dev_test_login_enabled: bool
     is_dev_login: bool
     desktop_auth_token: str | None = None
@@ -99,6 +100,12 @@ class AuthenticatedAccountResponse(BaseModel):
 
 class DesktopPetCapabilityRefreshResponse(BaseModel):
     desktop_pet_capability_token: str
+
+
+class AvatarUpdateRequest(BaseModel):
+    # A data URL, not raw bytes: the client already has one from the canvas it
+    # used to downscale the picture, and it round-trips through JSON unchanged.
+    avatar: str = Field(default="", max_length=350_000)
 
 
 class LogoutResponse(BaseModel):

@@ -25,6 +25,9 @@ import { PASSWORD_MIN_LENGTH, PASSWORD_POLICY_MESSAGE, passwordPolicyError } fro
 export type AuthGateSession = {
   account: FormalAccount
   signOut: () => Promise<void>
+  /** Apply a field the app just persisted, so the shell re-renders without a
+   *  full session round-trip. */
+  patchAccount: (patch: Partial<FormalAccount>) => void
 }
 
 type AuthGateProps = {
@@ -251,7 +254,7 @@ export default function AuthGate({ children }: AuthGateProps) {
     return (
       <main className={styles.shell} aria-busy="true">
         <section className={styles.loadingCard}>
-          <span className={styles.brandMark}>LF</span>
+          <img className={styles.brandMark} src="/brand-mark.png" alt="" width={40} height={40} />
           <h1>正在确认你的学习空间</h1>
           <p>身份确认后才会读取对应 learner 的本地缓存与正式学习状态。</p>
         </section>
@@ -259,12 +262,15 @@ export default function AuthGate({ children }: AuthGateProps) {
     )
   }
 
-  if (account) return children({ account, signOut })
+  const patchAccount = (patch: Partial<FormalAccount>) =>
+    setAccount(previous => (previous ? { ...previous, ...patch } : previous))
+
+  if (account) return children({ account, signOut, patchAccount })
 
   if (isCloudDesktopRuntime()) return (
     <main className={`${styles.shell} ${styles.cloudShell}`}>
       <section className={`${styles.card} ${styles.cloudCard}`} aria-labelledby="cloud-connect-title">
-        <div className={styles.brand}><span className={styles.brandMark}>LF</span><strong>LearnFlow</strong></div>
+        <div className={styles.brand}><img className={styles.brandMark} src="/brand-mark.png" alt="" width={40} height={40} /><strong>LearnFlow</strong></div>
         <header className={styles.cloudHeader}>
           <h1 id="cloud-connect-title">连接 LearnFlow</h1>
           <p>使用个人 API Key，继续你的项目和学习记录。</p>
@@ -288,7 +294,7 @@ export default function AuthGate({ children }: AuthGateProps) {
   return (
     <main className={styles.shell}>
       <section className={styles.hero}>
-        <div className={styles.brand}><span className={styles.brandMark}>LF</span><strong>LearnFlow</strong></div>
+        <div className={styles.brand}><img className={styles.brandMark} src="/brand-mark.png" alt="" width={40} height={40} /><strong>LearnFlow</strong></div>
         <p className={styles.eyebrow}>你的专属学习空间</p>
         <h1>每个账号，一段独立的学习旅程。</h1>
         <p className={styles.heroCopy}>从一次提问到一段长期计划，LearnFlow 会陪你延续理解、练习与成长。</p>

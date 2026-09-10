@@ -67,6 +67,7 @@ EXTRA_COLUMNS = {
         ("api_key_hint", "TEXT"),
         ("api_key_encryption_version", "INTEGER"),
         ("api_key_updated_at", "DATETIME"),
+        ("avatar_data_url", "TEXT"),
         ("credit_limit", "INTEGER DEFAULT -1"),
         ("credit_used", "INTEGER DEFAULT 0"),
     ],

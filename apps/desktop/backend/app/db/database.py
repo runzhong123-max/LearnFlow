@@ -67,6 +67,7 @@ EXTRA_COLUMNS = {
         ("api_key_hint", "TEXT"),
         ("api_key_encryption_version", "INTEGER"),
         ("api_key_updated_at", "DATETIME"),
+        ("avatar_data_url", "TEXT"),
         ("provider_base_url", "TEXT"),
         ("provider_model", "TEXT"),
         ("vision_api_key_ciphertext", "TEXT"),

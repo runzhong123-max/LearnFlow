@@ -412,6 +412,7 @@ export type FormalAccount = {
   must_change_password: boolean
   is_legacy_demo: boolean
   profile: FormalAuthenticatedProfile
+  avatar?: string | null
   dev_test_login_enabled: boolean
   is_dev_login: boolean
   desktop_auth_token?: string
@@ -616,6 +617,11 @@ export async function logoutFormalAccount() {
 export async function loadFormalModelCredential() {
   return jsonRequest<FormalModelCredentialMetadata>('/api/auth/model-credential')
 }
+
+export async function listFormalModelCredentialModels() {
+  return jsonRequest<{ models: string[]; base_url: string }>('/api/auth/model-credential/models')
+}
+
 
 export async function saveFormalModelCredential(apiKey: string) {
   return jsonRequest<FormalModelCredentialMetadata>('/api/auth/model-credential', {
@@ -1534,3 +1540,17 @@ export function learnerPathStateFromFormal(overlay: FormalPathOverlay): LearnerP
 
 // Internal workbenches share the authenticated transport.
 export { jsonRequest as formalJsonRequest }
+
+
+/** Avatars live on the account, so they follow a learner from the desktop app
+ *  to the browser. The picture is downscaled client-side before it gets here. */
+export async function saveFormalAvatar(avatar: string) {
+  return jsonRequest<{ avatar: string | null }>('/api/auth/profile/avatar', {
+    method: 'PUT',
+    body: JSON.stringify({ avatar }),
+  })
+}
+
+export async function clearFormalAvatar() {
+  return jsonRequest<{ avatar: string | null }>('/api/auth/profile/avatar', { method: 'DELETE' })
+}

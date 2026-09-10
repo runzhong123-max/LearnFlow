@@ -19,6 +19,29 @@ import {
 } from './formal-runtime.ts'
 import styles from './AccountModelSettings.module.css'
 
+
+/** Known OpenAI-compatible providers. Picking one fills in the endpoint so a
+ *  learner only has to paste the key they were given; "custom" keeps the manual
+ *  field for anything not listed.
+ *
+ *  Deliberately no per-provider model catalogue: vendors rename and retire
+ *  models continuously, and a list baked in here goes stale without anything
+ *  failing loudly. The composer asks the provider what it actually serves. */
+const MODEL_PROVIDERS = [
+  { id: 'deepseek', label: 'DeepSeek', baseUrl: 'https://api.deepseek.com' },
+  { id: 'moonshot', label: '月之暗面 Kimi', baseUrl: 'https://api.moonshot.cn/v1' },
+  { id: 'zhipu', label: '智谱 GLM', baseUrl: 'https://open.bigmodel.cn/api/paas/v4' },
+  { id: 'openai', label: 'OpenAI', baseUrl: 'https://api.openai.com/v1' },
+  { id: 'dashscope', label: '阿里云百炼', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1' },
+  { id: 'siliconflow', label: '硅基流动', baseUrl: 'https://api.siliconflow.cn/v1' },
+  { id: 'custom', label: '其他（手动填写）', baseUrl: '' },
+] as const
+
+function providerFromBaseUrl(url: string) {
+  const normalized = String(url || '').trim().replace(/\/$/, '')
+  return MODEL_PROVIDERS.find(item => item.baseUrl && item.baseUrl === normalized)?.id || 'custom'
+}
+
 type AccountModelSettingsProps = {
   account: FormalAccount
   baseUrl: string
@@ -263,8 +286,25 @@ export default function AccountModelSettings({
           <i className={credential?.configured ? styles.configured : ''}>{loading ? '读取中' : credential?.configured ? 'configured' : 'not configured'}</i>
         </div>
         <div className={styles.fieldGrid}>
-          <label><span>Base URL</span><input name="model_base_url" autoComplete="url" value={baseUrl} onChange={event => onConnectionChange({ baseUrl: event.target.value })} placeholder="https://api.example.com/v1" /></label>
-          <label><span>模型名称</span><input name="model_name" autoComplete="off" value={model} onChange={event => onConnectionChange({ model: event.target.value })} placeholder="例如 model-name" /></label>
+          <label><span>服务商</span>
+            <select
+              name="model_provider"
+              value={providerFromBaseUrl(baseUrl)}
+              onChange={event => {
+                const preset = MODEL_PROVIDERS.find(item => item.id === event.target.value)
+                if (!preset || preset.id === 'custom') return
+                onConnectionChange({ baseUrl: preset.baseUrl })
+              }}
+            >
+              {MODEL_PROVIDERS.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
+            </select>
+          </label>
+          <label><span>默认模型</span>
+            <input name="model_name" autoComplete="off" value={model} onChange={event => onConnectionChange({ model: event.target.value })} placeholder="留空则用服务端默认" />
+          </label>
+          {providerFromBaseUrl(baseUrl) === 'custom' && (
+            <label><span>Base URL</span><input name="model_base_url" autoComplete="url" value={baseUrl} onChange={event => onConnectionChange({ baseUrl: event.target.value })} placeholder="https://api.example.com/v1" /></label>
+          )}
         </div>
         <label className={styles.keyField}>
           <span>API Key</span>
