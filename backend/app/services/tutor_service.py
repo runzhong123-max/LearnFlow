@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime
 import json
 import logging
@@ -65,6 +66,7 @@ from app.services.chat_modes import (
     chat_mode_prompt,
     chat_mode_view,
     classify_chat_mode,
+    requested_chat_mode,
     complete_explanation_mode,
     enter_chat_mode,
 )
@@ -318,6 +320,41 @@ async def _invoke_plain_tutor_reply(
     if not str(decoded[0] or "").strip():
         raise ValueError("empty_plain_tutor_reply")
     return decoded
+
+
+# One empty completion used to be a user-visible failure in exactly the two
+# modes that carry teaching: explain and learn call the plain tier directly
+# with max_retries=0, so any hiccup fell through to canned error text.
+# An empty body is transient and the same request usually returns text on the
+# next call; a spent deadline is not, so it is never retried.
+_EMPTY_REPLY_RETRY_MIN_REMAINING_SECONDS = 6.0
+
+
+async def _invoke_plain_tutor_reply_resiliently(
+    llm: Any,
+    messages: list[Any],
+    deadline: float,
+    *,
+    attempts: int = 2,
+) -> tuple[str, list[dict], dict | None, dict | None, list[dict], dict | None]:
+    last_empty: Exception | None = None
+    for attempt in range(max(1, attempts)):
+        try:
+            return await _invoke_plain_tutor_reply(llm, messages, deadline)
+        except InteractiveModelBudgetExceeded:
+            raise
+        except ValueError as error:
+            if not str(error).startswith('empty_'):
+                raise
+            last_empty = error
+            remaining = deadline - asyncio.get_running_loop().time()
+            if remaining <= _EMPTY_REPLY_RETRY_MIN_REMAINING_SECONDS:
+                raise
+            logger.info(
+                'plain Tutor reply came back empty, retrying (attempt %s)',
+                attempt + 1,
+            )
+    raise last_empty if last_empty else RuntimeError('empty_plain_tutor_reply')
 
 
 JSON_TUTOR_REPLY_PROMPT = """
@@ -2336,7 +2373,7 @@ async def _generate_tutor_reply(
     )
     if workflow_instruction:
         try:
-            decoded = await _invoke_plain_tutor_reply(plain_llm, messages, deadline)
+            decoded = await _invoke_plain_tutor_reply_resiliently(plain_llm, messages, deadline)
             return (*decoded, None)
         except Exception as skill_error:
             logger.info(
@@ -2363,7 +2400,7 @@ async def _generate_tutor_reply(
             ), [], None, None, [], None, None
     if mode_view.get("id") == "explain":
         try:
-            decoded = await _invoke_plain_tutor_reply(plain_llm, messages, deadline)
+            decoded = await _invoke_plain_tutor_reply_resiliently(plain_llm, messages, deadline)
             return (*decoded, None)
         except Exception as explain_error:
             logger.info(
@@ -2429,7 +2466,7 @@ async def _generate_tutor_reply(
                     type(json_error).__name__,
                 )
         try:
-            decoded = await _invoke_plain_tutor_reply(plain_llm, messages, deadline)
+            decoded = await _invoke_plain_tutor_reply_resiliently(plain_llm, messages, deadline)
             return (*decoded, None)
         except Exception as fallback_error:
             logger.info(
@@ -2768,6 +2805,12 @@ async def process_turn(
         message_context["learning_skill"] = active_learning_skill
     if isinstance(incoming_context.get("selected_text"), str):
         message_context["selected_text"] = incoming_context["selected_text"][:12000]
+    # The composer state the learner picked. It used to be dropped here, so the
+    # runtime re-guessed the mode from keywords every turn and the same
+    # selection could produce a different posture each time.
+    selected_chat_mode = requested_chat_mode(incoming_context.get("mode"))
+    if selected_chat_mode:
+        message_context["requested_chat_mode"] = selected_chat_mode
     for key in (
         "selected_source_id", "selected_source_url", "surface", "resource_kind",
         "resource_id", "title", "section_index", "selected_path", "open_file", "language",
@@ -2870,8 +2913,13 @@ async def process_turn(
                 and persisted_mode.get("status") == "active"
             )
         ),
+        requested_mode=selected_chat_mode,
     )
-    if deterministic_task_opportunity and mode_id == "free":
+    if (
+        deterministic_task_opportunity
+        and mode_id == "free"
+        and selected_chat_mode in ("", "free")
+    ):
         mode_id = "learn"
         mode_reason = "学习者显式要求完成一个可验证的原子学习闭环"
     if (
@@ -3203,9 +3251,13 @@ async def process_turn(
 
     skill_run = None
     skill_turn_plan: dict[str, Any] | None = None
+    # A learner who stepped out to another state for this turn must not have
+    # their task stepped forward behind their back: the Skill runtime only
+    # drives a turn that is actually running in learn.
     if (
         active_learning_skill
         and active_learning_skill["id"] in RUNTIME_SKILL_IDS
+        and current_chat_mode["id"] == "learn"
     ):
         if prepared_skill_turn:
             skill_run = prepared_skill_turn[1]

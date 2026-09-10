@@ -134,7 +134,10 @@ const DIRECTION_REQUIREMENTS: LearningPlanProjection['requirements'] = [
   { id: 'constraints', label: '现实约束' },
 ]
 
-const DIRECTION_PATTERN = /(?:未来|以后|职业|就业|工作方向|发展方向|科研方向|读研|升学|转行|从事什么|走什么方向|适合.*方向|成为.{0,24}(?:工程师|研究员|开发者|科学家))/i
+// 未来 / 以后 on their own are ordinary words — “以后再说” is not a career
+// question — so they now need a companion about doing or choosing something.
+// The standalone markers mirror _DIRECTION_MARKERS in the backend.
+const DIRECTION_PATTERN = /(?:职业规划|职业|就业|工作方向|发展方向|科研方向|读研|考研|升学|转行|从事什么|走什么方向|适合.*方向|成为.{0,24}(?:工程师|研究员|开发者|科学家|架构师)|(?:未来|以后|将来|毕业后).{0,24}(?:做|从事|方向|工作|职业|读研|就业|转行))/i
 const COMPLEX_PLAN_PATTERN = /(?:系统(?:地)?学|完整(?:地)?学|学习规划|学习路线|路线图|从零.*(?:到|学)|几个月|半年|一年|长期学习|做一个.*(?:项目|系统|应用|作品)|构建.*(?:项目|系统|应用)|复现.*论文|围绕.*仓库.*学)/i
 const EXPLICIT_VALUE_PATTERN = /(?:我(?:想|希望|打算|倾向|计划)|目标是|(?:未来|以后).*(?:做|从事|研究|方向)|准备(?:走|做|研究))/i
 

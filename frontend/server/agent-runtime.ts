@@ -383,6 +383,11 @@ function toolDecisionNextAction(run: TutorToolRun) {
   return '把这条结构化观察回灌给 Tutor，继续选择下一个学习动作或形成回答'
 }
 
+// Failures a learner or an administrator has to act on — a missing key, an
+// unconfigured model, an exhausted quota. Covering these with a friendly
+// “keep asking” line hides the one thing that would get them unstuck.
+const ACTIONABLE_TURN_FAILURE = /401|403|404|api[_ -]?key|apikey|credential|凭据|未配置|not_?found|invalid_?model|unsupported_?model|insufficient|quota|余额|欠费|billing|permission/i
+
 function deterministicTutorFallback(input: TutorAgentRuntimeInput, runs: TutorToolRun[]) {
   const failedRuns = runs.filter(run => run.status === 'failed')
   const failureNote = failedRuns.length
@@ -1868,7 +1873,9 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
         lastError = error
         if (streamText) resetVisibleDraft('retry')
         const message = error instanceof Error ? error.message : String(error || '')
-        const transient = /timeout|超时|429|rate|network|fetch|ECONN|temporar|503|502/i.test(message)
+        // 500/504/408/529 和 socket hang up 与 502/503 一样是重试一次就能过去的
+        // 上游故障；aborted 不在其中，那是学习者主动取消，重试等于无视意图。
+        const transient = /timeout|超时|408|429|500|502|503|504|529|rate|network|fetch|socket hang up|ECONN|EAI_AGAIN|temporar|overload/i.test(message)
         if (!transient || attempt > 0 || Date.now() >= requestDeadline - 1_000) throw error
         record({ phase: 'decide', detail: '模型请求遇到暂时故障，使用剩余预算重试一次', status: 'retrying' })
       }
@@ -2094,7 +2101,13 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
     record({ phase: 'error', detail: error instanceof Error ? error.message.slice(0, 240) : 'Agent Runtime 失败', status: 'failed' })
     stopReason = 'error'
     if (!reply && fallbackReply) reply = fallbackReply
-    if (!reply && input.mode === 'guided_learning') {
+    const failureText = error instanceof Error ? error.message : String(error || '')
+    const needsLearnerAction = ACTIONABLE_TURN_FAILURE.test(failureText)
+    // A cancelled turn must stay cancelled: synthesising a reply for it would
+    // put words in a turn the learner explicitly stopped.
+    const cancelled = (error instanceof Error && error.name === 'AbortError')
+      || /abort|cancel|取消/i.test(failureText)
+    if (!reply && !cancelled && (input.mode === 'guided_learning' || !needsLearnerAction)) {
       reply = deterministicTutorFallback(input, runs)
       stopReason = 'forced_finalize'
       reconcileVisibleDraft(reply)

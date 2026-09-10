@@ -36,7 +36,7 @@ export const CORE_TOOL_CAPABILITIES: readonly ToolCapabilitySummary[] = Object.f
     label: '路线与项目规划',
     purpose: '定位学习路径、检查项目关卡，并形成需要确认的路线或文件提案。',
     glyph: '路',
-    status: '规划与项目态',
+    status: '规划与项目',
     source: 'core',
   },
   {

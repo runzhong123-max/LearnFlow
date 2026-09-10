@@ -1664,7 +1664,7 @@ export async function executeTutorAgentTool(
       }
     }
     if (name === 'design_assessment_blueprint') {
-      if (options.mode !== 'guided_learning') throw new Error('评估蓝图只能在带领学习态的正式学习任务中设计')
+      if (options.mode !== 'guided_learning') throw new Error('评估蓝图只能在带领学习的正式学习任务中设计')
       const learningTaskId = requirePracticeTaskScope(options, args.learning_task_id)
       const itemTypes = Array.isArray(args.item_types) ? args.item_types.map(String).slice(0, 6) : ['single']
       const count = Math.max(1, Math.min(12, Number(args.count) || 3))
@@ -1703,7 +1703,7 @@ export async function executeTutorAgentTool(
       }
     }
     if (name === 'generate_dynamic_practice' || name === 'generate_similar_practice') {
-      if (options.mode !== 'guided_learning') throw new Error('动态习题只能在带领学习态的正式学习任务中生成')
+      if (options.mode !== 'guided_learning') throw new Error('动态习题只能在带领学习的正式学习任务中生成')
       const learningTaskId = requirePracticeTaskScope(options, args.learning_task_id)
       const similar = name === 'generate_similar_practice'
       const candidates = await generatePracticeCandidates(args, options, similar)
