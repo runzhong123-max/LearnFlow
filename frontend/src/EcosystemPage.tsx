@@ -85,7 +85,7 @@ export default function EcosystemPage() {
   }
   const evidenceData = evidence?.data?.data ?? evidence?.data ?? evidence
   return <section className="projects-page ecosystem-page">
-    <header className="projects-hero"><span className="eyebrow">ROLE KNOWLEDGE</span><h1>岗位图谱</h1><p>浏览岗位任务与知识技能，查看依据，再将合适的知识技能挂载到学习路径。</p></header>
+    <header className="projects-hero page-hero"><div><span className="eyebrow">ROLE KNOWLEDGE</span><h1>岗位图谱</h1><p>浏览岗位任务与知识技能，查看依据，再将合适的知识技能挂载到学习路径。</p></div></header>
     <div className="ecosystem-status"><span>{service}</span><button disabled={!!busy} onClick={() => void act('connect', () => connect(!pkg))}>刷新连接与路径</button>{graphVersion && <small>学习路径版本：{graphVersion}</small>}<a href="https://graphs.learnflow.club/hub" target="_blank" rel="noopener noreferrer">浏览 Graph Hub ↗</a></div>
     {error && <p className="project-error" role="alert">{error}</p>}
     <form className="ecosystem-search" onSubmit={e => { e.preventDefault(); void act('search', async () => { const result = await api.search(query); setItems(result.items); setTotal(result.total); setSearched(true) }) }}>

@@ -7,7 +7,6 @@
 .heading i { margin-left: auto; border: 1px solid #d8e2dc; border-radius: 999px; padding: 5px 9px; color: #5f7167; font-size: 12px; font-style: normal; white-space: nowrap; }
 .heading .configured { border-color: #bcdcc9; background: #eef9f2; color: #0a704a; }
 .accountRow { display: flex; align-items: center; gap: 12px; padding-top: 14px; }
-.avatar { display: grid; width: 38px; height: 38px; flex: none; place-items: center; overflow: hidden; border-radius: 50%; background: #e7f2eb; color: #13704c; font-size: 13px; font-weight: 850; }
 .accountRow strong, .accountRow span { display: block; }
 .accountRow strong { color: #2d4136; font-size: 14px; }
 .accountRow span { margin-top: 3px; color: #687a70; font-size: 12px; }

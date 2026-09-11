@@ -34,7 +34,7 @@ export default function LearningTasksPage({ connection, tasks, busyTaskId, error
 
   return (
     <section className="task-queue-page">
-      <header className="task-queue-heading">
+      <header className="task-queue-heading page-hero">
         <div><h1>学习任务</h1><p>查看当前安排、继续学习，或整理已经完成的任务。</p></div>
         <button type="button" className="task-refresh-button" onClick={onRefresh}><span aria-hidden="true">↻</span>刷新</button>
       </header>

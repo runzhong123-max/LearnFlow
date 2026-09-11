@@ -16,6 +16,7 @@ import {
 } from './profile-presentation'
 
 import { buildProfileOverview, profileGrowthArea, profileTimeLabel } from './profile-overview'
+import { UserAvatar } from '../../../../packages/learning-client/src/identity/UserIdentity'
 import './profile-overview.css'
 
 const KERNELS: Array<{ id: KernelName; name: string; short: string; description: string }> = [
@@ -37,6 +38,9 @@ type Props = {
   onClaimAction: (claimId: number, action: 'confirm' | 'correct' | 'retract', correction?: string) => void
   onRecordSelfReport: (rawText: string) => Promise<boolean>
   onUpdateProfile: (patch: FormalLearnerProfilePatch) => Promise<boolean>
+  /** The signed-in account row, so the profile heading shows the same
+   *  avatar and handle as the sidebar and the thread. */
+  accountIdentity?: { displayName: string; username: string; avatar?: string | null }
 }
 
 type ConceptPosition = {
@@ -293,7 +297,7 @@ function PersonalConceptGraph({ snapshot, kernel }: { snapshot: FormalLearnerSna
 }
 
 export default function LearnerProfilePage({
-  connection, snapshot, busyKey, error, onRefresh, onOpenPath, onMemoryArchive, onClaimAction, onRecordSelfReport, onUpdateProfile,
+  connection, snapshot, busyKey, error, onRefresh, onOpenPath, onMemoryArchive, onClaimAction, onRecordSelfReport, onUpdateProfile, accountIdentity,
 }: Props) {
   const [recordsOpen, setRecordsOpen] = useState(false)
   const [editorOpen, setEditorOpen] = useState(false)
@@ -340,10 +344,13 @@ export default function LearnerProfilePage({
 
   return (
     <section className="profile-page formal-profile-page">
-      <header className="profile-page-heading">
-        <div>
-          <h1>{snapshot.learner.display_name}的学习画像</h1>
-          <p>你的基础、目标、偏好，以及学习过程中逐渐形成的认识。</p>
+      <header className="profile-page-heading page-hero">
+        <div className="profile-page-identity">
+          <UserAvatar displayName={snapshot.learner.display_name} avatar={accountIdentity?.avatar} size="lg" />
+          <div>
+            <h1>{snapshot.learner.display_name}的学习画像</h1>
+            <p>你的基础、目标、偏好，以及学习过程中逐渐形成的认识。</p>
+          </div>
         </div>
         <div className="profile-version formal-authority-badge">
           <i /> <span>{connection.status === 'connected' ? '已同步' : '离线'}</span>

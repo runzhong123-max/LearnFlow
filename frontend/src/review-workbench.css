@@ -120,3 +120,362 @@
   .review-summary-cards { width: 100%; }
   .review-summary-cards article { flex: 1; }
 }
+
+/* 桌面工作台：压缩装饰信息，优先呈现复习动作与证据。 */
+.review-page-heading {
+  align-items: center;
+  padding: 24px 32px 18px;
+}
+
+.review-page-heading h1 {
+  margin: 0 0 5px;
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -.025em;
+}
+
+.review-page-heading p {
+  color: #66786e;
+  font-size: 14px;
+}
+
+.review-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.review-summary-cards article {
+  min-width: 68px;
+  border-radius: 12px;
+  padding: 9px 12px;
+}
+
+.review-summary-cards strong {
+  font-size: 20px;
+}
+
+.review-summary-cards span {
+  color: #697b72;
+  font-size: 11px;
+}
+
+.review-refresh {
+  display: inline-flex;
+  height: 36px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #cfddd5;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0 13px;
+  color: #356650;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.review-refresh:hover {
+  border-color: #91b9a5;
+  background: #f1f8f4;
+}
+
+.review-refresh:disabled {
+  cursor: wait;
+  opacity: .58;
+}
+
+.review-refresh span {
+  font-size: 16px;
+}
+
+.review-boundary-strip {
+  border: 0;
+  border-bottom: 1px solid #e1e8e3;
+  background: #f8faf8;
+  padding: 9px 32px;
+  color: #61736a;
+  font-size: 12px;
+}
+
+.review-boundary-strip summary {
+  width: max-content;
+  cursor: pointer;
+  color: #4c695b;
+  font-weight: 750;
+}
+
+.review-boundary-strip p {
+  max-width: 900px;
+  margin: 7px 0 2px;
+  color: #697970;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.review-page-state,
+.review-page-empty {
+  display: grid;
+  width: min(920px, calc(100% - 48px));
+  min-height: 330px;
+  place-items: center;
+  align-content: center;
+  margin: 20px auto 44px;
+  border: 1px solid #d9e4de;
+  border-radius: 18px;
+  background: #fff;
+  padding: 42px 24px;
+  color: #6c7c74;
+  font-size: 14px;
+  text-align: center;
+}
+
+.review-state-loader {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 12px;
+  border: 3px solid #dce9e2;
+  border-top-color: #17835c;
+  border-radius: 50%;
+  animation: review-spin .75s linear infinite;
+}
+
+@keyframes review-spin {
+  to { transform: rotate(360deg); }
+}
+
+.review-page-empty > span {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border-radius: 14px;
+  background: #e6f3eb;
+  color: #16825b;
+  font-size: 24px;
+}
+
+.review-page-empty h2 {
+  margin: 15px 0 7px;
+  color: #1b3328;
+  font-size: 20px;
+}
+
+.review-page-empty > p {
+  max-width: 520px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.review-page-empty ol {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.review-page-empty li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #e0e8e3;
+  border-radius: 10px;
+  background: #f8faf8;
+  padding: 8px 10px;
+  color: #52685d;
+  font-size: 12px;
+}
+
+.review-page-empty li b {
+  display: grid;
+  width: 19px;
+  height: 19px;
+  place-items: center;
+  border-radius: 50%;
+  background: #dff0e7;
+  color: #147351;
+  font-size: 10px;
+}
+
+.review-page-empty > div {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.review-page-empty button,
+.review-empty-focus button {
+  border: 1px solid #cfddd5;
+  border-radius: 9px;
+  background: #fff;
+  padding: 9px 13px;
+  color: #476359;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.review-page-empty .review-empty-primary {
+  border-color: #087b55;
+  background: #087b55;
+  color: #fff;
+}
+
+.review-alert {
+  width: min(1400px, calc(100% - 44px));
+  margin: 12px auto 0;
+  font-size: 13px;
+}
+
+.review-workspace-grid {
+  width: min(1500px, 100%);
+  grid-template-columns: minmax(260px, 300px) minmax(420px, 1fr) minmax(310px, 360px);
+  margin: 0 auto;
+  padding: 18px 22px 42px;
+}
+
+.review-workspace-no-selection {
+  grid-template-columns: minmax(260px, 300px) minmax(420px, 1fr);
+}
+
+.review-buckets {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  overflow: visible;
+  padding: 9px;
+}
+
+.review-buckets button {
+  padding: 7px 5px;
+  font-size: 12px;
+}
+
+.review-queue-list > button > span small,
+.review-memory-note header,
+.review-reflection-form span,
+.review-memory-note footer {
+  font-size: 11px;
+}
+
+.review-queue-list > button div strong {
+  font-size: 13px;
+}
+
+.review-queue-list > button div small,
+.review-queue-list > button div em,
+.review-question-card > header div small,
+.review-question-card > header label,
+.review-question-card select,
+.review-reflection-form select,
+.review-score-row p,
+.review-proficiency-dial span,
+.review-dimension span,
+.review-dsr-state span,
+.review-score-explanation p,
+.review-model-details,
+.review-memory-note p,
+.review-empty-memory,
+.review-reflection-form textarea {
+  font-size: 12px;
+}
+
+.review-linkage-bar,
+.review-question-card > header div span,
+.review-question-card > footer button,
+.review-item-actions button,
+.review-reflection-form button,
+.review-score-explanation strong,
+.review-memory-note > strong {
+  font-size: 12px;
+}
+
+.review-empty-queue {
+  padding: 34px 16px;
+  font-size: 13px;
+}
+
+.review-question-card {
+  padding: 20px;
+  border-radius: 16px;
+}
+
+.review-question-card h2 {
+  margin-top: 22px;
+  font-size: 20px;
+}
+
+.review-evidence-panel,
+.review-memory-panel {
+  border-radius: 16px;
+}
+
+.review-empty-focus {
+  display: grid;
+  min-height: 300px;
+  place-items: center;
+  align-content: center;
+  padding: 48px 30px;
+}
+
+.review-empty-focus p {
+  max-width: 420px;
+  margin: 8px 0 16px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+@media (max-width: 1320px) {
+  .review-workspace-grid {
+    grid-template-columns: minmax(250px, 290px) minmax(380px, 1fr);
+  }
+
+  .review-evidence-column {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .review-page-heading {
+    padding: 22px 16px 17px;
+  }
+
+  .review-heading-actions {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .review-summary-cards {
+    flex: 1;
+  }
+
+  .review-summary-cards article {
+    min-width: 0;
+  }
+
+  .review-boundary-strip {
+    padding-inline: 16px;
+  }
+
+  .review-page-state,
+  .review-page-empty {
+    width: calc(100% - 24px);
+  }
+
+  .review-workspace-grid,
+  .review-workspace-no-selection {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+
+  .review-evidence-column {
+    grid-column: auto;
+    grid-template-columns: 1fr;
+  }
+}

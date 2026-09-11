@@ -23,6 +23,7 @@ import {
   History,
   Upload,
   LockKeyhole,
+  Maximize2,
   Network,
   PanelRightClose,
   PanelRightOpen,
@@ -35,6 +36,8 @@ import {
   Square,
   Wrench,
   X,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -52,6 +55,7 @@ import { projectRunStatus } from "@/lib/jobs/run-status";
 import type { ResearchProgress } from "@/lib/jobs/research-progress";
 import ProjectToolPane from "@/app/components/ProjectToolPane";
 import RoleIntakePane from "@/app/components/RoleIntakePane";
+import { UserIdentity, type RoleAtlasIdentity } from "@/app/components/UserIdentity";
 import { useConversationState } from "@/app/components/useConversationState";
 import { useConversationDraft } from "@/app/components/useConversationDraft";
 import { chatDraftKey, requireAgentStream, restoreChatReferences } from "@/lib/chat/workspace-state";
@@ -164,16 +168,20 @@ const typeLabels: Record<string, string> = {
   actor: "参与者",
 };
 
+/* Node colours come from the LearnFlow category palette: ink for the centre,
+   blue for the industry/job ring, amber for work tasks, violet for capability,
+   green for knowledge and skill. The graph keeps its own identity through the
+   radial layout and the interaction surface, not through an off-brand palette. */
 const palettes: Record<string, { fill: string; stroke: string; label: string }> = {
-  market_role: { fill: "#24342c", stroke: "#17251e", label: "#17231d" },
-  industry_chain_node: { fill: "#dce7eb", stroke: "#809ba8", label: "#435d68" },
-  job_family: { fill: "#dce7eb", stroke: "#809ba8", label: "#435d68" },
-  occupation_standard: { fill: "#dce7eb", stroke: "#809ba8", label: "#435d68" },
-  related_role: { fill: "#dce7eb", stroke: "#809ba8", label: "#435d68" },
-  task: { fill: "#f6d9cf", stroke: "#c97759", label: "#884631" },
-  capability: { fill: "#e5ddea", stroke: "#927da0", label: "#66566f" },
-  capability_unit: { fill: "#eee9f0", stroke: "#b4a2bc", label: "#6e6175" },
-  knowledge_skill: { fill: "#dce9df", stroke: "#72927b", label: "#42634c" },
+  market_role: { fill: "#176947", stroke: "#0f5c40", label: "#0d3f2c" },
+  industry_chain_node: { fill: "#e7f0ff", stroke: "#315e9d", label: "#264a7d" },
+  job_family: { fill: "#e7f0ff", stroke: "#315e9d", label: "#264a7d" },
+  occupation_standard: { fill: "#e7f0ff", stroke: "#315e9d", label: "#264a7d" },
+  related_role: { fill: "#e7f0ff", stroke: "#315e9d", label: "#264a7d" },
+  task: { fill: "#fff5dc", stroke: "#d4a743", label: "#8c6514" },
+  capability: { fill: "#f1eefe", stroke: "#64529b", label: "#4d3f78" },
+  capability_unit: { fill: "#f6f3fe", stroke: "#8570c4", label: "#5c4b8f" },
+  knowledge_skill: { fill: "#e7f3eb", stroke: "#087a53", label: "#176947" },
 };
 
 const toolLabels: Record<string, string> = {
@@ -258,10 +266,14 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
   const [draggingNode, setDraggingNode] = useState<RoleNode | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [detailOpen, setDetailOpen] = useState(true);
+  const [graphZoom, setGraphZoom] = useState(1);
   const [messages, setMessages] = useConversationState<Message[]>(activeConversationId, initialMessages);
   const [packageStatus, setPackageStatus] = useState<PackageStatus | null>(null);
   const [actorSubjectId, setActorSubjectId] = useState("");
   const [loginHref, setLoginHref] = useState("");
+  // The signed-in LearnFlow account, shown once in the rail so the identity
+  // reads the same here as it does in the LearnFlow sidebar.
+  const [identity, setIdentity] = useState<RoleAtlasIdentity | null>(null);
   const draftKey = chatDraftKey(actorSubjectId, projectId, activeConversationId, packageStatus?.snapshotId || "");
   const draftScope = draftKey || JSON.stringify([actorSubjectId, projectId || "bundled", activeConversationId]);
   const [draft, setDraft] = useConversationDraft(draftScope, draftKey);
@@ -351,6 +363,22 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
     }));
     return restored.length ? restored : initialMessages;
   }
+
+  useEffect(() => {
+    const controller = new AbortController();
+    // One account row for the whole product: the same LearnFlow session that
+    // the sidebar of the learning app shows, read at workspace level.
+    fetch("/api/auth/session", { signal: controller.signal, cache: "no-store" })
+      .then(async (response) => response.ok ? await response.json() as { authenticated?: boolean; user?: { displayName?: string; username?: string; role?: string } } : null)
+      .then((payload) => {
+        if (controller.signal.aborted) return;
+        const user = payload?.authenticated ? payload.user : undefined;
+        if (!user?.displayName || !user.username) return;
+        setIdentity({ displayName: user.displayName, username: user.username, role: user.role === "admin" ? "admin" : "user" });
+      })
+      .catch(() => { /* the bundled sample stays readable without an account */ });
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -762,7 +790,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
             y: centerY + Math.sin(angle) * radius,
             size: node.ring === 0 ? 62 : node.ring <= 2 ? 22 : 16,
             fill: palette.fill,
-            stroke: node.lifecycle === "candidate" ? "#a97959" : palette.stroke,
+            stroke: node.lifecycle === "candidate" ? "#d4a743" : palette.stroke,
             lineWidth: node.ring === 0 ? 4 : 1.5,
             lineDash: node.lifecycle === "candidate" ? [4, 3] : undefined,
             opacity: 1,
@@ -770,11 +798,13 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
             cursor: "grab" as const,
             labelText: node.ring === 0 ? workspaceTitle : shortLabel(node.label, node.ring),
             labelPlacement: (node.ring === 0 ? "center" : "bottom") as "center" | "bottom",
-            labelFill: node.ring === 0 ? "#f8f5eb" : palette.label,
-            labelFontSize: node.ring === 0 ? 12 : node.ring <= 2 ? 9 : 8,
+            labelFill: node.ring === 0 ? "#ffffff" : palette.label,
+            // Labels are the graph's content, so they use the design system
+            // floor (11px) instead of the 8px chrome size they shipped with.
+            labelFontSize: node.ring === 0 ? 15 : node.ring <= 2 ? 12 : 11,
             labelFontWeight: node.ring === 0 ? 700 : 600,
             labelBackground: node.ring !== 0,
-            labelBackgroundFill: "#f5f2e9",
+            labelBackgroundFill: "#ffffff",
             labelBackgroundFillOpacity: 0.9,
             labelPadding: [2, 3],
           },
@@ -793,8 +823,8 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
             target: edge.target,
             data: { relationType: edge.type },
             style: {
-              stroke: edge.lifecycle === "candidate" ? "#a97959" : "#a9ada8",
-              opacity: edge.lifecycle === "candidate" ? 0.4 : 0.23,
+              stroke: edge.lifecycle === "candidate" ? "#d4a743" : "#9fb1a6",
+              opacity: edge.lifecycle === "candidate" ? 0.5 : 0.28,
               lineWidth: edge.lifecycle === "candidate" ? 1.25 : 0.75,
               lineDash: edge.lifecycle === "candidate" ? [4, 4] : undefined,
               endArrow: true,
@@ -804,13 +834,13 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
         behaviors: ["drag-canvas", "zoom-canvas", "drag-element"],
         node: {
           state: {
-            selected: { halo: true, haloStroke: "#da6d4d", haloLineWidth: 7, haloStrokeOpacity: 0.22, labelFontSize: 12 },
-            related: { opacity: 1, labelFontSize: 11 },
-            inactive: { opacity: 0.16 },
+            selected: { halo: true, haloStroke: "#087a53", haloLineWidth: 9, haloStrokeOpacity: 0.24, labelFontSize: 14 },
+            related: { opacity: 1, labelFontSize: 12 },
+            inactive: { opacity: 0.18 },
           },
           animation: false,
         },
-        edge: { animation: false, state: { related: { opacity: 0.95, lineWidth: 2, stroke: "#347b68" }, inactive: { opacity: 0.06 } } },
+        edge: { animation: false, state: { related: { opacity: 0.95, lineWidth: 2, stroke: "#087a53" }, inactive: { opacity: 0.06 } } },
         animation: false,
       });
 
@@ -875,6 +905,23 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
     const clearHover = () => setHoveredNodeId("");
     window.addEventListener("blur", clearHover);
     return () => window.removeEventListener("blur", clearHover);
+  }, []);
+
+  // The canvas is the product's centrepiece, so its zoom is a first-class
+  // control instead of a wheel-only affordance.
+  const zoomCanvas = useCallback((action: "in" | "out" | "fit") => {
+    const graph = graphRef.current;
+    if (!graph) return;
+    if (action === "fit") {
+      graph.fitView?.({ when: "overflow" });
+      setGraphZoom(Number(graph.getZoom?.() ?? 1));
+      return;
+    }
+    setGraphZoom((current) => {
+      const next = Math.min(2.5, Math.max(0.3, Number((current * (action === "in" ? 1.2 : 1 / 1.2)).toFixed(2))));
+      graph.zoomTo?.(next, { duration: 180 });
+      return next;
+    });
   }, []);
 
   function selectAndFocus(node: RoleNode) {
@@ -1285,6 +1332,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
           </Link>
         </div>
 
+        {identity ? <UserIdentity identity={identity} /> : null}
         {researchAdmin?<a className="account-row" href="/admin/research" target="_blank" rel="noopener noreferrer"><Layers3 size={18}/><span><b>测试数据中心</b><small>管理员 · 研究历史与导出</small></span></a>:null}
         <ProjectManagement title={workspaceTitle} variant="trash" />
         <button type="button" className="account-row" onClick={() => setActiveOperation("settings")}><CircleUserRound size={18} /><span><b>模型与设置</b><small>{modelSummary.label}</small></span><Settings size={15} /></button>
@@ -1384,7 +1432,13 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
             <>
               <div className="graph-canvas" ref={containerRef} onPointerLeave={() => setHoveredNodeId("")} aria-label="可交互岗位知识图谱" />
               {!graphData && <div className={`graph-loading ${workspaceError ? "error" : ""}`}>{workspaceError ? <AlertTriangle size={14} /> : <span />} {workspaceError || "正在装载岗位快照…"}</div>}
-              <div className="graph-hint"><GripVertical size={13} /> 悬停高亮一跳关系 · 滚轮缩放 · 拖入右侧对话即可引用 <button type="button" onClick={() => { setSelectedId(""); setHoveredNodeId(""); setDetailOpen(false); }}>清除聚焦</button></div>
+              <div className="graph-hint"><GripVertical size={13} /> 悬停高亮一跳关系 · 滚轮或缩放控件 · 拖入右侧对话即可引用 <button type="button" onClick={() => { setSelectedId(""); setHoveredNodeId(""); setDetailOpen(false); }}>清除聚焦</button></div>
+              <div className="graph-zoom" role="group" aria-label="图谱缩放">
+                <button type="button" onClick={() => zoomCanvas("out")} aria-label="缩小图谱" title="缩小"><ZoomOut size={15} /></button>
+                <output aria-live="polite">{Math.round(graphZoom * 100)}%</output>
+                <button type="button" onClick={() => zoomCanvas("in")} aria-label="放大图谱" title="放大"><ZoomIn size={15} /></button>
+                <button type="button" className="graph-zoom-fit" onClick={() => zoomCanvas("fit")} aria-label="适应画布" title="适应画布"><Maximize2 size={14} /></button>
+              </div>
               {detailOpen && selectedNode && (
                 <article className="node-card">
                   <button className="node-card-close" onClick={() => setDetailOpen(false)} aria-label="关闭节点卡片"><X size={14} /></button>

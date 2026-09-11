@@ -1,17 +1,17 @@
-.version-adoption { margin:14px 0 4px; border:1px solid #d1dfce; border-radius:10px; padding:14px; background:#f1f6ed; color:#4c6849; }
+.version-adoption { margin:14px 0 4px; border:1px solid #dfe5df; border-radius: var(--r-md); padding:14px; background:#f6f7f3; color:#0a6a49; }
 .version-adoption > div { display:flex; align-items:flex-start; gap:8px; }
 .version-adoption > div > svg { flex-shrink:0; margin-top:2px; }
 .version-adoption > div > span { display:grid; gap:5px; }
-.version-adoption b { font-size:12px; }
-.version-adoption small { font-size:10px; line-height:1.7; color:#84927c; }
-.version-adoption p { font-size:11px; line-height:1.9; margin:12px 0; overflow-wrap:anywhere; }
-.version-adoption p b { font-size:11px; }
-.version-card .version-adoption > label { display:block; margin:14px 0; font-size:11px; line-height:1.8; }
-.version-card .version-adoption > label > input { width:auto; margin:0 7px 0 0; accent-color:#587e4f; }
+.version-adoption b { font-size: 12px; }
+.version-adoption small { font-size: 11px; line-height:1.7; color:#1f8a60; }
+.version-adoption p { font-size: 11px; line-height:1.9; margin:12px 0; overflow-wrap:anywhere; }
+.version-adoption p b { font-size: 11px; }
+.version-card .version-adoption > label { display:block; margin:14px 0; font-size: 11px; line-height:1.8; }
+.version-card .version-adoption > label > input { width:auto; margin:0 7px 0 0; accent-color:#087a53; }
 .version-card .version-adoption > label > small { display:block; margin-left:22px; }
-.version-card .version-adoption > button { margin-top:8px; padding:9px 12px; background:#3c653c; color:#fff; border-color:#3c653c; }
-.version-notice.adoption-conflict { background:#fbf0e4; color:#93603d; border-color:#ebceb0; }
+.version-card .version-adoption > button { margin-top:8px; padding:9px 12px; background:#0a6a49; color:#ffffff; border-color:#0a6a49; }
+.version-notice.adoption-conflict { background:#e7f4ec; color:#087a53; border-color:#a4cbb6; }
 
 .release-builder { scroll-margin-block:20px; outline:none; }
-.release-builder:focus-visible { outline:2px solid #7b9a70; outline-offset:4px; }
-.release-visibility-note { color:#819378; font-size:11px; line-height:1.8; margin:12px 0; }
+.release-builder:focus-visible { outline:2px solid #1f8a60; outline-offset:4px; }
+.release-visibility-note { color:#1f8a60; font-size: 11px; line-height:1.8; margin:12px 0; }

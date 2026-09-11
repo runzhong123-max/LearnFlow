@@ -1,15 +1,15 @@
-.learning-path-mapping { margin: 8px 18px; padding: 10px 12px; border: 1px solid #d8e0d8; border-radius: 10px; background: #f6f8f3; color: #304b3d; font-size: 12px; }
+.learning-path-mapping { margin: 8px 18px; padding: 10px 12px; border: 1px solid #e7ece8; border-radius: var(--r-md); background: #fbfcfa; color: #0f5c40; font-size: 12px; }
 .learning-path-mapping summary { cursor: pointer; font-weight: 650; }
-.learning-path-mapping summary span { margin-left: 8px; color: #687970; font-size: 11px; font-weight: 400; }
+.learning-path-mapping summary span { margin-left: 8px; color: #718078; font-size: 11px; font-weight: 400; }
 .learning-path-mapping p { line-height: 1.6; margin: 7px 0; overflow-wrap: anywhere; }
 .learning-path-mapping ul { list-style: none; padding: 0; margin: 8px 0; max-height: 260px; overflow: auto; }
-.learning-path-mapping li { padding: 10px 0; border-top: 1px solid #e1e6dd; }
+.learning-path-mapping li { padding: 10px 0; border-top: 1px solid #e7ece8; }
 .learning-path-mapping li > div { display: flex; flex-wrap: wrap; gap: 6px 12px; justify-content: space-between; }
-.learning-path-mapping li > div > span { color: #876849; }
-.learning-path-mapping button { padding: 6px 9px; border: 1px solid #bdcfc3; border-radius: 6px; background: white; color: #285843; cursor: pointer; }
+.learning-path-mapping li > div > span { color: #087a53; }
+.learning-path-mapping button { padding: 6px 9px; border: 1px solid #a4cbb6; border-radius: var(--r-xs); background: white; color: #0f5c40; cursor: pointer; }
 .learning-path-mapping button:disabled { opacity: .6; cursor: wait; }
-.learning-path-mapping button:focus-visible, .learning-path-mapping summary:focus-visible { outline: 2px solid #2f7357; outline-offset: 3px; }
-.learning-path-mapping .mapping-gap, .learning-path-mapping [role=alert] { color: #965333; }
-.learning-path-mapping small { display: block; margin-top: 8px; color: #687970; line-height: 1.5; }
+.learning-path-mapping button:focus-visible, .learning-path-mapping summary:focus-visible { outline: 2px solid #0a6a49; outline-offset: 3px; }
+.learning-path-mapping .mapping-gap, .learning-path-mapping [role=alert] { color: #087a53; }
+.learning-path-mapping small { display: block; margin-top: 8px; color: #718078; line-height: 1.5; }
 
-.learning-path-mapping section { margin: 10px 0 0 8px; padding: 8px 0 8px 10px; border-left: 2px solid #d8e0d8; }
+.learning-path-mapping section { margin: 10px 0 0 8px; padding: 8px 0 8px 10px; border-left: 2px solid #e7ece8; }

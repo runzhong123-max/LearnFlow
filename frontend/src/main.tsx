@@ -1,4 +1,5 @@
 import PlanningResourceWorkbench from './PlanningResourceWorkbench'
+import { UserAvatar, UserIdentity } from '../../packages/learning-client/src/identity/UserIdentity'
 import { conversationTitle, recentConversations } from './conversation-display.ts'
 import { readTabLayout, saveTabLayout, consumeLayoutReset, withoutTabLayout } from './workspace-layout.ts'
 import { conversionMessagePresentation } from '../../packages/learning-client/src/work-task-conversion/presentation.ts'
@@ -297,6 +298,13 @@ const PROJECTS_TAB: WorkspaceTab = { id: 'projects', kind: 'projects', title: '�
 const LEARNING_PATH_TAB: WorkspaceTab = { id: 'learning-path', kind: 'learning-path', title: '学习路径' }
 const ECOSYSTEM_TAB: WorkspaceTab = { id: 'ecosystem', kind: 'ecosystem', title: '岗位图谱' }
 const PROFILE_TAB: WorkspaceTab = { id: 'profile', kind: 'profile', title: '我的画像' }
+const SIDEBAR_WIDTH_STORAGE_KEY = 'learnflow:sidebar-width'
+const SIDEBAR_MIN_WIDTH = 220
+const SIDEBAR_MAX_WIDTH = 380
+
+function boundedSidebarWidth(value: number) {
+  return Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, Number.isFinite(value) ? value : 252))
+}
 
 /** One list drives both the key handler and the reference sheet, so a shortcut
  *  can never be documented differently from the way it actually behaves. */
@@ -738,12 +746,17 @@ function App({ auth }: { auth: AuthGateSession }) {
   const [toolChoices, setToolChoices] = useState<Record<string, TutorToolChoice>>({})
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarWidth, setSidebarWidth] = useState(() => boundedSidebarWidth(Number(localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY))))
   const [renamingConversationId, setRenamingConversationId] = useState('')
   const [renameDraft, setRenameDraft] = useState('')
   const [draggingTabId, setDraggingTabId] = useState('')
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [avatarBusy, setAvatarBusy] = useState(false)
   const [avatarError, setAvatarError] = useState('')
+
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(Math.round(sidebarWidth)))
+  }, [sidebarWidth])
 
   const changeAvatar = async (file: File) => {
     setAvatarError('')
@@ -3203,6 +3216,7 @@ function App({ auth }: { auth: AuthGateSession }) {
             onClaimAction={(claimId, action, correction) => { void updateFormalClaim(claimId, action, correction) }}
             onRecordSelfReport={recordConceptSelfReport}
             onUpdateProfile={updateExplicitLearnerProfile}
+            accountIdentity={{ displayName: auth.account.display_name, username: auth.account.username, avatar: auth.account.avatar }}
           />
         </Suspense>
       )
@@ -3219,6 +3233,7 @@ function App({ auth }: { auth: AuthGateSession }) {
             onAction={(task, action) => { void updateFormalTask(task, action) }}
             onGenerateFiles={task => { void generateTaskFiles(task) }}
             onOpenFiles={() => openTab(LEARNING_FILES_TAB)}
+            onStartLearning={newConversation}
             onReturnToScene={returnToLearningScene}
           />
         </Suspense>
@@ -3227,12 +3242,12 @@ function App({ auth }: { auth: AuthGateSession }) {
     if (tab.kind === 'review') {
       return (
         <Suspense fallback={<div className="page-loading">正在载入复习队列…</div>}>
-          <ReviewWorkbenchPage connection={formalConnection} />
+          <ReviewWorkbenchPage connection={formalConnection} onOpenTasks={() => openTab(TASKS_TAB)} />
         </Suspense>
       )
     }
     if (tab.kind === 'learning-files') {
-      return <Suspense fallback={<div className="page-loading">正在载入学习文件…</div>}><LearningFilesPage onOpen={file => openTab(learningFileTab(file))} /></Suspense>
+      return <Suspense fallback={<div className="page-loading">正在载入学习文件…</div>}><LearningFilesPage onOpen={file => openTab(learningFileTab(file))} onOpenTasks={() => openTab(TASKS_TAB)} /></Suspense>
     }
     if (tab.kind === 'lecture-file' && tab.fileRef) {
       return <Suspense fallback={<div className="page-loading">正在打开讲义…</div>}><LectureFilePage lectureId={Number(tab.fileRef)} conversationId={tab.originConversationId} {...learningScopeForFile(tab.originConversationId, 'lecture', String(tab.fileRef))} onProgress={() => syncLearningFileProgress(tab.originConversationId)} onContinue={tab.originConversationId && learningScopeForFile(tab.originConversationId, 'lecture', String(tab.fileRef)).learningTaskId ? () => { void openTaskLearningFile(tab.originConversationId!, 'practice') } : undefined} onAttach={file => attachLearningFileToConversation(file, tab.originConversationId, { parentSheetId: tab.originSheetId })} /></Suspense>
@@ -3243,10 +3258,9 @@ function App({ auth }: { auth: AuthGateSession }) {
     if (tab.kind === 'settings') {
       return (
         <section className="settings-page">
-          <div className="settings-intro">
-            <span className="eyebrow">SETTINGS</span>
+          <div className="settings-intro page-hero">
             <h1>设置</h1>
-            <p>账号、模型凭据和浏览器缓存都以当前 learner 为边界；五核、学习路径与任务队列继续使用正式后端事件链。</p>
+            <p>管理账号、模型连接和学习记录。</p>
           </div>
           <AccountModelSettings
             account={auth.account}
@@ -3380,7 +3394,7 @@ function App({ auth }: { auth: AuthGateSession }) {
           if (object) addPluginDraftReference(draftKey, object)
         }}
       >
-        <header className="chat-heading">
+        <header className="chat-heading page-hero">
           <h1>{conversation.title}</h1>
           <div className="chat-state-stack">
             {conversation.projectId && <button type="button" className="project-panel-toggle" aria-expanded={projectPanelConversationId === conversation.id} onClick={() => setProjectPanelConversationId(current => current === conversation.id ? '' : conversation.id)}>项目面板</button>}
@@ -3595,6 +3609,8 @@ function App({ auth }: { auth: AuthGateSession }) {
                   )}
                   <MessageList
                     messages={messages}
+                    learnerAvatar={auth.account.avatar}
+                    learnerName={auth.account.display_name}
                     onPluginPrompt={prompt => { void runTutorTurn(conversation.id, prompt, { hideUserMessage: true }) }}
                     onPluginReference={(object, prompt) => {
                       addPluginDraftReference(draftKey, object)
@@ -4018,7 +4034,7 @@ function App({ auth }: { auth: AuthGateSession }) {
 
   return (
     <div className="app-shell">
-      <div className="workspace">
+      <div className="workspace" style={{ '--sidebar-width': `${sidebarWidth}px` } as CSSProperties}>
         <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
           <button className="sidebar-brand" type="button" onClick={newConversation} aria-label="新建 LearnFlow 对话">
             <img className="brand-mark" src="/brand-mark.png" alt="" width={36} height={36} /><span><strong>LearnFlow</strong><small>学习空间</small></span>
@@ -4125,12 +4141,12 @@ function App({ auth }: { auth: AuthGateSession }) {
           <div className="sidebar-footer">
             <details className="sidebar-account-menu">
               <summary className="sidebar-user-button" role="button" aria-label="账号菜单">
-                <span className="sidebar-profile-avatar">
-                  {auth.account.avatar
-                    ? <img src={auth.account.avatar} alt="" />
-                    : auth.account.display_name.slice(0, 1)}
-                </span>
-                <span><strong>{auth.account.display_name}</strong><small>{formalConnection.status === 'connected' ? `@${auth.account.username} · 画像已连接` : `@${auth.account.username} · 画像离线`}</small></span>
+                <UserIdentity
+                  displayName={auth.account.display_name}
+                  username={auth.account.username}
+                  avatar={auth.account.avatar}
+                  detail={formalConnection.status === 'connected' ? '画像已连接' : '画像离线'}
+                />
               </summary>
               <div className="sidebar-account-popover">
                 <button type="button" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); openTab(PROFILE_TAB) }}>
@@ -4166,6 +4182,35 @@ function App({ auth }: { auth: AuthGateSession }) {
             </details>
           </div>
         </aside>
+
+        {!sidebarCollapsed && (
+          <div
+            className="sidebar-resize-handle desktop-only"
+            role="separator"
+            aria-label="调整侧栏宽度"
+            aria-orientation="vertical"
+            aria-valuemin={SIDEBAR_MIN_WIDTH}
+            aria-valuemax={SIDEBAR_MAX_WIDTH}
+            aria-valuenow={Math.round(sidebarWidth)}
+            tabIndex={0}
+            onPointerDown={event => {
+              event.currentTarget.setPointerCapture(event.pointerId)
+              event.currentTarget.classList.add('sidebar-resize-active')
+            }}
+            onPointerMove={event => {
+              if (event.currentTarget.hasPointerCapture(event.pointerId)) setSidebarWidth(boundedSidebarWidth(event.clientX))
+            }}
+            onPointerUp={event => {
+              event.currentTarget.classList.remove('sidebar-resize-active')
+              if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
+            }}
+            onKeyDown={event => {
+              if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+              event.preventDefault()
+              setSidebarWidth(value => boundedSidebarWidth(value + (event.key === 'ArrowLeft' ? -12 : 12)))
+            }}
+          />
+        )}
 
         {sidebarOpen && <button className="sidebar-scrim" type="button" onClick={() => setSidebarOpen(false)} aria-label="关闭对话列表" />}
 
@@ -4471,8 +4516,10 @@ function ToolDecisionBridge({
   )
 }
 
-function MessageList({ messages, conversationId, onPluginPrompt, onPluginReference, onOpenLearningTask, onOpenProject, onOpenPluginResult, onQuoteFollowUp, onOpenLearningFile, onAttachLearningFile, onAcceptPathProposal, onAcceptPathPlan, onAcceptProjectRoadmap, onAcceptProjectLearningFile, activePathPlanId, pathPlanBusyId, pathPlanWriteErrors, projectBusyKey, projectError, learningFileProposalErrors }: {
+function MessageList({ messages, learnerAvatar, learnerName, conversationId, onPluginPrompt, onPluginReference, onOpenLearningTask, onOpenProject, onOpenPluginResult, onQuoteFollowUp, onOpenLearningFile, onAttachLearningFile, onAcceptPathProposal, onAcceptPathPlan, onAcceptProjectRoadmap, onAcceptProjectLearningFile, activePathPlanId, pathPlanBusyId, pathPlanWriteErrors, projectBusyKey, projectError, learningFileProposalErrors }: {
   messages: Message[]
+  learnerAvatar?: string | null
+  learnerName: string
   conversationId: string
   onPluginPrompt: (prompt: string) => void
   onPluginReference: (object: LearnFlowPluginObject, prompt?: string) => void
@@ -4544,9 +4591,11 @@ function MessageList({ messages, conversationId, onPluginPrompt, onPluginReferen
       <div className="message-column">
         {visibleMessages.map(message => (
           <article key={message.id} data-message-id={message.id} data-message-role={message.role} className={`message message-${message.role}${message.learningActionLabel ? ' message-learning-action' : ''}`}>
-            {message.role !== 'user' && (message.role === 'assistant'
-              ? <img className="message-avatar" src="/brand-mark.png" alt="" width={26} height={26} />
-              : <span className="message-avatar">i</span>)}
+            {message.role === 'user'
+              ? <UserAvatar className="message-avatar" displayName={learnerName} avatar={learnerAvatar} size="sm" />
+              : message.role === 'assistant'
+                ? <img className="message-avatar" src="/brand-mark.png" alt="" width={26} height={26} />
+                : <span className="message-avatar">i</span>}
             <div className="message-content" onMouseUp={message.role === 'assistant' ? event => captureSelection(message.id, event.currentTarget) : undefined}>
               <div className="message-meta">
                 {message.role === 'user' ? '你' : message.role === 'assistant' ? 'Tutor' : '系统'}
@@ -4663,7 +4712,11 @@ const publicVisualHub = ['/visualize', '/visual-hub'].includes(window.location.p
 void initializeRuntimeClient().then(() => root.render(
   <AuthGate>{auth => isIpAccountConsole(window.location)
     ? <main className="settings-page" style={{ maxWidth: 800, margin: '0 auto', padding: '36px 20px' }}>
-      <div className="settings-intro"><h1>LearnFlow 个人设置</h1><p>{auth.account.display_name} · @{auth.account.username}</p><p>签发个人 API Key，复制到 LearnFlow 桌面端即可连接。</p></div>
+      <div className="settings-intro page-hero">
+        <h1>LearnFlow 个人设置</h1>
+        <UserIdentity displayName={auth.account.display_name} username={auth.account.username} avatar={auth.account.avatar} size="lg" />
+        <p>签发个人 API Key，复制到 LearnFlow 桌面端即可连接。</p>
+      </div>
       <PersonalApiKeys key={auth.account.id} />
       <button type="button" className="button-secondary" style={{ marginTop: 20 }} onClick={() => { void auth.signOut() }}>退出账号</button>
     </main>

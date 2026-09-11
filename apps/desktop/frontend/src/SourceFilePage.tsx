@@ -75,7 +75,7 @@ export default function SourceFilePage({ sourceId, embedded, conversationId, she
   const unit = sourceUnit(formatId)
   return (
     <section className={`source-file-workbench${embedded ? ' learning-file-embedded' : ''}`}>
-      <header className="learning-file-workbench-heading">
+      <header className="learning-file-workbench-heading page-hero">
         <div><span className="source-format-label">{formatLabel}</span><h1>{file.name}</h1>{!embedded && file.url && <code>{file.url}</code>}</div>
         <div>
           {onFollowUp && <button type="button" className="learning-file-subtle-action" onMouseDown={event => event.preventDefault()} onClick={onFollowUp}>选中追问</button>}

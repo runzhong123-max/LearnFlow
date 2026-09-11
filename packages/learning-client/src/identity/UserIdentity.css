@@ -1,0 +1,33 @@
+/* One avatar and one identity line for every surface that shows the learner:
+   the sidebar account footer, message threads, the profile page, account
+   settings and the API key console. The avatar is always a circle at one of
+   three sizes; the copy under the name is always "@handle · state". */
+.user-avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #dff3e8;
+  color: #14704c;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: none;
+}
+
+.user-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+.user-avatar-sm { height: 26px; width: 26px; font-size: 12px; }
+.user-avatar-md { height: 32px; width: 32px; font-size: 13px; }
+.user-avatar-lg { height: 40px; width: 40px; font-size: 16px; }
+
+.user-identity { display: inline-flex; min-width: 0; align-items: center; gap: 9px; color: inherit; text-align: left; }
+.user-identity-copy { min-width: 0; }
+.user-identity-copy > strong, .user-identity-copy > small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-identity-copy > strong { color: #2b4036; font-size: 13px; font-weight: 750; }
+.user-identity-copy > small { margin-top: 2px; color: #8a9891; font-size: 12px; }
+
+/* Inside a dark or tinted surface the copy inherits the surface colour instead
+   of forcing the light-surface ink. */
+.user-identity-inherit .user-identity-copy > strong { color: inherit; }
+.user-identity-inherit .user-identity-copy > small { color: inherit; opacity: .72; }

@@ -119,17 +119,19 @@ test('archived profile memories stay editable but are not presented as active pe
   assert.match(buildProfileOverview(value)[3].items[0].source, /形式偏好/)
 })
 
-test('five-kernel overview keeps tasks out of goals and excludes archived practice', async () => {
-  const { buildFiveKernelOverview } = await import('../src/profile-overview.ts')
+test('overview labels active tasks as current activity and archived memories as stopped personalization', () => {
   const value = snapshot()
+  value.profile = { ...value.profile, career_goal: '研发工程师' }
   value.learning_tasks = [{ id: 2, title: '当前任务', status: 'active' }] as FormalLearnerSnapshot['learning_tasks']
-  value.growth = { areas: [{ id: 'ability', memories: [
-    { memory_id: 'old', status: 'archived', summary: '旧记录' },
-    { memory_id: 'current', status: 'active', summary: '提示后完成', source_label: '实践记录' },
+  value.growth = { areas: [{ id: 'direction', memories: [
+    { memory_id: 'value:long_term:career_goal', status: 'archived', summary: '旧目标' },
   ] }] } as FormalLearnerSnapshot['growth']
-  const sections = buildFiveKernelOverview(value)
-  assert.equal(new Set(sections.map(section => section.kernel)).size, 5)
-  assert.equal(sections[0].items.length, 0)
-  assert.equal(sections[1].items[0].text, '当前任务')
-  assert.deepEqual(sections[3].items.map(item => item.text), ['提示后完成'])
+  const sections = buildProfileOverview(value)
+  assert.deepEqual(sections.map(section => section.id), ['focus', 'background', 'progress', 'support'])
+  // The goal is stopped for personalization, and an active task never reads as a long-term priority.
+  assert.equal(sections[0].items[0].source, '已停止用于个性化，可在记忆管理中恢复')
+  assert.equal(sections[0].items[1].text, '当前任务')
+  assert.match(sections[0].items[1].source, /不代表长期优先级/)
+  // Every section still maps to a five-kernel dimension for evidence drill-down.
+  assert.deepEqual([...new Set(sections.map(section => section.kernel))].sort(), ['human', 'knowledge', 'value'])
 })

@@ -1,29 +1,29 @@
 .source-materials { display: grid; gap: 12px; min-width: 0; font-size: 13px; position: relative; }
-.source-materials.dragging { outline: 2px dashed #84ab96; outline-offset: 4px; border-radius: 8px; }
-.source-materials .material-drop-hint { padding: 10px; border-radius: 8px; background: #e5f0e7; color: #285e4a; text-align: center; }
+.source-materials.dragging { outline: 2px dashed #4ea47e; outline-offset: 4px; border-radius: var(--r-sm); }
+.source-materials .material-drop-hint { padding: 10px; border-radius: var(--r-sm); background: #f1f4f0; color: #0f5c40; text-align: center; }
 .material-modes { display: flex; gap: 6px; }
-.source-materials button { border: 1px solid #819b8e66; border-radius: 8px; padding: 8px 12px; color: inherit; background: transparent; cursor: pointer; }
+.source-materials button { border: 1px solid #4ea47e66; border-radius: var(--r-sm); padding: 8px 12px; color: inherit; background: transparent; cursor: pointer; }
 .material-modes button { flex: 1; }
-.material-modes button[aria-pressed=true] { background: #285e4a; color: white; border-color: #76a48f; }
+.material-modes button[aria-pressed=true] { background: #0f5c40; color: white; border-color: #4ea47e; }
 .source-materials button:disabled { opacity: .5; cursor: not-allowed; }
-.material-drop { border: 1px dashed #84ab96; border-radius: 10px; padding: 16px 12px; display: grid; gap: 10px; }
-.material-drop.dragging { background: #699a8133; outline: 2px solid #84ab96; }
+.material-drop { border: 1px dashed #4ea47e; border-radius: var(--r-md); padding: 16px 12px; display: grid; gap: 10px; }
+.material-drop.dragging { background: #1f8a6033; outline: 2px solid #4ea47e; }
 .material-drop input[type=file] { width: 100%; font-size: 12px; margin-top: 10px; }
 .source-materials small { line-height: 1.6; opacity: .8; }
-.material-error { color: #d77a5e; white-space: pre-wrap; }
-.material-item { border-bottom: 1px solid #819b8e44; padding-bottom: 10px; overflow-wrap: anywhere; }
+.material-error { color: #4ea47e; white-space: pre-wrap; }
+.material-item { border-bottom: 1px solid #4ea47e44; padding-bottom: 10px; overflow-wrap: anywhere; }
 .material-item summary { cursor: pointer; }
 .material-item pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 180px; overflow: auto; font: inherit; }
 .source-materials label { display: grid; gap: 6px; }
 .source-materials textarea { min-height: 110px; }
 .chat-tool-form .source-materials label { margin: 0; }
 .material-imports { display: grid; gap: 6px; }
-.material-import { padding: 8px; border: 1px solid #819b8e33; border-radius: 8px; min-width: 0; }
+.material-import { padding: 8px; border: 1px solid #4ea47e33; border-radius: var(--r-sm); min-width: 0; }
 .material-import > div { display: grid; gap: 4px; }
 .material-import b { font-size: 11px; font-weight: 500; overflow-wrap: anywhere; }
-.material-import span { font-size: 10px; color: #6d7e72; }
-.material-import.failed { border-color: #ce937966; }
-.material-import.failed p { color: #a2573f; font-size: 11px; }
-.material-import.reading { background: #edf4ec; }
+.material-import span { font-size: 11px; color: #718078; }
+.material-import.failed { border-color: #4ea47e66; }
+.material-import.failed p { color: #b34432; font-size: 11px; }
+.material-import.reading { background: #f6f7f3; }
 .source-materials .material-import button { padding: 3px 10px; font-size: 11px; margin-top: 6px; }
-.source-materials .material-detected { font-size: 11px; color: #285e4a; background: #edf4ec; }
+.source-materials .material-detected { font-size: 11px; color: #0f5c40; background: #f6f7f3; }

@@ -280,7 +280,7 @@ export default function ReviewWorkbenchPage({ connection, onOpenTasks }: { conne
 
   return (
     <section className="review-page">
-      <header className="review-page-heading">
+      <header className="review-page-heading page-hero">
         <div><h1>复习与错题</h1><p>集中完成到期复习、错题纠正和知识巩固。</p></div>
         <div className="review-heading-actions">
           <div className="review-summary-cards">

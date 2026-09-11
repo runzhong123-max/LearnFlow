@@ -60,11 +60,13 @@ const relationLabels: Record<string, string> = {
   prerequisite_of: "前置于",
 };
 
+/* The radar reuses the semantic graph's LearnFlow categories, so a node keeps
+   one colour whichever view you meet it in. */
 const nodeColors: Record<string, { fill: string; stroke: string; text: string }> = {
-  task: { fill: "#f4d8cd", stroke: "#bd6e51", text: "#78432f" },
-  capability: { fill: "#e4ddea", stroke: "#8f789e", text: "#5f5069" },
-  capability_unit: { fill: "#eee9f0", stroke: "#ad9ab5", text: "#685b70" },
-  knowledge_skill: { fill: "#dce9df", stroke: "#6f9178", text: "#3f6249" },
+  task: { fill: "#fff5dc", stroke: "#d4a743", text: "#8c6514" },
+  capability: { fill: "#f1eefe", stroke: "#64529b", text: "#4d3f78" },
+  capability_unit: { fill: "#f6f3fe", stroke: "#8570c4", text: "#5c4b8f" },
+  knowledge_skill: { fill: "#e7f3eb", stroke: "#087a53", text: "#176947" },
 };
 
 function compareNodes(a: RoleCardNode, b: RoleCardNode) {

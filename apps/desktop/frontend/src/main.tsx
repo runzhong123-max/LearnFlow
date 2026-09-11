@@ -1,4 +1,5 @@
 import { conversionMessagePresentation } from '../../../../packages/learning-client/src/work-task-conversion/presentation.ts'
+import { UserAvatar, UserIdentity } from '../../../../packages/learning-client/src/identity/UserIdentity'
 import { taskLearningFiles, fileKindForStage, fileProgressMessage } from './learning-file-flow'
 import { directVisualWorkflowCall } from '../../../../packages/learning-client/src/visuals/workflow.ts'
 import { resolveExplicitVisualIntent } from '../server/visual-tool-execution.ts'
@@ -3382,6 +3383,7 @@ function App({ auth }: { auth: AuthGateSession }) {
             onClaimAction={(claimId, action, correction) => { void updateFormalClaim(claimId, action, correction) }}
             onRecordSelfReport={recordConceptSelfReport}
             onUpdateProfile={updateExplicitLearnerProfile}
+            accountIdentity={{ displayName: auth.account.display_name, username: auth.account.username, avatar: auth.account.avatar }}
           />
         </Suspense>
       )
@@ -3423,7 +3425,7 @@ function App({ auth }: { auth: AuthGateSession }) {
     if (tab.kind === 'settings') {
       return (
         <section className="settings-page">
-          <div className="settings-intro">
+          <div className="settings-intro page-hero">
             <h1>设置</h1>
             <p>管理账号、模型连接和学习记录。</p>
           </div>
@@ -3556,7 +3558,7 @@ function App({ auth }: { auth: AuthGateSession }) {
     }
     return (
       <section className={`chat-page${conversation.projectId ? ' project-chat-page' : ''}${embedded ? ' project-embedded-tutor' : ''}`}>
-        <header className="chat-heading">
+        <header className="chat-heading page-hero">
           <h1>{conversation.title}</h1>
           <div className="chat-state-stack">
             {conversation.projectId && !embedded && <button type="button" className="project-panel-toggle" onClick={() => openTab({ id: `project:${conversation.projectId}`, kind: 'project', title: '项目工作台', projectId: conversation.projectId })}>项目工作台</button>}
@@ -4322,12 +4324,12 @@ function App({ auth }: { auth: AuthGateSession }) {
           <div className="sidebar-footer">
             <details className="sidebar-account-menu">
               <summary className="sidebar-user-button" role="button" aria-label="账号菜单">
-                <span className="sidebar-profile-avatar">
-                  {auth.account.avatar
-                    ? <img src={auth.account.avatar} alt="" />
-                    : auth.account.display_name.slice(0, 1)}
-                </span>
-                <span><strong>{auth.account.display_name}</strong><small>{formalConnection.status === 'connected' ? `@${auth.account.username} · 画像已连接` : `@${auth.account.username} · 画像离线`}</small></span>
+                <UserIdentity
+                  displayName={auth.account.display_name}
+                  username={auth.account.username}
+                  avatar={auth.account.avatar}
+                  detail={formalConnection.status === 'connected' ? '画像已连接' : '画像离线'}
+                />
               </summary>
               <div className="sidebar-account-popover">
                 <button type="button" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); openTab(PROFILE_TAB) }}>
@@ -4776,7 +4778,7 @@ function MessageList({ messages, learnerAvatar, learnerName, conversationId, onP
         {visibleMessages.map(message => (
           <article key={message.id} data-message-id={message.id} data-message-role={message.role} className={`message message-${message.role}${message.learningActionLabel ? ' message-learning-action' : ''}`}>
             {message.role === 'user'
-              ? <span className="message-avatar message-user-avatar">{learnerAvatar ? <img src={learnerAvatar} alt="" /> : learnerName.slice(0, 1)}</span>
+              ? <UserAvatar className="message-avatar" displayName={learnerName} avatar={learnerAvatar} size="sm" />
               : message.role === 'assistant'
                 ? <img className="message-avatar" src="/brand-mark.png" alt="" width={26} height={26} />
                 : <span className="message-avatar">i</span>}

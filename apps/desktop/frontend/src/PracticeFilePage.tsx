@@ -196,7 +196,7 @@ export default function PracticeFilePage({ practiceRef, embedded, inline, conver
   const codeRetryReady = Boolean(codeCaseId && codeRetrying && remediationViewState(cases[codeCaseId]).canRetry)
   return (
     <section className={`practice-file-workbench${embedded ? ' learning-file-embedded' : ''}${inline ? ' learning-file-inline' : ''}`}>
-      <header className={inline ? 'learning-file-inline-heading' : 'learning-file-workbench-heading'}>
+      <header className={inline ? 'learning-file-inline-heading' : 'learning-file-workbench-heading page-hero'}>
         <div><span>{inline ? `练习 · ${file.questions?.length || 1} 题` : '练习'}</span><h1>{file.title}</h1>{!embedded && !inline && <code>{file.logical_filename}</code>}</div>
         <div>
           {onFollowUp && <button type="button" className="learning-file-subtle-action" onMouseDown={event => event.preventDefault()} onClick={onFollowUp}>选中追问</button>}

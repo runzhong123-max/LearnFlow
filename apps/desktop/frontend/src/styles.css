@@ -76,7 +76,6 @@ button { cursor: pointer; }
 .sidebar-footer { border-top: 1px solid #e4e9e5; padding: 10px 10px 12px; }
 .sidebar-profile-button { display: grid; width: 100%; grid-template-columns: 31px minmax(0, 1fr) auto; align-items: center; gap: 9px; border: 1px solid transparent; border-radius: var(--r-md); background: transparent; padding: 7px; color: #4d6056; text-align: left; }
 .sidebar-profile-button:hover, .sidebar-profile-button[aria-expanded="true"] { border-color: #dce7e0; background: #eef6f1; color: #176445; }
-.sidebar-profile-avatar { display: grid; height: 31px; width: 31px; place-items: center; border-radius: var(--r-md); background: #dff3e8; color: #14704c; font-size: var(--fs-sm); font-weight: 800; }
 .sidebar-profile-button strong, .sidebar-profile-button small { display: block; }
 .sidebar-profile-button strong { font-size: var(--fs-sm); font-weight: 750; }
 .sidebar-profile-button small { margin-top: 2px; overflow: hidden; color: #8a9891; font-size: var(--fs-xs); text-overflow: ellipsis; white-space: nowrap; }
@@ -154,8 +153,7 @@ button { cursor: pointer; }
 .message-follow-up:hover { background: #edf6f1; color: #176947 !important; }
 
 .message-user { justify-content: flex-end; }
-.message-user .message-avatar { order: 2; overflow: hidden; border-radius: 50%; background: #dcefe4; color: #176b4b; }
-.message-user .message-user-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.message-user .message-avatar { order: 2; overflow: hidden; border-radius: var(--r-full); background: #dcefe4; color: #176b4b; font-size: var(--fs-xs); }
 .message-user .message-content { max-width: min(78%, 600px); flex: 0 1 auto; border-radius: var(--r-xl) 18px 5px 18px; background: #f0f2f0; padding: 10px 14px; }
 .message-user .message-meta { min-height: 15px; justify-content: flex-end; color: #7d8982; font-size: var(--fs-xs); }
 .message-user .message-meta em { background: rgba(255,255,255,.72); }
@@ -693,7 +691,23 @@ img.message-avatar { background: none; border-radius: 0; object-fit: contain; }
 .path-page, .profile-page { min-height: 0; flex: 1; overflow-y: auto; background: #f7f8f5; }
 .path-heading, .profile-page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; border-bottom: 1px solid #dfe6e1; background: #fff; padding: 28px 34px 24px; }
 .path-heading h1, .profile-page-heading h1 { margin: 5px 0 5px; font-size: var(--fs-3xl); letter-spacing: -.04em; }
+/* The profile heading leads with the learner's own avatar, on the same 40px
+   circle the sidebar and account pages use. */
+.profile-page-identity { display: flex; min-width: 0; align-items: center; gap: 14px; }
 .path-heading p, .profile-page-heading p { max-width: 700px; margin: 0; color: #728078; font-size: var(--fs-sm); line-height: 1.65; }
+
+/* One title block per page. The eyebrow, h1 and lead sentence always share a
+   single left-aligned column; only an optional action cluster moves to the
+   right edge. Pages opt in with .page-hero so a page's own layout can never
+   centre or right-align its large title. */
+.page-hero { text-align: left; }
+.page-hero > div { min-width: 0; text-align: left; }
+.page-hero > span, .page-hero h1, .page-hero > p, .page-hero > div > p { text-align: left; }
+.page-hero .eyebrow { display: block; }
+
+@media (max-width: 900px) {
+  .page-hero { align-items: flex-start; flex-direction: column; gap: 16px; }
+}
 .path-manifest { display: grid; grid-template-columns: repeat(3, auto); align-items: baseline; gap: 3px 8px; border: 1px solid #dce6df; border-radius: var(--r-md); background: #f8fbf9; padding: 12px 14px; }
 .path-manifest strong { color: #176848; font-size: var(--fs-lg); }
 .path-manifest span { color: #7d8c84; font-size: var(--fs-xs); }
@@ -1193,7 +1207,7 @@ img.message-avatar { background: none; border-radius: 0; object-fit: contain; }
 .conversation-list{overflow:visible;padding:0}.conversation-open{padding:7px 4px 7px 8px}.conversation-list strong{font-size: var(--fs-sm)}.conversation-list small{display:none}.conversation-glyph{font-size: var(--fs-sm)}.conversation-delete{width:25px;height:25px}
 .sidebar-footer{display:grid;grid-template-columns:minmax(0,1fr) 32px;gap:4px;padding:8px;border-top:1px solid #e1e7e3;background:#fbfcfa}
 .sidebar-user-button{display:flex;min-width:0;align-items:center;gap:8px;border:0;border-radius: var(--r-sm);background:transparent;padding:5px;color:#4d6056;text-align:left}.sidebar-user-button:hover{background:#edf3ef}
-.sidebar-user-button .sidebar-profile-avatar{width:28px;height:28px;border-radius: var(--r-sm)}.sidebar-user-button strong,.sidebar-user-button small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sidebar-user-button strong{font-size: var(--fs-sm)}.sidebar-user-button small{color:#91a098;font-size: var(--fs-2xs)}
+.sidebar-user-button strong,.sidebar-user-button small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sidebar-user-button strong{font-size: var(--fs-sm)}.sidebar-user-button small{color:#91a098;font-size: var(--fs-2xs)}
 .sidebar-settings-button{border:0;border-radius: var(--r-sm);background:transparent;color:#718078;font-size: var(--fs-md)}.sidebar-settings-button:hover{background:#edf3ef;color:#176848}
 .mobile-menu-trigger{width:38px;flex:none;border:0;background:transparent;color:#c2ccda;font-size: var(--fs-md)}
 
@@ -1635,10 +1649,9 @@ details > summary::-webkit-details-marker { display: none; }
 .source-attachment-popover .composer-capability-picker__selection strong { font-size: var(--fs-xs); }
 .source-attachment-popover .composer-capability-picker__selection small { font-size: var(--fs-2xs); }
 
-/* Round avatars everywhere they appear. */
-.sidebar-profile-avatar,
-.sidebar-user-button .sidebar-profile-avatar { border-radius: var(--r-full); overflow: hidden; }
-.sidebar-profile-avatar img { height: 100%; width: 100%; object-fit: cover; }
+/* The learner avatar is the shared .user-avatar circle from
+   packages/learning-client/src/identity; every surface reuses it instead of
+   declaring its own tile, radius and initial. */
 
 /* A <label>, not a <button>, so it misses the rule above; every value here
    is copied from it so the row does not read as a different typeface. */

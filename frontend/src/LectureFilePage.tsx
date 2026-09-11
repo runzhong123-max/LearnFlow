@@ -81,7 +81,7 @@ export default function LectureFilePage({ lectureId, embedded, conversationId, s
   }
   return (
     <section className={`lecture-file-workbench${embedded ? ' learning-file-embedded' : ''}`}>
-      <header className="learning-file-workbench-heading">
+      <header className="learning-file-workbench-heading page-hero">
         <div><span>讲义</span><h1>{file.title}</h1>{!embedded && <code>{file.logical_filename}</code>}</div>
         <div>
           {onFollowUp && <button type="button" className="learning-file-subtle-action" onMouseDown={event => event.preventDefault()} onClick={onFollowUp}>选中追问</button>}
