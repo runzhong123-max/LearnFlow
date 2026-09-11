@@ -385,9 +385,7 @@ export class RolePackageRuntime {
       && (!selector.snapshotId || item.manifest.snapshotId === selector.snapshotId)
     ))
     if (matches.length !== 1) {
-      throw new Error(matches.length
-        ? 'role_package_ambiguous:provide packageId, packageVersion or snapshotId'
-        : 'role_package_not_found:the requested immutable package is not installed')
+      throw this.resolutionFailure(selector, matches.length ? 'ambiguous' : 'missing')
     }
     const match = matches[0]
     // Matching id + version + snapshot is not enough to claim the pinned
@@ -395,9 +393,35 @@ export class RolePackageRuntime {
     // the caller carries a rootHash, an installed package with different
     // content must fail loudly instead of quietly answering from other bytes.
     if (selector.rootHash && match.manifest.rootHash !== selector.rootHash) {
-      throw new Error('role_package_root_hash_mismatch:the installed package with this id, version and snapshot has different content')
+      throw this.resolutionFailure(selector, 'content')
     }
     return match
+  }
+
+  /**
+   * A pinned reference can only resolve against packages this runtime can see.
+   * A bare "not installed" reads like a transient fault, so the caller retries
+   * other body-dependent tools and loops; the model cannot tell a missing本体
+   * from a hiccup. Naming what IS installed and how to install the rest makes
+   * the failure terminal: the next useful action is an operator command or a
+   * different choice, never another read.
+   *
+   * Only identities the runtime already exposes through list_role_packages are
+   * repeated here, so this adds no disclosure.
+   */
+  private resolutionFailure(selector: PackageSelector, reason: 'missing' | 'content' | 'ambiguous') {
+    const code = reason === 'content' ? 'role_package_root_hash_mismatch'
+      : reason === 'ambiguous' ? 'role_package_ambiguous' : 'role_package_not_found'
+    const requested = [selector.packageId, selector.packageVersion, selector.snapshotId].filter(Boolean).join(' / ') || '(未指定)'
+    const installed = this.packages.length
+      ? this.packages.map(item => `${item.manifest.packageId}@${item.manifest.packageVersion} (${item.manifest.snapshotId})`).join('、')
+      : '无'
+    const guidance = reason === 'content'
+      ? '本机存在同 id/版本/快照的岗位包，但内容哈希不同，不能沿用旧引用继续读取。'
+      : reason === 'ambiguous'
+        ? '选择器同时匹配多个已安装版本，请补充 packageId、packageVersion 或 snapshotId 后重试。'
+        : '该不可变版本在本机不可用，重试读取不会成功。请让运维执行 npm run role:import-release 安装该版本，或改选下方已安装版本。'
+    return new Error(`${code}:${guidance} 请求=${requested}；本机已安装=${installed}；安装完成后需重启 LearnFlow 前端以重建岗位包索引。`)
   }
 
   private hasSelector(selector: PackageSelector) {
