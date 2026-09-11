@@ -59,14 +59,9 @@ export const roleSkillDefinitions: RoleSkillDefinition[] = [
     disclosure: "metadata_first",
     defaultProfile: "user_directed",
   },
-  {
-    id: "workspace-instantiation",
-    label: "接入真实工作区",
-    description: "提取工作事件与交付物，校准岗位包",
-    scope: "snapshot",
-    execution: "durable_job",
-    disclosure: "metadata_first",
-  },
+  // NOTE: “接入真实工作区”（workspace-instantiation）的前端入口已按需求下线，
+  // 保留 RoleSkillId/WorkspaceSkillId 类型与 /snapshots/[id]/workspace 直达页面，
+  // 后端 workspace-upgrades 能力不受影响。
 ];
 
 export const workspaceSkillDefinitions = roleSkillDefinitions.filter(

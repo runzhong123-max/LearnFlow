@@ -22,14 +22,10 @@ test("内置静态快照也直接进入统一技能工作流，不回退冷启�
     roleTitle: "大模型应用工程师",
     market: "中国大陆",
   };
-  assert.deepEqual(workspaceSkillDefinitions.map((skill) => skill.label), ["迭代岗位包", "深化选中节点", "接入真实工作区"]);
+  assert.deepEqual(workspaceSkillDefinitions.map((skill) => skill.label), ["迭代岗位包", "深化选中节点"]);
   const iterationHref = workspaceSkillHref("snapshot-iteration", context);
   assert.equal(iterationHref, "/snapshots/snapshot%3Arole%3Allm-app-engineer%402026-08-19/iterate?profile=co_guided");
   assert.doesNotMatch(iterationHref, /projects\/new|cold|role=/);
-  assert.equal(
-    workspaceSkillHref("workspace-instantiation", context),
-    "/snapshots/snapshot%3Arole%3Allm-app-engineer%402026-08-19/workspace?profile=co_guided",
-  );
 });
 
 test("节点深化 Skill 复用统一迭代运行时并预填选中节点", () => {
@@ -48,13 +44,6 @@ test("节点深化 Skill 复用统一迭代运行时并预填选中节点", () =
   assert.match(url.searchParams.get("prompt") || "", /深化证据/);
 });
 
-test("真实工作区 Skill 复用当前项目、版本和会话上下文", () => {
-  const href = workspaceSkillHref("workspace-instantiation", {
-    snapshotId: "snapshot:robot@2026-08-22",
-    projectId: "project:robot",
-    versionId: "version:robot:1",
-    conversationId: "conversation:1",
-    roleTitle: "工业机器人系统运维员",
-  });
-  assert.equal(href, "/snapshots/snapshot%3Arobot%402026-08-22/workspace?profile=co_guided&project=project%3Arobot&version=version%3Arobot%3A1&conversation=conversation%3A1");
+test("真实工作区入口已从技能目录下线", () => {
+  assert.equal(workspaceSkillDefinitions.some((skill) => skill.id === "workspace-instantiation"), false);
 });
