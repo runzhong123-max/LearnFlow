@@ -47,6 +47,7 @@ const selectorProperties = {
   packageId: { type: 'string', maxLength: 220, description: '可选的精确岗位包 ID；安装多个包时必须用于消歧。' },
   packageVersion: { type: 'string', maxLength: 80, description: '可选的精确岗位包 SemVer。' },
   snapshotId: { type: 'string', maxLength: 220, description: '可选的不可变快照 ID。' },
+  rootHash: { type: 'string', minLength: 64, maxLength: 64, description: '可选的 64 位 SHA-256 内容哈希；引用后必须随 selector 一并复用，确保读取的仍是用户选定的同一份字节。' },
 } as const
 
 function schema(properties: PluginJsonSchema['properties'], required: string[] = []): PluginJsonSchema {
@@ -257,7 +258,7 @@ const plugin = defineLearnFlowPlugin({
         '当前问题涉及职业方向、岗位职责、典型任务、能力结构、知识技能、工作过程或岗位证据时，在回答或追问之前必须先调用本插件工具；不得只读取核心学习路径或依靠通用知识作答。',
         '先把插件返回的 snapshot 描述视为本轮唯一岗位事实版本；回答中不得混用其他快照。对话中还没有岗位包引用时，先把用户询问的岗位名称或原始问题作为 query 调用 list_role_packages；只有查询全部目录时才能省略 query。不得替用户自动选择。',
         '若 list_role_packages 返回 matchStatus=not_found，则当前岗位没有可用岗位包：不得调用 explore_role、search_role_knowledge 或其他岗位内容工具，不得用目录中的无关岗位包作“有限探索”。应明确说明未匹配，并引导用户点击工具结果中的 Role Atlas 入口自主研究；LearnFlow 不执行岗位包冷启动或迭代。',
-        '用户明确选择目录中的一个版本后，必须把目录返回的 packageId、packageVersion、snapshotId、rootHash 原样传给 reference_role_package。引用成功后的所有岗位读取都复用 requiredSelector；不得只按标题重新匹配或静默换版本。',
+        '用户明确选择目录中的一个版本后，必须把目录返回的 packageId、packageVersion、snapshotId、rootHash 原样传给 reference_role_package。引用成功后的所有岗位读取都复用 requiredSelector，并且必须连同其中的 rootHash 一起复用；它是用户选定内容的内容哈希，省略或改写会让读取退化为同名版本槽位匹配，而不是同一份字节。不得只按标题重新匹配或静默换版本。',
         '已经存在明确岗位包引用时，首次介绍岗位或询问“是什么、做什么、需要什么能力”调用 explore_role，并带上引用中的精确 selector；它一次返回足够的岗位全景，取得结果后通常直接回答，不要再机械调用搜索、对象读取和关系图。',
         '只有局部问题没有稳定对象 ID 时才调用 search_role_knowledge；已有 ID 时精确读取；需要岗位中心、任务、能力单元和知识技能逐环展开时用 read_capability_radar；解释局部关系时查询图；解释工作如何发生时追踪事理过程。',
         '涉及重要事实、争议、可信度或时间边界时检查证据。引用对象 ID，并区分 accepted/candidate 与 observed_pattern/documented_norm/inferred_pattern。',

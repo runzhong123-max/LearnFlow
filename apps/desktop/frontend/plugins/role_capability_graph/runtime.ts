@@ -139,6 +139,13 @@ export type PackageSelector = {
   packageId?: string
   packageVersion?: string
   snapshotId?: string
+  /**
+   * Optional content pin. A reference fixes the full immutable identity
+   * (packageId + packageVersion + snapshotId + rootHash); carrying the hash
+   * through later reads keeps them from silently resolving to different bytes
+   * that happen to share the same id, version and snapshot.
+   */
+  rootHash?: string
 }
 
 const PACKAGE_ROOT = fileURLToPath(new URL('./data/packages', import.meta.url))
@@ -373,11 +380,19 @@ export class RolePackageRuntime {
         ? 'role_package_ambiguous:provide packageId, packageVersion or snapshotId'
         : 'role_package_not_found:the requested immutable package is not installed')
     }
-    return matches[0]
+    const match = matches[0]
+    // Matching id + version + snapshot is not enough to claim the pinned
+    // content: those three fields describe a release slot, not its bytes. When
+    // the caller carries a rootHash, an installed package with different
+    // content must fail loudly instead of quietly answering from other bytes.
+    if (selector.rootHash && match.manifest.rootHash !== selector.rootHash) {
+      throw new Error('role_package_root_hash_mismatch:the installed package with this id, version and snapshot has different content')
+    }
+    return match
   }
 
   private hasSelector(selector: PackageSelector) {
-    return Boolean(selector.packageId || selector.packageVersion || selector.snapshotId)
+    return Boolean(selector.packageId || selector.packageVersion || selector.snapshotId || selector.rootHash)
   }
 
   private resolveForQuery(selector: PackageSelector, query: string) {
@@ -627,6 +642,10 @@ export class RolePackageRuntime {
           packageId: pkg.manifest.packageId,
           packageVersion: pkg.manifest.packageVersion,
           snapshotId: pkg.manifest.snapshotId,
+          // The reference verified this hash against the selected immutable
+          // package. Reusing it downstream keeps every later read pinned to the
+          // exact bytes the learner chose, not merely the same release slot.
+          rootHash: pkg.manifest.rootHash,
         },
         boundary: '引用固定到本次 ToolRun；后续工具必须复用精确 selector，不得按标题静默切换版本。',
       },
@@ -895,6 +914,7 @@ export function packageSelector(input: Record<string, PluginJson>): PackageSelec
     packageId: typeof input.packageId === 'string' && input.packageId ? input.packageId : undefined,
     packageVersion: typeof input.packageVersion === 'string' && input.packageVersion ? input.packageVersion : undefined,
     snapshotId: typeof input.snapshotId === 'string' && input.snapshotId ? input.snapshotId : undefined,
+    rootHash: typeof input.rootHash === 'string' && input.rootHash ? input.rootHash : undefined,
   }
 }
 
