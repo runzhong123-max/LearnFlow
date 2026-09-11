@@ -54,7 +54,23 @@
 | 10 | 研究循环无副作用、可终止、失败开放 | `lib/agent/research-loop.ts` | `tests/research-loop.test.ts` |
 | 16 | 产物不得自评：排序由代码复算，批准权不在模型 | `lib/iteration/products.ts` | `tests/products.test.ts` |
 | 20 | 规划器只提议：排序、拼接、挂载由代码决定 | `lib/iteration/graph.ts` `assembleProducts` | `tests/iteration-capabilities.test.ts` |
+| 21 | 研究主管不得扩大研究范围：卡片身份、findings、预算与范围来自工作项，模型只写问题、证据类别与检索方向 | `lib/iteration/supervisor.ts` | `tests/supervisor.test.ts` |
 | 14 | 不复用语义不匹配的启发式做新门禁 | review（见 §5） | `tests/augmentation.test.ts` 契约范例用例 |
+
+### 2.3.1 研究主管的边界（第 21 条展开）
+
+`createResearchSupervisor` 把确定性检查已经决定的工作项翻译成任务卡。分工是刻意的，也是第 21 条能成立的原因：
+
+| 代码所有 | 模型所有 |
+|---|---|
+| 哪些工作项需要研究 | 研究问题怎么问 |
+| 每张卡的身份（由工作项 id 派生） | 依据哪一类证据 |
+| `why.findingIds`（来自工作项） | 先试哪几条检索方向 |
+| 预算上限 | — |
+
+任务卡结构里**没有节点范围字段**，所以"顺手多写几个节点"越权无处安放。模型漏掉的工作项会补上确定性卡片——否则研究范围会因模型而悄悄收窄，看起来像是检查发现的比实际少。
+
+与来源边界判定、证据复核不同，**研究主管失败不关闭研究**：本仓对规划的既有先例是降级为确定性计划并如实标注（`coursePlannerDegraded`），而不是跳过工作。
 
 ### 2.4 预算与兼容性
 
