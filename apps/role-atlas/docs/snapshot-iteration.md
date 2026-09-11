@@ -35,6 +35,12 @@ Skill 支持三种发起方式：
 
 运行由 LangGraph 编排，但图内状态不使用进程内 `MemorySaver` 冒充恢复能力。D1 的 `snapshot_iteration_runs` 与 `snapshot_iteration_events` 保存运行输入、阶段检查点、事件和最终结果。有效的新快照进入通用 `snapshot_versions`，项目型运行还会镜像到项目版本树并更新发起会话的固定版本。
 
+### 运行中断与回收（2026-09-11）
+
+- 迭代运行在 role-atlas 进程内执行；部署或崩溃会杀死执行器，但运行行仍停留在 `running`。`lib/iteration/reaper.ts` 用确定性信号回收这类僵尸运行：运行自身（路由驱动）或父任务（`:deep` / `:repair` 自动跟进）持有有效租约即视为活跃，永不回收；否则关联角色任务进入终态（`failed`/`cancelled`/`completed`），或超过 90 分钟没有新事件（无事件时退回 `started_at`），即标记 `interrupted`。
+- 回收在 `getLatestSnapshotIteration` 读取路径惰性执行，`UPDATE` 仅匹配 `status='running'`，重复调用幂等；事件、检查点与已有成果全部保留。
+- `interrupted` 是可重试状态：`startSnapshotIteration` 允许从 `failed` 或 `interrupted` 复活同一运行；用户侧文案为“研究被中断，检查点与已有成果已保留，可重试”。
+
 ### 风险修复与自动发现（2026-09-08）
 
 - 风险修复包含已诊断的任务知识技能缺口、错误映射、孤立节点和过程缺口。这些修复可以需要研究证据，不因其 `research` 分类而被误排除；普通边界扩展仍归深度研究。

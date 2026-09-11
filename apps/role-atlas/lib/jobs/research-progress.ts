@@ -12,5 +12,5 @@ export function researchStage(kind: string, payload: Record<string, unknown> = {
 export function progressForJob(job: { status: string; phase: string }, previous?: ResearchProgress): ResearchProgress {
   const active = ["queued", "running", "recovering", "cancelling", "waiting_user"].includes(job.status);
   const stage = Math.max(previous?.stage || 0, researchStage(job.phase) || 0);
-  return { active, stage, status: job.status, message: job.status === "queued" ? "任务已接收，等待后台执行" : job.status === "recovering" ? "正在从保存处继续研究" : active ? previous?.message || researchStages[stage] : job.status === "completed" ? job.phase === "kernel.completed" ? "岗位骨架已保存，后台将继续展开研究" : "研究结果已保存，学习课程由后台继续核对" : "已有成果已保留，请查看任务记录" };
+  return { active, stage, status: job.status, message: job.status === "queued" ? "任务已接收，等待后台执行" : job.status === "recovering" ? "正在从保存处继续研究" : active ? previous?.message || researchStages[stage] : job.status === "completed" ? job.phase === "kernel.completed" ? "岗位骨架已保存，后台将继续展开研究" : "研究结果已保存，学习课程由后台继续核对" : job.status === "interrupted" ? "研究被中断，检查点与已有成果已保留，可重试" : "已有成果已保留，请查看任务记录" };
 }

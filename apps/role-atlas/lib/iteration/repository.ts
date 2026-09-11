@@ -1,8 +1,9 @@
-import { and, sql, asc, desc, eq } from "drizzle-orm";
+import { and, sql, asc, desc, eq, inArray } from "drizzle-orm";
 import { ensureAppSchema, getD1, getDb } from "@/db";
 import { snapshotIterationEvents, snapshotIterationRuns } from "@/db/schema";
 import type { IterationEvent, SnapshotIterationRequest, SnapshotIterationResult } from "./types";
 import { commitStaticSnapshot } from "@/lib/versioning/commit";
+import { reapInterruptedSnapshotIterations } from "./reaper";
 
 export async function startSnapshotIteration(request: SnapshotIterationRequest) {
   await ensureAppSchema();
@@ -26,7 +27,7 @@ export async function startSnapshotIteration(request: SnapshotIterationRequest) 
       error: null,
       completedAt: null,
     },
-    setWhere: and(eq(snapshotIterationRuns.projectId, request.snapshotRef.projectId || request.projectId || ""), eq(snapshotIterationRuns.baseSnapshotId, request.snapshotRef.snapshotId), eq(snapshotIterationRuns.status, "failed")),
+    setWhere: and(eq(snapshotIterationRuns.projectId, request.snapshotRef.projectId || request.projectId || ""), eq(snapshotIterationRuns.baseSnapshotId, request.snapshotRef.snapshotId), inArray(snapshotIterationRuns.status, ["failed", "interrupted"])),
   });
 }
 
@@ -101,6 +102,9 @@ export async function failSnapshotIteration(runId: string, error: string, cancel
 
 export async function getLatestSnapshotIteration(snapshotId: string, ownerSubjectId?: string) {
   await ensureAppSchema();
+  // Runs whose executor died (deploy/crash) stay 'running' forever; reap them
+  // lazily so this read path never presents a dead run as active research.
+  await reapInterruptedSnapshotIterations(getD1());
   const db = getDb();
   const [run] = await db.select().from(snapshotIterationRuns)
     .where(and(eq(snapshotIterationRuns.baseSnapshotId, snapshotId), ownerSubjectId ? sql`EXISTS (SELECT 1 FROM projects p WHERE p.id=${snapshotIterationRuns.projectId} AND p.owner_subject_id=${ownerSubjectId} AND p.deleted_at IS NULL)` : undefined))
