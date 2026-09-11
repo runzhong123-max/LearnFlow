@@ -2,8 +2,9 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { createFormalProject, deleteFormalProject, listFormalProjects } from './formal-runtime'
 import type { FormalProjectWorkspace } from './project'
 
-export default function ProjectsPage({ onOpen }: {
+export default function ProjectsPage({ onOpen, onProjectsChanged }: {
   onOpen: (project: FormalProjectWorkspace['project']) => void
+  onProjectsChanged?: () => void
 }) {
   const [projects, setProjects] = useState<FormalProjectWorkspace['project'][]>([])
   const [name, setName] = useState('')
@@ -34,6 +35,7 @@ export default function ProjectsPage({ onOpen }: {
     try {
       await deleteFormalProject(project.id)
       setProjects(previous => previous.filter(item => item.id !== project.id))
+      onProjectsChanged?.()
     } catch (error) {
       setError(error instanceof Error ? error.message : '项目删除失败')
     } finally { setBusy(false) }
