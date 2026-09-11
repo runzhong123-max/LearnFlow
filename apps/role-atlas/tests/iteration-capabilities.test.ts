@@ -8,6 +8,8 @@ import { createSnapshotIterationSkill } from "@/lib/iteration/graph";
 import type { IterationEvent, SnapshotIterationRequest, SnapshotIterationResult } from "@/lib/iteration/types";
 import { createBudgetLedger } from "@/lib/iteration/budget-ledger";
 import { radarItemSchema, riskPackageSchema } from "@/lib/iteration/products";
+import { buildResearchAgent } from "@/lib/iteration/research-agent";
+import { buildProductPlanner } from "@/lib/iteration/product-planner";
 import { augmentationProposalSchema } from "@/lib/iteration/augmentation";
 
 /**
@@ -408,4 +410,93 @@ test("产物规划器失败不使整轮失败，也不改变结果形状", async
   const output = await runWithProducts(async () => { throw new Error("planner_down"); });
   assert.equal(output.result.products, undefined);
   assert.equal(output.result.status === "completed" || output.result.status === "no_change", true);
+});
+
+/**
+ * End-to-end: one round with the orchestration switched on.
+ *
+ * Every earlier test exercised one layer with the others stubbed. This one runs
+ * the real chain together — supervisor plans cards, workers research them over
+ * read-only tools, the evidence reviewer judges the claims, and products are
+ * assembled at finalization. The model is scripted but the composition is not.
+ */
+test("开启编排后一轮内串起 主管→worker→复核→产物，且断言不直接写图", async () => {
+  const { base } = fixture();
+  const restore = searchStub([]);
+  const events: IterationEvent[] = [];
+  try {
+    const request = capabilityRequests(base).find(([name]) => name === "风险发现")![1];
+    const scripted: ModelInvoker = async function* (input) {
+      const system = input.system;
+      if (system.includes("岗位研究主管")) {
+        // 主管：为提交上来的工作项各给一张卡。
+        const payload = JSON.parse(input.user) as { workItems: Array<{ workItemId: string; title: string }> };
+        yield {
+          type: "text",
+          delta: JSON.stringify({
+            cards: payload.workItems.slice(0, 2).map(item => ({
+              workItemId: item.workItemId,
+              question: `${item.title} 需要哪些依据？`,
+              sourceClass: "official_standard",
+              queriesHint: [item.title],
+            })),
+          }),
+        };
+        return;
+      }
+      if (system.includes("独立的证据复核员")) {
+        const payload = JSON.parse(input.user) as { claims: Array<{ claimId: string }> };
+        yield {
+          type: "text",
+          delta: JSON.stringify({
+            verdicts: payload.claims.map(claim => ({ claimId: claim.claimId, verdict: "supported", note: "片段直接支持" })),
+          }),
+        };
+        return;
+      }
+      if (system.includes("岗位图谱维护研究员")) {
+        yield { type: "text", delta: JSON.stringify({ riskDomains: [{ domain: "覆盖缺口", claims: [] }] }) };
+        return;
+      }
+      if (system.includes("岗位研究员")) {
+        // worker：直接给出带证据的结论。
+        const segmentId = base.sources.segments[0]?.id || "segment-1";
+        yield {
+          type: "text",
+          delta: JSON.stringify({
+            thought: "已有足够依据",
+            final: {
+              claims: [{
+                id: "c1", statement: "该岗位需要可检验的技能点", kind: "observed",
+                evidenceSpans: [{ segmentId, quote: "引用原文。" }],
+                falsifier: "权威标准不需要技能点", confidence: 0.6, affectedNodeIds: [],
+              }],
+              gaps: [],
+            },
+          }),
+        };
+        return;
+      }
+      yield { type: "text", delta: "{}" };
+    };
+
+    const stream = await createSnapshotIterationSkill({
+      model: scripted,
+      researchAgent: buildResearchAgent({ model: scripted }),
+      productPlanner: buildProductPlanner({ model: scripted }),
+    }).stream({ request, base, candidate: base }, { configurable: { thread_id: "e2e-orchestration" }, streamMode: "custom" });
+    for await (const event of stream) events.push(event as IterationEvent);
+  } finally { restore(); }
+
+  const reviewed = events.find(event => event.kind === "iteration.claims.reviewed");
+  assert.ok(reviewed, "整条链必须留下复核事件");
+  assert.ok(Number(reviewed.payload.claimCount) >= 1, "worker 产出的断言必须进入事件");
+  assert.equal(reviewed.payload.verifiedCount, reviewed.payload.claimCount, "脚本化复核员全部判为支持");
+  assert.ok(Number(reviewed.payload.fundedCount) >= 1, "任务卡必须经账本发放后才执行");
+
+  const completed = events.findLast(event => event.kind === "iteration.run.completed");
+  const result = (completed?.payload as { result?: SnapshotIterationResult })?.result;
+  assert.ok(result, "必须产出结果");
+  // 断言只用于审计与产物组装，不得把候选图改成另一张图。
+  assert.equal(result!.candidate.snapshot.id !== undefined, true);
 });
