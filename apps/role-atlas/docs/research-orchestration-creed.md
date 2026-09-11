@@ -55,6 +55,7 @@
 | 16 | 产物不得自评：排序由代码复算，批准权不在模型 | `lib/iteration/products.ts` | `tests/products.test.ts` |
 | 20 | 规划器只提议：排序、拼接、挂载由代码决定 | `lib/iteration/graph.ts` `assembleProducts` | `tests/iteration-capabilities.test.ts` |
 | 21 | 研究主管不得扩大研究范围：卡片身份、findings、预算与范围来自工作项，模型只写问题、证据类别与检索方向 | `lib/iteration/supervisor.ts` | `tests/supervisor.test.ts` |
+| 22 | 研究工具只读且观察有界；引用必须落在本轮已收集的片段内 | `lib/iteration/research-tools.ts` | `tests/research-tools.test.ts` |
 | 14 | 不复用语义不匹配的启发式做新门禁 | review（见 §5） | `tests/augmentation.test.ts` 契约范例用例 |
 
 ### 2.3.1 研究主管的边界（第 21 条展开）
@@ -194,6 +195,7 @@ autonomous + 审计干净 + 全部 verified → auto
 
 1. **`productPlanner` / `researchAgent` 尚未接到 `route.ts`**：两者都是可选注入，默认关闭。接线后才成为 HTTP 可达能力，届时须补 registry 登记与 Contract impact 声明。
 2. **per-product 分层账本只对 agent 研究计费**，尚未覆盖确定性检索路径与四类产物各自的额度。
+2b. **agent 研究已具备 plan（研究主管）与 run（worker + 检索/读源工具）**，但仍未被装配：`route.ts` 尚未构造它，因此默认关闭。
 3. **风险模块仍有死代码**：`lib/risk/graph.ts` 的 8 节点风险图、legacy 风险持久化函数与 `risk_issues` / `risk_patches` 表均无调用方；`RiskIssue.status` 七态机只写 `open`。是复活还是删除尚未裁决。
 4. **`IterationWorkItem.dependencies` 与 `IterationContract.stopConditions` 只写不读**。
 5. **`ModelInvoker` 仍无原生工具调用**，当前走结构化动作协议；native 路径待验证。
