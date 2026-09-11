@@ -23,6 +23,7 @@ from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
 from app.core.config import settings
+from app.services.auth import AccountModelProviderConfig
 
 MAX_TOOL_ROUNDS = 12
 
@@ -143,11 +144,16 @@ SYSTEM_PROMPT = """你是一名学习路线规划专家。你的任务是帮助�
 class RoadmapAgent:
     """Conversational agent that plans learning roadmaps via tool calling."""
 
-    def __init__(self):
-        self.llm = ChatOpenAI(
-            model=settings.llm_model,
+    def __init__(self, provider_config: AccountModelProviderConfig | None = None):
+        provider_config = provider_config or AccountModelProviderConfig(
             api_key=settings.llm_api_key,
             base_url=settings.llm_base_url,
+            model=settings.llm_model,
+        )
+        self.llm = ChatOpenAI(
+            model=provider_config.model,
+            api_key=provider_config.api_key,
+            base_url=provider_config.base_url,
             temperature=0.7,
             timeout=180,
             max_retries=0,

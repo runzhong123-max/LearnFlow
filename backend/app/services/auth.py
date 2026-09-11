@@ -76,6 +76,13 @@ class EncryptedModelCredential:
     version: int
 
 
+@dataclass(frozen=True)
+class AccountModelProviderConfig:
+    api_key: str
+    base_url: str
+    model: str
+
+
 INVALID_LOGIN_DETAIL = "用户名或密码错误"
 LOGIN_BACKOFF_DETAIL = "登录暂不可用，请稍后重试"
 CSRF_HEADER_NAME = "x-csrf-token"
@@ -347,6 +354,16 @@ def decrypt_model_credential(account: UserAccount) -> str:
         raise
     except (binascii.Error, InvalidTag, UnicodeDecodeError, UnicodeEncodeError, ValueError) as exc:
         raise ModelCredentialDecryptionError("model credential authentication failed") from exc
+
+
+def account_model_provider_config(account: UserAccount) -> AccountModelProviderConfig:
+    """Resolve an account credential using this host's managed provider settings."""
+    api_key = decrypt_model_credential(account)
+    base_url = str(settings.llm_base_url or "").strip()
+    model = str(settings.llm_model or "").strip()
+    if not base_url or not model:
+        raise ModelCredentialDecryptionError("model provider configuration is incomplete")
+    return AccountModelProviderConfig(api_key=api_key, base_url=base_url, model=model)
 
 
 def _csrf_token(session_token: str) -> str:
