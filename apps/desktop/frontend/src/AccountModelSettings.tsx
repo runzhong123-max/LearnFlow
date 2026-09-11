@@ -292,8 +292,8 @@ export default function AccountModelSettings({
               value={providerFromBaseUrl(baseUrl)}
               onChange={event => {
                 const preset = MODEL_PROVIDERS.find(item => item.id === event.target.value)
-                if (!preset || preset.id === 'custom') return
-                onConnectionChange({ baseUrl: preset.baseUrl })
+                if (!preset) return
+                onConnectionChange({ baseUrl: preset.id === 'custom' ? '' : preset.baseUrl })
               }}
             >
               {MODEL_PROVIDERS.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
