@@ -14,6 +14,7 @@ import { createBoundaryVerifier } from "@/lib/search/boundary-verdicts";
 import type { SearchProviderConfig } from "@/lib/search/providers";
 import { applyInspectionToSnapshot, findingIdentity, inspectSnapshot } from "./inspector";
 import { preserveIterationGraph } from "./preserve-graph";
+import { runResearchWorkers, type ResearchTaskCard, type ResearchWorkerResult, type ReviewedClaim } from "./worker";
 import {
   createIterationContract,
   discoverIterationOpportunities,
@@ -52,6 +53,12 @@ const IterationState = new StateSchema({
   activeResearchPlan: z.custom<IterationResearchPlan>().optional(),
   researchPlans: z.custom<IterationResearchPlan[]>().default(() => []),
   researchReports: z.custom<WebResearchReport[]>().default(() => []),
+  /**
+   * Claims produced by agent research this round, each carrying an
+   * evidence-review verdict. Round-scoped like activeResearchPlan: reset on the
+   * next round so a stale claim can never be attributed to new work.
+   */
+  researchClaims: z.custom<ReviewedClaim[]>().default(() => []),
   researchedSources: z.custom<SourceInput[]>().default(() => []),
   patches: z.custom<GraphPatch[]>().default(() => []),
   migrations: z.record(z.string(), z.string()).default(() => ({})),
@@ -174,6 +181,24 @@ export function createSnapshotIterationSkill(input: {
   initialSeq?: number;
   searchConfig?: SearchProviderConfig;
   onCheckpoint?: (phase: string, state: Record<string, unknown>) => Promise<void>;
+  /**
+   * Optional agent research. When omitted the iteration runs exactly as before,
+   * so this stays an opt-in capability rather than a behaviour change.
+   *
+   * The agent never writes to the graph. It returns claims that already carry an
+   * evidence-review verdict, the iteration records them as a zero-target event,
+   * and the deterministic rebuild/evaluate path remains the only writer.
+   */
+  researchAgent?: {
+    plan: (input: {
+      contract: IterationContract;
+      workItems: IterationWorkItem[];
+      round: number;
+      signal?: AbortSignal;
+    }) => Promise<ResearchTaskCard[] | undefined>;
+    run: (card: ResearchTaskCard, input: { signal?: AbortSignal }) => Promise<ResearchWorkerResult>;
+    concurrency?: number;
+  };
 }) {
   let seq = input.initialSeq || 0;
   const boundaryVerifier = createBoundaryVerifier(input.model);
@@ -294,7 +319,9 @@ export function createSnapshotIterationSkill(input: {
     if (!plan.queries.length || !input.searchConfig) {
       // Fetch completion is not defect resolution. Existing sources may still
       // support a focused derivation; evaluation owns the terminal work status.
-      const update = { researchedSources: [], workItems: runningItems };
+      // Agent research carries its own tools, so it is not gated on the
+      // deterministic retrieval config being present.
+      const update = { researchedSources: [], workItems: runningItems, researchClaims: await runAgentResearch(state, runningItems, config.signal) };
       await checkpoint("research", state, update);
       return update;
     }
@@ -325,9 +352,59 @@ export function createSnapshotIterationSkill(input: {
       collectedSources: mergeIterationSources(state.collectedSources || [], researched.sources, 80),
       researchReports: [...state.researchReports, researched.report],
       workItems: runningItems,
+      // Round-scoped: a fresh research step replaces this round's claims.
+      researchClaims: state.researchClaims,
     };
+    const agentClaims = await runAgentResearch(state, runningItems, config.signal);
+    update.researchClaims = agentClaims;
     await checkpoint("research", state, update);
     return update;
+  };
+
+  /**
+   * Optional agent research on top of the deterministic retrieval above.
+   *
+   * Claims are recorded for later rounds and for audit; they are never written
+   * into the candidate graph here. A planner or worker failure leaves the round
+   * exactly as the deterministic path left it.
+   */
+  const runAgentResearch = async (state: IterationStateType, items: IterationWorkItem[], signal?: AbortSignal): Promise<ReviewedClaim[]> => {
+    if (!input.researchAgent) return [];
+    try {
+      const cards = await input.researchAgent.plan({
+        contract: state.contract!,
+        workItems: items.filter(item => item.requiresResearch),
+        round: state.round,
+        signal,
+      });
+      if (!cards?.length) return [];
+      const results = await runResearchWorkers({
+        cards,
+        concurrency: input.researchAgent.concurrency,
+        runOne: card => input.researchAgent!.run(card, { signal }),
+      });
+      const claims = results.flatMap(result => result.claims);
+      emit(state, "iteration.claims.reviewed", "research", {
+        round: state.round,
+        cardCount: cards.length,
+        claimCount: claims.length,
+        verifiedCount: claims.filter(item => item.verification === "verified").length,
+        rejectedCount: claims.filter(item => item.verification === "unverified").length,
+        stopReasons: results.map(result => result.stopReason),
+      });
+      return claims;
+    } catch (error) {
+      // Agent research is an enhancement; its failure must not fail the round.
+      emit(state, "iteration.claims.reviewed", "research", {
+        round: state.round,
+        cardCount: 0,
+        claimCount: 0,
+        verifiedCount: 0,
+        rejectedCount: 0,
+        failed: error instanceof Error ? error.message.slice(0, 300) : "agent_research_failed",
+      });
+      return [];
+    }
   };
 
   const rebuild = async (state: IterationStateType, config: { signal?: AbortSignal }) => {
@@ -501,6 +578,9 @@ export function createSnapshotIterationSkill(input: {
     })].map(item => [item.id, item])).values()];
     const findingHistory = [...new Map([...state.findingHistory, ...inspection.findings].map(finding => [finding.id, finding])).values()];
     const update = { round, candidate, inspectionWorking: inspection, opportunities, workItems, findingHistory, researchedSources: [],
+      // Claims belong to the round that produced them; carrying them forward
+      // would let an earlier round's reviewed claim be read as current evidence.
+      researchClaims: [],
       migrations: state.evaluation?.meaningful ? state.migrations : state.accepted?.migrations || {},
       patches: state.evaluation?.meaningful ? state.patches : state.accepted?.patches || [] };
     await checkpoint("next-round", state, update);
@@ -551,6 +631,9 @@ export function createSnapshotIterationSkill(input: {
       workItems: state.workItems,
       researchPlans: state.researchPlans,
       researchReports: state.researchReports,
+      // Only present when a research agent ran, so existing stored results and
+      // consumers keep their exact shape.
+      ...(input.researchAgent ? { researchClaims: state.researchClaims } : {}),
       patches: state.patches,
       diff,
       evaluation: state.evaluation!,

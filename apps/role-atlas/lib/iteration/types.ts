@@ -3,6 +3,7 @@ import { learningPathGraphInputSchema, sourceInputSchema, type ColdStartBuildRes
 import type { PlannedQuery } from "@/lib/search/web-research";
 import { snapshotReferenceSchema, type SnapshotReference } from "@/lib/snapshots/types";
 import type { GraphPatch, RiskAuditReport, RiskIssue, SemanticDiff } from "@/lib/risk/types";
+import type { ReviewedClaim } from "./worker";
 
 export const initiativeProfileSchema = z.enum(["autonomous", "co_guided", "user_directed"]);
 export const iterationModeSchema = z.enum(["auto", "freshness", "deep_research", "risk_repair"]);
@@ -193,6 +194,12 @@ export type SnapshotIterationResult = {
   workItems: IterationWorkItem[];
   researchPlans: IterationResearchPlan[];
   researchReports: WebResearchReport[];
+  /**
+   * Additive: agent-researched claims with their evidence-review verdict.
+   * Absent when no research agent is configured, so existing consumers and
+   * stored results stay valid.
+   */
+  researchClaims?: ReviewedClaim[];
   patches: GraphPatch[];
   diff: SemanticDiff;
   evaluation: IterationEvaluation;
@@ -233,7 +240,13 @@ export type IterationEventKind =
   | "iteration.snapshot.write.started"
   | "iteration.snapshot.created"
   | "iteration.run.completed"
-  | "iteration.run.failed";
+  | "iteration.run.failed"
+  /**
+   * Additive: agent research produced claims that carry an evidence-review
+   * verdict. Zero kernel target, like every other iteration event. Consumers
+   * that do not know this kind simply ignore it.
+   */
+  | "iteration.claims.reviewed";
 
 export type IterationEvent = {
   version: "1.0";

@@ -5,7 +5,7 @@ import { prepareBuildInput, compileSemanticDraft, compileRolePackage } from "@/l
 import type { ColdStartRequest } from "@/lib/build/types";
 import type { SemanticDraft } from "@/lib/build/model";
 import { createSnapshotIterationSkill } from "@/lib/iteration/graph";
-import type { SnapshotIterationRequest, SnapshotIterationResult } from "@/lib/iteration/types";
+import type { IterationEvent, SnapshotIterationRequest, SnapshotIterationResult } from "@/lib/iteration/types";
 
 /**
  * Characterization: each of the six user-selectable iteration capabilities
@@ -143,3 +143,87 @@ for (const [capability, request] of capabilityRequests(fixture().base)) {
     } finally { restore(); }
   });
 }
+
+/**
+ * Agent research is opt-in. Without it every existing capability must behave
+ * exactly as before; with it, claims are recorded for audit and must never
+ * reach the graph on their own.
+ */
+function claimCard() {
+  return {
+    id: "card-1", question: "该岗位需要哪些知识技能", sourceClass: "official_standard" as const,
+    why: { findingIds: [], detail: "" }, queriesHint: [], budget: { queries: 4 },
+  };
+}
+
+function reviewedClaim(id: string, verification: "verified" | "unverified") {
+  return {
+    claim: {
+      id, statement: `断言 ${id}`, kind: "observed" as const,
+      evidenceSpans: [{ segmentId: "segment-1", quote: "引用原文。" }],
+      falsifier: "权威标准不含该职责", confidence: 0.6, affectedNodeIds: [],
+    },
+    verification,
+    note: verification === "verified" ? "片段直接支持" : "复核不支持：片段未覆盖",
+  };
+}
+
+test("未注入研究智能体时结果形状与事件序列完全不变", async () => {
+  const { base } = fixture();
+  const restore = searchStub([]);
+  try {
+    const request = capabilityRequests(base).find(([name]) => name === "风险发现")![1];
+    const output = await createSnapshotIterationSkill({ model: capabilityModel() }).invoke({ request, base, candidate: base });
+    assert.equal("researchClaims" in output.result!, false, "未启用时不得新增结果字段");
+  } finally { restore(); }
+});
+
+test("注入研究智能体时，已复核断言随结果返回，且不被写进候选图", async () => {
+  const { base } = fixture();
+  const restore = searchStub([]);
+  const events: IterationEvent[] = [];
+  try {
+    const request = capabilityRequests(base).find(([name]) => name === "风险发现")![1];
+    const stream = await createSnapshotIterationSkill({
+      model: capabilityModel(),
+      researchAgent: {
+        plan: async () => [claimCard()],
+        run: async () => ({
+          cardId: "card-1",
+          claims: [reviewedClaim("c1", "verified"), reviewedClaim("c2", "unverified")],
+          rejectedCount: 1, stopReason: "final" as const, transcript: [], usage: { turns: 1, toolCalls: 0 },
+        }),
+      },
+    }).stream({ request, base, candidate: base }, { configurable: { thread_id: "agent-claims-test" }, streamMode: "custom" });
+    for await (const event of stream) events.push(event as IterationEvent);
+  } finally { restore(); }
+
+  const reviewed = events.find(event => event.kind === "iteration.claims.reviewed");
+  assert.ok(reviewed, "必须留下可审计的复核事件");
+  assert.equal(reviewed.payload.claimCount, 2);
+  assert.equal(reviewed.payload.verifiedCount, 1);
+  assert.equal(reviewed.payload.rejectedCount, 1);
+  assert.deepEqual(reviewed.payload.stopReasons, ["final"]);
+});
+
+test("研究智能体失败不使整轮失败，并如实记录失败原因", async () => {
+  const { base } = fixture();
+  const restore = searchStub([]);
+  const events: IterationEvent[] = [];
+  try {
+    const request = capabilityRequests(base).find(([name]) => name === "风险发现")![1];
+    const stream = await createSnapshotIterationSkill({
+      model: capabilityModel(),
+      researchAgent: {
+        plan: async () => { throw new Error("planner_down"); },
+        run: async () => { throw new Error("unreachable"); },
+      },
+    }).stream({ request, base, candidate: base }, { configurable: { thread_id: "agent-claims-fail-test" }, streamMode: "custom" });
+    for await (const event of stream) events.push(event as IterationEvent);
+  } finally { restore(); }
+
+  const reviewed = events.find(event => event.kind === "iteration.claims.reviewed");
+  assert.ok(reviewed, "失败也必须留下事件，不能静默吞掉");
+  assert.equal(reviewed.payload.claimCount, 0);
+  assert.match(String(reviewed.payload.failed), /planner_down/u);
+});
