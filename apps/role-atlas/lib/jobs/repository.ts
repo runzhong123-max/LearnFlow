@@ -2,6 +2,7 @@ import { roleJobEventsQuery } from "./journal-query";
 import { dispatchSchema } from "./dispatch-schema";
 import { linkRunAttachments, archiveJobAttempt } from "@/lib/research-collection/store";
 import { ensureAppSchema, getD1 } from "@/db";
+import { loadLargeText, storeLargeText } from "@/db/large-text";
 import { canonicalStringify } from "@/lib/versioning/canonical";
 import { roleJobClaimStatements } from "./claim-transaction";
 import { iterationRunBrief } from "@/lib/iteration/brief";
@@ -86,10 +87,11 @@ export async function claimRoleJob(input: {
   if (row && !sameScope) throw new Error("JOB_SCOPE_CONFLICT");
   const claimed = Boolean(row && row.status === "running" && row.lease_owner === input.owner);
   if(claimed&&input.projectId){await linkRunAttachments(input.projectId,input.id,input.payload);await archiveJobAttempt(input.id,input.projectId);}
+  const checkpointJson = row ? await loadLargeText(getD1(), { table: "role_jobs", id: row.id, column: "checkpoint_json" }, row.checkpoint_json) : null;
   return {
     claimed,
     job: row ? descriptor(row) : undefined,
-    checkpoint: row ? parseJson<RoleJobCheckpoint>(row.checkpoint_json) : undefined,
+    checkpoint: parseJson<RoleJobCheckpoint>(checkpointJson),
     leaseExpiresAt: row?.lease_expires_at || undefined,
   };
 }
@@ -126,28 +128,33 @@ export async function checkpointRoleJob(input: {
     state: input.state,
     savedAt,
   };
+  const stored = await storeLargeText(getD1(), { table: "role_jobs", id: input.jobId, column: "checkpoint_json" }, JSON.stringify(checkpoint));
   const written = await getD1().prepare(`UPDATE role_jobs SET phase=?, checkpoint_json=?, lease_expires_at=?, updated_at=?
     WHERE id=? AND lease_owner=? AND status='running' AND lease_expires_at>?`)
-    .bind(input.phase, JSON.stringify(checkpoint), isoAfter(input.leaseMs || 45_000), savedAt, input.jobId, input.owner, savedAt).run();
+    .bind(input.phase, stored, isoAfter(input.leaseMs || 45_000), savedAt, input.jobId, input.owner, savedAt).run();
   return Boolean(written.meta.changes);
 }
 
 export async function completeRoleJob(input: { jobId: string; owner: string; phase: string; result?: unknown }) {
   await ensureAppSchema();
   const now = new Date().toISOString();
+  const stored = await storeLargeText(getD1(), { table: "role_jobs", id: input.jobId, column: "result_json" }, JSON.stringify(input.result || {}));
   await getD1().prepare(`UPDATE role_jobs SET status='completed', phase=?, result_json=?, lease_owner=NULL,
     lease_expires_at=NULL, error=NULL, completed_at=?, updated_at=?
     WHERE id=? AND lease_owner=? AND status='running' AND lease_expires_at>?`)
-    .bind(input.phase, JSON.stringify(input.result || {}), now, now, input.jobId, input.owner, now).run();
+    .bind(input.phase, stored, now, now, input.jobId, input.owner, now).run();
   await archiveJobAttempt(input.jobId);
 }
 
 export async function failRoleJob(input: { jobId: string; owner: string; error: string; retryable: boolean; result?: unknown }) {
   await ensureAppSchema();
   const now = new Date().toISOString();
+  const stored = input.result
+    ? await storeLargeText(getD1(), { table: "role_jobs", id: input.jobId, column: "result_json" }, JSON.stringify(input.result))
+    : null;
   await getD1().prepare(`UPDATE role_jobs SET status=?, lease_owner=NULL, lease_expires_at=NULL, error=?, result_json=COALESCE(?,result_json),
     completed_at=?, updated_at=? WHERE id=? AND lease_owner=? AND status='running'`)
-    .bind("failed", input.error, input.result ? JSON.stringify(input.result) : null, now, now, input.jobId, input.owner).run();
+    .bind("failed", input.error, stored, now, now, input.jobId, input.owner).run();
   await archiveJobAttempt(input.jobId);
 }
 
@@ -157,15 +164,23 @@ export async function getRoleJob(jobId: string) {
   if (!row) return null;
   await getD1().prepare(dispatchSchema).run();
   const recovery = await getD1().prepare("SELECT state,deliveries FROM role_job_dispatch WHERE job_id=?").bind(jobId).first<{ state: string; deliveries: number }>();
-  const result = parseJson<{ outcome?: IterationOutcome }>(row.result_json);
+  const d1 = getD1();
+  const jobOwner = { table: "role_jobs", id: row.id };
+  const resultJson = await loadLargeText(d1, { ...jobOwner, column: "result_json" }, row.result_json);
+  const checkpointJson = await loadLargeText(d1, { ...jobOwner, column: "checkpoint_json" }, row.checkpoint_json);
+  const result = parseJson<{ outcome?: IterationOutcome }>(resultJson);
   const outcome = result?.outcome || await loadIterationOutcome({ id: row.id, projectId: row.project_id, kind: row.kind, status: row.status },
-    (id, projectId) => getD1().prepare("SELECT id,project_id,result_json FROM snapshot_iteration_runs WHERE id=? AND project_id=?")
-      .bind(id, projectId).first<{ id: string; project_id: string | null; result_json: string | null }>());
+    async (id, projectId) => {
+      const iteration = await d1.prepare("SELECT id,project_id,result_json FROM snapshot_iteration_runs WHERE id=? AND project_id=?")
+        .bind(id, projectId).first<{ id: string; project_id: string | null; result_json: string | null }>();
+      if (iteration) iteration.result_json = await loadLargeText(d1, { table: "snapshot_iteration_runs", id: iteration.id, column: "result_json" }, iteration.result_json);
+      return iteration;
+    });
   return {
     recovery: recovery || undefined,
     ...descriptor(row),
     iterationBrief: iterationRunBrief(parseJson<{ iteration?: unknown }>(row.input_json)?.iteration),
-    checkpoint: parseJson<RoleJobCheckpoint>(row.checkpoint_json),
+    checkpoint: parseJson<RoleJobCheckpoint>(checkpointJson),
     result: outcome ? { ...result, outcome } : result,
     leaseExpiresAt: row.lease_expires_at || undefined,
     error: row.error || undefined,

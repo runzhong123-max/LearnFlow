@@ -71,18 +71,18 @@ test("冷启动后自动串联重要深研与全量风险修复", () => {
   assert.equal(deep.mode, "deep_research");
   assert.equal(deep.initiativeProfile, "autonomous");
   assert.equal(deep.webResearch, true);
-  assert.equal(deep.maxWorkItems, 12);
-  assert.equal(deep.maxRounds, 4);
+  assert.equal(deep.maxWorkItems, 32);
+  assert.equal(deep.maxRounds, 12);
   assert.match(deep.prompt, /3—5 个/u);
 
   const repair = createColdStartRiskRepairRequest({ ...common, snapshotId: "snapshot:researched" });
   assert.equal(repair.snapshotRef.snapshotId, "snapshot:researched");
   assert.equal(repair.mode, "risk_repair");
   assert.equal(repair.webResearch, true);
-  assert.equal(repair.maxRounds, 4);
+  assert.equal(repair.maxRounds, 12);
   assert.equal(createColdStartRiskRepairRequest({ ...common, webResearch: false }).webResearch, false);
   assert.equal(createColdStartDeepResearchRequest({ ...common, webResearch: false }).webResearch, false);
-  assert.equal(repair.maxWorkItems, 16);
+  assert.equal(repair.maxWorkItems, 32);
   for (const kind of [
     "build.followup.deep_research.started",
     "build.followup.deep_research.completed",

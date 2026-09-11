@@ -1,5 +1,6 @@
 import { and, sql, asc, desc, eq } from "drizzle-orm";
-import { ensureAppSchema, getDb } from "@/db";
+import { ensureAppSchema, getD1, getDb } from "@/db";
+import { loadLargeText, storeLargeText } from "@/db/large-text";
 import { workspaceIngestionEvents, workspaceIngestionRuns } from "@/db/schema";
 import type { WorkspaceRunEvent } from "./events";
 import type {
@@ -57,9 +58,10 @@ export async function saveWorkspaceCheckpoint(runId: string, phase: string, chec
   const packageId = checkpoint && typeof checkpoint === "object" && "packageId" in checkpoint
     ? String((checkpoint as { packageId?: unknown }).packageId || "") || null
     : undefined;
+  const stored = await storeLargeText(getD1(), { table: "workspace_ingestion_runs", id: runId, column: "checkpoint_json" }, JSON.stringify(checkpoint));
   await db.update(workspaceIngestionRuns).set({
     phase,
-    checkpointJson: JSON.stringify(checkpoint),
+    checkpointJson: stored,
     ...(packageId !== undefined ? { packageId } : {}),
   }).where(eq(workspaceIngestionRuns.id, runId));
 }
@@ -71,14 +73,19 @@ export async function completeWorkspaceIngestion(input: {
   iterationRunId?: string;
 }) {
   await ensureAppSchema();
+  const d1 = getD1();
+  const storedResult = await storeLargeText(d1, { table: "workspace_ingestion_runs", id: input.runId, column: "result_json" }, JSON.stringify(input.result));
+  const storedAlignment = input.alignment
+    ? await storeLargeText(d1, { table: "workspace_ingestion_runs", id: input.runId, column: "alignment_json" }, JSON.stringify(input.alignment))
+    : null;
   const db = getDb();
   await db.update(workspaceIngestionRuns).set({
     status: "completed",
     phase: input.iterationRunId ? "iterate" : "complete",
     packageId: input.result.package.id,
     iterationRunId: input.iterationRunId,
-    resultJson: JSON.stringify(input.result),
-    alignmentJson: input.alignment ? JSON.stringify(input.alignment) : null,
+    resultJson: storedResult,
+    alignmentJson: storedAlignment,
     completedAt: new Date().toISOString(),
   }).where(eq(workspaceIngestionRuns.id, input.runId));
 }
@@ -105,12 +112,15 @@ export async function getLatestWorkspaceIngestion(input: { projectId?: string; s
   const [run] = await db.select().from(workspaceIngestionRuns).where(and(condition, input.ownerSubjectId ? sql`EXISTS (SELECT 1 FROM projects p WHERE p.id=${workspaceIngestionRuns.projectId} AND p.owner_subject_id=${input.ownerSubjectId} AND p.deleted_at IS NULL)` : undefined))
     .orderBy(desc(workspaceIngestionRuns.startedAt)).limit(1);
   if (!run) return null;
+  const d1 = getD1();
+  const resultJson = await loadLargeText(d1, { table: "workspace_ingestion_runs", id: run.id, column: "result_json" }, run.resultJson);
+  const alignmentJson = await loadLargeText(d1, { table: "workspace_ingestion_runs", id: run.id, column: "alignment_json" }, run.alignmentJson);
   const events = await db.select().from(workspaceIngestionEvents)
     .where(eq(workspaceIngestionEvents.runId, run.id)).orderBy(asc(workspaceIngestionEvents.seq));
   return {
     ...run,
-    result: run.resultJson ? JSON.parse(run.resultJson) as WorkspaceIngestionResult : null,
-    alignment: run.alignmentJson ? JSON.parse(run.alignmentJson) as WorkspaceAlignmentReport : null,
+    result: resultJson ? JSON.parse(resultJson) as WorkspaceIngestionResult : null,
+    alignment: alignmentJson ? JSON.parse(alignmentJson) as WorkspaceAlignmentReport : null,
     events: events.flatMap((event) => {
       try { return [JSON.parse(event.eventJson) as WorkspaceRunEvent]; }
       catch { return []; }

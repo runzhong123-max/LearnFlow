@@ -29,8 +29,8 @@ export const riskRunRequestSchema = z.object({
   }).default({ targetIds: [], profiles: [], question: "" }),
   targetAsOf: z.string().max(40).optional(),
   webResearch: z.boolean().default(true),
-  maxIterations: z.number().int().min(1).max(2).default(2),
-  sourceLimit: z.number().int().min(4).max(20).default(12),
+  maxIterations: z.number().int().min(1).max(4).default(4),
+  sourceLimit: z.number().int().min(4).max(64).default(64),
 });
 
 export type RiskRunRequest = z.infer<typeof riskRunRequestSchema>;

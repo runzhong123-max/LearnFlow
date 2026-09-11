@@ -23,7 +23,7 @@ test('automatic repair preserves offline consent, evidence text and full researc
   const jobId = await automaticRepairJobId('mount-one');
   assert.equal(jobId, await automaticRepairJobId('mount-one')); assert.ok(jobId.length <= 100);
   const body = automaticRepairPlan({mountId:'mount-one',jobId,projectId:'project-one',versionId:'version-one',conversationId:'conversation-one',result,mount:mountResult,sourcePayload:{build:{},webResearch:false}})!;
-  assert.equal(body.iteration.webResearch,false); assert.equal(body.iteration.maxRounds,2); assert.equal(body.iteration.sourceLimit,12); assert.equal(body.iteration.maxWorkItems,8);
+  assert.equal(body.iteration.webResearch,false); assert.equal(body.iteration.maxRounds,12); assert.equal(body.iteration.sourceLimit,64); assert.equal(body.iteration.maxWorkItems,32);
   assert.deepEqual(body.iteration.targetIds,['point-one']); assert.equal(body.iteration.supplementalSources[0].content,result.sources.segments[0].text);
   assert.equal('providerConfig' in body,false); assert.equal('mastery' in body,false);
   const noPoints = {...mountResult,unresolved:[],reason:'no_learning_points'};
@@ -87,7 +87,7 @@ test('real dispatcher queues one scoped repair, replay survives restart, and chi
     const dispatch=h.state.db.prepare('SELECT * FROM role_job_dispatch WHERE job_id=?').get(child.id)!;
     const request=await h.service.dispatchRequest(String(child.id),dispatch as never);
     assert.equal(h.service.isTrusted(request),true);assert.equal(h.service.isTrusted(new Request('http://localhost',{headers:{'x-role-worker':'true'}})),false);
-    const body=await request.json() as {iteration:ReturnType<typeof snapshotIterationRequestSchema.parse>};assert.equal(body.iteration.maxRounds,2);assert.equal(body.iteration.sourceLimit,12);assert.equal(body.iteration.webResearch,false);
+    const body=await request.json() as {iteration:ReturnType<typeof snapshotIterationRequestSchema.parse>};assert.equal(body.iteration.maxRounds,12);assert.equal(body.iteration.sourceLimit,64);assert.equal(body.iteration.webResearch,false);
     const route = await readFile('app/api/snapshot-iterations/route.ts','utf8');
     const normalization = route.slice(route.indexOf('  const iterationRequest = {'),route.indexOf('  const mayRebuild ='));
     const normalize = new Function('parsed','resolved','projectId','learningMountFeedback',normalization+'return iterationRequest;');

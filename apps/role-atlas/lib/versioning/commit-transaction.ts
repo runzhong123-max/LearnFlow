@@ -14,6 +14,8 @@ export type VersionCommit = {
   message: string;
   authorKind: string;
   packageJson: string;
+  /** Stored form for build_runs.result_json; chunk markers are owner-scoped, so it differs from packageJson when chunked. */
+  buildResultJson?: string;
   now: string;
   conversationId?: string | null;
   jobId?: string;
@@ -30,7 +32,7 @@ export function versionCommitStatements(d1: D1Database, input: VersionCommit) {
       SELECT ?, ?, 'completed', ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM projects WHERE id=? AND deleted_at IS NULL)${leaseFence}
       ON CONFLICT(id) DO UPDATE SET status='completed', result_json=excluded.result_json, error=NULL, completed_at=excluded.completed_at
       WHERE build_runs.project_id=excluded.project_id AND build_runs.status!='cancelled'`)
-      .bind(input.sourceRunId, input.projectId, input.sourceInput, input.packageJson, input.now, input.now, input.projectId, ...leaseValues),
+      .bind(input.sourceRunId, input.projectId, input.sourceInput, input.buildResultJson ?? input.packageJson, input.now, input.now, input.projectId, ...leaseValues),
     // INSERT SELECT binds the run to its owning project. A conflicting run from another project cannot be reused.
     d1.prepare(`INSERT INTO project_versions
       (id, project_id, build_run_id, parent_version_id, source_run_id, source_kind, version, snapshot_id, status, root_hash, message, author_kind, package_json, created_at)

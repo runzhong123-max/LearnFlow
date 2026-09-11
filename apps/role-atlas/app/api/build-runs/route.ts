@@ -190,7 +190,7 @@ export async function POST(request: Request) {
   const graph = createColdStartSkill(createRecordedModelInvoker(providerConfig, { projectId: buildRequest.projectId, runId: buildRequest.runId }), {
     initialSeq: await lastRoleEventSequence(buildRequest.runId),
     searchConfig,
-    sourceLimit: 16,
+    sourceLimit: 64,
     existingResearchReport,
     cache: coldStartWorkItemCache,
     execution: "kernel",

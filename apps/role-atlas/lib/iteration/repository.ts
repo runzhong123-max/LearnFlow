@@ -1,9 +1,12 @@
 import { and, sql, asc, desc, eq, inArray } from "drizzle-orm";
 import { ensureAppSchema, getD1, getDb } from "@/db";
+import { loadLargeText, storeLargeText } from "@/db/large-text";
 import { snapshotIterationEvents, snapshotIterationRuns } from "@/db/schema";
 import type { IterationEvent, SnapshotIterationRequest, SnapshotIterationResult } from "./types";
 import { commitStaticSnapshot } from "@/lib/versioning/commit";
 import { reapInterruptedSnapshotIterations } from "./reaper";
+
+const ITERATION_TABLE = "snapshot_iteration_runs";
 
 export async function startSnapshotIteration(request: SnapshotIterationRequest) {
   await ensureAppSchema();
@@ -45,9 +48,10 @@ export async function appendIterationEvent(event: IterationEvent) {
 
 export async function saveIterationCheckpoint(runId: string, phase: string, checkpoint: unknown) {
   await ensureAppSchema();
+  const stored = await storeLargeText(getD1(), { table: ITERATION_TABLE, id: runId, column: "checkpoint_json" }, JSON.stringify(checkpoint));
   const db = getDb();
   await db.update(snapshotIterationRuns)
-    .set({ phase, checkpointJson: JSON.stringify(checkpoint) })
+    .set({ phase, checkpointJson: stored })
     .where(eq(snapshotIterationRuns.id, runId));
 }
 
@@ -60,13 +64,14 @@ export async function completeSnapshotIteration(result: SnapshotIterationResult)
   const d1 = getD1();
   const now = new Date().toISOString();
   if (result.createdSnapshot) result.candidateSnapshotId = result.candidate.snapshot.id;
+  const storedResult = await storeLargeText(d1, { table: ITERATION_TABLE, id: result.runId, column: "result_json" }, JSON.stringify(result));
   const statements = [
     d1.prepare(`UPDATE snapshot_iteration_runs
       SET status=?, phase='snapshot', candidate_snapshot_id=?, result_json=?, completed_at=? WHERE id=?`)
       .bind(
         result.createdSnapshot ? "completed" : result.status,
         result.createdSnapshot ? result.candidate.snapshot.id : null,
-        JSON.stringify(result),
+        storedResult,
         now,
         result.runId,
       ),
@@ -83,10 +88,11 @@ export async function completeSnapshotIteration(result: SnapshotIterationResult)
 export async function attachIterationProjectVersion(result: SnapshotIterationResult, projectVersionId: string) {
   await ensureAppSchema();
   result.projectVersionId = projectVersionId;
+  const stored = await storeLargeText(getD1(), { table: ITERATION_TABLE, id: result.runId, column: "result_json" }, JSON.stringify(result));
   const db = getDb();
   await db.update(snapshotIterationRuns).set({
     projectVersionId,
-    resultJson: JSON.stringify(result),
+    resultJson: stored,
   }).where(eq(snapshotIterationRuns.id, result.runId));
 }
 
@@ -110,12 +116,13 @@ export async function getLatestSnapshotIteration(snapshotId: string, ownerSubjec
     .where(and(eq(snapshotIterationRuns.baseSnapshotId, snapshotId), ownerSubjectId ? sql`EXISTS (SELECT 1 FROM projects p WHERE p.id=${snapshotIterationRuns.projectId} AND p.owner_subject_id=${ownerSubjectId} AND p.deleted_at IS NULL)` : undefined))
     .orderBy(desc(snapshotIterationRuns.startedAt)).limit(1);
   if (!run) return null;
+  const resultJson = await loadLargeText(getD1(), { table: ITERATION_TABLE, id: run.id, column: "result_json" }, run.resultJson);
   const events = await db.select().from(snapshotIterationEvents)
     .where(eq(snapshotIterationEvents.runId, run.id))
     .orderBy(asc(snapshotIterationEvents.seq));
   return {
     ...run,
-    result: run.resultJson ? JSON.parse(run.resultJson) as SnapshotIterationResult : null,
+    result: resultJson ? JSON.parse(resultJson) as SnapshotIterationResult : null,
     events: events.flatMap((event) => {
       try { return [JSON.parse(event.eventJson) as IterationEvent]; }
       catch { return []; }

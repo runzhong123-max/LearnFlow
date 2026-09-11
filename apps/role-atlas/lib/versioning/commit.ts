@@ -1,5 +1,6 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { ensureAppSchema, getD1, getDb } from "@/db";
+import { loadLargeText, storeLargeText } from "@/db/large-text";
 import { buildRuns, projectVersions, projects, snapshotVersions } from "@/db/schema";
 import type { ColdStartBuildResult } from "@/lib/build/types";
 import { normalizeRolePackage } from "@/lib/packages/role-package-manifest";
@@ -13,6 +14,11 @@ function parseResult(value: string) {
   return normalizeRolePackage(JSON.parse(value) as ColdStartBuildResult);
 }
 
+/** package_json may hold a chunked-blob marker; always resolve through here. */
+function readPackageJson(table: "snapshot_versions" | "project_versions", id: string, value: string) {
+  return loadLargeText(getD1(), { table, id, column: "package_json" }, value);
+}
+
 async function backfillLegacyProjectVersions(projectId: string) {
   const db = getDb();
   const rows = await db.select().from(projectVersions).where(eq(projectVersions.projectId, projectId)).orderBy(projectVersions.createdAt);
@@ -23,7 +29,11 @@ async function backfillLegacyProjectVersions(projectId: string) {
       continue;
     }
     let result: ColdStartBuildResult;
-    try { result = parseResult(row.packageJson); }
+    try {
+      const packageJson = await readPackageJson("project_versions", row.id, row.packageJson);
+      if (!packageJson) throw new Error("PACKAGE_MISSING");
+      result = parseResult(packageJson);
+    }
     catch { parentVersionId = row.id; continue; }
     const rootHash = await sha256Hex(canonicalStringify(result));
     let sourceKind: ProjectVersionSourceKind = row.sourceKind as ProjectVersionSourceKind;
@@ -58,8 +68,9 @@ export async function commitStaticSnapshot(input: {
   const [existing] = await db.select().from(snapshotVersions)
     .where(eq(snapshotVersions.snapshotId, input.result.snapshot.id)).limit(1);
   if (existing) {
+    const existingPackageJson = await readPackageJson("snapshot_versions", existing.snapshotId, existing.packageJson);
     const existingHash = existing.contentHash === "legacy"
-      ? await sha256Hex(canonicalStringify(parseResult(existing.packageJson)))
+      ? await sha256Hex(canonicalStringify(parseResult(existingPackageJson || "")))
       : existing.contentHash;
     if (existingHash !== contentHash) throw new Error("IMMUTABLE_SNAPSHOT_CONFLICT");
     if (existing.contentHash === "legacy") {
@@ -67,6 +78,7 @@ export async function commitStaticSnapshot(input: {
     }
     return { snapshotId: existing.snapshotId, contentHash: existingHash, created: false };
   }
+  const storedPackageJson = await storeLargeText(getD1(), { table: "snapshot_versions", id: input.result.snapshot.id, column: "package_json" }, packageJson) ?? packageJson;
   const inserted = await db.insert(snapshotVersions).values({
     snapshotId: input.result.snapshot.id,
     parentSnapshotId: input.parentSnapshotId || null,
@@ -76,12 +88,13 @@ export async function commitStaticSnapshot(input: {
     contentHash,
     sourceRunId: input.sourceRunId || input.result.runId,
     protocolVersion: input.result.packages.rolePackage.protocolVersion,
-    packageJson,
+    packageJson: storedPackageJson,
   }).onConflictDoNothing().returning({ snapshotId: snapshotVersions.snapshotId });
   if (!inserted.length) {
     // Another worker can win between the lookup and insert. Reuse only byte-identical immutable content.
     const [stored] = await db.select().from(snapshotVersions).where(eq(snapshotVersions.snapshotId, input.result.snapshot.id)).limit(1);
-    const storedHash = stored?.contentHash === "legacy" ? await sha256Hex(canonicalStringify(parseResult(stored.packageJson))) : stored?.contentHash;
+    const storedPackage = stored ? await readPackageJson("snapshot_versions", stored.snapshotId, stored.packageJson) : null;
+    const storedHash = stored?.contentHash === "legacy" ? await sha256Hex(canonicalStringify(parseResult(storedPackage || ""))) : stored?.contentHash;
     if (storedHash !== contentHash) throw new Error("IMMUTABLE_SNAPSHOT_CONFLICT");
   }
   return { snapshotId: input.result.snapshot.id, contentHash, created: inserted.length > 0 };
@@ -146,10 +159,15 @@ export async function commitProjectVersion(input: {
     const [stored] = await db.select({ packageJson: snapshotVersions.packageJson }).from(snapshotVersions)
       .where(eq(snapshotVersions.snapshotId, input.reuseSnapshotId)).limit(1);
     if (!stored) throw new Error("SNAPSHOT_NOT_FOUND");
-    result = parseResult(stored.packageJson);
+    const storedPackageJson = await readPackageJson("snapshot_versions", input.reuseSnapshotId, stored.packageJson);
+    if (!storedPackageJson) throw new Error("SNAPSHOT_NOT_FOUND");
+    result = parseResult(storedPackageJson);
   }
   if (parentVersion && !alreadyStoredSnapshot) {
-    try { result = preserveStableIdentities(parseResult(parentVersion.packageJson), result).result; }
+    try {
+      const parentPackageJson = await readPackageJson("project_versions", parentVersion.id, parentVersion.packageJson);
+      if (parentPackageJson) result = preserveStableIdentities(parseResult(parentPackageJson), result).result;
+    }
     catch { /* Keep generated IDs; semantic diff will expose uncertainty. */ }
   }
   const snapshot = await commitStaticSnapshot({ result, parentSnapshotId: parentVersion?.snapshotId, sourceRunId: input.sourceRunId });
@@ -159,13 +177,16 @@ export async function commitProjectVersion(input: {
   const version = projectVersionLabel(now, snapshot.contentHash, commitIdentity);
   const status = result.snapshot.status === "ready" ? "ready" : "candidate";
   const d1 = getD1();
+  const fullPackageJson = canonicalStringify(result);
+  const storedVersionPackageJson = await storeLargeText(d1, { table: "project_versions", id, column: "package_json" }, fullPackageJson);
+  const storedBuildResultJson = await storeLargeText(d1, { table: "build_runs", id: input.sourceRunId, column: "result_json" }, fullPackageJson);
   try {
     const committed = await d1.batch([...versionCommitStatements(d1, {
       id, projectId: input.projectId, sourceRunId: input.sourceRunId, sourceKind: input.sourceKind,
       sourceInput: JSON.stringify(input.sourceInput || { kind: input.sourceKind }), parentVersionId,
       expectedHeadId: parentVersionId, version, snapshotId: result.snapshot.id,
       rootHash: snapshot.contentHash, status, message: input.message, authorKind: input.authorKind || "agent",
-      packageJson: canonicalStringify(result), now, conversationId: input.conversationId, jobId: input.jobId, jobOwner: input.jobOwner,
+      packageJson: storedVersionPackageJson ?? "", buildResultJson: storedBuildResultJson ?? "", now, conversationId: input.conversationId, jobId: input.jobId, jobOwner: input.jobOwner,
     }), automaticMountEnqueueStatement(d1, { projectId: input.projectId, versionId: id, conversationId: input.conversationId, now })]);
     if (!committed[1].meta.changes) throw new Error("BUILD_RUN_PROJECT_CONFLICT");
   } catch (error) {
@@ -186,9 +207,12 @@ export async function listProjectVersions(projectId: string): Promise<ProjectVer
   const db = getDb();
   const rows = await db.select().from(projectVersions)
     .where(eq(projectVersions.projectId, projectId)).orderBy(desc(projectVersions.createdAt));
-  return rows.flatMap((row) => {
+  const records: ProjectVersionRecord[] = [];
+  for (const row of rows) {
     try {
-      return [{
+      const packageJson = await readPackageJson("project_versions", row.id, row.packageJson);
+      if (!packageJson) continue;
+      records.push({
         id: row.id,
         projectId: row.projectId,
         parentVersionId: row.parentVersionId,
@@ -201,12 +225,13 @@ export async function listProjectVersions(projectId: string): Promise<ProjectVer
         message: row.message,
         authorKind: row.authorKind,
         createdAt: row.createdAt,
-        result: parseResult(row.packageJson),
-      } satisfies ProjectVersionRecord];
+        result: parseResult(packageJson),
+      } satisfies ProjectVersionRecord);
     } catch {
-      return [];
+      // Skip versions whose package cannot be read; the timeline stays truthful.
     }
-  });
+  }
+  return records;
 }
 
 export async function getProjectVersionRecord(projectId: string, versionId: string) {
@@ -216,12 +241,14 @@ export async function getProjectVersionRecord(projectId: string, versionId: stri
   const [row] = await db.select().from(projectVersions)
     .where(and(eq(projectVersions.projectId, projectId), eq(projectVersions.id, versionId))).limit(1);
   if (!row) return null;
+  const packageJson = await readPackageJson("project_versions", row.id, row.packageJson);
+  if (!packageJson) return null;
   return {
     ...row,
     parentVersionId: row.parentVersionId,
     sourceRunId: row.sourceRunId || row.buildRunId,
     sourceKind: row.sourceKind as ProjectVersionSourceKind,
-    result: parseResult(row.packageJson),
+    result: parseResult(packageJson),
   };
 }
 
@@ -237,12 +264,13 @@ export async function restoreProjectVersion(input: {
   const runId = domainId("restore-run");
   const now = new Date().toISOString();
   const db = getDb();
+  const storedResult = await storeLargeText(getD1(), { table: "build_runs", id: runId, column: "result_json" }, canonicalStringify(target.result));
   await db.insert(buildRuns).values({
     id: runId,
     projectId: input.projectId,
     status: "completed",
     inputJson: JSON.stringify({ kind: "restore", targetVersionId: input.targetVersionId }),
-    resultJson: canonicalStringify(target.result),
+    resultJson: storedResult,
     startedAt: now,
     completedAt: now,
   });

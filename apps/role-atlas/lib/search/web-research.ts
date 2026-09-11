@@ -750,7 +750,7 @@ export async function researchRoleSources(input: {
       roleTitle: input.request.roleTitle,
       market: input.request.market,
       roleDescription: input.request.roleDescription,
-      candidates: ranked.slice(0, 24).map((item) => ({
+      candidates: ranked.slice(0, 48).map((item) => ({
         url: item.result.url,
         title: item.result.title,
         domain: new URL(item.result.url).hostname,
@@ -771,7 +771,7 @@ export async function researchRoleSources(input: {
   const perDomain = new Map<string, number>();
   const selected: typeof ranked = [];
   const selectedUrls = new Set<string>();
-  const limit = Math.max(6, Math.min(input.sourceLimit || 16, 20));
+  const limit = Math.max(6, Math.min(input.sourceLimit || 64, 64));
   const accept = (item: (typeof ranked)[number]) => {
     if (selectedUrls.has(item.result.url) || selected.length >= limit) return false;
     if (item.relevance < minimumRoleRelevance(item.categories)) return false;
@@ -787,7 +787,7 @@ export async function researchRoleSources(input: {
     if (boundaryHardRejects(item.boundaryVerdict, tier)) return false;
     const host = new URL(item.result.url).hostname;
     const count = perDomain.get(host) || 0;
-    if (count >= 2) return false;
+    if (count >= 4) return false;
     selected.push(item);
     selectedUrls.add(item.result.url);
     perDomain.set(host, count + 1);

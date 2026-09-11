@@ -764,7 +764,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     emit(state.request, "build.targeted_research.started", "evidence", { reason: "missing_task_layer", round, queryCount: options?.searchConfig ? queries.length : 0, message: "尚未找到可支撑岗位任务的证据，正在补充招聘职责和真实工作实践。" });
     if (options?.searchConfig) {
       try {
-        const researched = await researchRoleSources({ request: { ...state.request, roleTitle: role }, config: options.searchConfig, queries, sourceLimit: 6, verifyBoundaries: boundaryVerifier, signal: config.signal });
+        const researched = await researchRoleSources({ request: { ...state.request, roleTitle: role }, config: options.searchConfig, queries, sourceLimit: 16, verifyBoundaries: boundaryVerifier, signal: config.signal });
         activeRequest = { ...activeRequest, sources: mergeResearchSources(activeRequest.sources, researched.sources) };
         report = mergeResearchReports(report, researched.report);
       } catch (error) {
@@ -776,7 +776,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     const assets = qualifySources(raw.assets, raw.segments);
     const prepared = { ...raw, assets };
     const examined = new Set(state.shards.map(shard => shard.id));
-    const routed = selectKernelSourceShards({ shards: createSourceShards({ assets, segments: raw.segments }).filter(shard => !examined.has(shard.id)), assets, roleTitle: role, maxPublicShards: 8 });
+    const routed = selectKernelSourceShards({ shards: createSourceShards({ assets, segments: raw.segments }).filter(shard => !examined.has(shard.id)), assets, roleTitle: role, maxPublicShards: 16 });
     const shards = [...state.shards, ...routed.selected];
     emit(state.request, "build.targeted_research.completed", "evidence", { reason: "missing_task_layer", round, addedSourceShards: routed.selected.length, report });
     return { activeRequest, prepared, researchReport: report, shards, taskRecoveryRound: round, targetedResearchQueries: state.targetedResearchQueries + (options?.searchConfig ? queries.length : 0), laneFailures: failures };
@@ -815,11 +815,11 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
 
   const targetedKnowledgeResearch = async (state: typeof BuildState.State, config: { signal?: AbortSignal }, knowledgeGroups: TaskGroup[]) => {
     if (!options?.searchConfig || !knowledgeGroups.length) return {};
-    const budget = Math.max(0, 12 - state.targetedResearchQueries);
+    const budget = Math.max(0, 32 - state.targetedResearchQueries);
     // A failed quality check overrides pre-extraction heuristics: the presence
     // of a technical document or mention did not actually close these gaps.
     const needy = knowledgeGroups.filter(group => state.qualityRepairRound > 0
-      || taskGroupNeedsKnowledgeResearch(group, state.mentions, state.prepared!.assets, state.prepared!.segments)).slice(0, Math.min(4, budget));
+      || taskGroupNeedsKnowledgeResearch(group, state.mentions, state.prepared!.assets, state.prepared!.segments)).slice(0, Math.min(8, budget));
     if (!needy.length) return {};
     const category = state.qualityRepairRound === 1 ? "work_practice" : state.qualityRepairRound > 1 ? "education" : "technology";
     const angle = category === "technology" ? "官方文档 原理 操作 验证" : category === "work_practice" ? "项目实践 操作流程 故障诊断 交付 验收" : "实训项目 知识原理 技能练习 评价标准";
@@ -831,7 +831,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
         config: options.searchConfig,
         queries,
         planStrategy: "deterministic",
-        sourceLimit: Math.min(6, Math.max(3, queries.length * 2)),
+        sourceLimit: Math.min(16, Math.max(6, queries.length * 2)),
         verifyBoundaries: boundaryVerifier,
         signal: config.signal,
         onProgress: (progress) => {
@@ -885,11 +885,11 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     const evidenceState = { ...state, prepared: targeted.prepared || state.prepared! };
     const targetedPromise = Promise.resolve(targeted);
     const invokeKnowledgeGroup = async (group: TaskGroup, prefix: string, prepared: PreparedBuild) => {
-      const segments = selectKnowledgeContext({ group, segments: prepared.segments, mentions: state.mentions, assets: prepared.assets, maxTokens: 4_800 });
+      const segments = selectKnowledgeContext({ group, segments: prepared.segments, mentions: state.mentions, assets: prepared.assets, maxTokens: 9_600 });
       const mentions = mentionsForSegments(state.mentions, segments.map((segment) => segment.id));
       const prompt = knowledgeDerivationPrompt({ roleTitle: state.request.roleTitle, roleDescription: state.request.roleDescription, group, mentions, segments, assets: prepared.assets, definitionTargets: (state.semanticDraft?.nodes || []).filter(node => options?.learningDefinitionTargetIds?.includes(node.tempId)), mode: "detail", iterationObjective: options?.iterationObjective });
       const lane = `knowledge:${group.id}${state.qualityRepairRound ? `:pass-${state.qualityRepairRound}` : ""}`;
-      const outputBudget = group.tasks.length > 1 ? 5_600 : 3_600;
+      const outputBudget = group.tasks.length > 1 ? 8_000 : 6_000;
       const draft = await runWorkItem({ request: state.request, workItems, stage: "task-knowledge-derivation", lane, inputRefs: [group.id, ...group.tasks.map(task => task.tempId), ...segments.map((segment) => segment.id)], priority: 7, estimatedInputTokens: estimateTokens(prompt.user), maxOutputTokens: outputBudget, cachePayload: JSON.stringify(prompt), profile: "semantic", invoke: (onReasoning) => invokeStructured({ model, ...prompt, schema: knowledgeDerivationSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: outputBudget, timeoutMs: 65_000, totalTimeoutMs: 95_000, onReasoning }) });
       const checked = inspectKnowledgeDerivation({ draft, group, mentions, segments });
       let accepted = checked.accepted;
@@ -993,10 +993,10 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       for (let round = 0; round < 2; round += 1) {
         const coverage = capabilityCoverage(combined);
         if (!coverage.uncoveredTaskIds.length && !coverage.capabilitiesWithoutUnits.length && !coverage.unitsWithoutCultivation.length && !coverage.capabilitiesWithoutTransfer.length) break;
-        const capabilitySegments = selectKnowledgeContext({ group: { id: "capability", tasks: state.taskDraft!.nodes.filter(node => node.type === "task"), evidenceSegmentIds: [] }, segments: evidenceState.prepared.segments, mentions: state.mentions, assets: evidenceState.prepared.assets, maxTokens: 3_600 });
+        const capabilitySegments = selectKnowledgeContext({ group: { id: "capability", tasks: state.taskDraft!.nodes.filter(node => node.type === "task"), evidenceSegmentIds: [] }, segments: evidenceState.prepared.segments, mentions: state.mentions, assets: evidenceState.prepared.assets, maxTokens: 7_200 });
         const prompt = capabilityDerivationPrompt({ roleTitle: state.request.roleTitle, roleDescription: state.request.roleDescription, segments: capabilitySegments, tasks: state.taskDraft!.nodes, mentions: state.mentions, coverage, repairAttempt: round > 0 || state.qualityRepairRound > 0, existing: combined.nodes.filter(node => ["capability", "capability_unit"].includes(node.type)).map(node => ({ id: node.tempId, label: node.label, summary: node.summary })) });
         try {
-          const draft = await runWorkItem({ request: state.request, workItems, stage: "cross-task-capability-derivation", lane: round ? "capability:coverage-repair" : "capability:cross-task", inputRefs: [...stableTaskIds], priority: 8, estimatedInputTokens: estimateTokens(prompt.user), maxOutputTokens: 4_800, cachePayload: prompt.user, profile: "semantic", invoke: (onReasoning) => invokeStructured({ model, ...prompt, schema: capabilityDerivationSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: 4_800, timeoutMs: 65_000, totalTimeoutMs: 95_000, onReasoning }) });
+          const draft = await runWorkItem({ request: state.request, workItems, stage: "cross-task-capability-derivation", lane: round ? "capability:coverage-repair" : "capability:cross-task", inputRefs: [...stableTaskIds], priority: 8, estimatedInputTokens: estimateTokens(prompt.user), maxOutputTokens: 8_000, cachePayload: prompt.user, profile: "semantic", invoke: (onReasoning) => invokeStructured({ model, ...prompt, schema: capabilityDerivationSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: 8_000, timeoutMs: 65_000, totalTimeoutMs: 95_000, onReasoning }) });
           const part = prefixDerivedDraft(capabilityToSemanticDraft({ draft, tasks: state.taskDraft!.nodes, mentions: state.mentions }), `q${state.qualityRepairRound}:cross${round}:`, stableTaskIds);
           output = mergeDerivedSemanticDrafts(output, [part]);
           combined = mergeDerivedSemanticDrafts(base, [output]);
@@ -1010,11 +1010,11 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       return output;
     })();
     const invokeProcessGroup = async (group: TaskGroup, prefix: string) => {
-      const segments = selectSegmentsForTaskGroup({ group, segments: evidenceState.prepared.segments, mentions: state.mentions, assets: evidenceState.prepared.assets, purpose: "process", maxTokens: 4_000 });
+      const segments = selectSegmentsForTaskGroup({ group, segments: evidenceState.prepared.segments, mentions: state.mentions, assets: evidenceState.prepared.assets, purpose: "process", maxTokens: 8_000 });
       const mentions = mentionsForSegments(state.mentions, segments.map((segment) => segment.id));
       const prompt = taskProcessPrompt({ roleTitle: state.request.roleTitle, roleDescription: state.request.roleDescription, group, mentions, segments: segments.map((segment) => ({ id: segment.id, sourceKind: sourceKindForSegment(segment, evidenceState.prepared.assets), text: segment.text })) });
       const lane = `process:${group.id}${state.qualityRepairRound ? `:pass-${state.qualityRepairRound}` : ""}`;
-      const draft = await runWorkItem({ request: state.request, workItems, stage: "task-process-expansion", lane, inputRefs: [group.id, ...segments.map((segment) => segment.id)], priority: 6, estimatedInputTokens: estimateTokens(prompt.user), maxOutputTokens: 3_800, cachePayload: prompt.user, profile: "process", invoke: (onReasoning) => invokeStructured({ model, ...prompt, schema: processDraftSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: 3_800, timeoutMs: 55_000, totalTimeoutMs: 90_000, normalize: (value) => normalizeProcessDraft(value, { roleTitle: state.request.roleTitle, rejectOffScope: true, maxScenarios: 3, maxNodes: 30, maxEdges: 60 }), onReasoning }) });
+      const draft = await runWorkItem({ request: state.request, workItems, stage: "task-process-expansion", lane, inputRefs: [group.id, ...segments.map((segment) => segment.id)], priority: 6, estimatedInputTokens: estimateTokens(prompt.user), maxOutputTokens: 6_000, cachePayload: prompt.user, profile: "process", invoke: (onReasoning) => invokeStructured({ model, ...prompt, schema: processDraftSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: 6_000, timeoutMs: 55_000, totalTimeoutMs: 90_000, normalize: (value) => normalizeProcessDraft(value, { roleTitle: state.request.roleTitle, rejectOffScope: true, maxScenarios: 5, maxNodes: 48, maxEdges: 96 }), onReasoning }) });
       return prefixProcessDraft(draft, prefix);
     };
 

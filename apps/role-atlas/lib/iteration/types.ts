@@ -27,13 +27,13 @@ export const snapshotIterationRequestSchema = z.object({
   prompt: z.string().max(4_000).default(""),
   targetIds: z.array(z.string().max(220)).max(60).default([]),
   targetAsOf: z.string().max(40).optional(),
-  supplementalSources: z.array(sourceInputSchema).max(20).default([]),
+  supplementalSources: z.array(sourceInputSchema).max(64).default([]),
   learningPathGraph: learningPathGraphInputSchema,
   learningMountFeedback: z.array(z.object({ roleNodeId: z.string().min(1).max(220), reason: z.string().max(1_000), researchGoal: z.string().max(1_500) })).max(40).default([]),
   webResearch: z.boolean().default(true),
-  maxRounds: z.number().int().min(1).max(6).default(4),
-  sourceLimit: z.number().int().min(4).max(20).default(12),
-  maxWorkItems: z.number().int().min(3).max(16).default(10),
+  maxRounds: z.number().int().min(1).max(12).default(12),
+  sourceLimit: z.number().int().min(4).max(64).default(64),
+  maxWorkItems: z.number().int().min(3).max(32).default(32),
 });
 
 export type InitiativeProfile = z.infer<typeof initiativeProfileSchema>;

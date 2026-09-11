@@ -169,7 +169,7 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
       preparation.current = null;
       if (activeTool === "workspace-instantiation") {
         endpoint = "/api/workspace-upgrades";
-        body = { ...common, snapshotRef, conversationId: context.conversationId, workspace: { runId: id, projectId: context.projectId, connection: { adapterId, payload: parsedWorkspace, roleHint: context.roleTitle, visibility: "project_private", provenance: { capturedAt: new Date().toISOString() } }, maxObservations: 16, redactPersonalData: true }, iteration: { prompt, webResearch, learningPathGraph, maxRounds: 4, sourceLimit: 20, maxWorkItems: 16 } };
+        body = { ...common, snapshotRef, conversationId: context.conversationId, workspace: { runId: id, projectId: context.projectId, connection: { adapterId, payload: parsedWorkspace, roleHint: context.roleTitle, visibility: "project_private", provenance: { capturedAt: new Date().toISOString() } }, maxObservations: 32, redactPersonalData: true }, iteration: { prompt, webResearch, learningPathGraph, maxRounds: 12, sourceLimit: 64, maxWorkItems: 32 } };
       } else {
         const iteration = conversationIterationRequest({ runId: id, context, draft: iterationDraft, prompt, materials, webResearch, learningPathGraph: learningPathGraph! });
         setSubmittedBrief(iterationRunBrief(iteration));

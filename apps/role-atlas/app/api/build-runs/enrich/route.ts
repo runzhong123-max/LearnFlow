@@ -141,7 +141,7 @@ export async function POST(request: Request) {
     initialSeq: await lastRoleEventSequence(parsed.build.runId),
     execution: "enrichment",
     searchConfig,
-    sourceLimit: 8,
+    sourceLimit: 64,
     existingResearchReport: baseResult.sources.research,
     cache: enrichmentCache,
   });

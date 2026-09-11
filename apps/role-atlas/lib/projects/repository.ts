@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, inArray, isNull, ne } from "drizzle-orm";
 import { ensureAppSchema, getD1, getDb } from "@/db";
+import { loadLargeText, storeLargeText } from "@/db/large-text";
 import { buildEvents, buildRuns, conversations, messages, projects, projectVersions, riskEvents, riskRuns } from "@/db/schema";
 import type { AgentEvent } from "@/lib/agent/events";
 import type { BuildEvent } from "@/lib/build/events";
@@ -108,7 +109,8 @@ export async function getProjectWorkspace(projectId: string, snapshotId?: string
         .limit(1);
   let result: ColdStartBuildResult | null = null;
   if (versionRows[0]) {
-    try { result = normalizeRolePackage(JSON.parse(versionRows[0].packageJson) as ColdStartBuildResult); }
+    const packageJson = await loadLargeText(getD1(), { table: "project_versions", id: versionRows[0].id, column: "package_json" }, versionRows[0].packageJson);
+    try { result = packageJson ? normalizeRolePackage(JSON.parse(packageJson) as ColdStartBuildResult) : null; }
     catch { result = null; }
   }
   return { project, conversations: conversationRows, version: versionRows[0] || null, result };
@@ -264,10 +266,11 @@ export async function completeFastBuildSnapshot(result: ColdStartBuildResult, co
 
 export async function completeBuildStageRun(runId: string, projectId: string, result: ColdStartBuildResult) {
   await ensureAppSchema();
+  const stored = await storeLargeText(getD1(), { table: "build_runs", id: runId, column: "result_json" }, JSON.stringify(result));
   const db = getDb();
   await db.update(buildRuns).set({
     status: "completed",
-    resultJson: JSON.stringify(result),
+    resultJson: stored,
     error: null,
     completedAt: new Date().toISOString(),
   }).where(and(eq(buildRuns.id, runId), eq(buildRuns.projectId, projectId), ne(buildRuns.status, "cancelled")));
@@ -356,8 +359,10 @@ export async function getProjectVersion(projectId: string, versionId?: string | 
     : await db.select().from(projectVersions).where(eq(projectVersions.projectId, projectId)).orderBy(desc(projectVersions.createdAt)).limit(1);
   const version = rows[0];
   if (!version) return null;
+  const packageJson = await loadLargeText(getD1(), { table: "project_versions", id: version.id, column: "package_json" }, version.packageJson);
+  if (!packageJson) return null;
   try {
-    return { version, result: normalizeRolePackage(JSON.parse(version.packageJson) as ColdStartBuildResult) };
+    return { version, result: normalizeRolePackage(JSON.parse(packageJson) as ColdStartBuildResult) };
   } catch {
     return null;
   }
@@ -393,8 +398,9 @@ export async function appendRiskEvent(event: RiskEvent & { projectId: string }) 
 
 export async function saveRiskCheckpoint(runId: string, phase: string, checkpoint: unknown) {
   await ensureAppSchema();
+  const stored = await storeLargeText(getD1(), { table: "risk_runs", id: runId, column: "checkpoint_json" }, JSON.stringify(checkpoint));
   const db = getDb();
-  await db.update(riskRuns).set({ phase, checkpointJson: JSON.stringify(checkpoint) }).where(eq(riskRuns.id, runId));
+  await db.update(riskRuns).set({ phase, checkpointJson: stored }).where(eq(riskRuns.id, runId));
 }
 
 export async function completeRiskRun(result: RiskRunResult & { projectId: string }, conversationId?: string) {
@@ -415,11 +421,13 @@ export async function completeRiskRun(result: RiskRunResult & { projectId: strin
     : null;
   const versionId = committed?.id || null;
   if (result.improved && versionId) result.candidateVersionId = versionId;
+  const storedResult = await storeLargeText(d1, { table: "risk_runs", id: result.runId, column: "result_json" }, JSON.stringify(result));
+  const storedCandidate = await storeLargeText(d1, { table: "build_runs", id: result.runId, column: "result_json" }, JSON.stringify(result.candidate));
   const statements = [
     d1.prepare("UPDATE risk_runs SET status=?, phase='version', candidate_version_id=?, result_json=?, completed_at=? WHERE id=?")
-      .bind(result.status === "no_improvement" ? "no_improvement" : "completed", result.improved ? versionId : null, JSON.stringify(result), now, result.runId),
+      .bind(result.status === "no_improvement" ? "no_improvement" : "completed", result.improved ? versionId : null, storedResult, now, result.runId),
     d1.prepare("UPDATE build_runs SET status='completed', result_json=?, completed_at=? WHERE id=?")
-      .bind(JSON.stringify(result.candidate), now, result.runId),
+      .bind(storedCandidate, now, result.runId),
     d1.prepare("DELETE FROM risk_issues WHERE run_id=?").bind(result.runId),
     d1.prepare("DELETE FROM risk_patches WHERE run_id=?").bind(result.runId),
   ];
@@ -504,10 +512,11 @@ export async function getLatestRiskRun(projectId: string) {
   const db = getDb();
   const [run] = await db.select().from(riskRuns).where(eq(riskRuns.projectId, projectId)).orderBy(desc(riskRuns.startedAt)).limit(1);
   if (!run) return null;
+  const resultJson = await loadLargeText(getD1(), { table: "risk_runs", id: run.id, column: "result_json" }, run.resultJson);
   const events = await db.select().from(riskEvents).where(eq(riskEvents.runId, run.id)).orderBy(asc(riskEvents.seq));
   return {
     ...run,
-    result: run.resultJson ? JSON.parse(run.resultJson) as RiskRunResult : null,
+    result: resultJson ? JSON.parse(resultJson) as RiskRunResult : null,
     events: events.map((event) => JSON.parse(event.eventJson) as RiskEvent),
   };
 }

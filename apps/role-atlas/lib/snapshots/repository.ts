@@ -1,5 +1,6 @@
 import { and, sql, asc, desc, eq } from "drizzle-orm";
 import { ensureAppSchema, getD1, getDb } from "@/db";
+import { loadLargeText, storeLargeText } from "@/db/large-text";
 import { snapshotRiskEvents, snapshotRiskRuns, snapshotVersions } from "@/db/schema";
 import type { ColdStartBuildResult } from "@/lib/build/types";
 import { normalizeRolePackage } from "@/lib/packages/role-package-manifest";
@@ -11,7 +12,9 @@ export async function getStoredSnapshot(snapshotId: string) {
   const db = getDb();
   const [row] = await db.select().from(snapshotVersions).where(eq(snapshotVersions.snapshotId, snapshotId)).limit(1);
   if (!row) return null;
-  try { return { row, result: normalizeRolePackage(JSON.parse(row.packageJson) as ColdStartBuildResult) }; }
+  const packageJson = await loadLargeText(getD1(), { table: "snapshot_versions", id: snapshotId, column: "package_json" }, row.packageJson);
+  if (!packageJson) return null;
+  try { return { row, result: normalizeRolePackage(JSON.parse(packageJson) as ColdStartBuildResult) }; }
   catch { return null; }
 }
 
@@ -56,8 +59,9 @@ export async function appendSnapshotRiskEvent(event: RiskEvent) {
 
 export async function saveSnapshotRiskCheckpoint(runId: string, phase: string, checkpoint: unknown) {
   await ensureAppSchema();
+  const stored = await storeLargeText(getD1(), { table: "snapshot_risk_runs", id: runId, column: "checkpoint_json" }, JSON.stringify(checkpoint));
   const db = getDb();
-  await db.update(snapshotRiskRuns).set({ phase, checkpointJson: JSON.stringify(checkpoint) }).where(eq(snapshotRiskRuns.id, runId));
+  await db.update(snapshotRiskRuns).set({ phase, checkpointJson: stored }).where(eq(snapshotRiskRuns.id, runId));
 }
 
 export async function completeSnapshotRiskRun(result: RiskRunResult) {
@@ -65,9 +69,10 @@ export async function completeSnapshotRiskRun(result: RiskRunResult) {
   const d1 = getD1();
   const now = new Date().toISOString();
   if (result.improved) result.candidateVersionId = result.candidate.snapshot.id;
+  const storedResult = await storeLargeText(d1, { table: "snapshot_risk_runs", id: result.runId, column: "result_json" }, JSON.stringify(result));
   const statements = [
     d1.prepare("UPDATE snapshot_risk_runs SET status=?, phase='version', candidate_snapshot_id=?, result_json=?, completed_at=? WHERE id=?")
-      .bind(result.status === "no_improvement" ? "no_improvement" : "completed", result.improved ? result.candidate.snapshot.id : null, JSON.stringify(result), now, result.runId),
+      .bind(result.status === "no_improvement" ? "no_improvement" : "completed", result.improved ? result.candidate.snapshot.id : null, storedResult, now, result.runId),
   ];
   if (result.improved) {
     await commitStaticSnapshot({ result: result.candidate, parentSnapshotId: result.baseSnapshotId, sourceRunId: result.runId });
@@ -93,11 +98,12 @@ export async function getLatestSnapshotRiskRun(snapshotId: string, ownerSubjectI
     .where(and(eq(snapshotRiskRuns.baseSnapshotId, snapshotId), ownerSubjectId ? sql`EXISTS (SELECT 1 FROM projects p WHERE p.id=${snapshotRiskRuns.projectId} AND p.owner_subject_id=${ownerSubjectId} AND p.deleted_at IS NULL)` : undefined))
     .orderBy(desc(snapshotRiskRuns.startedAt)).limit(1);
   if (!run) return null;
+  const resultJson = await loadLargeText(getD1(), { table: "snapshot_risk_runs", id: run.id, column: "result_json" }, run.resultJson);
   const events = await db.select().from(snapshotRiskEvents)
     .where(eq(snapshotRiskEvents.runId, run.id)).orderBy(asc(snapshotRiskEvents.seq));
   return {
     ...run,
-    result: run.resultJson ? JSON.parse(run.resultJson) as RiskRunResult : null,
+    result: resultJson ? JSON.parse(resultJson) as RiskRunResult : null,
     events: events.flatMap((event) => {
       try { return [JSON.parse(event.eventJson) as RiskEvent]; }
       catch { return []; }

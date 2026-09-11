@@ -296,7 +296,22 @@ const automaticLearningRepairMigration: RuntimeMigration = {
   id: "2026-09-09-automatic-learning-repair-v1",
   async apply(d1) { await d1.prepare(automaticRepairSchema).run(); },
 };
-const runtimeMigrations: RuntimeMigration[] = [versioningRegistryMigration, pinLegacyConversationsMigration, registryMetadataV2Migration, registryMaintenancePolicyBackfill, durableRoleJobsMigration, unifiedRolePackageProtocolMigration, projectLifecycleMigration, conversationJobsMigration, automaticLearningMountMigration, automaticLearningRepairMigration];
+const chunkedBlobsMigration: RuntimeMigration = {
+  id: "2026-09-11-chunked-blobs-v1",
+  async apply(d1) {
+    // Oversized run checkpoints/results and packages are split here; see db/large-text.ts.
+    await d1.prepare(`CREATE TABLE IF NOT EXISTS chunked_blobs (
+      owner_table TEXT NOT NULL,
+      owner_id TEXT NOT NULL,
+      column_name TEXT NOT NULL,
+      seq INTEGER NOT NULL,
+      chunk TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (owner_table, owner_id, column_name, seq)
+    )`).run();
+  },
+};
+const runtimeMigrations: RuntimeMigration[] = [versioningRegistryMigration, pinLegacyConversationsMigration, registryMetadataV2Migration, registryMaintenancePolicyBackfill, durableRoleJobsMigration, unifiedRolePackageProtocolMigration, projectLifecycleMigration, conversationJobsMigration, automaticLearningMountMigration, automaticLearningRepairMigration, chunkedBlobsMigration];
 
 /**
  * Runtime migration runner for local/D1 preview environments. Production can

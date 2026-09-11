@@ -323,7 +323,7 @@ export function planIterationResearch(input: {
   const attempts = new Map<string, number>();
   for (const plan of input.previousPlans || []) for (const id of plan.workItemIds) attempts.set(id, (attempts.get(id) || 0) + 1);
   const researchItems = input.workItems.filter((item) => item.requiresResearch && item.status !== "completed" && item.status !== "skipped")
-    .sort((a, b) => (attempts.get(a.id) || 0) - (attempts.get(b.id) || 0) || b.priority - a.priority).slice(0, 10);
+    .sort((a, b) => (attempts.get(a.id) || 0) - (attempts.get(b.id) || 0) || b.priority - a.priority).slice(0, 32);
   for (const item of researchItems) {
     // Follow-up searches change the evidence category instead of repeating round one.
     const availableCategories = categoryForWorkItem(item);
@@ -381,7 +381,7 @@ export function planIterationResearch(input: {
     id: `iteration-plan:${stableHash(`${input.runId}:${input.round}:${[...queries.keys()].join("|")}`)}`,
     round: input.round,
     workItemIds: researchItems.map((item) => item.id),
-    queries: input.request.webResearch ? [...queries.values()].sort((left, right) => right.priority - left.priority).slice(0, 12) : [],
+    queries: input.request.webResearch ? [...queries.values()].sort((left, right) => right.priority - left.priority).slice(0, 32) : [],
     rationale: researchItems.map((item) => `${item.title}：${item.detail}`),
     stopConditions: input.contract.stopConditions,
   };

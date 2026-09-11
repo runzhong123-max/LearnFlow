@@ -82,7 +82,7 @@ export async function createRoleSearchPlan(input: {
         market: input.request.market,
         audience: input.request.audience,
         snapshotAsOf: input.request.snapshotAsOf,
-        suppliedMaterials: input.request.sources.slice(0, 8).map(source => ({ title: source.title, excerpt: source.content.slice(0, 900) })),
+        suppliedMaterials: input.request.sources.slice(0, 16).map(source => ({ title: source.title, excerpt: source.content.slice(0, 900) })),
         researchRequirement: "用户材料只是研究线索，必须继续检索独立岗位职责、真实交付实践和一手技术资料。将长目标拆成短查询；排除条款不是应当检索的岗位职责。技术文档不能独自证明岗位责任。",
         output: {
           queries: [{ category: "official_standard", query: "可直接搜索的查询词", priority: 8 }],

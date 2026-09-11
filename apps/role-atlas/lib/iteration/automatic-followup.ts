@@ -25,9 +25,9 @@ export function createColdStartDeepResearchRequest(input: FollowupInput): Snapsh
     supplementalSources: [],
     learningPathGraph: input.learningPathGraph,
     webResearch: input.webResearch ?? true,
-    maxRounds: 4,
-    sourceLimit: 16,
-    maxWorkItems: 12,
+    maxRounds: 12,
+    sourceLimit: 64,
+    maxWorkItems: 32,
   };
 }
 
@@ -44,8 +44,8 @@ export function createColdStartRiskRepairRequest(input: FollowupInput): Snapshot
     supplementalSources: [],
     learningPathGraph: input.learningPathGraph,
     webResearch: input.webResearch ?? true,
-    maxRounds: 4,
-    sourceLimit: 16,
-    maxWorkItems: 16,
+    maxRounds: 12,
+    sourceLimit: 64,
+    maxWorkItems: 32,
   };
 }

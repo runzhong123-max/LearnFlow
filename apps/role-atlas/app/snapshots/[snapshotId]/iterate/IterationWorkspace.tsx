@@ -293,7 +293,7 @@ export default function IterationWorkspace({ snapshotId, projectId, versionId, c
         method: "POST",
         headers: { "content-type": "application/json" },
         signal: controller.signal,
-        body: JSON.stringify({ iteration: { runId: crypto.randomUUID(), snapshotRef: workspace.reference, projectId: workspace.reference.projectId, conversationId: workspace.reference.projectId ? conversationId : undefined, initiativeProfile, mode, prompt: prompt.trim(), targetIds: parsedTargetIds, targetAsOf: targetAsOf || undefined, supplementalSources, learningPathGraph, webResearch, maxRounds: 4, sourceLimit: 20, maxWorkItems: 16 }, providerConfig, searchConfig }),
+        body: JSON.stringify({ iteration: { runId: crypto.randomUUID(), snapshotRef: workspace.reference, projectId: workspace.reference.projectId, conversationId: workspace.reference.projectId ? conversationId : undefined, initiativeProfile, mode, prompt: prompt.trim(), targetIds: parsedTargetIds, targetAsOf: targetAsOf || undefined, supplementalSources, learningPathGraph, webResearch, maxRounds: 12, sourceLimit: 64, maxWorkItems: 32 }, providerConfig, searchConfig }),
       });
       if (!response.ok || !response.body) throw new Error((await response.json().catch(() => ({})) as { error?: string }).error || `请求失败（${response.status}）`);
       const reader = response.body.getReader();

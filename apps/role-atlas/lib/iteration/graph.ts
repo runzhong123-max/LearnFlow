@@ -72,7 +72,7 @@ export function currentIterationResearchReport(plan: IterationResearchPlan | und
     && report.queries.every(query => queryIds.has(query.id)));
 }
 
-export function mergeIterationSources(current: SourceInput[], incoming: SourceInput[], limit = 80) {
+export function mergeIterationSources(current: SourceInput[], incoming: SourceInput[], limit = 320) {
   const seen = new Set<string>();
   const ordered = [
     ...incoming.filter((source) => source.kind === "workspace_observation" || source.kind === "private_document"),
@@ -86,14 +86,14 @@ export function mergeIterationSources(current: SourceInput[], incoming: SourceIn
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
-  }).slice(0, Math.max(4, Math.min(limit, 80)));
+  }).slice(0, Math.max(4, Math.min(limit, 320)));
 }
 
 export function iterationRepairFocus(input: { candidate: ColdStartBuildResult; contract?: IterationContract; workItems: IterationWorkItem[] }) {
   const objects = new Map([...input.candidate.semantic.nodes, ...input.candidate.process.scenarios, ...input.candidate.process.nodes].map(node => [node.id, node]));
   return [input.contract?.objective,
     "本轮只针对下列发现补证、补充具体知识技能及合法关系。保留已有任务 ID 和证据；不能把用户观察、组织事实或无来源推断伪装成已修复。",
-    ...input.workItems.filter(item => item.status !== "completed" && item.status !== "skipped").slice(0, 16).map(item => [
+    ...input.workItems.filter(item => item.status !== "completed" && item.status !== "skipped").slice(0, 32).map(item => [
       `${item.kind}：${item.title}。${item.detail.slice(0, 300)}`,
       ...item.targetIds.slice(0, 4).map(id => { const node = objects.get(id); return node ? `${id} | ${node.label} | ${node.summary.slice(0, 350)}` : id; }),
     ].join("\n")),
@@ -114,8 +114,8 @@ function coldStartRequest(input: {
     audience: state.base.brief.audience,
     snapshotAsOf: state.contract?.targetAsOf || state.base.snapshot.asOf,
     // Existing mature snapshots can legitimately exceed the cold-start UI's
-    // 20-source input limit. Internal iteration must not discard that history.
-    sources: input.sources.slice(0, 80),
+    // source input limit. Internal iteration must not discard that history.
+    sources: input.sources.slice(0, 320),
     learningPathGraph: state.request.learningPathGraph,
   };
 }
@@ -275,7 +275,7 @@ export function createSnapshotIterationSkill(input: {
     });
     const enabled = state.request.webResearch && Boolean(input.searchConfig);
     const previousQueries = new Set(state.researchPlans.flatMap(item => item.queries.map(query => `${query.category}:${query.query}`)));
-    const remainingQueryBudget = Math.max(0, 48 - state.researchPlans.reduce((sum, item) => sum + item.queries.length, 0));
+    const remainingQueryBudget = Math.max(0, 192 - state.researchPlans.reduce((sum, item) => sum + item.queries.length, 0));
     const activeResearchPlan = { ...plan, queries: enabled ? plan.queries.filter(query => !previousQueries.has(`${query.category}:${query.query}`)).slice(0, remainingQueryBudget) : [] };
     emit(state, "iteration.research.plan.created", "research", {
       plan: activeResearchPlan,
