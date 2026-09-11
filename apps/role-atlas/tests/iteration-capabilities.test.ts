@@ -7,6 +7,8 @@ import type { SemanticDraft } from "@/lib/build/model";
 import { createSnapshotIterationSkill } from "@/lib/iteration/graph";
 import type { IterationEvent, SnapshotIterationRequest, SnapshotIterationResult } from "@/lib/iteration/types";
 import { createBudgetLedger } from "@/lib/iteration/budget-ledger";
+import { radarItemSchema, riskPackageSchema } from "@/lib/iteration/products";
+import { augmentationProposalSchema } from "@/lib/iteration/augmentation";
 
 /**
  * Characterization: each of the six user-selectable iteration capabilities
@@ -302,4 +304,108 @@ test("不提供账本时研究照旧执行，保持既有行为", async () => {
   assert.deepEqual(seen, [{ id: "card-1", queries: 4 }], "无账本时使用卡片自身预算");
   assert.equal(reviewed.payload.fundedCount, 1);
   assert.deepEqual(reviewed.payload.denied, []);
+});
+
+/**
+ * Products are assembled by code from a planner's proposal: code ranks radar
+ * items, splices augmentation through the compiler, and drops anything the four
+ * gates or the audit refuse. A planner only proposes.
+ */
+async function runWithProducts(planner: Parameters<typeof createSnapshotIterationSkill>[0]["productPlanner"]) {
+  const { base } = fixture();
+  const restore = searchStub([]);
+  const events: IterationEvent[] = [];
+  try {
+    const request = capabilityRequests(base).find(([name]) => name === "风险发现")![1];
+    const output = await createSnapshotIterationSkill({ model: capabilityModel(), productPlanner: planner })
+      .invoke({ request, base, candidate: base });
+    return { result: output.result!, events };
+  } finally { restore(); }
+}
+
+test("未配置产物规划器时结果不新增字段，形状与既有完全一致", async () => {
+  const { base } = fixture();
+  const restore = searchStub([]);
+  try {
+    const request = capabilityRequests(base).find(([name]) => name === "风险发现")![1];
+    const output = await createSnapshotIterationSkill({ model: capabilityModel() }).invoke({ request, base, candidate: base });
+    assert.equal("products" in output.result!, false);
+  } finally { restore(); }
+});
+
+test("雷达项由代码排序后进入结果，被闸门拒绝的方向不会出现", async () => {
+  const { base } = fixture();
+  const task = base.semantic.nodes.find(node => node.type === "task")!;
+  const output = await runWithProducts(async () => ({
+    radarItems: [
+      radarItemSchema.parse({
+        id: "ok", axis: "task_coverage", direction: "补齐缺失任务",
+        gapSignal: "检查发现任务层不完整", affectedNodeIds: [task.id],
+        expectedGain: { score: 5, basis: "检查发现" }, requiredEvidence: "权威岗位标准",
+      }),
+      radarItemSchema.parse({
+        id: "ghost", axis: "task_coverage", direction: "补齐幻想任务",
+        gapSignal: "指向不存在的节点", affectedNodeIds: ["node-that-does-not-exist"],
+        expectedGain: { score: 100, basis: "模型认为很重要" }, requiredEvidence: "无",
+      }),
+    ],
+    riskPackage: riskPackageSchema.parse({
+      packageProtocol: "learnflow.risk-package.v1", baseSnapshotId: base.snapshot.id,
+      generatedAt: "2026-09-11T00:00:00.000Z",
+    }),
+  }));
+  const products = output.result.products!;
+  assert.ok(products);
+  assert.deepEqual(products.radarItems?.map(item => item.id), ["ok"], "指向不存在节点的方向必须被信号闸剔除");
+  assert.equal(products.radarItems?.[0].rank, 1, "排序由代码写回");
+  assert.equal(products.riskPackage?.packageProtocol, "learnflow.risk-package.v1");
+});
+
+test("审计不通过或四道闸拒绝的增补不会被挂到结果上", async () => {
+  const { base } = fixture();
+  const task = base.semantic.nodes.find(node => node.type === "task")!;
+  const segmentId = base.sources.segments[0].id;
+  const output = await runWithProducts(async () => ({
+    augmentations: [
+      // 基线不一致 → 整份被拒。
+      augmentationProposalSchema.parse({
+        baseSnapshotId: "snapshot:stale", motivation: "过期基线",
+        nodes: [{
+          tempId: "p", type: "knowledge_skill", label: "边界值选取规则", summary: "s",
+          aliases: [], confidence: 0.6, evidenceSegmentIds: [segmentId],
+          learningKind: "knowledge", learningDefinition: { scopeNote: "x", assessmentCriteria: ["c"] },
+        }],
+        edges: [{ from: task.id, to: "p", type: "requires_skill", evidenceSegmentIds: [segmentId], confidence: 0.6 }],
+      }),
+    ],
+  }));
+  assert.equal(output.result.products, undefined, "全部被拒时不应挂载空产物对象");
+});
+
+test("通过四道闸且审计无新错误的增补会进入结果", async () => {
+  const { base } = fixture();
+  const task = base.semantic.nodes.find(node => node.type === "task")!;
+  const segmentId = base.sources.segments[0].id;
+  // 规划器拿到的是本轮候选，因此基线必须写候选的快照 id；写 base 会被
+  // 基线闸拒绝——这正是那个闸要拦的情况。
+  const output = await runWithProducts(async context => ({
+    augmentations: [
+      augmentationProposalSchema.parse({
+        baseSnapshotId: context.candidate.snapshot.id, motivation: "补齐边界值知识点",
+        nodes: [{
+          tempId: "p", type: "knowledge_skill", label: "边界值选取规则", summary: "说明边界附近数据的选取依据。",
+          aliases: [], confidence: 0.6, evidenceSegmentIds: [segmentId],
+          learningKind: "knowledge", learningDefinition: { scopeNote: "限于边界取值判断", assessmentCriteria: ["能说明选取依据"] },
+        }],
+        edges: [{ from: task.id, to: "p", type: "requires_skill", evidenceSegmentIds: [segmentId], confidence: 0.6 }],
+      }),
+    ],
+  }));
+  assert.equal(output.result.products?.augmentations?.length, 1);
+});
+
+test("产物规划器失败不使整轮失败，也不改变结果形状", async () => {
+  const output = await runWithProducts(async () => { throw new Error("planner_down"); });
+  assert.equal(output.result.products, undefined);
+  assert.equal(output.result.status === "completed" || output.result.status === "no_change", true);
 });

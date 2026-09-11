@@ -8,6 +8,7 @@ import { createColdStartSkill, mergeResearchReports } from "@/lib/build/graph";
 import type { ColdStartBuildResult, ColdStartRequest, SourceInput, WebResearchReport } from "@/lib/build/types";
 import { applyGraphPatch, computeSemanticDiff, proposeSafePatch } from "@/lib/risk/patch";
 import type { GraphPatch } from "@/lib/risk/types";
+import type { AugmentationProposal } from "./augmentation";
 import { reconstructSourceInputs } from "@/lib/risk/research";
 import { researchRoleSources } from "@/lib/search/web-research";
 import { createBoundaryVerifier } from "@/lib/search/boundary-verdicts";
@@ -24,6 +25,8 @@ import {
 } from "./planner";
 import { DEFAULT_ITERATION_BUDGET } from "./types";
 import type { BudgetLedger } from "./budget-ledger";
+import { rankRadarItems } from "./products";
+import { applyAugmentation } from "./augmentation-splice";
 import type {
   IterationContract,
   IterationEvent,
@@ -35,6 +38,8 @@ import type {
   SnapshotInspection,
   SnapshotIterationRequest,
   SnapshotIterationResult,
+  IterationProducts,
+  IterationProductProposal,
 } from "./types";
 
 const IterationState = new StateSchema({
@@ -207,6 +212,19 @@ export function createSnapshotIterationSkill(input: {
      */
     budgetLedger?: BudgetLedger;
   };
+  /**
+   * Optional product planning at finalization. The planner proposes; code ranks
+   * radar items, splices augmentation through the compiler, and decides what the
+   * result may carry. Absent means the result shape is exactly as before.
+   */
+  productPlanner?: (input: {
+    contract: IterationContract;
+    base: ColdStartBuildResult;
+    candidate: ColdStartBuildResult;
+    claims: ReviewedClaim[];
+    round: number;
+    signal?: AbortSignal;
+  }) => Promise<IterationProductProposal | undefined>;
 }) {
   let seq = input.initialSeq || 0;
   const boundaryVerifier = createBoundaryVerifier(input.model);
@@ -319,6 +337,73 @@ export function createSnapshotIterationSkill(input: {
     const update = { roundBefore: state.inspectionWorking || state.inspectionBefore, activeResearchPlan, researchPlans: [...state.researchPlans, activeResearchPlan] };
     await checkpoint("research-plan", state, update);
     return update;
+  };
+
+  /**
+   * Assemble the round's products. The planner only proposes: ranking, splicing
+   * and what may be attached are decided here, and a planner failure leaves the
+   * result shape untouched rather than failing the round.
+   */
+  const assembleProducts = async (state: IterationStateType): Promise<IterationProducts | undefined> => {
+    if (!input.productPlanner) return undefined;
+    let proposed: IterationProductProposal | undefined;
+    try {
+      proposed = await input.productPlanner({
+        contract: state.contract!,
+        base: state.base,
+        candidate: state.candidate,
+        claims: state.researchClaims,
+        round: state.round,
+      });
+    } catch (error) {
+      emit(state, "iteration.claims.reviewed", "research", {
+        round: state.round, cardCount: 0, claimCount: 0, verifiedCount: 0, rejectedCount: 0,
+        productsFailed: error instanceof Error ? error.message.slice(0, 300) : "product_planner_failed",
+      });
+      return undefined;
+    }
+    if (!proposed) return undefined;
+
+    const nodeIds = new Set(state.candidate.semantic.nodes.map(node => node.id));
+    const severity = new Map<string, "info" | "warning" | "error">();
+    for (const issue of state.inspectionAfter?.audit?.issues || state.inspectionBefore?.audit?.issues || []) {
+      for (const id of issue.targetIds) severity.set(id, issue.severity);
+    }
+    const radar = proposed.radarItems?.length
+      ? rankRadarItems({
+        items: proposed.radarItems,
+        knownNodeIds: nodeIds,
+        nodeSeverity: severity,
+        objective: state.contract?.objective,
+      })
+      : undefined;
+
+    // Only an augmentation that survives the four gates AND leaves the audit
+    // without new errors may be attached; anything else is reported, not merged.
+    const augmentations: AugmentationProposal[] = [];
+    const augmentationRejections: string[] = [];
+    for (const proposal of proposed.augmentations || []) {
+      const spliced = applyAugmentation({ base: state.candidate, proposal });
+      if (spliced.auditClean && (spliced.report.acceptedNodes.length || spliced.report.acceptedEdges.length)) {
+        augmentations.push(proposal);
+        continue;
+      }
+      augmentationRejections.push(...spliced.report.rejections.map(item => `${item.ref}: ${item.reason}`));
+      augmentationRejections.push(...spliced.newErrors);
+    }
+
+    const products: IterationProducts = {
+      ...(proposed.riskPackage ? { riskPackage: proposed.riskPackage } : {}),
+      ...(radar ? { radarItems: radar.ranked } : {}),
+      ...(augmentations.length ? { augmentations } : {}),
+    };
+    if (radar?.rejections.length || augmentationRejections.length) {
+      emit(state, "iteration.claims.reviewed", "research", {
+        round: state.round, cardCount: 0, claimCount: 0, verifiedCount: 0, rejectedCount: 0,
+        radarRejections: radar?.rejections || [], augmentationRejections,
+      });
+    }
+    return Object.keys(products).length ? products : undefined;
   };
 
   const research = async (state: IterationStateType, config: { signal?: AbortSignal }) => {
@@ -660,6 +745,7 @@ export function createSnapshotIterationSkill(input: {
       `证据准备度 ${state.inspectionBefore!.axes.evidenceReadiness.toFixed(0)} → ${state.inspectionAfter!.axes.evidenceReadiness.toFixed(0)}`,
       `任务无技能覆盖 ${state.inspectionBefore!.coverage.tasksWithoutSkills} → ${state.inspectionAfter!.coverage.tasksWithoutSkills}`,
     ];
+    const products = await assembleProducts(state);
     const result: SnapshotIterationResult = {
       runId: state.request.runId,
       snapshotRef: state.request.snapshotRef,
@@ -676,6 +762,7 @@ export function createSnapshotIterationSkill(input: {
       // Only present when a research agent ran, so existing stored results and
       // consumers keep their exact shape.
       ...(input.researchAgent ? { researchClaims: state.researchClaims } : {}),
+      ...(products ? { products } : {}),
       patches: state.patches,
       diff,
       evaluation: state.evaluation!,

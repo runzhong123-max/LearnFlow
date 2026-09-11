@@ -4,6 +4,26 @@ import type { PlannedQuery } from "@/lib/search/web-research";
 import { snapshotReferenceSchema, type SnapshotReference } from "@/lib/snapshots/types";
 import type { GraphPatch, RiskAuditReport, RiskIssue, SemanticDiff } from "@/lib/risk/types";
 import type { ReviewedClaim } from "./worker";
+import type { RadarItem, RankedRadarItem, RiskPackage } from "./products";
+import type { AugmentationProposal } from "./augmentation";
+
+/**
+ * What a planner may propose. Ranking, splicing and acceptance are applied by
+ * code afterwards, which is why this type is unranked and unvalidated.
+ */
+export type IterationProductProposal = {
+  riskPackage?: RiskPackage;
+  /** Unranked; ordered by code through rankRadarItems. */
+  radarItems?: RadarItem[];
+  augmentations?: AugmentationProposal[];
+};
+
+/** What the result may carry, after code ranked, gated and spliced. */
+export type IterationProducts = {
+  riskPackage?: RiskPackage;
+  radarItems?: RankedRadarItem[];
+  augmentations?: AugmentationProposal[];
+};
 
 export const initiativeProfileSchema = z.enum(["autonomous", "co_guided", "user_directed"]);
 export const iterationModeSchema = z.enum(["auto", "freshness", "deep_research", "risk_repair"]);
@@ -224,6 +244,12 @@ export type SnapshotIterationResult = {
    * stored results stay valid.
    */
   researchClaims?: ReviewedClaim[];
+  /**
+   * Additive: research products assembled at finalization. Present only when a
+   * product planner is configured, so stored results and existing consumers keep
+   * their exact shape.
+   */
+  products?: IterationProducts;
   patches: GraphPatch[];
   diff: SemanticDiff;
   evaluation: IterationEvaluation;
