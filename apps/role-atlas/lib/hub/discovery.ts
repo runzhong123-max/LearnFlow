@@ -27,6 +27,10 @@ export function normalizeHubQuery(value: string) {
 
 export type HubSearchTarget = "role" | "task" | "all";
 export const HUB_SEARCH_STRATEGY = "field-coverage.v2";
+/** Model-driven boundary relation between a query and a hub entry; see lib/hub/boundary.ts. */
+export type HubBoundaryVerdict = { relation: "core" | "adjacent" | "comparison" | "foreign"; confidence: number; note: string };
+/** Confidence at which a `foreign` verdict excludes an entry from results. */
+export const HUB_BOUNDARY_REJECT_CONFIDENCE = 0.7;
 // Job suffixes and conversational boilerplate cannot establish occupational relevance.
 const noise = /工程师|技术员|专员|岗位|职位|工作任务|典型任务|相关|我想|了解|请问|查找|搜索|推荐|有哪些|方向|engineer|specialist/giu;
 const aliases: Array<[RegExp, string]> = [
@@ -67,12 +71,16 @@ function roleTextScore(query: string, label: string) {
   if (domain && !normalizeHubQuery(searchable(label)).includes(domain)) return 0;
   return textScore(name, label);
 }
-export function searchHub(entries: HubEntry[], input: { query?: string; target?: HubSearchTarget; roleQuery?: string; category?: string; limit?: number; offset?: number } = {}) {
-  const query = String(input.query || "").trim().slice(0, 500), target = input.target || "all";
+export function searchHub(entries: HubEntry[], input: { query?: string; target?: HubSearchTarget; roleQuery?: string; category?: string; limit?: number; offset?: number } = {},
+  options: { boundary?: Map<string, HubBoundaryVerdict> } = {}) {
+  const query = String(input.query || "").trim().slice(0, 500), target = input.target || "all", boundary = options.boundary;
   const classified = entries.map(entry => ({ ...entry, categories: classifyHubEntry(entry) }));
   const categories = HUB_TAXONOMY.map(category => category.label);
   const ranked = classified.flatMap(entry => {
     if (input.category && !entry.categories.includes(input.category)) return [];
+    // Boundary verdicts can only narrow: a confidently foreign entry never ranks.
+    const verdict = boundary?.get(entry.id);
+    if (verdict?.relation === "foreign" && verdict.confidence >= HUB_BOUNDARY_REJECT_CONFIDENCE) return [];
     const roleMatch = (value: string) => Math.max(...[entry.title, ...entry.aliases,
       ...entry.nodeIndex.filter(node => ["market_role", "role"].includes(node.type)).flatMap(node => [node.label, ...node.aliases])]
       .map(label => roleTextScore(value, label)), 0);
@@ -90,18 +98,22 @@ export function searchHub(entries: HubEntry[], input: { query?: string; target?:
       return score > 0 || (!query && target === "task") ? [{ ...node, score }] : [];
     }).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
     const matchedTasks = matchedNodes.filter(node => ["task", "typical_task"].includes(node.type));
-    const score = target === "task" ? matchedTasks[0]?.score || 0 : roleScore * 2 + (matchedNodes[0]?.score || 0);
-    if (query && !score) return [];
+    const rawScore = target === "task" ? matchedTasks[0]?.score || 0 : roleScore * 2 + (matchedNodes[0]?.score || 0);
+    if (query && !rawScore) return [];
     if (target === "task" && !matchedTasks.length) return [];
+    // Adjacent entries keep every deterministic gate but lose ranking ground;
+    // verdicts never raise a score.
+    const score = verdict?.relation === "adjacent" ? Math.round(rawScore * (1 - 0.4 * verdict.confidence)) : rawScore;
     const reasons = [exactPackageId ? "匹配包 ID" : "", title > 0 ? "匹配岗位名称" : "", matchedAliases.length ? `匹配别名：${matchedAliases.slice(0, 2).join("、")}` : "",
       matchedNodes.length ? `匹配${target === "task" ? "任务" : "节点"}：${matchedNodes.slice(0, 3).map(node => node.label).join("、")}` : "",
-      roleScore && !exactPackageId && !title && !matchedAliases.length ? "匹配岗位节点" : ""].filter(Boolean);
+      roleScore && !exactPackageId && !title && !matchedAliases.length ? "匹配岗位节点" : "",
+      verdict && verdict.relation !== "core" ? `边界判定：${{ adjacent: "相邻岗位", comparison: "岗位对比资料", foreign: "不同岗位" }[verdict.relation]}${verdict.note ? `（${verdict.note}）` : ""}` : ""].filter(Boolean);
     return [{ entry, score, reasons, matchedNodes: matchedNodes.slice(0, 6), matchedTasks: matchedTasks.slice(0, 6),
       matchedTaskCount: matchedTasks.length }];
   }).sort((a, b) => b.score - a.score || a.entry.title.localeCompare(b.entry.title, "zh") || a.entry.id.localeCompare(b.entry.id));
   const limit = Math.min(100, Math.max(1, Math.trunc(Number(input.limit) || 20)));
   const offset = Math.max(0, Math.trunc(Number(input.offset) || 0));
   const categoryCounts = Object.fromEntries(categories.map(category => [category, classified.filter(entry => entry.categories.includes(category)).length]));
-  return { query, target, strategy: HUB_SEARCH_STRATEGY, categories, categoryCounts, total: ranked.length, offset, limit, items: ranked.slice(offset, offset + limit),
+  return { query, target, strategy: HUB_SEARCH_STRATEGY, boundary: boundary?.size ? "hub-boundary.v1" as const : undefined, categories, categoryCounts, total: ranked.length, offset, limit, items: ranked.slice(offset, offset + limit),
     nextOffset: offset + limit < ranked.length ? offset + limit : null };
 }

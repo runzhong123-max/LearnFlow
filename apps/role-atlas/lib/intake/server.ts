@@ -5,6 +5,7 @@ import { resolveProviderConfig, resolveSearchProviderConfig } from "@/lib/server
 import { workerRuntimeBindings } from "@/lib/worker-runtime-bindings";
 import { researchRoleSources } from "@/lib/search/web-research";
 import { generateIntakeRevision, normalizeIntakeMaterials } from "./generate";
+import { createHubBoundaryVerifier } from "@/lib/hub/boundary";
 import { suggestIntakeHubMatches } from "./hub";
 import { IntakeRepository } from "./repository";
 import { IntakeError, type IntakeConfirmInput, type IntakeScope, type IntakeTurnInput } from "./types";
@@ -70,7 +71,7 @@ export async function turnIntake(input: OwnedInput & { request: Request; turn: I
         model,
         research: searchConfig ? args => researchRoleSources({ ...args, config: searchConfig, sourceLimit: 6,
           signal: AbortSignal.any([signal, AbortSignal.timeout(45_000)]) }) : undefined,
-        hub: query => suggestIntakeHubMatches(query),
+        hub: query => suggestIntakeHubMatches(query, { boundaryVerifier: createHubBoundaryVerifier(model) }),
       },
     });
     return await repository.complete(ownedScope, claim, content);

@@ -123,3 +123,11 @@ Graph Hub 面向计算机专业群，分类规则位于 `lib/hub/taxonomy.ts`（
 岗位边界由 `roleTextScore` 的领域保留规则执行：共享“运维/开发/管理”等动词不能消除云、网络、安全、桌面支持之间的差别。`tests/hub-boundary.test.ts` 固定云运维、网络运维、安全运维、IT 支持与大模型应用工程师五岗位的互斥金标准（含“云运维查询不得返回大模型应用工程师”），排序规则变化必须先过这组回归。
 
 Contract impact：catalog.v1 与岗位包保持兼容；分类词表从全行业纠正为计算机岗位方向（2.0.0）。Registry 只读投影新增可选 sourceCategories 保留来源行业标签，categories 只返回标准方向。旧分类链接若不在新词表中显示空结果，不静默映射到无关方向。LearnFlow Agent、事件及五核契约无变化。
+
+## 2026-09-11 检索边界判定与挂载降级
+
+词法领域规则是始终在线的确定性底座，但它依赖人工维护的词汇表。在此之上新增通用的模型判定层 `lib/hub/boundary.ts`（版本 `hub-boundary.v1`）：对检索词与候选条目做 core / adjacent / comparison / foreign 关系判定，语义与冷启动资料边界判定（`lib/search/boundary-verdicts.ts`）一致——判定只能降权或排除既有候选，不能引入新条目、不能加分、不能绕过确定性门槛；模型超时、JSON 非法或编造条目 id 一律失败开放到词法排序。判定按“归一化查询 + 条目 + 制品根哈希”缓存于长期运行的服务进程：已登录的冷启动推荐（`suggestIntakeHubMatches`，调用方传入有审计记录的模型）负责写入缓存，公开的 `/api/hub/search` 只读缓存、不发起模型调用，因此公开端点没有模型消耗与滥用面。排序结果新增可选 `boundary` 标记与“边界判定”匹配依据。`tests/hub-entry-boundary.test.ts` 固定这套机制的契约；五岗位测试保留为机制之上的具体回归实例。
+
+自动学习路径挂载的课程规划器（`lib/learning-path/course-planner.ts`）失败时不再让整个挂载失败：模型超时、限流或返回无效规划（幻觉课程引用、漏项、重复项、粒度过细）时降级为确定性主题归并，仍受 `MAX_NEW_COURSES_PER_RESOLUTION` 上限约束、只产生课程级节点，并在 resolution 上标记 `coursePlannerDegraded` 供审计。该降级不改变既有课程复用优先级，不产生逐动作原子知识点。
+
+Contract impact：`RoleLearningResolution` 新增可选字段 `coursePlannerDegraded`，向后兼容，旧消费方忽略即可；`searchHub` 新增可选第三参数与响应可选字段 `boundary`，协议号不变。HubEntry、catalog.v1、岗位包协议、LearnFlow 事件与五核契约均无变化。

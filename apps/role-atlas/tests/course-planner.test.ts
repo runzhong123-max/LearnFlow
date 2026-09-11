@@ -38,15 +38,20 @@ test("uncovered operational details become one validated course, never atomic no
   assert.equal(resolved.extensionProposal?.nodes.length, 1); assert.equal(resolved.extensionProposal?.nodes[0].kind, "course");
   assert.equal(resolved.pendingBindings.length, 2); assert.equal(resolved.unresolved.length, 0);
 });
-test("hallucinated references, omitted members, duplicate members and operational courses fail before writing", async () => {
+test("invalid model plans degrade to bounded deterministic grouping with an audit marker", async () => {
   const f = fixture(), ids = f.points.map(point => point.id);
   for (const groups of [[group(ids, 99)], [group([ids[0]], 0)], [group(ids, 0), group([ids[0]], 0)], [group([...ids, "foreign-point"], 0)], [group(ids, null, "执行磁盘清理")]]) {
-    await assert.rejects(resolveRoleLearningPoints({ ...f, planCourses: createCoursePlanner(model({ groups })) }), /COURSE_PLAN_/);
+    const resolved = await resolveRoleLearningPoints({ ...f, planCourses: createCoursePlanner(model({ groups })) });
+    assert.ok(resolved.coursePlannerDegraded, "无效规划必须标记降级而不是写入垃圾");
+    assert.ok((resolved.extensionProposal?.nodes || []).every(node => node.kind === "course"), "降级路径只产生课程节点");
   }
 });
-test("model failure never falls back to speculative course creation", async () => {
+test("model failure degrades to deterministic grouping instead of failing the mount", async () => {
   const f = fixture(); f.graph.nodes[0].title = "离散数学";
-  await assert.rejects(resolveRoleLearningPoints({ ...f, planCourses: createCoursePlanner(async function* () { throw new Error("network timeout"); }) }), /network timeout/);
+  const resolved = await resolveRoleLearningPoints({ ...f, planCourses: createCoursePlanner(async function* () { throw new Error("network timeout"); }) });
+  assert.ok(resolved.coursePlannerDegraded?.reason.includes("network timeout"));
+  assert.ok((resolved.extensionProposal?.nodes || []).every(node => node.kind === "course"));
+  assert.equal(resolved.unresolved.length, 0);
 });
 test("missing evidence remains in research and never enters the model's mount plan", async () => {
   const f = fixture(); f.points[1].evidenceBindingIds = [];

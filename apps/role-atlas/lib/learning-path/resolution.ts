@@ -18,6 +18,10 @@ export type RoleLearningResolution = {
   pendingBindings: RoleLearningAlignmentV2["bindings"];
   courseTargets?: Array<{ roleNodeId: string; target: { namespace: string; id: string; revision: number }; title: string; kind: "course" }>;
   extensionProposal?: GraphExtensionProposalV2;
+  /** Set when the model course planner failed and the bounded deterministic
+   * theme grouping (still capped by MAX_NEW_COURSES_PER_RESOLUTION) was used.
+   * The mount stays useful during provider outages instead of failing closed. */
+  coursePlannerDegraded?: { reason: string };
   unresolved: Array<{ roleNodeId: string; reason: "needs_decomposition" | "needs_definition" | "needs_evidence" | "ambiguous_definition" | "needs_anchor" | "needs_consolidation"; candidates: Array<{ namespace: string; id: string; revision: number; title: string; kind: string }> }>;
 };
 
@@ -128,12 +132,22 @@ export async function resolveRoleLearningPoints(input: {
   const standaloneRoots: NonNullable<GraphExtensionProposalV2["standaloneRoots"]> = [];
   const packageSourceId = `role-evidence:${input.packageRef.rootHash}`;
   const evidenceIds = new Set(source.evidenceIds);
-  const coursePlan = input.groupByCourse && input.planCourses
-    ? await input.planCourses(input.result.semantic.nodes.filter(point => point.type === "knowledge_skill" && (point.learningKind === "knowledge" || point.learningKind === "skill")
-      && point.learningDefinition?.scopeNote.trim() && point.learningDefinition.assessmentCriteria.length
-      && point.learningDefinition.assessmentCriteria.every(text => text.trim())
-      && input.result.sources.evidenceBindings.some(binding => binding.targetId === point.id && point.evidenceBindingIds.includes(binding.id) && evidenceIds.has(binding.id))), graph, input.result.brief.roleTitle)
-    : undefined;
+  const coursePlannerInput = input.result.semantic.nodes.filter(point => point.type === "knowledge_skill" && (point.learningKind === "knowledge" || point.learningKind === "skill")
+    && point.learningDefinition?.scopeNote.trim() && point.learningDefinition.assessmentCriteria.length
+    && point.learningDefinition.assessmentCriteria.every(text => text.trim())
+    && input.result.sources.evidenceBindings.some(binding => binding.targetId === point.id && point.evidenceBindingIds.includes(binding.id) && evidenceIds.has(binding.id)));
+  let coursePlan: Awaited<ReturnType<CoursePlanner>> | undefined;
+  if (input.groupByCourse && input.planCourses && coursePlannerInput.length) {
+    try {
+      coursePlan = await input.planCourses(coursePlannerInput, graph, input.result.brief.roleTitle);
+    } catch (error) {
+      // Degrade to the deterministic theme grouping below, which is still
+      // bounded by MAX_NEW_COURSES_PER_RESOLUTION and never creates per-action
+      // atomic nodes. Failing the whole mount during a provider outage made
+      // automatic mounting unusable; the degradation is surfaced for audit.
+      resolution.coursePlannerDegraded = { reason: (error instanceof Error ? error.message : "course_planner_failed").slice(0, 200) };
+    }
+  }
   for (const point of points) {
     const anchors = graph.nodes.filter(n => n.kind === "course" || n.kind === "skill_domain")
       .map(n => ({ n, score: Math.max(...[n.title, ...n.aliases].map(name => Math.max(overlap(point.label, name), overlap(input.result.brief.roleTitle, name) * 0.9))) }))

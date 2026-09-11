@@ -1,4 +1,5 @@
 import { searchHub, type HubEntry } from "@/lib/hub/discovery";
+import { readCachedHubBoundary, type HubBoundaryVerifier } from "@/lib/hub/boundary";
 import type { ForkOrigin } from "@/lib/hub/fork-plan";
 import type { StaticRolePackageBundle } from "@/lib/packages/types";
 
@@ -76,12 +77,22 @@ function matchesPin(entry: HubEntry, source: IntakeHubRelease): boolean {
 /** Read at most three ranked, validated public artifacts without creating projects or forks. */
 export async function suggestIntakeHubMatches(
   query: string,
-  options: { dependencies?: IntakeHubDependencies } = {},
+  options: { dependencies?: IntakeHubDependencies; boundaryVerifier?: HubBoundaryVerifier } = {},
 ): Promise<IntakeHubMatch[]> {
   const dependencies = options.dependencies ?? await productionDependencies();
   // A catalog outage is different from no matches. Let the caller report the unavailable state.
   const entries = await dependencies.listEntries();
-  const candidates = searchHub(entries, { query: text(query, 500), target: "role", limit: 3 }).items;
+  const cleanQuery = text(query, 500);
+  // Rank past the final cut so a boundary exclusion can promote the next candidate.
+  const ranked = searchHub(entries, { query: cleanQuery, target: "role", limit: 8 }).items;
+  const verdicts = options.boundaryVerifier
+    ? await options.boundaryVerifier({ query: cleanQuery, entries: ranked.map(item => item.entry) }).catch(() => undefined)
+    : undefined;
+  // A live verifier also warms the process cache; without one, cached verdicts still apply.
+  const boundary = verdicts ?? readCachedHubBoundary(cleanQuery, ranked.map(item => item.entry));
+  const candidates = boundary.size
+    ? searchHub(entries, { query: cleanQuery, target: "role", limit: 3 }, { boundary }).items
+    : ranked.slice(0, 3);
   const matches: IntakeHubMatch[] = [];
   for (const { entry, reasons } of candidates) {
     try {
