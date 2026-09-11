@@ -1,0 +1,60 @@
+/* Research products panel: plain, textual, and honest about what was withheld. */
+.iteration-products {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.iteration-products-block {
+  border: 1px solid var(--line, #e3e3e8);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--surface-subtle, rgba(0, 0, 0, 0.02));
+}
+
+.iteration-products-block h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.iteration-products-block ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.iteration-products-block li {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.iteration-products-block.withheld {
+  border-style: dashed;
+  border-color: var(--line-strong, #c9c9d1);
+}
+
+.iteration-products-rank {
+  display: inline-block;
+  min-width: 24px;
+  margin-right: 6px;
+  color: var(--text-muted, #6b6b76);
+  font-variant-numeric: tabular-nums;
+}
+
+.iteration-products-signal {
+  margin: 2px 0 0;
+  color: var(--text-strong, #2b2b33);
+}
+
+.iteration-products-counts {
+  margin: 0;
+  font-size: 13px;
+}
+
+.iteration-products-meta,
+.iteration-products-note {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-muted, #6b6b76);
+}

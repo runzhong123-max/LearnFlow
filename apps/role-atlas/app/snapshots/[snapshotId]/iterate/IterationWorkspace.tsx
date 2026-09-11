@@ -29,6 +29,7 @@ import {
 import Link from "next/link";
 import SourceMaterials from "@/app/components/SourceMaterials";
 import { useEffect, useMemo, useRef, useState } from "react";
+import IterationProductsPanel from "@/app/components/IterationProductsPanel";
 import type { ColdStartBuildResult, LearningPathGraphInput, SourceInput } from "@/lib/build/types";
 import {
   buildIterationActivityFeed,
@@ -179,6 +180,7 @@ function FinalResultMessage({ result, resultHref, resultLinkLabel, onAccept }: {
         {result.candidateSnapshotId ? <div className="iteration-result-actions">{onAccept
           ? <button type="button" onClick={onAccept}>{resultLinkLabel}<ChevronRight size={13} /></button>
           : <Link href={resultHref}>{resultLinkLabel}<ChevronRight size={13} /></Link>}<code>{result.candidateSnapshotId}</code></div> : null}
+        <IterationProductsPanel products={result.products} />
         <div className="iteration-result-disclosures">
           <details>
             <summary><ShieldCheck size={14} /><span><b>{result.createdSnapshot ? "结构体检" : "未采用候选体检"}</b><small>{result.inspectionAfter.findings.length} 项发现 · {result.inspectionAfter.hardBlockers.length} 个协议阻断</small></span><ChevronDown size={13} /></summary>
