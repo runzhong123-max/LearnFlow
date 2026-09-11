@@ -23,6 +23,7 @@ import {
   planIterationWork,
 } from "./planner";
 import { DEFAULT_ITERATION_BUDGET } from "./types";
+import type { BudgetLedger } from "./budget-ledger";
 import type {
   IterationContract,
   IterationEvent,
@@ -199,10 +200,17 @@ export function createSnapshotIterationSkill(input: {
     }) => Promise<ResearchTaskCard[] | undefined>;
     run: (card: ResearchTaskCard, input: { signal?: AbortSignal }) => Promise<ResearchWorkerResult>;
     concurrency?: number;
+    /**
+     * Caller-owned ledger. When present, agent research is charged through it so
+     * a large budget stays accountable and the review reserve stays untouchable.
+     * Absent means agent research runs unfunded, exactly as before.
+     */
+    budgetLedger?: BudgetLedger;
   };
 }) {
   let seq = input.initialSeq || 0;
   const boundaryVerifier = createBoundaryVerifier(input.model);
+  const budgetLedger = input.researchAgent?.budgetLedger;
   const emit = (state: Pick<IterationStateType, "request">, kind: IterationEventKind, phase: IterationEvent["phase"], payload: Record<string, unknown>) => {
     const event: IterationEvent = {
       version: "1.0",
@@ -380,8 +388,35 @@ export function createSnapshotIterationSkill(input: {
         signal,
       });
       if (!cards?.length) return [];
+      /**
+       * Agent research is where new spending happens, so it is where the ledger
+       * binds. The deterministic query path above keeps its own historical
+       * budget untouched, which is why wiring the ledger here changes nothing
+       * for a caller that never opted into a research agent.
+       *
+       * A card that cannot be funded is dropped with its reason rather than run
+       * on credit, and the review reserve is never reachable from this side.
+       */
+      const funded: typeof cards = [];
+      const denied: Array<{ cardId: string; reason: string }> = [];
+      for (const card of cards) {
+        if (!budgetLedger) { funded.push(card); continue; }
+        const grant = budgetLedger.charge("general", { queries: card.budget.queries });
+        if (grant.granted.queries <= 0) {
+          denied.push({ cardId: card.id, reason: grant.reason || "预算不足" });
+          continue;
+        }
+        funded.push({ ...card, budget: { ...card.budget, queries: grant.granted.queries } });
+      }
+      if (!funded.length) {
+        emit(state, "iteration.claims.reviewed", "research", {
+          round: state.round, cardCount: cards.length, fundedCount: 0,
+          claimCount: 0, verifiedCount: 0, rejectedCount: 0, denied,
+        });
+        return [];
+      }
       const results = await runResearchWorkers({
-        cards,
+        cards: funded,
         concurrency: input.researchAgent.concurrency,
         runOne: card => input.researchAgent!.run(card, { signal }),
       });
@@ -389,6 +424,8 @@ export function createSnapshotIterationSkill(input: {
       emit(state, "iteration.claims.reviewed", "research", {
         round: state.round,
         cardCount: cards.length,
+        fundedCount: funded.length,
+        denied,
         claimCount: claims.length,
         verifiedCount: claims.filter(item => item.verification === "verified").length,
         rejectedCount: claims.filter(item => item.verification === "unverified").length,

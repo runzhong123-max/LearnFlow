@@ -6,6 +6,7 @@ import type { ColdStartRequest } from "@/lib/build/types";
 import type { SemanticDraft } from "@/lib/build/model";
 import { createSnapshotIterationSkill } from "@/lib/iteration/graph";
 import type { IterationEvent, SnapshotIterationRequest, SnapshotIterationResult } from "@/lib/iteration/types";
+import { createBudgetLedger } from "@/lib/iteration/budget-ledger";
 
 /**
  * Characterization: each of the six user-selectable iteration capabilities
@@ -226,4 +227,79 @@ test("研究智能体失败不使整轮失败，并如实记录失败原因", as
   assert.ok(reviewed, "失败也必须留下事件，不能静默吞掉");
   assert.equal(reviewed.payload.claimCount, 0);
   assert.match(String(reviewed.payload.failed), /planner_down/u);
+});
+
+/**
+ * The ledger is where the agent's own spending is accounted. Wiring it here —
+ * and nowhere near the deterministic query path — is what lets a large budget
+ * stay accountable without changing any caller that never opted in.
+ */
+async function runWithLedger(input: {
+  ledger?: ReturnType<typeof createBudgetLedger>;
+  cards?: ReturnType<typeof claimCard>[];
+  seen?: Array<{ id: string; queries: number }>;
+}) {
+  const { base } = fixture();
+  const restore = searchStub([]);
+  const events: IterationEvent[] = [];
+  try {
+    const request = capabilityRequests(base).find(([name]) => name === "风险发现")![1];
+    const stream = await createSnapshotIterationSkill({
+      model: capabilityModel(),
+      researchAgent: {
+        plan: async () => input.cards || [claimCard()],
+        run: async card => {
+          input.seen?.push({ id: card.id, queries: card.budget.queries });
+          return {
+            cardId: card.id, claims: [], rejectedCount: 0, stopReason: "final" as const,
+            transcript: [], usage: { turns: 1, toolCalls: 0 },
+          };
+        },
+        ...(input.ledger ? { budgetLedger: input.ledger } : {}),
+      },
+    }).stream({ request, base, candidate: base }, { configurable: { thread_id: `ledger-${Math.random()}` }, streamMode: "custom" });
+    for await (const event of stream) events.push(event as IterationEvent);
+  } finally { restore(); }
+  return events.find(event => event.kind === "iteration.claims.reviewed")!;
+}
+
+test("研究卡按账本发放额度，发放量小于申请量时按发放量执行", async () => {
+  const ledger = createBudgetLedger({
+    total: { queries: 10, tokens: 0, turns: 0 },
+    reviewReserve: { queries: 4, tokens: 0, turns: 0 },
+    perProduct: { general: { queries: 3, tokens: 0, turns: 0 } },
+  });
+  const seen: Array<{ id: string; queries: number }> = [];
+  const reviewed = await runWithLedger({ ledger, cards: [claimCard()], seen });
+  // 申请 4，产品额度 3 → 只能拿到 3，且研究池与复核预留都必须原样保留。
+  assert.deepEqual(seen, [{ id: "card-1", queries: 3 }]);
+  assert.equal(reviewed.payload.fundedCount, 1);
+  assert.equal(ledger.snapshot().remainingReserve.queries, 4, "研究绝不能动用复核预留");
+});
+
+test("预算耗尽的研究卡被拒并记录原因，不会带账运行", async () => {
+  const ledger = createBudgetLedger({
+    total: { queries: 5, tokens: 0, turns: 0 },
+    reviewReserve: { queries: 5, tokens: 0, turns: 0 },
+  });
+  const seen: Array<{ id: string; queries: number }> = [];
+  const cards = [
+    { ...claimCard(), id: "card-1" },
+    { ...claimCard(), id: "card-2" },
+  ];
+  const reviewed = await runWithLedger({ ledger, cards, seen });
+  assert.deepEqual(seen, [], "研究池为 0 时任何卡片都不该执行");
+  assert.equal(reviewed.payload.fundedCount, 0);
+  assert.equal(reviewed.payload.cardCount, 2);
+  assert.equal((reviewed.payload.denied as unknown[]).length, 2);
+  assert.match(String((reviewed.payload.denied as Array<{ reason: string }>)[0].reason), /预算不足|截断/u);
+  assert.equal(ledger.snapshot().remainingReserve.queries, 5);
+});
+
+test("不提供账本时研究照旧执行，保持既有行为", async () => {
+  const seen: Array<{ id: string; queries: number }> = [];
+  const reviewed = await runWithLedger({ cards: [claimCard()], seen });
+  assert.deepEqual(seen, [{ id: "card-1", queries: 4 }], "无账本时使用卡片自身预算");
+  assert.equal(reviewed.payload.fundedCount, 1);
+  assert.deepEqual(reviewed.payload.denied, []);
 });
