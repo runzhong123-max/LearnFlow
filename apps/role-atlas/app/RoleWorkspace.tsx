@@ -48,6 +48,7 @@ import TaskWorkspace, { type TaskPerspective } from "@/app/components/TaskWorksp
 import WorkspaceSkillLauncher from "@/app/components/WorkspaceSkillLauncher";
 import { iterationTargetNodes } from "@/lib/iteration/targets";
 import ResearchStages from "@/app/components/ResearchStages";
+import { projectRunStatus } from "@/lib/jobs/run-status";
 import type { ResearchProgress } from "@/lib/jobs/research-progress";
 import ProjectToolPane from "@/app/components/ProjectToolPane";
 import RoleIntakePane from "@/app/components/RoleIntakePane";
@@ -1249,6 +1250,10 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
   };
 
   const showIntake = !conversationLoading && !intakeDismissed && !packageStatus && projectStatus !== "building" && !toolBusy[activeConversationId] && (initialNewProject || Boolean(projectId));
+  // One canonical run projection feeds both the stage list and the header chip,
+  // so the page can never show "后台增量中" and "已完成" at the same time.
+  const activeMount = courseMount?.snapshotId === projectResult?.snapshot.id ? courseMount : undefined;
+  const runStatus = projectRunStatus({ progress: researchProgress[activeConversationId], mount: activeMount });
   return (
     <main className={`workspace-shell ${chatCollapsed ? "chat-collapsed" : ""}`}>
       <aside className="sidebar">
@@ -1292,7 +1297,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
             {projectId && <><button type="button" title="历史版本与比较" onClick={() => setActiveOperation("versions")}><History size={14} />版本历史</button><button type="button" onClick={() => setActiveOperation("publish")}><Upload size={14} />发布</button><div className="project-menu-wrap"><button type="button" onClick={() => setProjectMenuOpen((value) => !value)} aria-label="项目操作" aria-expanded={projectMenuOpen}><MoreHorizontal size={18} /></button>{projectMenuOpen && <div className="project-header-menu"><ProjectManagement projectId={projectId} title={workspaceTitle} variant="delete" /></div>}</div></>}
 
             {launchReleaseId ? <button type="button" className="learnflow-launch" onClick={() => void launchInLearnFlow()} disabled={launchingLearnFlow}><MessageCircle size={13} /> {launchingLearnFlow ? "正在进入…" : "在 LearnFlow 中引用"}</button> : null}
-            <div className={`status-chip ${packageStatus?.publishable === false ? "warning" : ""}`}><span /> {projectStatus === "building" || enrichmentState.running ? "内核可用 · 后台增量中" : packageStatus ? `快照 ${packageStatus.snapshotAsOf}` : "尚未生成岗位包"}</div>
+            <div className={`status-chip ${runStatus?.tone === "attention" || packageStatus?.publishable === false ? "warning" : ""}`}><span /> {runStatus && runStatus.tone !== "idle" && runStatus.tone !== "done" ? runStatus.headline : projectStatus === "building" || enrichmentState.running ? "内核可用 · 后台增量中" : packageStatus ? `快照 ${packageStatus.snapshotAsOf}` : "尚未生成岗位包"}</div>
           </div>
         </header>
         {workspaceError && <div className="tool-error" role="alert"><AlertTriangle size={14} /><span>{workspaceError}</span>{/登录|身份/.test(workspaceError) && <a href={loginHref || `https://learn.learnflow.club/login?return_to=${encodeURIComponent(typeof window === "undefined" ? "https://roles.learnflow.club/" : window.location.href)}`}>重新登录</a>}</div>}
@@ -1445,7 +1450,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
         {!modelSummary.configured && (
           <div className="model-banner"><AlertTriangle size={15} /><span><b>还不能发起真实回答</b><small>选择 MiMo V2.5 或 DeepSeek V4 Flash，并保存会话级 API Key。</small></span><button type="button" onClick={() => setActiveOperation("settings")}>去配置</button></div>
         )}
-        {projectId && <ResearchStages progress={researchProgress[activeConversationId]} mount={courseMount?.snapshotId === projectResult?.snapshot.id ? courseMount : undefined} />}
+        {projectId && <ResearchStages progress={researchProgress[activeConversationId]} mount={activeMount} />}
         <div className="messages">
           {showIntake && <RoleIntakePane key={`${actorSubjectId}:${projectId || "new"}:${activeConversationId}`} actorSubjectId={actorSubjectId} projectId={projectId} conversationId={activeConversationId || undefined} initialTitle={newProjectBrief?.role || (projectId ? workspaceTitle : "")} initialDescription={newProjectBrief?.description || projectBrief.description} initialMarket={newProjectBrief?.market || projectBrief.market} onBusyChange={setIntakeBusy} onClose={initialNewProject ? undefined : () => setIntakeDismissed(true)} onStarted={(scope) => window.location.assign(`/projects/${encodeURIComponent(scope.projectId)}?conversation=${encodeURIComponent(scope.conversationId)}`)} />}
           {projectId && conversations.filter((conversation) => conversation.id === activeConversationId || toolInstances[conversation.id] || toolBusy[conversation.id]).map((conversation) => {

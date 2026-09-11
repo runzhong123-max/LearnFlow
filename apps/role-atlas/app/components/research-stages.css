@@ -5,3 +5,6 @@
 .research-stages li.active { color: #315b45; font-weight: 600; }
 .research-stages li.active i, .research-stages li.done i { background: #315b45; color: white; border-color: #315b45; }
 .research-stages p { font-size: 11px; color: #576859; margin: 8px 0 0; overflow-wrap: anywhere; }
+.research-stages li.blocked { color: #8a5a1d; font-weight: 600; }
+.research-stages li.blocked i { background: #8a5a1d; color: white; border-color: #8a5a1d; }
+.research-stages p.attention { color: #8a5a1d; }

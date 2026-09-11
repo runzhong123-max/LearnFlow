@@ -17,6 +17,7 @@ const dispositionLabels: Record<WebResearchReport["candidates"][number]["disposi
   domain_limit: "同域名配额",
   source_limit: "来源上限",
   unreadable: "正文不可读",
+  foreign_occupation: "其他岗位主题",
 };
 
 export default function ResearchAudit({ report }: { report: WebResearchReport }) {

@@ -210,6 +210,54 @@ function contentNoisePenalty(result: RawSearchResult) {
   return Math.min(0.2, penalty);
 }
 
+const OCCUPATION_PATTERN = /[\p{Script=Han}A-Za-z0-9+#]{2,12}?(?:工程师|架构师|分析师|设计师|管理员|顾问|经理|专员|技术员|讲师|培训师)/gu;
+const OCCUPATION_SUFFIX = /(?:工程师|架构师|分析师|设计师|管理员|顾问|经理|专员|技术员|讲师|培训师)$/u;
+
+function occupationCore(value: string) {
+  return cleanText(value).replace(/[^\p{Script=Han}\p{L}\p{N}]/gu, "").toLowerCase().replace(OCCUPATION_SUFFIX, "");
+}
+
+/** Occupations the result's own title is about. The boundary stage can only stay
+ * stable if a page titled after a *different* occupation cannot ride on body
+ * mentions of the target role. */
+export function titledOccupations(title: string): string[] {
+  return [...new Set((title.match(OCCUPATION_PATTERN) || [])
+    .map(occupationCore).filter(core => core.length >= 2))];
+}
+
+/**
+ * Penalty for sources whose title names an occupation outside the target role
+ * boundary (e.g. a 系统架构师 or 安全工程师 page retrieved for 云运维工程师).
+ * Body co-occurrence keeps such pages citable context only when they are
+ * materially about the target role; the ranking penalty keeps them out of the
+ * primary evidence set.
+ */
+export function foreignOccupationPenalty(result: Pick<RawSearchResult, "title" | "content">, roleTitle: string) {
+  const targetCore = occupationCore(researchRoleTitle(roleTitle));
+  if (targetCore.length < 2) return 0;
+  const titled = titledOccupations(result.title);
+  if (!titled.length) return 0;
+  const alien = titled.filter(core => !core.includes(targetCore) && !targetCore.includes(core));
+  if (!alien.length) return 0;
+  // A page that still leads with the target role in its body is comparison
+  // material, not boundary noise; halve the penalty instead of rejecting it.
+  const body = cleanText(result.content.slice(0, 3_000)).replace(/[^\p{Script=Han}\p{L}\p{N}]/gu, "").toLowerCase();
+  return body.includes(targetCore) ? 0.12 : 0.24;
+}
+
+const STALE_SENSITIVE: ReadonlySet<WebSearchCategory> = new Set(["job_market", "work_practice", "future_signal", "education"]);
+
+/** Deterministic freshness decay for categories where a four-year-old page
+ * describes a different market. Reference year stays injectable for tests. */
+export function stalenessPenalty(result: Pick<RawSearchResult, "publishedAt">, category: WebSearchCategory, referenceYear = new Date().getUTCFullYear()) {
+  if (!STALE_SENSITIVE.has(category) || !result.publishedAt) return 0;
+  const year = Number(String(result.publishedAt).slice(0, 4));
+  if (!Number.isInteger(year) || year < 2000 || year > referenceYear + 1) return 0;
+  const age = referenceYear - year;
+  if (age <= 2) return 0;
+  return Math.min(0.16, 0.05 + (age - 2) * 0.03);
+}
+
 function roleRelevance(result: RawSearchResult, roleTitle: string) {
   const target = cleanText(researchRoleTitle(roleTitle)).replace(/[^\p{Script=Han}\p{L}\p{N}]/gu, "").toLowerCase();
   const haystack = cleanText(`${result.title}\n${result.content.slice(0, 3_000)}`).replace(/[^\p{Script=Han}\p{L}\p{N}]/gu, "").toLowerCase();
@@ -236,7 +284,8 @@ function qualityScore(result: RawSearchResult, category: WebSearchCategory, role
   const contentScore = Math.min(result.content.length / 5_000, 1) * 0.16;
   const providerScore = Math.max(0, Math.min(result.score || 0.5, 1)) * 0.12;
   return Math.max(0, Math.min(1, tierScore * 0.45 + contentScore + providerScore
-    + roleRelevance(result, roleTitle) * 0.2 + categoryFit(result, category) * 0.12 - contentNoisePenalty(result)));
+    + roleRelevance(result, roleTitle) * 0.2 + categoryFit(result, category) * 0.12
+    - contentNoisePenalty(result) - foreignOccupationPenalty(result, roleTitle) - stalenessPenalty(result, category)));
 }
 
 function researchRelevance(result: RawSearchResult, roleTitle: string, queries: PlannedQuery[]) {
@@ -696,6 +745,13 @@ export async function researchRoleSources(input: {
   const accept = (item: (typeof ranked)[number]) => {
     if (selectedUrls.has(item.result.url) || selected.length >= limit) return false;
     if (item.relevance < minimumRoleRelevance(item.categories)) return false;
+    // A non-authoritative page titled after a different occupation (架构师 /
+    // 安全工程师 / 培训讲师 …) without target-role substance is boundary noise,
+    // not comparison material; keep it out of the selected evidence set.
+    // Authoritative standards often legitimately name a neighbouring occupation
+    // (e.g. 国家职业标准), so they are only down-ranked, never hard-rejected.
+    const tier = strongestQualityTier(item.result, item.categories);
+    if (foreignOccupationPenalty(item.result, input.request.roleTitle) >= 0.2 && (tier === "secondary" || tier === "contextual")) return false;
     const host = new URL(item.result.url).hostname;
     const count = perDomain.get(host) || 0;
     if (count >= 2) return false;
@@ -813,8 +869,14 @@ export async function researchRoleSources(input: {
     ...ranked.map((item) => {
       const domain = new URL(item.result.url).hostname;
       let disposition: WebResearchReport["candidates"][number]["disposition"];
+      const candidateTier = strongestQualityTier(item.result, item.categories);
       if (finalSelectedUrls.has(item.result.url)) disposition = "selected";
       else if (selectedUrls.has(item.result.url)) disposition = "unreadable";
+      // Name the boundary reason before the generic relevance floor: a low-tier
+      // page titled after another occupation was rejected because of what it is,
+      // and the audit should say so.
+      else if (foreignOccupationPenalty(item.result, input.request.roleTitle) >= 0.2
+        && ["secondary", "contextual"].includes(candidateTier)) disposition = "foreign_occupation";
       else if (item.relevance < minimumRoleRelevance(item.categories)) disposition = "low_relevance";
       else if ((perDomain.get(domain) || 0) >= 2) disposition = "domain_limit";
       else disposition = "source_limit";

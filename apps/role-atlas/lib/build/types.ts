@@ -133,7 +133,7 @@ export type WebResearchReport = {
     providerScore?: number;
     relevanceScore: number;
     rankingScore: number;
-    disposition: "selected" | "duplicate_content" | "low_relevance" | "domain_limit" | "source_limit" | "unreadable";
+    disposition: "selected" | "duplicate_content" | "low_relevance" | "domain_limit" | "source_limit" | "unreadable" | "foreign_occupation";
     duplicateOf?: string;
   }>;
   categoryCoverage: Array<{

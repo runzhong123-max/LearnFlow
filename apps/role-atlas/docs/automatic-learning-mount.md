@@ -24,6 +24,8 @@ UI 通过 owner-scoped `/api/projects/:projectId/learning-mounts?versionId=...` 
 
 相同类型、名称/别名与显式 scopeNote + assessmentCriteria 复用节点；纯摘要更新不重复建点。自动模式下多个完全等价候选按已持久同主体内容 ID、官方节点、namespace/id 稳定顺序选择；手动歧义预览保持原行为。新节点内容 ID 碰撞时依次延长哈希，再使用稳定后缀，检查源图和本批节点并在后续重用，不覆盖旧节点。定义变化是不同点，历史节点与学习记录保留。找不到可靠容器时建立本人 graph_extension 命名空间下的岗位学习域，通过 standaloneRoots 明确声明并连接新原子点；不强行等价或虚构官方归属。
 
+单次 resolve 新增课程受 `MAX_NEW_COURSES_PER_RESOLUTION`（6 门）上限约束：匹配已有课程与复用本批新课程不占额度，只有真正新建课程计数。超出上限的点以 `needs_consolidation` 进入 unresolved，不静默丢弃、不降级为细碎知识点；这些点在先前课程并入源图后的下一轮 resolve 中继续挂载，因此重跑收敛而不是反复失败。`needs_consolidation` 不触发自动补研。
+
 ## 部署和数据边界
 
 - 两服务复用仅服务端 `ROLE_ATLAS_GATEWAY_SECRET`（至少 32 字节），Role 需 `LEARNFLOW_BASE_URL`；生产使用 HTTPS 固定源站。内部同机容器允许 `http://learnflow-backend:8000`。不得放入 PUBLIC/VITE 配置。

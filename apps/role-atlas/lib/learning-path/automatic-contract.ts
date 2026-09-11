@@ -31,6 +31,7 @@ export const mountReason = (reason?: string) => ({
   ambiguous_definition: "同名节点定义不同，需要明确语义边界",
   no_learning_points: "尚未形成可挂载的知识点或技能点，需要先完善岗位内容",
   needs_anchor: "需要明确学习内容归属",
+  needs_consolidation: "单次挂载新增课程已达上限，需先归并为更大粒度课程",
 }[reason || ""] || reason || "需要进一步核对");
 
 export function learningMountFeedback(record: AutomaticMountRecord | null) {

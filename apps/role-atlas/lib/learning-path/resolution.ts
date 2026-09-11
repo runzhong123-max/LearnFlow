@@ -18,8 +18,17 @@ export type RoleLearningResolution = {
   pendingBindings: RoleLearningAlignmentV2["bindings"];
   courseTargets?: Array<{ roleNodeId: string; target: { namespace: string; id: string; revision: number }; title: string; kind: "course" }>;
   extensionProposal?: GraphExtensionProposalV2;
-  unresolved: Array<{ roleNodeId: string; reason: "needs_decomposition" | "needs_definition" | "needs_evidence" | "ambiguous_definition" | "needs_anchor"; candidates: Array<{ namespace: string; id: string; revision: number; title: string; kind: string }> }>;
+  unresolved: Array<{ roleNodeId: string; reason: "needs_decomposition" | "needs_definition" | "needs_evidence" | "ambiguous_definition" | "needs_anchor" | "needs_consolidation"; candidates: Array<{ namespace: string; id: string; revision: number; title: string; kind: string }> }>;
 };
+
+/**
+ * A single mount may only add a few coarse-grained courses. Without the cap a
+ * fine-grained knowledge/skill list becomes one new course per action and the
+ * learner's radar fills with noise. Overflow points stay unresolved with
+ * `needs_consolidation` so the next resolution can place them once the earlier
+ * courses exist in the graph.
+ */
+export const MAX_NEW_COURSES_PER_RESOLUTION = 6;
 
 const normalize = (s: string) => s.normalize("NFKC").trim().replace(/\s+/gu, " ").toLocaleLowerCase();
 const key = (n: PathNodeV2) => ({ namespace: n.namespace, id: n.id, revision: n.revision });
@@ -154,6 +163,7 @@ export async function resolveRoleLearningPoints(input: {
       let course = planned ? planned.existing || newNodes.find(node => courseNameKey(node.title) === courseNameKey(theme.title)) : matches[0]?.n;
       if (!course) {
         if (!input.allowStandaloneRoots) { fail("needs_anchor"); continue; }
+        if (newNodes.filter(node => node.kind === "course").length >= MAX_NEW_COURSES_PER_RESOLUTION) { fail("needs_consolidation"); continue; }
         const id = `course:${(await sha256Hex(courseNameKey(theme.title))).slice(0, 40)}`;
         if ([...graph.nodes, ...newNodes].some(n => n.namespace === input.namespace && n.id === id)) {
           fail("ambiguous_definition"); continue;

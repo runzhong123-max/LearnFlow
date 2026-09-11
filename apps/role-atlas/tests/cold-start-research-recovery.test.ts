@@ -85,7 +85,7 @@ test("英文一手技术文档按聚焦技术词进入研究；相邻BIM岗位�
     const result = await researchRoleSources({ request: { ...request(), roleTitle: "大模型应用工程师" }, config: { provider: "exa", apiKey: "fixture" }, queries: [{ id: "focused-tech", category: "technology", query: "ESP-IDF JTAG debugging reference", priority: 9 }] });
     assert.ok(result.sources.some(source => source.title.includes("ESP-IDF")));
     assert.ok(!result.sources.some(source => source.title.includes("BIM")));
-    assert.equal(result.report.candidates?.find(candidate => candidate.title.includes("BIM"))?.disposition, "low_relevance");
+    assert.equal(result.report.candidates?.find(candidate => candidate.title.includes("BIM"))?.disposition, "foreign_occupation");
   } finally { globalThis.fetch = original; }
 });
 
