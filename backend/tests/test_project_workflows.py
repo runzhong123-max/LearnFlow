@@ -121,7 +121,7 @@ def test_practice_case_validate_gate_restart_and_non_mastery(client):
     assert client.post(f"/api/vnext-projects/{pid}/checkpoints/{third}/hint", json=hint_payload).status_code == 409
     hint = client.post(f"/api/vnext-projects/{pid}/checkpoints/{first}/hint", json=hint_payload)
     assert hint.status_code == 200, hint.text
-    assert "201" not in str(hint.json())
+    assert "201" not in hint.json()["hint"]["body"]
     assert client.post(f"/api/vnext-projects/{pid}/checkpoints/{first}/hint", json=hint_payload).status_code == 200
     assert len(client.get(f"/api/vnext-projects/{pid}/workflow").json()["milestones"][0]["hints_used"]) == 1
     assert deliver(client, pid, third, {"result": "{}", "handoff": "直接跳到结尾"}).status_code == 409

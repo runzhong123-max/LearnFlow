@@ -68,7 +68,13 @@ jobs:
         run: npm --prefix apps/desktop/desktop run build:sidecar
 
       - name: Build unsigned internal desktop package
-        run: npm --prefix apps/desktop/desktop run build
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            npm --prefix apps/desktop/desktop run build -- --bundles app
+          else
+            npm --prefix apps/desktop/desktop run build
+          fi
 
       - name: Upload internal package
         uses: actions/upload-artifact@v4
