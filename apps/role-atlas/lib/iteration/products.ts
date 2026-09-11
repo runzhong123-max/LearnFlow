@@ -159,7 +159,12 @@ export type RiskPackage = z.infer<typeof riskPackageSchema>;
 export type RiskPackageInput = {
   baseSnapshotId: string;
   generatedAt: string;
-  issues: RiskIssue[];
+  /**
+   * Deterministic findings produced by code. Only their presence is relied on
+   * here — the package stores them verbatim and counts them — so the type is
+   * left structural rather than forcing callers to fabricate a rich issue.
+   */
+  issues: readonly unknown[];
   metrics?: RiskHealthMetrics;
   domains?: RiskDomain[];
   researchAgenda?: ResearchTaskCard[];

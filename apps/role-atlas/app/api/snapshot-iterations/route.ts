@@ -10,6 +10,7 @@ import type { ModelInvoker } from "@/lib/agent/model";
 import { createRecordedModelInvoker } from "@/lib/research-collection/model";
 import { createSnapshotIterationSkill } from "@/lib/iteration/graph";
 import { buildResearchAgent, ledgerForRun, researchAgentEnabled } from "@/lib/iteration/research-agent";
+import { buildProductPlanner } from "@/lib/iteration/product-planner";
 import { DEFAULT_ITERATION_BUDGET } from "@/lib/iteration/types";
 import { iterationBriefError } from "@/lib/iteration/brief";
 import { iterationTargetNodes } from "@/lib/iteration/targets";
@@ -200,6 +201,10 @@ export async function POST(request: Request) {
     initialSeq: await lastRoleEventSequence(iterationRequest.runId),
     searchConfig,
     ...(researchAgent ? { researchAgent } : {}),
+    // Products ride on the same switch as the research that feeds them: radar
+    // items and augmentations are derived from what research found, so enabling
+    // one without the other would be a half-configured feature.
+    ...(researchAgent ? { productPlanner: buildProductPlanner({ model, issues: resolved.result.audit?.issues || [] }) } : {}),
     onCheckpoint: async (phase, state) => {
       await assertRoleJobLease(iterationRequest.runId, jobOwner);
       if (!await checkpointRoleJob({ jobId: iterationRequest.runId, owner: jobOwner, kind: jobKind, phase, state })) throw new Error("JOB_LEASE_LOST");
