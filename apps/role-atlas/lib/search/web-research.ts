@@ -1,5 +1,6 @@
 import { stableHash } from "@/lib/build/compiler";
 import type { ColdStartRequest, SourceInput, WebResearchReport, WebSearchCategory } from "@/lib/build/types";
+import { boundaryHardRejects, boundaryScoreAdjustment, type BoundaryVerifier, type BoundaryVerdict } from "./boundary-verdicts";
 import { SEARCH_PROVIDERS, type SearchProviderConfig } from "./providers";
 import { researchRoleTitle } from "./role-query";
 
@@ -662,6 +663,7 @@ export async function researchRoleSources(input: {
   signal?: AbortSignal;
   onProgress?: ResearchProgress;
   sourceLimit?: number;
+  verifyBoundaries?: BoundaryVerifier;
 }): Promise<{ sources: SourceInput[]; report: WebResearchReport }> {
   const startedAt = new Date().toISOString();
   const queries = input.queries?.length ? input.queries : planRoleSearchQueries(input.request);
@@ -736,8 +738,36 @@ export async function researchRoleSources(input: {
       ...item,
       relevance: researchRelevance(item.result, input.request.roleTitle, queries.filter(query => item.queryIds.includes(query.id))),
       score: qualityScore(item.result, item.query.category, input.request.roleTitle) + item.query.priority / 100,
+      boundaryVerdict: undefined as BoundaryVerdict | undefined,
     }))
     .sort((left, right) => right.score - left.score);
+
+  // Agent boundary pass: the model classifies how each leading candidate
+  // relates to the target occupation's boundary. Verdicts can only demote or
+  // reject; on any failure the deterministic heuristics alone decide.
+  if (input.verifyBoundaries && ranked.length) {
+    const verdicts = await input.verifyBoundaries({
+      roleTitle: input.request.roleTitle,
+      market: input.request.market,
+      roleDescription: input.request.roleDescription,
+      candidates: ranked.slice(0, 24).map((item) => ({
+        url: item.result.url,
+        title: item.result.title,
+        domain: new URL(item.result.url).hostname,
+        excerpt: cleanText(item.result.content).slice(0, 600),
+      })),
+      signal: input.signal,
+    }).catch(() => undefined);
+    if (verdicts?.size) {
+      for (const item of ranked) {
+        const verdict = verdicts.get(item.result.url);
+        if (!verdict) continue;
+        item.boundaryVerdict = verdict;
+        item.score = Math.max(0, item.score + boundaryScoreAdjustment(verdict));
+      }
+      ranked.sort((left, right) => right.score - left.score);
+    }
+  }
   const perDomain = new Map<string, number>();
   const selected: typeof ranked = [];
   const selectedUrls = new Set<string>();
@@ -752,6 +782,9 @@ export async function researchRoleSources(input: {
     // (e.g. 国家职业标准), so they are only down-ranked, never hard-rejected.
     const tier = strongestQualityTier(item.result, item.categories);
     if (foreignOccupationPenalty(item.result, input.request.roleTitle) >= 0.2 && (tier === "secondary" || tier === "contextual")) return false;
+    // The model boundary pass may veto a low-tier page it confidently places
+    // outside the target occupation, even when the title heuristic missed it.
+    if (boundaryHardRejects(item.boundaryVerdict, tier)) return false;
     const host = new URL(item.result.url).hostname;
     const count = perDomain.get(host) || 0;
     if (count >= 2) return false;
@@ -877,6 +910,7 @@ export async function researchRoleSources(input: {
       // and the audit should say so.
       else if (foreignOccupationPenalty(item.result, input.request.roleTitle) >= 0.2
         && ["secondary", "contextual"].includes(candidateTier)) disposition = "foreign_occupation";
+      else if (boundaryHardRejects(item.boundaryVerdict, candidateTier)) disposition = "foreign_occupation";
       else if (item.relevance < minimumRoleRelevance(item.categories)) disposition = "low_relevance";
       else if ((perDomain.get(domain) || 0) >= 2) disposition = "domain_limit";
       else disposition = "source_limit";
@@ -890,6 +924,9 @@ export async function researchRoleSources(input: {
         relevanceScore: item.relevance,
         rankingScore: item.score,
         disposition,
+        boundaryVerdict: item.boundaryVerdict
+          ? { relation: item.boundaryVerdict.relation, confidence: item.boundaryVerdict.confidence, note: item.boundaryVerdict.note }
+          : undefined,
       };
     }),
     ...contentDuplicates.map(({ item, duplicateOf }) => ({

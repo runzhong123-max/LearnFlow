@@ -6,6 +6,7 @@ import { inspectSnapshot, inspectionToBuildAudit } from "@/lib/iteration/inspect
 import { refreshRolePackageManifest } from "@/lib/packages/role-package-manifest";
 import { createRoleSearchPlan } from "@/lib/search/query-planner";
 import type { SearchProviderConfig } from "@/lib/search/providers";
+import { createBoundaryVerifier } from "@/lib/search/boundary-verdicts";
 import { researchRoleSources, type PlannedQuery } from "@/lib/search/web-research";
 import { researchRoleTitle } from "@/lib/search/role-query";
 import { compileProcessDraft, compileRolePackage, compileSemanticDraft, prepareBuildInput, stableHash } from "./compiler";
@@ -337,6 +338,7 @@ function markRecoveredWorkItem(workItems: BuildWorkItemSummary[], stage: string,
 export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions) {
   let seq = options?.initialSeq || 0;
   const cache = options?.cache || new Map<string, unknown>();
+  const boundaryVerifier = createBoundaryVerifier(model);
 
   function emit(request: ColdStartRequest, kind: BuildEventKind, profile: BuildEvent["profile"], payload: Record<string, unknown>) {
     if (options?.emitEvents === false) return;
@@ -544,6 +546,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       planStrategy: searchPlan.strategy,
       plannerFallbackReason: searchPlan.fallbackReason,
       sourceLimit: options.sourceLimit,
+      verifyBoundaries: boundaryVerifier,
       signal: config.signal,
       onProgress: (progress) => {
         const kind = { plan: "build.research.plan.created", "search-started": "build.search.started", "search-retrying": "build.search.retrying", "search-completed": "build.search.completed", "search-failed": "build.search.failed", "source-fetched": "build.source.fetched", "source-deduplicated": "build.source.deduplicated" }[progress.kind] as BuildEventKind;
@@ -761,7 +764,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     emit(state.request, "build.targeted_research.started", "evidence", { reason: "missing_task_layer", round, queryCount: options?.searchConfig ? queries.length : 0, message: "尚未找到可支撑岗位任务的证据，正在补充招聘职责和真实工作实践。" });
     if (options?.searchConfig) {
       try {
-        const researched = await researchRoleSources({ request: { ...state.request, roleTitle: role }, config: options.searchConfig, queries, sourceLimit: 6, signal: config.signal });
+        const researched = await researchRoleSources({ request: { ...state.request, roleTitle: role }, config: options.searchConfig, queries, sourceLimit: 6, verifyBoundaries: boundaryVerifier, signal: config.signal });
         activeRequest = { ...activeRequest, sources: mergeResearchSources(activeRequest.sources, researched.sources) };
         report = mergeResearchReports(report, researched.report);
       } catch (error) {
@@ -800,7 +803,8 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       relationPropositions: base.sources.relationPropositions || [],
       taskDraft,
       semanticDraft: taskDraft,
-      taskGroups: groupTasks(taskDraft.nodes.filter(node => node.type === "task")),
+      taskGroups: groupTasks(taskDraft.nodes.filter(node => node.type === "task"
+        && (!options?.knowledgeTargetIds?.length || options.knowledgeTargetIds.includes(node.tempId)))),
       firstTaskSkeletonMs: base.build?.metrics.firstTaskSkeletonMs,
       kernelResult: base,
       workItems: [...(base.build?.workItems || [])],
@@ -828,6 +832,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
         queries,
         planStrategy: "deterministic",
         sourceLimit: Math.min(6, Math.max(3, queries.length * 2)),
+        verifyBoundaries: boundaryVerifier,
         signal: config.signal,
         onProgress: (progress) => {
           const kind = { plan: "build.research.plan.created", "search-started": "build.search.started", "search-retrying": "build.search.retrying", "search-completed": "build.search.completed", "search-failed": "build.search.failed", "source-fetched": "build.source.fetched", "source-deduplicated": "build.source.deduplicated" }[progress.kind] as BuildEventKind;

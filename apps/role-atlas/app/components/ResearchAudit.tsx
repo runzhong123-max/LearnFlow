@@ -20,6 +20,13 @@ const dispositionLabels: Record<WebResearchReport["candidates"][number]["disposi
   foreign_occupation: "其他岗位主题",
 };
 
+const boundaryRelationLabels: Record<NonNullable<WebResearchReport["candidates"][number]["boundaryVerdict"]>["relation"], string> = {
+  core: "边界内",
+  adjacent: "相邻岗位",
+  comparison: "边界对比",
+  foreign: "边界外",
+};
+
 export default function ResearchAudit({ report }: { report: WebResearchReport }) {
   const coverage = report.categoryCoverage || [];
   const candidates = report.candidates || [];
@@ -44,7 +51,7 @@ export default function ResearchAudit({ report }: { report: WebResearchReport })
         {candidates.length ? <div className="research-candidate-list">
           {candidates.map((candidate, index) => <article className={candidate.disposition} key={`${candidate.url}:${candidate.disposition}:${index}`}>
             <span><b>{candidate.title}</b><small>{candidate.domain} · 相关性 {Math.round(candidate.relevanceScore * 100)}% · 排序 {candidate.rankingScore.toFixed(2)}</small></span>
-            <em>{dispositionLabels[candidate.disposition]}{candidate.duplicateOf ? ` · 合并至 ${candidate.duplicateOf}` : ""}</em>
+            <em>{dispositionLabels[candidate.disposition]}{candidate.duplicateOf ? ` · 合并至 ${candidate.duplicateOf}` : ""}{candidate.boundaryVerdict ? ` · 边界判定：${boundaryRelationLabels[candidate.boundaryVerdict.relation]} ${Math.round(candidate.boundaryVerdict.confidence * 100)}%${candidate.boundaryVerdict.note ? `（${candidate.boundaryVerdict.note}）` : ""}` : ""}</em>
             <a href={candidate.url} target="_blank" rel="noreferrer">原页</a>
           </article>)}
         </div> : null}

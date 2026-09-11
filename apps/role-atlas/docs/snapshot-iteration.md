@@ -58,6 +58,14 @@ Skill 支持三种发起方式：
 
 回归：`iteration-empty-recovery.test.ts`、`iteration-directed-scope.test.ts`、`iteration-capability-coverage.test.ts`。以上保持现有事件和存储契约，不修改学习者五核。
 
+### 六能力契约与智能体边界判定（2026-09-11）
+
+- 深度研究、风险发现、时效迭代、目标增强、自动发现、定向研究的技术定义（契约字段、执行路径、验收路径、失败语义）统一登记在 [iteration-capabilities.md](/Users/a1-6/LearnFlow/apps/role-atlas/docs/iteration-capabilities.md)；六能力特征化测试 `tests/iteration-capabilities.test.ts` 钉死“选中即产生真实研究、证据增量与可读结论”。
+- 显式选中节点的定向研究改为锚定 enrichment 重建：全量重建会因为限定来源不参与抽取分片而丢失基线原始证据，并引入范围外对象。`knowledgeTargetIds` 只含用户声明范围（不再聚合所有活跃工作项的目标），`hydrateKernel` 的 taskGroups 同步收窄；范围整体门禁不变。
+- 检索新增模型驱动的通用岗位边界判定（`lib/search/boundary-verdicts.ts`）：对排序前列候选判定 core/adjacent/comparison/foreign，只能淘汰或降权、不能扩权，失败时回退确定性启发式，判定写入研究报告 `candidates[].boundaryVerdict` 供审计。冷启动三处检索与迭代研究统一接入。
+
+回归追加：`tests/iteration-capabilities.test.ts`、`tests/boundary-verdicts.test.ts`。
+
 ## 3. 结构检查不是粗糙质量门
 
 检查发生在冷启动和每次迭代之后，覆盖：

@@ -10,6 +10,7 @@ import { applyGraphPatch, computeSemanticDiff, proposeSafePatch } from "@/lib/ri
 import type { GraphPatch } from "@/lib/risk/types";
 import { reconstructSourceInputs } from "@/lib/risk/research";
 import { researchRoleSources } from "@/lib/search/web-research";
+import { createBoundaryVerifier } from "@/lib/search/boundary-verdicts";
 import type { SearchProviderConfig } from "@/lib/search/providers";
 import { applyInspectionToSnapshot, findingIdentity, inspectSnapshot } from "./inspector";
 import { preserveIterationGraph } from "./preserve-graph";
@@ -175,6 +176,7 @@ export function createSnapshotIterationSkill(input: {
   onCheckpoint?: (phase: string, state: Record<string, unknown>) => Promise<void>;
 }) {
   let seq = input.initialSeq || 0;
+  const boundaryVerifier = createBoundaryVerifier(input.model);
   const emit = (state: Pick<IterationStateType, "request">, kind: IterationEventKind, phase: IterationEvent["phase"], payload: Record<string, unknown>) => {
     const event: IterationEvent = {
       version: "1.0",
@@ -303,6 +305,7 @@ export function createSnapshotIterationSkill(input: {
       queries: plan.queries,
       planStrategy: "deterministic",
       sourceLimit: state.request.sourceLimit,
+      verifyBoundaries: boundaryVerifier,
       signal: config.signal,
       onProgress: (progress) => {
         if (progress.kind === "search-started") emit(state, "iteration.search.started", "research", progress.payload);
@@ -348,8 +351,18 @@ export function createSnapshotIterationSkill(input: {
     // Enrichment hydrates tasks from the base and cannot invent that missing
     // layer. A role-only legacy snapshot must re-run source/task extraction.
     const mountRepair = Boolean(state.contract?.learningMountFeedback?.length);
-    const anchored = hasExistingTasks && (reuseEvidence || hasTaskRepair || mountRepair);
-    const taskTargets = new Set(activeItems.flatMap(item => item.targetIds));
+    // Directed research names existing nodes as its scope. Regenerating the
+    // whole graph both discards the base's original evidence (sources whose
+    // qualified evidence roles are empty never reach extraction shards) and
+    // invites out-of-scope additions; anchor the rebuild on the base instead.
+    const directedAtExisting = state.contract?.initiativeProfile === "user_directed"
+      && Boolean(state.contract.targetIds.length);
+    const anchored = hasExistingTasks && (reuseEvidence || hasTaskRepair || mountRepair || directedAtExisting);
+    // Directed research derives within the declared selection; other modes
+    // follow the active work items. Seeding from every work item's targets
+    // would let an aggregate finding (e.g. process gaps listing all tasks)
+    // silently widen a user-declared scope.
+    const taskTargets = new Set(directedAtExisting ? state.contract!.targetIds : activeItems.flatMap(item => item.targetIds));
     // A knowledge-point selection must reach its task context without changing
     // the user's declared scope or interpreting a role hub as every task.
     for (let depth = 0; depth < 3; depth++) for (const edge of state.candidate.semantic.edges) {

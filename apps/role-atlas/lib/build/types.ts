@@ -135,6 +135,12 @@ export type WebResearchReport = {
     rankingScore: number;
     disposition: "selected" | "duplicate_content" | "low_relevance" | "domain_limit" | "source_limit" | "unreadable" | "foreign_occupation";
     duplicateOf?: string;
+    /** Model-driven occupation boundary verdict, when the boundary pass ran. */
+    boundaryVerdict?: {
+      relation: "core" | "adjacent" | "comparison" | "foreign";
+      confidence: number;
+      note?: string;
+    };
   }>;
   categoryCoverage: Array<{
     category: WebSearchCategory;
