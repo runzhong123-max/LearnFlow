@@ -29,7 +29,7 @@ from app.services.learning_skill_runtime import (
 from app.services.learning_tasks import create_learning_task, ensure_checkpoint_learning_task
 from app.services.profile import memory_projection
 from app.services.task_manager import manager
-from app.services.auth import load_current_learner
+from app.services.auth import AccountModelProviderConfig, load_current_learner
 from app.services.roadmap_agent import RoadmapAgent, SubmittedRoadmap
 from app.services.tutor_service import _decode_tutor_content, get_or_create_session
 from app.services.checkpoint_context import build_checkpoint_tutor_context
@@ -1817,6 +1817,48 @@ def test_roadmap_submission_requires_a_confirmed_tutor_action(client: TestClient
     )
     assert response.status_code == 409
     assert "确认" in response.json()["detail"]
+
+
+def test_roadmap_chat_uses_account_model_credential_without_global_key(
+    client: TestClient,
+    monkeypatch,
+):
+    created = client.post("/api/projects", json={
+        "name": f"账号路线连接测试 {uuid.uuid4().hex[:8]}",
+        "description": "验证路线 Agent 使用当前账号已保存的模型连接。",
+        "user_level": "beginner",
+    })
+    assert created.status_code == 200, created.text
+    project_id = created.json()["id"]
+    configured_provider = AccountModelProviderConfig(
+        api_key="account-test-key",
+        base_url="https://example.invalid/v1",
+        model="account-test-model",
+    )
+    captured: dict[str, AccountModelProviderConfig] = {}
+
+    def fake_init(self, provider_config=None):
+        captured["provider_config"] = provider_config
+
+    async def fake_chat(self, **_kwargs):
+        return {"message": "已使用账号模型连接生成路线建议。", "updated_roadmap": None}
+
+    monkeypatch.setattr("app.api.phase1.settings.llm_api_key", "")
+    monkeypatch.setattr("app.api.phase1.model_credential_configured", lambda _account: True)
+    monkeypatch.setattr(
+        "app.api.phase1.account_model_provider_config",
+        lambda _account: configured_provider,
+    )
+    monkeypatch.setattr(RoadmapAgent, "__init__", fake_init)
+    monkeypatch.setattr(RoadmapAgent, "chat", fake_chat)
+
+    response = client.post(
+        f"/api/projects/{project_id}/roadmap/chat",
+        json={"message": "帮我规划对象存储学习路线", "history": []},
+    )
+
+    assert response.status_code == 200, response.text
+    assert captured["provider_config"] == configured_provider
 
 
 def test_roadmap_chunk_tools_are_scoped_to_current_project_sources():
