@@ -28,9 +28,16 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-          cache-dependency-path: apps/role-atlas/package-lock.json
+          cache-dependency-path: |
+            apps/role-atlas/package-lock.json
+            frontend/package-lock.json
       - run: npm ci
         working-directory: apps/role-atlas
+      # role-atlas type-checking follows learning-path imports into
+      # frontend/src (runtime-client dynamically imports @tauri-apps/api), so
+      # the frontend dependency tree must exist in this job too.
+      - run: npm ci
+        working-directory: frontend
       - run: node scripts/verify_role_atlas_layout.mjs
       - run: npm test && npm run typecheck && npm run build
         working-directory: apps/role-atlas
