@@ -56,7 +56,8 @@ export function isLocalLearningRuntime() { return isDesktopRuntime() && !isCloud
 export function switchDesktopWorkspace(cloud: boolean) {
   clearRuntimeAuth()
   sessionStorage.setItem('learnflow.desktop.workspace-mode', cloud ? 'cloud' : 'local')
-  window.location.reload()
+  runtime.cloud = cloud && Boolean(runtime.cloudOrigin)
+  window.dispatchEvent(new CustomEvent('learnflow:runtime-changed'))
 }
 
 export function isDesktopPetWindow() {

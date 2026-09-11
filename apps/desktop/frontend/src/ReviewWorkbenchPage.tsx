@@ -185,7 +185,7 @@ function QuestionRunner({ item, busy, onSubmit }: {
   )
 }
 
-export default function ReviewWorkbenchPage({ connection }: { connection: FormalRuntimeConnection }) {
+export default function ReviewWorkbenchPage({ connection, onOpenTasks }: { connection: FormalRuntimeConnection; onOpenTasks: () => void }) {
   const [summary, setSummary] = useState<ReviewSummary>()
   const [items, setItems] = useState<ReviewItem[]>([])
   const [bucket, setBucket] = useState<ReviewBucket>('all')
@@ -281,17 +281,30 @@ export default function ReviewWorkbenchPage({ connection }: { connection: Formal
   return (
     <section className="review-page">
       <header className="review-page-heading">
-        <div><span className="review-kicker">RETRIEVAL · EVIDENCE · MEMORY</span><h1>复习工作台</h1><p>任务交付复习，检索产生证据，证据更新知识核；分数只负责解释与排序。</p></div>
-        <div className="review-summary-cards">
-          <article><strong>{summary?.due || 0}</strong><span>今天</span></article>
-          <article><strong>{summary?.remediation || 0}</strong><span>纠错</span></article>
-          <article><strong>{summary?.stable || 0}</strong><span>稳定</span></article>
+        <div><h1>复习与错题</h1><p>集中完成到期复习、错题纠正和知识巩固。</p></div>
+        <div className="review-heading-actions">
+          <div className="review-summary-cards">
+            <article><strong>{summary?.due || 0}</strong><span>今天</span></article>
+            <article><strong>{summary?.remediation || 0}</strong><span>错题</span></article>
+            <article><strong>{summary?.stable || 0}</strong><span>已稳定</span></article>
+          </div>
+          <button type="button" className="review-refresh" disabled={busy === 'load'} onClick={() => void load(bucket)}><span aria-hidden="true">↻</span>{busy === 'load' ? '刷新中' : '刷新'}</button>
         </div>
       </header>
-      <div className="review-boundary-strip"><b>证据边界</b> 学习任务“完成”只触发交接；必须有已判分 Attempt 才会进入复习量化。内容曝光、用户自述和模型生成不会自动提升掌握。</div>
+      <details className="review-boundary-strip"><summary>复习记录如何产生</summary><p>完成学习任务中的独立作答并获得判定后，系统才会安排复习。浏览内容或生成材料不会自动算作掌握。</p></details>
       {error ? <div className="review-alert review-alert-error">{error}</div> : null}
       {result ? <div className="review-alert review-alert-success">{result}</div> : null}
-      <div className="review-workspace-grid">
+      {!items.length && busy === 'load' ? (
+        <div className="review-page-state" role="status"><span className="review-state-loader" />正在加载复习记录…</div>
+      ) : !items.length && bucket === 'all' ? (
+        <div className="review-page-empty">
+          <span aria-hidden="true">↺</span>
+          <h2>还没有需要复习的内容</h2>
+          <p>完成学习任务中的独立练习后，错题和到期内容会自动出现在这里。</p>
+          <ol><li><b>1</b>完成一项学习任务</li><li><b>2</b>独立作答并提交</li><li><b>3</b>系统按结果安排复习</li></ol>
+          <div><button type="button" className="review-empty-primary" onClick={onOpenTasks}>查看学习任务</button><button type="button" onClick={() => void load('all')}>重新检查</button></div>
+        </div>
+      ) : <div className={`review-workspace-grid${selected ? '' : ' review-workspace-no-selection'}`}>
         <aside className="review-queue">
           <div className="review-buckets">{BUCKETS.map(item => <button type="button" key={item.id} className={bucket === item.id ? 'active' : ''} onClick={() => setBucket(item.id)}>{item.label}</button>)}</div>
           <div className="review-queue-list">
@@ -319,11 +332,10 @@ export default function ReviewWorkbenchPage({ connection }: { connection: Formal
               </div>
             </>
           ) : (
-            <div className="review-empty-focus"><strong>还没有可复习的已判分项目</strong><p>完成学习任务中的独立验证后，ReviewSchedule 会由证据自动重建并出现在这里。</p></div>
+            <div className="review-empty-focus"><strong>这个筛选下没有内容</strong><p>可以切换其他分类，或重新检查最新的复习记录。</p><button type="button" onClick={() => setBucket('all')}>查看全部</button></div>
           )}
         </main>
-        <aside className="review-evidence-column">
-          {selected ? (
+        {selected ? <aside className="review-evidence-column">
             <>
               <EvidencePanel item={selected} />
               <section className="review-memory-panel">
@@ -337,9 +349,8 @@ export default function ReviewWorkbenchPage({ connection }: { connection: Formal
                 </div>
               </section>
             </>
-          ) : null}
-        </aside>
-      </div>
+        </aside> : null}
+      </div>}
     </section>
   )
 }

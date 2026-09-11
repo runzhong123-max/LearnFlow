@@ -362,11 +362,11 @@ export default function LearnerProfilePage({
           }}>{section.id === 'progress' ? '查看依据' : '修改'}</button></header>
           {section.items.length ? <ul>{section.items.map(item => <li key={item.id}>
             <p>{item.text}</p><small>{item.source}</small>
-            <small><time>{profileTimeLabel(item.time)}</time>{item.time ? ' · 记录时间' : ''}</small>
+            {item.time && <small><time>{profileTimeLabel(item.time)}</time></small>}
           </li>)}</ul> : <p className="formal-empty-copy">{section.empty}</p>}
         </section>)}
       </div>
-      <div className="profile-overview-footer"><span>这里呈现当前已读取的资料。自述帮助选择讲解起点，具体能力由学习表现逐步确认。</span><button type="button" onClick={onOpenPath}>打开学习路径</button></div>
+      <div className="profile-overview-footer"><span>自述用于选择讲解起点，能力以学习表现为准。</span><button type="button" onClick={onOpenPath}>学习路径</button></div>
 
       <details className="profile-input-disclosure">
         <summary>＋ 补充学习经历、阻碍或联想</summary>
@@ -382,7 +382,7 @@ export default function LearnerProfilePage({
       </details>
 
       <details ref={recordsRef} className="profile-record-disclosure" open={recordsOpen} onToggle={event => setRecordsOpen(event.currentTarget.open)}>
-        <summary>查看与管理全部学习认识</summary>
+        <summary>全部学习认识与依据</summary>
       <nav className="kernel-tabs" aria-label="五核切换" role="tablist">
         {KERNELS.map(item => (
           <button key={item.id} type="button" role="tab" aria-selected={activeKernel === item.id} className={activeKernel === item.id ? 'active' : ''} onClick={() => setActiveKernel(item.id)}>

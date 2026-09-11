@@ -48,6 +48,13 @@ type AccountModelSettingsProps = {
   model: string
   onConnectionChange: (patch: Partial<{ baseUrl: string; model: string }>) => void
   onSignOut: () => Promise<void>
+  learningSync: {
+    connected: boolean
+    detail: string
+    onRefresh: () => void
+    onOpenProfile: () => void
+    onOpenTasks: () => void
+  }
 }
 
 function messageFrom(error: unknown, fallback: string) {
@@ -66,6 +73,7 @@ export default function AccountModelSettings({
   model,
   onConnectionChange,
   onSignOut,
+  learningSync,
 }: AccountModelSettingsProps) {
   const [credential, setCredential] = useState<FormalModelCredentialMetadata>()
   const [visionCredential, setVisionCredential] = useState<FormalVisionCredentialMetadata>()
@@ -80,6 +88,9 @@ export default function AccountModelSettings({
   const [deleteArmed, setDeleteArmed] = useState(false)
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
+  const [feedbackScope, setFeedbackScope] = useState<'account' | 'model' | 'vision'>('model')
+  const selectedProviderId = providerFromBaseUrl(baseUrl)
+  const selectedProvider = MODEL_PROVIDERS.find(item => item.id === selectedProviderId) || MODEL_PROVIDERS[MODEL_PROVIDERS.length - 1]
 
   useEffect(() => {
     let active = true
@@ -117,6 +128,7 @@ export default function AccountModelSettings({
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    setFeedbackScope('model')
     setBusyAction('save')
     setError('')
     setNotice('')
@@ -136,6 +148,7 @@ export default function AccountModelSettings({
   }
 
   const removeCredential = async () => {
+    setFeedbackScope('model')
     if (!deleteArmed) {
       setDeleteArmed(true)
       setNotice('再次点击以确认删除本人模型凭据。')
@@ -159,6 +172,7 @@ export default function AccountModelSettings({
   }
 
   const testCredential = async () => {
+    setFeedbackScope('model')
     if (apiKey.trim()) {
       setError('输入框中有尚未保存的 Key；请先保存，再测试服务端已加密的凭据。')
       return
@@ -178,6 +192,7 @@ export default function AccountModelSettings({
 
   const saveVisionCredential = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    setFeedbackScope('vision')
     if (!visionUsesTutorKey && !visionCredential?.configured && !visionApiKey.trim()) {
       setError('请填写独立视觉 API Key，或选择复用对话模型 Key。')
       return
@@ -209,6 +224,7 @@ export default function AccountModelSettings({
   }
 
   const removeVisionCredential = async () => {
+    setFeedbackScope('vision')
     if (!deleteArmed) {
       setDeleteArmed(true)
       setNotice('再次点击以移除视觉模型的独立配置；不会删除对话模型凭据。')
@@ -235,6 +251,7 @@ export default function AccountModelSettings({
   }
 
   const testVisionCredential = async () => {
+    setFeedbackScope('vision')
     if (visionApiKey.trim()) {
       setError('独立视觉 API Key 尚未保存；请先保存，再测试服务端已加密的凭据。')
       return
@@ -253,6 +270,7 @@ export default function AccountModelSettings({
   }
 
   const signOut = async () => {
+    setFeedbackScope('account')
     setBusyAction('logout')
     setError('')
     try {
@@ -265,71 +283,88 @@ export default function AccountModelSettings({
 
   return (
     <div className={styles.stack}>
-      <section className={styles.card} aria-labelledby="account-settings-title">
+      <section className={`${styles.card} ${styles.accountCard}`} aria-labelledby="account-settings-title">
         <div className={styles.heading}>
-          <span>01</span>
-          <div><h2 id="account-settings-title">账号与缓存边界</h2><p>当前浏览器工作区只写入 learner #{account.learner_id} 的 scoped key。</p></div>
+          <div><h2 id="account-settings-title">账号与学习记录</h2><p>当前设备只保存这个账号的本地设置。</p></div>
           <i>{account.role === 'admin' ? '管理员' : '学习者'}</i>
         </div>
         <div className={styles.accountRow}>
           <div className={styles.avatar}>{account.display_name.slice(0, 1).toUpperCase()}</div>
-          <div><strong>{account.display_name}</strong><span>@{account.username} · 账号 #{account.account_number}</span></div>
-          <button type="button" className={styles.secondary} disabled={Boolean(busyAction)} onClick={() => { void signOut() }}>{busyAction === 'logout' ? '正在退出…' : '退出并切换账号'}</button>
+          <div><strong>{account.display_name}</strong><span>@{account.username} · 账号 {account.account_number}</span></div>
+          <button type="button" className={styles.secondary} disabled={Boolean(busyAction)} onClick={() => { void signOut() }}>{busyAction === 'logout' ? '正在退出…' : '切换账号'}</button>
+        </div>
+        <div className={styles.syncRow}>
+          <div className={styles.syncState}>
+            <i className={learningSync.connected ? styles.syncConnected : ''} aria-hidden="true" />
+            <div><strong>学习记录</strong><span>{learningSync.detail}</span></div>
+          </div>
+          <div className={styles.syncActions}>
+            <button type="button" className={styles.secondary} disabled={Boolean(busyAction)} onClick={learningSync.onRefresh}>刷新</button>
+            <button type="button" className={styles.secondary} onClick={learningSync.onOpenProfile}>个人画像</button>
+            <button type="button" className={styles.secondary} onClick={learningSync.onOpenTasks}>任务队列</button>
+          </div>
         </div>
         {account.must_change_password ? <p className={styles.warning}>此账号被标记为需要更新密码；请尽快使用账号密码接口完成修改。</p> : null}
+        {feedbackScope === 'account' && error ? <p className={styles.error} role="alert">{error}</p> : null}
       </section>
 
-      <form className={styles.card} onSubmit={save}>
+      <section className={styles.card} aria-labelledby="model-settings-title">
         <div className={styles.heading}>
-          <span>02</span>
-          <div><h2>模型连接与本人凭据</h2><p>API Key 加密保存；Base URL 与模型名称同样绑定当前账号，页面不会回显明文。</p></div>
-          <i className={credential?.configured ? styles.configured : ''}>{loading ? '读取中' : credential?.configured ? 'configured' : 'not configured'}</i>
+          <div><h2 id="model-settings-title">模型连接</h2><p>用于对话、学习规划和内容生成。密钥会加密保存。</p></div>
+          <i className={credential?.configured ? styles.configured : ''}>{loading ? '读取中' : credential?.configured ? '已配置' : '未配置'}</i>
         </div>
+        <form className={styles.modelForm} onSubmit={save}>
         <div className={styles.fieldGrid}>
-          <label><span>服务商</span>
-            <select
-              name="model_provider"
-              value={providerFromBaseUrl(baseUrl)}
-              onChange={event => {
-                const preset = MODEL_PROVIDERS.find(item => item.id === event.target.value)
-                if (!preset) return
-                onConnectionChange({ baseUrl: preset.id === 'custom' ? '' : preset.baseUrl })
-              }}
-            >
-              {MODEL_PROVIDERS.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
-            </select>
+          <label className={styles.providerField}><span>服务商</span>
+            <details className={styles.providerSelect}>
+              <summary aria-label={`当前服务商：${selectedProvider.label}`}><span>{selectedProvider.label}</span><i aria-hidden="true">⌄</i></summary>
+              <div role="listbox" aria-label="选择模型服务商">
+                {MODEL_PROVIDERS.map(item => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="option"
+                    aria-selected={selectedProviderId === item.id}
+                    onClick={event => {
+                      event.currentTarget.closest('details')?.removeAttribute('open')
+                      onConnectionChange({ baseUrl: item.baseUrl })
+                    }}
+                  ><i aria-hidden="true">{selectedProviderId === item.id ? '✓' : ''}</i><span>{item.label}</span></button>
+                ))}
+              </div>
+            </details>
           </label>
           <label><span>默认模型</span>
             <input name="model_name" autoComplete="off" value={model} onChange={event => onConnectionChange({ model: event.target.value })} placeholder="留空则用服务端默认" />
           </label>
-          {providerFromBaseUrl(baseUrl) === 'custom' && (
+          {selectedProviderId === 'custom' && (
             <label><span>Base URL</span><input name="model_base_url" autoComplete="url" value={baseUrl} onChange={event => onConnectionChange({ baseUrl: event.target.value })} placeholder="https://api.example.com/v1" /></label>
           )}
         </div>
         <label className={styles.keyField}>
           <span>API Key</span>
           <input name="model_api_key" type="password" value={apiKey} onChange={event => { setApiKey(event.target.value); setDeleteArmed(false) }} autoComplete="new-password" placeholder={credential?.configured ? '留空以保留现有凭据' : '输入当前账号的模型 API Key'} />
-          <small>{credential?.configured ? `已配置 ${credential.key_hint || 'masked key'} · ${dateLabel(credential.updated_at)}。空输入会保留现有 Key。` : '尚未配置。明文仅存在于本次输入状态，不写入 localStorage。'}</small>
+          <small>{credential?.configured ? `${credential.key_hint || '已保存的密钥'} · ${dateLabel(credential.updated_at)}` : '尚未保存密钥。'}</small>
         </label>
         {credential?.configured && (!credential.base_url || !credential.model) ? <p className={styles.notice}>请点击“保存 / 更新”一次，将当前 Base URL 和模型名称绑定到账号后再使用桌宠。</p> : null}
-        {error ? <p className={styles.error} role="alert">{error}</p> : null}
-        {notice ? <p className={styles.notice} role="status">{notice}</p> : null}
+        {feedbackScope === 'model' && error ? <p className={styles.error} role="alert">{error}</p> : null}
+        {feedbackScope === 'model' && notice ? <p className={styles.notice} role="status">{notice}</p> : null}
         <div className={styles.actions}>
           <button type="submit" disabled={Boolean(busyAction)}>{busyAction === 'save' ? '正在保存…' : credential?.configured ? '保存 / 更新' : '保存凭据'}</button>
           <button type="button" className={styles.secondary} disabled={Boolean(busyAction) || !credential?.configured} onClick={() => { void testCredential() }}>{busyAction === 'test' ? '正在测试…' : '测试连接'}</button>
           <button type="button" className={deleteArmed ? styles.dangerArmed : styles.danger} disabled={Boolean(busyAction) || !credential?.configured} onClick={() => { void removeCredential() }}>{busyAction === 'delete' ? '正在删除…' : deleteArmed ? '确认删除凭据' : '删除凭据'}</button>
         </div>
-      </form>
+        </form>
 
-      <form className={styles.card} onSubmit={saveVisionCredential}>
-        <div className={styles.heading}>
-          <span>03</span>
-          <div><h2>配置视觉模型</h2><p>仅用于你主动粘贴并确认的截图；原图不写入学习记录或长期记忆。</p></div>
-          <i className={visionCredential?.configured ? styles.configured : ''}>{loading ? '读取中' : visionCredential?.configured ? 'configured' : 'not configured'}</i>
-        </div>
+        <details className={styles.visionDisclosure}>
+          <summary>
+            <div><strong>图片理解</strong><span>识别你主动提交的截图</span></div>
+            <i className={visionCredential?.configured ? styles.configured : ''}>{loading ? '读取中' : visionUsesTutorKey ? '复用对话模型' : visionCredential?.configured ? '已配置' : '未配置'}</i>
+          </summary>
+          <form className={styles.visionForm} onSubmit={saveVisionCredential}>
         <div className={styles.fieldGrid}>
-          <label><span>视觉 Base URL</span><input name="vision_model_base_url" autoComplete="url" value={visionBaseUrl} onChange={event => setVisionBaseUrl(event.target.value)} placeholder="留空时使用对话模型地址" /></label>
-          <label><span>视觉模型名称</span><input name="vision_model_name" autoComplete="off" value={visionModel} onChange={event => setVisionModel(event.target.value)} placeholder="例如 qwen-vl-max" /></label>
+          <label><span>服务地址</span><input name="vision_model_base_url" autoComplete="url" value={visionBaseUrl} onChange={event => setVisionBaseUrl(event.target.value)} placeholder="留空则使用对话模型地址" /></label>
+          <label><span>模型名称</span><input name="vision_model_name" autoComplete="off" value={visionModel} onChange={event => setVisionModel(event.target.value)} placeholder="例如 qwen-vl-max" /></label>
         </div>
         <label className={styles.toggle}>
           <input name="vision_uses_tutor_key" type="checkbox" checked={visionUsesTutorKey} onChange={event => {
@@ -343,32 +378,34 @@ export default function AccountModelSettings({
           <span>独立视觉 API Key</span>
           <input name="vision_model_api_key" type="password" value={visionApiKey} disabled={visionUsesTutorKey} onChange={event => { setVisionApiKey(event.target.value); setDeleteArmed(false) }} autoComplete="new-password" placeholder={visionUsesTutorKey ? '当前复用对话模型 Key' : visionCredential?.uses_tutor_key ? '输入视觉模型 API Key' : '留空以保留现有独立 Key'} />
           <small>{visionUsesTutorKey
-            ? '视觉请求使用本账号已保存的对话模型 Key。'
+            ? '使用上方对话模型的已保存密钥。'
             : visionCredential?.uses_tutor_key
-              ? '明文仅存在于本次输入状态，不写入 localStorage。'
-              : `已配置 ${visionCredential?.key_hint || 'masked key'} · ${dateLabel(visionCredential?.updated_at)}。空输入会保留现有独立 Key。`}</small>
+              ? '尚未保存独立密钥。'
+              : `${visionCredential?.key_hint || '已保存的密钥'} · ${dateLabel(visionCredential?.updated_at)}`}</small>
         </label>
-        {error ? <p className={styles.error} role="alert">{error}</p> : null}
-        {notice ? <p className={styles.notice} role="status">{notice}</p> : null}
+        <p className={styles.privacyNote}>截图只用于本次识别，不写入学习记录或长期记忆。</p>
+        {feedbackScope === 'vision' && error ? <p className={styles.error} role="alert">{error}</p> : null}
+        {feedbackScope === 'vision' && notice ? <p className={styles.notice} role="status">{notice}</p> : null}
         <div className={styles.actions}>
-          <button type="submit" disabled={Boolean(busyAction)}>{busyAction === 'vision-save' ? '正在保存…' : '保存视觉配置'}</button>
+          <button type="submit" disabled={Boolean(busyAction)}>{busyAction === 'vision-save' ? '正在保存…' : '保存'}</button>
           <button type="button" className={styles.secondary} disabled={Boolean(busyAction) || !visionCredential?.configured} onClick={() => { void testVisionCredential() }}>{busyAction === 'vision-test' ? '正在测试…' : '测试图片理解'}</button>
-          <button type="button" className={deleteArmed ? styles.dangerArmed : styles.danger} disabled={Boolean(busyAction) || !visionCredential?.configured} onClick={() => { void removeVisionCredential() }}>{busyAction === 'vision-delete' ? '正在删除…' : deleteArmed ? '确认移除视觉配置' : '移除视觉配置'}</button>
+          <button type="button" className={deleteArmed ? styles.dangerArmed : styles.danger} disabled={Boolean(busyAction) || !visionCredential?.configured} onClick={() => { void removeVisionCredential() }}>{busyAction === 'vision-delete' ? '正在删除…' : deleteArmed ? '确认移除' : '移除配置'}</button>
         </div>
-      </form>
+          </form>
+        </details>
+      </section>
 
       {account.role === 'admin' ? (
         <section className={styles.card} aria-labelledby="admin-account-title">
           <div className={styles.heading}>
-            <span>04</span>
-            <div><h2 id="admin-account-title">账号凭据配置概览</h2><p>管理员视图只展示 configured 状态，不展示其他账号的 key hint 或密文。</p></div>
+            <div><h2 id="admin-account-title">账号配置概览</h2><p>只显示配置状态，不显示其他账号的密钥信息。</p></div>
             <i>{adminAccounts.length} 个账号</i>
           </div>
           <div className={styles.accountList}>
             {adminAccounts.map(item => (
               <article key={item.account_number}>
                 <div><strong>{item.display_name}</strong><span>@{item.username} · {item.role} · {item.status} · {item.project_count} 个项目</span></div>
-                <b className={item.api_key_configured ? styles.yes : styles.no}>{item.api_key_configured ? 'configured' : 'not configured'}</b>
+                <b className={item.api_key_configured ? styles.yes : styles.no}>{item.api_key_configured ? '已配置' : '未配置'}</b>
               </article>
             ))}
           </div>

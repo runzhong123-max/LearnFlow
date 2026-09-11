@@ -64,6 +64,8 @@ def main() -> None:
     python = build_python()
     executable = "learnflow-backend.exe" if platform.system() == "Windows" else "learnflow-backend"
     data_separator = ";" if platform.system() == "Windows" else ":"
+    visuals_root = SHARED_CORE_SOURCE / "learnflow_core" / "visuals"
+    visual_hub_root = visuals_root / "hub"
     pyinstaller_args = [
         python,
         "-m",
@@ -79,11 +81,18 @@ def main() -> None:
         str(SHARED_CORE_SOURCE),
         "--collect-submodules=learnflow_core",
         "--add-data",
-        f"{SHARED_CORE_SOURCE / 'learnflow_core' / 'visuals' / 'schema.json'}{data_separator}learnflow_core/visuals",
+        f"{visuals_root / 'schema.json'}{data_separator}learnflow_core/visuals",
         "--add-data",
-        f"{SHARED_CORE_SOURCE / 'learnflow_core' / 'visuals' / 'schema-0.2.0.json'}{data_separator}learnflow_core/visuals",
+        f"{visuals_root / 'schema-0.2.0.json'}{data_separator}learnflow_core/visuals",
         "--add-data",
-        f"{SHARED_CORE_SOURCE / 'learnflow_core' / 'visuals' / 'library'}{data_separator}learnflow_core/visuals/library",
+        f"{visuals_root / 'library'}{data_separator}learnflow_core/visuals/library",
+        # 作品库运行时只需要清单与已发布成品，不打包 authoring 开发源文件。
+        "--add-data",
+        f"{visual_hub_root / 'curriculum.json'}{data_separator}learnflow_core/visuals/hub",
+        "--add-data",
+        f"{visual_hub_root / 'works.json'}{data_separator}learnflow_core/visuals/hub",
+        "--add-data",
+        f"{visual_hub_root / 'works'}{data_separator}learnflow_core/visuals/hub/works",
         "--distpath",
         str(BUILD_ROOT / "dist"),
         "--workpath",

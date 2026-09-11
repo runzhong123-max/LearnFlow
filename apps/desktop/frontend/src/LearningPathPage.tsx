@@ -54,6 +54,7 @@ export default function LearningPathPage({ state, onStatusChange, onAddPersonalN
   const [hoveredId, setHoveredId] = useState<string>()
   const [focusPinned, setFocusPinned] = useState(false)
   const [showSources, setShowSources] = useState(false)
+  const [inspectorOpen, setInspectorOpen] = useState(true)
   const [zoom, setZoom] = useState(.82)
   const [personalTitle, setPersonalTitle] = useState('')
   const [anchorId, setAnchorId] = useState('machine-learning')
@@ -123,7 +124,15 @@ export default function LearningPathPage({ state, onStatusChange, onAddPersonalN
     const left = Math.max(0, (position.x + position.width / 2) * zoom - viewport.clientWidth / 2)
     const top = Math.max(0, (position.y + position.height / 2) * zoom - viewport.clientHeight / 2)
     viewport.scrollTo({ left, top, behavior: 'smooth' })
-  }, [selected?.id, nebulaPositions, zoom])
+  }, [selected?.id, nebulaPositions])
+
+  const fitCanvas = () => {
+    const viewport = canvasScrollRef.current
+    if (!viewport) return
+    const nextZoom = Math.max(.55, Math.min(1, (viewport.clientWidth - 24) / NEBULA_WIDTH, (viewport.clientHeight - 24) / nebulaCanvasHeight))
+    setZoom(+nextZoom.toFixed(2))
+    requestAnimationFrame(() => viewport.scrollTo({ left: 0, top: 0, behavior: 'smooth' }))
+  }
 
   const addManualNode = () => {
     const title = personalTitle.trim()
@@ -158,6 +167,10 @@ export default function LearningPathPage({ state, onStatusChange, onAddPersonalN
     <section className="path-page">
       <header className="path-heading">
         <div><h1>学习路径</h1><p>查看课程之间的前置关系，以及你正在走的路线。</p></div>
+        <div className="path-heading-metrics" aria-label="当前星图概览">
+          <span><strong>{visibleNodes.length}</strong><small>可见节点</small></span>
+          <span><strong>{projection.nodes.length}</strong><small>全部课程</small></span>
+        </div>
       </header>
 
       {activePlan && (
@@ -171,8 +184,9 @@ export default function LearningPathPage({ state, onStatusChange, onAddPersonalN
         </section>
       )}
 
-      <div className="path-layout">
+      <div className={`path-layout${inspectorOpen ? '' : ' path-layout-inspector-closed'}`}>
         <main className="path-main">
+          <section className="path-control-panel" aria-label="学习路径筛选">
           <div className="path-filters">
             <label><span>查找课程或技能</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="机器学习、网络安全、Agent…" /></label>
             <label><span>学习阶段</span><select value={audience} onChange={event => setAudience(event.target.value)}><option>全部</option><option value="vocational">高职</option><option value="undergraduate">本科</option><option value="graduate">研究生</option><option value="self_directed">自主学习</option></select></label>
@@ -197,10 +211,11 @@ export default function LearningPathPage({ state, onStatusChange, onAddPersonalN
               {LEARNING_PATH_SOURCES.map(source => <a key={source.id} href={source.url} target="_blank" rel="noreferrer"><span>{source.institution}</span><strong>{source.title}</strong></a>)}
             </div>
           )}
+          </section>
 
           <div className="path-canvas-toolbar">
             <div><strong>学习星图</strong><span>基础 → 核心 → 方向 → 高阶 → 产出</span></div>
-            <div className="path-canvas-actions"><button type="button" className={!focusPinned ? 'active' : ''} onClick={() => setFocusPinned(false)}>全图</button><button type="button" className={focusPinned ? 'active' : ''} disabled={!selected} onClick={() => setFocusPinned(true)}>聚焦</button><i /><button type="button" onClick={() => setZoom(value => Math.max(.55, +(value - .1).toFixed(2)))} aria-label="缩小星图">−</button><span>{Math.round(zoom * 100)}%</span><button type="button" onClick={() => setZoom(value => Math.min(1.3, +(value + .1).toFixed(2)))} aria-label="放大星图">＋</button></div>
+            <div className="path-canvas-actions"><button type="button" className={!focusPinned ? 'active' : ''} onClick={() => setFocusPinned(false)}>全图</button><button type="button" className={focusPinned ? 'active' : ''} disabled={!selected} onClick={() => setFocusPinned(true)}>聚焦</button><button type="button" onClick={fitCanvas}>适应</button><i /><button type="button" onClick={() => setZoom(value => Math.max(.55, +(value - .1).toFixed(2)))} aria-label="缩小星图">−</button><span>{Math.round(zoom * 100)}%</span><button type="button" onClick={() => setZoom(value => Math.min(1.3, +(value + .1).toFixed(2)))} aria-label="放大星图">＋</button><i /><button type="button" className={inspectorOpen ? 'active' : ''} onClick={() => setInspectorOpen(value => !value)}>{inspectorOpen ? '收起详情' : '节点详情'}</button></div>
           </div>
           <div className="path-canvas-scroll" ref={canvasScrollRef}>
             <div className="path-zoom-stage" style={{ width: NEBULA_WIDTH * zoom, height: nebulaCanvasHeight * zoom }}>
@@ -272,6 +287,7 @@ export default function LearningPathPage({ state, onStatusChange, onAddPersonalN
         </main>
 
         <aside className="path-inspector">
+          <div className="path-inspector-heading"><span>节点详情</span><button type="button" onClick={() => setInspectorOpen(false)} aria-label="收起节点详情">×</button></div>
           {selected && (
             <>
               <h2>{selected.title}</h2>

@@ -78,9 +78,9 @@ export function buildProfileOverview(snapshot: FormalLearnerSnapshot): ProfileOv
   if (snapshot.profile.preferred_modes.length) support.push({ id: 'modes', text: snapshot.profile.preferred_modes.map(profilePreferredModeLabel).join('、'), source: sourceFor('human', ['human:long_term:learning_preferences', 'human:short_term:preferred_modes'], '资料中的形式偏好 · 可随时修改') })
   if (Number.isFinite(snapshot.profile.weekly_hours) && snapshot.profile.weekly_hours > 0) support.push({ id: 'hours', text: `每周可投入 ${snapshot.profile.weekly_hours} 小时`, source: sourceFor('human', ['human:long_term:learning_preferences', 'human:short_term:weekly_hours'], '当前资料设置 · 用于安排学习量') })
   return [
-    { id: 'focus', title: '当前重点', kernel: 'value', empty: '当前资料没有明确方向或进行中的任务。', items: focus },
-    { id: 'background', title: '已有基础', kernel: 'knowledge', empty: '当前资料没有可展示的背景自述，可以补充你接触过的内容。', items: background },
-    { id: 'progress', title: '最近进展', kernel: 'knowledge', empty: '本次资料没有可展示的概念学习记录；这不代表你没有练习或进步。', items: progress },
-    { id: 'support', title: '如何帮助我', kernel: 'human', empty: '当前资料没有可展示的学习支持设置。', items: support },
+    { id: 'focus', title: '当前重点', kernel: 'value', empty: '还没有明确方向或进行中的任务。', items: focus },
+    { id: 'background', title: '已有基础', kernel: 'knowledge', empty: '还没有填写学习背景。', items: background },
+    { id: 'progress', title: '最近进展', kernel: 'knowledge', empty: '暂无可展示的学习记录；这不代表你没有练习或进步。', items: progress },
+    { id: 'support', title: '如何帮助我', kernel: 'human', empty: '还没有设置学习偏好。', items: support },
   ]
 }
