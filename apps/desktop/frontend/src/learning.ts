@@ -279,7 +279,10 @@ function canonicalSkillStepId(skillId: LearningSkillId, stepId: string) {
   return LEGACY_SKILL_STEP_ALIASES[skillId][stepId] || stepId
 }
 
-const LEARNING_INTENT = /(?:带我(?:学|学习|弄懂|理解|练习|做|写|实现|完成)|教我(?:学会|理解|弄懂)|陪我(?:学|练)|让我练习|(?:开始|创建|建立|加入)(?:一个)?学习任务|练习并(?:检查|验证)|从头学会)/
+// Mirrors _DEEP_LEARNING_MARKERS in the backend's chat_modes.py. A sentence
+// that asks for real understanding has to reach the same mode whichever
+// runtime answers it, or the same wording behaves differently per build.
+const LEARNING_INTENT = /(?:带我(?:学|学习|弄懂|理解|练习|做|写|实现|完成)|教我(?:学会|理解|弄懂)|陪我(?:学|练)|让我练习|(?:开始|创建|建立|加入)(?:一个)?学习任务|练习并(?:检查|验证)|学会并验证|从头学(?:会)?|深[入度]理解|彻底搞懂|真正弄懂|帮我(?:弄懂|搞懂)|学习闭环|(?:逐步|一步步)带我)/
 const SUPPORT_REQUEST = /(?:不会|不知道|没懂|不明白|想不出来|给个提示|提示一下|举个例子|直接讲|跳过)/
 
 function eventId() {

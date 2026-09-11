@@ -35,10 +35,10 @@ export type TutorContextMessage = {
 }
 
 export const TUTOR_MODE_LABELS: Record<TutorMode, string> = {
-  free: '自由态',
-  simple_explain: '简单讲解态',
-  guided_learning: '带领学习态',
-  learning_plan: '学习规划态',
+  free: '自由状态',
+  simple_explain: '简单讲解',
+  guided_learning: '带领学习',
+  learning_plan: '学习规划',
 }
 
 const EXPLANATION_INTENT = /(?:什么是|讲讲|讲一下|解释(?:一下)?|怎么理解|如何理解|帮我理解|介绍一下)/
@@ -48,9 +48,15 @@ export function isTutorMode(value: unknown): value is TutorMode {
 }
 
 export function resolveTutorMode(selectedMode: TutorMode, input: string, hasActiveLearningTask = false): TutorMode {
-  if (selectedMode === 'guided_learning' || hasActiveLearningTask) return 'guided_learning'
+  // An explicit pick outranks an unfinished task. The task is durable and no
+  // caller mutates it outside guided_learning, so stepping out to ask a side
+  // question costs nothing; refusing to step out left a learner with only two
+  // options — abandon the task, or not ask. `free` still means "you decide",
+  // and with a task in flight that decision is to stay with the task.
+  if (selectedMode === 'guided_learning') return 'guided_learning'
   if (selectedMode === 'learning_plan') return 'learning_plan'
   if (selectedMode === 'simple_explain') return selectedMode
+  if (hasActiveLearningTask) return 'guided_learning'
   if (hasPlanningIntent(input)) return 'learning_plan'
   if (hasExplicitLearningIntent(input)) return 'guided_learning'
   return EXPLANATION_INTENT.test(input) ? 'simple_explain' : 'free'
@@ -77,18 +83,18 @@ export function systemPrompt(mode: TutorMode) {
   ].join('\n')
 
   if (mode === 'simple_explain') {
-    return `${common}\n\n当前状态：简单讲解态。\n先直接回答当前疑问，再按需用机制、贯穿例子或必要元素补足理解；局部追问只补局部，不默认追加自检题或下一步菜单。明确要求简短时保持简短。只完成这一轮解释，不自动建立学习任务，不宣称学生已经掌握。`
+    return `${common}\n\n当前状态：简单讲解。\n先给解释本身，不要用一个空泛追问代替讲解。第一次讲一个新概念时按这个顺序展开——一句话说清它是什么、为什么这样工作、一个最小具体例子，必要时再留一个简短自检问题；如果这只是对上一轮的局部追问，就只补那一处，不要重讲全套，也不要默认追加自检题或下一步菜单。不要写小标题，不要用表格，学生要求简短时就简短。只完成这一轮解释，不自动建立学习任务，不宣称学生已经掌握。学生在这个状态下要路线、计划、周安排或多阶段方案时，这个状态不承接：用两三句给出方向感，然后告诉学生切到「学习规划」才能得到正式路线，不要在这里铺开成课表，也不要顺势推销项目。本段要求优先于通用回复原则；两者冲突时以当前状态为准。`
   }
 
   if (mode === 'guided_learning') {
-    return `${common}\n\n当前状态：带领学习态。\n你正在同一段对话内带领一个原子学习任务。学习任务只提供目标和暂停点，当前 Skill 自己的步骤与循环由本地确定性流程提供；你只能完成当前教学动作，不能自行推进步骤、切换 Skill、完成任务、评分或宣布掌握。每轮先回应学生刚才的真实问题，再自然落实当前 Skill 动作。若学生说不知道、没懂或要求提示，按当前 Skill 的循环支架继续同一步，不把它冒充有效尝试。保持正常对话感，不要输出内部事件、状态机或冗长流程公告。`
+    return `${common}\n\n当前状态：带领学习。\n你正在同一段对话内带领一个原子学习任务。学习任务只提供目标和暂停点，当前 Skill 自己的步骤与循环由本地确定性流程提供；你只能完成当前教学动作，不能自行推进步骤、切换 Skill、完成任务、评分或宣布掌握。每轮先回应学生刚才的真实问题，再自然落实当前 Skill 动作。若学生说不知道、没懂或要求提示，按当前 Skill 的循环支架继续同一步，不把它冒充有效尝试。保持正常对话感，不要输出内部事件、状态机或冗长流程公告。`
   }
 
   if (mode === 'learning_plan') {
-    return `${common}\n\n当前状态：学习规划态。\n先判断这是“项目雏形规划”还是“发展方向规划”，并围绕同一规划目标持续对话。学习型项目先推荐与选择资料（开放教材、开源书籍、官方文档、仓库或用户上传），再据真实章节/文件覆盖设置关卡与长期计划，最后提出实验和实践。不要把学习课程一律当成工程交付，已有目标不重复询问。工程交付型请求仍需明确产物。随后逐步确认当前基础、时间投入和现实约束；一次最多追问一个最高价值缺口，不要在每轮重复整套问卷。发展方向规划要给有取舍依据的建议，并优先设计低成本探索实验，而不是替学生决定职业。资源推荐采用“学习资源策展”Skill：先检查当前对话附加资料和学习路径覆盖，再用联网搜索补资料缺口；按目标匹配度、权威层级、实践价值和成本解释取舍，保留来源，不自动加入项目。你可以建议修改 Value Claim，但必须展示依据和影响范围，并明确说明只有学生本人可以接受、修改或拒绝；不得声称前端候选已经写入正式五核。普通对话侧重方向比较、资料选择和跨阶段长期计划；已绑定的项目 Tutor 侧重该项目来源、关卡依赖和进度，只调整未开始部分。使用本轮提供的提案工具设置关卡与长期学习计划，并等待用户确认，不伪造已保存状态。`
+    return `${common}\n\n当前状态：学习规划。\n先判断这是“项目雏形规划”还是“发展方向规划”，并围绕同一规划目标持续对话。学习型项目先推荐与选择资料（开放教材、开源书籍、官方文档、仓库或用户上传），再据真实章节/文件覆盖设置关卡与长期计划，最后提出实验和实践。不要把学习课程一律当成工程交付，已有目标不重复询问。工程交付型请求仍需明确产物。随后逐步确认当前基础、时间投入和现实约束；一次最多追问一个最高价值缺口，不要在每轮重复整套问卷。发展方向规划要给有取舍依据的建议，并优先设计低成本探索实验，而不是替学生决定职业。资源推荐采用“学习资源策展”Skill：先检查当前对话附加资料和学习路径覆盖，再用联网搜索补资料缺口；按目标匹配度、权威层级、实践价值和成本解释取舍，保留来源，不自动加入项目。你可以建议修改 Value Claim，但必须展示依据和影响范围，并明确说明只有学生本人可以接受、修改或拒绝；不得声称前端候选已经写入正式五核。普通对话侧重方向比较、资料选择和跨阶段长期计划；已绑定的项目 Tutor 侧重该项目来源、关卡依赖和进度，只调整未开始部分。使用本轮提供的提案工具设置关卡与长期学习计划，并等待用户确认，不伪造已保存状态。`
   }
 
-  return `${common}\n\n当前状态：自由态。\n自然回应学生当前意图，可以讨论、澄清、共同规划或回答短问题。只有在缺少关键信息时才追问，不擅自创建学习任务，不宣称学生已经掌握。`
+  return `${common}\n\n当前状态：自由状态。\n直接回答学生问的那件事，长度跟着问题走，短问题就短答。不要主动铺开成教程，不要在结尾追加与提问无关的延伸建议。只有当缺少关键信息、无法给出任何有用回答时才追问，并且一次只问一个。不擅自创建学习任务，不宣称学生已经掌握。`
 }
 
 export function endpointFor(baseUrl: string) {

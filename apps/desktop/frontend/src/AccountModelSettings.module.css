@@ -8,7 +8,7 @@
 .heading i { margin-left: auto; border: 1px solid #d8e2dc; border-radius: 999px; padding: 5px 8px; color: #718078; font-size: 9px; font-style: normal; white-space: nowrap; }
 .heading .configured { border-color: #bcdcc9; background: #eef9f2; color: #0a704a; }
 .accountRow { display: flex; align-items: center; gap: 12px; padding-top: 18px; }
-.avatar { display: grid; width: 38px; height: 38px; flex: none; place-items: center; border-radius: 11px; background: #e7f2eb; color: #13704c; font-size: 13px; font-weight: 850; }
+.avatar { display: grid; width: 38px; height: 38px; flex: none; place-items: center; overflow: hidden; border-radius: 50%; background: #e7f2eb; color: #13704c; font-size: 13px; font-weight: 850; }
 .accountRow strong, .accountRow span { display: block; }
 .accountRow strong { color: #2d4136; font-size: 12px; }
 .accountRow span { margin-top: 4px; color: #8b9891; font-size: 9px; }
@@ -18,6 +18,17 @@
 .card label > span { display: block; margin-bottom: 7px; color: #405148; font-size: 11px; font-weight: 700; }
 .card input { width: 100%; height: 43px; border: 1px solid #d5ddd8; border-radius: 10px; background: #fbfcfb; padding: 0 12px; outline: 0; color: #26372e; font-size: 12px; }
 .card input:focus { border-color: #78ae91; background: #fff; box-shadow: 0 0 0 3px rgba(76, 154, 112, 0.08); }
+/* The browser default select is a square grey box that reads as a different
+   product from every other field on this page.  Match the text inputs and draw
+   our own chevron so the two controls sit on the same visual grid. */
+.card select {
+  width: 100%; height: 43px; border: 1px solid #d5ddd8; border-radius: 10px;
+  background: #fbfcfb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%23788d81' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+  padding: 0 34px 0 12px; outline: 0; color: #26372e; font: inherit; font-size: 12px;
+  appearance: none; cursor: pointer;
+}
+.card select:focus { border-color: #78ae91; background-color: #fff; box-shadow: 0 0 0 3px rgba(76, 154, 112, 0.08); }
+.card select:hover { border-color: #bcccc3; }
 .keyField small { display: block; margin-top: 7px; color: #8a9790; font-size: 9px; line-height: 1.55; }
 .toggle { display: flex !important; align-items: center; gap: 8px; margin-top: 19px; color: #405148; font-size: 11px; font-weight: 700; }
 .toggle input { width: 15px !important; height: 15px !important; margin: 0; accent-color: #087a53; }
@@ -53,4 +64,10 @@
   .accountRow button { width: 100%; margin-left: 0; }
   .actions button { flex: 1; }
   .actions .danger, .actions .dangerArmed { margin-left: 0; }
+}
+
+@supports (appearance: base-select) {
+  /* The picker draws its own icon; drop the hand-rolled chevron so the control
+     does not end up with two arrows. */
+  .card select { background-image: none; padding-right: 12px; }
 }

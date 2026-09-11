@@ -104,7 +104,8 @@ def test_learning_path_data_contracts_are_bound_but_never_learner_writers():
         assert contract["owner"] == ("tutor_agent" if contract_id in {"work_task_conversion_v1", "work_task_conversion_context_v1", "role_job_delivery_v1", "ecosystem_gateway_v1", "teaching_response_v1", "golden_role_workspace_v1", "learning_platform_v1", "project_guidance_v1", "project_device_report_v1", "project_workflow_v1", "project_stage_support_v1", "workspace_recommendations_v1", "engineering_provenance_v1", "role_research_archive_v1", "desktop_api_key_v1"} else "learning_design_agent")
         assert contract["kernel_reads"] == []
         assert contract["kernel_write_path"] == "none"
-        assert contract["schema_version"] in (root / contract["authority_path"]).read_text()
+        authority = (root / contract["authority_path"]).read_text(encoding="utf-8")
+        assert contract["schema_version"] in authority
         for binding_id in contract["binding_ids"]:
             assert binding_id in IMPLEMENTATION_BINDINGS
     assert "v1 runtime remains compatible" in manifest["authority"]["learning_path_source_contract"]

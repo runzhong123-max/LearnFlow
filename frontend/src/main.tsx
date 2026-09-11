@@ -158,12 +158,16 @@ import {
   type FormalRuntimeConnection,
   type FormalTutorMessage,
   type FormalTutorSession,
+  clearFormalAvatar,
+  listFormalModelCredentialModels,
+  saveFormalAvatar,
 } from './formal-runtime'
 import { parseLearningTaskDraftConfirmation } from '../plugins/learning_task_conversion/intake.ts'
 import type { AgentDecisionSummary, AgentTurnStreamEvent, AgentTurnTrace } from './agent-contracts'
 import type { FormalProjectCheckpoint, FormalProjectWorkspace, ProjectLearningFileProposal, ProjectRoadmapProposal } from './project'
 import { projectSidebarChats } from './project-sidebar'
 import { buildTutorContextMessages, hasVisibleStudentMessage, recoverableTutorTurn } from './turn-recovery'
+import { UiIcon } from './ui-icons'
 import {
   deletePaperSheet,
   findPaperSheetByArtifact,
@@ -236,6 +240,8 @@ type PaperDeskView = {
 type Conversation = {
   id: string
   title: string
+  /** Pinned conversations sort above the rest; absent means not pinned. */
+  pinned?: boolean
   messages: Message[]
   updatedAt: number
   mode: TutorMode
@@ -269,6 +275,10 @@ type WorkspaceTab = {
 type SettingsState = {
   baseUrl: string
   model: string
+  /** Extra model names selectable per conversation. They share the account
+      credential, so switching stays inside one provider unless the operator
+      also updates the base URL. */
+  modelProfiles?: string[]
 }
 
 type PersistedState = {
@@ -287,6 +297,20 @@ const PROJECTS_TAB: WorkspaceTab = { id: 'projects', kind: 'projects', title: '�
 const LEARNING_PATH_TAB: WorkspaceTab = { id: 'learning-path', kind: 'learning-path', title: '学习路径' }
 const ECOSYSTEM_TAB: WorkspaceTab = { id: 'ecosystem', kind: 'ecosystem', title: '岗位图谱' }
 const PROFILE_TAB: WorkspaceTab = { id: 'profile', kind: 'profile', title: '我的画像' }
+
+/** One list drives both the key handler and the reference sheet, so a shortcut
+ *  can never be documented differently from the way it actually behaves. */
+const KEYBOARD_SHORTCUTS: Array<{ keys: string; label: string; group: string }> = [
+  { group: '工作区', keys: 'Ctrl + N', label: '新建对话' },
+  { group: '工作区', keys: 'Ctrl + W', label: '关闭当前标签页' },
+  { group: '工作区', keys: 'Ctrl + B', label: '收起 / 展开侧栏' },
+  { group: '工作区', keys: 'Ctrl + 1…9', label: '跳到第 N 个标签页' },
+  { group: '工作区', keys: 'Ctrl + ,', label: '打开设置' },
+  { group: '工作区', keys: 'Ctrl + /', label: '显示这份快捷键表' },
+  { group: '输入框', keys: 'Enter', label: '发送消息' },
+  { group: '输入框', keys: 'Shift + Enter', label: '换行' },
+  { group: '通用', keys: 'Esc', label: '关闭弹出菜单或对话框' },
+]
 const TASKS_TAB: WorkspaceTab = { id: 'tasks', kind: 'tasks', title: '学习任务' }
 const REVIEW_TAB: WorkspaceTab = { id: 'review', kind: 'review', title: '复习' }
 const LEARNING_FILES_TAB: WorkspaceTab = { id: 'learning-files', kind: 'learning-files', title: '讲义与练习' }
@@ -336,7 +360,7 @@ function createConversation(): Conversation {
     messages: [{
       id: uid('message'),
       role: 'assistant',
-      content: '现在处于自由态。你可以直接讨论学习问题；明确的解释请求会进入简单讲解，“带我学 / 带我练”会开始原子学习任务，较大的学习、项目或发展方向会进入学习规划态。',
+      content: '现在处于自由状态。你可以直接讨论学习问题；明确的解释请求会进入简单讲解，“带我学 / 带我练”会开始原子学习任务，较大的学习、项目或发展方向会进入学习规划。',
       createdAt: now,
       tutorMode: 'free',
     }],
@@ -682,12 +706,118 @@ function WorkspaceIcon({ kind }: { kind: WorkspaceTab['kind'] }) {
   return <span aria-hidden="true" className="tab-icon">{icon}</span>
 }
 
+/** Downscale to a square thumbnail before upload: the account column holds a
+ *  data URL, and an untouched phone photo would be megabytes of it. Drawing
+ *  through a canvas also drops EXIF, GPS tags included. */
+const AVATAR_EDGE = 256
+
+async function avatarDataUrlFromFile(file: File) {
+  const bitmap = await createImageBitmap(file)
+  try {
+    const edge = Math.min(bitmap.width, bitmap.height)
+    const canvas = document.createElement('canvas')
+    canvas.width = AVATAR_EDGE
+    canvas.height = AVATAR_EDGE
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('当前环境不支持画布，无法处理图片')
+    context.drawImage(
+      bitmap,
+      (bitmap.width - edge) / 2, (bitmap.height - edge) / 2, edge, edge,
+      0, 0, AVATAR_EDGE, AVATAR_EDGE,
+    )
+    return canvas.toDataURL('image/png')
+  } finally {
+    bitmap.close()
+  }
+}
+
 function App({ auth }: { auth: AuthGateSession }) {
   const [workspace, setWorkspace] = useState<PersistedState>(() => restoreState(auth.account.learner_id))
   const [drafts, setDrafts] = useState<Record<string, string>>(() => readTabLayout(sessionStorage, auth.account.learner_id)?.drafts || {})
   const [pluginDraftReferences, setPluginDraftReferences] = useState<Record<string, LearnFlowPluginObject[]>>({})
   const [toolChoices, setToolChoices] = useState<Record<string, TutorToolChoice>>({})
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [renamingConversationId, setRenamingConversationId] = useState('')
+  const [renameDraft, setRenameDraft] = useState('')
+  const [draggingTabId, setDraggingTabId] = useState('')
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const [avatarBusy, setAvatarBusy] = useState(false)
+  const [avatarError, setAvatarError] = useState('')
+
+  const changeAvatar = async (file: File) => {
+    setAvatarError('')
+    setAvatarBusy(true)
+    try {
+      const result = await saveFormalAvatar(await avatarDataUrlFromFile(file))
+      auth.patchAccount({ avatar: result.avatar })
+    } catch (error) {
+      setAvatarError(error instanceof Error ? error.message : '头像更新失败')
+    } finally {
+      setAvatarBusy(false)
+    }
+  }
+
+  const removeAvatar = async () => {
+    setAvatarError('')
+    setAvatarBusy(true)
+    try {
+      await clearFormalAvatar()
+      auth.patchAccount({ avatar: null })
+    } catch (error) {
+      setAvatarError(error instanceof Error ? error.message : '头像移除失败')
+    } finally {
+      setAvatarBusy(false)
+    }
+  }
+  const [providerModels, setProviderModels] = useState<string[]>([])
+  const [providerModelsError, setProviderModelsError] = useState('')
+
+  /** Ask the configured provider what it serves, instead of shipping a list
+   *  that goes stale as vendors rename and retire models. */
+  const loadProviderModels = async () => {
+    setProviderModelsError('')
+    try {
+      const result = await listFormalModelCredentialModels()
+      setProviderModels(result.models)
+      if (!result.models.length) setProviderModelsError('服务商没有返回模型列表')
+    } catch (error) {
+      setProviderModels([])
+      setProviderModelsError(error instanceof Error ? error.message : '读取模型列表失败')
+    }
+  }
+
+
+  /** Reorder open tabs by dragging one onto another. */
+  const moveTab = (fromId: string, toId: string) => {
+    if (!fromId || fromId === toId) return
+    setWorkspace(previous => {
+      const order = previous.tabs.slice()
+      const from = order.findIndex(item => item.id === fromId)
+      const to = order.findIndex(item => item.id === toId)
+      if (from < 0 || to < 0) return previous
+      const [moved] = order.splice(from, 1)
+      order.splice(to, 0, moved)
+      return { ...previous, tabs: order }
+    })
+  }
+
+
+  const renameConversation = (conversationId: string, title: string) => {
+    setWorkspace(previous => ({
+      ...previous,
+      conversations: previous.conversations.map(item => item.id === conversationId ? { ...item, title } : item),
+      tabs: previous.tabs.map(tab => tab.id === `chat:${conversationId}` ? { ...tab, title } : tab),
+    }))
+  }
+
+  const togglePinConversation = (conversationId: string) => {
+    setWorkspace(previous => ({
+      ...previous,
+      conversations: previous.conversations.map(item => item.id === conversationId ? { ...item, pinned: !item.pinned } : item),
+    }))
+  }
+
   const [pendingDelete, setPendingDelete] = useState<Conversation | null>(null)
   const [pendingSheetDelete, setPendingSheetDelete] = useState<PendingSheetDelete | null>(null)
   const [paperDeskView, setPaperDeskView] = useState<PaperDeskView | null>(null)
@@ -728,6 +858,33 @@ function App({ auth }: { auth: AuthGateSession }) {
   const splitConversation = splitTab?.kind === 'chat'
     ? workspace.conversations.find(item => item.id === splitTab.conversationId)
     : undefined
+
+
+  // Native details popovers stay open until their own summary is clicked
+  // again, which does not match how every other menu in the app behaves.
+  // One document listener closes any open menu on an outside click or Escape,
+  // so each popover does not need its own state.
+  useEffect(() => {
+    const closeOutside = (event: MouseEvent) => {
+      const target = event.target as Node | null
+      for (const element of Array.from(document.querySelectorAll('details[open]'))) {
+        if (!target || !element.contains(target)) element.removeAttribute('open')
+      }
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      setShortcutsOpen(false)
+      for (const element of Array.from(document.querySelectorAll('details[open]'))) {
+        element.removeAttribute('open')
+      }
+    }
+    document.addEventListener('pointerdown', closeOutside)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [])
 
   useEffect(() => {
     try {
@@ -1187,7 +1344,7 @@ function App({ auth }: { auth: AuthGateSession }) {
     const intro = role === 'tutor'
       ? `这是“${projectWorkspace.project.name}”的项目 Tutor。规划必须围绕项目目标“${projectWorkspace.project.objective}”与真实产物展开；我会先读取项目来源和五核，再给出需要你确认的关卡路线。`
       : role === 'checkpoint'
-        ? `现在进入关卡“${checkpoint!.title}”。本对话绑定正式学习任务，会自然使用带领学习态；讲义与练习可以生成、留存并在对话纸张或独立标签页中打开。`
+        ? `现在进入关卡“${checkpoint!.title}”。本对话绑定正式学习任务，会自然使用带领学习；讲义与练习可以生成、留存并在对话纸张或独立标签页中打开。`
         : `这是“${projectWorkspace.project.name}”的项目自由对话。它共享项目来源与五核 scope，但不会自动推进关卡。`
     const conversation: Conversation = {
       ...base, id: uid('chat'), title, updatedAt: now, mode,
@@ -1243,12 +1400,15 @@ function App({ auth }: { auth: AuthGateSession }) {
       if (index < 0) return previous
       let tabs = previous.tabs.filter(tab => tab.id !== tabId)
       if (tabs.length === 0) {
-        const fallbackConversation = previous.conversations[0] || createConversation()
+        // Closing the last tab starts a fresh conversation rather than
+        // reopening the most recent one: the workspace is never empty, and the
+        // learner is not dropped back into a thread they just dismissed.
+        const fallbackConversation = createConversation()
         const fallbackTab = chatTab(fallbackConversation)
         tabs = [fallbackTab]
         return {
           ...previous,
-          conversations: previous.conversations.length ? previous.conversations : [fallbackConversation],
+          conversations: [fallbackConversation, ...previous.conversations],
           tabs,
           activeTabId: fallbackTab.id,
           splitTabId: '',
@@ -1280,6 +1440,50 @@ function App({ auth }: { auth: AuthGateSession }) {
   const closeSplit = () => {
     setWorkspace(previous => ({ ...previous, splitTabId: '' }))
   }
+
+  /** Window-level shortcuts.  Declared after the handlers they call so the
+   *  bindings are already in scope, and gated on the modifier key so typing a
+   *  plain character in the composer can never trigger a workspace action. */
+  useEffect(() => {
+    const run = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) return
+      const key = event.key
+      if (key >= '1' && key <= '9') {
+        const target = workspace.tabs[Number(key) - 1]
+        if (!target) return
+        event.preventDefault()
+        openTab(target)
+        return
+      }
+      switch (key.toLowerCase()) {
+        case 'n':
+          event.preventDefault()
+          newConversation()
+          break
+        case 'w':
+          if (!activeTab) return
+          event.preventDefault()
+          closeTab(activeTab.id)
+          break
+        case 'b':
+          event.preventDefault()
+          setSidebarCollapsed(value => !value)
+          break
+        case ',':
+          event.preventDefault()
+          openTab(SETTINGS_TAB)
+          break
+        case '/':
+          event.preventDefault()
+          setShortcutsOpen(value => !value)
+          break
+        default:
+          break
+      }
+    }
+    window.addEventListener('keydown', run)
+    return () => window.removeEventListener('keydown', run)
+  })
 
   const deleteConversation = async (conversationId: string) => {
     const target = workspace.conversations.find(conversation => conversation.id === conversationId)
@@ -1640,10 +1844,8 @@ function App({ auth }: { auth: AuthGateSession }) {
       ...previous,
       conversations: previous.conversations.map(conversation => {
         if (conversation.id !== conversationId) return conversation
-        const activeTask = activeLearningTaskProjection(conversation.learningTasks, conversation.learningEvents)
         return {
           ...conversation,
-          mode: activeTask ? 'guided_learning' : mode === 'simple_explain' ? 'free' : mode,
           updatedAt: Date.now(),
           messages: sheetId === 'main' ? [...conversation.messages, finishedMessage] : conversation.messages,
           sheets: sheetId === 'main' ? conversation.sheets : conversation.sheets.map(sheet => (
@@ -1928,7 +2130,6 @@ function App({ auth }: { auth: AuthGateSession }) {
             ? content.slice(0, 22)
             : item.title,
           updatedAt: now,
-          mode,
           learningTasks,
           learningEvents,
           learningPlans,
@@ -3058,7 +3259,7 @@ function App({ auth }: { auth: AuthGateSession }) {
             <div className="settings-card-heading">
               <span>{auth.account.role === 'admin' ? '04' : '03'}</span>
               <div>
-                <h2 id="formal-profile-title">正式学习者状态</h2>
+                <h2 id="formal-profile-title">学习记录同步</h2>
                 <p>{formalConnection.status === 'connected' ? `已连接 ${formalConnection.learner?.display_name || '当前学习者'}；所有写入经过 EvidenceEvent 与 reducer。` : formalConnection.detail}</p>
               </div>
               <i>{formalConnection.status === 'connected' ? '已连接' : '未连接'}</i>
@@ -3079,12 +3280,16 @@ function App({ auth }: { auth: AuthGateSession }) {
     const taskStep = taskProjection ? currentLearningSkillStep(taskProjection) : undefined
     const activeTaskStep = activeTaskProjection ? currentLearningSkillStep(activeTaskProjection) : undefined
     const taskCanAdvance = taskProjection ? canAdvanceLearningSkillStep(taskProjection) : false
-    const visibleMode = pendingMode || (activeTaskProjection ? 'guided_learning' : conversation.mode)
+    // An active task only fills in the state when the learner has not chosen one.
+    // Forcing the chip to 带领学习 over their own pick made the selector look broken:
+    // they picked 简单讲解 and the chip kept saying something else.
+    const visibleMode = pendingMode
+      || (activeTaskProjection && conversation.mode === 'free' ? 'guided_learning' : conversation.mode)
     const visibleSkillId = activeTaskProjection?.skillId
       || (conversation.mode === 'guided_learning' ? conversation.preferredSkillId : undefined)
     const visibleSkill = visibleSkillId ? LEARNING_SKILLS[visibleSkillId] : undefined
     const visibleSubstateLabel = activeTaskProjection?.task.formalSkillStageLabel || activeTaskStep?.substateLabel
-      || (visibleMode === 'guided_learning' ? '准备态' : '')
+      || (visibleMode === 'guided_learning' ? '准备' : '')
     const formalVerificationReady = taskProjection?.task.formalSkillState === 'verification_ready'
     const sheet = activeSheet(conversation)
     const pluginProjectionSheet = Boolean(sheet?.messages.some(message => message.pluginResultProjection))
@@ -3179,13 +3384,7 @@ function App({ auth }: { auth: AuthGateSession }) {
           <h1>{conversation.title}</h1>
           <div className="chat-state-stack">
             {conversation.projectId && <button type="button" className="project-panel-toggle" aria-expanded={projectPanelConversationId === conversation.id} onClick={() => setProjectPanelConversationId(current => current === conversation.id ? '' : conversation.id)}>项目面板</button>}
-            <span className={`mode-badge mode-badge-${visibleMode}`}>
-              {TUTOR_MODE_LABELS[visibleMode]}{visibleSubstateLabel ? ` · ${visibleSubstateLabel}` : ''}
-            </span>
             {visibleSkill && <span className="skill-badge">{visibleSkill.name}</span>}
-            <span className="local-label">
-              {isDesktopRuntime() ? (workspace.settings.model || '待配置模型') : 'DeepSeek V4 Flash'}
-            </span>
           </div>
         </header>
         {verificationConversationId === conversation.id && taskProjection?.task.formalVerificationRunId && (
@@ -3460,7 +3659,7 @@ function App({ auth }: { auth: AuthGateSession }) {
                   <div className="planning-anchor-main">
                     <strong>{planProjection.plan.objective}</strong>
                     <span>
-                      学习规划态 · {planningKindLabel(planProjection.plan.kind)} · 已确认 {planProjection.requirements.length - planProjection.missingRequirements.length}/{planProjection.requirements.length}
+                      学习规划 · {planningKindLabel(planProjection.plan.kind)} · 已确认 {planProjection.requirements.length - planProjection.missingRequirements.length}/{planProjection.requirements.length}
                       {planProjection.missingRequirements.length ? ` · 待确认 ${planProjection.missingRequirements.slice(0, 2).map(item => item.label).join('、')}` : ' · 草案信息已齐'}
                     </span>
                   </div>
@@ -3560,7 +3759,7 @@ function App({ auth }: { auth: AuthGateSession }) {
                 <details className="learning-task-menu">
                   <summary role="button" aria-label="学习任务选项">•••</summary>
                   <div className="learning-task-popover">
-                    <header><strong>带领学习态 · {taskStep?.substateLabel} · {taskSkill?.name}</strong><span>{taskSkill?.description}</span></header>
+                    <header><strong>带领学习 · {taskStep?.substateLabel} · {taskSkill?.name}</strong><span>{taskSkill?.description}</span></header>
                     <ol>
                       {taskSkill?.steps.map((step, index) => (
                         <li key={step.id} className={index === taskProjection.stepIndex ? 'current' : index < taskProjection.stepIndex ? 'done' : ''}>
@@ -3684,12 +3883,14 @@ function App({ auth }: { auth: AuthGateSession }) {
             />
             <div className="composer-footer">
               <div className="composer-tools composer-tools-capability">
+                <div className="composer-lead">
                 <details className="source-attachment-menu">
                   <summary role="button" aria-label="给当前对话添加资料" title="添加本地文件或 URL">
-                    ＋资料{attachedSources.length > 0 ? ` ${attachedSources.length}` : ''}
+                    <svg className="plus-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 3.4v9.2M3.4 8h9.2" /></svg>
+                    {attachedSources.length > 0 ? <b>{attachedSources.length}</b> : null}
                   </summary>
                   <div className="source-attachment-popover">
-                    <header><strong>{conversation.projectId ? '项目来源' : '本对话资料'}</strong><span>资料只作为带来源的上下文，不代表你已经掌握。</span></header>
+                    <header><strong>{conversation.projectId ? '项目来源' : '本对话资料'}</strong><span>资料只是上下文，不代表已掌握。</span></header>
                     <label className="source-file-picker">
                       <input
                         type="file"
@@ -3715,29 +3916,7 @@ function App({ auth }: { auth: AuthGateSession }) {
                     </div>
                     {sourceBusy[conversation.id] && <p className="source-import-status">{sourceBusy[conversation.id]}</p>}
                     {sourceErrors[conversation.id] && <p className="source-import-error">{sourceErrors[conversation.id]}</p>}
-                    <small>{conversation.projectId ? '这里与项目面板完全同步，项目内所有对话共享；发送时可强制读取“项目来源”。' : '发送问题时可选“对话资料”强制读取；“自动”会在资料与联网搜索之间判断。'}</small>
-                  </div>
-                </details>
-                <div className="mode-options" aria-label="选择 Tutor 状态">
-                  <button type="button" title="自由讨论；解释请求仍可自动进入简单讲解" aria-pressed={!activeTaskProjection && conversation.mode === 'free'} disabled={Boolean(pendingMode) || Boolean(activeTaskProjection)} onClick={() => setConversationMode(conversation.id, 'free')}>自由态</button>
-                  <button type="button" title="下一轮使用简单讲解，完成后回到自由态" aria-pressed={!activeTaskProjection && conversation.mode === 'simple_explain'} disabled={Boolean(pendingMode) || Boolean(activeTaskProjection)} onClick={() => setConversationMode(conversation.id, 'simple_explain')}>简单讲解</button>
-                  <button
-                    type="button"
-                    title="围绕一个原子目标在当前对话中持续学习"
-                    aria-pressed={Boolean(activeTaskProjection) || conversation.mode === 'guided_learning'}
-                    disabled={Boolean(pendingMode)}
-                    onClick={() => taskProjection?.status === 'paused'
-                      ? updateLearningTask(conversation.id, 'resume')
-                      : setConversationMode(conversation.id, 'guided_learning')}
-                  >带领学习</button>
-                  <button
-                    type="button"
-                    title="规划较大的学习、真实产物项目或未来发展方向"
-                    aria-pressed={!activeTaskProjection && conversation.mode === 'learning_plan'}
-                    disabled={Boolean(pendingMode) || Boolean(activeTaskProjection)}
-                    onClick={() => setConversationMode(conversation.id, 'learning_plan')}
-                  >学习规划</button>
-                </div>
+                    <div className="composer-extra-controls">
                 <ComposerCapabilityPicker
                   isGuidedLearning={Boolean(activeTaskProjection) || conversation.mode === 'guided_learning'}
                   skillChoice={activeTaskProjection?.skillId || (conversation.mode === 'guided_learning' ? conversation.preferredSkillId || 'auto' : 'auto')}
@@ -3763,8 +3942,59 @@ function App({ auth }: { auth: AuthGateSession }) {
                       : item),
                   }))}
                 />
-                <span className="composer-shortcut-hint">Shift + Enter 换行</span>
+                    </div>
+                  </div>
+                </details>
+                <details className="mode-menu">
+                  <summary role="button" title="切换学习状态" aria-label="选择 Tutor 状态">
+                    <span>{TUTOR_MODE_LABELS[visibleMode]}</span>
+                  </summary>
+                  <div className="mode-popover">
+                    <button type="button" title="自由讨论；解释请求仍可自动进入简单讲解" aria-pressed={!activeTaskProjection && conversation.mode === 'free'} disabled={Boolean(pendingMode) || Boolean(activeTaskProjection)} onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); setConversationMode(conversation.id, 'free') }}>自由状态</button>
+                    <button type="button" title="下一轮使用简单讲解，完成后回到自由状态" aria-pressed={!activeTaskProjection && conversation.mode === 'simple_explain'} disabled={Boolean(pendingMode) || Boolean(activeTaskProjection)} onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); setConversationMode(conversation.id, 'simple_explain') }}>简单讲解</button>
+                    <button
+                      type="button"
+                      title="围绕一个原子目标在当前对话中持续学习"
+                      aria-pressed={Boolean(activeTaskProjection) || conversation.mode === 'guided_learning'}
+                      disabled={Boolean(pendingMode)}
+                      onClick={event => {
+                        event.currentTarget.closest('details')?.removeAttribute('open')
+                        if (taskProjection?.status === 'paused') updateLearningTask(conversation.id, 'resume')
+                        else setConversationMode(conversation.id, 'guided_learning')
+                      }}
+                    >带领学习</button>
+                    <button
+                      type="button"
+                      title="规划较大的学习、真实产物项目或未来发展方向"
+                      aria-pressed={!activeTaskProjection && conversation.mode === 'learning_plan'}
+                      disabled={Boolean(pendingMode) || Boolean(activeTaskProjection)}
+                      onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); setConversationMode(conversation.id, 'learning_plan') }}
+                    >学习规划</button>
+                  </div>
+                </details>
+                </div>
               </div>
+              <details className="composer-model-menu" onToggle={event => { if ((event.currentTarget as HTMLDetailsElement).open) void loadProviderModels() }}>
+                <summary className="composer-model-chip" role="button" title="切换模型" aria-label="切换模型">
+                  <strong>{workspace.settings.model || '待配置模型'}</strong>
+                </summary>
+                <div className="composer-model-popover">
+                  <header>{providerModelsError || (providerModels.length ? '服务商可用模型' : '正在读取模型…')}</header>
+                  {(providerModels.length ? providerModels : [workspace.settings.model].filter(Boolean)).map(name => (
+                    <button
+                      key={name}
+                      type="button"
+                      aria-pressed={workspace.settings.model === name}
+                      onClick={event => {
+                        event.currentTarget.closest('details')?.removeAttribute('open')
+                        updateSettings({ ...workspace.settings, model: name })
+                      }}
+                    >
+                      <i>{workspace.settings.model === name ? '✓' : ''}</i>{name}
+                    </button>
+                  ))}
+                </div>
+              </details>
               <button type="submit" disabled={Boolean(pendingMode) || (!(drafts[draftKey] || '').trim() && draftPluginObjects.length === 0)} aria-label={pendingMode ? 'Tutor 回复中' : '发送消息'}>{pendingMode ? '…' : '↑'}</button>
             </div>
           </form>
@@ -3789,16 +4019,16 @@ function App({ auth }: { auth: AuthGateSession }) {
   return (
     <div className="app-shell">
       <div className="workspace">
-        <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
+        <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
           <button className="sidebar-brand" type="button" onClick={newConversation} aria-label="新建 LearnFlow 对话">
-            <span className="brand-mark">✦</span><span><strong>LearnFlow</strong><small>学习空间</small></span>
+            <img className="brand-mark" src="/brand-mark.png" alt="" width={36} height={36} /><span><strong>LearnFlow</strong><small>学习空间</small></span>
           </button>
           <nav className="sidebar-primary-nav" aria-label="学习工作台">
-            <button type="button" onClick={() => openTab(LEARNING_FILES_TAB)}><span>▤</span>讲义与练习</button>
-            <button type="button" onClick={() => openTab(REVIEW_TAB)}><span>↺</span>复习与错题</button>
-            <button type="button" onClick={() => openTab(TASKS_TAB)}><span>☷</span>学习任务</button>
-            <button type="button" onClick={() => openTab(LEARNING_PATH_TAB)}><span>⌁</span>学习路径</button>
-            <button type="button" onClick={() => window.location.assign('/visualize')}><span>▷</span>图解与动画</button>
+            <button type="button" onClick={() => openTab(LEARNING_FILES_TAB)}><UiIcon name="lecture" />讲义与练习</button>
+            <button type="button" onClick={() => openTab(REVIEW_TAB)}><UiIcon name="review" />复习与错题</button>
+            <button type="button" onClick={() => openTab(TASKS_TAB)}><UiIcon name="tasks" />学习任务</button>
+            <button type="button" onClick={() => openTab(LEARNING_PATH_TAB)}><UiIcon name="path" />学习路径</button>
+            <button type="button" onClick={() => window.location.assign('/visualize')}><UiIcon name="visual" />图解与动画</button>
             <button type="button" onClick={() => window.location.assign('https://graphs.learnflow.club/hub')}><span>◇</span>岗位图谱</button>
           </nav>
           <div className="sidebar-scroll-area">
@@ -3839,27 +4069,101 @@ function App({ auth }: { auth: AuthGateSession }) {
             <section className="sidebar-section sidebar-conversations">
               <header><strong>对话</strong><button type="button" onClick={newConversation} aria-label="新建对话">＋</button></header>
               <nav className="conversation-list" aria-label="对话列表">
-            {recentConversations(workspace.conversations.filter(conversation => !conversation.projectId)).map(conversation => (
+            {recentConversations(workspace.conversations.filter(conversation => !conversation.projectId))
+              .slice()
+              .sort((left, right) => Number(Boolean(right.pinned)) - Number(Boolean(left.pinned)))
+              .map(conversation => (
               <div
                 key={conversation.id}
                 className={`conversation-row ${activeConversation?.id === conversation.id ? 'conversation-active' : ''} ${splitConversation?.id === conversation.id ? 'conversation-secondary' : ''}`}
               >
-                <button type="button" className="conversation-open" onClick={() => openTab(chatTab(conversation))}>
-                  <span className="conversation-glyph">□</span>
-                  <span><strong>{conversation.title}</strong><small>{conversation.messages.filter(message => message.role === 'user' && !message.hiddenFromTranscript).length} 条输入</small></span>
-                </button>
-                <button type="button" className="conversation-delete" onClick={() => setPendingDelete(conversation)} aria-label={`删除对话${conversation.title}`} title="删除对话">⌫</button>
+                {renamingConversationId === conversation.id ? (
+                  <form
+                    className="conversation-rename"
+                    onSubmit={event => {
+                      event.preventDefault()
+                      const title = renameDraft.trim()
+                      if (title) renameConversation(conversation.id, title)
+                      setRenamingConversationId('')
+                    }}
+                  >
+                    <input
+                      autoFocus
+                      value={renameDraft}
+                      maxLength={80}
+                      onChange={event => setRenameDraft(event.target.value)}
+                      onBlur={() => setRenamingConversationId('')}
+                      onKeyDown={event => { if (event.key === 'Escape') setRenamingConversationId('') }}
+                      aria-label="重命名对话"
+                    />
+                  </form>
+                ) : (
+                  <button type="button" className="conversation-open" onClick={() => openTab(chatTab(conversation))}>
+                    <span className="conversation-glyph">{conversation.pinned ? '★' : '□'}</span>
+                    <span><strong>{conversation.title}</strong><small>{conversation.messages.filter(message => message.role === 'user' && !message.hiddenFromTranscript).length} 条输入</small></span>
+                  </button>
+                )}
+                <details className="conversation-menu">
+                  <summary role="button" aria-label={`对话操作：${conversation.title}`} title="更多操作">⋯</summary>
+                  <div className="conversation-popover">
+                    <button type="button" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); togglePinConversation(conversation.id) }}>
+                      <i>{conversation.pinned ? '☆' : '★'}</i>{conversation.pinned ? '取消置顶' : '置顶'}
+                    </button>
+                    <button type="button" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); setRenameDraft(conversation.title); setRenamingConversationId(conversation.id) }}>
+                      <i>✎</i>重命名
+                    </button>
+                    <button type="button" className="conversation-popover-danger" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); setPendingDelete(conversation) }}>
+                      <i>⌫</i>删除
+                    </button>
+                  </div>
+                </details>
               </div>
             ))}
               </nav>
             </section>
           </div>
           <div className="sidebar-footer">
-            <button type="button" className="sidebar-user-button" onClick={() => openTab(PROFILE_TAB)}>
-              <span className="sidebar-profile-avatar">{auth.account.display_name.slice(0, 1)}</span>
-              <span><strong>{auth.account.display_name}</strong><small>{formalConnection.status === 'connected' ? `@${auth.account.username} · 画像已连接` : `@${auth.account.username} · 画像离线`}</small></span>
-            </button>
-            <button type="button" className="sidebar-settings-button" onClick={() => openTab(SETTINGS_TAB)} aria-label="打开设置">⚙</button>
+            <details className="sidebar-account-menu">
+              <summary className="sidebar-user-button" role="button" aria-label="账号菜单">
+                <span className="sidebar-profile-avatar">
+                  {auth.account.avatar
+                    ? <img src={auth.account.avatar} alt="" />
+                    : auth.account.display_name.slice(0, 1)}
+                </span>
+                <span><strong>{auth.account.display_name}</strong><small>{formalConnection.status === 'connected' ? `@${auth.account.username} · 画像已连接` : `@${auth.account.username} · 画像离线`}</small></span>
+              </summary>
+              <div className="sidebar-account-popover">
+                <button type="button" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); openTab(PROFILE_TAB) }}>
+                  <UiIcon name="profile" />个人画像
+                </button>
+                <button type="button" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); setShortcutsOpen(true) }}>
+                  <UiIcon name="shortcuts" />快捷键
+                </button>
+                <label className="sidebar-account-avatar-picker">
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    disabled={avatarBusy}
+                    onChange={event => {
+                      const file = event.target.files?.[0]
+                      event.currentTarget.value = ''
+                      event.currentTarget.closest('details')?.removeAttribute('open')
+                      if (file) void changeAvatar(file)
+                    }}
+                  />
+                  <UiIcon name="avatar" />{avatarBusy ? '正在处理…' : '更换头像'}
+                </label>
+                {auth.account.avatar && (
+                  <button type="button" disabled={avatarBusy} onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); void removeAvatar() }}>
+                    <UiIcon name="avatar-off" />移除头像
+                  </button>
+                )}
+                <button type="button" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); openTab(SETTINGS_TAB) }}>
+                  <UiIcon name="settings" />设置
+                </button>
+                {avatarError && <p className="sidebar-account-error" role="alert">{avatarError}</p>}
+              </div>
+            </details>
           </div>
         </aside>
 
@@ -3868,8 +4172,17 @@ function App({ auth }: { auth: AuthGateSession }) {
         <main className="main-stage">
           <nav className="tabs" aria-label="已打开页面">
             <button className="mobile-menu-trigger mobile-only" type="button" onClick={() => setSidebarOpen(true)} aria-label="打开侧栏">☰</button>
+            <button className="sidebar-collapse-trigger desktop-only" type="button" onClick={() => setSidebarCollapsed(value => !value)} aria-label={sidebarCollapsed ? '展开侧栏' : '收起侧栏'} title={sidebarCollapsed ? '展开侧栏' : '收起侧栏'}>{sidebarCollapsed ? '›' : '‹'}</button>
             {workspace.tabs.map(tab => (
-              <div key={tab.id} className={`tab ${tab.id === activeTab?.id ? 'tab-active' : ''} ${tab.id === splitTab?.id ? 'tab-secondary' : ''}`}>
+              <div
+                key={tab.id}
+                className={`tab ${tab.id === activeTab?.id ? 'tab-active' : ''} ${tab.id === splitTab?.id ? 'tab-secondary' : ''} ${draggingTabId === tab.id ? 'tab-dragging' : ''}`}
+                draggable
+                onDragStart={event => { setDraggingTabId(tab.id); event.dataTransfer.effectAllowed = 'move' }}
+                onDragOver={event => { event.preventDefault(); event.dataTransfer.dropEffect = 'move' }}
+                onDrop={event => { event.preventDefault(); moveTab(draggingTabId, tab.id); setDraggingTabId('') }}
+                onDragEnd={() => setDraggingTabId('')}
+              >
                 <button type="button" className="tab-main" onClick={() => openTab(tab)}>
                   <WorkspaceIcon kind={tab.kind} />
                   <span>{tab.title}</span>
@@ -3900,6 +4213,30 @@ function App({ auth }: { auth: AuthGateSession }) {
         </main>
       </div>
 
+      {shortcutsOpen && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setShortcutsOpen(false) }}>
+          <section className="confirm-dialog shortcut-dialog" role="dialog" aria-modal="true" aria-labelledby="shortcut-dialog-title">
+            <span className="dialog-eyebrow">KEYBOARD</span>
+            <h2 id="shortcut-dialog-title">快捷键</h2>
+            <dl className="shortcut-list">
+              {Array.from(new Set(KEYBOARD_SHORTCUTS.map(item => item.group))).map(group => (
+                <div key={group} className="shortcut-group">
+                  <p className="shortcut-group-title">{group}</p>
+                  {KEYBOARD_SHORTCUTS.filter(item => item.group === group).map(item => (
+                    <div key={item.keys} className="shortcut-row">
+                      <dt>{item.label}</dt>
+                      <dd><kbd>{item.keys}</kbd></dd>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </dl>
+            <div className="dialog-actions">
+              <button type="button" className="button-secondary" onClick={() => setShortcutsOpen(false)}>关闭</button>
+            </div>
+          </section>
+        </div>
+      )}
       {pendingDelete && (
         <div className="modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setPendingDelete(null) }}>
           <section className="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-dialog-title">
@@ -4207,7 +4544,9 @@ function MessageList({ messages, conversationId, onPluginPrompt, onPluginReferen
       <div className="message-column">
         {visibleMessages.map(message => (
           <article key={message.id} data-message-id={message.id} data-message-role={message.role} className={`message message-${message.role}${message.learningActionLabel ? ' message-learning-action' : ''}`}>
-            {message.role !== 'user' && <span className="message-avatar">{message.role === 'assistant' ? '✦' : 'i'}</span>}
+            {message.role !== 'user' && (message.role === 'assistant'
+              ? <img className="message-avatar" src="/brand-mark.png" alt="" width={26} height={26} />
+              : <span className="message-avatar">i</span>)}
             <div className="message-content" onMouseUp={message.role === 'assistant' ? event => captureSelection(message.id, event.currentTarget) : undefined}>
               <div className="message-meta">
                 {message.role === 'user' ? '你' : message.role === 'assistant' ? 'Tutor' : '系统'}

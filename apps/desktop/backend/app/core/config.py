@@ -40,18 +40,26 @@ def openai_chat_provider_kwargs(
     *,
     thinking_enabled: bool,
 ) -> dict:
-    """Return narrowly scoped OpenAI-compatible provider extensions."""
+    """Return narrowly scoped OpenAI-compatible provider extensions.
+
+    Reasoning models spend the output budget on their thinking pass before any
+    visible text, so a deployment that pairs one with a short interactive turn
+    can receive empty content. The effort value is forwarded verbatim rather
+    than matched against a provider list: whoever configures the model knows
+    which value it accepts, and an unset value keeps the request untouched so
+    models without a reasoning mode are unaffected.
+    """
     hostname = (urlsplit(str(base_url or "")).hostname or "").casefold()
     model_name = str(model or "").casefold()
+    extra_body: dict = {}
     if hostname == "api.xiaomimimo.com" and model_name.startswith("mimo-"):
-        return {
-            "extra_body": {
-                "thinking": {
-                    "type": "enabled" if thinking_enabled else "disabled",
-                },
-            },
+        extra_body["thinking"] = {
+            "type": "enabled" if thinking_enabled else "disabled",
         }
-    return {}
+    configured_effort = str(settings.llm_reasoning_effort or "").strip()
+    if configured_effort:
+        extra_body["reasoning_effort"] = configured_effort
+    return {"extra_body": extra_body} if extra_body else {}
 
 
 class Settings(BaseSettings):
@@ -62,6 +70,11 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_base_url: str = "https://api.openai.com/v1"
     llm_model: str = "gpt-4o-mini"
+    # Forwarded verbatim to the provider when set. Reasoning models spend the
+    # output budget on thinking first, so lowering or disabling the effort
+    # keeps interactive turns from returning empty content. Leave empty for
+    # models that have no reasoning mode.
+    llm_reasoning_effort: str = ""
     # User-visible online enhancement has a long but bounded wall-clock budget.
     # Deterministic fallbacks remain usable when the provider reaches it.
     tutor_model_budget_seconds: float = 180.0

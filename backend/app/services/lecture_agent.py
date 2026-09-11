@@ -281,6 +281,7 @@ class LectureAgent:
             temperature=0.7,
             timeout=240,
             max_retries=0,
+            max_tokens=8000,
         )
         self.gen_llm = ChatOpenAI(
             model=settings.llm_model,
@@ -289,6 +290,7 @@ class LectureAgent:
             temperature=0.8,
             timeout=300,
             max_retries=0,
+            max_tokens=8000,
         )
 
     def _build_chunk_context(self, chunks: List[Dict]) -> str:
@@ -757,6 +759,7 @@ class QAAgent:
             temperature=0.5,
             timeout=120,
             max_retries=0,
+            max_tokens=8000,
         )
 
     async def answer(

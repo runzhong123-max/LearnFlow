@@ -13,6 +13,7 @@
     "windows": [
       {
         "title": "LearnFlow",
+        "dragDropEnabled": false,
         "width": 1440,
         "height": 920,
         "minWidth": 1024,

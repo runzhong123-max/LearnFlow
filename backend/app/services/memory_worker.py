@@ -173,6 +173,7 @@ async def _model_draft(
         temperature=0,
         timeout=120,
         max_retries=1,
+        max_tokens=4000,
     )
     structured = llm.with_structured_output(SynthesisDraft, include_raw=True)
     policy = KERNELS[kernel_name]

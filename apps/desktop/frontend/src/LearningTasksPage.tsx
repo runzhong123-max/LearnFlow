@@ -28,7 +28,7 @@ export default function LearningTasksPage({ connection, tasks, busyTaskId, error
       {error && <div className="formal-inline-error" role="alert">{error}</div>}
       <div className="task-queue-summary"><strong>{active.length}</strong><span>个待完成</span></div>
       <div className="task-queue-list">
-        {tasks.length === 0 && <div className="formal-empty-copy">还没有正式学习任务。在对话中说“带我学……”或切到带领学习态即可创建。</div>}
+        {tasks.length === 0 && <div className="formal-empty-copy">还没有正式学习任务。在对话中说“带我学……”或切到带领学习即可创建。</div>}
         {tasks.map((task, index) => {
           const phases = task.plan?.phases || []
           const currentPhase = phases.find(phase => phase.id === task.current_phase_id)

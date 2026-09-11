@@ -46,6 +46,58 @@ test('only an explicit atomic learning request starts guided learning automatica
   assert.equal(hasExplicitLearningIntent('带我学习操作系统'), true)
 })
 
+// Kept in sync with SHARED_INTENT_CORPUS in the backends'
+// tests/test_chat_modes.py. The composer resolves 自由状态 here before the
+// turn is sent, and the runtime classifies it again for clients that send no
+// state, so a phrase landing in a different mode on each side means the same
+// sentence teaches differently depending on which runtime answered it.
+const SHARED_INTENT_CORPUS: Array<[string, ReturnType<typeof resolveTutorMode>]> = [
+  ['什么是指针', 'simple_explain'],
+  ['跟我讲讲什么是朴素贝叶斯分类器', 'simple_explain'],
+  ['解释一下哈希表', 'simple_explain'],
+  ['帮我理解一下闭包', 'simple_explain'],
+  ['怎么理解动态规划', 'simple_explain'],
+  ['介绍一下 TCP 三次握手', 'simple_explain'],
+  ['带我学会二叉树', 'guided_learning'],
+  ['深入理解朴素贝叶斯', 'guided_learning'],
+  ['彻底搞懂指针', 'guided_learning'],
+  ['真正弄懂闭包', 'guided_learning'],
+  ['帮我搞懂动态规划', 'guided_learning'],
+  ['逐步带我实现一个链表', 'guided_learning'],
+  ['练习并验证我对递归的理解', 'guided_learning'],
+  ['从头学会线性代数', 'guided_learning'],
+  ['教我学会正则表达式', 'guided_learning'],
+  ['帮我规划从零开始系统学习操作系统的路线', 'learning_plan'],
+  ['我想系统学习编译原理', 'learning_plan'],
+  ['做一个项目练手', 'learning_plan'],
+  ['以后想做算法工程师', 'learning_plan'],
+  ['我在考虑转行做前端', 'learning_plan'],
+  ['未来读研还是就业', 'learning_plan'],
+  ['半年内想掌握后端开发', 'learning_plan'],
+  ['给我一个学习路线图', 'learning_plan'],
+  ['这个函数的返回值是什么意思', 'free'],
+  ['我最近有点不知道从哪里聊起', 'free'],
+  ['今天天气不错', 'free'],
+  ['这段代码报错了怎么办', 'free'],
+  ['谢谢', 'free'],
+]
+
+test('the composer resolver and the runtime classifier agree on the shared corpus', () => {
+  const mismatched = SHARED_INTENT_CORPUS
+    .map(([phrase, expected]) => [phrase, expected, resolveTutorMode('free', phrase)])
+    .filter(([, expected, actual]) => expected !== actual)
+  assert.deepEqual(mismatched, [])
+})
+
+test('direction words alone do not turn an ordinary sentence into planning', () => {
+  for (const phrase of ['以后再说吧', '这个以后会不会变', '未来的版本里还有吗']) {
+    assert.equal(resolveTutorMode('free', phrase), 'free', phrase)
+  }
+  for (const phrase of ['以后想做算法工程师', '毕业后想从事后端开发']) {
+    assert.equal(resolveTutorMode('free', phrase), 'learning_plan', phrase)
+  }
+})
+
 test('a task starts at the recommended skill own first step', () => {
   assert.equal(createLearningTask('带我学习贝叶斯公式', 99).task.objective, '贝叶斯公式')
   assert.equal(createLearningTask('带我学习一下集成学习', 99).task.objective, '集成学习')
@@ -217,4 +269,16 @@ test('the model receives a bounded read-only skill-step projection', () => {
   assert.equal(context.stepCount, LEARNING_SKILLS.guided_explanation.steps.length)
   assert.match(context.stepInstruction, /直接说明/)
   assert.match(currentLearningSkillStep(projection).loopInstruction || '', /只换表征/)
+})
+
+test('an explicit state lets a learner step out of a running task', () => {
+  // The task is durable and nothing outside guided_learning mutates it, so a
+  // side question must not cost the learner their place. Refusing the switch
+  // left only two options: abandon the task, or do not ask.
+  assert.equal(resolveTutorMode('simple_explain', '顺便问一下，什么是闭包', true), 'simple_explain')
+  assert.equal(resolveTutorMode('learning_plan', '之后怎么安排', true), 'learning_plan')
+  // `free` delegates the decision, and with a task in flight that decision is
+  // to stay with the task.
+  assert.equal(resolveTutorMode('free', '继续', true), 'guided_learning')
+  assert.equal(resolveTutorMode('guided_learning', '继续', true), 'guided_learning')
 })

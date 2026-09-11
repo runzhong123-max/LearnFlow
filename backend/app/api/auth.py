@@ -1,6 +1,11 @@
+import base64
+import binascii
+import re
 import ipaddress
 import hmac
 import time
+
+import httpx
 from uuid import uuid4
 from datetime import datetime
 from urllib.parse import urlsplit
@@ -23,6 +28,7 @@ from app.models.learning import AuthApiKey, AuthApiKeySecret, AuthSession, Learn
 from app.models.project import Project
 from app.schemas.auth import (
     AdminAccountProjection,
+    AvatarUpdateRequest,
     ApiKeyCreateRequest,
     ApiKeyRevealRequest,
     ApiKeyCreateResponse,
@@ -213,6 +219,7 @@ def _account_view(current: CurrentLearner, desktop_auth_token: str | None = None
             "career_goal": current.profile.career_goal or "",
             "career_goal_status": current.profile.career_goal_status,
         },
+        "avatar": current.account.avatar_data_url or None,
         "dev_test_login_enabled": settings.dev_test_login_enabled,
         "is_dev_login": current.is_dev_login,
         "quota": {
@@ -793,3 +800,100 @@ async def dev_login(
         CurrentLearner(account, learner, profile, is_dev_login=True),
         token if valid_desktop_request(request) else None,
     )
+
+@router.get("/auth/model-credential/models")
+async def list_model_credential_models(
+    current: CurrentLearner = Depends(get_current_learner),
+):
+    """List what the configured provider actually offers.
+
+    Hard-coding a model catalogue goes stale silently: names change, tiers are
+    retired, and a learner is left picking something the provider no longer
+    serves. Asking the provider keeps the list correct without this codebase
+    tracking every vendor's releases.
+    """
+    if not model_credential_configured(current.account):
+        raise HTTPException(409, "尚未配置账户模型凭据")
+    try:
+        provider_config = account_model_provider_config(current.account)
+    except ModelCredentialFormatError:
+        raise HTTPException(422, "账户模型凭据格式无效，请在设置中重新保存 API Key") from None
+    except ModelCredentialEncryptionUnavailable:
+        _raise_model_credential_kek_error()
+    except ModelCredentialDecryptionError:
+        raise HTTPException(500, "账户模型凭据无法解密，请检查 KEK 版本或密文完整性") from None
+
+    base_url = _validated_model_base_url(provider_config.base_url or settings.llm_base_url)
+    try:
+        async with httpx.AsyncClient(timeout=20, trust_env=False) as client:
+            response = await client.get(
+                f"{base_url.rstrip('/')}/models",
+                headers={"Authorization": f"Bearer {provider_config.api_key}"},
+            )
+    except httpx.HTTPError:
+        raise HTTPException(502, "无法连接模型服务商，请检查地址与网络") from None
+    if response.status_code == 401:
+        raise HTTPException(401, "模型服务商拒绝了当前 API Key")
+    if response.status_code >= 400:
+        raise HTTPException(502, f"模型服务商返回 {response.status_code}")
+    try:
+        payload = response.json()
+    except ValueError:
+        raise HTTPException(502, "模型服务商返回了无法解析的内容") from None
+    entries = payload.get("data") if isinstance(payload, dict) else None
+    models = sorted({
+        str(item.get("id")).strip()
+        for item in (entries or [])
+        if isinstance(item, dict) and str(item.get("id") or "").strip()
+    })
+    return {"models": models[:60], "base_url": base_url}
+
+
+# Raster formats only. An SVG data URL would be rendered by the browser as a
+# document and can carry script, so it is refused rather than sanitised.
+AVATAR_MEDIA_TYPES = ("image/png", "image/jpeg", "image/webp")
+AVATAR_MAX_BYTES = 192 * 1024
+
+
+def _validated_avatar(value: str) -> str:
+    raw = (value or "").strip()
+    if not raw:
+        return ""
+    prefix, _, payload = raw.partition(",")
+    match = re.fullmatch(r"data:([-\w.+/]+);base64", prefix)
+    if not match or not payload:
+        raise HTTPException(422, "头像必须是 base64 编码的 data URL")
+    if match.group(1).lower() not in AVATAR_MEDIA_TYPES:
+        raise HTTPException(422, "头像只支持 PNG、JPEG 或 WebP")
+    try:
+        decoded = base64.b64decode(payload, validate=True)
+    except (binascii.Error, ValueError):
+        raise HTTPException(422, "头像数据无法解码") from None
+    if not decoded:
+        raise HTTPException(422, "头像数据为空")
+    if len(decoded) > AVATAR_MAX_BYTES:
+        raise HTTPException(413, f"头像不能超过 {AVATAR_MAX_BYTES // 1024}KB")
+    return raw
+
+
+@router.put("/auth/profile/avatar")
+async def put_profile_avatar(
+    data: AvatarUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    current: CurrentLearner = Depends(get_current_learner),
+):
+    """Store the learner's avatar on the account so it follows them between
+    the desktop app and the browser instead of one device's local storage."""
+    current.account.avatar_data_url = _validated_avatar(data.avatar) or None
+    await db.commit()
+    return {"avatar": current.account.avatar_data_url}
+
+
+@router.delete("/auth/profile/avatar")
+async def delete_profile_avatar(
+    db: AsyncSession = Depends(get_db),
+    current: CurrentLearner = Depends(get_current_learner),
+):
+    current.account.avatar_data_url = None
+    await db.commit()
+    return {"avatar": None}

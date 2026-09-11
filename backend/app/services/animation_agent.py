@@ -91,6 +91,7 @@ class AnimationAgent:
             temperature=0.4,
             timeout=300,
             max_retries=0,
+            max_tokens=4000,
         )
 
     # ── 规则层：快速拒绝（零成本） ──

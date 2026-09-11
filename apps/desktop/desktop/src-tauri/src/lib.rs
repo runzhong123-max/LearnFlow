@@ -908,12 +908,17 @@ fn show_platform_workspace(app: &tauri::AppHandle) -> Result<(), String> {
     }
     // Only the release builder selects the online authority. Page code cannot
     // choose a destination or send local credentials to it.
-    let url = validated_platform_url(option_env!("LEARNFLOW_PLATFORM_URL").unwrap_or("https://learn.learnflow.club"))?;
+    // Same authority the sidecar is given. A separate literal here meant the
+    // window kept opening an address the rest of the app had already moved off.
+    let url = validated_platform_url(
+        option_env!("LEARNFLOW_API_ORIGIN").unwrap_or("https://8.148.28.98"),
+    )?;
     let origin = url.origin();
     tauri::WebviewWindowBuilder::new(app, "platform", tauri::WebviewUrl::External(url))
         .title("LearnFlow · 在线学习空间")
         .inner_size(1440.0, 920.0)
         .min_inner_size(768.0, 600.0)
+        .closable(true)
         .on_navigation(move |next| next.origin() == origin)
         .build().map_err(|e| e.to_string())?;
     // No capability file matches this remote window. It cannot use local IPC,

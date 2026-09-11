@@ -24,6 +24,9 @@ import { PASSWORD_MIN_LENGTH, PASSWORD_POLICY_MESSAGE, passwordPolicyError } fro
 export type AuthGateSession = {
   account: FormalAccount
   signOut: () => Promise<void>
+  /** Apply a field the app just persisted, so the shell re-renders without a
+   *  full session round-trip. */
+  patchAccount: (patch: Partial<FormalAccount>) => void
 }
 
 type AuthGateProps = {
@@ -232,7 +235,10 @@ export default function AuthGate({ children }: AuthGateProps) {
   if (account && isUnifiedSite(window.location.hostname) && window.location.pathname === '/login') {
     return null
   }
-  if (account) return children({ account, signOut })
+  const patchAccount = (patch: Partial<FormalAccount>) =>
+    setAccount(previous => (previous ? { ...previous, ...patch } : previous))
+
+  if (account) return children({ account, signOut, patchAccount })
   if (isUnifiedSite(window.location.hostname) && window.location.pathname !== '/login') {
     return null
   }

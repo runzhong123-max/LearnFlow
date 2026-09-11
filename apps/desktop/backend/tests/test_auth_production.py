@@ -1449,3 +1449,43 @@ def test_desktop_pet_capability_least_privilege_bootstrap_and_context_lifecycle(
     assert external_reference not in serialized_messages
     assert document_reference not in serialized_messages
     assert context_id in serialized_messages
+def test_avatar_upload_accepts_raster_and_refuses_script_bearing_or_oversized():
+    # A 1x1 PNG: the smallest payload that still exercises the decode path.
+    png = (
+        "data:image/png;base64,"
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    )
+    with TestClient(app) as raw_client:
+        client = browser(raw_client)
+        registered = client.post("/api/auth/register", json=registration("avatar_owner"))
+        assert registered.status_code == 200, registered.text
+        # The account response is serialised with exclude_none, so an unset
+        # avatar is an absent key rather than an explicit null.
+        assert "avatar" not in registered.json()
+        bind_csrf(client)
+
+        stored = client.put("/api/auth/profile/avatar", json={"avatar": png})
+        assert stored.status_code == 200, stored.text
+        assert stored.json()["avatar"] == png
+        assert client.get("/api/auth/me").json()["avatar"] == png
+
+        # SVG renders as a document and can carry script, so it must not be
+        # storable even though it is nominally an image media type.
+        svg = client.put("/api/auth/profile/avatar", json={
+            "avatar": "data:image/svg+xml;base64,PHN2Zy8+",
+        })
+        assert svg.status_code == 422, svg.text
+        assert client.get("/api/auth/me").json()["avatar"] == png
+
+        oversized = client.put("/api/auth/profile/avatar", json={
+            "avatar": "data:image/png;base64," + base64.b64encode(b"\0" * (192 * 1024 + 1)).decode(),
+        })
+        assert oversized.status_code == 413, oversized.text
+
+        undecodable = client.put("/api/auth/profile/avatar", json={"avatar": "data:image/png;base64,!!!!"})
+        assert undecodable.status_code == 422, undecodable.text
+
+        cleared = client.delete("/api/auth/profile/avatar")
+        assert cleared.status_code == 200, cleared.text
+        assert cleared.json()["avatar"] is None
+        assert client.get("/api/auth/me").json().get("avatar") is None

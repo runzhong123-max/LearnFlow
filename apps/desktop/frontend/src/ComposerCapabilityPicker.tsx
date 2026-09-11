@@ -251,7 +251,7 @@ export default function ComposerCapabilityPicker({
           aria-expanded={openMenu === 'skill'}
           aria-controls={`${id}-skill-listbox`}
           disabled={methodUnavailable}
-          title={!isGuidedLearning ? '学习方法仅在带领学习态可设置' : skillDisabled ? '当前学习任务暂不可切换方法' : undefined}
+          title={!isGuidedLearning ? '学习方法仅在带领学习时可设置' : skillDisabled ? '当前学习任务暂不可切换方法' : undefined}
           onClick={() => togglePicker('skill')}
           onKeyDown={event => handleTriggerKeyDown('skill', event)}
         >

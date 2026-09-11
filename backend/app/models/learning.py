@@ -110,6 +110,10 @@ class UserAccount(Base):
     username = Column(String(32), nullable=False)
     username_normalized = Column(String(32), nullable=False, unique=True, index=True)
     normalized_username = synonym("username_normalized")
+    # A learner-supplied avatar, held as a data URL so it travels with the
+    # account instead of living in one browser's storage. Size and media type
+    # are enforced at the API boundary; SVG is refused because it can script.
+    avatar_data_url = Column(Text, nullable=True)
     password_hash = Column(Text, nullable=True)
     password_version = Column(Integer, default=1, nullable=False)
     auth_epoch = Column(Integer, default=0, nullable=False)
