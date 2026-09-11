@@ -162,7 +162,7 @@ function DiffRow({ label, added, removed, updated }: { label: string; added: num
   return <div className="risk-diff-row"><b>{label}</b><span className="add">+{added}</span><span className="remove">−{removed}</span><span>~{updated}</span></div>;
 }
 
-function FinalResultMessage({ result, resultHref, resultLinkLabel, onAccept }: { result: SnapshotIterationResult; resultHref: string; resultLinkLabel: string; onAccept?: () => void }) {
+function FinalResultMessage({ result, resultHref, resultLinkLabel, onAccept, onStartFromRadar }: { result: SnapshotIterationResult; resultHref: string; resultLinkLabel: string; onAccept?: () => void; onStartFromRadar?: (request: { mode: IterationMode; initiativeProfile: InitiativeProfile; targetIds: string; prompt: string }) => void }) {
   const selectedSources = result.researchReports.reduce((sum, report) => sum + report.selectedSourceCount, 0);
   return (
     <article className={`iteration-final-message ${result.createdSnapshot ? "created" : "unchanged"}`}>
@@ -180,7 +180,17 @@ function FinalResultMessage({ result, resultHref, resultLinkLabel, onAccept }: {
         {result.candidateSnapshotId ? <div className="iteration-result-actions">{onAccept
           ? <button type="button" onClick={onAccept}>{resultLinkLabel}<ChevronRight size={13} /></button>
           : <Link href={resultHref}>{resultLinkLabel}<ChevronRight size={13} /></Link>}<code>{result.candidateSnapshotId}</code></div> : null}
-        <IterationProductsPanel products={result.products} />
+        <IterationProductsPanel
+          products={result.products}
+          {...(onStartFromRadar ? {
+            onStartFromRadar: (request: { mode: IterationMode; initiativeProfile: InitiativeProfile; targetIds: string[]; prompt: string }) => onStartFromRadar({
+              mode: request.mode,
+              initiativeProfile: request.initiativeProfile,
+              targetIds: request.targetIds.join(" "),
+              prompt: request.prompt,
+            }),
+          } : {})}
+        />
         <div className="iteration-result-disclosures">
           <details>
             <summary><ShieldCheck size={14} /><span><b>{result.createdSnapshot ? "结构体检" : "未采用候选体检"}</b><small>{result.inspectionAfter.findings.length} 项发现 · {result.inspectionAfter.hardBlockers.length} 个协议阻断</small></span><ChevronDown size={13} /></summary>
@@ -273,10 +283,19 @@ export default function IterationWorkspace({ snapshotId, projectId, versionId, c
     if (event.kind === "iteration.run.failed") setError(String(event.payload.message || "岗位快照迭代失败。"));
   }
 
-  async function start() {
+  /**
+   * `overrides` exists because the radar action sets several fields and starts
+   * in the same tick; reading component state there would submit the values the
+   * user was looking at before, not the ones they just chose.
+   */
+  async function start(overrides?: { initiativeProfile?: InitiativeProfile; mode?: IterationMode; prompt?: string; targetIds?: string }) {
     if (running || materialsBusy || !workspace) return;
-    const parsedTargetIds = targetIds.split(/[\s,，]+/u).map((value) => value.trim()).filter(Boolean);
-    setSubmittedBrief({ profile: initiativeProfile, mode, objective: prompt.trim() || (initiativeProfile === "autonomous" ? "自动发现当前快照中信息价值最高的问题并研究" : "围绕选定范围深化岗位快照"), targetCount: parsedTargetIds.length, webResearch, hasSupplement: materials.length > 0 });
+    const chosenProfile = overrides?.initiativeProfile || initiativeProfile;
+    const chosenMode = overrides?.mode || mode;
+    const chosenPrompt = overrides?.prompt ?? prompt;
+    const chosenTargets = overrides?.targetIds ?? targetIds;
+    const parsedTargetIds = chosenTargets.split(/[\s,，]+/u).map((value) => value.trim()).filter(Boolean);
+    setSubmittedBrief({ profile: chosenProfile, mode: chosenMode, objective: chosenPrompt.trim() || (chosenProfile === "autonomous" ? "自动发现当前快照中信息价值最高的问题并研究" : "围绕选定范围深化岗位快照"), targetCount: parsedTargetIds.length, webResearch, hasSupplement: materials.length > 0 });
     setRunning(true);
     setError("");
     setEvents([]);
@@ -295,7 +314,7 @@ export default function IterationWorkspace({ snapshotId, projectId, versionId, c
         method: "POST",
         headers: { "content-type": "application/json" },
         signal: controller.signal,
-        body: JSON.stringify({ iteration: { runId: crypto.randomUUID(), snapshotRef: workspace.reference, projectId: workspace.reference.projectId, conversationId: workspace.reference.projectId ? conversationId : undefined, initiativeProfile, mode, prompt: prompt.trim(), targetIds: parsedTargetIds, targetAsOf: targetAsOf || undefined, supplementalSources, learningPathGraph, webResearch, maxRounds: 12, sourceLimit: 64, maxWorkItems: 32 }, providerConfig, searchConfig }),
+        body: JSON.stringify({ iteration: { runId: crypto.randomUUID(), snapshotRef: workspace.reference, projectId: workspace.reference.projectId, conversationId: workspace.reference.projectId ? conversationId : undefined, initiativeProfile: chosenProfile, mode: chosenMode === "auto" ? "auto" : chosenMode, prompt: chosenPrompt.trim(), targetIds: parsedTargetIds, targetAsOf: targetAsOf || undefined, supplementalSources, learningPathGraph, webResearch, maxRounds: 12, sourceLimit: 64, maxWorkItems: 32 }, providerConfig, searchConfig }),
       });
       if (!response.ok || !response.body) throw new Error((await response.json().catch(() => ({})) as { error?: string }).error || `请求失败（${response.status}）`);
       const reader = response.body.getReader();
@@ -364,7 +383,12 @@ export default function IterationWorkspace({ snapshotId, projectId, versionId, c
             <article className="iteration-user-message"><span>你发起了 · {modeOptions.find(option => option.id === (result?.contract.mode || submittedBrief?.mode || mode))?.label || "岗位迭代"} · {profileLabel(result?.contract.initiativeProfile || submittedBrief?.profile || initiativeProfile)}</span><p>{objective || "自动发现当前快照中信息价值最高的问题并研究"}</p><small>{submittedBrief?.targetCount ? `限定 ${submittedBrief.targetCount} 个节点 · ` : ""}{submittedBrief?.webResearch ?? webResearch ? "允许联网研究" : "不联网"}{submittedBrief?.hasSupplement ? " · 已附加资料" : ""}</small></article>
             {activities.map((activity) => <ActivityCard activity={activity} key={activity.id} />)}
             {running ? <article className="iteration-thinking-message"><div className="iteration-agent-avatar"><LoaderCircle className="spin" size={15} /></div><div><span className="iteration-message-author">ROLE AGENT · 正在思考</span><h3>{thinking}</h3><p>运行仍在继续，新的工具动作和结果会自动出现在这里。</p><small><Clock3 size={11} /> 已运行 {formatIterationElapsed(elapsed)}</small></div></article> : null}
-            {result ? <FinalResultMessage result={result} resultHref={resultHref} resultLinkLabel={embedded ? "应用新版本并返回工作台" : workspace?.reference.projectId ? "打开项目中的新版本" : "从新快照继续迭代"} onAccept={embedded ? onClose : undefined} /> : null}
+            {result ? <FinalResultMessage result={result} resultHref={resultHref} resultLinkLabel={embedded ? "应用新版本并返回工作台" : workspace?.reference.projectId ? "打开项目中的新版本" : "从新快照继续迭代"} onAccept={embedded ? onClose : undefined} onStartFromRadar={(request) => void start({
+              initiativeProfile: request.initiativeProfile,
+              mode: request.mode,
+              prompt: request.prompt,
+              targetIds: request.targetIds,
+            })} /> : null}
             {error && !events.some((event) => event.kind === "iteration.run.failed") ? <article className="iteration-agent-message failed"><div className="iteration-agent-avatar"><CircleX size={15} /></div><div><span className="iteration-message-author">ROLE AGENT · 运行提示</span><h3>本轮没有继续执行</h3><p>{error}</p></div></article> : null}
             <div ref={conversationEndRef} />
           </div> : null}

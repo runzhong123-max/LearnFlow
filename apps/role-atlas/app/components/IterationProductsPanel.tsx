@@ -1,8 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
-import type { IterationProducts } from "@/lib/iteration/types";
+import { useMemo, useState } from "react";
+import type { IterationMode, IterationProducts } from "@/lib/iteration/types";
+
+type StartMode = Exclude<IterationMode, "auto">;
 import { presentIterationProducts } from "@/lib/iteration/product-presentation";
+import { radarSelectionToIteration } from "@/lib/iteration/radar-action";
+import type { ColdStartBuildResult } from "@/lib/build/types";
 import "./iteration-products.css";
 
 /**
@@ -16,11 +20,27 @@ import "./iteration-products.css";
  *   - it never hides what was withheld. A round where three augmentations were
  *     refused is a different fact from one where none were proposed.
  */
-export default function IterationProductsPanel({ products, withheld }: {
+export default function IterationProductsPanel({ products, withheld, base, onStartFromRadar }: {
   products?: IterationProducts;
   withheld?: string[];
+  /** Needed only to validate that selected directions still point at real nodes. */
+  base?: ColdStartBuildResult;
+  onStartFromRadar?: (request: { mode: Exclude<IterationMode, "auto">; initiativeProfile: "user_directed"; targetIds: string[]; prompt: string }) => void;
 }) {
   const view = useMemo(() => presentIterationProducts({ products, withheld }), [products, withheld]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const actionable = Boolean(base && onStartFromRadar && view.radar.length);
+  // Ids must exist on the presented item; the ranked list is what the user saw.
+  const presented = useMemo(
+    () => (products?.radarItems || []).map((item, index) => ({ ...view.radar[index], id: item.id })),
+    [products, view.radar],
+  );
+  const selection = useMemo(
+    () => (actionable && base && selected.length
+      ? radarSelectionToIteration({ base, selection: { directionIds: selected }, presented })
+      : undefined),
+    [actionable, base, selected, presented],
+  );
   if (view.isEmpty && !view.withheld.length) return null;
 
   return (
@@ -51,8 +71,21 @@ export default function IterationProductsPanel({ products, withheld }: {
         <section className="iteration-products-block">
           <h4>深化雷达（{view.radar.length} 个方向）</h4>
           <ul>
-            {view.radar.map(item => (
+            {view.radar.map((item, index) => (
               <li key={`${item.rank}-${item.direction}`}>
+                {actionable && (
+                  <input
+                    type="checkbox"
+                    aria-label={`选择方向：${item.direction}`}
+                    checked={selected.includes(presented[index]?.id || "")}
+                    onChange={(event) => {
+                      const id = presented[index]?.id || "";
+                      setSelected((current) => event.target.checked
+                        ? [...current, id]
+                        : current.filter(value => value !== id));
+                    }}
+                  />
+                )}
                 <span className="iteration-products-rank">#{item.rank}</span>
                 <strong>{item.axis}</strong>
                 <span> · {item.direction}</span>
@@ -63,6 +96,34 @@ export default function IterationProductsPanel({ products, withheld }: {
               </li>
             ))}
           </ul>
+          {actionable && (
+            <footer className="iteration-products-action">
+              <button
+                type="button"
+                disabled={!selected.length}
+                onClick={() => {
+                  if (!selection) return;
+                  onStartFromRadar!({
+                    mode: selection.request.mode as StartMode,
+                    initiativeProfile: "user_directed",
+                    targetIds: selection.request.targetIds,
+                    prompt: selection.request.prompt,
+                  });
+                }}
+              >
+                按所选方向开始下一轮（{selected.length}）
+              </button>
+              {selected.length > 0 && selection && (
+                <small>
+                  将研究 {selection.request.targetIds.length} 个节点 · 模式 {selection.request.mode}
+                  {selection.droppedDirections.length > 0 ? ` · ${selection.droppedDirections.length} 个方向不可用` : ""}
+                </small>
+              )}
+              {selected.length > 0 && selection && selection.request.targetIds.length === 0 && (
+                <small role="alert">所选方向指向的节点已不在当前快照中，无法据此发起研究。</small>
+              )}
+            </footer>
+          )}
         </section>
       )}
 
