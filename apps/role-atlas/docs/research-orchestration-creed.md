@@ -56,6 +56,7 @@
 | 20 | 规划器只提议：排序、拼接、挂载由代码决定 | `lib/iteration/graph.ts` `assembleProducts` | `tests/iteration-capabilities.test.ts` |
 | 21 | 研究主管不得扩大研究范围：卡片身份、findings、预算与范围来自工作项，模型只写问题、证据类别与检索方向 | `lib/iteration/supervisor.ts` | `tests/supervisor.test.ts` |
 | 22 | 研究工具只读且观察有界；引用必须落在本轮已收集的片段内 | `lib/iteration/research-tools.ts` | `tests/research-tools.test.ts` |
+| 23 | 用户确认的雷达方向决定下一轮范围：范围只取所选方向指向且仍存在的节点，有上限，且只能是 `user_directed` | `lib/iteration/radar-action.ts` | `tests/radar-action.test.ts` |
 | 14 | 不复用语义不匹配的启发式做新门禁 | review（见 §5） | `tests/augmentation.test.ts` 契约范例用例 |
 
 ### 2.3.1 研究主管的边界（第 21 条展开）
@@ -195,6 +196,7 @@ autonomous + 审计干净 + 全部 verified → auto
 
 1. **`productPlanner` 尚未接到 `route.ts`**；`researchAgent` 已接线，但由 `ROLE_ATLAS_RESEARCH_AGENT=1` 显式开启，默认关闭。
    **登记范围的更正**：Role Atlas 迭代运行时是岗位产品内部能力，不是 LearnFlow 的 Agent 工具；`architecture_registry.py` 中 `iteration.*` 与 `snapshot_iteration` 均为零引用，本次接入同样不新增该侧登记，也**不产生 LearnFlow Contract impact**（零 kernel target、无新增 LearnFlow 事件或工具）。可发现性由本文件与该应用的 `.env.example` 承担。
+2. **雷达方向可在界面勾选并转成下一轮请求**（`radar-action.ts`），但面板尚未接上该动作的按钮与调用。
 2. **per-product 分层账本只对 agent 研究计费**，尚未覆盖确定性检索路径与四类产物各自的额度。
 2b. **agent 研究已具备 plan（研究主管）与 run（worker + 检索/读源工具）**，但仍未被装配：`route.ts` 尚未构造它，因此默认关闭。
 3. **风险模块仍有死代码**：`lib/risk/graph.ts` 的 8 节点风险图、legacy 风险持久化函数与 `risk_issues` / `risk_patches` 表均无调用方；`RiskIssue.status` 七态机只写 `open`。是复活还是删除尚未裁决。

@@ -17,6 +17,9 @@ import type { RankedRadarItem } from "./products";
 
 export type RadarPresentation = {
   rank: number;
+  /** Machine-readable axis, kept so callers never have to parse a label. */
+  axisId: string;
+  /** Localized label for display only. */
   axis: string;
   direction: string;
   gapSignal: string;
@@ -68,6 +71,7 @@ export function radarAxisLabel(axis: string) {
 function presentRadarItem(item: RankedRadarItem): RadarPresentation {
   return {
     rank: item.rank,
+    axisId: item.axis,
     axis: radarAxisLabel(item.axis),
     direction: item.direction,
     gapSignal: item.gapSignal,
