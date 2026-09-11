@@ -11,8 +11,9 @@ const modes: Array<{ id: ProjectMode; icon: string; title: string; detail: strin
   { id: 'practice', icon: '03', title: '体验一个岗位任务', detail: '选择岗位包中的真实任务，转成学习方案，由导师带你实践。' },
 ]
 
-export default function ProjectsPage({ onOpen }: {
+export default function ProjectsPage({ onOpen, onProjectsChanged }: {
   onOpen: (project: FormalProjectWorkspace['project']) => void
+  onProjectsChanged?: () => void
 }) {
   const [projects, setProjects] = useState<FormalProjectWorkspace['project'][]>([])
   const [name, setName] = useState('')
@@ -44,6 +45,7 @@ export default function ProjectsPage({ onOpen }: {
     try {
       await deleteFormalProject(project.id)
       setProjects(previous => previous.filter(item => item.id !== project.id))
+      onProjectsChanged?.()
     } catch (error) {
       setError(error instanceof Error ? error.message : '项目删除失败')
     } finally { setBusy(false) }

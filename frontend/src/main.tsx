@@ -3159,7 +3159,7 @@ function App({ auth }: { auth: AuthGateSession }) {
     if (!tab) return null
     if (tab.kind === 'visual-hub') return <Suspense fallback={<p>正在载入图解库…</p>}><VisualHubPage/></Suspense>
     if (tab.kind === 'projects') {
-      return <Suspense fallback={<div className="page-loading">正在载入学习项目…</div>}><ProjectsPage onOpen={project => { refreshFormalProjects(); void openProjectTutor(project.id) }} /></Suspense>
+      return <Suspense fallback={<div className="page-loading">正在载入学习项目…</div>}><ProjectsPage onOpen={project => { refreshFormalProjects(); void openProjectTutor(project.id) }} onProjectsChanged={refreshFormalProjects} /></Suspense>
     }
     if (tab.kind === 'project' && tab.projectId) {
       return (
