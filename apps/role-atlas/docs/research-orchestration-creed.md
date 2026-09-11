@@ -193,7 +193,8 @@ autonomous + 审计干净 + 全部 verified → auto
 
 本文描述的是已落地并接线的内容。以下仍是缺口，不应被读作已完成：
 
-1. **`productPlanner` / `researchAgent` 尚未接到 `route.ts`**：两者都是可选注入，默认关闭。接线后才成为 HTTP 可达能力，届时须补 registry 登记与 Contract impact 声明。
+1. **`productPlanner` 尚未接到 `route.ts`**；`researchAgent` 已接线，但由 `ROLE_ATLAS_RESEARCH_AGENT=1` 显式开启，默认关闭。
+   **登记范围的更正**：Role Atlas 迭代运行时是岗位产品内部能力，不是 LearnFlow 的 Agent 工具；`architecture_registry.py` 中 `iteration.*` 与 `snapshot_iteration` 均为零引用，本次接入同样不新增该侧登记，也**不产生 LearnFlow Contract impact**（零 kernel target、无新增 LearnFlow 事件或工具）。可发现性由本文件与该应用的 `.env.example` 承担。
 2. **per-product 分层账本只对 agent 研究计费**，尚未覆盖确定性检索路径与四类产物各自的额度。
 2b. **agent 研究已具备 plan（研究主管）与 run（worker + 检索/读源工具）**，但仍未被装配：`route.ts` 尚未构造它，因此默认关闭。
 3. **风险模块仍有死代码**：`lib/risk/graph.ts` 的 8 节点风险图、legacy 风险持久化函数与 `risk_issues` / `risk_patches` 表均无调用方；`RiskIssue.status` 七态机只写 `open`。是复活还是删除尚未裁决。

@@ -5,7 +5,7 @@ import { prepareBuildInput, stableHash } from "@/lib/build/compiler";
 import { qualifySources } from "@/lib/build/workflow";
 import { refreshRolePackageManifest } from "@/lib/packages/role-package-manifest";
 import { createColdStartSkill, mergeResearchReports } from "@/lib/build/graph";
-import type { ColdStartBuildResult, ColdStartRequest, SourceInput, WebResearchReport } from "@/lib/build/types";
+import type { ColdStartBuildResult, ColdStartRequest, SourceAsset, SourceInput, SourceSegment, WebResearchReport } from "@/lib/build/types";
 import { applyGraphPatch, computeSemanticDiff, proposeSafePatch } from "@/lib/risk/patch";
 import type { GraphPatch } from "@/lib/risk/types";
 import type { AugmentationProposal } from "./augmentation";
@@ -203,7 +203,17 @@ export function createSnapshotIterationSkill(input: {
       round: number;
       signal?: AbortSignal;
     }) => Promise<ResearchTaskCard[] | undefined>;
-    run: (card: ResearchTaskCard, input: { signal?: AbortSignal }) => Promise<ResearchWorkerResult>;
+    /**
+     * `run` receives the round's current request plus the candidate's own
+     * segments/assets, so a caller can build read-only tools over exactly the
+     * material this round has — not over whatever happens to be on disk.
+     */
+    run: (card: ResearchTaskCard, input: {
+      signal?: AbortSignal;
+      request: ColdStartRequest;
+      segments: SourceSegment[];
+      assets: SourceAsset[];
+    }) => Promise<ResearchWorkerResult>;
     concurrency?: number;
     /**
      * Caller-owned ledger. When present, agent research is charged through it so
@@ -500,10 +510,15 @@ export function createSnapshotIterationSkill(input: {
         });
         return [];
       }
+      const workerContext = {
+        request: coldStartRequest({ state, sources: reconstructSourceInputs(state.candidate) }),
+        segments: state.candidate.sources.segments,
+        assets: state.candidate.sources.assets,
+      };
       const results = await runResearchWorkers({
         cards: funded,
         concurrency: input.researchAgent.concurrency,
-        runOne: card => input.researchAgent!.run(card, { signal }),
+        runOne: card => input.researchAgent!.run(card, { signal, ...workerContext }),
       });
       const claims = results.flatMap(result => result.claims);
       emit(state, "iteration.claims.reviewed", "research", {

@@ -9,6 +9,8 @@ import { z } from "zod/v4";
 import type { ModelInvoker } from "@/lib/agent/model";
 import { createRecordedModelInvoker } from "@/lib/research-collection/model";
 import { createSnapshotIterationSkill } from "@/lib/iteration/graph";
+import { buildResearchAgent, ledgerForRun, researchAgentEnabled } from "@/lib/iteration/research-agent";
+import { DEFAULT_ITERATION_BUDGET } from "@/lib/iteration/types";
 import { iterationBriefError } from "@/lib/iteration/brief";
 import { iterationTargetNodes } from "@/lib/iteration/targets";
 import {
@@ -178,11 +180,26 @@ export async function POST(request: Request) {
 
   const execution = startRoleJobExecution(iterationRequest.runId, jobOwner);
 
+  // Agent research is opt-in per deployment: enabling it changes what an
+  // iteration actually does and spends model budget, so it must be an explicit
+  // operator decision. Unset keeps the deterministic path exactly as before.
+  const researchAgent = researchAgentEnabled()
+    ? buildResearchAgent({
+      model,
+      ...(searchConfig ? { searchConfig } : {}),
+      budgetLedger: ledgerForRun({
+        queryBudget: iterationRequest.queryBudget ?? DEFAULT_ITERATION_BUDGET.queryBudget,
+        maxRounds: iterationRequest.maxRounds,
+      }),
+    })
+    : undefined;
+
   const graph = createSnapshotIterationSkill({
     model,
     modelLabel,
     initialSeq: await lastRoleEventSequence(iterationRequest.runId),
     searchConfig,
+    ...(researchAgent ? { researchAgent } : {}),
     onCheckpoint: async (phase, state) => {
       await assertRoleJobLease(iterationRequest.runId, jobOwner);
       if (!await checkpointRoleJob({ jobId: iterationRequest.runId, owner: jobOwner, kind: jobKind, phase, state })) throw new Error("JOB_LEASE_LOST");
