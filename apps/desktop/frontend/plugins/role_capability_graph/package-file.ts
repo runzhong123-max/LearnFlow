@@ -39,6 +39,23 @@ type RolePackageFileBundle = {
 
 export const BUILTIN_ROLE_PACKAGE_ROOT = fileURLToPath(new URL('./data/packages', import.meta.url))
 
+/**
+ * Where a newly installed package lands when the caller does not name a root.
+ *
+ * The bundled root ships with the application and is read-only once packaged,
+ * so a deployment that installs packages at runtime (or a desktop user doing
+ * the same) points `LEARNFLOW_ROLE_PACKAGE_HOME` at a writable directory.
+ * Unset keeps the previous behaviour exactly.
+ *
+ * Installing into a root that `defaultPackageSources()` does not scan would
+ * leave the package invisible to `resolve()` — the original defect — so the
+ * runtime adds this same root as an `installed` source.
+ */
+export function rolePackageInstallRoot() {
+  const configured = String(process.env.LEARNFLOW_ROLE_PACKAGE_HOME || '').trim()
+  return configured ? resolve(configured) : BUILTIN_ROLE_PACKAGE_ROOT
+}
+
 function canonicalValue(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonicalValue)
   if (value && typeof value === 'object') {
@@ -162,7 +179,7 @@ function packageDirectoryName(packageId: string) {
 
 export async function installRolePackageFile(input: { packageFile: string; packageRoot?: string; dryRun?: boolean }) {
   const inspected = await inspectRolePackageFile(input.packageFile)
-  const root = resolve(input.packageRoot || BUILTIN_ROLE_PACKAGE_ROOT)
+  const root = resolve(input.packageRoot || rolePackageInstallRoot())
   const existing = await installedVersion(root, inspected.bundle.manifest)
   if (existing) {
     if (existing.manifest.rootHash !== inspected.bundle.manifest.rootHash) throw new Error('role_package_version_conflict')

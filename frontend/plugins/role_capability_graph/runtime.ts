@@ -9,6 +9,7 @@ import {
   type PluginJson,
   type PluginToolResult,
 } from '../../src/plugin-api.ts'
+import { rolePackageInstallRoot } from './package-file.ts'
 const {
   ROLE_CAPABILITY_PLUGIN,
   ROLE_OBJECT_SCHEMA_VERSION,
@@ -177,7 +178,7 @@ export type RolePackageSource = {
   accessScope: 'official' | 'reviewed_public' | 'owner_private' | 'simulation_all' | 'installed'
 }
 
-function defaultPackageSources(): RolePackageSource[] {
+export function defaultPackageSources(): RolePackageSource[] {
   const sources: RolePackageSource[] = [{ root: PACKAGE_ROOT, sourceKind: 'official_builtin', accessScope: 'official' }]
   const explicitRoots = (process.env.LEARNFLOW_ROLE_AGENT_PACKAGE_ROOTS || '').split(delimiter).filter(Boolean)
   const inferredRoots = process.env.NODE_ENV === 'production' ? [] : [
@@ -188,6 +189,14 @@ function defaultPackageSources(): RolePackageSource[] {
     if (existsSync(absolute) && !sources.some(source => resolve(source.root) === absolute)) {
       sources.push({ root: absolute, sourceKind: 'role_agent_simulation', accessScope: 'simulation_all' })
     }
+  }
+  // Packages installed at runtime land outside the bundled root. Without this
+  // source they would be on disk yet invisible to resolve(), which is exactly
+  // how a pinned reference ends up failing with role_package_not_found.
+  const installRoot = rolePackageInstallRoot()
+  if (installRoot !== resolve(PACKAGE_ROOT) && existsSync(installRoot)
+    && !sources.some(source => resolve(source.root) === installRoot)) {
+    sources.push({ root: installRoot, sourceKind: 'installed', accessScope: 'installed' })
   }
   return sources
 }
