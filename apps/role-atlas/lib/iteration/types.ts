@@ -32,10 +32,34 @@ export const snapshotIterationRequestSchema = z.object({
   learningPathGraph: learningPathGraphInputSchema,
   learningMountFeedback: z.array(z.object({ roleNodeId: z.string().min(1).max(220), reason: z.string().max(1_000), researchGoal: z.string().max(1_500) })).max(40).default([]),
   webResearch: z.boolean().default(true),
-  maxRounds: z.number().int().min(1).max(12).default(12),
-  sourceLimit: z.number().int().min(4).max(64).default(64),
-  maxWorkItems: z.number().int().min(3).max(32).default(32),
+  /**
+   * Budget ceilings. Defaults are exactly the values that used to be literals,
+   * so an existing request keeps its behaviour; only the maxima moved, which is
+   * what makes "more budget" reachable without changing any current caller.
+   */
+  maxRounds: z.number().int().min(1).max(40).default(12),
+  sourceLimit: z.number().int().min(4).max(256).default(64),
+  maxWorkItems: z.number().int().min(3).max(128).default(32),
+  /**
+   * Optional so existing callers that build a request literal keep compiling.
+   * Read through DEFAULT_ITERATION_BUDGET, never as a bare number.
+   */
+  queryBudget: z.number().int().min(8).max(768).optional(),
+  stagnantRoundLimit: z.number().int().min(1).max(8).optional(),
 });
+
+/**
+ * The values these limits used to be hard-coded to. Named once so "unchanged by
+ * default" is a single readable fact rather than a number repeated in the graph,
+ * the planner, the brief and two follow-up paths.
+ */
+export const DEFAULT_ITERATION_BUDGET = {
+  maxRounds: 12,
+  sourceLimit: 64,
+  maxWorkItems: 32,
+  queryBudget: 192,
+  stagnantRoundLimit: 2,
+} as const;
 
 export type InitiativeProfile = z.infer<typeof initiativeProfileSchema>;
 export type IterationMode = z.infer<typeof iterationModeSchema>;

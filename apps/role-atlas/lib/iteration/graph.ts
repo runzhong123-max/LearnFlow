@@ -22,6 +22,7 @@ import {
   planIterationResearch,
   planIterationWork,
 } from "./planner";
+import { DEFAULT_ITERATION_BUDGET } from "./types";
 import type {
   IterationContract,
   IterationEvent,
@@ -300,7 +301,8 @@ export function createSnapshotIterationSkill(input: {
     });
     const enabled = state.request.webResearch && Boolean(input.searchConfig);
     const previousQueries = new Set(state.researchPlans.flatMap(item => item.queries.map(query => `${query.category}:${query.query}`)));
-    const remainingQueryBudget = Math.max(0, 192 - state.researchPlans.reduce((sum, item) => sum + item.queries.length, 0));
+    const queryBudget = state.request.queryBudget ?? DEFAULT_ITERATION_BUDGET.queryBudget;
+    const remainingQueryBudget = Math.max(0, queryBudget - state.researchPlans.reduce((sum, item) => sum + item.queries.length, 0));
     const activeResearchPlan = { ...plan, queries: enabled ? plan.queries.filter(query => !previousQueries.has(`${query.category}:${query.query}`)).slice(0, remainingQueryBudget) : [] };
     emit(state, "iteration.research.plan.created", "research", {
       plan: activeResearchPlan,
@@ -555,11 +557,14 @@ export function createSnapshotIterationSkill(input: {
       || state.workItems.some(item => item.requiresResearch && item.status === "known_gap");
     const canUseEvidence = state.candidate.sources.assets.some(asset => asset.kind !== "user_brief" && asset.qualification?.status !== "quarantined")
       || state.request.supplementalSources.length > 0 || state.collectedSources?.length > 0;
+    // Rounds 1..n share one query budget; a quarter of it is the point at which
+    // continuing to search stops being worthwhile (48 of the default 192).
+    const searchBudgetFloor = Math.ceil((state.request.queryBudget ?? DEFAULT_ITERATION_BUDGET.queryBudget) / 4);
     const hasSearchBudget = state.request.webResearch && Boolean(input.searchConfig)
-      && state.researchPlans.reduce((sum, plan) => sum + plan.queries.length, 0) < 48;
+      && state.researchPlans.reduce((sum, plan) => sum + plan.queries.length, 0) < searchBudgetFloor;
     const attempted = new Set(state.researchPlans.flatMap(plan => plan.workItemIds));
     const unattempted = state.workItems.some(item => item.requiresResearch && item.status !== "completed" && !attempted.has(item.id));
-    return researchable && (hasSearchBudget || canUseEvidence) && ((state.stagnantRounds || 0) < 2 || unattempted) ? "retry" : "finish";
+    return researchable && (hasSearchBudget || canUseEvidence) && ((state.stagnantRounds || 0) < (state.request.stagnantRoundLimit ?? DEFAULT_ITERATION_BUDGET.stagnantRoundLimit) || unattempted) ? "retry" : "finish";
   };
 
   const nextRound = async (state: IterationStateType) => {

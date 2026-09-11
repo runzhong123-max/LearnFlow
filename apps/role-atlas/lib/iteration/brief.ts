@@ -1,4 +1,4 @@
-import { snapshotIterationRequestSchema, type InitiativeProfile, type IterationMode, type SnapshotIterationRequest } from "./types";
+import { DEFAULT_ITERATION_BUDGET, snapshotIterationRequestSchema, type InitiativeProfile, type IterationMode, type SnapshotIterationRequest } from "./types";
 import type { LearningPathGraphInput, SourceInput } from "@/lib/build/types";
 import type { WorkspaceSkillContext } from "@/lib/skills/workspace";
 
@@ -39,7 +39,8 @@ export function conversationIterationRequest(input: {
     initiativeProfile: draft.initiativeProfile, mode: draft.mode, prompt: input.prompt.trim(), targetIds,
     targetAsOf: draft.targetAsOf || undefined, supplementalSources: input.materials,
     learningPathGraph: input.learningPathGraph, webResearch: input.webResearch,
-    maxRounds: 12, sourceLimit: 64, maxWorkItems: 32,
+    maxRounds: DEFAULT_ITERATION_BUDGET.maxRounds, sourceLimit: DEFAULT_ITERATION_BUDGET.sourceLimit,
+    maxWorkItems: DEFAULT_ITERATION_BUDGET.maxWorkItems,
   });
 }
 
