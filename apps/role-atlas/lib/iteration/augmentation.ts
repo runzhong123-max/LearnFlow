@@ -68,7 +68,8 @@ export type AugmentationRejection = {
 };
 
 export type AugmentationReport = {
-  acceptedNodes: AugmentationNode[];
+  /** Proposal-local temp ids are retained so a splice can map them to compiled ids. */
+  acceptedNodes: Array<AugmentationNode & { tempId: string }>;
   acceptedEdges: AugmentationEdge[];
   rejections: AugmentationRejection[];
   /** True only when every proposed piece survived all four gates. */
@@ -198,7 +199,7 @@ export function validateAugmentation(input: {
   }
 
   // Gate 4: duplicate labels and unresolvable edge endpoints are structural.
-  const acceptedNodes: AugmentationNode[] = [];
+  const acceptedNodes: Array<AugmentationNode & { tempId: string }> = [];
   const acceptedTempIds = new Set<string>();
   const labelOwner = new Map(existingLabels);
   for (const node of evidenceAccepted) {
