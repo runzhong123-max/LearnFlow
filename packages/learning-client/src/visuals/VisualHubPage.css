@@ -6,6 +6,11 @@
 
 .visual-hub-page {
   box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 32px;
+  -webkit-overflow-scrolling: touch;
   color: var(--text-primary, #15221d);
   overscroll-behavior: contain;
   scrollbar-gutter: stable;

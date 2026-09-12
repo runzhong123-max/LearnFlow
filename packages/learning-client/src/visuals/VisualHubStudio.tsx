@@ -9,11 +9,11 @@ const emptyConfig: Config = {base_url: '', model: '', api_key: ''}
 const errorText = (error: unknown) => error instanceof Error ? error.message : '操作未完成，请重试。'
 
 /** Credentials remain component-local; the existing workspace only receives artifact operations. */
-export default function VisualHubStudio({request, active}: {request: HubRequest; active: boolean}) {
+export default function VisualHubStudio({request, active, initialRequest = '', initialKind = 'animation'}: {request: HubRequest; active: boolean; initialRequest?: string; initialKind?: VisualWorkKind}) {
   const [config, setConfig] = useState<Config>(emptyConfig)
   const [settingsOpen, setSettingsOpen] = useState(true)
-  const [draft, setDraft] = useState('')
-  const [kind, setKind] = useState<VisualWorkKind>('animation')
+  const [draft, setDraft] = useState(initialRequest)
+  const [kind, setKind] = useState<VisualWorkKind>(initialKind)
   const [source, setSource] = useState<VisualSourceMode>('fresh')
   const [busy, setBusy] = useState(false)
   const [testing, setTesting] = useState(false)

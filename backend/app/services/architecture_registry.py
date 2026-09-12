@@ -44,7 +44,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-12.1"
+REGISTRY_VERSION = "2026-09-13.1"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Source-data contracts, not Agent-callable tools or learner-state writers.
@@ -295,7 +295,7 @@ TOOLS = {
         ToolContract("checkpoint_delivery_readiness", "Teaching Package and Atomic Task Readiness Projection", "learning_design_agent", "learnflow", "projection",
                      (), (), "existing Source/Lecture/Question/Exercise/Assessment -> package readiness; learner-owned LearningTask -> task readiness; optional answer-free Knowledge ContextPacket stays a separate read-only design input; compatibility summary retained and no mastery inference"),
         ToolContract("educational_visual_plugin", "Educational Visuals Plugin", "learning_design_agent", "vnext", "artifact",
-                     (), (), "namespaced plugin tools or visual_hub BYOK studio -> resumable source/builder graph -> host-validated private work references; Hub model credentials are request-only with public HTTPS pinned egress, no platform-key fallback; no core learner object or kernel writes"),
+                     (), (), "chat create -> exact-topic existing work reuse or context-prefilled studio_draft; visual_hub BYOK studio -> user-started resumable source/builder graph -> host-validated private work references; Hub model credentials are request-only with public HTTPS pinned egress, no platform-key fallback; no core learner object or kernel writes"),
         ToolContract("visual_artifact_workspace", "Private Visual Works and Workflow Checkpoints", "learning_design_agent", "learnflow", "harness",
                      (), (), "authenticated owned jobs -> immutable source revisions and parameter runs + view state; optimistic version checks, bounded JSON, event audit; generated works never enter public library automatically"),
         ToolContract("visual_content_library", "Maintained Visual Recipes and Capability Discovery", "learning_design_agent", "vnext", "harness",

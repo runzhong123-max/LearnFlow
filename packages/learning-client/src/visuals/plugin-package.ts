@@ -1,5 +1,5 @@
 import {
-  VISUAL_WORKFLOW_VERSION, createVisualWork, searchVisualWorks, openVisualWork,
+  VISUAL_WORKFLOW_VERSION, recommendVisualWork, searchVisualWorks, openVisualWork,
   iterateVisualWork, resumeVisualWork, cancelVisualWork,
   type VisualWorkEnvelope, type VisualWorkflowContext, type VisualWorkKind, type VisualSourceMode,
 } from './workflow.ts'
@@ -43,7 +43,7 @@ export function createEducationalVisualsPlugin<Package>(api:PluginAPI<Package>):
       description:'检索、从零构建、改编和恢复可回放教学图解与动画；保存独立作品版本。',defaultEnabled:false,
       objects:[{
         type:'visual_work',title:'图解与动画作品',description:'持久化作品引用或可恢复工作进度；源规格与场景按需读取。',schemaVersion:VISUAL_WORKFLOW_VERSION,
-        schema:schema({schema_version:{type:'string',enum:[VISUAL_WORKFLOW_VERSION]},status:{type:'string',enum:['ready','paused','cancelled','search_results']},title:string(300),job_id:revision,stage:string(80),artifact:{type:'object'},results:{type:'array',maxItems:20,items:{type:'object'}},catalog:{type:'array',maxItems:8,items:{type:'object'}},jobs:{type:'array',maxItems:10,items:{type:'object'}},message:string(600),parent_revision_id:revision},['schema_version','status','title']),
+        schema:schema({schema_version:{type:'string',enum:[VISUAL_WORKFLOW_VERSION]},status:{type:'string',enum:['ready','paused','cancelled','search_results']},title:string(300),job_id:revision,stage:string(80),artifact:{type:'object'},results:{type:'array',maxItems:20,items:{type:'object'}},catalog:{type:'array',maxItems:8,items:{type:'object'}},jobs:{type:'array',maxItems:10,items:{type:'object'}},message:string(600),parent_revision_id:revision,studio_draft:{type:'object',properties:{request,kind},required:['request','kind'],additionalProperties:false}},['schema_version','status','title']),
         validate:(value:unknown)=>{
           const envelope=value as VisualWorkEnvelope
           if(envelope.status==='ready'&&!envelope.artifact?.revision_id)return ['ready visual_work requires a persisted revision']
@@ -52,7 +52,7 @@ export function createEducationalVisualsPlugin<Package>(api:PluginAPI<Package>):
         },
       }],
       tools:[
-        tool('create','创建图解与动画','用户明确要求图解或动画时调用。保留完整主题与输入；auto检索后明确选择复用、改编或从零，fresh跳过案例检索。',{request,kind,source_mode:{type:'string',enum:['auto','reuse','adapt','fresh']},base_revision_id:revision,request_id:requestId},['request','kind']),
+        tool('create','创建图解与动画','用户明确要求图解或动画时调用。优先直接打开高度相关已有作品；没有合适作品则提供预填的我的创作工作台，由用户配置自己的模型并生成。',{request,kind,source_mode:{type:'string',enum:['auto','reuse','adapt','fresh']},base_revision_id:revision,request_id:requestId},['request','kind']),
         tool('search','检索图解与动画','用户寻找现有作品时检索自己的已保存版本与重点维护案例；返回小型引用和候选元数据。',{query:{type:'string',maxLength:6000},kind},['query'],true),
         tool('open','打开图解与动画','按已知revision_id读取并展示既有作品；不重新生成。',{revision_id:revision},['revision_id'],true),
         tool('iterate','修改图解与动画','用户要求修改已有作品时按revision_id创建子版本；原作品保持可用，修改说明必须保留用户具体输入。',{revision_id:revision,request,kind,request_id:requestId},['revision_id','request']),
@@ -62,13 +62,13 @@ export function createEducationalVisualsPlugin<Package>(api:PluginAPI<Package>):
       skills:[{
         id:'visual_workflow',title:'图解与动画工作流',description:'Tutor协调下的learning_design视觉产物工作流。',
         whenToUse:'用户明确要求可视化、查找图解、修改或恢复图解作品。',whenNotToUse:'普通讲解不强制激活；不负责评分、学习者画像或掌握判定。',
-        instructions:'保留用户输入与来源模式。已有revision修改用iterate，已有job继续用resume，不能新建替代。新作品由create完成检索、精确选源、VisualSpec或SVGStory构建、有限修复和后端发布；不要求先完成长篇文字讲解。内部Hub按模块、章节和session组织；curriculum_sessions中的planned只是待制作选题，不能称为现成作品。interactive_html为维护专用版本，只可精确复用，画面内参数可交互；新建和改编使用生成builder。维护库没命中仍保留从零生成。ready仅表示服务端已保存作品，检查范围读取verification；paused说明进度已存储，提示继续或修改，不能声称生成成功。插件没有独立主Agent控制权，不写五核，不把生成、观看或交互当成掌握证据。',
+        instructions:'保留用户输入与来源模式。已有revision修改用iterate，已有job继续用resume，不能新建替代。聊天create只检索并复用高度相关作品；未命中或要求从零制作时返回studio_draft，提示打开我的创作配置模型并生成，禁止自动继续构建；不要求先完成长篇文字讲解。内部Hub按模块、章节和session组织；curriculum_sessions中的planned只是待制作选题，不能称为现成作品。interactive_html为维护专用版本，只可精确复用，画面内参数可交互；新建和改编使用生成builder。维护库没命中仍保留从零生成。ready仅表示服务端已保存作品，检查范围读取verification；paused说明进度已存储，提示继续或修改，不能声称生成成功。插件没有独立主Agent控制权，不写五核，不把生成、观看或交互当成掌握证据。',
         tools:['create','search','open','iterate','resume','cancel'],objectTypes:['visual_work'],
       }],
       renderers:[{id:'visual_work',title:'图解与动画工作区',description:'按版本引用读取并呈现图解、动画和可恢复工作状态。'}],
     },
     handlers:{
-      create:async(input:Record<string,unknown>,context:VisualWorkflowContext)=>result(await createVisualWork({request:input.request as string,kind:input.kind as VisualWorkKind,source_mode:input.source_mode as VisualSourceMode|undefined,base_revision_id:input.base_revision_id as string|undefined,request_id:input.request_id as string|undefined},context)),
+      create:async(input:Record<string,unknown>,context:VisualWorkflowContext)=>result(await recommendVisualWork({request:input.request as string,kind:input.kind as VisualWorkKind,source_mode:input.source_mode as VisualSourceMode|undefined,base_revision_id:input.base_revision_id as string|undefined,request_id:input.request_id as string|undefined},context)),
       search:async(input:Record<string,unknown>,context:VisualWorkflowContext)=>result(await searchVisualWorks(input.query as string,input.kind as VisualWorkKind|undefined,context)),
       open:async(input:Record<string,unknown>,context:VisualWorkflowContext)=>result(await openVisualWork(input.revision_id as string,context)),
       iterate:async(input:Record<string,unknown>,context:VisualWorkflowContext)=>result(await iterateVisualWork({revision_id:input.revision_id as string,request:input.request as string,kind:input.kind as VisualWorkKind|undefined,request_id:input.request_id as string|undefined},context)),

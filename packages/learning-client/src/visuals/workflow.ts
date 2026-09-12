@@ -14,6 +14,7 @@ export type VisualWorkEnvelope = {
   job_id?: string; stage?: string; artifact?: VisualWorkRef; results?: VisualWorkRef[]
   curriculum_sessions?: Array<Record<string,unknown>>
   catalog?: VisualCatalog['templates']; jobs?: Array<Record<string,unknown>>
+  studio_draft?: {request: string; kind: VisualWorkKind}
   message?: string; parent_revision_id?: string
 }
 export type VisualArtifactHost = {
@@ -200,6 +201,34 @@ async function requestIdentity(input:CreateVisualWork,context:VisualWorkflowCont
   const seed=JSON.stringify({scope:context.scope,request:input.request,kind:input.kind,mode:input.source_mode,base:input.base_revision_id})
   const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(seed))
   return 'visual-'+Array.from(new Uint8Array(hash)).map(byte=>byte.toString(16).padStart(2,'0')).join('')
+}
+
+/** Chat may reuse content, but authoring starts only in the user's model workbench. */
+export async function recommendVisualWork(input:CreateVisualWork,context:VisualWorkflowContext):Promise<VisualWorkEnvelope> {
+  const host=hostFor(context);aborted(context)
+  let recent=''
+  try {
+    const data=JSON.parse(host.context.split('\n<recent_visual_references>')[0])
+    recent=(data.messages||[]).slice(-3).map((m:{role:string;content:string})=>`${m.role==='user'?'用户':'Tutor'}：${clean(m.content,1400)}`).join('\n')
+  } catch { /* Only structured conversation messages belong in the brief. */ }
+  const draft={request:clean(`${input.request}${recent?'\n\n对话参考：\n'+recent:''}`,6000),kind:input.kind}
+  const fallback:VisualWorkEnvelope={schema_version:VISUAL_WORKFLOW_VERSION,status:'search_results',title:'在我的创作中制作动画与图解',studio_draft:draft,message:'没有找到足够匹配的现成作品。已准备创作要求，请前往“我的创作”配置自己的模型后生成。'}
+  if(input.source_mode==='fresh'||input.source_mode==='adapt'||requestsFreshVisual(input.request))return {...fallback,message:'创作要求已准备好，请前往“我的创作”配置自己的模型后生成。'}
+  const found=await searchVisualWorks(input.request,input.kind,context)
+  aborted(context)
+  // Catalog scores >= 10 require an exact topic alias, rather than incidental text overlap.
+  const exactId=input.request.match(/\btemplate_id=([a-zA-Z0-9_.:-]+)/)?.[1]
+  const exactVersion=input.request.match(/\btemplate_version=([a-zA-Z0-9_.:-]+)/)?.[1]
+  const template=found.catalog?.find(t=>exactId?t.id===exactId&&t.version===exactVersion:Number(t.score)>=10)
+  if(template) {
+    const reused=await createVisualWork({...input,request:`template_id=${template.id} template_version=${template.version}\n${input.request}`.slice(0,6000),source_mode:'reuse'},{...context,artifactHost:{...host,generate:async()=>{throw new Error('visual_reuse_only')}}})
+    if(reused.status==='ready')return reused
+    return {...fallback,message:'现有作品暂时无法打开。可前往“我的创作”配置模型后制作。'}
+  }
+  // Private retrieval scores use a different scale. Only an exact title match is automatic.
+  const own=found.results?.find(item=>item.title.length>=4&&input.request.toLocaleLowerCase().includes(item.title.toLocaleLowerCase()))
+  if(own)return openVisualWork(own.revision_id,context)
+  return fallback
 }
 
 export async function createVisualWork(input:CreateVisualWork,context:VisualWorkflowContext):Promise<VisualWorkEnvelope> {

@@ -1098,7 +1098,7 @@ function App({ auth }: { auth: AuthGateSession }) {
     if (!activeTab) return
     if (pendingConversionChatId.current) return
     const path = pathForTab(activeTab)
-    window.history.replaceState({ tabId: activeTab.id }, '', activeTab.kind === 'ecosystem' && window.location.pathname === '/ecosystem' ? ecosystemEntryPath(window.location.search) : path)
+    window.history.replaceState({ tabId: activeTab.id }, '', activeTab.kind === 'ecosystem' && window.location.pathname === '/ecosystem' ? ecosystemEntryPath(window.location.search) : activeTab.kind === 'visual-hub' ? path + window.location.hash : path)
     document.title = `${activeTab.title} · LearnFlow`
   }, [activeTab])
 

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import {createVisualWork,resumeVisualWork,cancelVisualWork,parseVisualWorkflowCandidate,directVisualWorkflowCall,type VisualWorkflowContext} from './workflow.ts'
+import {recommendVisualWork,createVisualWork,resumeVisualWork,cancelVisualWork,parseVisualWorkflowCandidate,directVisualWorkflowCall,type VisualWorkflowContext} from './workflow.ts'
 import {OFFLINE_VISUAL_CATALOG} from './authoring.ts'
 import {createEducationalVisualsPlugin} from './plugin-package.ts'
 import * as webAPI from '../../../../frontend/src/plugin-api.ts'
@@ -157,4 +157,44 @@ test('repair persists the latest precise diagnostic for the next resume',async()
   assert.equal(result.status,'paused')
   assert.ok(result.message?.includes('/steps/1/active_nodes'))
   assert.equal(setup.job.route.diagnostic,setup.job.diagnostics[0].detail)
+})
+
+
+test('chat miss and weak matches hand off context without generation or jobs', async()=>{
+  for(const score of [0,1.8]) {
+    const setup=harness([])
+    const original=setup.context.artifactHost!.request
+    setup.context.artifactHost!.context=JSON.stringify({messages:[{role:'assistant',content:'CNN 卷积、池化再分类'}]})
+    setup.context.artifactHost!.request=async(op,payload)=>op==='catalog'?{...OFFLINE_VISUAL_CATALOG,templates:[{...template,score}]}:original(op,payload)
+    const result=await recommendVisualWork({request:'可以用动画演示一下 CNN 吗',kind:'animation'},setup.context)
+    assert.equal(result.status,'search_results')
+    assert.match(result.studio_draft!.request,/CNN 卷积/)
+    assert.equal(result.studio_draft!.kind,'animation')
+    assert.equal(setup.calls.some(c=>c.operation==='start_job'),false)
+    assert.equal(setup.prompts.length,0)
+  }
+})
+test('chat exact maintained topic reuses without any model generation',async()=>{
+  const setup=harness([],{templates:true})
+  const original=setup.context.artifactHost!.request
+  setup.context.artifactHost!.request=async(op,payload)=>op==='catalog'?{...OFFLINE_VISUAL_CATALOG,templates:[{...template,score:10.5}]}:original(op,payload)
+  const result=await recommendVisualWork({request:'消息传递动画',kind:'animation'},setup.context)
+  assert.equal(result.status,'ready')
+  assert.equal(setup.prompts.length,0)
+})
+test('chat fresh request only prepares a workbench even with matching catalog',async()=>{
+  const setup=harness([],{templates:true})
+  const result=await recommendVisualWork({request:'从零制作消息传递动画',kind:'animation'},setup.context)
+  assert.ok(result.studio_draft)
+  assert.equal(setup.calls.length,0)
+  assert.equal(setup.prompts.length,0)
+})
+
+test('plugin create preserves the prefilled workbench envelope',async()=>{
+  const setup=harness([])
+  const plugin=createEducationalVisualsPlugin(webAPI)
+  const result=await plugin.handlers.create({request:'制作一个陌生机制的动画',kind:'animation'},setup.context)
+  assert.equal((result.payload as any).studio_draft.request,'制作一个陌生机制的动画')
+  assert.equal((result.payload as any).status,'search_results')
+  assert.equal(setup.generations,0)
 })

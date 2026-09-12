@@ -1162,7 +1162,7 @@ function App({ auth }: { auth: AuthGateSession }) {
 
   useEffect(() => {
     if (!activeTab) return
-    window.history.replaceState({ tabId: activeTab.id }, '', pathForTab(activeTab))
+    window.history.replaceState({ tabId: activeTab.id }, '', pathForTab(activeTab) + (activeTab.kind === 'visual-hub' ? window.location.hash : ''))
     document.title = `${activeTab.title} · LearnFlow`
   }, [activeTab])
 
