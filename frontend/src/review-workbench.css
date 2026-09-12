@@ -1,6 +1,6 @@
 .review-page { flex: 1; min-height: 0; overflow-y: auto; background: #f5f7f3; color: #14251e; }
 .review-page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; padding: 38px 0 26px; border-bottom: 1px solid #dce5df; }
-.review-page-heading h1 { margin: 7px 0 5px; font-size: clamp(28px, 3vw, 42px); line-height: 1; letter-spacing: -.04em; }
+.review-page-heading h1 { margin: 7px 0 5px; font-size: var(--fs-page-title, 28px); line-height: 1; letter-spacing: -.04em; }
 .review-page-heading p { margin: 0; color: #65736c; font-size: 14px; }
 .review-kicker { color: #668077; font-size: 10px; font-weight: 800; letter-spacing: .18em; }
 .review-summary-cards { display: flex; gap: 8px; }
@@ -124,12 +124,12 @@
 /* 桌面工作台：压缩装饰信息，优先呈现复习动作与证据。 */
 .review-page-heading {
   align-items: center;
-  padding: 24px 0 18px;
+  padding: var(--page-title-top, 24px) 0 var(--page-title-bottom, 18px);
 }
 
 .review-page-heading h1 {
   margin: 0 0 5px;
-  font-size: 28px;
+  font-size: var(--fs-page-title, 28px);
   line-height: 1.2;
   letter-spacing: -.025em;
 }

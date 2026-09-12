@@ -8,12 +8,12 @@
   align-items: center;
   max-width: none;
   margin-bottom: 16px;
-  padding-bottom: 17px;
+  padding-block: var(--page-title-top, 24px) var(--page-title-bottom, 18px);
 }
 
 .learning-files-page .file-page-heading h1 {
   margin: 0 0 5px;
-  font-size: 28px;
+  font-size: var(--fs-page-title, 28px);
   line-height: 1.2;
 }
 
