@@ -126,6 +126,14 @@ test('BYOK configuration errors keep actionable reasons instead of attempting vi
   assert.ok(!setup.calls.some(c=>c.operation==='publish'))
 })
 
+test('desktop planner credential errors are not presented as VisualSpec validation failures', async () => {
+  const setup=harness([new Error('409: 桌面模型凭据尚未配置')])
+  const result=await createVisualWork({request:'从零演示消息',kind:'animation',request_id:'desktop-model-unavailable'},setup.context)
+  assert.equal(result.status,'paused')
+  assert.equal(result.message,'模型连接尚未配置或当前不可用；请在账户设置中检查模型凭据后重试。')
+  assert.equal(setup.job.diagnostics[0].code,'model_unavailable')
+})
+
 test('source selection is small and separate; custom inputs can route to fresh construction',async()=>{
   const setup=harness([{source_mode:'fresh',reason:'用户要求不同输入'},fresh],{templates:true})
   const result=await createVisualWork({request:'用动画演示前文的具体输入',kind:'animation',request_id:'route-then-build'},setup.context)

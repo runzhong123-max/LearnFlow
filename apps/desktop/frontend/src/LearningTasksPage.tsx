@@ -34,22 +34,24 @@ export default function LearningTasksPage({ connection, tasks, busyTaskId, error
 
   return (
     <section className="task-queue-page">
-      <header className="task-queue-heading">
-        <div><h1>学习任务</h1><p>查看当前安排、继续学习，或整理已经完成的任务。</p></div>
-        <button type="button" className="task-refresh-button" onClick={onRefresh}><span aria-hidden="true">↻</span>刷新</button>
-      </header>
-      {connection.status !== 'connected' && <div className={`formal-runtime-strip formal-runtime-${connection.status}`}><i /> <strong>学习记录暂时离线</strong><span>{connection.detail}</span></div>}
-      {error && <div className="formal-inline-error" role="alert">{error}</div>}
-      <div className="task-queue-overview">
-        <div className="task-queue-stats" aria-label="学习任务概览">
-          <article><strong>{active.length}</strong><span>待完成</span></article>
-          <article><strong>{inProgress.length}</strong><span>进行中</span></article>
-          <article><strong>{completed.length}</strong><span>已完成</span></article>
-        </div>
-        <div className="task-queue-filters" role="group" aria-label="筛选学习任务">
-          <button type="button" className={filter === 'pending' ? 'active' : ''} onClick={() => setFilter('pending')}>待完成</button>
-          <button type="button" className={filter === 'all' ? 'active' : ''} onClick={() => setFilter('all')}>全部</button>
-          <button type="button" className={filter === 'completed' ? 'active' : ''} onClick={() => setFilter('completed')}>已完成</button>
+      <div className="task-queue-sticky">
+        <header className="task-queue-heading">
+          <div><h1>学习任务</h1><p>查看当前安排、继续学习，或整理已经完成的任务。</p></div>
+          <button type="button" className="task-refresh-button" onClick={onRefresh}><span aria-hidden="true">↻</span>刷新</button>
+        </header>
+        {connection.status !== 'connected' && <div className={`formal-runtime-strip formal-runtime-${connection.status}`}><i /> <strong>学习记录暂时离线</strong><span>{connection.detail}</span></div>}
+        {error && <div className="formal-inline-error" role="alert">{error}</div>}
+        <div className="task-queue-overview">
+          <div className="task-queue-stats" aria-label="学习任务概览">
+            <article><strong>{active.length}</strong><span>待完成</span></article>
+            <article><strong>{inProgress.length}</strong><span>进行中</span></article>
+            <article><strong>{completed.length}</strong><span>已完成</span></article>
+          </div>
+          <div className="task-queue-filters" role="group" aria-label="筛选学习任务">
+            <button type="button" className={filter === 'pending' ? 'active' : ''} onClick={() => setFilter('pending')}>待完成</button>
+            <button type="button" className={filter === 'all' ? 'active' : ''} onClick={() => setFilter('all')}>全部</button>
+            <button type="button" className={filter === 'completed' ? 'active' : ''} onClick={() => setFilter('completed')}>已完成</button>
+          </div>
         </div>
       </div>
       <div className="task-queue-list">

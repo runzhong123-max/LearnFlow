@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.db.database import async_session
 from app.main import app
 from app.models.learning import EvidenceEvent
+from app.services.auth import AccountModelProviderConfig
 
 
 DESKTOP_TOKEN = "visual-planner-desktop-token"
@@ -93,6 +94,52 @@ def test_desktop_visual_planner_is_narrow_scoped_and_uses_requested_budget(monke
     completion_finish = "length"
     with pytest.raises(RuntimeError, match="visual_provider_incomplete:length"):
         asyncio.run(plan_learning_visual(instructions="JSON", input_text="合成矩阵", timeout_ms=1000, max_tokens=8000))
+
+
+def test_desktop_visual_planner_uses_current_account_provider_before_global_settings(monkeypatch):
+    calls: list[dict] = []
+
+    class FakeCompletions:
+        async def create(self, **kwargs):
+            calls.append(kwargs)
+            return SimpleNamespace(
+                model="account-visual-model",
+                choices=[SimpleNamespace(finish_reason="stop", message=SimpleNamespace(content='{"kind":"diagram"}'))],
+            )
+
+    class FakeAsyncOpenAI:
+        def __init__(self, **kwargs):
+            assert kwargs["api_key"] == "account-test-key"
+            assert kwargs["base_url"] == "https://account-provider.example/v1"
+            self.chat = SimpleNamespace(completions=FakeCompletions())
+
+    async def account_provider(*_args):
+        return AccountModelProviderConfig(
+            api_key="account-test-key",
+            base_url="https://account-provider.example/v1",
+            model="account-visual-model",
+        )
+
+    monkeypatch.setattr(settings, "desktop_mode", True)
+    monkeypatch.setattr(settings, "desktop_token", DESKTOP_TOKEN)
+    monkeypatch.setattr(settings, "llm_api_key", "")
+    monkeypatch.setattr("app.api.agent._session_model_provider_config", account_provider)
+    monkeypatch.setattr("openai.AsyncOpenAI", FakeAsyncOpenAI)
+
+    with TestClient(app) as client:
+        registered = client.post("/api/auth/register", headers=HEADERS, json=_registration("visual_account_provider"))
+        assert registered.status_code == 200, registered.text
+        session = client.post("/api/agent/sessions", headers=HEADERS, json={"session_type": "global"})
+        assert session.status_code == 200, session.text
+        response = client.post(
+            f"/api/agent/sessions/{session.json()['id']}/visual-plans",
+            headers=HEADERS,
+            json={"instructions": "只输出合法的视觉规划 JSON 对象，不要解释。", "input": "画图", "timeout_ms": 1000, "max_tokens": 8000},
+        )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["model"] == "account-visual-model"
+    assert calls[0]["model"] == "account-visual-model"
 
 
 def test_visual_planner_bridge_is_hidden_outside_desktop(monkeypatch):

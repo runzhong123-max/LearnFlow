@@ -2,6 +2,16 @@
   color: #172d23;
 }
 
+.task-queue-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  overflow: hidden;
+  border-bottom: 1px solid #dfe6e1;
+  background: #f6f8f5;
+  box-shadow: 0 7px 16px rgba(32, 58, 44, .08);
+}
+
 .task-queue-heading {
   align-items: center;
   padding: 24px 32px 18px;
