@@ -7,9 +7,11 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import {
   activateFormalIdentity,
   getFormalAuthStatus,
+  getFormalDemoStatus,
   invalidateFormalIdentity,
   listFormalDevAccounts,
   loginFormalAccount,
+  loginFormalDemoAccount,
   loginFormalDevAccount,
   logoutFormalAccount,
   registerFormalAccount,
@@ -76,6 +78,18 @@ export default function AuthGate({ children }: AuthGateProps) {
         setAccount(status)
         setDevLoginEnabled(status.dev_test_login_enabled === true)
       } else {
+        // The seeded competition demo opens straight into the isolated demo
+        // learner, exactly as the desktop host does, so `bash start.sh demo`
+        // and the runbook's `/review` entry work in the browser too.
+        if (window.location.pathname === '/review') {
+          const demo = await getFormalDemoStatus()
+          if (demo.enabled) {
+            const demoAccount = await loginFormalDemoAccount()
+            setAccount(demoAccount)
+            setDevLoginEnabled(false)
+            return
+          }
+        }
         invalidateFormalIdentity()
         setAccount(undefined)
         setDevLoginEnabled(status.dev_test_login_enabled === true)
