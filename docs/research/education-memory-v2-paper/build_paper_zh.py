@@ -62,29 +62,38 @@ class Figure:
         renderPDF.draw(self.d,c,0,0);c.showPage();c.save()
 
 
-def make_figures(d):
-    f=Figure(241)
-    f.panel(8,14,'a','学习者状态的权威形成')
-    labels=[('证据事件','EvidenceEvent'),('确定性归约','reducer'),('状态变更','KernelMutation'),('五核状态','KernelState'),('长期记忆投影','Fact / Module / Claim')]
-    xs=[8,108,208,308,408]
-    for i,((a,b),x) in enumerate(zip(labels,xs)):
-        f.rect(x,30,92,35,'#F3F6F8',BLUE,.6);f.txt(x+46,44,a,7,anchor='middle');f.txt(x+46,56,b,6.3,anchor='middle')
-        if i<4:f.arrow(x+93,47,x+99,47)
-    f.txt(8,81,'状态维度',7)
-    for i,s in enumerate(['结构','知识','人因','价值','实践']):
-        x=78+i*87;f.rect(x,70,75,19,None,'#B8C2CA',.4);f.txt(x+37.5,83,s,7,anchor='middle')
-    f.panel(8,113,'b','只读投影与有预算的教学准备')
-    for x,w,lines in [(8,116,['来源与适用范围检查','Fact → Mutation → Event → Attempt']),
-                      (142,110,['最新优先连续前缀','超限即停止，不跳到旧片段']),
-                      (270,108,['有限上下文','评估结果、辅助条件、时间']),
-                      (396,104,['确定性教学动作','诊断 / 撤除辅助 / 变式检查'])]:
-        f.rect(x,131,w,43,None,'#AAB5BD',.6)
-        for j,t in enumerate(lines):f.txt(x+w/2,147+j*13,t,7 if j==0 else 5.7,anchor='middle')
-    for x in (125,253,379):f.arrow(x,152,x+15,152)
-    f.line(455,65,510,65,'#7E8991',.5,[2,2]);f.line(510,65,510,122,'#7E8991',.5,[2,2]);f.line(510,122,67,122,'#7E8991',.5,[2,2]);f.arrow(67,122,67,130,'#7E8991')
-    f.txt(8,198,'准入约束',7);f.txt(63,198,'最多 3 个片段，每片段最多 6 条事实；来源与辅助限定整体保留。',7)
-    f.txt(8,217,'证据边界',7);f.txt(63,217,'生成计划、摘要和讲解均不直接升级掌握状态。',7)
+def make_architecture_figure():
+    f=Figure(330)
+    f.panel(8,14,'a','五核按教学问题分工，共用身份、主题与证据来源')
+    cores=[('结构 Structure','走到哪里，如何返回','位置 / 依赖 / 锚点'),
+           ('知识 Knowledge','理解证据是什么','概念 / 缺口 / 错误'),
+           ('人因 Human','当前如何支持','明确请求 / 时效'),
+           ('价值 Value','为何学，优先什么','目标 / 确认 / 更新'),
+           ('实践 Practice','在何种条件下做成','尝试 / 辅助 / 迁移')]
+    for i,(name,q,fields) in enumerate(cores):
+        x=8+i*100;f.rect(x,28,92,59,'#F3F6F8',BLUE,.6)
+        f.txt(x+46,43,name,7,anchor='middle');f.txt(x+46,60,q,6.5,anchor='middle');f.txt(x+46,75,fields,6.1,anchor='middle')
+    f.txt(8,101,'不同核独立判断；学习位置、自述兴趣与受助成功不能互相替代为掌握。',7)
+    f.panel(8,122,'b','统一事件更新与版本化记忆')
+    labels=[('行为与证据','EvidenceEvent'),('确定性归约','reducer'),('合法状态变更','KernelMutation'),('五核当前状态','KernelState'),('记忆及历史版本','Fact / Module / Claim')]
+    for i,(a,b) in enumerate(labels):
+        x=8+i*100;f.rect(x,136,92,34,None,'#AAB5BD',.6)
+        f.txt(x+46,149,a,7,anchor='middle');f.txt(x+46,161,b,6.3,anchor='middle')
+        if i<4:f.arrow(x+93,153,x+99,153)
+    f.txt(8,187,'纠正追加证据与后继版本，保留历史；不同核采用各自的内容与巩固门槛。',7)
+    f.panel(8,211,'c','按教学用途提供只读证据')
+    f.rect(8,223,492,29,'#F3F6F8',BLUE,.6)
+    f.txt(254,235,'范围与来源检查 → 当前适用证据 → 预算准入 → ContextPacket',7,anchor='middle')
+    f.txt(254,246,'结果、辅助、时间、来源和未知项共同送达',6.5,anchor='middle')
+    for x,title,detail in [(8,'Tutor 辅导','相关概念 / 当前支持需求'),(177,'学习规划','目标与路径 / 诊断与独立检查'),(346,'练习与复习','理解与实践证据 / 所属业务对象')]:
+        f.arrow(x+77,253,x+77,264);f.rect(x,265,154,31,None,'#AAB5BD',.6)
+        f.txt(x+77,278,title,7,anchor='middle');f.txt(x+77,290,detail,6.3,anchor='middle')
+    f.txt(8,315,'新的学习行为回到事件入口；讲解、计划和模型生成不直接升级掌握。',7)
     f.save('fig1_architecture')
+
+
+def make_figures(d):
+    make_architecture_figure()
 
     f=Figure(264)
     f.panel(8,14,'a','全体案例的时序审计')
@@ -210,7 +219,7 @@ def docx():
             p.paragraph_format.space_after=Pt(1);p.paragraph_format.line_spacing=1.0;p.paragraph_format.keep_with_next=not line.startswith('返回')
             for r in p.runs:r.font.size=Pt(9)
         elif line.startswith('# '):
-            p=doc.add_paragraph(line[2:].replace('教学的证据','教学的\n证据'),'Title');p.alignment=WD_ALIGN_PARAGRAPH.CENTER
+            p=doc.add_paragraph(line[2:].replace('教学的五核','教学的\n五核'),'Title');p.alignment=WD_ALIGN_PARAGRAPH.CENTER
         elif line.startswith('## '):
             doc.add_paragraph(line[3:],'Heading 1');ref=line=='## 参考文献'
         elif line.startswith('### '):doc.add_paragraph(line[4:],'Heading 2')
@@ -224,8 +233,8 @@ def docx():
             rows=[line]
             while i<len(lines) and lines[i].startswith('|'):rows.append(lines[i]);i+=1
             vals=[[c.strip() for c in r.strip('|').split('|')] for r in rows if not re.match(r'^\|\s*---',r)]
-            n=len(vals[0]);text_table=vals[0][0]=='研究路径'
-            widths=([32,45,46,50] if text_table else ([35,31,38,31,38] if n==5 else ([38,114,21] if vals[0][1]=='干预定义' else [57,58,58])))
+            n=len(vals[0]);text_table=n==4
+            widths=(([26,48,62,37] if vals[0][0]=='状态维度' else [32,45,46,50]) if text_table else ([35,31,38,31,38] if n==5 else ([38,114,21] if vals[0][1]=='干预定义' else [57,58,58])))
             table=doc.add_table(rows=0,cols=n);table.autofit=False;table.alignment=WD_TABLE_ALIGNMENT.CENTER
             for col,w in zip(table.columns,widths):col.width=Mm(w)
             # Journal-style three-rule table, per requested scientific visual direction.
@@ -256,7 +265,7 @@ def docx():
             if ref:
                 p.paragraph_format.line_spacing=1.05;p.paragraph_format.space_after=Pt(6)
                 for r in p.runs:r.font.size=Pt(9)
-    doc.core_properties.title=lines[0][2:];doc.core_properties.author='';doc.core_properties.subject='教育智能体记忆系统的证据与时序评估'
+    doc.core_properties.title=lines[0][2:];doc.core_properties.author='';doc.core_properties.subject='五核学习者记忆的教学服务与证据评估'
     path=HERE/'LearnFlow_Educational_Memory_Manuscript_ZH.docx';doc.save(path)
     print('DOCX:',path.name,'tables',len(doc.tables),'figures',len(doc.inline_shapes))
 
@@ -286,7 +295,7 @@ def verify_data(d):
     assert '注册表 2026-09-08.9' in md
     assert '### 2.4 DeepTutor' in md and '3.91/5' in md and '3.80/5' in md
     assert '本文没有运行 TutorBench 或 DeepTutor 基线' in md
-    assert re.findall(r'^表 ([1-9]) [^\n]+\n\n\|', md, re.M)==list(map(str,range(1,6)))
+    assert re.findall(r'^表 ([1-9]) [^\n]+\n\n\|', md, re.M)==list(map(str,range(1,7)))
     print('Chinese table, negative-result and citation checks passed.')
 
 if __name__=='__main__':
