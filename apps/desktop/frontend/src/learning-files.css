@@ -6,7 +6,7 @@
 
 .learning-files-page .file-page-heading {
   align-items: center;
-  max-width: 1060px;
+  max-width: none;
   margin-bottom: 16px;
   padding-bottom: 17px;
 }
@@ -38,11 +38,11 @@
 
 .learning-files-overview {
   display: flex;
-  max-width: 1060px;
+  max-width: none;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  margin: 0 auto 14px;
+  margin: 0 0 14px;
 }
 
 .learning-files-stats {
@@ -90,11 +90,11 @@
 .learning-files-empty,
 .learning-files-loading {
   display: grid;
-  max-width: 1060px;
+  max-width: none;
   min-height: 320px;
   place-items: center;
   align-content: center;
-  margin: 0 auto;
+  margin: 0;
   border: 1px solid #d8e4dd;
   border-radius: 18px;
   background: #fff;
@@ -168,7 +168,7 @@
 }
 
 .learning-files-page .learning-file-columns {
-  max-width: 1060px;
+  max-width: none;
   gap: 14px;
 }
 
@@ -307,10 +307,6 @@
 }
 
 @media (max-width: 520px) {
-  .learning-files-page {
-    padding-inline: 14px;
-  }
-
   .learning-files-stats {
     justify-content: space-between;
   }

@@ -4044,7 +4044,7 @@ function App({ auth }: { auth: AuthGateSession }) {
             <button type="button" onClick={() => openTab(REVIEW_TAB)}><UiIcon name="review" />复习与错题</button>
             <button type="button" onClick={() => openTab(TASKS_TAB)}><UiIcon name="tasks" />学习任务</button>
             <button type="button" onClick={() => openTab(LEARNING_PATH_TAB)}><UiIcon name="path" />学习路径</button>
-            <button type="button" onClick={() => window.location.assign('/visualize')}><UiIcon name="visual" />图解与动画</button>
+            <button type="button" onClick={() => openTab(VISUAL_HUB_TAB)}><UiIcon name="visual" />图解与动画</button>
             <button type="button" onClick={() => window.location.assign('https://graphs.learnflow.club/hub')}><span>◇</span>岗位图谱</button>
           </nav>
           <div className="sidebar-scroll-area">
@@ -4708,7 +4708,6 @@ const root = rootScope.__learnflowRoot || createRoot(rootElement)
 rootScope.__learnflowRoot = root
 const ConversionPage = lazy(() => import('./WorkTaskConversionPage.tsx'))
 const isConversionPage = window.location.pathname === '/convert' || window.location.hostname === 'w2ltask.learnflow.club'
-const publicVisualHub = ['/visualize', '/visual-hub'].includes(window.location.pathname)
 void initializeRuntimeClient().then(() => root.render(
   <AuthGate>{auth => isIpAccountConsole(window.location)
     ? <main className="settings-page" style={{ maxWidth: 800, margin: '0 auto', padding: '36px 20px' }}>
@@ -4722,7 +4721,5 @@ void initializeRuntimeClient().then(() => root.render(
     </main>
     : isConversionPage
     ? <Suspense fallback={<p>正在载入工作任务转换…</p>}><ConversionPage key={`conversion:${auth.account.learner_id}`} auth={auth}/></Suspense>
-    : publicVisualHub
-    ? <><nav style={{padding:'16px 26px'}}><a href="/">← 返回学习空间</a></nav><Suspense fallback={<p>正在载入图解库…</p>}><VisualHubPage key={`visual-hub:${auth.account.learner_id}`}/></Suspense></>
     : <App key={`learner:${auth.account.learner_id}`} auth={auth} />}</AuthGate>,
 ))

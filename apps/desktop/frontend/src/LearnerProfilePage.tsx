@@ -345,15 +345,15 @@ export default function LearnerProfilePage({
   return (
     <section className="profile-page formal-profile-page">
       <header className="profile-page-heading page-hero">
-        <div className="profile-page-identity">
-          <UserAvatar displayName={snapshot.learner.display_name} avatar={accountIdentity?.avatar} size="lg" />
-          <div>
-            <h1>{snapshot.learner.display_name}的学习画像</h1>
-            <p>你的基础、目标、偏好，以及学习过程中逐渐形成的认识。</p>
-          </div>
+        <div>
+          <h1>{snapshot.learner.display_name}的学习画像</h1>
+          <p>你的基础、目标、偏好，以及学习过程中逐渐形成的认识。</p>
         </div>
-        <div className="profile-version formal-authority-badge">
-          <i /> <span>{connection.status === 'connected' ? '已同步' : '离线'}</span>
+        <div className="profile-page-aside">
+          <UserAvatar displayName={snapshot.learner.display_name} avatar={accountIdentity?.avatar} size="lg" />
+          <div className="profile-version formal-authority-badge">
+            <i /> <span>{connection.status === 'connected' ? '已同步' : '离线'}</span>
+          </div>
         </div>
       </header>
 
