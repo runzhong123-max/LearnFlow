@@ -707,7 +707,7 @@ img.message-avatar { background: none; border-radius: 0; object-fit: contain; }
 /* Learning path and dedicated learner profile */
 .page-loading { display: grid; min-height: 0; flex: 1; place-items: center; color: #7d8c84; font-size: var(--fs-sm); }
 .path-page, .profile-page { min-height: 0; flex: 1; overflow-y: auto; background: #f7f8f5; }
-.path-heading, .profile-page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; border-bottom: 1px solid #dfe6e1; background: #fff; padding: 28px 0 24px; }
+.path-heading, .profile-page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; border-bottom: 1px solid #dfe6e1; padding: 28px 0 24px; }
 .path-heading h1, .profile-page-heading h1 { margin: 5px 0 5px; font-size: var(--fs-3xl); letter-spacing: -.04em; }
 /* The heading keeps the page's left edge for its title; the learner's avatar
    rides in the action cluster, on the same 40px circle the sidebar uses. */
@@ -1102,7 +1102,7 @@ img.message-avatar { background: none; border-radius: 0; object-fit: contain; }
 .formal-empty-copy { margin: 14px 0; color: #849188; font-size: var(--fs-xs); line-height: 1.65; }
 
 .task-queue-page { min-height: 0; flex: 1; overflow-y: auto; background: #f6f8f5; padding-bottom: 50px; }
-.task-queue-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; border-bottom: 1px solid #dfe6e1; background: #fff; padding: 28px 0 24px; }
+.task-queue-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; border-bottom: 1px solid #dfe6e1; padding: 28px 0 24px; }
 .task-queue-heading h1 { margin: 5px 0; font-size: var(--fs-3xl); letter-spacing: -.04em; }
 .task-queue-heading p { max-width: 720px; margin: 0; color: #728078; font-size: var(--fs-sm); line-height: 1.65; }
 .formal-runtime-strip { display: flex; width: min(900px, calc(100% - 48px)); align-items: center; gap: 7px; margin: 14px auto 0; border: 1px solid #dce5df; border-radius: var(--r-md); background: #fff; padding: 9px 12px; color: #627269; font-size: var(--fs-2xs); }
