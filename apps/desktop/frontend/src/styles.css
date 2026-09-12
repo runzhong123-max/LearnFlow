@@ -1425,6 +1425,7 @@ img.message-avatar { background: none; border-radius: 0; object-fit: contain; }
   overflow: hidden; font-weight: inherit; text-overflow: ellipsis;
 }
 .composer-model-chip span { color: #8a9a90; }
+.composer-model-managed { border-color: #d7e7dd; background: #f1f7f3; color: #527064; cursor: default; }
 
 /* Learning state collapses to the current choice; the full list opens
    on click so the bar stays readable at any width. */

@@ -19,7 +19,7 @@ import {
   type FormalRegistrationInput,
 } from './formal-runtime.ts'
 import styles from './AuthGate.module.css'
-import { isCloudDesktopRuntime, isDesktopRuntime, switchDesktopWorkspace, getRuntimeClientState } from './runtime-client'
+import { isCloudDesktopRuntime, isDesktopRuntime, switchDesktopWorkspace } from './runtime-client'
 import { PASSWORD_MIN_LENGTH, PASSWORD_POLICY_MESSAGE, passwordPolicyError } from './password-policy.ts'
 
 export type AuthGateSession = {
@@ -289,7 +289,10 @@ export default function AuthGate({ children }: AuthGateProps) {
           <p>使用个人 API Key，继续你的项目和学习记录。</p>
         </header>
         <form className={styles.form} onSubmit={submitApiKey} autoComplete="off">
-          <label><span>服务器</span><input value={getRuntimeClientState().cloudOrigin || ''} readOnly aria-readonly="true" /></label>
+          <div className={styles.cloudDestination} role="status" aria-label="连接目标：LearnFlow 云端">
+            <span className={styles.cloudDestinationMark} aria-hidden="true" />
+            <span><strong>LearnFlow 云端</strong><small>连接地址由应用统一管理</small></span>
+          </div>
           <label><span>API Key</span><input name="api_key" type="password" autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} required maxLength={128} disabled={busy} autoFocus aria-describedby="cloud-key-help" /></label>
           <p id="cloud-key-help" className={styles.cloudHelp}>使用账号管理员签发的个人 API Key，仅在本次运行中保存。退出应用后需重新输入。</p>
           {error && <p className={styles.error} role="alert">{error}</p>}

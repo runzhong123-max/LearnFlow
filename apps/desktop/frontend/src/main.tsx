@@ -4165,27 +4165,29 @@ function App({ auth }: { auth: AuthGateSession }) {
                 </details>
                 </div>
               </div>
-              <details className="composer-model-menu" onToggle={event => { if ((event.currentTarget as HTMLDetailsElement).open) void loadProviderModels() }}>
-                <summary className="composer-model-chip" role="button" title="切换模型" aria-label="切换模型">
-                  <strong>{workspace.settings.model || '待配置模型'}</strong>
-                </summary>
-                <div className="composer-model-popover">
-                  <header>{providerModelsError || (providerModels.length ? '服务商可用模型' : '正在读取模型…')}</header>
-                  {(providerModels.length ? providerModels : [workspace.settings.model].filter(Boolean)).map(name => (
-                    <button
-                      key={name}
-                      type="button"
-                      aria-pressed={workspace.settings.model === name}
-                      onClick={event => {
-                        event.currentTarget.closest('details')?.removeAttribute('open')
-                        updateSettings({ ...workspace.settings, model: name })
-                      }}
-                    >
-                      <i>{workspace.settings.model === name ? '✓' : ''}</i>{name}
-                    </button>
-                  ))}
-                </div>
-              </details>
+              {isCloudDesktopRuntime()
+                ? <span className="composer-model-chip composer-model-managed" title="模型由 LearnFlow 云端统一配置" aria-label="云端托管模型"><strong>云端托管</strong></span>
+                : <details className="composer-model-menu" onToggle={event => { if ((event.currentTarget as HTMLDetailsElement).open) void loadProviderModels() }}>
+                    <summary className="composer-model-chip" role="button" title="切换模型" aria-label="切换模型">
+                      <strong>{workspace.settings.model || '待配置模型'}</strong>
+                    </summary>
+                    <div className="composer-model-popover">
+                      <header>{providerModelsError || (providerModels.length ? '服务商可用模型' : '正在读取模型…')}</header>
+                      {(providerModels.length ? providerModels : [workspace.settings.model].filter(Boolean)).map(name => (
+                        <button
+                          key={name}
+                          type="button"
+                          aria-pressed={workspace.settings.model === name}
+                          onClick={event => {
+                            event.currentTarget.closest('details')?.removeAttribute('open')
+                            updateSettings({ ...workspace.settings, model: name })
+                          }}
+                        >
+                          <i>{workspace.settings.model === name ? '✓' : ''}</i>{name}
+                        </button>
+                      ))}
+                    </div>
+                  </details>}
               <button type="submit" disabled={Boolean(pendingMode) || (!(drafts[draftKey] || '').trim() && draftPluginObjects.length === 0)} aria-label={pendingMode ? 'Tutor 回复中' : '发送消息'}>{pendingMode ? '…' : '↑'}</button>
             </div>
           </form>
