@@ -56,16 +56,22 @@ export const snapshotIterationRequestSchema = z.object({
    * Budget ceilings. Defaults are exactly the values that used to be literals,
    * so an existing request keeps its behaviour; only the maxima moved, which is
    * what makes "more budget" reachable without changing any current caller.
+   *
+   * The ceilings are deliberately far above any default: a deep study of one
+   * role is allowed to spend real money, and the operator asking for it should
+   * not be argued with by a schema. The ledger still makes spending accountable
+   * (see budget-ledger.ts) and the loop still stops on its own conditions, so a
+   * large ceiling raises what is *possible* without raising what is *automatic*.
    */
-  maxRounds: z.number().int().min(1).max(40).default(12),
-  sourceLimit: z.number().int().min(4).max(256).default(64),
-  maxWorkItems: z.number().int().min(3).max(128).default(32),
+  maxRounds: z.number().int().min(1).max(400).default(12),
+  sourceLimit: z.number().int().min(4).max(4_000).default(64),
+  maxWorkItems: z.number().int().min(3).max(1_000).default(32),
   /**
    * Optional so existing callers that build a request literal keep compiling.
    * Read through DEFAULT_ITERATION_BUDGET, never as a bare number.
    */
-  queryBudget: z.number().int().min(8).max(768).optional(),
-  stagnantRoundLimit: z.number().int().min(1).max(8).optional(),
+  queryBudget: z.number().int().min(8).max(20_000).optional(),
+  stagnantRoundLimit: z.number().int().min(1).max(64).optional(),
 });
 
 /**

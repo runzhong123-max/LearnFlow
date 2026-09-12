@@ -57,78 +57,6 @@ function queryForCategory(input: {
  * family rather than one node each, preventing duplicated retrieval work when
  * several task branches share the same knowledge or evidence gap.
  */
-export function planRiskResearch(input: {
-  result: ColdStartBuildResult;
-  audit: RiskAuditReport;
-  request: RiskRunRequest;
-  iteration: number;
-}): RiskResearchPlan {
-  const targetSet = new Set(input.request.scope.targetIds);
-  const selected = input.audit.clusters
-    .filter((cluster) => cluster.repairability.includes("research"))
-    .filter((cluster) => !targetSet.size || cluster.targetIds.some((id) => targetSet.has(id)))
-    .slice(0, 8);
-  const snapshotYear = Number((input.request.targetAsOf || input.result.snapshot.asOf).slice(0, 4));
-  const year = Number.isFinite(snapshotYear) ? snapshotYear : new Date().getUTCFullYear();
-  const queryMap = new Map<string, PlannedQuery>();
-  for (const cluster of selected) {
-    const labels = nodeLabels(input.result, cluster.targetIds);
-    const categories = CATEGORY_BY_PROFILE[cluster.profile].slice(0, input.iteration > 1 ? 3 : 2);
-    for (const [categoryIndex, category] of categories.entries()) {
-      const query = queryForCategory({
-        category,
-        role: input.result.brief.roleTitle,
-        market: input.result.brief.market,
-        year,
-        cluster,
-        labels,
-        question: input.request.scope.question,
-      });
-      const key = `${category}:${query}`;
-      if (queryMap.has(key)) continue;
-      queryMap.set(key, {
-        id: `risk-query:${stableHash(`${input.request.runId}:${input.iteration}:${key}`)}`,
-        category,
-        query,
-        priority: Math.max(1, 12 - categoryIndex - selected.indexOf(cluster) * 0.1),
-      });
-    }
-  }
-  if (input.request.scope.question.trim()) {
-    const query = queryForCategory({
-      category: "user_focus",
-      role: input.result.brief.roleTitle,
-      market: input.result.brief.market,
-      year,
-      cluster: selected[0] || input.audit.clusters[0],
-      labels: [],
-      question: input.request.scope.question,
-    });
-    queryMap.set(`user_focus:${query}`, {
-      id: `risk-query:${stableHash(`${input.request.runId}:${input.iteration}:user:${query}`)}`,
-      category: "user_focus",
-      query,
-      priority: 12,
-    });
-  }
-  const queries = [...queryMap.values()]
-    .sort((left, right) => right.priority - left.priority)
-    .slice(0, 12);
-  return {
-    id: `risk-plan:${stableHash(`${input.request.runId}:${input.iteration}:${queries.map((query) => query.id).join("|")}`)}`,
-    iteration: input.iteration,
-    clusterIds: selected.map((cluster) => cluster.id),
-    queries,
-    rationale: selected.map((cluster) => `${cluster.title}：${cluster.researchQuestion || cluster.summary}`),
-    stopConditions: [
-      "目标风险获得两个以上相互独立来源，或一个权威/一手来源的可定位支持",
-      "新证据不再提高任务—过程、直接证据或有效章节覆盖率",
-      "达到本轮来源上限；未消除的问题转为已知缺口，不以模型推断冒充事实",
-    ],
-  };
-}
-
-/** Rebuild SourceInput records from the stored evidence layer. */
 export function reconstructSourceInputs(result: ColdStartBuildResult): SourceInput[] {
   const segmentsBySource = new Map<string, typeof result.sources.segments>();
   for (const segment of result.sources.segments) {
@@ -162,22 +90,4 @@ export function reconstructSourceInputs(result: ColdStartBuildResult): SourceInp
       workspaceEvidence: asset.workspaceEvidence,
     }))
     .filter((source) => source.content.trim());
-}
-
-export function requestForRiskResearch(input: {
-  result: ColdStartBuildResult;
-  request: RiskRunRequest;
-  sources: SourceInput[];
-  iteration: number;
-}): ColdStartRequest {
-  return {
-    runId: `${input.request.runId}:research:${input.iteration}`.slice(0, 100),
-    projectId: input.request.projectId || input.request.snapshotRef.projectId || `snapshot:${stableHash(input.request.snapshotRef.snapshotId)}`,
-    roleTitle: input.result.brief.roleTitle,
-    roleDescription: [input.result.brief.roleDescription, input.request.scope.question].filter(Boolean).join("\n研究重点：").slice(0, 8_000),
-    market: input.result.brief.market,
-    audience: input.result.brief.audience,
-    snapshotAsOf: input.request.targetAsOf || input.result.snapshot.asOf,
-    sources: input.sources.slice(0, 20),
-  };
 }

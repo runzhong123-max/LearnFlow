@@ -3,8 +3,6 @@ import test from "node:test";
 import type { ColdStartBuildResult } from "@/lib/build/types";
 import { auditRoleSnapshot, isAuditImproved } from "@/lib/risk/audit";
 import { applyGraphPatch, computeSemanticDiff, proposeSafePatch } from "@/lib/risk/patch";
-import { planRiskResearch } from "@/lib/risk/research";
-import type { RiskRunRequest } from "@/lib/risk/types";
 import { createRolePackageManifest } from "@/lib/packages/role-package-manifest";
 
 function fixture(): ColdStartBuildResult {
@@ -92,30 +90,6 @@ test("风险审计聚合同义重复与悬空关系，安全补丁迁移所有�
   const diff = computeSemanticDiff({ base, candidate: applied.result, patches: [applied.patch], auditBefore: before, auditAfter: after, migrations: applied.referenceMigration });
   assert.equal(diff.referenceMigration["skill:eval-b"], "skill:eval-a");
   assert.ok(diff.nodes.merged.some((merge) => merge.from.includes("skill:eval-b") && merge.to === "skill:eval-a"));
-});
-
-test("风险检索计划按风险簇而非逐节点生成，并为时间风险选择近期技术与趋势查询", () => {
-  const result = fixture();
-  result.sources.assets[0].searchCategories = ["technology"];
-  result.sources.assets[0].publishedAt = "2022-01-01";
-  const audit = auditRoleSnapshot(result, { profiles: ["temporal", "semantic"] });
-  const request: RiskRunRequest = {
-    runId: "risk-plan-test",
-    snapshotRef: { snapshotId: result.snapshot.id, projectId: result.projectId, versionId: "version:base" },
-    projectId: result.projectId,
-    baseVersionId: "version:base",
-    mode: "temporal_refresh",
-    scope: { targetIds: [], profiles: ["temporal", "semantic"], question: "Agent 编排框架是否已经变化？" },
-    targetAsOf: "2026-08-22",
-    webResearch: true,
-    maxIterations: 2,
-    sourceLimit: 12,
-  };
-  const plan = planRiskResearch({ result, audit, request, iteration: 1 });
-  assert.ok(plan.queries.length <= 12);
-  assert.equal(new Set(plan.queries.map((query) => query.id)).size, plan.queries.length);
-  assert.ok(plan.queries.some((query) => query.category === "technology" || query.category === "future_signal"));
-  assert.ok(plan.queries.some((query) => query.category === "user_focus"));
 });
 
 test("日期型快照允许同日抓取，未来来源仅在不孤立事实时自动剔除", () => {

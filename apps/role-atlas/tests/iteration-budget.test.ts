@@ -35,21 +35,29 @@ test("不含新字段的旧请求仍然合法，且解析后不凭空补出字�
   assert.equal(parsed.queryBudget ?? DEFAULT_ITERATION_BUDGET.queryBudget, 192);
 });
 
-test("上限已放宽：可请求远超旧上限的预算", () => {
+test("上限已放宽到远超默认：深度研究不该被 schema 拦下", () => {
   const parsed = snapshotIterationRequestSchema.parse({
     runId: "budget-large",
     snapshotRef: { snapshotId: "snapshot:role@2026-08-19" },
-    maxRounds: 40,
-    sourceLimit: 256,
-    maxWorkItems: 128,
-    queryBudget: 768,
-    stagnantRoundLimit: 8,
+    maxRounds: 400,
+    sourceLimit: 4_000,
+    maxWorkItems: 1_000,
+    queryBudget: 20_000,
+    stagnantRoundLimit: 64,
   });
-  assert.equal(parsed.maxRounds, 40);
-  assert.equal(parsed.sourceLimit, 256);
-  assert.equal(parsed.maxWorkItems, 128);
-  assert.equal(parsed.queryBudget, 768);
-  assert.equal(parsed.stagnantRoundLimit, 8);
+  assert.equal(parsed.maxRounds, 400);
+  assert.equal(parsed.sourceLimit, 4_000);
+  assert.equal(parsed.maxWorkItems, 1_000);
+  assert.equal(parsed.queryBudget, 20_000);
+  assert.equal(parsed.stagnantRoundLimit, 64);
+  // 上限抬高不等于默认抬高：不指定时仍是保守值。
+  const defaults = snapshotIterationRequestSchema.parse({
+    runId: "budget-defaults",
+    snapshotRef: { snapshotId: "snapshot:role@2026-08-19" },
+  });
+  assert.equal(defaults.maxRounds, DEFAULT_ITERATION_BUDGET.maxRounds);
+  assert.equal(defaults.sourceLimit, DEFAULT_ITERATION_BUDGET.sourceLimit);
+  assert.equal(defaults.maxWorkItems, DEFAULT_ITERATION_BUDGET.maxWorkItems);
 });
 
 test("旧上限仍被接受，放宽不引入新的拒绝面", () => {
@@ -68,11 +76,11 @@ test("旧上限仍被接受，放宽不引入新的拒绝面", () => {
 
 test("超出新上限仍被拒绝，预算始终有硬边界", () => {
   for (const budget of [
-    { maxRounds: 41 },
-    { sourceLimit: 257 },
-    { maxWorkItems: 129 },
-    { queryBudget: 769 },
-    { stagnantRoundLimit: 9 },
+    { maxRounds: 401 },
+    { sourceLimit: 4_001 },
+    { maxWorkItems: 1_001 },
+    { queryBudget: 20_001 },
+    { stagnantRoundLimit: 65 },
   ]) {
     const parsed = snapshotIterationRequestSchema.safeParse({
       runId: "budget-over-limit",
