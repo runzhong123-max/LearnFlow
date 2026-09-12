@@ -1,15 +1,18 @@
+import { checkedRolePackageRef } from '../../../../../packages/learning-client/src/role-packages/reference.ts'
+import { checkedRolePackageBundle } from '../../../../../packages/learning-client/src/role-packages/bundle.ts'
 import {
   defineLearnFlowPlugin,
   LEARNFLOW_PLUGIN_API_VERSION,
   versionedPluginModuleUrl,
   type PluginJson,
   type PluginJsonSchema,
+  type PluginToolContext,
 } from '../../src/plugin-api.ts'
 import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-const { packageSelector, rolePackageRuntime } = await import(
+const { packageSelector, rolePackageRuntime, RolePackageRuntime } = await import(
   versionedPluginModuleUrl('./runtime.ts', import.meta.url)
 ) as typeof import('./runtime.ts')
 const {
@@ -23,6 +26,20 @@ const { graphHubSubject, recommendGraphHubEntries } = await import(
 ) as typeof import('./graph-hub.ts')
 
 const BUILTIN_GRAPH_HUB_CATALOG = fileURLToPath(new URL('./graph-hub.catalog.json', import.meta.url))
+
+async function runtimeFor(input: Record<string, PluginJson>, context: PluginToolContext) {
+  const selector = packageSelector(input)
+  if (!context.rolePackageHost || !Object.values(selector).some(Boolean)) return rolePackageRuntime
+  // Bundled public reference bytes remain usable offline. Other references must be
+  // reauthorized on every call, including releases formerly installed in this process.
+  try {
+    const local = rolePackageRuntime.resolve(selector)
+    if (local.source.sourceKind === 'official_builtin') return rolePackageRuntime
+  } catch { /* A remote published version need not exist on disk. */ }
+  const ref = checkedRolePackageRef(selector)
+  const bundle = checkedRolePackageBundle(await context.rolePackageHost.resolve(ref), ref)
+  return new RolePackageRuntime({ bundles: [bundle] })
+}
 
 function scopedGraphHubCatalog(learnerId?: number) {
   const subject = graphHubSubject(learnerId)
@@ -207,7 +224,7 @@ const plugin = defineLearnFlowPlugin({
       },
       {
         id: 'research_role_node_risks', title: '深度研究节点风险', description: '固定一个岗位节点，联合读取其两跳邻域、直接关系、证据绑定、候选状态与事理风险，形成只用于解释的有界风险研究结果。',
-        whenToUse: '用户追问某个已安装岗位节点为什么重要、有哪些边界/风险/证据缺口，或希望对一个节点做深度解释时。',
+        whenToUse: '用户追问某个已引用岗位节点为什么重要、有哪些边界/风险/证据缺口，或希望对一个节点做深度解释时。',
         whenNotToUse: '不要用于冷启动、更新岗位包、生成 patch、联网补证据或发布版本；它只解释当前不可变快照已经包含的信息与缺口。',
         toolClass: 'perception', risk: 'read_only', renderer: ROLE_RENDERERS.nodeRisk,
         inputSchema: schema({
@@ -234,15 +251,16 @@ const plugin = defineLearnFlowPlugin({
         outputObjectTypes: ['role_package_reference'], availableInModes: ['free', 'simple_explain', 'guided_learning', 'learning_plan'],
       },
       {
-        id: 'compare_role_packages', title: '比较岗位包版本', description: '比较两个已安装不可变岗位快照的对象新增、移除、内容变更和引用迁移命中。',
+        id: 'compare_role_packages', title: '比较岗位包版本', description: '比较两个可读取的不可变岗位快照的对象新增、移除、内容变更和引用迁移命中。',
         whenToUse: '用户明确比较两个岗位包或同一岗位的两个版本，并已给出可解析的快照选择器时。',
-        whenNotToUse: '只有一个已安装版本或选择器不明确时先列出岗位包；不得虚构不存在的版本差异。',
+        whenNotToUse: '只有一个可读取版本或选择器不明确时先列出岗位包；不得虚构不存在的版本差异。',
         toolClass: 'perception', risk: 'read_only', renderer: ROLE_RENDERERS.comparison,
         inputSchema: {
           type: 'object',
           properties: {
             basePackageId: { type: 'string', maxLength: 220 }, basePackageVersion: { type: 'string', maxLength: 80 }, baseSnapshotId: { type: 'string', maxLength: 220 },
             targetPackageId: { type: 'string', maxLength: 220 }, targetPackageVersion: { type: 'string', maxLength: 80 }, targetSnapshotId: { type: 'string', maxLength: 220 },
+            baseRootHash: { type: 'string', minLength: 64, maxLength: 64 }, targetRootHash: { type: 'string', minLength: 64, maxLength: 64 },
           },
           required: ['baseSnapshotId', 'targetSnapshotId'], additionalProperties: false,
         },
@@ -259,7 +277,8 @@ const plugin = defineLearnFlowPlugin({
         '先把插件返回的 snapshot 描述视为本轮唯一岗位事实版本；回答中不得混用其他快照。对话中还没有岗位包引用时，先把用户询问的岗位名称或原始问题作为 query 调用 list_role_packages；只有查询全部目录时才能省略 query。不得替用户自动选择。',
         '若 list_role_packages 返回 matchStatus=not_found，则当前岗位没有可用岗位包：不得调用 explore_role、search_role_knowledge 或其他岗位内容工具，不得用目录中的无关岗位包作“有限探索”。应明确说明未匹配，并引导用户点击工具结果中的 Role Atlas 入口自主研究；LearnFlow 不执行岗位包冷启动或迭代。',
         '用户明确选择目录中的一个版本后，必须把目录返回的 packageId、packageVersion、snapshotId、rootHash 原样传给 reference_role_package。引用成功后的所有岗位读取都复用 requiredSelector，并且必须连同其中的 rootHash 一起复用；它是用户选定内容的内容哈希，省略或改写会让读取退化为同名版本槽位匹配，而不是同一份字节。不得只按标题重新匹配或静默换版本。',
-        '岗位读取返回 role_package_not_found、role_package_root_hash_mismatch 或 role_package_ambiguous 时，说明该固定版本在本机不可用或内容已不同，属于终止性失败：不得改调 explore_role、search_role_knowledge、read_capability_radar 等依赖岗位本体的工具反复尝试，也不得换用其它版本冒充同一引用。应直接说明失败原因，转述错误中给出的已安装版本清单，并引导用户改选一个已安装版本或请运维安装该版本。',
+        '用户明确选择 Hub 的完整四元身份后，可以调用 reference_role_package；中央宿主会按当前账号读取远端制品，无需本机预装。后续读取继承该引用，权限撤销或哈希不一致时停止；新引用必须由用户明确选择。',
+        '岗位读取返回 role_package_not_found、role_package_root_hash_mismatch 或 role_package_ambiguous 时，说明该固定版本在本机不可用或内容已不同，属于终止性失败：不得改调 explore_role、search_role_knowledge、read_capability_radar 等依赖岗位本体的工具反复尝试，也不得换用其它版本冒充同一引用。应直接说明失败原因。中央网关拒绝时检查登录、可见性或发布状态；离线环境才需要安装对应包。不得通过去掉 selector 或哈希来绕过失败。',
         '已经存在明确岗位包引用时，首次介绍岗位或询问“是什么、做什么、需要什么能力”调用 explore_role，并带上引用中的精确 selector；它一次返回足够的岗位全景，取得结果后通常直接回答，不要再机械调用搜索、对象读取和关系图。',
         '只有局部问题没有稳定对象 ID 时才调用 search_role_knowledge；已有 ID 时精确读取；需要岗位中心、任务、能力单元和知识技能逐环展开时用 read_capability_radar；解释局部关系时查询图；解释工作如何发生时追踪事理过程。',
         '涉及重要事实、争议、可信度或时间边界时检查证据。引用对象 ID，并区分 accepted/candidate 与 observed_pattern/documented_norm/inferred_pattern。',
@@ -297,28 +316,31 @@ const plugin = defineLearnFlowPlugin({
         topK: Number(input.topK || 5),
       })
     },
-    explore_role: input => rolePackageRuntime.explore(packageSelector(input), String(input.query)),
-    read_capability_radar: input => rolePackageRuntime.capabilityRadar(packageSelector(input), String(input.query || '')),
-    read_role_objects: input => rolePackageRuntime.readObjects(packageSelector(input), input.objectIds as string[], input.includeRelations !== false),
-    search_role_knowledge: input => rolePackageRuntime.search(packageSelector(input), String(input.query), Number(input.topK || 8), input.includeCandidate !== false),
-    query_role_graph: input => rolePackageRuntime.queryGraph(packageSelector(input), String(input.objectId), Number(input.depth || 1), (input.direction || 'both') as 'outgoing' | 'incoming' | 'both', Number(input.maxNodes || 20)),
-    trace_work_process: input => rolePackageRuntime.traceProcess(packageSelector(input), String(input.objectId), Number(input.maxNodes || 28)),
-    inspect_role_evidence: input => rolePackageRuntime.inspectEvidence(packageSelector(input), input.objectIds as string[]),
-    audit_role_package: input => rolePackageRuntime.audit(packageSelector(input)),
-    research_role_node_risks: input => rolePackageRuntime.researchNodeRisks(packageSelector(input), String(input.objectId), String(input.question || ''), Number(input.maxNodes || 16)),
+    explore_role: async (input, context) => (await runtimeFor(input, context)).explore(packageSelector(input), String(input.query)),
+    read_capability_radar: async (input, context) => (await runtimeFor(input, context)).capabilityRadar(packageSelector(input), String(input.query || '')),
+    read_role_objects: async (input, context) => (await runtimeFor(input, context)).readObjects(packageSelector(input), input.objectIds as string[], input.includeRelations !== false),
+    search_role_knowledge: async (input, context) => (await runtimeFor(input, context)).search(packageSelector(input), String(input.query), Number(input.topK || 8), input.includeCandidate !== false),
+    query_role_graph: async (input, context) => (await runtimeFor(input, context)).queryGraph(packageSelector(input), String(input.objectId), Number(input.depth || 1), (input.direction || 'both') as 'outgoing' | 'incoming' | 'both', Number(input.maxNodes || 20)),
+    trace_work_process: async (input, context) => (await runtimeFor(input, context)).traceProcess(packageSelector(input), String(input.objectId), Number(input.maxNodes || 28)),
+    inspect_role_evidence: async (input, context) => (await runtimeFor(input, context)).inspectEvidence(packageSelector(input), input.objectIds as string[]),
+    audit_role_package: async (input, context) => (await runtimeFor(input, context)).audit(packageSelector(input)),
+    research_role_node_risks: async (input, context) => (await runtimeFor(input, context)).researchNodeRisks(packageSelector(input), String(input.objectId), String(input.question || ''), Number(input.maxNodes || 16)),
     list_role_packages: input => rolePackageRuntime.listPackages(typeof input.query === 'string' ? input.query : ''),
-    reference_role_package: input => rolePackageRuntime.referencePackage({
+    reference_role_package: async (input, context) => (await runtimeFor(input, context)).referencePackage({
       packageId: String(input.packageId), packageVersion: String(input.packageVersion), snapshotId: String(input.snapshotId), rootHash: String(input.rootHash),
     }),
-    compare_role_packages: input => rolePackageRuntime.compare({
-      packageId: typeof input.basePackageId === 'string' ? input.basePackageId : undefined,
-      packageVersion: typeof input.basePackageVersion === 'string' ? input.basePackageVersion : undefined,
-      snapshotId: String(input.baseSnapshotId),
-    }, {
-      packageId: typeof input.targetPackageId === 'string' ? input.targetPackageId : undefined,
-      packageVersion: typeof input.targetPackageVersion === 'string' ? input.targetPackageVersion : undefined,
-      snapshotId: String(input.targetSnapshotId),
-    }),
+    compare_role_packages: async (input, context) => {
+      const selector = (prefix: string) => Object.fromEntries(['PackageId', 'PackageVersion', 'SnapshotId', 'RootHash']
+        .filter(key => typeof input[`${prefix}${key}`] === 'string')
+        .map(key => [key[0].toLowerCase() + key.slice(1), input[`${prefix}${key}`]])) as Record<string, PluginJson>
+      const base = selector('base'), target = selector('target')
+      const left = await runtimeFor(base, context), right = await runtimeFor(target, context)
+      // compare() only reads packages; this facade is local to this one tool call.
+      const combined = Object.create(left) as InstanceType<typeof RolePackageRuntime>
+      Object.defineProperty(combined, 'packages', { value: [...new Map([...left.packages, ...right.packages]
+        .map(pkg => [pkg.manifest.rootHash, pkg])).values()] })
+      return combined.compare(packageSelector(base), packageSelector(target))
+    },
   },
 })
 

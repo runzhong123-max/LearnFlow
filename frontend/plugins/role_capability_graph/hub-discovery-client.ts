@@ -83,11 +83,11 @@ export function withHubDiscovery(installed: PluginToolResult, hub: HubDiscovery,
   const matchStatus = packages.length ? payload.matchStatus : available.length ? 'available_not_installed'
     : hub.status === 'unavailable' || hub.status === 'not_configured' ? 'discovery_unavailable' : 'not_found'
   const summary = packages.length ? `${installed.summary}${available.length ? ` Hub 另有 ${available.length} 个可用发布版本。` : ''}`
-    : available.length ? `Graph Hub 找到 ${available.length} 个与“${query}”相关的已发布岗位包，当前运行环境尚未加载。请打开仓库选择“在 LearnFlow 中使用”；不得把这些包说成不存在。`
+    : available.length ? `Graph Hub 找到 ${available.length} 个与“${query}”相关的已发布岗位包，当前运行环境尚未加载。已连接中央服务时，用户选择后可按完整身份引用；也可打开仓库选择“在 LearnFlow 中使用”；不得把这些包说成不存在。`
       : matchStatus === 'discovery_unavailable' ? `当前运行环境未找到匹配岗位包，且 Graph Hub 检索${hub.status === 'not_configured' ? '尚未配置' : '暂时不可用'}，因此不能判断仓库是否存在该岗位包。`
         : `当前已加载岗位包和 Graph Hub 公开仓库均未找到与“${query}”匹配的岗位包。`
   return { ...installed, summary, payload: { ...payload, matchStatus, hubStatus: hub.status,
     availablePackages: available as unknown as PluginJson, hubTotal: hub.total, hubTruncated: hub.truncated,
-    discoveryBoundary: '已加载与可发现分开；远程发现不安装、不替用户确认、不写学习状态。未加载版本必须先通过仓库进入 LearnFlow。',
+    discoveryBoundary: '已加载与可发现分开；远程发现不安装、不替用户确认、不写学习状态。未加载版本可由已认证的中央宿主按完整引用读取；离线宿主仍需导入。',
   } }
 }

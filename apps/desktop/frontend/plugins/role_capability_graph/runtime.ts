@@ -1,3 +1,4 @@
+import { checkedRolePackageBundle, type RolePackageBundle } from '../../../../../packages/learning-client/src/role-packages/bundle.ts'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { delimiter, dirname, join, resolve } from 'node:path'
@@ -219,16 +220,19 @@ function discoverManifests(root: string) {
 
 function loadPackage(manifestPath: string, source: RolePackageSource): LoadedRolePackage {
   const manifest = asObject(readJson(manifestPath).value, 'manifest') as unknown as StaticPackageManifest
+  return loadPackageContent(manifest, path => readJson(join(dirname(manifestPath), path)), source)
+}
+
+function loadPackageContent(manifest: StaticPackageManifest, read: (path: string) => { raw: string; value: unknown }, source: RolePackageSource): LoadedRolePackage {
   if (manifest.packageProtocol !== 'static-role-package' || !manifest.packageId || !manifest.snapshotId || !manifest.rootHash) {
-    throw new Error(`role_package_invalid:${manifestPath}`)
+    throw new Error(`role_package_invalid:${manifest.packageId}`)
   }
-  const directory = dirname(manifestPath)
   function componentValue(entrypoint: string, label: string) {
     const filename = manifest.entrypoints[entrypoint]
     if (!filename || filename.includes('..') || filename.startsWith('/')) throw new Error(`role_package_invalid:${label}_entrypoint`)
-    const loaded = readJson(join(directory, filename))
+    const loaded = read(filename)
     if (manifest.hashes[filename] !== sha256(loaded.raw)) throw new Error(`role_package_hash_mismatch:${filename}`)
-    return loaded.value
+    return loaded.value as PluginJson
   }
   const component = (entrypoint: string, label: string) => asObject(componentValue(entrypoint, label), label)
   const semantic = component('semanticGraph', 'semantic') as unknown as LoadedRolePackage['semantic']
@@ -347,7 +351,18 @@ export class RolePackageRuntime {
   readonly packages: readonly LoadedRolePackage[]
   readonly discoveryIssues: readonly string[]
 
-  constructor(root: string | RolePackageSource[] = defaultPackageSources()) {
+  constructor(root: string | RolePackageSource[] | { bundles: RolePackageBundle[] } = defaultPackageSources()) {
+    if (typeof root === 'object' && !Array.isArray(root)) {
+      this.packages = root.bundles.map(value => {
+        const bundle = checkedRolePackageBundle(value)
+        return loadPackageContent(bundle.manifest as unknown as StaticPackageManifest,
+          path => ({ raw: bundle.components[path], value: JSON.parse(bundle.components[path]) }),
+          { root: 'authenticated-gateway', sourceKind: bundle.manifest.visibility === 'private' ? 'owner_private' : 'installed',
+            accessScope: bundle.manifest.visibility === 'private' ? 'owner_private' : 'installed' })
+      })
+      this.discoveryIssues = []
+      return
+    }
     const sources: RolePackageSource[] = typeof root === 'string'
       ? [{ root: resolve(root), sourceKind: 'installed', accessScope: 'installed' }]
       : root.map(source => ({ ...source, root: resolve(source.root) }))

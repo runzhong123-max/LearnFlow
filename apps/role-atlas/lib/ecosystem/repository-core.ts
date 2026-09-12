@@ -35,7 +35,7 @@ return {
     if (canonicalStringify({ packageId: m.packageId, packageVersion: m.packageVersion, snapshotId: m.snapshotId, rootHash: m.rootHash }) !== canonicalStringify(requested) || !(await validatePackageBundle(artifact.bundle)).valid) throw new GatewayError("PACKAGE_INTEGRITY_FAILED", 502);
     const result = reconstructBuildResult(artifact.bundle);
     if (result.packages.rolePackage.packageId !== requested.packageId || result.packages.rolePackage.packageVersion !== requested.packageVersion || result.snapshot.id !== requested.snapshotId) throw new GatewayError("PACKAGE_INTEGRITY_FAILED", 502);
-    return { packageRef: requested, title: row.title, result };
+    return { packageRef: requested, title: row.title, result, bundle: artifact.bundle };
   },
   async getRun(actor, id) {
     const db = await ready();

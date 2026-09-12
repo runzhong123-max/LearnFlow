@@ -1,3 +1,4 @@
+import { projectResultIdentity } from "./result-identity";
 import { and, asc, desc, eq, inArray, isNull, ne } from "drizzle-orm";
 import { ensureAppSchema, getD1, getDb } from "@/db";
 import { loadLargeText, storeLargeText } from "@/db/large-text";
@@ -107,10 +108,11 @@ export async function getProjectWorkspace(projectId: string, snapshotId?: string
         .where(eq(projectVersions.projectId, projectId))
         .orderBy(desc(projectVersions.createdAt))
         .limit(1);
+  if (snapshotId && versionRows[0] && versionRows[0].snapshotId !== snapshotId) return null;
   let result: ColdStartBuildResult | null = null;
   if (versionRows[0]) {
     const packageJson = await loadLargeText(getD1(), { table: "project_versions", id: versionRows[0].id, column: "package_json" }, versionRows[0].packageJson);
-    try { result = packageJson ? normalizeRolePackage(JSON.parse(packageJson) as ColdStartBuildResult) : null; }
+    try { result = packageJson ? projectResultIdentity(normalizeRolePackage(JSON.parse(packageJson) as ColdStartBuildResult), projectId) : null; }
     catch { result = null; }
   }
   if (!result && !snapshotId && !versionId && !versionRows.length) {
@@ -374,7 +376,7 @@ export async function getProjectVersion(projectId: string, versionId?: string | 
   const packageJson = await loadLargeText(getD1(), { table: "project_versions", id: version.id, column: "package_json" }, version.packageJson);
   if (!packageJson) return null;
   try {
-    return { version, result: normalizeRolePackage(JSON.parse(packageJson) as ColdStartBuildResult) };
+    return { version, result: projectResultIdentity(normalizeRolePackage(JSON.parse(packageJson) as ColdStartBuildResult), projectId) };
   } catch {
     return null;
   }

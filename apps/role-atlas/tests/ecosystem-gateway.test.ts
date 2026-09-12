@@ -304,3 +304,25 @@ test("course organization does not bind to equally ranked different subjects", a
   assert.equal(resolved.unresolved[0].reason, "ambiguous_definition");
   assert.equal(resolved.extensionProposal, undefined);
 });
+
+test("package.resolve bundle projection preserves bytes and default response stays compatible", async () => {
+ const { compileStaticRolePackage } = await import("../lib/packages/compiler");
+ const result = bundledRoleSnapshot();
+ const { bundle } = await compileStaticRolePackage({ result, packageId: result.packages.rolePackage.packageId, packageVersion: "1.2.0", visibility: "private", evidencePolicy: "full" });
+ const m = bundle.manifest, ref = { packageId: m.packageId, packageVersion: m.packageVersion, snapshotId: m.snapshotId, rootHash: m.rootHash };
+ let reads = 0;
+ const repository = { load: async (who: typeof actor, requested: typeof ref) => {
+   reads++; assert.deepEqual(requested, ref);
+   if (who.sub !== actor.sub) throw new Error("PACKAGE_NOT_FOUND");
+   return { packageRef: ref, title: m.roleTitle, result, bundle };
+ } } as unknown as GatewayRepository;
+ const request: GatewayRequest = { protocol: PROTOCOL, operation: "package.resolve", requestId: "bundle-read", payload: { packageRef: ref } };
+ const deps = { repository, runAgent: async () => { throw new Error("unexpected model call"); } };
+ const legacy = await dispatchGateway(request, actor, deps) as any;
+ assert.equal(legacy.result, result); assert.equal(legacy.bundle, undefined);
+ request.payload.format = "bundle";
+ const raw = await dispatchGateway(request, actor, deps) as any;
+ assert.equal(raw.bundle, bundle); assert.equal(raw.result, undefined);
+ await assert.rejects(dispatchGateway(request, { ...actor, sub: "learnflow:learner:2" }, deps), /PACKAGE_NOT_FOUND/);
+ assert.equal(reads, 3);
+});

@@ -79,6 +79,7 @@ def test_signed_launch_creates_one_plugin_bound_chat_without_learning_evidence(c
         "packageId": "role.network-ops",
         "packageVersion": "1.0.0",
         "snapshotId": "snapshot:network-ops",
+        "rootHash": "a" * 64,
     }
 
     async def stored_counts():

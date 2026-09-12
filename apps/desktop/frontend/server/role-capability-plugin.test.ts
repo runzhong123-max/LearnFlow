@@ -372,3 +372,30 @@ test('role product links use the desktop external URL bridge', () => {
   assert.match(desktopSource, /fn open_external_url/)
   assert.match(desktopSource, /starts_with\("http:\/\/"\) \|\| value\.starts_with\("https:\/\/"\)/)
 })
+
+test('Hub reference reads an uninstalled package by exact hash, rechecks permission and never enters shared runtime', async () => {
+  const local = new RolePackageRuntime().packages[0]
+  const manifestPath = (await import('node:fs')).readdirSync(join(local.source.root), { recursive: true })
+    .map(path => join(local.source.root, String(path))).find(path => path.endsWith('/manifest.json') && JSON.parse(readFileSync(path, 'utf8')).rootHash === local.manifest.rootHash)!
+  const manifest = { ...JSON.parse(readFileSync(manifestPath, 'utf8')), packageId: 'role:remote-only:test', visibility: 'private', rootHash: '' }
+  manifest.rootHash = createHash('sha256').update(canonicalStringify(manifest)).digest('hex')
+  const components = Object.fromEntries(Object.keys(manifest.hashes).map(path => [path, readFileSync(join(manifestPath, '..', path), 'utf8')]))
+  const ref = { packageId: manifest.packageId, packageVersion: manifest.packageVersion, snapshotId: manifest.snapshotId, rootHash: manifest.rootHash }
+  const loaded = await registry()
+  let reads = 0, allowed = true
+  const rolePackageHost = { resolve: async (requested: unknown) => { reads++; assert.deepEqual(requested, ref); if (!allowed) throw new Error('PACKAGE_NOT_FOUND'); return { manifest, components } } }
+  const context = { ...executionContext, rolePackageHost }
+  const referenced = await loaded.execute('role_capability_graph__reference_role_package', ref, context)
+  assert.deepEqual((referenced.result.payload as any).requiredSelector, ref)
+  const task = local.semantic.nodes.find(node => node.type === 'task')!
+  const details = await loaded.execute('role_capability_graph__read_role_objects', { ...ref, objectIds: [task.id] }, context)
+  assert.ok(JSON.stringify(details.result).includes(task.label))
+  assert.ok(details.result.objects?.every(object => object.value.packageId === ref.packageId))
+  assert.equal(reads, 2)
+  await assert.rejects(loaded.execute('role_capability_graph__read_role_objects', { ...ref, objectIds: [task.id] }, executionContext), /role_package_not_found/)
+  allowed = false
+  await assert.rejects(loaded.execute('role_capability_graph__audit_role_package', ref, context), /PACKAGE_NOT_FOUND/)
+  allowed = true
+  await assert.rejects(loaded.execute('role_capability_graph__audit_role_package', ref, { ...context, rolePackageHost: { resolve: async () => ({ manifest: { ...manifest, rootHash: 'a'.repeat(64) }, components }) } }), /root_hash_mismatch/)
+  await assert.rejects(loaded.execute('role_capability_graph__audit_role_package', ref, { ...context, rolePackageHost: { resolve: async () => ({ manifest, components: { ...components, [manifest.entrypoints.semanticGraph]: '{}' } }) } }), /integrity_failed/)
+})

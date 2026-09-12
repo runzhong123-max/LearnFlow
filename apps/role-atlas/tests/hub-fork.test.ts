@@ -17,6 +17,7 @@ test("Fork 生成独立身份、保留来源许可与图谱内容，不改上游
  assert.notEqual(fork.result.snapshot.id,input.result.snapshot.id);
  assert.notEqual(fork.packageId,input.manifest.packageId);
  assert.equal(fork.result.brief.projectId,fork.projectId);
+ assert.equal(fork.result.projectId,fork.projectId);
  assert.equal(fork.result.packages.rolePackage.snapshotId,fork.result.snapshot.id);
  assert.deepEqual(fork.result.semantic,input.result.semantic);assert.deepEqual(fork.result.process,input.result.process);
  assert.deepEqual(input.result,before);
@@ -24,6 +25,9 @@ test("Fork 生成独立身份、保留来源许可与图谱内容，不改上游
  const compiled=await compileStaticRolePackage({result:fork.result,packageId:fork.packageId,packageVersion:"1.0.0",visibility:"private",evidencePolicy:"metadata"});
  assert.equal((await validatePackageBundle(compiled.bundle)).valid,true);
  assert.equal(compiled.bundle.manifest.visibility,"private");
+ const stored = JSON.parse(compiled.bundle.components[compiled.bundle.manifest.entrypoints.snapshot]);
+ assert.equal(stored.projectId, fork.projectId);
+ assert.equal(stored.brief.projectId, fork.projectId);
  assert.notEqual(compiled.bundle.manifest.rootHash,input.manifest.rootHash);
 });
 test("同一账户和版本的重复 Fork 幂等，不同账户或上游版本独立",async()=>{
@@ -48,4 +52,18 @@ test("重试创建不覆盖已有个人内容，删除后的副本不被隐式�
   assert.equal(db.prepare("SELECT COUNT(*) AS n FROM conversations").get()?.n,0);
   assert.equal(db.prepare("SELECT deleted_at FROM projects").get()?.deleted_at,"today");
  }finally{db.close();}
+});
+
+test("旧 Fork 的读取投影修复项目路由，不改变历史快照或上游内容", async () => {
+ const { projectResultIdentity } = await import("@/lib/projects/result-identity");
+ const input = await upstream(), fork = await planHubFork(input);
+ const broken = { ...fork.result, projectId: input.result.projectId };
+ const before = JSON.stringify(broken);
+ const repaired = projectResultIdentity(broken, fork.projectId);
+ assert.equal(repaired.projectId, fork.projectId);
+ assert.equal(repaired.snapshot, broken.snapshot);
+ assert.equal(repaired.semantic, broken.semantic);
+ assert.equal(JSON.stringify(broken), before);
+ assert.equal(projectResultIdentity(broken, "another-project"), broken);
+ assert.equal(projectResultIdentity(input.result, fork.projectId), input.result);
 });

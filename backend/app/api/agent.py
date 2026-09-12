@@ -652,6 +652,7 @@ async def consume_role_package_launch(
         "packageId": package_ref["packageId"],
         "packageVersion": package_ref["packageVersion"],
         "snapshotId": package_ref["snapshotId"],
+        "rootHash": package_ref["rootHash"],
     }
     binding = {
         "protocol": launch["protocol"],
