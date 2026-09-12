@@ -180,3 +180,14 @@ test("运行中的对话或跨项目对话阻止整个采用事务，而不只�
     assert.equal(db.prepare("SELECT COUNT(*) n FROM project_version_events WHERE action='version.adopted'").get()?.n, 0);
   } finally { db.close(); }
 });
+
+test("先审阅保存候选且不切换 head 或对话，之后显式采用仍使用原事务", () => {
+  const { db, commit } = database();
+  try {
+    commit(input("review-base"));
+    commit(input("review-candidate", { parentVersionId: "pv:review-base", expectedHeadId: "pv:review-base", adopt: false }));
+    assert.equal(db.prepare("SELECT COUNT(*) AS n FROM project_versions").get()?.n, 2);
+    assert.equal(db.prepare("SELECT head_version_id FROM projects WHERE id='project:1'").get()?.head_version_id, "pv:review-base");
+    assert.equal(db.prepare("SELECT version_id FROM conversations WHERE id='conversation:1'").get()?.version_id, "pv:review-base");
+  } finally { db.close(); }
+});

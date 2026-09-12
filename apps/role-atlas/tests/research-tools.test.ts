@@ -65,12 +65,12 @@ test("工具只读：没有网络或写库依赖也能独立构造出可调用�
   const toolset = createReadOnlyToolset({
     segments: [segment("segment-1", "已有原文。"), segment("segment-2", "另一段原文。")],
   });
-  assert.deepEqual(toolset.map(tool => tool.name), ["read_source"]);
+  assert.deepEqual(toolset.map(tool => tool.name), ["list_sources", "read_source"]);
   for (const tool of toolset) {
     assert.equal(typeof tool.run, "function");
     assert.ok(Object.keys(tool.args).length > 0, "工具必须声明参数，否则模型无从调用");
   }
-  const result = await toolset[0].run({ segmentId: "segment-2" }, { turn: 1 });
+  const result = await toolset.find(tool => tool.name === "read_source")!.run({ segmentId: "segment-2" }, { turn: 1 });
   assert.match((result.data as { quote: string }).quote, /另一段原文/u);
 });
 

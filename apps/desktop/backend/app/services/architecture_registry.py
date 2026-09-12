@@ -45,10 +45,16 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-09.2-desktop"
+REGISTRY_VERSION = "2026-09-12.1-desktop"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 DATA_CONTRACTS = {
+    "role_package_import_v3_1": {
+        "schema_version": "role-task-definition/v1", "owner": "tutor_agent", "origin": "builtin",
+        "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "../../docs/implementation/ROLE_RESEARCH_PROTOCOL.md",
+        "binding_ids": ["frontend:role_package.import_file"], "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "static-role-package 3.1.0 plus 2.0.0 and 3.0.0; task details are read-only content, pinned reference and original hash retained; no learner mastery inference",
+    },
     "desktop_api_key_v1": {
         "schema_version": "learnflow.desktop-api-key.v1", "owner": "tutor_agent", "origin": "builtin",
         "mode": "scoped_account_authentication", "lifecycle": "implemented",
@@ -1545,6 +1551,7 @@ _API_BINDING_TARGETS = {
 
 
 _FRONTEND_HANDLER_TARGETS = {
+    "frontend:role_package.import_file": ("frontend/plugins/role_capability_graph/package-file.ts", "inspectRolePackageFile", ""),
     "native:desktop.conversion_handoff": ("desktop/src-tauri/src/conversion_handoff.rs", "parse_conversion_ticket", ""),
     "frontend:platform.open": ("frontend/src/runtime-client.ts", "openPlatformWorkspace", ""),
     "frontend:cloud.identity": ("frontend/src/runtime-client.ts", "isCloudDesktopRuntime", ""),

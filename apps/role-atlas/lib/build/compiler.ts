@@ -129,7 +129,7 @@ export function prepareBuildInput(request: ColdStartRequest) {
     ...request.sources,
   ];
   const assets: SourceAsset[] = inputs.map((source, index) => ({
-    id: `src:${stableHash(`${request.projectId}:${index}:${source.title}:${source.content}`)}`,
+    id: `src:${stableHash(`${request.projectId}:${request.research ? source.locator || "content" : index}:${source.title}:${source.content}`)}`,
     title: source.title,
     kind: source.kind,
     locator: source.locator,
@@ -168,6 +168,7 @@ export function prepareBuildInput(request: ColdStartRequest) {
         id: `seg:${stableHash(`${sourceId}:${ordinal}:${text}`)}`,
         sourceId,
         ordinal,
+        ...(source.excerptType ? { excerptType: source.excerptType } : {}),
         text,
         contentHash: stableHash(text),
       });
@@ -370,6 +371,7 @@ export function compileSemanticDraft(input: {
     semanticNodes.push({
       id,
       type: preferred.type,
+      taskDefinition: preferred.type === "task" ? preferred.taskDefinition : undefined,
       label: preferred.label,
       summary: preferred.summary,
       aliases: unique(group.flatMap((item) => [item.label, ...item.aliases]).filter((label) => label !== preferred.label)),

@@ -113,6 +113,18 @@ export async function getProjectWorkspace(projectId: string, snapshotId?: string
     try { result = packageJson ? normalizeRolePackage(JSON.parse(packageJson) as ColdStartBuildResult) : null; }
     catch { result = null; }
   }
+  if (!result && !snapshotId && !versionId && !versionRows.length) {
+    const [latest] = await db.select({ id: buildRuns.id, resultJson: buildRuns.resultJson }).from(buildRuns)
+      .where(and(eq(buildRuns.projectId, projectId), eq(buildRuns.status, "completed")))
+      .orderBy(desc(buildRuns.completedAt)).limit(1);
+    if (latest?.resultJson) {
+      const saved = await loadLargeText(getD1(), { table: "build_runs", id: latest.id, column: "result_json" }, latest.resultJson);
+      try {
+        const draft = saved ? JSON.parse(saved) as ColdStartBuildResult : null;
+        if (draft?.projectId === projectId && draft.researchRun?.protocol === "role-research/v2" && draft.deliveryReadiness?.ready === false) result = draft;
+      } catch { /* Invalid artifacts do not become a project baseline. */ }
+    }
+  }
   return { project, conversations: conversationRows, version: versionRows[0] || null, result };
 }
 
@@ -256,10 +268,10 @@ export async function completeFastBuildSnapshot(result: ColdStartBuildResult, co
     result,
     sourceRunId: result.runId,
     sourceKind: "cold_start",
-    sourceInput: { kind: "cold_start_fast_snapshot", brief: result.brief },
+    sourceInput: { kind: result.deliveryReadiness ? "cold_start_complete" : "cold_start_fast_snapshot", brief: result.brief },
     conversationId,
     ...execution,
-    message: `建立“${result.brief.roleTitle}”岗位内核快照`,
+    message: `建立“${result.brief.roleTitle}”${result.deliveryReadiness ? "完整首版" : "岗位内核快照"}`,
     authorKind: "agent",
   });
 }
@@ -384,6 +396,7 @@ export async function saveProjectCandidateFromIteration(
   };
   const committed = await commitProjectVersion({
     projectId,
+    adopt: result.createdSnapshot && result.contract.research?.adoption !== "review" && !result.researchRun?.changeSets.some(change => change.status === "needs_review"),
     result: result.candidate,
     sourceRunId: result.runId,
     sourceKind: result.workItems.some((item) => item.origin === "workspace" || item.kind === "instantiate") ? "workspace" : "iteration",

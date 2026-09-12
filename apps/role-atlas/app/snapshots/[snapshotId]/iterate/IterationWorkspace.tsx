@@ -1,5 +1,10 @@
 "use client";
 
+import ResearchRunDetail from "@/app/components/ResearchRunDetail";
+import IterationOptions from "@/app/components/IterationOptions";
+import { researchOptionsSchema } from "@/lib/research/protocol";
+
+
 import {
   AlertTriangle,
   ArrowLeft,
@@ -169,7 +174,8 @@ function FinalResultMessage({ result, resultHref, resultLinkLabel, onAccept, onS
       <div className="iteration-agent-avatar"><Sparkles size={15} /></div>
       <div className="iteration-final-body">
         <span className="iteration-message-author">ROLE AGENT · 最终回答</span>
-        <h3>{result.createdSnapshot ? "本轮迭代完成，已形成新的静态快照" : "本轮研究已完成，当前快照保持不变"}</h3>
+        <ResearchRunDetail run={result.researchRun} />
+        <h3>{result.status === "waiting_user" ? "候选版本已保存，等待审阅后采用" : result.createdSnapshot ? "本轮迭代完成，已形成新的静态快照" : "本轮研究已完成，当前快照保持不变"}</h3>
         <p>{result.summary.slice(0, 3).join(" ")}</p>
         <div className="iteration-result-facts">
           <span><b>{result.evaluation.informationGain.score.toFixed(1)}</b><small>{result.createdSnapshot ? "信息增量" : "未采用候选增量"}</small></span>
@@ -213,6 +219,8 @@ function FinalResultMessage({ result, resultHref, resultLinkLabel, onAccept, onS
 
 export default function IterationWorkspace({ snapshotId, projectId, versionId, conversationId, initialProfile = "co_guided", initialPrompt = "", initialTargetIds = "", embedded = false, onClose, onComplete, onSettingsRequest }: { snapshotId: string; projectId?: string; versionId?: string; conversationId?: string; initialProfile?: InitiativeProfile; initialPrompt?: string; initialTargetIds?: string; embedded?: boolean; onClose?: () => void; onComplete?: (result: SnapshotIterationResult) => void; onSettingsRequest?: () => void }) {
   const [workspace, setWorkspace] = useState<WorkspaceEnvelope | null>(null);
+  const [adoption, setAdoption] = useState<"automatic" | "review">("automatic");
+  const [depth, setDepth] = useState<"focused" | "deep">("deep");
   const [initiativeProfile, setInitiativeProfile] = useState<InitiativeProfile>(initialProfile);
   const [mode, setMode] = useState<Exclude<IterationMode, "auto">>("deep_research");
   const [prompt, setPrompt] = useState(initialPrompt);
@@ -314,7 +322,7 @@ export default function IterationWorkspace({ snapshotId, projectId, versionId, c
         method: "POST",
         headers: { "content-type": "application/json" },
         signal: controller.signal,
-        body: JSON.stringify({ iteration: { runId: crypto.randomUUID(), snapshotRef: workspace.reference, projectId: workspace.reference.projectId, conversationId: workspace.reference.projectId ? conversationId : undefined, initiativeProfile: chosenProfile, mode: chosenMode === "auto" ? "auto" : chosenMode, prompt: chosenPrompt.trim(), targetIds: parsedTargetIds, targetAsOf: targetAsOf || undefined, supplementalSources, learningPathGraph, webResearch, maxRounds: 12, sourceLimit: 64, maxWorkItems: 32 }, providerConfig, searchConfig }),
+        body: JSON.stringify({ iteration: { research: researchOptionsSchema.parse({ objective: chosenPrompt.trim(), targetIds: parsedTargetIds, changeScope: parsedTargetIds.length ? "selected" : "role", adoption, budget: depth === "focused" ? { tokens: 500_000, queries: 128, tasks: 32, revisions: 8 } : {} }), runId: crypto.randomUUID(), snapshotRef: workspace.reference, projectId: workspace.reference.projectId, conversationId: workspace.reference.projectId ? conversationId : undefined, initiativeProfile: chosenProfile, mode: chosenMode === "auto" ? "auto" : chosenMode, prompt: chosenPrompt.trim(), targetIds: parsedTargetIds, targetAsOf: targetAsOf || undefined, supplementalSources, learningPathGraph, webResearch, maxRounds: 12, sourceLimit: 64, maxWorkItems: 32 }, providerConfig, searchConfig }),
       });
       if (!response.ok || !response.body) throw new Error((await response.json().catch(() => ({})) as { error?: string }).error || `请求失败（${response.status}）`);
       const reader = response.body.getReader();
@@ -354,15 +362,8 @@ export default function IterationWorkspace({ snapshotId, projectId, versionId, c
           <span className="cold-kicker">ITERATION BRIEF</span>
           <h1>{workspace?.title || "岗位快照迭代"}</h1>
           <p>先在这里明确基本信息。开始后，右侧会像 Agent 工作会话一样实时展示分析、工具调用、耗时和最终产物。</p>
-          <div className="iteration-profile-picker" role="radiogroup" aria-label="迭代功能类型">
-            {modeOptions.map((option) => <button type="button" role="radio" aria-checked={mode === option.id} disabled={running} className={mode === option.id ? "active" : ""} key={option.id} onClick={() => setMode(option.id)}><span><strong>{option.label}</strong><small>{option.detail}</small></span>{mode === option.id ? <Check size={12} /> : null}</button>)}
-          </div>
-          <div className="iteration-profile-picker" role="radiogroup" aria-label="迭代发起方式">
-            {profileOptions.map((profile) => <button type="button" role="radio" aria-checked={initiativeProfile === profile.id} disabled={running} className={initiativeProfile === profile.id ? "active" : ""} key={profile.id} onClick={() => setInitiativeProfile(profile.id)}><span><strong>{profile.label}</strong><small>{profile.detail}</small></span>{initiativeProfile === profile.id ? <Check size={12} /> : null}</button>)}
-          </div>
+          <IterationOptions disabled={running} value={{ mode, initiativeProfile, targetIds, targetAsOf, adoption, depth }} onChange={value => { setMode(value.mode); setInitiativeProfile(value.initiativeProfile); setTargetIds(value.targetIds); setTargetAsOf(value.targetAsOf); setAdoption(value.adoption || "automatic"); setDepth(value.depth || "deep"); }} />
           <label><span>本轮想获得什么</span><textarea value={prompt} disabled={running} onChange={(event) => setPrompt(event.target.value)} placeholder={initiativeProfile === "autonomous" ? "可以留空，Agent 会自动发现并研究" : "例如：重点研究 Agent 系统开发任务及其学习路径，同时检查相关节点是否重复"} /></label>
-          <label><span>限定节点 ID（可选）</span><textarea value={targetIds} disabled={running} onChange={(event) => setTargetIds(event.target.value)} placeholder="拖入或粘贴节点 ID，逗号分隔" /></label>
-          <label><span>更新到目标时点（可选）</span><input type="date" value={targetAsOf} disabled={running} onChange={(event) => setTargetAsOf(event.target.value)} /></label>
           <label className="cold-web-toggle"><span><Globe2 size={13} /><b>自主定向研究</b><small>按工作项并行检索、抽取与去重</small></span><input type="checkbox" checked={webResearch} disabled={running} onChange={(event) => setWebResearch(event.target.checked)} /></label>
           <details className="iteration-source-input"><summary>添加资料（附件、URL、文本）</summary><SourceMaterials value={materials} onChange={setMaterials} disabled={running} onBusyChange={setMaterialsBusy} /></details>
           <div className="risk-baseline"><span><RefreshCw size={13} /><b>当前不可变快照</b></span><small>{workspace?.version ? `${workspace.version.version} · ${workspace.version.snapshotId}` : "正在读取快照…"}</small></div>

@@ -1,3 +1,6 @@
+import { replayBuildCompletion, reusableResearchSources } from "@/lib/research/recovery";
+import { researchOptionsSchema } from "@/lib/research/protocol";
+import type { ResearchAgentCheckpoint } from "@/lib/iteration/research-agent";
 import { enqueueRoleJob, isDispatchedRoleJob } from "@/lib/jobs/dispatch";
 import { rememberResearchRequester } from "@/lib/research-collection/store";
 import { startRoleJobExecution } from "@/lib/jobs/execution";
@@ -97,41 +100,13 @@ export async function POST(request: Request) {
     const previous = workspace?.result;
     if (!previous) return Response.json({ ok: false, error: "当前项目还没有可复用的来源索引。" }, { status: 409 });
     const existingKeys = new Set(parsed.build.sources.map((source) => `${source.locator || ""}:${source.title}`));
-    const reused = previous.sources.assets
-      .filter((asset) => asset.kind !== "user_brief")
-      .flatMap((asset) => {
-        const content = previous.sources.segments
-          .filter((segment) => segment.sourceId === asset.id)
-          .sort((left, right) => left.ordinal - right.ordinal)
-          .map((segment) => segment.text)
-          .join("\n\n")
-          .slice(0, 60_000);
-        const key = `${asset.locator || ""}:${asset.title}`;
-        if (!content || existingKeys.has(key)) return [];
-        existingKeys.add(key);
-        return [{
-          title: asset.title,
-          content,
-          kind: asset.kind,
-          locator: asset.locator,
-          attachmentId: asset.attachmentId,
-          observedAt: asset.observedAt,
-          publisher: asset.publisher,
-          domain: asset.domain,
-          publishedAt: asset.publishedAt,
-          fetchedAt: asset.fetchedAt,
-          sourceTier: asset.sourceTier,
-          queryIds: asset.queryIds,
-          searchCategories: asset.searchCategories,
-          retrievalScore: asset.retrievalScore,
-          provider: asset.provider,
-          providerRequestIds: asset.providerRequestIds,
-          extractionMethod: asset.extractionMethod,
-        }];
-      });
-    buildRequest = { ...parsed.build, sources: [...parsed.build.sources, ...reused].slice(0, 20) };
+    const reused = reusableResearchSources(previous).filter(source => !existingKeys.has(`${source.locator || ""}:${source.title}`));
+    // Fail explicitly at the public request boundary rather than silently retaining the first 20 sources.
+    buildRequest = coldStartRequestSchema.parse({ ...parsed.build, sources: [...parsed.build.sources, ...reused] });
     existingResearchReport = previous.sources.research;
   }
+
+  if (!isDispatchedRoleJob(request)) buildRequest.research ||= researchOptionsSchema.parse({});
 
   let providerConfig;
   let searchConfig;
@@ -187,21 +162,32 @@ export async function POST(request: Request) {
   const execution = startRoleJobExecution(buildRequest.runId, jobOwner);
 
   pruneWorkItemCache();
+  let latestResearchCheckpoint = (job.checkpoint?.state as { researchCheckpoint?: ResearchAgentCheckpoint } | undefined)?.researchCheckpoint;
+  const recoveredResult = (job.checkpoint?.state as { completedResult?: ColdStartBuildResult } | undefined)?.completedResult;
+  const replay = buildRequest.research && recoveredResult?.runId === buildRequest.runId && recoveredResult.projectId === buildRequest.projectId ? recoveredResult : undefined;
+  const nextSequence = await lastRoleEventSequence(buildRequest.runId) + 1;
   const graph = createColdStartSkill(createRecordedModelInvoker(providerConfig, { projectId: buildRequest.projectId, runId: buildRequest.runId }), {
     initialSeq: await lastRoleEventSequence(buildRequest.runId),
     searchConfig,
     sourceLimit: 64,
     existingResearchReport,
     cache: coldStartWorkItemCache,
-    execution: "kernel",
+    execution: buildRequest.research ? "full" : "kernel",
+    researchCheckpoint: latestResearchCheckpoint,
+    onResearchCheckpoint: async researchCheckpoint => {
+      latestResearchCheckpoint = researchCheckpoint;
+      await assertRoleJobLease(buildRequest.runId, jobOwner);
+      await checkpointRoleJob({ jobId: buildRequest.runId, owner: jobOwner, kind: "cold_start", phase: "research", state: { researchCheckpoint } });
+    },
   });
   const stream = createDurableJobStream<BuildEvent>({
     signal: execution.signal,
-    execute: () => graph.stream(
+    execute: () => replay ? Promise.resolve(replayBuildCompletion(replay, nextSequence)) : graph.stream(
       { request: buildRequest, laneFailures: [] },
       {
         configurable: { thread_id: `${buildRequest.projectId}:${buildRequest.runId}` },
         streamMode: "custom",
+        recursionLimit: 10_000,
         signal: execution.signal,
       },
     ),
@@ -211,16 +197,25 @@ export async function POST(request: Request) {
     },
     handle: async (raw, journal) => {
       const buildEvent = raw as BuildEvent;
-      if (buildEvent.kind !== "build.kernel.completed" || !buildEvent.payload.result) {
+      if (buildEvent.kind !== (buildRequest.research ? "build.run.completed" : "build.kernel.completed") || !buildEvent.payload.result) {
         journal.publish(buildEvent);
         return;
       }
       await assertRoleJobLease(buildRequest.runId, jobOwner);
       const kernel = buildEvent.payload.result as ColdStartBuildResult;
+      if (buildRequest.research) await checkpointRoleJob({ jobId: buildRequest.runId, owner: jobOwner, kind: "cold_start", phase: "research.commit", state: { researchCheckpoint: latestResearchCheckpoint, completedResult: kernel } });
+      if (buildRequest.research && !kernel.deliveryReadiness?.ready) {
+        await completeBuildStageRun(buildRequest.runId, buildRequest.projectId, kernel);
+        await completeRoleJob({ jobId: buildRequest.runId, owner: jobOwner, phase: "draft", result: { outcome: kernel.researchRun?.stopReason || "insufficient_material", draft: true, blockers: kernel.deliveryReadiness?.blockers || ["首版尚未完整"] } });
+        buildEvent.payload.completed = false;
+        buildEvent.payload.draft = true;
+        journal.publish(buildEvent);
+        return;
+      }
       assertTaskKernel(kernel);
       await journal.commit(buildEvent, async () => {
         try {
-          await checkpointRoleJob({ jobId: buildRequest.runId, owner: jobOwner, kind: "cold_start", phase: "kernel.commit", state: { snapshotId: kernel.snapshot.id, eventSeq: buildEvent.seq } });
+          await checkpointRoleJob({ jobId: buildRequest.runId, owner: jobOwner, kind: "cold_start", phase: "kernel.commit", state: { snapshotId: kernel.snapshot.id, eventSeq: buildEvent.seq, ...(buildRequest.research ? { researchCheckpoint: latestResearchCheckpoint, completedResult: kernel } : {}) } });
           const committed = await completeFastBuildSnapshot(kernel, parsed.conversationId, { parentVersionId: job.job?.baseVersionId || null, jobId: buildRequest.runId, jobOwner });
           buildEvent.payload.projectVersionId = committed.id;
           buildEvent.payload.appliedToHead = committed.appliedToHead;

@@ -1,3 +1,4 @@
+import { taskDefinitionSchema } from "@/lib/research/task-schema";
 import { z } from "zod/v4";
 import type { ModelInvoker } from "@/lib/agent/model";
 import { processKnowledgeStateSchema, processNodeKindSchema, semanticNodeTypeSchema } from "./types";
@@ -12,6 +13,7 @@ const evidenceSpanSchema = z.object({
 export const semanticDraftSchema = z.object({
   roleSummary: z.string().max(1_200).default(""),
   nodes: z.array(z.object({
+    taskDefinition: taskDefinitionSchema.optional(),
     tempId: z.string().min(1).max(100),
     type: semanticNodeTypeSchema,
     label: z.string().min(1).max(120),
@@ -581,6 +583,13 @@ export async function invokeStructured<T>(input: {
   normalize?: (value: unknown) => unknown;
 }) {
   let content = "";
+  if (input.model.chat) {
+    const response = await input.model.chat({ messages: [{ role: "system", content: input.system }, { role: "user", content: input.user }], signal: input.signal, thinking: input.thinking, maxCompletionTokens: input.maxCompletionTokens, timeoutMs: input.timeoutMs, totalTimeoutMs: input.totalTimeoutMs });
+    if (response.finishReason !== "stop" || response.message.tool_calls?.length) throw new Error(`结构化回答未完整结束：${response.finishReason}`);
+    content = response.message.content || "";
+    const extracted = extractJson(content);
+    return input.schema.parse(input.normalize ? input.normalize(extracted) : extracted);
+  }
   for await (const part of input.model({
     system: input.system,
     user: input.user,

@@ -1,3 +1,4 @@
+import { nativeFixture } from "./helpers/native-model";
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { ModelInvoker } from "@/lib/agent/model";
@@ -165,7 +166,7 @@ function reviewedClaim(id: string, verification: "verified" | "unverified") {
   return {
     claim: {
       id, statement: `断言 ${id}`, kind: "observed" as const,
-      evidenceSpans: [{ segmentId: "segment-1", quote: "引用原文。" }],
+      evidenceSpans: [{ segmentId: "segment-1", quote: "岗位职责材料" }],
       falsifier: "权威标准不含该职责", confidence: 0.6, affectedNodeIds: [],
     },
     verification,
@@ -468,7 +469,7 @@ test("开启编排后一轮内串起 主管→worker→复核→产物，且断�
             final: {
               claims: [{
                 id: "c1", statement: "该岗位需要可检验的技能点", kind: "observed",
-                evidenceSpans: [{ segmentId, quote: "引用原文。" }],
+                evidenceSpans: [{ segmentId, quote: base.sources.segments[0].text.slice(0, 100) }],
                 falsifier: "权威标准不需要技能点", confidence: 0.6, affectedNodeIds: [],
               }],
               gaps: [],
@@ -482,7 +483,7 @@ test("开启编排后一轮内串起 主管→worker→复核→产物，且断�
 
     const stream = await createSnapshotIterationSkill({
       model: scripted,
-      researchAgent: buildResearchAgent({ model: scripted }),
+      researchAgent: buildResearchAgent({ model: nativeFixture(scripted) }),
       productPlanner: buildProductPlanner({ model: scripted }),
     }).stream({ request, base, candidate: base }, { configurable: { thread_id: "e2e-orchestration" }, streamMode: "custom" });
     for await (const event of stream) events.push(event as IterationEvent);

@@ -20,7 +20,7 @@ const REQUIRED_ENTRYPOINTS = [
 
 type RolePackageManifest = {
   packageProtocol: 'static-role-package'
-  protocolVersion: '3.0.0'
+  protocolVersion: '2.0.0' | '3.0.0' | '3.1.0'
   packageId: string
   packageVersion: string
   snapshotId: string
@@ -90,7 +90,7 @@ function validateBundle(value: unknown): RolePackageFileBundle {
   const envelope = asRecord(value, 'envelope')
   const manifest = asRecord(envelope.manifest, 'manifest') as RolePackageManifest
   const components = asRecord(envelope.components, 'components') as Record<string, string>
-  if (manifest.packageProtocol !== 'static-role-package' || manifest.protocolVersion !== '3.0.0') {
+  if (manifest.packageProtocol !== 'static-role-package' || !['2.0.0', '3.0.0', '3.1.0'].includes(manifest.protocolVersion)) {
     throw new Error('role_package_file_invalid:unsupported_protocol')
   }
   if (!manifest.packageId || !manifest.snapshotId || !manifest.rootHash || !SEMVER.test(manifest.packageVersion || '')) {

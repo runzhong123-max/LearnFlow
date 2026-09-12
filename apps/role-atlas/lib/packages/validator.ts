@@ -11,7 +11,7 @@ function duplicates(values: string[]) {
 
 /** A syntactically valid candidate is not necessarily a complete role package. */
 export function publicationBlockers(result: ColdStartBuildResult): string[] {
-  const blockers: string[] = [];
+  const blockers: string[] = [...(result.deliveryReadiness?.blockers || [])];
   const nodes = result.semantic.nodes.filter((node) => node.lifecycle !== "rejected");
   const required = [["market_role", "岗位定义"], ["task", "典型任务"], ["capability", "能力"], ["knowledge_skill", "知识技能"]] as const;
   for (const [type, label] of required) if (!nodes.some((node) => node.type === type)) blockers.push(`缺少${label}，请先继续完善岗位包。`);
@@ -50,7 +50,7 @@ export function validateBuildResult(result: ColdStartBuildResult) {
   if (duplicateIds.length > 0) hardErrors.push(`存在重复对象 ID：${duplicateIds.slice(0, 8).join("、")}`);
   if (!result.snapshot.id || !result.snapshot.asOf) hardErrors.push("快照缺少 snapshot_id 或 as_of。 ");
   const rolePackage = result.packages.rolePackage;
-  if (rolePackage.protocolVersion !== "3.0.0") hardErrors.push("岗位包协议版本不是 3.0.0。 ");
+  if (!["3.0.0", "3.1.0"].includes(rolePackage.protocolVersion)) hardErrors.push("岗位包协议版本不是 3.0.0。 ");
   if (rolePackage.snapshotId !== result.snapshot.id) hardErrors.push("岗位包与快照 ID 不一致。 ");
   if (rolePackage.snapshotAsOf !== result.snapshot.asOf) hardErrors.push("岗位包与快照时间边界不一致。 ");
   const expectedNamespaceCounts = {
@@ -97,7 +97,7 @@ export async function validatePackageBundle(bundle: StaticRolePackageBundle): Pr
   const hardErrors: string[] = [];
   const warnings: string[] = [];
   if (bundle.manifest.packageProtocol !== "static-role-package") hardErrors.push("不支持的 packageProtocol。 ");
-  if (bundle.manifest.protocolVersion !== "2.0.0" && bundle.manifest.protocolVersion !== "3.0.0") hardErrors.push("不支持的协议版本。 ");
+  if (!["2.0.0", "3.0.0", "3.1.0"].includes(bundle.manifest.protocolVersion)) hardErrors.push("不支持的协议版本。 ");
   if (!SEMVER.test(bundle.manifest.packageVersion)) hardErrors.push("packageVersion 不是合法 SemVer。 ");
   for (const [path, expected] of Object.entries(bundle.manifest.hashes)) {
     const content = bundle.components[path];

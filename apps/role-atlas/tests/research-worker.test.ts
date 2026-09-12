@@ -1,3 +1,4 @@
+import { nativeFixture } from "./helpers/native-model";
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { ModelInvoker } from "@/lib/agent/model";
@@ -45,7 +46,7 @@ function workerModel(input: {
   systems?: string[]
 }): ModelInvoker {
   let turns = 0;
-  return async function* (request) {
+  return nativeFixture(async function* (request) {
     input.systems?.push(request.system);
     if (request.system.includes("独立的证据复核员")) {
       yield { type: "text", delta: JSON.stringify({ verdicts: input.verdicts || [] }) };
@@ -55,7 +56,7 @@ function workerModel(input: {
     turns += 1;
     if (scripted) { yield { type: "text", delta: scripted }; return; }
     yield { type: "text", delta: JSON.stringify({ thought: "够了", final: input.final }) };
-  };
+  });
 }
 
 const tool: ResearchTool = {
@@ -105,7 +106,7 @@ test("无证据的 observed 断言不进可写集合，也不消耗复核调用"
   });
   assert.equal(result.claims.length, 1);
   assert.equal(result.claims[0].verification, "unverified");
-  assert.match(result.claims[0].note, /没有附任何原文片段/u);
+  assert.match(result.claims[0].note, /缺少原文/u);
   assert.equal(systems.some(system => system.includes("独立的证据复核员")), false);
 });
 
@@ -114,7 +115,7 @@ test("复核器失败时全部保持待核实，既不升级也不删除", async
     if (request.system.includes("独立的证据复核员")) throw new Error("reviewer_down");
     yield { type: "text", delta: JSON.stringify({ thought: "完成", final: { claims: [observedClaim()] } }) };
   };
-  const result = await runResearchWorker({ model, card: card(), tools: [tool] });
+  const result = await runResearchWorker({ model: nativeFixture(model), card: card(), tools: [tool] });
   assert.equal(result.claims.length, 1);
   assert.equal(result.claims[0].verification, "unverified");
   assert.match(result.claims[0].note, /复核不可用/u);
@@ -126,15 +127,15 @@ test("最终产物结构非法即终止，不静默丢弃部分断言", async ()
     model: workerModel({ final: { claims: [observedClaim(), observedClaim()] } }),
     card: card(), tools: [tool],
   });
-  assert.equal(duplicate.stopReason, "invalid_action");
-  assert.match(String(duplicate.stopDetail), /claim id 重复/u);
+  assert.equal(duplicate.stopReason, "max_turns");
+  assert.ok(duplicate.transcript.some(event => event.type === "turn.invalid" && event.reason.includes("claim id 重复")));
   assert.deepEqual(duplicate.claims, []);
 
   const malformed = await runResearchWorker({
-    model: workerModel({ final: { claims: [{ id: "x", statement: "s", kind: "observed" }] } }),
+    model: workerModel({ final: { claims: [{ id: "x", statement: "", kind: "observed" }] } }),
     card: card(), tools: [tool],
   });
-  assert.equal(malformed.stopReason, "invalid_action");
+  assert.equal(malformed.stopReason, "max_turns");
   assert.deepEqual(malformed.claims, []);
 });
 
@@ -157,19 +158,19 @@ test("工具失败仍能收敛为带缺口的结论，不伪造断言", async ()
 });
 
 test("worker 提示包含任务、证据类型与无证据断言的后果", () => {
-  const systems: string[] = [];
+  const systems: string[] = [], tasks: string[] = [];
   const payload = '{"thought":"完成","final":{"claims":[]}}';
   return runResearchWorker({
-    model: (async function* (request) { systems.push(request.system); yield { type: "text", delta: payload }; }) as ModelInvoker,
+    model: nativeFixture(async function* (request) { systems.push(request.system); tasks.push(request.user); yield { type: "text", delta: payload }; }),
     card: card({ sourceClass: "job_market", queriesHint: ["招聘要求", "岗位职责"] }),
     tools: [tool],
   }).then(() => {
     const system = systems[0];
-    assert.match(system, /official_standard|job_market/u);
-    assert.match(system, /job_market/u);
-    assert.match(system, /招聘要求/u);
+    assert.doesNotMatch(system, /招聘要求/u);
+    assert.match(tasks[0], /job_market/u);
+    assert.match(tasks[0], /招聘要求/u);
     assert.match(system, /kind=observed 时必须附至少一条原文片段/u);
-    assert.match(system, /falsifier 写明/u);
+    assert.match(system, /按需填写 falsifier/u);
     assert.match(system, /证据不足时把它写进 gaps/u);
   });
 });
@@ -198,5 +199,5 @@ test("任务卡与预算契约有明确边界", () => {
   assert.throws(() => researchTaskCardSchema.parse({ id: "x", question: "q", sourceClass: "unknown" }), /sourceClass|invalid/u);
   assert.equal(researchTaskCardSchema.parse({ id: "x", question: "q", sourceClass: "academic" }).budget.queries, 8);
   assert.throws(() => workerBudgetSchema.parse({ maxTurns: 999 }), /maxTurns|too_big/u);
-  assert.equal(workerBudgetSchema.parse({}).maxToolCalls, 10);
+  assert.equal(workerBudgetSchema.parse({}).maxToolCalls, 128);
 });

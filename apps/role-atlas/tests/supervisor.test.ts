@@ -39,7 +39,6 @@ function workItem(overrides: Partial<IterationWorkItem> = {}): IterationWorkItem
     findingIds: ["finding-1"],
     priority: 90,
     requiresResearch: true,
-    dependencies: [],
     status: "planned",
     ...overrides,
   };
@@ -81,7 +80,7 @@ test("模型给出的任务卡被采纳，但身份、findings 与预算由代�
   assert.equal(cards[0].budget.queries, QUERIES_PER_CARD);
 });
 
-test("任务卡不携带节点范围，模型无法借卡片扩大研究范围", async () => {
+test("调查范围可含相邻对象，改动范围仍由用户契约固定", async () => {
   const supervisor = createResearchSupervisor({
     model: modelReturning({
       cards: [{
@@ -92,11 +91,12 @@ test("任务卡不携带节点范围，模型无法借卡片扩大研究范围",
   });
   const cards = await supervisor.plan({ contract: contract(), workItems: [workItem()], round: 1 });
   // 卡结构里根本没有范围字段，越权无处安放。
-  assert.equal("targetIds" in cards[0], false);
+  assert.deepEqual(cards[0].targetIds, contract().targetIds);
+  assert.deepEqual(cards[0].inputRefs, ["task-999"]);
   assert.equal("affectedNodeIds" in cards[0], false);
 });
 
-test("为未知工作项编造的任务卡被丢弃", async () => {
+test("主管可提出检查清单外的新研究问题", async () => {
   const supervisor = createResearchSupervisor({
     model: modelReturning({
       cards: [
@@ -106,8 +106,9 @@ test("为未知工作项编造的任务卡被丢弃", async () => {
     }),
   });
   const cards = await supervisor.plan({ contract: contract(), workItems: [workItem()], round: 1 });
-  assert.equal(cards.length, 1);
-  assert.deepEqual(cards[0].why.findingIds, ["finding-1"]);
+  assert.equal(cards.length, 2);
+  assert.ok(cards.some(card => card.why.findingIds.includes("finding-1")));
+  assert.ok(cards.some(card => card.question === "研究一个不存在的工作项"));
 });
 
 test("模型漏掉的工作项仍会拿到确定性的卡，研究范围不因模型而收窄", async () => {
@@ -152,7 +153,7 @@ test("卡片数量受工作项预算与计划上限双重约束", async () => {
   assert.equal(cards.length, 5, "受 maxWorkItems 约束");
 
   const many = deterministicCards({ contract: contract({ maxWorkItems: 128 }), workItems: items });
-  assert.equal(many.length, MAX_CARDS_PER_PLAN, "受计划上限约束");
+  assert.equal(many.length, Math.min(items.length, MAX_CARDS_PER_PLAN), "受计划上限约束");
 });
 
 test("没有需要研究的工作项时不产生任何卡片", async () => {

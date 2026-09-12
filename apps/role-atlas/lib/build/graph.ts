@@ -1,3 +1,9 @@
+import { linkResearchFindings } from "@/lib/research/change-set";
+import { researchQuality } from "@/lib/research/quality";
+import { buildResearchAgent, type ResearchAgentParts, type ResearchAgentCheckpoint } from "@/lib/iteration/research-agent";
+import { runResearchWorkers } from "@/lib/iteration/worker";
+import { deriveTaskDefinitions } from "@/lib/research/task-definition";
+import type { IterationContract } from "@/lib/iteration/types";
 import { END, getWriter, START, StateGraph, StateSchema } from "@langchain/langgraph";
 import { z } from "zod/v4";
 import type { ModelInvoker } from "@/lib/agent/model";
@@ -110,9 +116,16 @@ const BuildState = new StateSchema({
   bestQualityScore: z.number().optional(),
   laneFailures: z.array(z.string()).default(() => []),
   result: z.custom<ColdStartBuildResult>().optional(),
+  researchContinue: z.boolean().default(false),
+  researchStagnant: z.number().default(0),
+  researchSignature: z.string().optional(),
 });
 
 type SkillOptions = {
+  researchAgent?: ResearchAgentParts;
+  researchCheckpoint?: ResearchAgentCheckpoint;
+  onResearchCheckpoint?: (state: ResearchAgentCheckpoint) => Promise<void>;
+  researchPerformed?: boolean;
   initialSeq?: number;
   searchConfig?: SearchProviderConfig;
   sourceLimit?: number;
@@ -336,6 +349,8 @@ function markRecoveredWorkItem(workItems: BuildWorkItemSummary[], stage: string,
 }
 
 export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions) {
+  let sharedResearch = options?.researchAgent;
+  const originalModel = model;
   let seq = options?.initialSeq || 0;
   const cache = options?.cache || new Map<string, unknown>();
   const boundaryVerifier = createBoundaryVerifier(model);
@@ -537,6 +552,24 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
   const researchSources = async (state: typeof BuildState.State, config: { signal?: AbortSignal }) => {
     const runStartedAt = Date.now();
     emit(state.request, "build.run.started", "system", { roleTitle: state.request.roleTitle, workflowVersion: COLD_START_WORKFLOW_VERSION });
+    if (state.request.research && !options?.researchPerformed) {
+      const settings = state.request.research;
+      sharedResearch ||= buildResearchAgent({ model: originalModel, searchConfig: options?.searchConfig, budget: settings.budget, onCheckpoint: options?.onResearchCheckpoint });
+      if (options?.researchCheckpoint && !sharedResearch.record()) sharedResearch.restore(options.researchCheckpoint);
+      model = sharedResearch.model;
+      const prepared = prepareBuildInput(state.request);
+      const contract: IterationContract = { id: state.request.runId, research: settings, objective: settings.objective || `研究${state.request.roleTitle}的岗位边界、典型任务、知识能力和完整工作过程，面向高职学生，优先支持下游项目转换`, initiativeProfile: "autonomous", mode: "deep_research", targetIds: [], targetAsOf: state.request.snapshotAsOf, changeIntents: ["expand", "verify"], evidencePolicy: [], acceptancePolicy: [], inferredFrom: ["cold_start"], budgets: { maxRounds: settings.budget.revisions, maxSources: settings.budget.queries, maxWorkItems: settings.budget.tasks, graphRadius: "global" } };
+      try {
+      const cards = await sharedResearch.plan({ contract, sources: prepared, graph: state.result, workItems: [], round: (sharedResearch.record()?.agenda.revision || 0) + 1, context: { role: state.request.roleTitle, boundary: state.request.roleDescription, targetAsOf: state.request.snapshotAsOf, audience: state.request.audience, currentQuality: state.result?.deliveryReadiness }, signal: config.signal });
+      const results = await runResearchWorkers({ cards, concurrency: sharedResearch.concurrency, runOne: card => sharedResearch!.run(card, { request: state.request, assets: prepared.assets, segments: prepared.segments, graph: state.result, signal: config.signal }) });
+      emit(state.request, "build.research.completed", "evidence", { taskCount: cards.length, findingCount: results.reduce((sum, result) => sum + result.claims.length, 0), budget: sharedResearch.budgetLedger.snapshot() });
+      } catch (error) {
+        if (config.signal?.aborted) throw error;
+        await sharedResearch.finish(error instanceof Error && error.message.includes("BUDGET") ? "budget_exhausted" : "failed");
+        emit(state.request, "build.research.completed", "evidence", { failed: error instanceof Error ? error.message : "research_failed", budget: sharedResearch.budgetLedger.snapshot() });
+      }
+      return { activeRequest: { ...state.request, sources: mergeResearchSources(state.request.sources, sharedResearch.collectedSources()) }, runStartedAt };
+    }
     if (!options?.searchConfig) return { activeRequest: state.request, researchReport: options?.existingResearchReport, runStartedAt };
     const searchPlan = await createRoleSearchPlan({ request: state.request, model, signal: config.signal, onReasoning: (delta) => emit(state.request, "build.reasoning.delta", "evidence", { lane: "search-planning", delta }) });
     const researched = await researchRoleSources({
@@ -728,9 +761,9 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     const visibleNodeCount = kernelResult.semantic.nodes.filter((node) => node.defaultVisibility !== false).length;
     emit(state.request, "build.semantic.patch", "semantic", { phase: "kernel", nodes: kernelResult.semantic.nodes, edges: kernelResult.semantic.edges, visibleNodeCount });
     emit(state.request, "build.lane.completed", "semantic", { lane: "kernel", visibleTaskCount: visibleTasks.length, visibleNodeCount, durationMs: firstKernelMs });
-    emit(state.request, "build.fast_snapshot.completed", "structural", { result: kernelResult, metrics, parentRunId: state.request.runId, compatibilityAlias: true });
-    emit(state.request, "build.kernel.completed", "structural", { result: kernelResult, metrics, visibleTaskCount: visibleTasks.length, visibleNodeCount, backgroundLanes: ["capability", "knowledge", "skill_dependencies", "process", "inspection"] });
-    emit(state.request, "build.enrichment.queued", "system", { baseSnapshotId: kernelResult.snapshot.id, lanes: ["capability", "knowledge", "skill_dependencies", "process", "inspection"] });
+    emit(state.request, "build.fast_snapshot.completed", "structural", { preview: Boolean(state.request.research), result: kernelResult, metrics, parentRunId: state.request.runId, compatibilityAlias: true });
+    emit(state.request, "build.kernel.completed", "structural", { preview: Boolean(state.request.research), result: kernelResult, metrics, visibleTaskCount: visibleTasks.length, visibleNodeCount, backgroundLanes: ["capability", "knowledge", "skill_dependencies", "process", "inspection"] });
+    if (!state.request.research) emit(state.request, "build.enrichment.queued", "system", { baseSnapshotId: kernelResult.snapshot.id, lanes: ["capability", "knowledge", "skill_dependencies", "process", "inspection"] });
     return {
       kernelResult,
       result: kernelResult,
@@ -743,6 +776,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
   };
 
   const needsTaskRecovery = (state: typeof BuildState.State) => {
+    if (state.request.research) return "build_kernel";
     if (state.taskDraft?.nodes.some(node => node.type === "task")) return "build_kernel";
     if (state.taskRecoveryRound >= 2) return "build_kernel";
     const allShards = createSourceShards({ assets: state.prepared!.assets, segments: state.prepared!.segments });
@@ -814,7 +848,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
   };
 
   const targetedKnowledgeResearch = async (state: typeof BuildState.State, config: { signal?: AbortSignal }, knowledgeGroups: TaskGroup[]) => {
-    if (!options?.searchConfig || !knowledgeGroups.length) return {};
+    if (state.request.research || !options?.searchConfig || !knowledgeGroups.length) return {};
     const budget = Math.max(0, 32 - state.targetedResearchQueries);
     // A failed quality check overrides pre-extraction heuristics: the presence
     // of a technical document or mention did not actually close these gaps.
@@ -1218,7 +1252,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     return { result, qualityTaskIds, qualityKnowledgeTaskIds, qualityProcessTaskIds, bestResult: better ? result : state.bestResult, bestQualityScore: better ? score : state.bestQualityScore };
   };
 
-  const routeQuality = (state: typeof BuildState.State) => state.qualityTaskIds.length > 0
+  const routeQuality = (state: typeof BuildState.State) => !state.request.research && state.qualityTaskIds.length > 0
     && state.qualityRepairRound < (options?.qualityRepairRounds ?? 2)
     && state.prepared!.assets.some(asset => asset.kind !== "user_brief" && asset.qualification?.status !== "quarantined")
     ? "repair_quality" : "finish_build";
@@ -1228,11 +1262,29 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       message: "检查发现可补齐的任务支撑缺口，正在更换来源角度补研并保留已有成果。" });
     return { qualityRepairRound: round };
   };
-  const finishBuild = async (state: typeof BuildState.State) => {
-    const result = state.bestResult || state.result!;
+  const finishBuild = async (state: typeof BuildState.State, config: { signal?: AbortSignal }) => {
+    let result = state.bestResult || state.result!;
+    let researchContinue = false, researchStagnant = state.researchStagnant, researchSignature = state.researchSignature;
+    if (state.request.research) {
+      await deriveTaskDefinitions(model, result, config.signal, sharedResearch?.reviewModel || model);
+      const run = sharedResearch?.record();
+      if (run) {
+        linkResearchFindings(result, run);
+        const signature = JSON.stringify({ quality: researchQuality(result), findings: run.findings.map(finding => finding.id) });
+        researchStagnant = signature === state.researchSignature ? state.researchStagnant + 1 : 0;
+        researchSignature = signature;
+        const remaining = sharedResearch!.budgetLedger.snapshot().remainingResearch;
+        const exhausted = remaining.tokens < 1000 || remaining.turns < 1 || run.agenda.revision >= state.request.research.budget.revisions;
+        researchContinue = !run.stopReason && !result.deliveryReadiness?.ready && !exhausted && researchStagnant < state.request.research.budget.stagnantRounds && run.agenda.tasks.some(task => task.status !== "failed");
+        if (!researchContinue) await sharedResearch!.finish(run.stopReason || (result.deliveryReadiness?.ready ? "goal_reached" : exhausted ? "budget_exhausted" : researchStagnant >= state.request.research.budget.stagnantRounds ? "no_progress" : "insufficient_material"));
+        result.researchRun = sharedResearch!.record();
+      }
+      result = refreshRolePackageManifest(result, { status: result.deliveryReadiness?.ready ? "ready" : "candidate" });
+    }
+    if (researchContinue) return { result, bestResult: result, researchContinue, researchStagnant, researchSignature };
     emit(state.request, "build.run.completed", "system", { result, publishable: result.validation.publishable, metrics: result.build?.metrics,
       qualityRepairRounds: state.qualityRepairRound, remainingTaskIds: state.qualityTaskIds, stoppedBecause: state.qualityTaskIds.length ? "research_budget_or_evidence_limit" : "task_support_complete" });
-    return { result };
+    return { result, researchContinue, researchStagnant, researchSignature };
   };
 
   if (options?.execution === "enrichment") {
@@ -1292,6 +1344,6 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     .addEdge("materialize_dual_graph", "audit_and_compile")
     .addConditionalEdges("audit_and_compile", routeQuality, ["repair_quality", "finish_build"])
       .addEdge("repair_quality", "derive_layers")
-      .addEdge("finish_build", END)
+      .addConditionalEdges("finish_build", state => state.researchContinue ? "research_sources" : END, ["research_sources", END])
     .compile({ checkpointer: false }).withConfig({ recursionLimit: 80 });
 }

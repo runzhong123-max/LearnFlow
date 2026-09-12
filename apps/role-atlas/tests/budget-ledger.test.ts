@@ -109,9 +109,9 @@ test("未登记额度的产品共享研究池，仍受总量约束", () => {
   assert.equal(book.snapshot().byProduct.general.queries, 20);
 });
 
-test("默认预留为总额的五分之一", () => {
+test("默认预留五分之一 token 与复核调用，不扣搜索额度", () => {
   const reserve = defaultReviewReserve(amount(100, 1000, 100));
-  assert.deepEqual(reserve, { queries: 20, tokens: 200, turns: 20 });
+  assert.deepEqual(reserve, { queries: 0, tokens: 200, turns: 20 });
 });
 
 test("账本契约拒绝未知产品名，避免无法执行的分账", () => {

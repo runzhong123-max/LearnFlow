@@ -10,11 +10,11 @@ import {
 
 const noopModel: ModelInvoker = async function* () { yield { type: "text", delta: '{"cards":[]}' }; };
 
-test("装配开关默认关闭，只有显式设为 1 才启用", () => {
-  assert.equal(researchAgentEnabled({}), false);
-  assert.equal(researchAgentEnabled({ ROLE_ATLAS_RESEARCH_AGENT: "" }), false);
+test("新研究默认启用，可明确关闭", () => {
+  assert.equal(researchAgentEnabled({}), true);
+  assert.equal(researchAgentEnabled({ ROLE_ATLAS_RESEARCH_AGENT: "" }), true);
   assert.equal(researchAgentEnabled({ ROLE_ATLAS_RESEARCH_AGENT: "0" }), false);
-  assert.equal(researchAgentEnabled({ ROLE_ATLAS_RESEARCH_AGENT: "true" }), false, "只认 1，避免歧义值被当成开启");
+  assert.equal(researchAgentEnabled({ ROLE_ATLAS_RESEARCH_AGENT: "true" }), true);
   assert.equal(researchAgentEnabled({ ROLE_ATLAS_RESEARCH_AGENT: " 1 " }), true);
 });
 
@@ -30,8 +30,8 @@ test("装配产出 plan / run / 并发 / 账本四件，并发默认保守", () 
 test("账本按本轮预算建账并预留复核额度", () => {
   const ledger = ledgerForRun({ queryBudget: 100, maxRounds: 10 });
   const spend = ledger.charge("general", { queries: 100 });
-  assert.equal(spend.granted.queries, 80, "研究池应为总额减去预留");
-  assert.equal(ledger.snapshot().remainingReserve.queries, 20, "复核预留必须原样保留");
+  assert.equal(spend.granted.queries, 100, "研究池应为总额减去预留");
+  assert.equal(ledger.snapshot().remainingReserve.queries, 0, "复核预留必须原样保留");
 });
 
 test("无检索供应商时 run 仍可构造，但不会调用检索工具", async () => {

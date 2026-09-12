@@ -4,7 +4,7 @@ export type PackageVisibility = "private" | "unlisted" | "public";
 export type EvidencePolicy = "full" | "metadata" | "redacted";
 
 export type PackageValidationReport = {
-  protocolVersion: "2.0.0" | "3.0.0";
+  protocolVersion: "2.0.0" | "3.0.0" | "3.1.0";
   valid: boolean;
   hardErrors: string[];
   warnings: string[];
@@ -16,7 +16,7 @@ export type PackageValidationReport = {
 
 export type StaticRolePackageManifest = {
   packageProtocol: "static-role-package";
-  protocolVersion: "2.0.0" | "3.0.0";
+  protocolVersion: "2.0.0" | "3.0.0" | "3.1.0";
   packageId: string;
   packageVersion: string;
   snapshotId: string;

@@ -26,12 +26,16 @@ export const radarAxisSchema = z.enum([
   "capability_transfer",
   "freshness_signal",
   "boundary_drift",
+  "student_understanding",
 ]);
 export type RadarAxis = z.infer<typeof radarAxisSchema>;
 
 export const radarItemSchema = z.object({
   id: z.string().min(1).max(200),
   axis: radarAxisSchema,
+  missingConcept: z.string().max(1000).optional(),
+  reopenReason: z.string().max(1000).optional(),
+  qualityTarget: z.enum(["project_conversion", "student_understanding", "coverage"]).optional(),
   direction: z.string().trim().min(2).max(400),
   /**
    * The concrete signal that exposed the gap, e.g. "6/12 份 JD 提到 X，图谱无对应
@@ -39,7 +43,7 @@ export const radarItemSchema = z.object({
    * than presented to the user as an opportunity.
    */
   gapSignal: z.string().trim().min(1).max(600),
-  affectedNodeIds: z.array(z.string().min(1).max(220)).min(1).max(40),
+  affectedNodeIds: z.array(z.string().min(1).max(220)).max(128),
   /** Proposed by the model; ordering uses the recomputed score instead. */
   expectedGain: z.object({
     score: z.number().min(0).max(100),
@@ -95,20 +99,22 @@ export function rankRadarItems(input: {
       continue;
     }
     const unknown = item.affectedNodeIds.filter(id => !input.knownNodeIds.has(id));
-    if (unknown.length) {
+    if (unknown.length || (!item.affectedNodeIds.length && !item.missingConcept?.trim())) {
       rejections.push({ id: item.id, gate: "signal", reason: `影响的节点在当前快照中不存在：${unknown.join("、")}` });
       continue;
     }
     const direction = normalizeDirection(item.direction);
-    if (input.decidedDirections?.has(direction) || seen.has(direction)) {
+    if ((input.decidedDirections?.has(direction) && !item.reopenReason?.trim()) || seen.has(direction)) {
       rejections.push({ id: item.id, gate: "dedupe", reason: "该方向已被决定或已在本次雷达中提出，不再重复推荐" });
       continue;
     }
     seen.add(direction);
 
-    const severity = item.affectedNodeIds.reduce((total, id) => total + RADAR_SEVERITY_WEIGHT[input.nodeSeverity?.get(id) || "warning"], 0);
+    const severity = Math.max(1, ...item.affectedNodeIds.map(id => RADAR_SEVERITY_WEIGHT[input.nodeSeverity?.get(id) || "warning"]));
+    const quality = item.qualityTarget || (["process_completeness", "capability_transfer"].includes(item.axis) ? "project_conversion" : item.axis === "student_understanding" ? "student_understanding" : "coverage");
+    const priority = { project_conversion: 300, student_understanding: 200, coverage: 100 }[quality];
     const relevance = objectiveRelevance(item, input.objective);
-    ranked.push({ ...item, recomputedGain: Math.round(severity * relevance * 10) / 10, rank: 0 });
+    ranked.push({ ...item, recomputedGain: priority + Math.round(severity * relevance * 10) / 10, rank: 0 });
   }
 
   ranked.sort((left, right) => right.recomputedGain - left.recomputedGain

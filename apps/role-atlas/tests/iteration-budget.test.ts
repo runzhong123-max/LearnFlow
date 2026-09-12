@@ -77,7 +77,7 @@ test("旧上限仍被接受，放宽不引入新的拒绝面", () => {
 test("超出新上限仍被拒绝，预算始终有硬边界", () => {
   for (const budget of [
     { maxRounds: 401 },
-    { sourceLimit: 4_001 },
+    { sourceLimit: 20_001 },
     { maxWorkItems: 1_001 },
     { queryBudget: 20_001 },
     { stagnantRoundLimit: 65 },

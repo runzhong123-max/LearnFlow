@@ -1,3 +1,5 @@
+import type { TaskDefinition } from "@/lib/research/task-definition";
+import { researchOptionsSchema } from "@/lib/research/protocol";
 import { z } from "zod/v4";
 
 export const sourceKindSchema = z.enum([
@@ -43,6 +45,7 @@ export const sourceInputSchema = z.object({
   provider: z.string().max(80).optional(),
   providerRequestIds: z.array(z.string().max(160)).max(24).optional(),
   extractionMethod: z.enum(["search_content", "provider_extract", "direct_fetch"]).optional(),
+  excerptType: z.enum(["verbatim", "close_paraphrase", "research_note"]).optional(),
   workspaceEvidence: workspaceEvidenceSchema.optional(),
 });
 
@@ -76,6 +79,7 @@ export const learningPathGraphInputSchema = z.object({
 }).optional();
 
 export const coldStartRequestSchema = z.object({
+  research: researchOptionsSchema.optional(),
   runId: z.string().min(4).max(100),
   projectId: z.string().min(4).max(100),
   roleTitle: z.string().min(2).max(120),
@@ -83,7 +87,7 @@ export const coldStartRequestSchema = z.object({
   market: z.string().max(120).default("中国大陆"),
   audience: z.array(z.string().min(1).max(80)).max(8).default(["高职学生", "教师"]),
   snapshotAsOf: z.string().max(40).default(() => new Date().toISOString().slice(0, 10)),
-  sources: z.array(sourceInputSchema).max(20).default([]),
+  sources: z.array(sourceInputSchema).max(2000).default([]),
   /** Optional LearnFlow-owned graph used only to build a read-only role projection. */
   learningPathGraph: learningPathGraphInputSchema,
 });
@@ -331,6 +335,10 @@ export type EvidenceBinding = {
   strength?: "strong" | "moderate" | "weak";
   limitations?: string[];
   rationale?: string;
+  reviewStatus?: "supported" | "partially_supported" | "conflicting" | "undetermined";
+  adoptionStatus?: "candidate" | "adopted" | "superseded" | "deprecated";
+  applicableAsOf?: string;
+  recheckWhen?: string;
 };
 
 export const semanticNodeTypeSchema = z.enum([
@@ -348,6 +356,7 @@ export const semanticNodeTypeSchema = z.enum([
 export type SemanticNodeType = z.infer<typeof semanticNodeTypeSchema>;
 
 export type SemanticNode = {
+  taskDefinition?: TaskDefinition;
   id: string;
   type: SemanticNodeType;
   label: string;
@@ -466,6 +475,9 @@ export type SemanticClaim = {
   assertionType?: "direct_fact" | "cross_source_synthesis" | "research_inference";
   limitations?: string[];
   conflictRefs?: string[];
+  researchFindingId?: string;
+  reviewStatus?: "supported" | "partially_supported" | "conflicting" | "undetermined";
+  adoptionStatus?: "candidate" | "adopted" | "superseded" | "deprecated";
 };
 
 export const processKnowledgeStateSchema = z.enum([
@@ -612,7 +624,7 @@ export type RolePackageNamespaceManifest = {
 
 /** One externally addressable Role Package with three internal namespaces. */
 export type RolePackageManifest = {
-  protocolVersion: "3.0.0";
+  protocolVersion: "3.0.0" | "3.1.0";
   packageId: string;
   packageVersion: string;
   snapshotId: string;
@@ -626,6 +638,8 @@ export type RolePackageManifest = {
 };
 
 export type ColdStartBuildResult = {
+  researchRun?: import("@/lib/research/protocol").ResearchRun;
+  deliveryReadiness?: { schemaVersion: "role-delivery-readiness/v1"; ready: boolean; blockers: string[]; tasks: Array<{ taskId: string; label: string; ready: boolean; gaps: string[] }> };
   runId: string;
   projectId: string;
   brief: ProjectBrief;

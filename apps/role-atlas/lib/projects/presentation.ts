@@ -26,7 +26,7 @@ export function projectGraphPayload(result: ColdStartBuildResult) {
       lifecycle: "candidate" as const,
       assertion_refs: result.semantic.claims.filter((claim) => claim.subjectId === node.id || claim.objectId === node.id).map((claim) => claim.id),
       evidence_summary: evidenceFor(result, node.evidenceBindingIds),
-      data: { aliases: node.aliases, confidence: node.confidence, granularity: node.granularity, facets: node.facets, expansion: node.expansion },
+      data: { taskDefinition: node.taskDefinition, aliases: node.aliases, confidence: node.confidence, granularity: node.granularity, facets: node.facets, expansion: node.expansion },
       packageId: result.packages.rolePackage.packageId,
       packageVersion: result.packages.rolePackage.packageVersion,
       snapshotId: result.snapshot.id,
@@ -43,7 +43,7 @@ export function projectObjectIndex(result: ColdStartBuildResult) {
     binding_refs: node.evidenceBindingIds,
     field_states: [{ field_path: "summary", state: node.evidenceBindingIds.length ? "supported" : "candidate" }],
     related_ids: result.semantic.edges.filter((edge) => edge.source === node.id || edge.target === node.id).flatMap((edge) => [edge.id, edge.source === node.id ? edge.target : edge.source]),
-    payload: { label: node.label, summary: node.summary, aliases: node.aliases, confidence: node.confidence, granularity: node.granularity, facets: node.facets, expansion: node.expansion },
+    payload: { taskDefinition: node.taskDefinition, label: node.label, summary: node.summary, aliases: node.aliases, confidence: node.confidence, granularity: node.granularity, facets: node.facets, expansion: node.expansion },
   }));
 }
 

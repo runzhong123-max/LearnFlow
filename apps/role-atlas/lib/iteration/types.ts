@@ -1,3 +1,4 @@
+import { researchOptionsSchema, type ResearchOptions } from "@/lib/research/protocol";
 import { z } from "zod/v4";
 import { learningPathGraphInputSchema, sourceInputSchema, type ColdStartBuildResult, type SourceInput, type WebResearchReport } from "@/lib/build/types";
 import type { PlannedQuery } from "@/lib/search/web-research";
@@ -39,14 +40,15 @@ export const iterationFindingLayerSchema = z.enum([
 ]);
 
 export const snapshotIterationRequestSchema = z.object({
+  research: researchOptionsSchema.optional(),
   runId: z.string().min(4).max(100),
   snapshotRef: snapshotReferenceSchema,
   projectId: z.string().min(4).max(100).optional(),
   conversationId: z.string().min(4).max(100).optional(),
   initiativeProfile: initiativeProfileSchema.default("co_guided"),
   mode: iterationModeSchema.default("auto"),
-  prompt: z.string().max(4_000).default(""),
-  targetIds: z.array(z.string().max(220)).max(60).default([]),
+  prompt: z.string().max(8_000).default(""),
+  targetIds: z.array(z.string().max(240)).max(128).default([]),
   targetAsOf: z.string().max(40).optional(),
   supplementalSources: z.array(sourceInputSchema).max(64).default([]),
   learningPathGraph: learningPathGraphInputSchema,
@@ -64,13 +66,13 @@ export const snapshotIterationRequestSchema = z.object({
    * large ceiling raises what is *possible* without raising what is *automatic*.
    */
   maxRounds: z.number().int().min(1).max(400).default(12),
-  sourceLimit: z.number().int().min(4).max(4_000).default(64),
-  maxWorkItems: z.number().int().min(3).max(1_000).default(32),
+  sourceLimit: z.number().int().min(1).max(20_000).default(64),
+  maxWorkItems: z.number().int().min(1).max(1_000).default(32),
   /**
    * Optional so existing callers that build a request literal keep compiling.
    * Read through DEFAULT_ITERATION_BUDGET, never as a bare number.
    */
-  queryBudget: z.number().int().min(8).max(20_000).optional(),
+  queryBudget: z.number().int().min(1).max(20_000).optional(),
   stagnantRoundLimit: z.number().int().min(1).max(64).optional(),
 });
 
@@ -98,6 +100,7 @@ export type SnapshotIterationRequest = Omit<z.infer<typeof snapshotIterationRequ
 };
 
 export type IterationContract = {
+  research?: ResearchOptions;
   id: string;
   initiativeProfile: InitiativeProfile;
   mode: IterationMode;
@@ -114,7 +117,9 @@ export type IterationContract = {
     graphRadius: number | "global";
   };
   acceptancePolicy: string[];
-  stopConditions: string[];
+  /** Legacy descriptions are read-only; stopPolicy owns execution. */
+  stopConditions?: string[];
+  stopPolicy?: { maxRounds: number; stagnantRounds: number };
   inferredFrom: string[];
 };
 
@@ -201,7 +206,6 @@ export type IterationWorkItem = {
   findingIds: string[];
   priority: number;
   requiresResearch: boolean;
-  dependencies: string[];
   status: "planned" | "running" | "completed" | "known_gap" | "skipped";
 };
 
@@ -211,7 +215,9 @@ export type IterationResearchPlan = {
   workItemIds: string[];
   queries: PlannedQuery[];
   rationale: string[];
-  stopConditions: string[];
+  /** Legacy descriptions are read-only; stopPolicy owns execution. */
+  stopConditions?: string[];
+  stopPolicy?: { maxRounds: number; stagnantRounds: number };
 };
 
 export type IterationEvaluation = {
@@ -232,6 +238,7 @@ export type IterationEvaluation = {
 };
 
 export type SnapshotIterationResult = {
+  researchRun?: import("@/lib/research/protocol").ResearchRun;
   runId: string;
   snapshotRef: SnapshotReference;
   projectId?: string;

@@ -153,7 +153,7 @@ test("结构闸：端点无法解析的关系被退回，不静默丢弃", () =>
   assert.match(report.rejections[0].reason, /node-that-does-not-exist/u);
 });
 
-test("结构闸：本批关系成环时整批关系被拒，节点仍保留", () => {
+test("结构闸：硬先修循环被拒，节点仍保留", () => {
   const snapshot = base();
   const segmentId = snapshot.sources.segments[0].id;
   const report = validateAugmentation({
@@ -164,8 +164,8 @@ test("结构闸：本批关系成环时整批关系被拒，节点仍保留", ()
         atomicNode(segmentId, { tempId: "b", label: "等价类划分原则" }),
       ],
       edges: [
-        { from: "a", to: "b", type: "requires_skill", evidenceSegmentIds: [segmentId], confidence: 0.6 },
-        { from: "b", to: "a", type: "requires_skill", evidenceSegmentIds: [segmentId], confidence: 0.6 },
+        { from: "a", to: "b", type: "prerequisite_of", evidenceSegmentIds: [segmentId], confidence: 0.6 },
+        { from: "b", to: "a", type: "prerequisite_of", evidenceSegmentIds: [segmentId], confidence: 0.6 },
       ],
     }),
   });

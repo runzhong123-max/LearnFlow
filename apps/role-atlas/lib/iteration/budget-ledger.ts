@@ -20,9 +20,9 @@ import { z } from "zod";
  */
 
 export const budgetAmountSchema = z.object({
-  queries: z.number().int().min(0).max(512).default(0),
-  tokens: z.number().int().min(0).max(4_000_000).default(0),
-  turns: z.number().int().min(0).max(128).default(0),
+  queries: z.number().int().min(0).max(20_000).default(0),
+  tokens: z.number().int().min(0).max(20_000_000).default(0),
+  turns: z.number().int().min(0).max(1_000_000).default(0),
 });
 export type BudgetAmount = z.infer<typeof budgetAmountSchema>;
 
@@ -99,15 +99,15 @@ function minAmount(left: BudgetAmount, right: BudgetAmount): BudgetAmount {
   };
 }
 
-export function createBudgetLedger(config: BudgetLedgerConfig) {
+export function createBudgetLedger(config: BudgetLedgerConfig, restored?: BudgetLedgerSnapshot) {
   const parsed = budgetLedgerConfigSchema.parse(config);
   const perProduct: Partial<Record<BudgetProduct, BudgetAmount>> = parsed.perProduct || {};
   // The reserve is subtracted from the research ceiling once, at construction;
   // it is not "available until needed", it is never available to research.
   const researchCeiling = subtract(parsed.total, parsed.reviewReserve);
-  let researchSpent: BudgetAmount = { ...ZERO };
-  let reserveSpent: BudgetAmount = { ...ZERO };
-  const byProduct: Record<string, BudgetAmount> = {};
+  let researchSpent: BudgetAmount = { ...ZERO, ...restored?.spent };
+  let reserveSpent: BudgetAmount = { ...ZERO, ...restored?.reserveSpent };
+  const byProduct: Record<string, BudgetAmount> = structuredClone(restored?.byProduct || {});
 
   const spentFor = (product: BudgetProduct) => byProduct[product] || { ...ZERO };
 
@@ -118,7 +118,7 @@ export function createBudgetLedger(config: BudgetLedgerConfig) {
    * other product can draw on the reserve at all.
    */
   const charge = (product: BudgetProduct, requested: Partial<BudgetAmount>): BudgetChargeResult => {
-    const want = add(ZERO, requested);
+    const want = budgetAmountSchema.parse(add(ZERO, requested));
     const fromReserve = product === "evidence_review";
     const pool = fromReserve ? parsed.reviewReserve : researchCeiling;
     const spentInPool = fromReserve ? reserveSpent : researchSpent;
@@ -154,7 +154,32 @@ export function createBudgetLedger(config: BudgetLedgerConfig) {
     remainingReserve: subtract(parsed.reviewReserve, reserveSpent),
   });
 
-  return { charge, snapshot };
+  const reserve = (product: BudgetProduct, requested: Partial<BudgetAmount>) => {
+    const result = charge(product, requested);
+    let settled = false;
+    const settle = (actual: Partial<BudgetAmount>) => {
+      if (settled) return;
+      settled = true;
+      const used = budgetAmountSchema.parse(add(ZERO, actual));
+      const refund = subtract(result.granted, used);
+      if (product === "evidence_review") reserveSpent = subtract(reserveSpent, refund);
+      else researchSpent = subtract(researchSpent, refund);
+      byProduct[product] = subtract(spentFor(product), refund);
+      // Unexpected provider excess is recorded as debt, never silently lost.
+      const excess = subtract(used, result.granted);
+      if (product === "evidence_review") reserveSpent = add(reserveSpent, excess);
+      else researchSpent = add(researchSpent, excess);
+      byProduct[product] = add(spentFor(product), excess);
+    };
+    return { ...result, settle };
+  };
+  const restore = (value: BudgetLedgerSnapshot) => {
+    researchSpent = budgetAmountSchema.parse(value.spent);
+    reserveSpent = budgetAmountSchema.parse(value.reserveSpent);
+    Object.keys(byProduct).forEach(key => delete byProduct[key]);
+    Object.assign(byProduct, structuredClone(value.byProduct));
+  };
+  return { charge, reserve, snapshot, restore };
 }
 
 export type BudgetLedger = ReturnType<typeof createBudgetLedger>;
@@ -162,7 +187,7 @@ export type BudgetLedger = ReturnType<typeof createBudgetLedger>;
 /** Default split: withhold a fifth of the query budget for evidence review. */
 export function defaultReviewReserve(total: BudgetAmount): BudgetAmount {
   return {
-    queries: Math.ceil(total.queries * 0.2),
+    queries: 0,
     tokens: Math.ceil(total.tokens * 0.2),
     turns: Math.ceil(total.turns * 0.2),
   };

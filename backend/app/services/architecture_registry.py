@@ -44,12 +44,26 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-09.6"
+REGISTRY_VERSION = "2026-09-12.1"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Source-data contracts, not Agent-callable tools or learner-state writers.
 # The referenced TypeScript module owns field semantics; this registry owns discovery.
 DATA_CONTRACTS = {
+    "role_package_import_v3_1": {
+        "schema_version": "role-task-definition/v1", "owner": "tutor_agent", "origin": "builtin",
+        "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "docs/implementation/ROLE_RESEARCH_PROTOCOL.md",
+        "binding_ids": ["frontend:role_package.import_file"], "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "static-role-package 3.1.0 plus 2.0.0 and 3.0.0; task details are read-only content, pinned reference and original hash retained; no learner mastery inference",
+    },
+    "role_research_run_v2": {
+        "schema_version": "role-research/v2", "owner": "tutor_agent", "origin": "builtin",
+        "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "docs/implementation/ROLE_RESEARCH_PROTOCOL.md",
+        "binding_ids": ["frontend:role_research.run", "frontend:role_research.native", "frontend:role_research.sources", "frontend:role_research.records", "frontend:role_research.propose", "frontend:role_research.compile", "frontend:role_research.quality"],
+        "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "new production runs use v2; legacy checkpoints retain their protocol; internal supervisor, investigator and reviewer have no user-control, publication or learner-state authority",
+    },
+
     "desktop_api_key_v1": {
         "schema_version": "learnflow.desktop-api-key.v1", "owner": "tutor_agent", "origin": "builtin",
         "mode": "scoped_account_authentication", "lifecycle": "implemented",
@@ -1608,6 +1622,15 @@ _API_BINDING_TARGETS = {
 
 
 _FRONTEND_HANDLER_TARGETS = {
+    "frontend:role_package.import_file": ("frontend/plugins/role_capability_graph/package-file.ts", "inspectRolePackageFile", ""),
+    "frontend:role_research.run": ("apps/role-atlas/lib/iteration/research-agent.ts", "buildResearchAgent", ""),
+    "frontend:role_research.native": ("apps/role-atlas/lib/agent/native-model.ts", "createChatInvoker", ""),
+    "frontend:role_research.sources": ("apps/role-atlas/lib/iteration/research-tools.ts", "createResearchToolset", ""),
+    "frontend:role_research.records": ("apps/role-atlas/lib/research/record-tools.ts", "researchRecordTools", ""),
+    "frontend:role_research.propose": ("apps/role-atlas/lib/research/semantic-changes.ts", "changeProposalTool", ""),
+    "frontend:role_research.compile": ("apps/role-atlas/lib/research/semantic-changes.ts", "compileResearchChanges", ""),
+    "frontend:role_research.quality": ("apps/role-atlas/lib/research/task-definition.ts", "roleDeliveryReadiness", ""),
+
     "frontend:auth.ip_account_console": ("frontend/src/ip-account-console.ts", "isIpAccountConsole", ""),
     "frontend:auth.api_key_console": ("frontend/src/PersonalApiKeys.tsx", "PersonalApiKeys", ""),
     "frontend:role_jobs.enqueue": ("apps/role-atlas/lib/jobs/dispatch.ts", "enqueueRoleJob", ""),

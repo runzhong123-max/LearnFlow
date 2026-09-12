@@ -1,9 +1,11 @@
+import { replayIterationCompletion, canReplayCommittedIteration } from "@/lib/research/recovery";
+import { researchOptionsSchema } from "@/lib/research/protocol";
 import { enqueueRoleJob, isDispatchedRoleJob } from "@/lib/jobs/dispatch";
 import { readAutomaticMountResearchFeedback } from "@/lib/learning-path/automatic";
 import { iterationOutcome } from "@/lib/jobs/iteration-outcome";
 import { rememberResearchRequester } from "@/lib/research-collection/store";
 import { startRoleJobExecution } from "@/lib/jobs/execution";
-import { projectVersionHeadState } from "@/lib/versioning/commit";
+import { projectVersionHeadState, committedRunProvenance } from "@/lib/versioning/commit";
 import { authorizeApiRequest, requestActor } from "@/lib/access";
 import { z } from "zod/v4";
 import type { ModelInvoker } from "@/lib/agent/model";
@@ -113,7 +115,11 @@ export async function POST(request: Request) {
     }
     if (conversation.conversation.mode !== "iteration") return Response.json({ error: "请先切换到迭代态再运行工具。", code: "ITERATION_MODE_REQUIRED" }, { status: 409 });
     if (conversation.conversation.versionId !== (resolved.reference.versionId || null) || conversation.conversation.snapshotId !== resolved.reference.snapshotId) {
-      return Response.json({ error: "对话基线已改变，请刷新后继续。", code: "CONVERSATION_BASE_CHANGED" }, { status: 409 });
+      const dispatched = isDispatchedRoleJob(request);
+      const committed = dispatched && parsed.iteration.research ? await committedRunProvenance(projectId, parsed.iteration.runId) : null;
+      if (!canReplayCommittedIteration({ dispatched, runId: parsed.iteration.runId, projectId, baseVersionId: resolved.reference.versionId, committed })) {
+        return Response.json({ error: "对话基线已改变，请刷新后继续。", code: "CONVERSATION_BASE_CHANGED" }, { status: 409 });
+      }
     }
   }
 
@@ -121,6 +127,12 @@ export async function POST(request: Request) {
   const learningMountFeedback = !isDispatchedRoleJob(request) && resolved.reference.versionId
     ? (await readAutomaticMountResearchFeedback(projectId, resolved.reference.versionId)).map(({ roleNodeId, reason, researchGoal }) => ({ roleNodeId, reason, researchGoal }))
     : parsed.iteration.learningMountFeedback;
+  if (!isDispatchedRoleJob(request)) parsed.iteration.research ||= researchOptionsSchema.parse({ objective: parsed.iteration.prompt, targetIds: parsed.iteration.targetIds, changeScope: parsed.iteration.targetIds.length ? "selected" : "role" });
+  if (parsed.iteration.research) {
+    const options = parsed.iteration.research;
+    if (options.targetIds.some(id => !nodeIds.has(id)) || (options.changeScope === "selected" && !options.targetIds.length)) return Response.json({ error: "请选择当前版本中的改动对象。" }, { status: 400 });
+    Object.assign(parsed.iteration, { targetIds: options.targetIds, prompt: options.objective ?? parsed.iteration.prompt, initiativeProfile: options.changeScope === "selected" ? "user_directed" : "autonomous", maxRounds: options.budget.revisions, maxWorkItems: options.budget.tasks, queryBudget: options.budget.queries, sourceLimit: options.budget.queries, stagnantRoundLimit: options.budget.stagnantRounds });
+  }
   const iterationRequest = {
     ...parsed.iteration,
     learningMountFeedback,
@@ -181,22 +193,30 @@ export async function POST(request: Request) {
 
   const execution = startRoleJobExecution(iterationRequest.runId, jobOwner);
 
-  // Agent research is opt-in per deployment: enabling it changes what an
-  // iteration actually does and spends model budget, so it must be an explicit
-  // operator decision. Unset keeps the deterministic path exactly as before.
-  const researchAgent = researchAgentEnabled()
+  // New sealed requests use v2; historical requests retain their original engine.
+  let latestResearchState: Record<string, unknown> = (job.checkpoint?.state as Record<string, unknown>) || {};
+  const researchAgent = iterationRequest.research && researchAgentEnabled()
     ? buildResearchAgent({
       model,
+      budget: iterationRequest.research?.budget,
+      onCheckpoint: async researchCheckpoint => {
+        latestResearchState = { ...latestResearchState, researchCheckpoint };
+        await assertRoleJobLease(iterationRequest.runId, jobOwner);
+        await checkpointRoleJob({ jobId: iterationRequest.runId, owner: jobOwner, kind: jobKind, phase: String(latestResearchState.phase || "research-plan"), state: latestResearchState });
+      },
       ...(searchConfig ? { searchConfig } : {}),
       budgetLedger: ledgerForRun({
         queryBudget: iterationRequest.queryBudget ?? DEFAULT_ITERATION_BUDGET.queryBudget,
         maxRounds: iterationRequest.maxRounds,
+        tokens: iterationRequest.research?.budget.tokens,
       }),
     })
     : undefined;
 
+  if (researchAgent && latestResearchState.researchCheckpoint) researchAgent.restore(latestResearchState.researchCheckpoint as import("@/lib/iteration/research-agent").ResearchAgentCheckpoint);
+
   const graph = createSnapshotIterationSkill({
-    model,
+    model: researchAgent?.model || model,
     modelLabel,
     initialSeq: await lastRoleEventSequence(iterationRequest.runId),
     searchConfig,
@@ -204,8 +224,9 @@ export async function POST(request: Request) {
     // Products ride on the same switch as the research that feeds them: radar
     // items and augmentations are derived from what research found, so enabling
     // one without the other would be a half-configured feature.
-    ...(researchAgent ? { productPlanner: buildProductPlanner({ model, issues: resolved.result.audit?.issues || [] }) } : {}),
+    ...(researchAgent ? { productPlanner: buildProductPlanner({ model: researchAgent.model, issues: resolved.result.audit?.issues || [] }) } : {}),
     onCheckpoint: async (phase, state) => {
+      latestResearchState = state;
       await assertRoleJobLease(iterationRequest.runId, jobOwner);
       if (!await checkpointRoleJob({ jobId: iterationRequest.runId, owner: jobOwner, kind: jobKind, phase, state })) throw new Error("JOB_LEASE_LOST");
       await saveIterationCheckpoint(iterationRequest.runId, phase, state);
@@ -218,9 +239,12 @@ export async function POST(request: Request) {
   const resumeFrom = recovered && resumablePhases.has(String(recovered.phase))
     ? String(recovered.phase) as "contract" | "discovery" | "research-plan" | "research" | "rebuild" | "consolidate" | "evaluate" | "next-round"
     : undefined;
+  const recoveredFinal = recovered?.result as SnapshotIterationResult | undefined;
+  const replay = iterationRequest.research && recoveredFinal?.runId === iterationRequest.runId && recoveredFinal.baseSnapshotId === resolved.reference.snapshotId ? recoveredFinal : undefined;
+  const nextSequence = await lastRoleEventSequence(iterationRequest.runId) + 1;
   const stream = createDurableJobStream<IterationEvent>({
     signal: execution.signal,
-    execute: () => graph.stream(
+    execute: () => replay ? Promise.resolve(replayIterationCompletion(replay, nextSequence)) : graph.stream(
       {
         round: 1,
         opportunities: [],
@@ -239,6 +263,7 @@ export async function POST(request: Request) {
       {
         configurable: { thread_id: `${resolved.reference.snapshotId}:${iterationRequest.runId}` },
         streamMode: "custom",
+        recursionLimit: 10_000,
         signal: execution.signal,
       },
     ),
@@ -251,6 +276,7 @@ export async function POST(request: Request) {
         return;
       }
       const result = event.payload.result as SnapshotIterationResult;
+      if (iterationRequest.research) await checkpointRoleJob({ jobId: iterationRequest.runId, owner: jobOwner, kind: jobKind, phase: "research.commit", state: { ...latestResearchState, researchCheckpoint: researchAgent?.snapshot(), result } });
       if (result.createdSnapshot) {
         await journal.commit({
           ...event,

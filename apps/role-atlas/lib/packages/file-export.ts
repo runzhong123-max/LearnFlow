@@ -26,7 +26,7 @@ function assertSafeComponentPath(path: string) {
 
 function parseManifest(raw: string, sourceDirectory: string) {
   const manifest = JSON.parse(raw) as StaticRolePackageManifest;
-  if (manifest.packageProtocol !== "static-role-package" || manifest.protocolVersion !== "3.0.0") {
+  if (manifest.packageProtocol !== "static-role-package" || !["2.0.0", "3.0.0", "3.1.0"].includes(manifest.protocolVersion)) {
     throw new Error(`UNSUPPORTED_ROLE_PACKAGE:${sourceDirectory}`);
   }
   for (const key of REQUIRED_ENTRYPOINTS) {

@@ -1,3 +1,4 @@
+import { roleDeliveryReadiness } from "@/lib/research/task-definition";
 import { compileRolePackage, stableHash } from "@/lib/build/compiler";
 import type { ColdStartBuildResult, ColdStartRequest, EvidenceSpan } from "@/lib/build/types";
 
@@ -67,6 +68,11 @@ export function preserveIterationGraph(base: ColdStartBuildResult, rebuilt: Cold
   const retainedNodes = base.semantic.nodes.map(old => {
     const next = mapped.semantic.nodes.find(node => node.id === old.id && node.type === old.type && node.label === old.label && node.learningKind === old.learningKind);
     if (!next) return old;
+    if (request.research && next.type === "task" && next.taskDefinition) {
+      const taskBindings = mapped.sources.evidenceBindings.filter(binding => binding.targetId === old.id && binding.fieldPath.startsWith("taskDefinition."));
+      teachingBindings.push(...taskBindings);
+      return { ...old, taskDefinition: next.taskDefinition, evidenceBindingIds: [...new Set([...old.evidenceBindingIds, ...taskBindings.map(binding => binding.id)])] };
+    }
     const definition = old.type === "knowledge_skill" && explicitDefinitionTargets.has(old.id)
       && next.learningDefinition?.scopeNote.trim() && next.learningDefinition.assessmentCriteria.some(item => item.trim())
       && JSON.stringify(old.learningDefinition) !== JSON.stringify(next.learningDefinition);
@@ -118,10 +124,11 @@ export function preserveIterationGraph(base: ColdStartBuildResult, rebuilt: Cold
   });
   result.process.capsules = retain(base.process.capsules || [], mapped.process.capsules || []);
   if (result.build && mapped.build) result.build = { ...mapped.build, ...result.build, stage: mapped.build.stage, enrichment: mapped.build.enrichment };
+  if (request.research) result.deliveryReadiness = roleDeliveryReadiness(result);
   return result;
 }
 
-export function learningRegressionReasons(base: ColdStartBuildResult, candidate: ColdStartBuildResult, migrations: Record<string, string> = {}) {
+export function learningRegressionReasons(base: ColdStartBuildResult, candidate: ColdStartBuildResult, migrations: Record<string, string> = {}, retired: Set<string> = new Set()) {
   const nodes = new Map(candidate.semantic.nodes.map(n => [n.id, n]));
   const redirect = (start: string) => {
     let id = start;
@@ -129,14 +136,14 @@ export function learningRegressionReasons(base: ColdStartBuildResult, candidate:
     while (migrations[id] && !seen.has(id)) { seen.add(id); id = migrations[id]; }
     return id;
   };
-  const lost = base.semantic.nodes.filter(n => (n.type === "knowledge_skill" || n.type === "task") && n.lifecycle !== "rejected").filter(n => {
+  const lost = base.semantic.nodes.filter(n => (n.type === "knowledge_skill" || n.type === "task") && n.lifecycle !== "rejected" && !retired.has(n.id)).filter(n => {
     const target = nodes.get(redirect(n.id));
     return !target || target.type !== n.type || target.lifecycle === "rejected" || (n.learningKind && target.learningKind !== n.learningKind);
   });
   const oldNodes = new Map(base.semantic.nodes.map(n => [n.id, n]));
   const links = new Set(candidate.semantic.edges.filter(e => e.lifecycle !== "rejected").map(e => `${e.type}:${e.source}:${e.target}`));
   const lostLinks = base.semantic.edges.filter(e => e.lifecycle !== "rejected" && oldNodes.get(e.source)?.type === "task" && oldNodes.get(e.target)?.type === "knowledge_skill")
-    .filter(e => !links.has(`${e.type}:${redirect(e.source)}:${redirect(e.target)}`));
+    .filter(e => !retired.has(e.source) && !retired.has(e.target) && !links.has(`${e.type}:${redirect(e.source)}:${redirect(e.target)}`));
   return [
     lost.length ? `候选丢失或改变 ${lost.length} 个已有任务或知识技能，缺少经过验证的合并迁移：${lost.map(n => n.label).join("、")}` : "",
     lostLinks.length ? `候选丢失 ${lostLinks.length} 条已有任务的知识技能支撑关系` : "",

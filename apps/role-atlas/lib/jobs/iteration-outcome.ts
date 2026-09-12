@@ -76,7 +76,7 @@ export async function loadIterationOutcome(
 
 export function iterationOutcomePresentation(outcome?: IterationOutcome) {
   if (!outcome) return undefined;
-  if (outcome.status === "waiting_user") return { tone: "partial", label: "需要补充资料", message: "本轮检查已结束，尚未生成新版本。请查看未解决的问题。" };
+  if (outcome.status === "waiting_user") return outcome.createdSnapshot ? { tone: "partial", label: "候选待审阅", message: "候选版本已保存，审阅后可采用；当前版本保持不变。" } : { tone: "partial", label: "需要补充资料", message: "本轮检查已结束，尚未生成新版本。请查看未解决的问题。" };
   if (!outcome.createdSnapshot || outcome.status === "no_change") return { tone: "no-change", label: "未生成新版本", message: "本轮没有可保存的有效更新，仍保留原版本。查看本轮结果可了解原因与剩余缺口。" };
   const hasGaps = outcome.remainingGapCount > 0 || outcome.work.unresolved > 0 || (outcome.coverage?.tasksWithoutSkills || 0) > 0 || (outcome.coverage?.tasksWithoutProcess || 0) > 0;
   return hasGaps

@@ -43,7 +43,7 @@ export type AugmentationNode = z.infer<typeof augmentationNodeSchema>;
 export const augmentationEdgeSchema = z.object({
   from: z.string().min(1).max(220),
   to: z.string().min(1).max(220),
-  type: z.enum(["requires_skill", "requires_capability", "requires_knowledge", "has_unit", "performs", "contains"]),
+  type: z.enum(["requires_skill", "requires_capability", "requires_knowledge", "has_unit", "performs", "contains", "prerequisite_of"]),
   evidenceSegmentIds: z.array(z.string().min(1).max(160)).max(12).default([]),
   confidence: z.number().min(0).max(1).default(0.6),
 });
@@ -233,7 +233,8 @@ export function validateAugmentation(input: {
 
   // Only cycles introduced by this batch matter: the base graph is already
   // validated as acyclic, so a cycle must involve at least one new edge.
-  if (acceptedEdges.length && detectCycle(acceptedEdges)) {
+  const acyclicTypes = ["prerequisite_of", "contains", "has_unit"];
+  if (acyclicTypes.some(type => acceptedEdges.some(edge => edge.type === type) && detectCycle([...base.semantic.edges.filter(edge => edge.lifecycle !== "rejected" && edge.type === type).map(edge => ({ from: edge.source, to: edge.target } as AugmentationEdge)), ...acceptedEdges.filter(edge => edge.type === type)]))) {
     return {
       acceptedNodes,
       acceptedEdges: [],

@@ -720,3 +720,5 @@ Contract impact（2026-09-09.3）：Graph Hub 公开岗位与典型任务复用 
 
 
 目录优先的岗位课程匹配（Contract impact，2026-09-09.6）：课程策略 role-course/v2 复用既有 curriculum_source_runtime 及 v2 接口。模型整批阅读已授权课程目录、课程范围及知识点标题，提出复用引用和未覆盖要求的课程分组；确定性代码复核目录成员、完整且唯一的要求归属、证据、namespace 与提交契约。模型失败不触发细项建点，交由既有自动挂载重试。旧回执不可变，无数据迁移；三类 Agent、五核、EvidenceEvent 均不变。
+
+Role Atlas 新研究运行采用 `role-research/v2`，岗位任务详情采用 `role-task-definition/v1`，两端导入兼容 `static-role-package` 3.1.0 / 3.0.0 / 2.0.0。契约与权限见 [ROLE_RESEARCH_PROTOCOL.md](implementation/ROLE_RESEARCH_PROTOCOL.md)，具体登记由各宿主注册表提供。岗位生产的内部研究职责不新增主 Agent 或学习状态写权限。

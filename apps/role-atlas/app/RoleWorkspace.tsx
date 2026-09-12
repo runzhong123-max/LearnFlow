@@ -1,5 +1,7 @@
 "use client";
 
+import TaskDefinitionDetail from "./components/TaskDefinitionDetail";
+
 import { courseGraphPayload } from "@/lib/learning-path/course-presentation";
 import type { AutomaticMountRecord } from "@/lib/learning-path/automatic-contract";
 import { formatIntakeDescription } from "@/lib/intake/presentation";
@@ -1445,6 +1447,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
                   <span className={`node-kind ${selectedNode.lifecycle}`}>{typeLabels[selectedNode.type] ?? selectedNode.type} · {selectedNode.lifecycle === "accepted" ? "已接受" : "待审"}</span>
                   <h2>{selectedNode.label}</h2>
                   <p>{selectedNode.summary}</p>
+                  {["task", "typical_task"].includes(selectedNode.type) && <TaskDefinitionDetail value={selectedNode.data.taskDefinition} />}
                   {Array.isArray(selectedNode.data.courseMemberIds) && <details className="node-technical"><summary>岗位应用与验收 · {selectedNode.facets?.length || 0} 项</summary>
                     {selectedNode.facets?.map(facet => <div key={facet.nodeId}><button type="button" onClick={() => { if (facet.nodeId) setSelectedId(facet.nodeId); }}>{facet.label}</button><p>{facet.summary}</p></div>)}
                   </details>}

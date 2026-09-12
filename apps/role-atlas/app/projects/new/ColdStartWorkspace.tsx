@@ -1,5 +1,7 @@
 "use client";
 
+import ResearchRunDetail from "@/app/components/ResearchRunDetail";
+
 import {
   AlertTriangle,
   ArrowLeft,
@@ -313,7 +315,7 @@ export default function ColdStartWorkspace({ initialQuery, embedded = false, onC
       setIssues(kernel.audit.issues);
       setPhase("semantic", "done");
       setPhase("snapshot", "done");
-      setPhase("package", "done");
+      setPhase("package", event.payload.preview ? "running" : "done");
     }
     if (event.kind === "build.targeted_research.started") setPhase("sources", "running");
     if (event.kind === "build.targeted_research.completed") setPhase("sources", "done");
@@ -365,6 +367,9 @@ export default function ColdStartWorkspace({ initialQuery, embedded = false, onC
       const completed = event.payload.result as ColdStartBuildResult;
       setResult(completed);
       setIssues(completed.audit.issues);
+      setSemanticNodes(completed.semantic.nodes);
+      setSemanticEdges(completed.semantic.edges);
+      setPhase("package", completed.deliveryReadiness && !completed.deliveryReadiness.ready ? "degraded" : "done");
     }
     if (event.kind === "build.run.failed") {
       setError(String(event.payload.message || "冷启动运行失败。"));
@@ -432,7 +437,7 @@ export default function ColdStartWorkspace({ initialQuery, embedded = false, onC
           method: "POST",
           headers: { "content-type": "application/json" },
           signal: controller.signal,
-          body: JSON.stringify({ id: activeConversationId, title: `版本构建 · ${new Date().toLocaleString("zh-CN", { hour12: false })}`, pinToActive: false }),
+          body: JSON.stringify({ id: activeConversationId, title: `版本构建 · ${new Date().toLocaleString("zh-CN", { hour12: false })}`, pinToActive: false, mode: "iteration" }),
         });
         if (!conversationResponse.ok) throw new Error((await conversationResponse.json().catch(() => ({})) as { error?: string }).error || "新版本会话创建失败。");
         setConversationId(activeConversationId);
@@ -476,17 +481,19 @@ export default function ColdStartWorkspace({ initialQuery, embedded = false, onC
         buffer = lines.pop() || "";
         lines.filter(Boolean).forEach((line) => {
           const event = JSON.parse(line) as BuildEvent;
-          if (event.kind === "build.kernel.completed") kernelResult = event.payload.result as ColdStartBuildResult;
+          if ((event.kind === "build.kernel.completed" && !event.payload.preview) || (event.kind === "build.run.completed" && (event.payload.result as ColdStartBuildResult)?.deliveryReadiness?.ready)) kernelResult = event.payload.result as ColdStartBuildResult;
           applyEvent(event);
         });
         if (done) break;
       }
       if (buffer.trim()) {
         const event = JSON.parse(buffer) as BuildEvent;
-        if (event.kind === "build.kernel.completed") kernelResult = event.payload.result as ColdStartBuildResult;
+        if ((event.kind === "build.kernel.completed" && !event.payload.preview) || (event.kind === "build.run.completed" && (event.payload.result as ColdStartBuildResult)?.deliveryReadiness?.ready)) kernelResult = event.payload.result as ColdStartBuildResult;
         applyEvent(event);
       }
-      if (kernelResult) {
+      if (kernelResult && (kernelResult as ColdStartBuildResult).deliveryReadiness?.ready) {
+        window.location.assign(`/projects/${encodeURIComponent(activeProjectId)}?conversation=${encodeURIComponent(activeConversationId)}`);
+      } else if (kernelResult) {
         sessionStorage.setItem(`role-atlas.pending-enrichment:${activeProjectId}`, JSON.stringify({
           baseSnapshotId: (kernelResult as ColdStartBuildResult).snapshot.id,
           enrichmentRunId: `${crypto.randomUUID()}:enrichment`,
@@ -549,15 +556,16 @@ export default function ColdStartWorkspace({ initialQuery, embedded = false, onC
           </div>
           <SourceMaterials value={materials} onChange={setMaterials} disabled={running} onBusyChange={setMaterialsBusy} />
           {error ? <div className="cold-error"><AlertTriangle size={13} />{error}{/模型/.test(error) ? embedded && onSettingsRequest ? <button type="button" onClick={onSettingsRequest}>去设置</button> : <Link href="/settings">去设置</Link> : null}</div> : null}
-          {running ? <button className="cold-start stop" onClick={() => abortRef.current?.abort()}><Square size={12} /> 停止本轮构建</button> : <button className="cold-start" disabled={materialsBusy || roleTitle.trim().length < 2} onClick={() => void startBuild()}><Play size={13} /> 生成岗位内核并进入工作台</button>}
-          {result && !running ? <button className="cold-start" onClick={() => void startBuild({ reuseProjectSources: true })}><Layers3 size={13} /> 复用已索引来源重跑抽取</button> : null}
-          {result && projectId ? <Link className="cold-open-project" href={skillIntent === "snapshot-iteration" ? `/snapshots/${encodeURIComponent(result.snapshot.id)}/iterate?profile=co_guided&project=${encodeURIComponent(projectId)}&conversation=${encodeURIComponent(conversationId)}` : `/projects/${projectId}?conversation=${conversationId}`}>{skillIntent === "snapshot-iteration" ? "进入岗位快照迭代" : "打开项目工作台"} <ArrowLeft size={12} /></Link> : null}
+          {running ? <button className="cold-start stop" onClick={() => abortRef.current?.abort()}><Square size={12} /> 停止本轮构建</button> : <button className="cold-start" disabled={materialsBusy || roleTitle.trim().length < 2} onClick={() => void startBuild()}><Play size={13} /> 研究并交付完整首版</button>}
+          {result && !running ? <button className="cold-start" onClick={() => void startBuild({ reuseProjectSources: true })}><Layers3 size={13} /> 复用已有资料继续研究</button> : null}
+          {result && projectId ? <Link className="cold-open-project" href={skillIntent === "snapshot-iteration" && result.deliveryReadiness?.ready !== false ? `/snapshots/${encodeURIComponent(result.snapshot.id)}/iterate?profile=co_guided&project=${encodeURIComponent(projectId)}&conversation=${encodeURIComponent(conversationId)}` : `/projects/${projectId}?conversation=${conversationId}`}>{skillIntent === "snapshot-iteration" && result.deliveryReadiness?.ready !== false ? "进入岗位快照迭代" : "打开项目工作台"} <ArrowLeft size={12} /></Link> : null}
         </section>
       </aside>
 
       <section className="cold-main">
         <header className="cold-main-header">
           <div><span>ROLE PACKAGE BUILD</span><h2>{roleTitle.trim() || "等待确定岗位"}</h2></div>
+          {result?.deliveryReadiness && !result.deliveryReadiness.ready && <aside role="status"><b>研究草稿 · 尚未交付完整首版</b><p>可补充材料后继续研究；停止原因和依据见研究记录。</p><ul>{result.deliveryReadiness.blockers.map((blocker, index) => <li key={index}>{blocker}</li>)}</ul></aside>}
           <div className={`cold-status ${running ? "running" : incomplete ? "degraded" : result ? "done" : ""}`}><i />{running ? (fastSnapshotActive ? "快速快照已保存 · 正在展开" : "正在构建") : incomplete ? "构建不完整 · 需要修复" : result ? (result.validation.publishable ? "可发布候选" : "候选包待研究") : "尚未开始"}</div>
         </header>
         <nav className="cold-tabs">
@@ -581,6 +589,7 @@ export default function ColdStartWorkspace({ initialQuery, embedded = false, onC
             result || issues.length > 0 ? <div className="cold-evidence-view">
               <div className="cold-evidence-stats"><span><b>{result?.sources.assets.length || 0}</b><small>入选来源</small></span><span><b>{result?.sources.research?.candidateCount || 0}</b><small>检索候选</small></span><span><b>{result?.sources.evidenceBindings.length || 0}</b><small>可解析绑定</small></span><span><b>{Math.round((result?.validation.evidence.coverage || 0) * 100)}%</b><small>任意绑定覆盖</small></span><span><b>{Math.round(directCoverage * 100)}%</b><small>直接证据覆盖</small></span><span><b>{result?.sources.research?.usage?.totalCredits ?? "—"}</b><small>Tavily Credits</small></span></div>
               {result?.audit.inspection ? <div className="cold-inspection-summary"><header><b>构建后诊断</b><small>{result.audit.inspection.protocolValid ? "协议可读取；不代表内容已经完整或可靠" : `${result.audit.inspection.hardBlockerIds.length} 个协议阻断`}</small></header>{Object.entries(result.audit.inspection.axes).map(([key, value]) => <span key={key}><b>{Math.round(displayAxisValue(key, value, result))}</b><small>{{ structuralValidity: "可遍历结构", semanticClarity: "语义覆盖", evidenceReadiness: "证据就绪", temporalIntegrity: "时点完整", processCoverage: "任务事理覆盖", agentUsability: "Agent 可用" }[key as keyof typeof result.audit.inspection.axes]}</small></span>)}</div> : null}
+              <ResearchRunDetail run={result?.researchRun} />
               {result?.sources.research ? <ResearchAudit report={result.sources.research} /> : null}
               {result?.sources.assets.length ? <div className="cold-source-index">{result.sources.assets.map((source) => <article key={source.id}><span><b>{source.title}</b><small>{source.domain || source.kind} · {source.sourceTier || "用户资料"} · {source.publishedAt || source.observedAt || "时间未知"} · {source.extractionMethod === "provider_extract" ? "定向抽取" : source.extractionMethod === "direct_fetch" ? "原页抓取" : "搜索内容"} · {source.providerRequestIds?.length || 0} 个请求索引</small></span>{source.locator ? <a href={source.locator} target="_blank" rel="noreferrer">查看原文</a> : <em>项目内资料</em>}</article>)}</div> : null}
               <div className="cold-issues">{issues.map((issue) => <article className={issue.severity} key={issue.id}><AlertTriangle size={14} /><span><b>{issue.title}</b><small>{issue.detail}</small></span><em>{issue.repair}</em></article>)}</div>
@@ -597,7 +606,7 @@ export default function ColdStartWorkspace({ initialQuery, embedded = false, onC
           {events.length === 0 ? <div className="cold-log-empty"><SearchCheck size={20} /><span>开始后，这里会实时展示来源资格、工作项队列、任务屏障、定点补研、证据绑定和包编译。</span></div> : events.map((event) => <div className={`cold-log ${event.payload.degraded || event.kind === "build.work_item.failed" || event.kind === "build.audit.issue.created" || event.kind === "build.inspection.finding.created" ? "attention" : ""}`} key={`${event.seq}:${event.kind}`}><i>{event.seq}</i><span><b>{buildKindLabels[event.kind] || event.kind}</b><small>{profileLabel(event.profile)} · {buildEventDetail(event)}</small></span></div>)}
           {Object.values(reasoning).some(Boolean) ? <details className="cold-reasoning" open><summary><Sparkles size={12} />模型思考过程 <span>{running ? "按工作项实时生成" : "本轮已结束"}</span></summary>{Object.entries(reasoning).filter(([, value]) => value).map(([lane, value]) => <section key={lane}><b>{laneLabel(lane)} <small>{lane}</small></b><pre>{value}</pre></section>)}</details> : null}
         </div>
-        <footer>{running ? <><Pause size={12} />{fastSnapshotActive ? "岗位内核已保存；即将回到工作台并自动启动事理与技能依赖增量。" : "先形成来源完整、默认低熵的岗位内核；详细事理和依赖不会阻塞首屏。"}</> : result ? <><Layers3 size={12} />已索引 {result.sources.assets.length} 个来源；默认显示 {result.semantic.nodes.filter((node) => node.defaultVisibility !== false).length} 个内核节点，详细层与事理将在工作台后台增量。</> : webResearch ? "等待使用已配置的联网厂商开始研究。" : "联网已关闭；仅使用用户资料构建。"}</footer>
+        <footer>{running ? <><Pause size={12} />正在研究并完善完整首版；预览不代表已交付。</> : result ? <><Layers3 size={12} />已保留 {result.sources.assets.length} 个来源与研究记录；{result.deliveryReadiness?.ready ? "完整首版已通过交付检查。" : "可补充材料并发起下一轮研究，已有草稿不会作为正式完成版本。"}</> : webResearch ? "等待使用已配置的联网厂商开始研究。" : "联网已关闭；仅使用用户资料构建。"}</footer>
       </aside>
     </Shell>
   );

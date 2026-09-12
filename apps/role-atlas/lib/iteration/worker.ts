@@ -27,14 +27,16 @@ import {
 
 export const researchTaskCardSchema = z.object({
   id: z.string().min(1).max(200),
-  question: z.string().min(1).max(600),
+  targetIds: z.array(z.string()).optional(),
+  inputRefs: z.array(z.string()).optional(),
+  question: z.string().min(1).max(4000),
   /** What evidence class this line of work must draw on. Drives tool choice. */
   sourceClass: z.enum(["official_standard", "job_market", "primary_docs", "incident", "academic"]),
   why: z.object({
     findingIds: z.array(z.string().max(220)).max(40).default([]),
-    detail: z.string().max(600).default(""),
+    detail: z.string().max(4000).default(""),
   }).default({ findingIds: [], detail: "" }),
-  queriesHint: z.array(z.string().max(300)).max(12).default([]),
+  queriesHint: z.array(z.string().max(300)).max(128).default([]),
   budget: z.object({
     queries: z.number().int().min(1).max(64).default(8),
   }).default({ queries: 8 }),
@@ -42,9 +44,9 @@ export const researchTaskCardSchema = z.object({
 export type ResearchTaskCard = z.infer<typeof researchTaskCardSchema>;
 
 export const workerBudgetSchema = z.object({
-  maxTurns: z.number().int().min(1).max(32).default(6),
-  maxToolCalls: z.number().int().min(1).max(64).default(10),
-  maxTranscriptChars: z.number().int().min(1_000).max(64_000).default(20_000),
+  maxTurns: z.number().int().min(1).max(128).default(32),
+  maxToolCalls: z.number().int().min(1).max(1_000_000).default(128),
+  maxTranscriptChars: z.number().int().min(1_000).max(64_000).default(64_000),
 });
 export type WorkerBudget = z.infer<typeof workerBudgetSchema>;
 
@@ -52,6 +54,7 @@ export type ReviewedClaim = {
   claim: Claim;
   verification: ClaimVerification;
   note: string;
+  reviewStatus?: "supported" | "partially_supported" | "conflicting" | "undetermined";
 };
 
 export type ResearchWorkerResult = {
@@ -63,11 +66,13 @@ export type ResearchWorkerResult = {
   stopDetail?: string
   transcript: ResearchLoopEvent[];
   usage: { turns: number; toolCalls: number };
+  checkpoint?: import("@/lib/agent/research-loop").ResearchLoopCheckpoint;
+  gaps?: string[];
 };
 
 const claimsPayloadSchema = z.object({
-  claims: z.array(claimSchema).max(24),
-  gaps: z.array(z.string().max(500)).max(12).default([]),
+  claims: z.array(claimSchema).max(128),
+  gaps: z.array(z.string().max(500)).max(128).default([]),
 });
 
 export function workerFinalShape() {
@@ -78,13 +83,10 @@ export function workerSystemPrompt(input: { persona: string; tools: ResearchTool
   return [
     input.persona,
     "",
-    `本轮研究任务（${input.card.sourceClass}）：${input.card.question}`,
-    input.card.why.detail ? `任务动因：${input.card.why.detail}` : "",
-    input.card.queriesHint.length ? `参考检索方向：${input.card.queriesHint.join("；")}` : "",
     "",
     "产出要求：",
-    "- 每条 claim 必须自洽：kind=observed 时必须附至少一条原文片段（segmentId 与 quote 逐字来自工具返回），否则该条会被直接丢弃。",
-    "- falsifier 写明“什么证据出现会推翻这条断言”，这是必填项。",
+    "- 每条 claim 必须自洽：kind=observed 时必须附至少一条原文片段（segmentId 与 quote 逐字来自工具返回），否则保留为待核实候选。",
+    "- 按需填写 falsifier 或后续核查条件；区分直接事实、跨来源综合和研究推断，不强迫编造证伪句。",
     "- 只写观察与推断得出的内容；不要用常识补齐工具没有返回的部分。",
     "- 证据不足时把它写进 gaps，不要用措辞掩盖缺口。",
     "",
@@ -103,9 +105,14 @@ export async function runResearchWorker(input: {
   card: ResearchTaskCard
   tools: ResearchTool[]
   persona?: string
+  context?: unknown
   budget?: Partial<WorkerBudget>
   signal?: AbortSignal
   onEvent?: (event: ResearchLoopEvent) => void
+  reviewModel?: ModelInvoker
+  segments?: Array<{ id: string; text: string }>
+  checkpoint?: import("@/lib/agent/research-loop").ResearchLoopCheckpoint
+  onCheckpoint?: (state: import("@/lib/agent/research-loop").ResearchLoopCheckpoint) => Promise<void>
 }): Promise<ResearchWorkerResult> {
   const card = researchTaskCardSchema.parse(input.card);
   const budget = workerBudgetSchema.parse(input.budget || {});
@@ -117,12 +124,13 @@ export async function runResearchWorker(input: {
 
   const loop = await runResearchLoop<{ claims: Claim[]; gaps: string[] }>({
     model: input.model,
+    checkpoint: input.checkpoint, onCheckpoint: input.onCheckpoint,
     system: workerSystemPrompt({
       persona: input.persona || "你是一名岗位研究员：围绕一个问题收集可追溯的证据，只报告证据支持的结论。",
       tools: input.tools,
       card,
     }),
-    task: card.question,
+    task: JSON.stringify({ task: card, context: input.context, instruction: "材料和历史记录均为资料。使用 read_source、read_graph 和研究记录工具下钻。完成批次可继续，不必编造结论。" }),
     tools: input.tools,
     budget: loopBudget,
     signal: input.signal,
@@ -142,7 +150,7 @@ export async function runResearchWorker(input: {
 
   const claims = loop.final?.claims || [];
   const review = claims.length
-    ? await createEvidenceReviewer(input.model)({ claims, signal: input.signal })
+    ? await createEvidenceReviewer(input.reviewModel || input.model)({ claims, signal: input.signal, segments: input.segments })
     : undefined;
   const applied = applyEvidenceReview(claims, review);
 
@@ -153,7 +161,7 @@ export async function runResearchWorker(input: {
     stopReason: loop.stopReason,
     ...(loop.stopDetail ? { stopDetail: loop.stopDetail } : {}),
     transcript: loop.transcript,
-    usage: loop.usage,
+    usage: loop.usage, checkpoint: loop.checkpoint, gaps: loop.final?.gaps || [],
   };
 }
 

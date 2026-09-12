@@ -598,8 +598,8 @@ async function searchBocha(config: SearchProviderConfig, query: PlannedQuery, _r
   }) };
 }
 
-async function fetchReadablePage(result: RawSearchResult, signal?: AbortSignal) {
-  if (result.content.length >= 900 || !isPublicUrl(result.url) || new URL(result.url).protocol !== "https:") return result;
+export async function fetchReadablePage(result: RawSearchResult, signal?: AbortSignal, full = false) {
+  if ((!full && result.content.length >= 900) || !isPublicUrl(result.url) || new URL(result.url).protocol !== "https:") return result;
   const timeout = withTimeout(signal, 12_000);
   try {
     let currentUrl = result.url;
@@ -622,8 +622,18 @@ async function fetchReadablePage(result: RawSearchResult, signal?: AbortSignal) 
     if (!/text\/html|text\/plain|application\/json|application\/xml|text\/xml/i.test(type)) return result;
     const length = Number(response.headers.get("content-length") || 0);
     if (length > 900_000) return result;
-    const text = (await response.text()).slice(0, 900_000);
-    const cleaned = cleanText(text).slice(0, 14_000);
+    const reader = response.body?.getReader();
+    if (!reader) return result;
+    const chunks: Uint8Array[] = []; let size = 0;
+    while (true) {
+      const chunk = await reader.read(); if (chunk.done) break;
+      size += chunk.value.length;
+      if (size > 900_000) { await reader.cancel(); return result; }
+      chunks.push(chunk.value);
+    }
+    const bytes = new Uint8Array(size); let offset = 0;
+    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
+    const cleaned = full ? cleanText(new TextDecoder().decode(bytes)) : cleanText(new TextDecoder().decode(bytes)).slice(0, 14_000);
     return cleaned.length > result.content.length ? { ...result, content: cleaned, extractionMethod: "direct_fetch" as const } : result;
   } catch {
     return result;
@@ -664,6 +674,7 @@ export async function researchRoleSources(input: {
   onProgress?: ResearchProgress;
   sourceLimit?: number;
   verifyBoundaries?: BoundaryVerifier;
+  investigationScope?: "role" | "background";
 }): Promise<{ sources: SourceInput[]; report: WebResearchReport }> {
   const startedAt = new Date().toISOString();
   const queries = input.queries?.length ? input.queries : planRoleSearchQueries(input.request);
@@ -774,17 +785,17 @@ export async function researchRoleSources(input: {
   const limit = Math.max(6, Math.min(input.sourceLimit || 64, 64));
   const accept = (item: (typeof ranked)[number]) => {
     if (selectedUrls.has(item.result.url) || selected.length >= limit) return false;
-    if (item.relevance < minimumRoleRelevance(item.categories)) return false;
+    if (input.investigationScope !== "background" && item.relevance < minimumRoleRelevance(item.categories)) return false;
     // A non-authoritative page titled after a different occupation (架构师 /
     // 安全工程师 / 培训讲师 …) without target-role substance is boundary noise,
     // not comparison material; keep it out of the selected evidence set.
     // Authoritative standards often legitimately name a neighbouring occupation
     // (e.g. 国家职业标准), so they are only down-ranked, never hard-rejected.
     const tier = strongestQualityTier(item.result, item.categories);
-    if (foreignOccupationPenalty(item.result, input.request.roleTitle) >= 0.2 && (tier === "secondary" || tier === "contextual")) return false;
+    if (input.investigationScope !== "background" && foreignOccupationPenalty(item.result, input.request.roleTitle) >= 0.2 && (tier === "secondary" || tier === "contextual")) return false;
     // The model boundary pass may veto a low-tier page it confidently places
     // outside the target occupation, even when the title heuristic missed it.
-    if (boundaryHardRejects(item.boundaryVerdict, tier)) return false;
+    if (input.investigationScope !== "background" && boundaryHardRejects(item.boundaryVerdict, tier)) return false;
     const host = new URL(item.result.url).hostname;
     const count = perDomain.get(host) || 0;
     if (count >= 4) return false;
@@ -908,10 +919,10 @@ export async function researchRoleSources(input: {
       // Name the boundary reason before the generic relevance floor: a low-tier
       // page titled after another occupation was rejected because of what it is,
       // and the audit should say so.
-      else if (foreignOccupationPenalty(item.result, input.request.roleTitle) >= 0.2
+      else if (input.investigationScope !== "background" && foreignOccupationPenalty(item.result, input.request.roleTitle) >= 0.2
         && ["secondary", "contextual"].includes(candidateTier)) disposition = "foreign_occupation";
-      else if (boundaryHardRejects(item.boundaryVerdict, candidateTier)) disposition = "foreign_occupation";
-      else if (item.relevance < minimumRoleRelevance(item.categories)) disposition = "low_relevance";
+      else if (input.investigationScope !== "background" && boundaryHardRejects(item.boundaryVerdict, candidateTier)) disposition = "foreign_occupation";
+      else if (input.investigationScope !== "background" && item.relevance < minimumRoleRelevance(item.categories)) disposition = "low_relevance";
       else if ((perDomain.get(domain) || 0) >= 2) disposition = "domain_limit";
       else disposition = "source_limit";
       return {

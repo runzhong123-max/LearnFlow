@@ -91,7 +91,7 @@ export async function compileStaticRolePackage(input: {
   const publishable = buildValidation.hardErrors.length === 0 && blockers.length === 0;
   refreshRolePackageManifest(result, { status: publishable ? "ready" : "candidate" });
   const preliminaryReport: PackageValidationReport = {
-    protocolVersion: "3.0.0",
+    protocolVersion: result.packages.rolePackage.protocolVersion,
     valid: buildValidation.hardErrors.length === 0,
     hardErrors: buildValidation.hardErrors,
     warnings: buildValidation.warnings,
@@ -107,7 +107,7 @@ export async function compileStaticRolePackage(input: {
     },
   };
   const components: Record<string, string> = {
-    [entrypoints.snapshot]: canonicalStringify({ runId: result.runId, projectId: result.projectId, brief: result.brief, snapshot: result.snapshot, packages: result.packages, validation: result.validation }),
+    [entrypoints.snapshot]: canonicalStringify({ runId: result.runId, projectId: result.projectId, brief: result.brief, snapshot: result.snapshot, packages: result.packages, validation: result.validation, deliveryReadiness: result.deliveryReadiness }),
     [entrypoints.sources]: canonicalStringify(result.sources),
     [entrypoints.semanticGraph]: canonicalStringify(result.semantic),
     [entrypoints.workProcessForest]: canonicalStringify(result.process),
@@ -120,7 +120,7 @@ export async function compileStaticRolePackage(input: {
   const hashes = Object.fromEntries(await Promise.all(Object.entries(components).map(async ([path, content]) => [path, await sha256Hex(content)])));
   const manifestCore: Omit<StaticRolePackageManifest, "rootHash"> = {
     packageProtocol: "static-role-package",
-    protocolVersion: "3.0.0",
+    protocolVersion: result.packages.rolePackage.protocolVersion,
     packageId: input.packageId,
     packageVersion: input.packageVersion,
     snapshotId: result.snapshot.id,

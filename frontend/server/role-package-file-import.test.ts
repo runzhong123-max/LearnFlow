@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import assert from 'node:assert/strict'
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -53,4 +54,31 @@ test('dry-run 不写盘，组件篡改与路径穿越均在安装前失败', asy
   unsafeBundle.manifest.entrypoints.snapshot = '../snapshot.json'
   await writeFile(unsafe, JSON.stringify(unsafeBundle), 'utf8')
   await assert.rejects(inspectRolePackageFile(unsafe), /role_package_file_invalid:entrypoint:snapshot/)
+})
+
+for (const protocolVersion of ['2.0.0', '3.0.0', '3.1.0']) test(`岗位包 ${protocolVersion} 导入保留固定哈希与任务详情，未知字段不补造`, async () => {
+  const root = await mkdtemp(join(tmpdir(), 'learnflow-role-protocol-'))
+  const file = await transferFile(root)
+  const bundle = JSON.parse(await readFile(file, 'utf8'))
+  bundle.manifest.protocolVersion = protocolVersion
+  const graphPath = bundle.manifest.entrypoints.semanticGraph
+  const graph = JSON.parse(bundle.components[graphPath])
+  const task = graph.nodes.find((node: { type: string }) => node.type === 'task')
+  const taskDefinition = { schemaVersion: 'role-task-definition/v1', deliverables: { text: '', basis: 'unknown', evidence: [] }, downstreamNeeds: ['企业内部验收材料'] }
+  if (protocolVersion === '3.1.0') task.taskDefinition = taskDefinition
+  bundle.components[graphPath] = JSON.stringify(graph)
+  const canonical = (value: unknown): unknown => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, item]) => [key, canonical(item)])) : value
+  const hash = (value: string) => createHash('sha256').update(value).digest('hex')
+  bundle.manifest.hashes[graphPath] = hash(bundle.components[graphPath])
+  bundle.manifest.rootHash = hash(JSON.stringify(canonical({ ...bundle.manifest, rootHash: '' })))
+  await writeFile(file, JSON.stringify(bundle), 'utf8')
+  const packageRoot = join(root, 'packages')
+  const installed = await installRolePackageFile({ packageFile: file, packageRoot })
+  assert.equal(installed.rootHash, bundle.manifest.rootHash)
+  const runtime = new RolePackageRuntime(packageRoot)
+  const output = runtime.readObjects({ packageId: bundle.manifest.packageId, packageVersion: bundle.manifest.packageVersion, snapshotId: bundle.manifest.snapshotId, rootHash: installed.rootHash }, [task.id], false)
+  const object = output.objects?.find(object => object.objectId === task.id)
+  assert.ok(object)
+  assert.deepEqual((object.value.data as Record<string, unknown>).taskDefinition, protocolVersion === '3.1.0' ? taskDefinition : undefined)
+  assert.equal(object.value.rootHash, installed.rootHash)
 })

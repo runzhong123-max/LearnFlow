@@ -41,6 +41,8 @@ export function reviewIterationScope(base: ColdStartBuildResult, candidate: Cold
     }
     frontier = next;
   }
+  const revised = objects(candidate).filter(object => baseObjects.has(object.id) && JSON.stringify(baseObjects.get(object.id)) !== JSON.stringify(object));
+  const outsideRevisions = revised.filter(object => !anchors.has(object.id));
   const incoming = objects(candidate).filter(object => !baseObjects.has(object.id));
   const incomingIds = new Set(incoming.map(object => object.id));
   const qualifiedSources = new Set(candidate.sources.assets.filter(source => source.kind !== "user_brief" && source.qualification?.status !== "quarantined").map(source => source.id));
@@ -71,11 +73,12 @@ export function reviewIterationScope(base: ColdStartBuildResult, candidate: Cold
   const outsideClaims = newClaims.filter(claim => !claimInScope(claim));
   return {
     reasons: [
+      outsideRevisions.length ? `定向研究修改了选中范围外的已有对象：${outsideRevisions.map(object => object.id).join("、")}` : "",
       outside.length ? `定向研究候选包含 ${outside.length} 个未通过可追溯关系连接到选中范围的新增对象：${outside.slice(0, 6).map(object => object.label).join("、")}。本轮不覆盖原版本，请缩小研究目标或选择自动发现。` : "",
       outsideLinks.length ? `定向研究候选包含 ${outsideLinks.length} 条未连接到选中范围的新增关系，未采用该候选。` : "",
       outsideClaims.length ? `定向研究候选包含 ${outsideClaims.length} 条选中范围外的新增断言，未采用该候选。` : "",
     ].filter(Boolean),
-    targetedChange: incoming.some(object => reachable.has(object.id)) || targetedEvidence || targetedLink
+    targetedChange: revised.some(object => anchors.has(object.id)) || incoming.some(object => reachable.has(object.id)) || targetedEvidence || targetedLink
       || newClaims.some(claim => claimInScope(claim) && (supportedTargets.has(claim.id) || claim.evidenceSegmentIds.some(id => segments.has(id)))),
   };
 }

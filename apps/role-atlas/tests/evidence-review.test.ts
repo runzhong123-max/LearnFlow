@@ -72,7 +72,7 @@ test("observed 但没有任何片段：由代码拒绝，不交给模型辩解",
   assert.equal(prompts.length, 0, "无证据的 observed 断言不得消耗模型调用");
   const [applied] = applyEvidenceReview([bare], review);
   assert.equal(applied.verification, "unverified");
-  assert.match(applied.note, /没有附任何原文片段/u);
+  assert.match(applied.note, /缺少原文/u);
 
   // inferred / absence 是合法类型，照常复核。
   assert.equal(isReviewableClaim(claim({ kind: "inferred", evidenceSpans: [] })), true);
@@ -123,7 +123,7 @@ test("同样的断言集合只调用模型一次（按内容 memoize）", async 
 test("复核提示只包含已提交的片段与断言，并要求逐条理由", () => {
   const prompt = evidenceReviewPrompt([{ claim: claim() }]);
   assert.match(prompt.system, /只能依据提交给你的片段判断/u);
-  assert.match(prompt.system, /supported：片段直接支持/u);
+  assert.match(prompt.system, /supported：原文支持/u);
   assert.match(prompt.system, /unsupported：片段与断言不符/u);
   assert.match(prompt.system, /uncertain/u);
   const payload = JSON.parse(prompt.user) as { claims: Array<Record<string, unknown>> };
@@ -134,8 +134,8 @@ test("复核提示只包含已提交的片段与断言，并要求逐条理由",
   assert.match(String(payload.claims[0].falsifier), /权威岗位标准/u);
 });
 
-test("claim 契约要求可证伪条件与非空断言", () => {
-  assert.throws(() => claimSchema.parse({ id: "x", statement: "s", kind: "observed" }), /falsifier/u);
+test("claim 保留非空断言约束，核查条件可选", () => {
+  assert.equal(claimSchema.parse({ id: "x", statement: "s", kind: "observed" }).falsifier, undefined);
   assert.throws(() => claimSchema.parse({ id: "x", statement: "", kind: "observed", falsifier: "f" }), /statement|too_small/u);
   const parsed = claimSchema.parse({ id: "x", statement: "s", kind: "inferred", falsifier: "f" });
   assert.deepEqual(parsed.evidenceSpans, []);

@@ -1195,3 +1195,5 @@ Contract impact（2026-09-09.3）：Graph Hub 公开岗位与典型任务复用 
 
 
 Contract impact（2026-09-09.6）：既有 curriculum_source_runtime 的课程组织升级为 role-course/v2。经签名委托和固定岗位包校验后，模型先阅读 scoped 课程目录并整批判断包含关系，只为未覆盖要求提出合并课程；代码校验目录引用、要求覆盖、证据与 v2 契约后沿既有源图提交链保存。模型调用有硬时限，失败进入原挂载重试，不按细项臆造节点。历史回执、三类 Agent、五核及零 target 审计语义不变。阶段展示订阅后台日志，浏览器不再重复启动增量研究。详见 ECOSYSTEM_GATEWAY_V1.md。
+
+Role Atlas 研究主管、调查员、复核员属于 Tutor 岗位生产接口内部职责，使用 `role-research/v2` 研究记录与 `role-task-definition/v1` 内容契约。研究结果、复核意见、候选采用与 Hub 发布彼此独立，不能作为学生掌握证据。完整边界见 [岗位研究协议](implementation/ROLE_RESEARCH_PROTOCOL.md)。
