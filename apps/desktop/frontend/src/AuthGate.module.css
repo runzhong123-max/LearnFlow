@@ -74,9 +74,13 @@
 .cloudHeader h1 { margin: 28px 0 9px; font-size: 27px; line-height: 1.3; letter-spacing: -0.035em; }
 .cloudHeader p, .cloudHelp, .legacyWorkspace p { color: #65776d; font-size: 12px; line-height: 1.75; }
 .cloudCard .form { margin-top: 24px; }
+.cloudDestination { display: flex; align-items: center; gap: 11px; border: 1px solid #dbe6df; border-radius: 11px; background: #f3f8f5; padding: 11px 13px; color: #294638; }
+.cloudDestination > span:last-child, .cloudDestination strong, .cloudDestination small { display: block; }
+.cloudDestination strong { font-size: 13px; line-height: 1.35; }
+.cloudDestination small { margin-top: 3px; color: #71847a; font-size: 11px; line-height: 1.45; }
+.cloudDestinationMark { width: 9px; height: 9px; flex: none; border: 2px solid #d8eee2; border-radius: 50%; background: #249567; box-shadow: 0 0 0 4px rgba(36, 149, 103, .09); }
 .cloudCard .form label > span { font-size: 12px; }
 .cloudCard .form input { font-size: 14px; height: 44px; }
-.cloudCard .form input[readonly] { color: #61766a; background: #f0f5f1; }
 .cloudHelp { margin: 12px 0 0; }
 .cloudCard .primary { font-size: 13px; }
 .cloudCard .error { font-size: 12px; overflow-wrap: anywhere; }

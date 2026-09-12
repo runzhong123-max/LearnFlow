@@ -26,7 +26,9 @@ from app.services.source_locator import SOURCE_LOCATOR, SourceLocationError
 from app.services.source_knowledge import repository_knowledge_domains
 from app.services.domain_knowledge import ensure_source_version
 from app.services.auth import (
-    CurrentLearner, get_current_learner, require_owned_project,
+    AccountModelProviderConfig, CurrentLearner, ModelCredentialDecryptionError,
+    ModelCredentialEncryptionUnavailable, account_model_provider_config,
+    get_current_learner, model_credential_configured, require_owned_project,
     require_owned_source,
 )
 
@@ -931,16 +933,24 @@ async def roadmap_chat(
         for node in existing_roadmap.get("checkpoints", []):
             node["completed"] = completed_by_order.get(node.get("order"), False)
 
-    # Check if LLM is configured
-    if not settings.llm_api_key or settings.llm_api_key in ("", "sk-your-key-here"):
-        raise HTTPException(
-            400,
-            "请先配置 API Key: 复制 .env.example 为 .env，并填入 LLM_API_KEY"
+    provider_config: AccountModelProviderConfig | None = None
+    if model_credential_configured(current.account):
+        try:
+            provider_config = account_model_provider_config(current.account)
+        except (ModelCredentialEncryptionUnavailable, ModelCredentialDecryptionError) as exc:
+            raise HTTPException(400, "当前账号的模型连接不可用，请在账号设置中重新保存并测试。") from exc
+    elif settings.llm_api_key and settings.llm_api_key not in ("", "***", "sk-your-key-here"):
+        provider_config = AccountModelProviderConfig(
+            api_key=settings.llm_api_key,
+            base_url=settings.llm_base_url,
+            model=settings.llm_model,
         )
+    else:
+        raise HTTPException(400, "请先在账号设置中保存并测试模型连接。")
 
     # Run agent
     try:
-        agent = RoadmapAgent()
+        agent = RoadmapAgent(provider_config=provider_config)
         result = await agent.chat(
             message=req.message,
             history=[m.model_dump() for m in req.history],
