@@ -24,7 +24,7 @@ from app.services.tutor_service import (
     action_card, action_result, finalize_action_for_task,
     proposal_acceptance_action, finalize_proposal_acceptance,
     get_session_state_summary, session_learning_skill,
-    _select_session_learning_skill, _is_confirmation,
+    _select_session_learning_skill, _is_confirmation, _session_model_provider_config,
 )
 from app.services.architecture_registry import (
     chat_mode_manifest,
@@ -904,15 +904,17 @@ async def plan_visual_for_desktop(
     """Desktop-only model planning. Visual validation/rendering uses the shared TS runtime."""
     if not valid_desktop_request(request):
         raise HTTPException(404, "Visual planner bridge is unavailable")
-    await _owned_session(db, current.learner.id, session_id)
+    session = await _owned_session(db, current.learner.id, session_id)
     from app.services.visual_planner import plan_learning_visual
     try:
+        provider_config = await _session_model_provider_config(db, session)
         return await plan_learning_visual(
             instructions=data.instructions,
             input_text=data.input,
             timeout_ms=data.timeout_ms,
             max_tokens=data.max_tokens,
             response_format=data.response_format,
+            provider_config=provider_config,
         )
     except RuntimeError as exc:
         if str(exc) == "visual_planner_not_configured":

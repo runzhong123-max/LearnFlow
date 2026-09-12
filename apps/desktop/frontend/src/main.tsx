@@ -3256,6 +3256,13 @@ function App({ auth }: { auth: AuthGateSession }) {
         ...previous,
         learning_tasks: previous.learning_tasks.map(item => item.id === updated.id ? updated : item),
       } : previous)
+      const files = taskLearningFiles(updated)
+      const gaps = updated.file_generation?.gaps || []
+      if (!files.length) {
+        setFormalError(gaps.join('；') || '讲义与练习未生成，请补充资料后重试。')
+        return
+      }
+      if (gaps.length) setFormalError(gaps.join('；'))
       openTab(LEARNING_FILES_TAB)
     } catch (error) {
       setFormalError(error instanceof Error ? error.message : '讲义与练习生成失败')

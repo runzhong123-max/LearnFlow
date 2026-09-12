@@ -11,6 +11,7 @@ from app.models.learning import EvidenceEvent, KernelMutation
 from app.models.project import Checkpoint, DomainKnowledgePacket, Project, Roadmap
 from app.services.micro_learning import _ground_artifact_in_packet
 from app.services.topic_primers import NAIVE_BAYES
+from app.services.auth import AccountModelProviderConfig
 
 
 def _register(client):
@@ -79,6 +80,32 @@ def test_files_fill_only_requested_missing_kind_and_replay_without_scope_drift()
         events, mutations = asyncio.run(generated_events())
         assert not mutations
         assert not any(event.event_type == "micro_learning_started" for event in events)
+
+
+def test_file_generation_uses_account_provider_when_global_key_is_unset(monkeypatch):
+    captured = []
+
+    async def generated_with_account_provider(**kwargs):
+        captured.append(kwargs["provider_config"])
+        return {**deepcopy(NAIVE_BAYES), "generation": {"mode": "model_enhanced"}}
+
+    monkeypatch.setattr("learnflow_core.api.learning_files.model_credential_configured", lambda _account: True)
+    monkeypatch.setattr(
+        "learnflow_core.api.learning_files.account_model_provider_config",
+        lambda _account: AccountModelProviderConfig(
+            api_key="account-test-key", base_url="https://provider.example/v1", model="account-test-model",
+        ),
+    )
+    monkeypatch.setattr("app.services.micro_learning.generate_micro_learning_artifact", generated_with_account_provider)
+    with TestClient(app) as client:
+        _register(client)
+        task = _task(client)
+        generated, _ = _generate(client, task, ["lecture", "practice"])
+
+    assert generated["file_generation"]["status"] == "ready"
+    assert captured == [AccountModelProviderConfig(
+        api_key="account-test-key", base_url="https://provider.example/v1", model="account-test-model",
+    )]
 
 
 def test_existing_project_checkpoint_and_artifact_identity_survive_generation():
