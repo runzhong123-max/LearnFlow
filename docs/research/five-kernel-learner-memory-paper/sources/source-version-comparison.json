@@ -1,0 +1,151 @@
+{
+  "native_baseline": "917b8a04e88c4f2afa7f72b477a127c3ef2249b7",
+  "read_only_audit_head": "055d31aa109f7cf006011f16f4ad1c552bb71b87",
+  "files": [
+    {
+      "path": "packages/learning-core/src/learnflow_core/registry_core.py",
+      "capability_audit_sha256": "d21780b509fbbd7a920dc6c5d18953ef347d30af90807a3349da7a617676861b",
+      "native_baseline_sha256": "d21780b509fbbd7a920dc6c5d18953ef347d30af90807a3349da7a617676861b",
+      "equal": true
+    },
+    {
+      "path": "packages/learning-core/src/learnflow_core/learning_runtime.py",
+      "capability_audit_sha256": "b88bb8926af5ab1a0cfbc844d64c6bd4fe33377bf106a8d63d73e1fbbb1f7f3a",
+      "native_baseline_sha256": "b88bb8926af5ab1a0cfbc844d64c6bd4fe33377bf106a8d63d73e1fbbb1f7f3a",
+      "equal": true
+    },
+    {
+      "path": "packages/learning-core/src/learnflow_core/memory_graph.py",
+      "capability_audit_sha256": "b47a405972a6af768a080c6d7eb2759a1efa5ccef6591cc24ec24821324c029b",
+      "native_baseline_sha256": "b47a405972a6af768a080c6d7eb2759a1efa5ccef6591cc24ec24821324c029b",
+      "equal": true
+    },
+    {
+      "path": "packages/learning-core/src/learnflow_core/planning_guidance.py",
+      "capability_audit_sha256": "4c987f0c7e80c55dffac359a286cdd7488fbec42b887a565e6917177e4795601",
+      "native_baseline_sha256": "4c987f0c7e80c55dffac359a286cdd7488fbec42b887a565e6917177e4795601",
+      "equal": true
+    },
+    {
+      "path": "packages/learning-core/src/learnflow_core/api/learner_state.py",
+      "capability_audit_sha256": "d2e981056e12ad6c378bc77236dc3f586b7989f334418e36a872d27e5e8c659e",
+      "native_baseline_sha256": "d2e981056e12ad6c378bc77236dc3f586b7989f334418e36a872d27e5e8c659e",
+      "equal": true
+    },
+    {
+      "path": "packages/learning-core/src/learnflow_core/api/phase3.py",
+      "capability_audit_sha256": "48564f798c40f4f9b973b3205965e71f5a8cec8fb9457bcd46feb10818c249d3",
+      "native_baseline_sha256": "48564f798c40f4f9b973b3205965e71f5a8cec8fb9457bcd46feb10818c249d3",
+      "equal": true
+    },
+    {
+      "path": "backend/app/services/memory_worker.py",
+      "capability_audit_sha256": "65bf87827c399bca6d5d1e436029cd6fe3f6453e4cf6bc622cd2d56c022df168",
+      "native_baseline_sha256": "65bf87827c399bca6d5d1e436029cd6fe3f6453e4cf6bc622cd2d56c022df168",
+      "equal": true
+    },
+    {
+      "path": "apps/desktop/backend/app/services/memory_worker.py",
+      "capability_audit_sha256": "65bf87827c399bca6d5d1e436029cd6fe3f6453e4cf6bc622cd2d56c022df168",
+      "native_baseline_sha256": "65bf87827c399bca6d5d1e436029cd6fe3f6453e4cf6bc622cd2d56c022df168",
+      "equal": true
+    },
+    {
+      "path": "backend/app/services/learning_tasks.py",
+      "capability_audit_sha256": "910bf158809a3a2b51729755a153e54411dd8ae7f9d719a0742e94e7ca3dd225",
+      "native_baseline_sha256": "910bf158809a3a2b51729755a153e54411dd8ae7f9d719a0742e94e7ca3dd225",
+      "equal": true
+    },
+    {
+      "path": "backend/app/services/personal_concept_graph.py",
+      "capability_audit_sha256": "614951e00d4e6439a309b66236265d65970aaba96befb31a5a3f235be0086eae",
+      "native_baseline_sha256": "614951e00d4e6439a309b66236265d65970aaba96befb31a5a3f235be0086eae",
+      "equal": true
+    },
+    {
+      "path": "backend/app/services/tutor_service.py",
+      "capability_audit_sha256": "018acbcc40f2da3e54ddbd75c24dd36e0d153916d07cd446dc59ac075d885968",
+      "native_baseline_sha256": "018acbcc40f2da3e54ddbd75c24dd36e0d153916d07cd446dc59ac075d885968",
+      "equal": true
+    },
+    {
+      "path": "backend/app/services/review.py",
+      "capability_audit_sha256": "201c40b09b7bf92b7ba98111ec5e6d91ea1c79ac3fb6bd7873fcf04ea28307ae",
+      "native_baseline_sha256": "201c40b09b7bf92b7ba98111ec5e6d91ea1c79ac3fb6bd7873fcf04ea28307ae",
+      "equal": true
+    },
+    {
+      "path": "backend/tests/test_memory_graph.py",
+      "capability_audit_sha256": "b338af89d045c07d2fa11dcdffb7e2cf55dcce4a87e5966ace2c09a9f201293e",
+      "native_baseline_sha256": "b338af89d045c07d2fa11dcdffb7e2cf55dcce4a87e5966ace2c09a9f201293e",
+      "equal": true
+    },
+    {
+      "path": "backend/tests/test_learner_state.py",
+      "capability_audit_sha256": "3b5a5a06913510368c2fa4d970f14b2c13a7720c227fca65f7cd6e25ba361ac6",
+      "native_baseline_sha256": "3b5a5a06913510368c2fa4d970f14b2c13a7720c227fca65f7cd6e25ba361ac6",
+      "equal": true
+    },
+    {
+      "path": "backend/tests/test_review.py",
+      "capability_audit_sha256": "f86b214d9b084ea7ab488965eb0d37330d5d8bf8b73062329572c60dbf2d7234",
+      "native_baseline_sha256": "f86b214d9b084ea7ab488965eb0d37330d5d8bf8b73062329572c60dbf2d7234",
+      "equal": true
+    },
+    {
+      "path": "backend/tests/test_remediation.py",
+      "capability_audit_sha256": "ac073aac56b155bfaae449da8c191ef01803987c1b1f1466bc113c81e8e5cb60",
+      "native_baseline_sha256": "ac073aac56b155bfaae449da8c191ef01803987c1b1f1466bc113c81e8e5cb60",
+      "equal": true
+    },
+    {
+      "path": "backend/tests/test_episode_planning.py",
+      "capability_audit_sha256": "3fc4cb5f8743db248252f755e6de5c6ed56a770c7b8806bfbf2c6f6c8c8ee84a",
+      "native_baseline_sha256": "3fc4cb5f8743db248252f755e6de5c6ed56a770c7b8806bfbf2c6f6c8c8ee84a",
+      "equal": true
+    },
+    {
+      "path": "backend/tests/test_education_memory_policy.py",
+      "capability_audit_sha256": "3e121db1069e66e65be1431449555dd2535537ddbd4ba6b7d7ed516e8f53e127",
+      "native_baseline_sha256": "3e121db1069e66e65be1431449555dd2535537ddbd4ba6b7d7ed516e8f53e127",
+      "equal": true
+    },
+    {
+      "path": "backend/tests/test_teaching_guidance_v2.py",
+      "capability_audit_sha256": "cd559d6812f42bb1b1ca32ea696eea5d6e6bcb9a64b4e876f46d1536faf709bb",
+      "native_baseline_sha256": "cd559d6812f42bb1b1ca32ea696eea5d6e6bcb9a64b4e876f46d1536faf709bb",
+      "equal": true
+    },
+    {
+      "path": "backend/tests/test_education_planning_lifecycle.py",
+      "capability_audit_sha256": "40e2a1f40a3028cb75b7fdce7d7840f409bf84c8e76279bbcd10770cf0adc929",
+      "native_baseline_sha256": "40e2a1f40a3028cb75b7fdce7d7840f409bf84c8e76279bbcd10770cf0adc929",
+      "equal": true
+    },
+    {
+      "path": "evals/education_memory_counterfactual/PROTOCOL.md",
+      "capability_audit_sha256": "81b13bce7744be78d17bad75b14162f73fcf042e1a4ddb65c3a11c8cbd5b1ee0",
+      "native_baseline_sha256": "81b13bce7744be78d17bad75b14162f73fcf042e1a4ddb65c3a11c8cbd5b1ee0",
+      "equal": true
+    },
+    {
+      "path": "evals/education_memory_counterfactual/formation.py",
+      "capability_audit_sha256": "257921aeed0327333018c57dd738c20a3eed1790907a8dc10a4ab988b0b62be0",
+      "native_baseline_sha256": "257921aeed0327333018c57dd738c20a3eed1790907a8dc10a4ab988b0b62be0",
+      "equal": true
+    },
+    {
+      "path": "evals/education_memory_counterfactual/generate.py",
+      "capability_audit_sha256": "2c2620756848659aaef698f69175be68f7e528867575a5a858e2dda7daba7b93",
+      "native_baseline_sha256": "2c2620756848659aaef698f69175be68f7e528867575a5a858e2dda7daba7b93",
+      "equal": true
+    },
+    {
+      "path": "evals/education_memory_counterfactual/verifier.py",
+      "capability_audit_sha256": "f16f71b21eea20cbcc56a506a85de5b1e2c9f5267a60dfebbb55cf6f55c4a13e",
+      "native_baseline_sha256": "f16f71b21eea20cbcc56a506a85de5b1e2c9f5267a60dfebbb55cf6f55c4a13e",
+      "equal": true
+    }
+  ],
+  "different": []
+}

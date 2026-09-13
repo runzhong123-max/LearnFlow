@@ -1,0 +1,25 @@
+{
+  "kind": "independent_delivery_recomputation",
+  "native_runs": [
+    {
+      "run": "native-01",
+      "manifest_files": 4
+    },
+    {
+      "run": "native-02",
+      "manifest_files": 4
+    }
+  ],
+  "native02_source_files_checked": 219,
+  "source_drift": [],
+  "native02_case_scores_recomputed": 15,
+  "case_field_assertions": 66,
+  "native02_all_scores_match": true,
+  "failed_native01_preserved": true,
+  "failed_source_files_checked": 8,
+  "formal_table_rows_checked": 8,
+  "references_checked": 18,
+  "figure_files_checked": 9,
+  "primary_formal_responses": 768,
+  "scope": "No new model responses or educational-effect estimates; visual QA recorded separately."
+}

@@ -1,0 +1,74 @@
+{
+  "date": "2026-09-13",
+  "artifact_checks": {
+    "pages": 18,
+    "extracted_chinese_characters": 11830,
+    "unique_reference_urls": 18,
+    "pdf_link_annotations": 25,
+    "docx_tables": 5,
+    "docx_figures": 3,
+    "title_border_removed": true
+  },
+  "visual_qa": {
+    "render": "bundled LibreOffice with task-local Fontconfig and bundled Poppler",
+    "all_pages_opened_and_checked": true,
+    "page_ranges": {
+      "paper_methods": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "five_kernel_audit": [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "root": [
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ]
+    },
+    "issues_remaining": []
+  },
+  "tests": {
+    "command": "PYTHONDONTWRITEBYTECODE=1 backend/venv/bin/python -m pytest -q -p no:cacheprovider evals/five_kernel_capabilities evals/education_memory_counterfactual",
+    "passed": 97,
+    "failed": 0,
+    "scope": "isolated paper integration checkout on 917b8a0",
+    "warnings": "Existing pytest-asyncio fixture-loop/deprecation notices"
+  },
+  "contract_impact": "none; research files only",
+  "not_executed": [
+    "new hosted-model experiment",
+    "production backend full suite",
+    "frontend builds",
+    "UI and cross-host end-to-end checks",
+    "real learner effectiveness study",
+    "push",
+    "deployment"
+  ],
+  "delivered_hashes": {
+    "manuscript_zh.md": "914292c1b40e72d178b0224e856a9f055a8b1093c9caed668abec7cec8f1e4a4",
+    "five_kernel_learner_memory_zh.docx": "edceb10980cc7391cf807f102669a6a6a981b6c077e81c394a0cd1934d425dea",
+    "five_kernel_learner_memory_zh.pdf": "e38a43e613a5ca75cfd16a1a9303a2712dc82b22a16181a885253236edcafc6b",
+    "artifact-audit.json": "f88d794f6c779a3d8fe2ecf21d794beed1035783da4571501a93eac64d3b48b8"
+  },
+  "integrated_main_regression": {
+    "head_before_research_commit": "055d31aa109f7cf006011f16f4ad1c552bb71b87",
+    "passed": 97,
+    "failed": 0,
+    "elapsed_seconds": 22.18,
+    "scope": "same two evaluation directories after integration into main",
+    "warning": "Existing pytest-asyncio deprecation warning"
+  }
+}

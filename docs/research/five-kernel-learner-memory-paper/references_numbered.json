@@ -1,0 +1,487 @@
+[
+  {
+    "key": "lewis2020rag",
+    "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+    "authors": [
+      "Patrick Lewis",
+      "Ethan Perez",
+      "Aleksandra Piktus",
+      "Fabio Petroni",
+      "Vladimir Karpukhin",
+      "Naman Goyal",
+      "Heinrich Küttler",
+      "Mike Lewis",
+      "Wen-tau Yih",
+      "Tim Rocktäschel",
+      "Sebastian Riedel",
+      "Douwe Kiela"
+    ],
+    "year": 2020,
+    "bibtype": "inproceedings",
+    "venue": "Advances in Neural Information Processing Systems",
+    "url": "https://papers.nips.cc/paper/2020/hash/6b493230205f780e1bc26945df7481e5-Abstract.html",
+    "verified_sections": "§2; §3–4",
+    "provided": "联合参数化生成器与非参数知识索引，并比较序列级/词元级文档条件化。",
+    "fair_comparison": "可作课程知识检索与生成基线，需固定语料、生成模型和预算。",
+    "not_a_demonstrated_defect": "原论文目标是知识密集 NLP，不是全套学习者状态治理；不能把原始密集索引定义外推为所有现代 RAG 的能力上限。",
+    "volume": "33",
+    "primary_urls": [
+      "https://papers.nips.cc/paper_files/paper/2020/file/6b493230205f780e1bc26945df7481e5-Paper.pdf",
+      "https://arxiv.org/abs/2005.11401v4"
+    ],
+    "citation_number": 1
+  },
+  {
+    "key": "park2023generative",
+    "title": "Generative Agents: Interactive Simulacra of Human Behavior",
+    "authors": [
+      "Joon Sung Park",
+      "Joseph C. O'Brien",
+      "Carrie J. Cai",
+      "Meredith Ringel Morris",
+      "Percy Liang",
+      "Michael S. Bernstein"
+    ],
+    "year": 2023,
+    "bibtype": "inproceedings",
+    "venue": "Proceedings of the 36th Annual ACM Symposium on User Interface Software and Technology",
+    "url": "https://arxiv.org/abs/2304.03442v2",
+    "verified_sections": "§4.1–4.3; §6–7",
+    "provided": "经验流、相关性/时近性/重要性联合召回、递归反思及计划；有组件消融与行为可信度评价。",
+    "fair_comparison": "可借鉴观测、反思、规划分开移除的设计，但教育终点应是资格与安排正确性。",
+    "not_a_demonstrated_defect": "不能称其仅存向量或不支持计划。可信的模拟行为与真实学生掌握是不同任务，不能跨任务直接排列分数。",
+    "doi": "10.1145/3586183.3606763",
+    "primary_urls": [
+      "https://arxiv.org/html/2304.03442v2",
+      "https://doi.org/10.1145/3586183.3606763"
+    ],
+    "citation_number": 2
+  },
+  {
+    "key": "packer2023memgpt",
+    "title": "MemGPT: Towards LLMs as Operating Systems",
+    "authors": [
+      "Charles Packer",
+      "Sarah Wooders",
+      "Kevin Lin",
+      "Vivian Fang",
+      "Shishir G. Patil",
+      "Ion Stoica",
+      "Joseph E. Gonzalez"
+    ],
+    "year": 2023,
+    "bibtype": "misc",
+    "venue": "arXiv preprint, 2310.08560v2",
+    "url": "https://arxiv.org/abs/2310.08560v2",
+    "verified_sections": "§2.1–2.3; §3",
+    "provided": "工作上下文、recall/archival 外部存储、上下文换入换出和函数链式检索；工作记忆保存用户事实与偏好。",
+    "fair_comparison": "可比较上下文管理、跨会话读取与预算成本；教育资格约束需要双方同样的任务接口。",
+    "not_a_demonstrated_defect": "不能称其只检索、不更新或没有画像。自主记忆编辑与 LearnFlow 的确定性权威链不同，不等于原方法在其目标任务上错误。",
+    "eprint": "2310.08560",
+    "version": "v2; 2024-02-12; first submitted 2023-10-12",
+    "doi": "10.48550/arXiv.2310.08560",
+    "primary_urls": [
+      "https://arxiv.org/html/2310.08560v2"
+    ],
+    "version_note": "按首发年2023引用并明确所读v2；本次未确认正式会议/期刊，不虚填。",
+    "citation_number": 3
+  },
+  {
+    "key": "zhong2024memorybank",
+    "title": "MemoryBank: Enhancing Large Language Models with Long-Term Memory",
+    "authors": [
+      "Wanjun Zhong",
+      "Lianghong Guo",
+      "Qiqi Gao",
+      "He Ye",
+      "Yanlin Wang"
+    ],
+    "year": 2024,
+    "bibtype": "article",
+    "venue": "Proceedings of the AAAI Conference on Artificial Intelligence",
+    "url": "https://ojs.aaai.org/index.php/AAAI/article/view/29946",
+    "verified_sections": "MemoryBank method; Experiments",
+    "provided": "记忆存储、召回、更新、事件/用户特征总结及随时间遗忘与强化，面向长期陪伴。",
+    "fair_comparison": "可比较长期偏好保持和历史更新；教育中要额外公开辅助条件与测评来源定义。",
+    "not_a_demonstrated_defect": "不能称其没有用户画像或时间机制；陪伴人格推断不等于经验证的教育掌握，也不能据此泛称方法无效。",
+    "volume": "38",
+    "number": "17",
+    "pages": "19724--19731",
+    "doi": "10.1609/aaai.v38i17.29946",
+    "primary_urls": [
+      "https://ojs.aaai.org/index.php/AAAI/article/download/29946/31654"
+    ],
+    "version_note": "采用AAAI 2024正式版本，非把2023预印本误写为正式发表年。",
+    "citation_number": 4
+  },
+  {
+    "key": "chhikara2025mem0",
+    "title": "Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory",
+    "authors": [
+      "Prateek Chhikara",
+      "Dev Khant",
+      "Saket Aryan",
+      "Taranjeet Singh",
+      "Deshraj Yadav"
+    ],
+    "year": 2025,
+    "bibtype": "misc",
+    "venue": "arXiv preprint, 2504.19413v1",
+    "url": "https://arxiv.org/abs/2504.19413v1",
+    "verified_sections": "§2; §3; Table 1–2",
+    "provided": "持续抽取、合并与更新紧凑记忆；另有图增强版。",
+    "fair_comparison": "须固定 LoCoMo 子集、读出模型、judge和预算，区分记忆形成与读取成本；本轮未重跑，不能列进同一排名。",
+    "not_a_demonstrated_defect": "不能称其只有向量或图版必优；v1排除对抗题，不能据该结果评价拒答。",
+    "eprint": "2504.19413",
+    "version": "v1; 2025-04-28",
+    "doi": "10.48550/arXiv.2504.19413",
+    "primary_urls": [
+      "https://arxiv.org/html/2504.19413v1"
+    ],
+    "verified_result_note": "Table 1 多跳 LLM-judge J：基础 Mem0 51.15±0.31，图版47.19±0.67。该反例不证明图机制普遍无用；论文机制用GPT-4o-mini，部分基线分数来自已有报告而非全部同场重跑。",
+    "citation_number": 5
+  },
+  {
+    "key": "xu2025amem",
+    "title": "A-Mem: Agentic Memory for LLM Agents",
+    "authors": [
+      "Wujiang Xu",
+      "Zujie Liang",
+      "Kai Mei",
+      "Hang Gao",
+      "Juntao Tan",
+      "Yongfeng Zhang"
+    ],
+    "year": 2025,
+    "bibtype": "inproceedings",
+    "venue": "Advances in Neural Information Processing Systems",
+    "url": "https://proceedings.neurips.cc/paper_files/paper/2025/hash/19909c36f51abc4856b4560aff3d36d6-Abstract-Conference.html",
+    "verified_sections": "§3.1–3.4; §4.4/Table 3; Appendix A.5",
+    "provided": "带关键词、标签和上下文描述的笔记、动态连边与旧记忆演化；提供组件移除实验。",
+    "fair_comparison": "可迁移链接/演化消融；固定生成模型、候选池与top-k，并预先固定调参方式。",
+    "not_a_demonstrated_defect": "不能称其缺少结构化组织或记忆更新。图组织效果不是教育证据的权威资格，二者需分别评价。",
+    "volume": "38",
+    "doi": "10.52202/085713-0593",
+    "primary_urls": [
+      "https://papers.neurips.cc/paper_files/paper/2025/file/19909c36f51abc4856b4560aff3d36d6-Paper-Conference.pdf",
+      "https://arxiv.org/html/2502.12110v11",
+      "https://github.com/WujiangXu/AgenticMemory",
+      "https://github.com/WujiangXu/A-mem-sys"
+    ],
+    "version_note": "采用NeurIPS 2025正式书目；方法交叉核对arXiv v11。基准仓库与生产库是不同产物，不能混同其配置。",
+    "citation_number": 6
+  },
+  {
+    "key": "corbett1994bkt",
+    "title": "Knowledge tracing: Modeling the acquisition of procedural knowledge",
+    "authors": [
+      "Albert T. Corbett",
+      "John R. Anderson"
+    ],
+    "year": 1994,
+    "bibtype": "article",
+    "venue": "User Modeling and User-Adapted Interaction",
+    "url": "https://link.springer.com/article/10.1007/BF01099821",
+    "verified_sections": "Abstract; ACT Programming Tutor model and empirical studies",
+    "provided": "对程序规则掌握概率持续估计，据此个性化安排练习，并以学生测验表现检验。",
+    "fair_comparison": "应作为知识状态估计的前身或可集成组件；若比较预测效果，应使用同一学生划分、历史输入与未来作答终点。",
+    "not_a_demonstrated_defect": "不能称教育历史模型只是静态分数，也不能说我们首次以证据驱动练习。治理状态正确不等于更好的概率校准。",
+    "volume": "4",
+    "pages": "253--278",
+    "doi": "10.1007/BF01099821",
+    "primary_urls": [
+      "https://act-r.psy.cmu.edu/?post_type=publications&p=14344"
+    ],
+    "version_note": "出版社正式卷期/引用为1994；作者ACT-R站列1995。本文按出版社1994，保留差异，避免悄然混年。",
+    "citation_number": 7
+  },
+  {
+    "key": "piech2015dkt",
+    "title": "Deep Knowledge Tracing",
+    "authors": [
+      "Chris Piech",
+      "Jonathan Bassen",
+      "Jonathan Huang",
+      "Surya Ganguli",
+      "Mehran Sahami",
+      "Leonidas Guibas",
+      "Jascha Sohl-Dickstein"
+    ],
+    "year": 2015,
+    "bibtype": "inproceedings",
+    "venue": "Advances in Neural Information Processing Systems",
+    "url": "https://papers.nips.cc/paper_files/paper/2015/hash/bac9162b47c56fc8a4d2a519803d51b3-Abstract.html",
+    "verified_sections": "§2–4",
+    "provided": "用循环神经网络表征作答序列和潜在知识动态，以真实学生后续作答预测评估。",
+    "fair_comparison": "可在知识核接入预测器，但应独立评价AUC/校准/泄漏，不能用安排字段准确率替代。",
+    "not_a_demonstrated_defect": "不能称神经知识追踪不建模历史或不做个性化。其目标未覆盖全部偏好/计划状态，不等于算法失败。",
+    "volume": "28",
+    "primary_urls": [
+      "https://papers.nips.cc/paper_files/paper/2015/file/bac9162b47c56fc8a4d2a519803d51b3-Paper.pdf"
+    ],
+    "version_note": "作者采用正式会议元数据Jonathan Bassen；arXiv 1506.05908检索条目显示Jonathan Spencer，不将两版作者混拼。",
+    "citation_number": 8
+  },
+  {
+    "key": "ghosh2020akt",
+    "title": "Context-Aware Attentive Knowledge Tracing",
+    "authors": [
+      "Aritra Ghosh",
+      "Neil Heffernan",
+      "Andrew S. Lan"
+    ],
+    "year": 2020,
+    "bibtype": "inproceedings",
+    "venue": "Proceedings of the 26th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining",
+    "url": "https://arxiv.org/abs/2007.12324",
+    "verified_sections": "§3; §4",
+    "provided": "单调注意力、上下文距离/衰减与Rasch正则问题表示，预测后续作答并分析可解释性。",
+    "fair_comparison": "可检验遗忘、题目难度与知识证据动态；采用真实学生隔离、前视遮罩及相同训练资料。",
+    "not_a_demonstrated_defect": "不能把所有KT称为只按最近一次答对或不考虑时间，也不能把注意力可解释性与完整事件追责视为同一终点。",
+    "doi": "10.1145/3394486.3403282",
+    "primary_urls": [
+      "https://arxiv.org/pdf/2007.12324"
+    ],
+    "version_note": "KDD 2020及DOI由原论文首页ACM Reference Format核验；未从一手页面核实页码，故不填。",
+    "citation_number": 9
+  },
+  {
+    "key": "bull2010olm",
+    "title": "Open Learner Models",
+    "authors": [
+      "Susan Bull",
+      "Judy Kay"
+    ],
+    "year": 2010,
+    "bibtype": "incollection",
+    "venue": "Advances in Intelligent Tutoring Systems",
+    "url": "https://link.springer.com/chapter/10.1007/978-3-642-14363-2_15",
+    "verified_sections": "Abstract and chapter bibliographic record",
+    "provided": "将机器中的学习者表示开放给学习者及支持者，讨论透明呈现、控制和学习用途。",
+    "fair_comparison": "可用来界定记忆面板应让用户理解和控制什么；后续需实际检验可理解性和修正流程。",
+    "not_a_demonstrated_defect": "不能把画像可见、学习者控制或支持元认知当作五核独创。本轮自动实验没有证明学习者使用收益。",
+    "pages": "301--322",
+    "series": "Studies in Computational Intelligence",
+    "volume": "308",
+    "editor": "Roger Nkambou | Jacqueline Bourdeau | Riichiro Mizoguchi",
+    "publisher": "Springer",
+    "doi": "10.1007/978-3-642-14363-2_15",
+    "primary_urls": [],
+    "access_note": "本次核验出版社书目与摘要，未获取付费章全文；不作其内部实现细节断言。",
+    "citation_number": 10
+  },
+  {
+    "key": "liu2024lost",
+    "title": "Lost in the Middle: How Language Models Use Long Contexts",
+    "authors": [
+      "Nelson F. Liu",
+      "Kevin Lin",
+      "John Hewitt",
+      "Ashwin Paranjape",
+      "Michele Bevilacqua",
+      "Fabio Petroni",
+      "Percy Liang"
+    ],
+    "year": 2024,
+    "bibtype": "article",
+    "venue": "Transactions of the Association for Computational Linguistics",
+    "volume": "12",
+    "pages": "157--173",
+    "doi": "10.1162/tacl_a_00638",
+    "publisher": "MIT Press",
+    "url": "https://aclanthology.org/2024.tacl-1.9/",
+    "primary_urls": [
+      "https://aclanthology.org/2024.tacl-1.9.pdf"
+    ],
+    "verified_sections": "Abstract; multi-document question answering and key-value retrieval experiments",
+    "provided": "控制多文档问答与键值检索中的相关信息位置，观察到若干受测模型在中间位置表现下降。",
+    "fair_comparison": "支持在组织方式实验中控制信息位置和顺序；应将分组、排序、篇幅分别干预。",
+    "not_a_demonstrated_defect": "不能由该文断定所有模型必有同样效应，也不能据此认定本轮分组差异已被位置机制因果解释。",
+    "version_note": "采用TACL 2024正式版本，不混用2023预印本发表年。",
+    "citation_number": 11
+  },
+  {
+    "key": "wu2025longmemeval",
+    "title": "LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory",
+    "authors": [
+      "Di Wu",
+      "Hongwei Wang",
+      "Wenhao Yu",
+      "Yuwei Zhang",
+      "Kai-Wei Chang",
+      "Dong Yu"
+    ],
+    "year": 2025,
+    "bibtype": "inproceedings",
+    "venue": "International Conference on Learning Representations",
+    "url": "https://arxiv.org/abs/2410.10813v2",
+    "verified_sections": "§2; §4; §5.2–5.5; Appendix C",
+    "provided": "500个问题测抽取、跨会话、时间、更新与拒答；明确索引—检索—读取三阶段，并研究时间查询和结构化读出。",
+    "fair_comparison": "可沿用分阶段指标、oracle证据条件与时序挑战；本轮等信息实验只覆盖读取组织与资格注释。",
+    "not_a_demonstrated_defect": "不能说前人忽略时间/更新/拒答，或首次发现召回不等于正确回答。我们自己的证据召回率不能当它的QA准确率。",
+    "eprint": "2410.10813",
+    "version": "v2; 2025-03-04",
+    "primary_urls": [
+      "https://arxiv.org/html/2410.10813v2",
+      "https://github.com/xiaowu0162/LongMemEval"
+    ],
+    "citation_number": 12
+  },
+  {
+    "key": "maharana2024locomo",
+    "title": "Evaluating Very Long-Term Conversational Memory of LLM Agents",
+    "authors": [
+      "Adyasha Maharana",
+      "Dong-Ho Lee",
+      "Sergey Tulyakov",
+      "Mohit Bansal",
+      "Francesco Barbieri",
+      "Yuwei Fang"
+    ],
+    "year": 2024,
+    "bibtype": "inproceedings",
+    "venue": "Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)",
+    "url": "https://aclanthology.org/2024.acl-long.747/",
+    "verified_sections": "§3; §4.1–4.3; §5; Table 1",
+    "provided": "人机共建并人工修订的长期多模态对话；包含QA、事件图摘要与对话生成，而非只有事实检索。",
+    "fair_comparison": "可迁移跨会话、时间、说话人归属与无答案场景；必须注明所跑任务/类别/子集。",
+    "not_a_demonstrated_defect": "不能把公开小子集等同全部基准，不能以 source evidence recall 冒充QA，不能说它没有因果/时间考察。",
+    "pages": "13851--13870",
+    "doi": "10.18653/v1/2024.acl-long.747",
+    "publisher": "Association for Computational Linguistics",
+    "primary_urls": [
+      "https://aclanthology.org/2024.acl-long.747.pdf"
+    ],
+    "citation_number": 13
+  },
+  {
+    "key": "bull2016smili",
+    "title": "SMILI☺: a Framework for Interfaces to Learning Data in Open Learner Models, Learning Analytics and Related Fields",
+    "authors": [
+      "Susan Bull",
+      "Judy Kay"
+    ],
+    "year": 2016,
+    "bibtype": "article",
+    "venue": "International Journal of Artificial Intelligence in Education",
+    "url": "https://link.springer.com/article/10.1007/s40593-015-0090-8",
+    "verified_sections": "Abstract and bibliographic record",
+    "provided": "提供描述、设计和比较开放学习者模型的框架，并针对学习分析等新场景修订。",
+    "fair_comparison": "可组织界面可见内容、访问和交互的比较；运行审计与用户理解需要不同证据。",
+    "not_a_demonstrated_defect": "不能把呈现状态等同真正开放可协商模型，也不能说之前没有系统的用户模型比较框架。",
+    "volume": "26",
+    "pages": "293--331",
+    "doi": "10.1007/s40593-015-0090-8",
+    "primary_urls": [],
+    "access_note": "本次核验出版社摘要与书目；未访问付费全文，不细述未读框架条目。",
+    "citation_number": 14
+  },
+  {
+    "key": "bull2016negotiated",
+    "title": "Negotiated learner modelling to maintain today’s learner models",
+    "authors": [
+      "Susan Bull"
+    ],
+    "year": 2016,
+    "bibtype": "article",
+    "venue": "Research and Practice in Technology Enhanced Learning",
+    "url": "https://link.springer.com/article/10.1186/s41039-016-0035-3",
+    "verified_sections": "Abstract; Background; Negotiated learner modelling",
+    "provided": "讨论以协商方式维护多来源学习者模型准确性，并支持学习者反思。",
+    "fair_comparison": "可迁移来源分解、争议提出与修正轨迹；自动可重放测试不能代替真人协商效果。",
+    "not_a_demonstrated_defect": "不能声称此前模型不允许用户纠错，或纠错权首次由本系统引入。LearnFlow的贡献应是具体事件化实现与检验。",
+    "volume": "11",
+    "doi": "10.1186/s41039-016-0035-3",
+    "primary_urls": [],
+    "version_note": "11为卷，10为文章号，非第10期。BibTeX使用eid。",
+    "eid": "10",
+    "citation_number": 15
+  },
+  {
+    "key": "zhao2026deeptutor",
+    "title": "DeepTutor: Towards Agentic Personalized Tutoring",
+    "authors": [
+      "Bingxi Zhao",
+      "Jiahao Zhang",
+      "Xubin Ren",
+      "Zirui Guo",
+      "Tianzhe Chu",
+      "Yi Ma",
+      "Chao Huang"
+    ],
+    "year": 2026,
+    "bibtype": "misc",
+    "venue": "arXiv preprint, 2604.26962v1",
+    "url": "https://arxiv.org/abs/2604.26962v1",
+    "verified_sections": "§4.1.1–4.1.3; §6.2, Table 1; §6.4; Appendix B.1–B.3",
+    "provided": "图/向量混合检索、三级 trace forest、三个画像维度与角色化注入；弱点消解要求后续至少两次会话正确应用。",
+    "fair_comparison": "可借鉴同骨干、同课程来源下的记忆消融与多轮模拟学生；另测证据资格、撤销和时效一致性。",
+    "not_a_demonstrated_defect": "不能称其只有向量检索、没有统一画像/来源追踪/持续更新。论文未报告的 LearnFlow 式写权限契约不能判为实现缺失。",
+    "eprint": "2604.26962",
+    "version": "v1; 2026-04-10",
+    "doi": "10.48550/arXiv.2604.26962",
+    "primary_urls": [
+      "https://arxiv.org/html/2604.26962v1",
+      "https://github.com/HKUDS/DeepTutor"
+    ],
+    "version_note": "最新 arXiv 页显示 v3（2026-07-09）；本材料固定 v1，不能混用其他版本数值。未确认期刊/会议录用。",
+    "verified_result_note": "v1 Table 1: OQ 3.91/5 vs w/o Memory 3.80/5；§6.2: 270 tasks/90 profiles/30 knowledge bases，学生与 tutor 用 Gemini-3-Flash，Claude Sonnet 4.6 judge，每 transcript 评分三次平均；并非真人前后测。",
+    "version_date_evidence": {
+      "submission_history": "[v1] Fri, 10 Apr 2026 17:57:00 UTC",
+      "pdf_first_page_stamp": "arXiv:2604.26962v1 [cs.CY] 10 Apr 2026",
+      "urls": [
+        "https://arxiv.org/abs/2604.26962v1",
+        "https://arxiv.org/pdf/2604.26962v1"
+      ],
+      "verified_on": "2026-09-13",
+      "note": "摘要页历史与v1 PDF首页一致；未从arXiv编号推算日期。"
+    },
+    "citation_number": 16
+  },
+  {
+    "key": "rasmussen2025zep",
+    "title": "Zep: A Temporal Knowledge Graph Architecture for Agent Memory",
+    "authors": [
+      "Preston Rasmussen",
+      "Pavlo Paliychuk",
+      "Travis Beauvais",
+      "Jack Ryan",
+      "Daniel Chalef"
+    ],
+    "year": 2025,
+    "bibtype": "misc",
+    "venue": "arXiv preprint, 2501.13956v1",
+    "url": "https://arxiv.org/abs/2501.13956v1",
+    "verified_sections": "§2.2.3; retrieval; evaluation",
+    "provided": "Graphiti记录系统时间与事实有效时间，支持边失效及图/语义检索。",
+    "fair_comparison": "可迁移时间双轴与失效机制为可重建派生索引；分别评估历史事实查询与当前安排有效性。",
+    "not_a_demonstrated_defect": "不能说通用记忆无时序治理。LLM抽取关系不自动获得教育状态写权；也不能把厂商不同版本分数并入本轮排名。",
+    "eprint": "2501.13956",
+    "version": "v1; 2025-01-20",
+    "doi": "10.48550/arXiv.2501.13956",
+    "primary_urls": [
+      "https://arxiv.org/html/2501.13956v1"
+    ],
+    "citation_number": 17
+  },
+  {
+    "key": "deepseek_thinking_mode",
+    "title": "Thinking Mode",
+    "authors": [
+      "DeepSeek"
+    ],
+    "year": null,
+    "bibtype": "misc",
+    "venue": "DeepSeek API Docs",
+    "url": "https://api-docs.deepseek.com/guides/thinking_mode/",
+    "primary_urls": [],
+    "accessed": "2026-09-13",
+    "publication_date": null,
+    "verified_sections": "Thinking Mode Toggle and Effort Control; Input and Output Parameters",
+    "provided": "官方文档说明thinking默认启用，提供enabled/disabled开关；OpenAI SDK通过extra_body传入thinking参数。",
+    "fair_comparison": "用于说明本实验显式关闭thinking的API参数选择；是否实际发送、用量和返回alias须由本轮回执佐证。",
+    "not_a_demonstrated_defect": "文档不是冻结模型权重或运行结果证明；不能从参数文档推断alias完全等价，也不能把请求温度0称为可重复的确定性输出。",
+    "version_note": "页面未给出明确发布日期，year保持null；BibTeX不伪造发表年，记录访问日期。",
+    "citation_number": 18
+  }
+]

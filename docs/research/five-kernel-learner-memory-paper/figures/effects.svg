@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="720" height="315" preserveAspectRatio="xMinYMin meet" viewBox="0 0 720 315" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="720" height="315"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-315)" style="clip-path: url(#clip)">
+		<g transform="">
+			<text x="12" y="291" style="font-family: ArialB; font-size: 16px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,582) scale(1,-1)">Paired differences in complete consistency</text>
+			<path d="M 303,48 L 303,266 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<text x="295.7734375" y="30" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,60) scale(1,-1)">-10</text>
+			<path d="M 341.7,48 L 341.7,266 Z" style="stroke: rgb(12%,14%,16%); stroke-linecap: butt; stroke-width: 0.9;"/>
+			<text x="338.91923828125" y="30" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,60) scale(1,-1)">0</text>
+			<path d="M 419.1,48 L 419.1,266 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<text x="413.5384765625" y="30" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,60) scale(1,-1)">20</text>
+			<path d="M 496.5,48 L 496.5,266 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<text x="490.9384765625" y="30" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,60) scale(1,-1)">40</text>
+			<path d="M 573.9,48 L 573.9,266 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<text x="568.3384765625" y="30" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,60) scale(1,-1)">60</text>
+			<path d="M 651.3,48 L 651.3,266 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<text x="645.7384765625" y="30" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,60) scale(1,-1)">80</text>
+			<path d="M 690,48 L 690,266 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<text x="684.4384765625" y="30" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,60) scale(1,-1)">90</text>
+			<text x="12" y="246" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,492) scale(1,-1)">Grouping with eligibility | 2,200</text>
+			<path d="M 321.54375,250 L 341.7,250 Z" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 1.3;"/>
+			<path d="M 321.54375,247 L 321.54375,253 Z" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 1;"/>
+			<path d="M 341.7,247 L 341.7,253 Z" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 1;"/>
+			<circle cx="333.6375" cy="250" r="3.5" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<text x="12" y="219" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,438) scale(1,-1)">Grouping with source only | 2,200</text>
+			<path d="M 539.23125,223 L 587.60625,223 Z" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 1.3;"/>
+			<path d="M 539.23125,220 L 539.23125,226 Z" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 1;"/>
+			<path d="M 587.60625,220 L 587.60625,226 Z" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 1;"/>
+			<circle cx="563.41875" cy="223" r="3.5" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<text x="12" y="192" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,384) scale(1,-1)">Eligibility within five kernels | 2,200</text>
+			<path d="M 410.23125,196 L 434.41875,196 Z" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 1.3;"/>
+			<path d="M 410.23125,193 L 410.23125,199 Z" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 1;"/>
+			<path d="M 434.41875,193 L 434.41875,199 Z" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 1;"/>
+			<circle cx="422.325" cy="196" r="3.5" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<text x="12" y="165" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,330) scale(1,-1)">Eligibility within flat | 2,200</text>
+			<path d="M 627.91875,169 L 676.29375,169 Z" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 1.3;"/>
+			<path d="M 627.91875,166 L 627.91875,172 Z" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 1;"/>
+			<path d="M 676.29375,166 L 676.29375,172 Z" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 1;"/>
+			<circle cx="652.10625" cy="169" r="3.5" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<text x="12" y="138" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,276) scale(1,-1)">Grouping with eligibility | 8,000</text>
+			<path d="M 313.48125,142 L 353.79375,142 Z" style="stroke: rgb(83%,36%,0%); stroke-linecap: butt; stroke-width: 1.3;"/>
+			<path d="M 313.48125,139 L 313.48125,145 Z" style="stroke: rgb(83%,36%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+			<path d="M 353.79375,139 L 353.79375,145 Z" style="stroke: rgb(83%,36%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+			<circle cx="329.60625" cy="142" r="3.5" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="12" y="111" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,222) scale(1,-1)">Grouping with source only | 8,000</text>
+			<path d="M 458.60625,115 L 583.575,115 Z" style="stroke: rgb(83%,36%,0%); stroke-linecap: butt; stroke-width: 1.3;"/>
+			<path d="M 458.60625,112 L 458.60625,118 Z" style="stroke: rgb(83%,36%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+			<path d="M 583.575,112 L 583.575,118 Z" style="stroke: rgb(83%,36%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+			<circle cx="531.1687499999999" cy="115" r="3.5" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="12" y="84" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,168) scale(1,-1)">Eligibility within five kernels | 8,000</text>
+			<path d="M 394.10625,88 L 418.29375,88 Z" style="stroke: rgb(83%,36%,0%); stroke-linecap: butt; stroke-width: 1.3;"/>
+			<path d="M 394.10625,85 L 394.10625,91 Z" style="stroke: rgb(83%,36%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+			<path d="M 418.29375,85 L 418.29375,91 Z" style="stroke: rgb(83%,36%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+			<circle cx="406.2" cy="88" r="3.5" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="12" y="57" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,114) scale(1,-1)">Eligibility within flat | 8,000</text>
+			<path d="M 539.23125,61 L 656.1375,61 Z" style="stroke: rgb(83%,36%,0%); stroke-linecap: butt; stroke-width: 1.3;"/>
+			<path d="M 539.23125,58 L 539.23125,64 Z" style="stroke: rgb(83%,36%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+			<path d="M 656.1375,58 L 656.1375,64 Z" style="stroke: rgb(83%,36%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+			<circle cx="607.7625" cy="61" r="3.5" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="422.515869140625" y="8" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,16) scale(1,-1)">Difference (percentage points)</text>
+		</g>
+	</g>
+</svg>

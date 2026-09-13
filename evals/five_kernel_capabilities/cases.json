@@ -1,0 +1,643 @@
+[
+  {
+    "case_id": "structure-anchor_active",
+    "kernel": "structure",
+    "at": "2026-09-01T12:00:00Z",
+    "steps": [
+      {
+        "id": "input",
+        "op": "control",
+        "at": "2026-09-01T11:00:00Z",
+        "text": "先回到递归基础定义。"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/observation/compiled/return_anchor",
+        "op": "contains",
+        "value": "递归基础定义"
+      },
+      {
+        "path": "/observation/plan/phases/0/purpose",
+        "op": "contains",
+        "value": "递归基础定义"
+      }
+    ]
+  },
+  {
+    "case_id": "structure-anchor_expired",
+    "kernel": "structure",
+    "at": "2026-09-01T12:00:00Z",
+    "steps": [
+      {
+        "id": "input",
+        "op": "control",
+        "at": "2026-09-01T03:00:00Z",
+        "text": "先回到递归基础定义。"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/observation/compiled/return_anchor",
+        "op": "absent",
+        "value": null
+      },
+      {
+        "path": "/observation/plan/phases/0/purpose",
+        "op": "not_contains",
+        "value": "递归基础定义"
+      }
+    ]
+  },
+  {
+    "case_id": "structure-path_confirmed",
+    "kernel": "structure",
+    "at": "2026-09-01T12:00:00Z",
+    "steps": [
+      {
+        "id": "confirm",
+        "op": "path_commit",
+        "at": "2026-09-01T11:00:00Z",
+        "revision": 1
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/observation/path_overlay/active_plan_id",
+        "op": "eq",
+        "value": "capability-path"
+      },
+      {
+        "path": "/lens/path_status",
+        "op": "eq",
+        "value": "active"
+      },
+      {
+        "path": "/lens/goal_status",
+        "op": "eq",
+        "value": "confirmed"
+      },
+      {
+        "path": "/lens/path_revision",
+        "op": "eq",
+        "value": 1
+      },
+      {
+        "path": "/lens/route",
+        "op": "eq",
+        "value": [
+          "python-programming",
+          "machine-learning",
+          "agent-engineering"
+        ]
+      },
+      {
+        "path": "/lens/learning_plan_packet_text",
+        "op": "contains",
+        "value": "capability-path"
+      }
+    ]
+  },
+  {
+    "case_id": "knowledge-gap",
+    "kernel": "knowledge",
+    "at": "2026-09-01T12:00:00Z",
+    "steps": [
+      {
+        "id": "gap",
+        "op": "gap",
+        "text": "我不懂递归的终止条件。",
+        "at": "2026-09-01T11:00:00Z"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/observation/compiled/blocker",
+        "op": "eq",
+        "value": "current_gap"
+      },
+      {
+        "path": "/observation/compiled/blocker_detail",
+        "op": "contains",
+        "value": "我不懂递归的终止条件。"
+      },
+      {
+        "path": "/lens/knowledge_gap_fact",
+        "op": "eq",
+        "value": "我不懂递归的终止条件。"
+      }
+    ]
+  },
+  {
+    "case_id": "knowledge-resolved",
+    "kernel": "knowledge",
+    "at": "2026-09-01T12:00:00Z",
+    "steps": [
+      {
+        "id": "gap",
+        "op": "gap",
+        "text": "我不懂递归的终止条件。",
+        "at": "2026-09-01T11:00:00Z"
+      },
+      {
+        "id": "resolve",
+        "op": "control",
+        "at": "2026-09-01T11:40:00Z",
+        "text": "这个问题已经解决了"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/observation/compiled/blocker",
+        "op": "eq",
+        "value": "resolved"
+      },
+      {
+        "path": "/lens/actions",
+        "op": "contains",
+        "value": "verify_reported_resolution"
+      },
+      {
+        "path": "/observation/plan/phases/0/purpose",
+        "op": "not_contains",
+        "value": "我不懂递归的终止条件。"
+      },
+      {
+        "path": "/lens/plan_actions",
+        "op": "contains",
+        "value": "verify_reported_resolution"
+      },
+      {
+        "path": "/observation/plan/phases/0/purpose",
+        "op": "contains",
+        "value": "当前卡点已由学生自述解决"
+      }
+    ]
+  },
+  {
+    "case_id": "knowledge-evaluated_error",
+    "kernel": "knowledge",
+    "at": "2026-09-01T12:00:00Z",
+    "steps": [
+      {
+        "id": "answer",
+        "op": "grade",
+        "at": "2026-09-01T11:00:00Z",
+        "item": "q1",
+        "correct": false,
+        "assistance": "none"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/lens/concept_statuses",
+        "op": "eq",
+        "value": [
+          "needs_review"
+        ]
+      },
+      {
+        "path": "/observation/compiled/practice_feedback",
+        "op": "eq",
+        "value": "evaluated_error"
+      },
+      {
+        "path": "/lens/grade_correct",
+        "op": "eq",
+        "value": [
+          false
+        ]
+      },
+      {
+        "path": "/lens/grade_human_value_mutations",
+        "op": "eq",
+        "value": 0
+      },
+      {
+        "path": "/observation/plan/phases/1/purpose",
+        "op": "contains",
+        "value": "先定位第一个错误步骤"
+      }
+    ]
+  },
+  {
+    "case_id": "human-minutes",
+    "kernel": "human",
+    "at": "2026-09-01T12:00:00Z",
+    "steps": [
+      {
+        "id": "input",
+        "op": "control",
+        "at": "2026-09-01T11:00:00Z",
+        "text": "本次只有8分钟。"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/observation/compiled/max_minutes",
+        "op": "eq",
+        "value": 8
+      },
+      {
+        "path": "/observation/plan/estimated_minutes",
+        "op": "eq",
+        "value": 8
+      }
+    ]
+  },
+  {
+    "case_id": "human-support_cap",
+    "kernel": "human",
+    "at": "2026-09-01T12:00:00Z",
+    "steps": [
+      {
+        "id": "input",
+        "op": "control",
+        "at": "2026-09-01T11:00:00Z",
+        "text": "本次只有25分钟。"
+      },
+      {
+        "id": "support",
+        "op": "control",
+        "at": "2026-09-01T11:40:00Z",
+        "text": "请拆成小步，每次只处理一个问题。"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/observation/compiled/max_minutes",
+        "op": "eq",
+        "value": 20
+      },
+      {
+        "path": "/observation/compiled/small_steps",
+        "op": "eq",
+        "value": true
+      },
+      {
+        "path": "/observation/plan/estimated_minutes",
+        "op": "eq",
+        "value": 20
+      },
+      {
+        "path": "/observation/plan/phases/2/required",
+        "op": "eq",
+        "value": true
+      },
+      {
+        "path": "/observation/plan/phases/2/purpose",
+        "op": "contains",
+        "value": "无提示独立"
+      }
+    ]
+  },
+  {
+    "case_id": "human-expired",
+    "kernel": "human",
+    "at": "2026-09-01T12:00:00Z",
+    "steps": [
+      {
+        "id": "input",
+        "op": "control",
+        "at": "2026-09-01T03:00:00Z",
+        "text": "本次只有8分钟。"
+      },
+      {
+        "id": "support",
+        "op": "control",
+        "at": "2026-09-01T03:01:00Z",
+        "text": "请拆成小步，每次只处理一个问题。"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/observation/compiled/max_minutes",
+        "op": "absent",
+        "value": null
+      },
+      {
+        "path": "/observation/compiled/small_steps",
+        "op": "absent",
+        "value": null
+      },
+      {
+        "path": "/observation/plan/estimated_minutes",
+        "op": "eq",
+        "value": 35
+      }
+    ]
+  },
+  {
+    "case_id": "value-priority_updated",
+    "kernel": "value",
+    "at": "2026-09-01T12:00:00Z",
+    "steps": [
+      {
+        "id": "input",
+        "op": "control",
+        "at": "2026-09-01T11:00:00Z",
+        "text": "本次优先：递归基础定义。"
+      },
+      {
+        "id": "update",
+        "op": "control",
+        "at": "2026-09-01T11:40:00Z",
+        "text": "本次优先：递归边界分析。"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/observation/compiled/current_priority",
+        "op": "contains",
+        "value": "递归边界分析"
+      },
+      {
+        "path": "/observation/plan/summary",
+        "op": "contains",
+        "value": "递归边界分析"
+      },
+      {
+        "path": "/observation/compiled/current_priority",
+        "op": "not_contains",
+        "value": "递归基础定义"
+      }
+    ]
+  },
+  {
+    "case_id": "value-priority_expired",
+    "kernel": "value",
+    "at": "2026-09-01T12:00:00Z",
+    "steps": [
+      {
+        "id": "input",
+        "op": "control",
+        "at": "2026-09-01T03:00:00Z",
+        "text": "本次优先：递归边界分析。"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/observation/compiled/current_priority",
+        "op": "absent",
+        "value": null
+      },
+      {
+        "path": "/observation/plan/summary",
+        "op": "not_contains",
+        "value": "递归边界分析"
+      }
+    ]
+  },
+  {
+    "case_id": "value-goal_lifecycle",
+    "kernel": "value",
+    "at": "2026-09-01T12:00:00Z",
+    "steps": [
+      {
+        "id": "confirm",
+        "op": "path_commit",
+        "at": "2026-09-01T11:00:00Z",
+        "revision": 1
+      },
+      {
+        "id": "revise",
+        "op": "path_commit",
+        "at": "2026-09-01T11:20:00Z",
+        "revision": 2
+      },
+      {
+        "id": "archive",
+        "op": "path_archive",
+        "at": "2026-09-01T11:40:00Z"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/lens/path_status",
+        "op": "eq",
+        "value": "archived"
+      },
+      {
+        "path": "/lens/goal_status",
+        "op": "eq",
+        "value": "archived"
+      },
+      {
+        "path": "/lens/path_revision",
+        "op": "eq",
+        "value": 2
+      },
+      {
+        "path": "/observation/path_overlay/active_plan_id",
+        "op": "eq",
+        "value": null
+      },
+      {
+        "path": "/lens/path_event_types",
+        "op": "eq",
+        "value": [
+          "vnext_learning_path_plan_committed",
+          "vnext_learning_path_plan_revised",
+          "vnext_learning_path_plan_archived"
+        ]
+      },
+      {
+        "path": "/lens/intermediate_goal_statuses",
+        "op": "eq",
+        "value": [
+          "confirmed",
+          "confirmed",
+          "archived"
+        ]
+      },
+      {
+        "path": "/observation/projection/value/long_term/confirmed_goals/path-plan:capability-path/statement",
+        "op": "contains",
+        "value": "含消融实验"
+      },
+      {
+        "path": "/receipts/1/projection_after/value/long_term/confirmed_goals/path-plan:capability-path/statement",
+        "op": "contains",
+        "value": "含消融实验"
+      }
+    ]
+  },
+  {
+    "case_id": "practice-supported",
+    "kernel": "practice",
+    "at": "2026-09-01T12:00:00Z",
+    "steps": [
+      {
+        "id": "answer",
+        "op": "grade",
+        "at": "2026-09-01T11:00:00Z",
+        "item": "q1",
+        "correct": true,
+        "assistance": "hint"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/lens/concept_statuses",
+        "op": "eq",
+        "value": [
+          "correct_with_support"
+        ]
+      },
+      {
+        "path": "/observation/compiled/practice_feedback",
+        "op": "eq",
+        "value": "supported_success"
+      },
+      {
+        "path": "/lens/grade_independent",
+        "op": "eq",
+        "value": [
+          false
+        ]
+      },
+      {
+        "path": "/lens/actions",
+        "op": "contains",
+        "value": "fade_support_then_independent_probe"
+      },
+      {
+        "path": "/lens/plan_actions",
+        "op": "contains",
+        "value": "fade_support_then_independent_probe"
+      },
+      {
+        "path": "/observation/plan/phases/1/purpose",
+        "op": "contains",
+        "value": "先逐步撤除提示"
+      }
+    ]
+  },
+  {
+    "case_id": "practice-independent",
+    "kernel": "practice",
+    "at": "2026-09-01T12:00:00Z",
+    "steps": [
+      {
+        "id": "answer",
+        "op": "grade",
+        "at": "2026-09-01T11:00:00Z",
+        "item": "q1",
+        "correct": true,
+        "assistance": "none"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/lens/concept_statuses",
+        "op": "eq",
+        "value": [
+          "verified_once"
+        ]
+      },
+      {
+        "path": "/observation/compiled/practice_feedback",
+        "op": "eq",
+        "value": "independent_success"
+      },
+      {
+        "path": "/lens/grade_independent",
+        "op": "eq",
+        "value": [
+          true
+        ]
+      },
+      {
+        "path": "/lens/actions",
+        "op": "contains",
+        "value": "independent_variant_or_reasoning_check"
+      },
+      {
+        "path": "/lens/plan_actions",
+        "op": "contains",
+        "value": "independent_variant_or_reasoning_check"
+      },
+      {
+        "path": "/observation/plan/phases/1/purpose",
+        "op": "contains",
+        "value": "无提示小变式或解释理由"
+      }
+    ]
+  },
+  {
+    "case_id": "practice-retry",
+    "kernel": "practice",
+    "at": "2026-09-01T12:00:00Z",
+    "steps": [
+      {
+        "id": "answer",
+        "op": "grade",
+        "at": "2026-09-01T11:00:00Z",
+        "item": "q1",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "retry",
+        "op": "grade",
+        "at": "2026-09-01T11:40:00Z",
+        "item": "q1",
+        "correct": true,
+        "assistance": "none"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/lens/concept_statuses",
+        "op": "eq",
+        "value": [
+          "correct_with_support"
+        ]
+      },
+      {
+        "path": "/observation/compiled/practice_feedback",
+        "op": "eq",
+        "value": "supported_success"
+      },
+      {
+        "path": "/lens/grade_independent",
+        "op": "eq",
+        "value": [
+          true,
+          false
+        ]
+      },
+      {
+        "path": "/lens/grade_assistance",
+        "op": "eq",
+        "value": [
+          "none",
+          "guided"
+        ]
+      },
+      {
+        "path": "/lens/attempt_roles",
+        "op": "eq",
+        "value": [
+          "original",
+          "retry"
+        ]
+      },
+      {
+        "path": "/lens/actions",
+        "op": "contains",
+        "value": "fade_support_then_independent_probe"
+      },
+      {
+        "path": "/lens/plan_actions",
+        "op": "contains",
+        "value": "fade_support_then_independent_probe"
+      },
+      {
+        "path": "/observation/plan/phases/1/purpose",
+        "op": "contains",
+        "value": "先逐步撤除提示"
+      }
+    ]
+  }
+]

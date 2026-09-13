@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="720" height="315" preserveAspectRatio="xMinYMin meet" viewBox="0 0 720 315" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="720" height="315"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-315)" style="clip-path: url(#clip)">
+		<g transform="">
+			<text x="12" y="286" style="font-family: ArialB; font-size: 17px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,572) scale(1,-1)">A</text>
+			<text x="37" y="286" style="font-family: ArialB; font-size: 14px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,572) scale(1,-1)">Complete consistency</text>
+			<path d="M 148,73 L 148,250 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.7;"/>
+			<text x="145.21923828125" y="54" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,108) scale(1,-1)">0</text>
+			<path d="M 199,73 L 199,250 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.7;"/>
+			<text x="193.4384765625" y="54" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,108) scale(1,-1)">25</text>
+			<path d="M 250,73 L 250,250 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.7;"/>
+			<text x="244.4384765625" y="54" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,108) scale(1,-1)">50</text>
+			<path d="M 301,73 L 301,250 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.7;"/>
+			<text x="295.4384765625" y="54" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,108) scale(1,-1)">75</text>
+			<path d="M 352,73 L 352,250 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.7;"/>
+			<text x="343.65771484375" y="54" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,108) scale(1,-1)">100</text>
+			<text x="14" y="224" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,448) scale(1,-1)">Five + eligibility</text>
+			<circle cx="330.75" cy="233" r="3.7" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="320.125" cy="221" r="3.7" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="14" y="179" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,358) scale(1,-1)">Flat + eligibility</text>
+			<circle cx="335.0" cy="188" r="3.7" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="326.5" cy="176" r="3.7" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="14" y="134" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,268) scale(1,-1)">Five, source only</text>
+			<circle cx="288.25" cy="143" r="3.7" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="286.125" cy="131" r="3.7" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="14" y="89" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,178) scale(1,-1)">Flat, source only</text>
+			<circle cx="171.375" cy="98" r="3.7" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="186.25" cy="86" r="3.7" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="219.13232421875" y="33" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,66) scale(1,-1)">Success (%)</text>
+			<text x="372" y="286" style="font-family: ArialB; font-size: 17px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,572) scale(1,-1)">B</text>
+			<text x="397" y="286" style="font-family: ArialB; font-size: 14px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,572) scale(1,-1)">Counterfactual pair success</text>
+			<path d="M 508,73 L 508,250 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.7;"/>
+			<text x="505.21923828125" y="54" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,108) scale(1,-1)">0</text>
+			<path d="M 559,73 L 559,250 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.7;"/>
+			<text x="553.4384765625" y="54" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,108) scale(1,-1)">25</text>
+			<path d="M 610,73 L 610,250 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.7;"/>
+			<text x="604.4384765625" y="54" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,108) scale(1,-1)">50</text>
+			<path d="M 661,73 L 661,250 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.7;"/>
+			<text x="655.4384765625" y="54" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,108) scale(1,-1)">75</text>
+			<path d="M 712,73 L 712,250 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.7;"/>
+			<text x="703.65771484375" y="54" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,108) scale(1,-1)">100</text>
+			<text x="374" y="224" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,448) scale(1,-1)">Five + eligibility</text>
+			<circle cx="669.5" cy="233" r="3.7" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="648.25" cy="221" r="3.7" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="374" y="179" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,358) scale(1,-1)">Flat + eligibility</text>
+			<circle cx="678.0" cy="188" r="3.7" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="665.25" cy="176" r="3.7" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="374" y="134" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,268) scale(1,-1)">Five, source only</text>
+			<circle cx="614.25" cy="143" r="3.7" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="614.25" cy="131" r="3.7" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="374" y="89" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,178) scale(1,-1)">Flat, source only</text>
+			<circle cx="520.75" cy="98" r="3.7" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="529.25" cy="86" r="3.7" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="579.13232421875" y="33" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,66) scale(1,-1)">Success (%)</text>
+			<circle cx="212" cy="13" r="3.7" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<text x="222" y="9" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,18) scale(1,-1)">2,200 budget units</text>
+			<circle cx="407" cy="13" r="3.7" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="417" y="9" style="font-family: Arial; font-size: 11px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,18) scale(1,-1)">8,000 budget units</text>
+		</g>
+	</g>
+</svg>

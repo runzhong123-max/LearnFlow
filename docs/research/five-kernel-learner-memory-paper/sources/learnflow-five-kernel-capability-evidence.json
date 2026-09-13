@@ -1,0 +1,175 @@
+{
+  "schema": "five-kernel-capability-readonly-audit.v1",
+  "date": "2026-09-13",
+  "repo": "/Users/a1-6/LearnFlow",
+  "head": "055d31aa109f7cf006011f16f4ad1c552bb71b87",
+  "git_status": "## main...origin/main [ahead 2]\n?? docs/competition/reports/\n",
+  "mode": "read_only_source_and_existing_artifact_inspection",
+  "executed_tests": [],
+  "new_experiments": [],
+  "repository_files_modified_by_this_task": [],
+  "capability_document": "/tmp/learnflow-five-kernel-capability-evidence.md",
+  "document_sha256": "ccf8dcfd9a6e02b8432533bd417ed59f02045ef128e9696127abc24779aa7fd4",
+  "source_files": [
+    {
+      "path": "/Users/a1-6/LearnFlow/packages/learning-core/src/learnflow_core/registry_core.py",
+      "current_sha256": "d21780b509fbbd7a920dc6c5d18953ef347d30af90807a3349da7a617676861b",
+      "head_sha256": "d21780b509fbbd7a920dc6c5d18953ef347d30af90807a3349da7a617676861b",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/packages/learning-core/src/learnflow_core/learning_runtime.py",
+      "current_sha256": "b88bb8926af5ab1a0cfbc844d64c6bd4fe33377bf106a8d63d73e1fbbb1f7f3a",
+      "head_sha256": "b88bb8926af5ab1a0cfbc844d64c6bd4fe33377bf106a8d63d73e1fbbb1f7f3a",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/packages/learning-core/src/learnflow_core/memory_graph.py",
+      "current_sha256": "b47a405972a6af768a080c6d7eb2759a1efa5ccef6591cc24ec24821324c029b",
+      "head_sha256": "b47a405972a6af768a080c6d7eb2759a1efa5ccef6591cc24ec24821324c029b",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/packages/learning-core/src/learnflow_core/planning_guidance.py",
+      "current_sha256": "4c987f0c7e80c55dffac359a286cdd7488fbec42b887a565e6917177e4795601",
+      "head_sha256": "4c987f0c7e80c55dffac359a286cdd7488fbec42b887a565e6917177e4795601",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/packages/learning-core/src/learnflow_core/api/learner_state.py",
+      "current_sha256": "d2e981056e12ad6c378bc77236dc3f586b7989f334418e36a872d27e5e8c659e",
+      "head_sha256": "d2e981056e12ad6c378bc77236dc3f586b7989f334418e36a872d27e5e8c659e",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/packages/learning-core/src/learnflow_core/api/phase3.py",
+      "current_sha256": "48564f798c40f4f9b973b3205965e71f5a8cec8fb9457bcd46feb10818c249d3",
+      "head_sha256": "48564f798c40f4f9b973b3205965e71f5a8cec8fb9457bcd46feb10818c249d3",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/backend/app/services/memory_worker.py",
+      "current_sha256": "65bf87827c399bca6d5d1e436029cd6fe3f6453e4cf6bc622cd2d56c022df168",
+      "head_sha256": "65bf87827c399bca6d5d1e436029cd6fe3f6453e4cf6bc622cd2d56c022df168",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/apps/desktop/backend/app/services/memory_worker.py",
+      "current_sha256": "65bf87827c399bca6d5d1e436029cd6fe3f6453e4cf6bc622cd2d56c022df168",
+      "head_sha256": "65bf87827c399bca6d5d1e436029cd6fe3f6453e4cf6bc622cd2d56c022df168",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/backend/app/services/learning_tasks.py",
+      "current_sha256": "910bf158809a3a2b51729755a153e54411dd8ae7f9d719a0742e94e7ca3dd225",
+      "head_sha256": "910bf158809a3a2b51729755a153e54411dd8ae7f9d719a0742e94e7ca3dd225",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/backend/app/services/personal_concept_graph.py",
+      "current_sha256": "614951e00d4e6439a309b66236265d65970aaba96befb31a5a3f235be0086eae",
+      "head_sha256": "614951e00d4e6439a309b66236265d65970aaba96befb31a5a3f235be0086eae",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/backend/app/services/tutor_service.py",
+      "current_sha256": "018acbcc40f2da3e54ddbd75c24dd36e0d153916d07cd446dc59ac075d885968",
+      "head_sha256": "018acbcc40f2da3e54ddbd75c24dd36e0d153916d07cd446dc59ac075d885968",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/backend/app/services/review.py",
+      "current_sha256": "201c40b09b7bf92b7ba98111ec5e6d91ea1c79ac3fb6bd7873fcf04ea28307ae",
+      "head_sha256": "201c40b09b7bf92b7ba98111ec5e6d91ea1c79ac3fb6bd7873fcf04ea28307ae",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/backend/tests/test_memory_graph.py",
+      "current_sha256": "b338af89d045c07d2fa11dcdffb7e2cf55dcce4a87e5966ace2c09a9f201293e",
+      "head_sha256": "b338af89d045c07d2fa11dcdffb7e2cf55dcce4a87e5966ace2c09a9f201293e",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/backend/tests/test_learner_state.py",
+      "current_sha256": "3b5a5a06913510368c2fa4d970f14b2c13a7720c227fca65f7cd6e25ba361ac6",
+      "head_sha256": "3b5a5a06913510368c2fa4d970f14b2c13a7720c227fca65f7cd6e25ba361ac6",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/backend/tests/test_review.py",
+      "current_sha256": "f86b214d9b084ea7ab488965eb0d37330d5d8bf8b73062329572c60dbf2d7234",
+      "head_sha256": "f86b214d9b084ea7ab488965eb0d37330d5d8bf8b73062329572c60dbf2d7234",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/backend/tests/test_remediation.py",
+      "current_sha256": "ac073aac56b155bfaae449da8c191ef01803987c1b1f1466bc113c81e8e5cb60",
+      "head_sha256": "ac073aac56b155bfaae449da8c191ef01803987c1b1f1466bc113c81e8e5cb60",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/backend/tests/test_episode_planning.py",
+      "current_sha256": "3fc4cb5f8743db248252f755e6de5c6ed56a770c7b8806bfbf2c6f6c8c8ee84a",
+      "head_sha256": "3fc4cb5f8743db248252f755e6de5c6ed56a770c7b8806bfbf2c6f6c8c8ee84a",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/backend/tests/test_education_memory_policy.py",
+      "current_sha256": "3e121db1069e66e65be1431449555dd2535537ddbd4ba6b7d7ed516e8f53e127",
+      "head_sha256": "3e121db1069e66e65be1431449555dd2535537ddbd4ba6b7d7ed516e8f53e127",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/backend/tests/test_teaching_guidance_v2.py",
+      "current_sha256": "cd559d6812f42bb1b1ca32ea696eea5d6e6bcb9a64b4e876f46d1536faf709bb",
+      "head_sha256": "cd559d6812f42bb1b1ca32ea696eea5d6e6bcb9a64b4e876f46d1536faf709bb",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/backend/tests/test_education_planning_lifecycle.py",
+      "current_sha256": "40e2a1f40a3028cb75b7fdce7d7840f409bf84c8e76279bbcd10770cf0adc929",
+      "head_sha256": "40e2a1f40a3028cb75b7fdce7d7840f409bf84c8e76279bbcd10770cf0adc929",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_counterfactual/PROTOCOL.md",
+      "current_sha256": "81b13bce7744be78d17bad75b14162f73fcf042e1a4ddb65c3a11c8cbd5b1ee0",
+      "head_sha256": "81b13bce7744be78d17bad75b14162f73fcf042e1a4ddb65c3a11c8cbd5b1ee0",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_counterfactual/formation.py",
+      "current_sha256": "257921aeed0327333018c57dd738c20a3eed1790907a8dc10a4ab988b0b62be0",
+      "head_sha256": "257921aeed0327333018c57dd738c20a3eed1790907a8dc10a4ab988b0b62be0",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_counterfactual/generate.py",
+      "current_sha256": "2c2620756848659aaef698f69175be68f7e528867575a5a858e2dda7daba7b93",
+      "head_sha256": "2c2620756848659aaef698f69175be68f7e528867575a5a858e2dda7daba7b93",
+      "current_matches_head": true
+    },
+    {
+      "path": "/Users/a1-6/LearnFlow/evals/education_memory_counterfactual/verifier.py",
+      "current_sha256": "f16f71b21eea20cbcc56a506a85de5b1e2c9f5267a60dfebbb55cf6f55c4a13e",
+      "head_sha256": "f16f71b21eea20cbcc56a506a85de5b1e2c9f5267a60dfebbb55cf6f55c4a13e",
+      "current_matches_head": true
+    }
+  ],
+  "read_formal_artifacts": [
+    {
+      "path": "/tmp/learnflow-memory-cf-formal-01/REPORT.md",
+      "sha256": "42b39030a9bd94858b2ea0cdd2080c88ccc3f9c57e75ec9eee26db072be13f19"
+    }
+  ],
+  "coverage_boundaries": [
+    "five_kernels_are_dimensions_not_agents",
+    "flat_baseline_retains_kernel_labels",
+    "768_is_responses_for_96_synthetic_trajectories_not_independent_learners",
+    "structure_anchor_only_expired_background_in_768",
+    "no_per_kernel_removal_ablation_in_768",
+    "no_learner_or_teacher_outcome_evidence",
+    "host_synthesis_worker_not_fully_shared",
+    "mastery_state_and_claim_gates_have_distinct_semantics_no_runtime_exploit_reproduced"
+  ]
+}

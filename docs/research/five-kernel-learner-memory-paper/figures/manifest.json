@@ -1,0 +1,18 @@
+{
+  "source": "docs/research/education-memory-counterfactual/formal-01-aggregate.json",
+  "source_sha256": "c2b756b15dcdf3e67de25c59419830c499eb8cbae2a28498bb07e47ef95d51dc",
+  "generator_sha256": "3b36de1d6b45933d9e66c81fd93150705710bb995bc9f16cf5e9577b772456e6",
+  "figures": {
+    "architecture.pdf": "79da4ca22a1fb4258a9fc0ad8ccfac108ca2f9f040021401efb5f0f734da8708",
+    "architecture.svg": "0be8a1f745004e527696045f3addbdb293bc2dc7b0ba287772cbc057739507d9",
+    "architecture.png": "48de0e9b6856bb2ec4b9f63b5fb100db2aeb8c62f12359cd1d2577803809a9f5",
+    "results.pdf": "9fbedfd9e6e7e9668efc86310fb63f1481133d0ca97b592e4b39ffb57eae5dd0",
+    "results.svg": "a52a6cc4943e3c22159b3450a9cb487f8198e531882a69a0e2cf059445aa8ae2",
+    "results.png": "2b18827499b604c6110d7cdaa7b8672b810bb2b96066d1008e40a14dc97ca692",
+    "effects.pdf": "74db42d5c616e0f9a7b5ec14cc5f1cc0e0fa35a8ca4e0072d286a492cc6e7a1a",
+    "effects.svg": "1e8ade8e3a237fc28281b7b11668e0ed61f482eedb47bbfc52a487c8f5e3fa15",
+    "effects.png": "c3652a27515887850c024f07563a247513044dd0d1ca3db6c965340491631bef"
+  },
+  "schematic": "architecture: designed explanatory diagram; no experimental values",
+  "quantitative": "results and effects: direct frozen aggregate data; no fabricated repetitions"
+}

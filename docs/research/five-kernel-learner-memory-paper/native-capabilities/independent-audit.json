@@ -1,0 +1,147 @@
+{
+  "artifact_hash_files_verified": 4,
+  "artifact_sha256": {
+    "aggregate.json": "a59647d01a96c511a436e45152ca531f2fa4102d7134240782c0e0d9b0ee0025",
+    "artifact-manifest.json": "728a28c747952cf86f4ba5d3c93b2c1ce02dd6d061e493f646df5884fd346bec",
+    "freeze.json": "7b100ef662dc381fd2b21d5f7f3535146e3e76ef5fa97735a7dc68258beb20a2",
+    "native.jsonl.gz": "9183410f3cb41cdccf32d227ea6d3630929a68eae365d9fa57ac12f1623dad7e"
+  },
+  "case_counts": {
+    "actual": 15,
+    "expected": 15,
+    "kernels": {
+      "human": {
+        "failed_case_ids": [],
+        "passed": 3,
+        "total": 3
+      },
+      "knowledge": {
+        "failed_case_ids": [],
+        "passed": 3,
+        "total": 3
+      },
+      "practice": {
+        "failed_case_ids": [],
+        "passed": 3,
+        "total": 3
+      },
+      "structure": {
+        "failed_case_ids": [],
+        "passed": 3,
+        "total": 3
+      },
+      "value": {
+        "failed_case_ids": [],
+        "passed": 3,
+        "total": 3
+      }
+    },
+    "passed": 15
+  },
+  "case_specific_assertions": 66,
+  "compiled_actions": {
+    "check_current_gap": 1,
+    "diagnose_first_error": 1,
+    "fade_support_then_independent_probe": 2,
+    "independent_variant_or_reasoning_check": 1,
+    "limit_session": 2,
+    "prioritize_current_goal": 1,
+    "restore_learning_anchor": 1,
+    "small_steps": 1,
+    "verify_reported_resolution": 1
+  },
+  "event_types": {
+    "concept_attempt_evaluated": 5,
+    "remediation_started": 1,
+    "user_message": 2,
+    "vnext_learning_path_plan_archived": 1,
+    "vnext_learning_path_plan_committed": 2,
+    "vnext_learning_path_plan_revised": 1,
+    "vnext_teaching_input_received": 26
+  },
+  "facts_per_kernel": {
+    "knowledge": 18,
+    "practice": 23,
+    "structure": 19,
+    "value": 18
+  },
+  "final_plan_actions": {
+    "check_current_gap": 1,
+    "diagnose_first_error": 1,
+    "fade_support_then_independent_probe": 2,
+    "independent_variant_or_reasoning_check": 1,
+    "limit_session": 2,
+    "prioritize_current_goal": 1,
+    "restore_learning_anchor": 1,
+    "small_steps": 1,
+    "verify_reported_resolution": 1
+  },
+  "head": "917b8a04e88c4f2afa7f72b477a127c3ef2249b7",
+  "known_null_session_grade_gaps": 5,
+  "limitations": [
+    "15 authored synthetic cases, not statistical performance estimates",
+    "No representation ablation, no traditional memory benchmark, no learning-outcome claims",
+    "No LLM or human evaluation; actual deterministic consumer only",
+    "Formal concept API has no session parameter; raw gap retained",
+    "Learning path API is learner-global, not checkpoint-scoped",
+    "Temporary controls intentionally form no Fact; native mutation/state route audited",
+    "No positive stable mastery, true transfer, synthesis, long-tail retrieval or full graph quality study",
+    "Direct route-function integration does not test HTTP middleware/UI authentication",
+    "All learners, confirmations and questions synthetic; no real student or teacher evidence",
+    "Goal priority changes summary; anchor changes pending learn phase, not UI navigation or course ranking",
+    "Not an independent full reducer reimplementation; native source rows and known scoped contract fields checked",
+    "Temporary Human controls have zero Facts by design, not evidence loss"
+  ],
+  "mutations_per_kernel": {
+    "human": 5,
+    "knowledge": 11,
+    "practice": 11,
+    "structure": 6,
+    "value": 22
+  },
+  "native_counts": {
+    "attempts": 5,
+    "events": 38,
+    "facts": 78,
+    "mutations": 55,
+    "nodes": 78
+  },
+  "offline_file_database_attempts": 0,
+  "offline_network_attempts": 0,
+  "prior_incident": {
+    "added_doc": "INCIDENTS.md",
+    "case_passed": 15,
+    "cases_or_product_or_assertions_changed": false,
+    "changed_source_files": [
+      "verifier.py canonical JSON display",
+      "test_verifier.py added reopen regression"
+    ],
+    "exit_code": 2,
+    "old_source_recovery": "Two exact prior files recovered and matched pre-existing frozen hashes; original run unchanged",
+    "only_difference": "structure-path_confirmed /lens/learning_plan_packet_text JSON object key order",
+    "original_artifact_hashes_verified": 4,
+    "parsed_json_equal": true,
+    "reverification_equal": false,
+    "run": "/tmp/learnflow-five-kernel-capability-native-01",
+    "source_unchanged_at_execution": true,
+    "string_lengths": [
+      12446,
+      12446
+    ]
+  },
+  "process_exit_code": 0,
+  "reverification_equal": true,
+  "run": "/tmp/learnflow-five-kernel-capability-native-02",
+  "schema": "five-kernel-capabilities.delivery-audit.v1",
+  "scope_distractor_cases_checked": 15,
+  "selected_control_count": 11,
+  "selected_episode_count": 5,
+  "source_hash_files_verified": 219,
+  "source_unchanged": true,
+  "status": "verified_native_02",
+  "test_calibration": {
+    "counted_as_native_cases": false,
+    "failures": 0,
+    "passed": 24
+  }
+}

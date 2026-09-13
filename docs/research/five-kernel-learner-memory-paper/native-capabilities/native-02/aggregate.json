@@ -1,0 +1,877 @@
+{
+  "by_kernel": {
+    "human": {
+      "failed_case_ids": [],
+      "passed": 3,
+      "total": 3
+    },
+    "knowledge": {
+      "failed_case_ids": [],
+      "passed": 3,
+      "total": 3
+    },
+    "practice": {
+      "failed_case_ids": [],
+      "passed": 3,
+      "total": 3
+    },
+    "structure": {
+      "failed_case_ids": [],
+      "passed": 3,
+      "total": 3
+    },
+    "value": {
+      "failed_case_ids": [],
+      "passed": 3,
+      "total": 3
+    }
+  },
+  "case_passed": 15,
+  "case_total": 15,
+  "freeze_sha256": "7b100ef662dc381fd2b21d5f7f3535146e3e76ef5fa97735a7dc68258beb20a2",
+  "frozen_head": "917b8a04e88c4f2afa7f72b477a127c3ef2249b7",
+  "kind": "authored_native_capability_contract_audit",
+  "known_scope_gaps": 5,
+  "limitations": [
+    "15 authored synthetic cases, not statistical performance estimates",
+    "No representation ablation, no traditional memory benchmark, no learning-outcome claims",
+    "No LLM or human evaluation; actual deterministic consumer only",
+    "Formal concept API has no session parameter; raw gap retained",
+    "Learning path API is learner-global, not checkpoint-scoped",
+    "Temporary controls intentionally form no Fact; native mutation/state route audited",
+    "No positive stable mastery, true transfer, synthesis, long-tail retrieval or full graph quality study"
+  ],
+  "native_counts": {
+    "attempts": 5,
+    "events": 38,
+    "facts": 78,
+    "mutations": 55,
+    "nodes": 78
+  },
+  "reverification_equal": true,
+  "scores": [
+    {
+      "case_id": "structure-anchor_active",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": "递归基础定义",
+          "op": "contains",
+          "passed": true,
+          "path": "/observation/compiled/return_anchor",
+          "value": "递归基础定义"
+        },
+        {
+          "actual": "沿已有学习路径回到：递归基础定义。先核对上次暂停位置，不据此改变掌握状态。围绕“递归终止条件与边界分析；接下来怎样推进 Agent 工程路径”形成一份能继续追问和练习的理解。",
+          "op": "contains",
+          "passed": true,
+          "path": "/observation/plan/phases/0/purpose",
+          "value": "递归基础定义"
+        }
+      ],
+      "counts": {
+        "attempts": 0,
+        "events": 2,
+        "facts": 0,
+        "mutations": 2,
+        "nodes": 0
+      },
+      "formation_gaps": [],
+      "kernel": "structure",
+      "passed": true
+    },
+    {
+      "case_id": "structure-anchor_expired",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": "<missing>",
+          "op": "absent",
+          "passed": true,
+          "path": "/observation/compiled/return_anchor",
+          "value": null
+        },
+        {
+          "actual": "围绕“递归终止条件与边界分析；接下来怎样推进 Agent 工程路径”形成一份能继续追问和练习的理解。",
+          "op": "not_contains",
+          "passed": true,
+          "path": "/observation/plan/phases/0/purpose",
+          "value": "递归基础定义"
+        }
+      ],
+      "counts": {
+        "attempts": 0,
+        "events": 2,
+        "facts": 0,
+        "mutations": 2,
+        "nodes": 0
+      },
+      "formation_gaps": [],
+      "kernel": "structure",
+      "passed": true
+    },
+    {
+      "case_id": "structure-path_confirmed",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": "capability-path",
+          "op": "eq",
+          "passed": true,
+          "path": "/observation/path_overlay/active_plan_id",
+          "value": "capability-path"
+        },
+        {
+          "actual": "active",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/path_status",
+          "value": "active"
+        },
+        {
+          "actual": "confirmed",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/goal_status",
+          "value": "confirmed"
+        },
+        {
+          "actual": 1,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/path_revision",
+          "value": 1
+        },
+        {
+          "actual": [
+            "python-programming",
+            "machine-learning",
+            "agent-engineering"
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/route",
+          "value": [
+            "python-programming",
+            "machine-learning",
+            "agent-engineering"
+          ]
+        },
+        {
+          "actual": "{\"adaptation_directives\": [], \"conflicts\": [], \"items\": [{\"confidence\": 1.0, \"detail\": {\"evidence_grade\": \"self_reported\", \"predicate\": \"short_term.resume_anchor\", \"source_event_id\": 1, \"source_text\": {\"chars\": 113, \"ranges\": [[0, 113]], \"sha256\": \"7f10a72e4a6d844f9a3a25d55834e7c32dd0c293c8bdb3ff16bf2b5af0dcb3b7\"}}, \"evidence_refs\": [1], \"id\": 3, \"kernel\": \"structure\", \"memory_kind\": \"resume\", \"node_type\": \"fact\", \"occurred_at\": \"2026-09-01T11:00:00\", \"provenance\": {\"event_type\": \"vnext_learning_path_plan_committed\", \"key\": \"resume_anchor\", \"reason\": \"学习者确认了可检查、可修订的长期学习路径；路线是导航结构而不是掌握结论\", \"scope\": \"short_term\"}, \"retrieval\": {\"reasons\": [\"salience\", \"lexical_match\", \"kernel_head_ref\", \"original_fact_for_detail\", \"candidate_pool_bm25\"], \"score\": 13.8703}, \"salience\": 0.64, \"schema_version\": \"memory-item.v2\", \"scope\": {\"checkpoint_id\": null, \"project_id\": null, \"session_id\": null}, \"status\": \"active\", \"subject\": {\"id\": \"capability-path\", \"key\": \"goal:capability-path\", \"type\": \"goal\"}, \"text\": \"resume_anchor: {\\\"node_id\\\": \\\"machine-learning\\\", \\\"note\\\": \\\"返回长期学习路径「学习 Agent 工程路径」继续\\\", \\\"plan_id\\\": \\\"capability-path\\\"}\"}, {\"confidence\": 1.0, \"detail\": {\"evidence_grade\": \"self_reported\", \"predicate\": \"long_term.confirmed_goals\", \"source_event_id\": 1, \"source_text\": {\"chars\": 227, \"ranges\": [[0, 227]], \"sha256\": \"a854da8da649f8888866e411e3cbafa79c5b3ea4f4e00ec0af07d0881a93da83\"}}, \"evidence_refs\": [1], \"id\": 10, \"kernel\": \"value\", \"memory_kind\": \"goal\", \"node_type\": \"fact\", \"occurred_at\": \"2026-09-01T11:00:00\", \"provenance\": {\"event_type\": \"vnext_learning_path_plan_committed\", \"key\": \"confirmed_goals\", \"reason\": \"学习者确认长期路线时同步确认其目标；路线本身仍由 Structure 负责\", \"scope\": \"long_term\"}, \"retrieval\": {\"reasons\": [\"salience\", \"lexical_match\", \"kernel_head_ref\", \"original_fact_for_detail\", \"candidate_pool_bm25\"], \"score\": 13.0933}, \"salience\": 0.76, \"schema_version\": \"memory-item.v2\", \"scope\": {\"checkpoint_id\": null, \"project_id\": null, \"session_id\": null}, \"status\": \"active\", \"subject\": {\"id\": \"capability-path\", \"key\": \"goal:capability-path\", \"type\": \"goal\"}, \"text\": \"confirmed_goals: {\\\"path-plan:capability-path\\\": {\\\"evidence_id\\\": 1, \\\"evidence_quote\\\": \\\"我确认这条路径和目标\\\", \\\"route_plan_id\\\": \\\"capability-path\\\", \\\"scope\\\": \\\"long_term_learning_path\\\", \\\"statement\\\": \\\"完成一个可评测的 Agent 项目\\\", \\\"status\\\": \\\"confirmed\\\"}}\"}, {\"confidence\": 1.0, \"detail\": {\"evidence_grade\": \"self_reported\", \"predicate\": \"long_term.learning_path_plans\", \"source_event_id\": 1, \"source_text\": {\"chars\": 241, \"ranges\": [[0, 241]], \"sha256\": \"5eadcd4882ad1c1401dc7bcad546fa8c3dbf03d2f44fcd3111b6def4f160be19\"}}, \"evidence_refs\": [1], \"id\": 4, \"kernel\": \"structure\", \"memory_kind\": \"anchor\", \"node_type\": \"fact\", \"occurred_at\": \"2026-09-01T11:00:00\", \"provenance\": {\"event_type\": \"vnext_learning_path_plan_committed\", \"key\": \"learning_path_plans\", \"reason\": \"学习者确认了可检查、可修订的长期学习路径；路线是导航结构而不是掌握结论\", \"scope\": \"long_term\"}, \"retrieval\": {\"reasons\": [\"salience\", \"lexical_match\", \"kernel_head_ref\", \"original_fact_for_detail\", \"candidate_pool_bm25\"], \"score\": 13.0779}, \"salience\": 0.76, \"schema_version\": \"memory-item.v2\", \"scope\": {\"checkpoint_id\": null, \"project_id\": null, \"session_id\": null}, \"status\": \"active\", \"subject\": {\"id\": \"capability-path\", \"key\": \"goal:capability-path\", \"type\": \"goal\"}, \"text\": \"learning_path_plans: {\\\"capability-path\\\": {\\\"evidence_id\\\": 1, \\\"evidence_quote\\\": \\\"我确认这条路径和目标\\\", \\\"horizon\\\": \\\"6 个月\\\", \\\"id\\\": \\\"capability-path\\\", \\\"milestone_node_ids\\\": [\\\"machine-learning\\\", \\\"agent-engineering\\\"], \\\"objective\\\": \\\"完成一个可评测的 Agent 项目\\\", \\\"rati…\"}, {\"confidence\": 1.0, \"detail\": {\"evidence_grade\": \"self_reported\", \"predicate\": \"short_term.active_learning_path_plan\", \"source_event_id\": 1, \"source_text\": {\"chars\": 247, \"ranges\": [[0, 247]], \"sha256\": \"9bb76dcec758c90db2e301c5fb9d4aaff68f7ca89f97fe289b30694d3ca5a556\"}}, \"evidence_refs\": [1], \"id\": 1, \"kernel\": \"structure\", \"memory_kind\": \"anchor\", \"node_type\": \"fact\", \"occurred_at\": \"2026-09-01T11:00:00\", \"provenance\": {\"event_type\": \"vnext_learning_path_plan_committed\", \"key\": \"active_learning_path_plan\", \"reason\": \"学习者确认了可检查、可修订的长期学习路径；路线是导航结构而不是掌握结论\", \"scope\": \"short_term\"}, \"retrieval\": {\"reasons\": [\"salience\", \"lexical_match\", \"kernel_head_ref\", \"original_fact_for_detail\", \"candidate_pool_bm25\"], \"score\": 12.9579}, \"salience\": 0.64, \"schema_version\": \"memory-item.v2\", \"scope\": {\"checkpoint_id\": null, \"project_id\": null, \"session_id\": null}, \"status\": \"active\", \"subject\": {\"id\": \"capability-path\", \"key\": \"goal:capability-path\", \"type\": \"goal\"}, \"text\": \"active_learning_path_plan: {\\\"evidence_id\\\": 1, \\\"evidence_quote\\\": \\\"我确认这条路径和目标\\\", \\\"horizon\\\": \\\"6 个月\\\", \\\"id\\\": \\\"capability-path\\\", \\\"milestone_node_ids\\\": [\\\"machine-learning\\\", \\\"agent-engineering\\\"], \\\"objective\\\": \\\"完成一个可评测的 Agent 项目\\\", \\\"rationale\\\": \\\"\\\", \\\"revisio…\"}, {\"confidence\": 1.0, \"detail\": {\"evidence_grade\": \"self_reported\", \"predicate\": \"short_term.goal_candidate\", \"source_event_id\": 1, \"source_text\": {\"chars\": 33, \"ranges\": [[0, 33]], \"sha256\": \"a77d726c24f3b415d269bdde5bc6b68ef8c9c35f322193c11b7d363100914b1d\"}}, \"evidence_refs\": [1], \"id\": 7, \"kernel\": \"value\", \"memory_kind\": \"goal\", \"node_type\": \"fact\", \"occurred_at\": \"2026-09-01T11:00:00\", \"provenance\": {\"event_type\": \"vnext_learning_path_plan_committed\", \"key\": \"goal_candidate\", \"reason\": \"学习者确认长期路线时同步确认其目标；路线本身仍由 Structure 负责\", \"scope\": \"short_term\"}, \"retrieval\": {\"reasons\": [\"salience\", \"lexical_match\", \"kernel_head_ref\", \"original_fact_for_detail\", \"candidate_pool_bm25\"], \"score\": 12.6402}, \"salience\": 0.64, \"schema_version\": \"memory-item.v2\", \"scope\": {\"checkpoint_id\": null, \"project_id\": null, \"session_id\": null}, \"status\": \"active\", \"subject\": {\"id\": \"capability-path\", \"key\": \"goal:capability-path\", \"type\": \"goal\"}, \"text\": \"goal_candidate: 完成一个可评测的 Agent 项目\"}, {\"confidence\": 1.0, \"detail\": {\"evidence_grade\": \"self_reported\", \"predicate\": \"short_term.current_priority\", \"source_event_id\": 1, \"source_text\": {\"chars\": 35, \"ranges\": [[0, 35]], \"sha256\": \"0d161026d97208cf4368ddd8ebf2eb8dd2ac4864990bae94e04b130153b92e54\"}}, \"evidence_refs\": [1], \"id\": 6, \"kernel\": \"value\", \"memory_kind\": \"priority\", \"node_type\": \"fact\", \"occurred_at\": \"2026-09-01T11:00:00\", \"provenance\": {\"event_type\": \"vnext_learning_path_plan_committed\", \"key\": \"current_priority\", \"reason\": \"学习者确认长期路线时同步确认其目标；路线本身仍由 Structure 负责\", \"scope\": \"short_term\"}, \"retrieval\": {\"reasons\": [\"salience\", \"lexical_match\", \"kernel_head_ref\", \"original_fact_for_detail\", \"candidate_pool_bm25\"], \"score\": 12.6402}, \"salience\": 0.64, \"schema_version\": \"memory-item.v2\", \"scope\": {\"checkpoint_id\": null, \"project_id\": null, \"session_id\": null}, \"status\": \"active\", \"subject\": {\"id\": \"capability-path\", \"key\": \"goal:capability-path\", \"type\": \"goal\"}, \"text\": \"current_priority: 完成一个可评测的 Agent 项目\"}], \"kernel_heads\": {\"human\": {\"alert_refs\": [], \"facets\": {}, \"focus_refs\": [], \"stable_refs\": [], \"summary\": \"\", \"version\": 1, \"working_refs\": []}, \"knowledge\": {\"alert_refs\": [], \"facets\": {}, \"focus_refs\": [], \"stable_refs\": [], \"summary\": \"\", \"version\": 1, \"working_refs\": []}, \"structure\": {\"alert_refs\": [], \"facets\": {\"confidence\": 1.0, \"states\": {\"active_memory_kinds\": [\"anchor\", \"resume\"], \"alert_count\": 0}, \"subjects\": [\"goal:capability-path\"]}, \"focus_refs\": [4, 3], \"stable_refs\": [], \"summary\": \"\", \"version\": 1, \"working_refs\": [4, 3, 1]}, \"value\": {\"alert_refs\": [], \"facets\": {\"confidence\": 1.0, \"states\": {\"active_memory_kinds\": [\"goal\", \"priority\"], \"alert_count\": 0}, \"subjects\": [\"goal:capability-path\"]}, \"focus_refs\": [10], \"stable_refs\": [], \"summary\": \"\", \"version\": 2, \"working_refs\": [10, 7, 6]}}, \"learning_episodes\": [], \"manifest\": {\"answer_free\": true, \"authority\": \"read_only_projection_from_evidence_and_memory_graph\", \"direct_memory_evidence\": true, \"evidence_gap\": null, \"evidence_ids\": [1], \"graph\": {\"candidate_edges\": 0, \"cycles_skipped\": 0, \"edge_candidate_limit\": 768, \"filtered_edges\": 0, \"max_depth_found\": 0, \"max_frontier\": 32, \"max_hops\": 2, \"max_roots\": 24, \"old_edges_per_anchor_kind\": 2, \"recent_edges_per_anchor_kind\": 6, \"second_hop_branches_omitted\": 0, \"second_hop_branches_per_root\": 4, \"window_truncated\": false}, \"personal_concept_graph\": \"read-only Knowledge node history + Structure relations sharing ConceptAnchor identity\", \"policy\": {\"candidate_mode\": \"legacy\", \"deep_kernels\": [\"structure\", \"knowledge\", \"human\", \"value\"], \"enable_aliases\": true, \"enable_bm25\": true, \"enable_compact_episodes\": false, \"enable_episodes\": true, \"enable_fuzzy\": true, \"enable_source_text\": false, \"enable_summary_boost\": true, \"enable_temporal\": true, \"head_kernels\": [\"structure\", \"knowledge\", \"human\", \"value\"], \"id\": \"learning_plan\", \"max_episode_facts\": 6, \"max_episodes\": 3, \"max_hops\": 2, \"max_items\": 14, \"max_paths\": 6, \"relations\": [\"SAME_SUBJECT\", \"SUPPORTS\", \"CONTRADICTS\", \"REFINES\", \"SUPERSEDES\", \"MOTIVATES\", \"ADDRESSES\", \"BLOCKS\", \"ENABLES\", \"CONSOLIDATED_INTO\"], \"scope_mode\": \"portfolio_reference\", \"token_budget\": 3200}, \"query_plan\": {\"alias_version\": \"computing-terminology.v1\", \"aliases\": [], \"explicit_current\": false, \"fuzzy_corrections\": [], \"fuzzy_rejected\": [{\"original\": \"agent\", \"reason\": \"exact_present\"}], \"fuzzy_scan\": {\"characters\": 1196, \"texts\": 10, \"truncated\": false, \"uniqueness_scope\": \"provided_candidates\", \"vocabulary_size\": 12}, \"intent\": \"fact\", \"normalization\": \"unicode_nfkc_casefold_whitespace\", \"query_truncated\": false, \"temporal\": \"current\", \"terms_truncated\": false, \"version\": \"memory-query.v1\"}, \"retrieval_order\": [\"exact_scope\", \"audited_query_normalization\", \"temporal_candidates\", \"relevance_tiers\", \"bounded_two_hop_bundles\", \"original_excerpts_joint_budget\"], \"retrieval_version\": \"relevance-budget.v4\", \"token_estimate\": 2985}, \"missing_facets\": [\"knowledge\", \"human\"], \"omitted\": {\"budget_or_rank_filtered\": 0, \"candidate_channels\": 5, \"candidate_count\": 10, \"candidate_limit_per_channel\": 240, \"candidate_window_may_be_truncated\": true, \"duplicate_summary_filtered\": 0, \"graph\": {\"candidate_edges\": 0, \"cycles_skipped\": 0, \"edge_candidate_limit\": 768, \"filtered_edges\": 0, \"max_depth_found\": 0, \"max_frontier\": 32, \"max_hops\": 2, \"max_roots\": 24, \"old_edges_per_anchor_kind\": 2, \"recent_edges_per_anchor_kind\": 6, \"second_hop_branches_omitted\": 0, \"second_hop_branches_per_root\": 4, \"window_truncated\": false}, \"irrelevant_filtered\": 4, \"scope_filtered\": 0, \"selected_count\": 6, \"sensitive_filtered\": 0, \"teaching_guidance_budget_filtered\": 0, \"temporal_candidates\": 0, \"update_ranking_candidates\": 0, \"update_ranking_truncated\": false}, \"personal_concept_graph\": {\"edges\": [], \"manifest\": {\"edge_count\": 0, \"knowledge_owns_node_history\": true, \"node_count\": 0, \"official_course_graph_is_separate\": true, \"scope\": {\"checkpoint_id\": null, \"learner_id\": 1, \"project_id\": null, \"session_id\": null}, \"self_report_never_implies_mastery\": true, \"shared_identity_only\": true, \"structure_owns_relations\": true, \"truncated_at_fact_count\": 5000}, \"nodes\": [], \"query\": \"递归终止条件与边界分析；接下来怎样推进 Agent 工程路径\", \"version\": \"personal-concept-graph.v1\"}, \"relation_paths\": [], \"resolved_updates\": [], \"retrieval_diagnostics\": {\"channels\": {\"bm25\": {\"candidates\": 7, \"truncated\": true}, \"fuzzy\": {\"candidates\": 7, \"truncated\": false}, \"head\": {\"candidates\": 6, \"truncated\": false}, \"literal\": {\"candidates\": 7, \"truncated\": false}, \"recent\": {\"candidates\": 10, \"truncated\": false}, \"scope\": {\"candidates\": 0, \"truncated\": false}}, \"components\": {\"aliases\": {\"activated\": 0, \"enabled\": true}, \"bm25\": {\"documents\": 10, \"enabled\": true, \"matched\": 6, \"selected\": 6, \"text_limit\": 65536, \"truncated_documents\": 0}, \"fuzzy\": {\"activated\": 0, \"enabled\": true}, \"paths\": {\"candidate_edges\": 0, \"eligible_bundles\": 0, \"enabled\": true, \"root_limit_omitted\": 0, \"selected\": 0}, \"summary_boost\": {\"activated\": 0, \"enabled\": true}, \"temporal\": {\"activated\": 0, \"enabled\": true}}, \"episodes\": {\"anchors\": 6, \"budget_omitted\": 0, \"eligible\": 0, \"enabled\": true, \"limit_omitted\": 0, \"rejected\": {\"no_supported_assessment_link\": 6}, \"selected\": 0}, \"teaching_controls\": {\"budget_omitted\": 0, \"counts\": {\"scope_mismatch\": 1}, \"delivered\": 0, \"diagnostics\": [], \"omitted\": 0, \"status\": \"scope_mismatch\"}}, \"scope\": {\"checkpoint_id\": null, \"learner_id\": 1, \"mode\": \"portfolio_reference\", \"project_id\": null, \"session_id\": null}, \"snapshot_id\": \"6ad9ff1bbecca548e19c\", \"teaching_guidance\": [], \"teaching_guidance_version\": \"teaching-guidance.v2\", \"version\": \"five-kernel-context.v2\"}",
+          "op": "contains",
+          "passed": true,
+          "path": "/lens/learning_plan_packet_text",
+          "value": "capability-path"
+        }
+      ],
+      "counts": {
+        "attempts": 0,
+        "events": 2,
+        "facts": 10,
+        "mutations": 3,
+        "nodes": 10
+      },
+      "formation_gaps": [],
+      "kernel": "structure",
+      "passed": true
+    },
+    {
+      "case_id": "knowledge-gap",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": "current_gap",
+          "op": "eq",
+          "passed": true,
+          "path": "/observation/compiled/blocker",
+          "value": "current_gap"
+        },
+        {
+          "actual": "我不懂递归的终止条件。",
+          "op": "contains",
+          "passed": true,
+          "path": "/observation/compiled/blocker_detail",
+          "value": "我不懂递归的终止条件。"
+        },
+        {
+          "actual": "我不懂递归的终止条件。",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/knowledge_gap_fact",
+          "value": "我不懂递归的终止条件。"
+        }
+      ],
+      "counts": {
+        "attempts": 0,
+        "events": 2,
+        "facts": 2,
+        "mutations": 3,
+        "nodes": 2
+      },
+      "formation_gaps": [],
+      "kernel": "knowledge",
+      "passed": true
+    },
+    {
+      "case_id": "knowledge-resolved",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": "resolved",
+          "op": "eq",
+          "passed": true,
+          "path": "/observation/compiled/blocker",
+          "value": "resolved"
+        },
+        {
+          "actual": [
+            "verify_reported_resolution"
+          ],
+          "op": "contains",
+          "passed": true,
+          "path": "/lens/actions",
+          "value": "verify_reported_resolution"
+        },
+        {
+          "actual": "当前卡点已由学生自述解决，停止重复旧讲解；先做一个小检查。完成小检查后衔接下一步，不据此认定稳定掌握。",
+          "op": "not_contains",
+          "passed": true,
+          "path": "/observation/plan/phases/0/purpose",
+          "value": "我不懂递归的终止条件。"
+        },
+        {
+          "actual": [
+            "verify_reported_resolution"
+          ],
+          "op": "contains",
+          "passed": true,
+          "path": "/lens/plan_actions",
+          "value": "verify_reported_resolution"
+        },
+        {
+          "actual": "当前卡点已由学生自述解决，停止重复旧讲解；先做一个小检查。完成小检查后衔接下一步，不据此认定稳定掌握。",
+          "op": "contains",
+          "passed": true,
+          "path": "/observation/plan/phases/0/purpose",
+          "value": "当前卡点已由学生自述解决"
+        }
+      ],
+      "counts": {
+        "attempts": 0,
+        "events": 3,
+        "facts": 2,
+        "mutations": 4,
+        "nodes": 2
+      },
+      "formation_gaps": [],
+      "kernel": "knowledge",
+      "passed": true
+    },
+    {
+      "case_id": "knowledge-evaluated_error",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": [
+            "needs_review"
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/concept_statuses",
+          "value": [
+            "needs_review"
+          ]
+        },
+        {
+          "actual": "evaluated_error",
+          "op": "eq",
+          "passed": true,
+          "path": "/observation/compiled/practice_feedback",
+          "value": "evaluated_error"
+        },
+        {
+          "actual": [
+            false
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/grade_correct",
+          "value": [
+            false
+          ]
+        },
+        {
+          "actual": 0,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/grade_human_value_mutations",
+          "value": 0
+        },
+        {
+          "actual": "先定位第一个错误步骤，给一个针对性提示后重试，并通过正式纠错闭环验证。记录正式尝试与真实帮助等级，再按原验收条件继续。",
+          "op": "contains",
+          "passed": true,
+          "path": "/observation/plan/phases/1/purpose",
+          "value": "先定位第一个错误步骤"
+        }
+      ],
+      "counts": {
+        "attempts": 1,
+        "events": 3,
+        "facts": 13,
+        "mutations": 6,
+        "nodes": 13
+      },
+      "formation_gaps": [
+        {
+          "actual_session_id": null,
+          "event_id": 1,
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1
+        }
+      ],
+      "kernel": "knowledge",
+      "passed": true
+    },
+    {
+      "case_id": "human-minutes",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": 8,
+          "op": "eq",
+          "passed": true,
+          "path": "/observation/compiled/max_minutes",
+          "value": 8
+        },
+        {
+          "actual": 8,
+          "op": "eq",
+          "passed": true,
+          "path": "/observation/plan/estimated_minutes",
+          "value": 8
+        }
+      ],
+      "counts": {
+        "attempts": 0,
+        "events": 2,
+        "facts": 0,
+        "mutations": 2,
+        "nodes": 0
+      },
+      "formation_gaps": [],
+      "kernel": "human",
+      "passed": true
+    },
+    {
+      "case_id": "human-support_cap",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": 20,
+          "op": "eq",
+          "passed": true,
+          "path": "/observation/compiled/max_minutes",
+          "value": 20
+        },
+        {
+          "actual": true,
+          "op": "eq",
+          "passed": true,
+          "path": "/observation/compiled/small_steps",
+          "value": true
+        },
+        {
+          "actual": 20,
+          "op": "eq",
+          "passed": true,
+          "path": "/observation/plan/estimated_minutes",
+          "value": 20
+        },
+        {
+          "actual": true,
+          "op": "eq",
+          "passed": true,
+          "path": "/observation/plan/phases/2/required",
+          "value": true
+        },
+        {
+          "actual": "用无提示独立作答或可检查产物验证当前目标；准备过程中的帮助不能计为独立通过。",
+          "op": "contains",
+          "passed": true,
+          "path": "/observation/plan/phases/2/purpose",
+          "value": "无提示独立"
+        }
+      ],
+      "counts": {
+        "attempts": 0,
+        "events": 3,
+        "facts": 0,
+        "mutations": 3,
+        "nodes": 0
+      },
+      "formation_gaps": [],
+      "kernel": "human",
+      "passed": true
+    },
+    {
+      "case_id": "human-expired",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": "<missing>",
+          "op": "absent",
+          "passed": true,
+          "path": "/observation/compiled/max_minutes",
+          "value": null
+        },
+        {
+          "actual": "<missing>",
+          "op": "absent",
+          "passed": true,
+          "path": "/observation/compiled/small_steps",
+          "value": null
+        },
+        {
+          "actual": 35,
+          "op": "eq",
+          "passed": true,
+          "path": "/observation/plan/estimated_minutes",
+          "value": 35
+        }
+      ],
+      "counts": {
+        "attempts": 0,
+        "events": 3,
+        "facts": 0,
+        "mutations": 3,
+        "nodes": 0
+      },
+      "formation_gaps": [],
+      "kernel": "human",
+      "passed": true
+    },
+    {
+      "case_id": "value-priority_updated",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": "递归边界分析",
+          "op": "contains",
+          "passed": true,
+          "path": "/observation/compiled/current_priority",
+          "value": "递归边界分析"
+        },
+        {
+          "actual": "本次优先推进：递归边界分析。先学习、再练习和独立验证，最后转交复习队列；任务完成不等于稳定掌握。",
+          "op": "contains",
+          "passed": true,
+          "path": "/observation/plan/summary",
+          "value": "递归边界分析"
+        },
+        {
+          "actual": "递归边界分析",
+          "op": "not_contains",
+          "passed": true,
+          "path": "/observation/compiled/current_priority",
+          "value": "递归基础定义"
+        }
+      ],
+      "counts": {
+        "attempts": 0,
+        "events": 3,
+        "facts": 0,
+        "mutations": 3,
+        "nodes": 0
+      },
+      "formation_gaps": [],
+      "kernel": "value",
+      "passed": true
+    },
+    {
+      "case_id": "value-priority_expired",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": "<missing>",
+          "op": "absent",
+          "passed": true,
+          "path": "/observation/compiled/current_priority",
+          "value": null
+        },
+        {
+          "actual": "先学习、再练习和独立验证，最后转交复习队列；任务完成不等于稳定掌握。",
+          "op": "not_contains",
+          "passed": true,
+          "path": "/observation/plan/summary",
+          "value": "递归边界分析"
+        }
+      ],
+      "counts": {
+        "attempts": 0,
+        "events": 2,
+        "facts": 0,
+        "mutations": 2,
+        "nodes": 0
+      },
+      "formation_gaps": [],
+      "kernel": "value",
+      "passed": true
+    },
+    {
+      "case_id": "value-goal_lifecycle",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": "archived",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/path_status",
+          "value": "archived"
+        },
+        {
+          "actual": "archived",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/goal_status",
+          "value": "archived"
+        },
+        {
+          "actual": 2,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/path_revision",
+          "value": 2
+        },
+        {
+          "actual": null,
+          "op": "eq",
+          "passed": true,
+          "path": "/observation/path_overlay/active_plan_id",
+          "value": null
+        },
+        {
+          "actual": [
+            "vnext_learning_path_plan_committed",
+            "vnext_learning_path_plan_revised",
+            "vnext_learning_path_plan_archived"
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/path_event_types",
+          "value": [
+            "vnext_learning_path_plan_committed",
+            "vnext_learning_path_plan_revised",
+            "vnext_learning_path_plan_archived"
+          ]
+        },
+        {
+          "actual": [
+            "confirmed",
+            "confirmed",
+            "archived"
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/intermediate_goal_statuses",
+          "value": [
+            "confirmed",
+            "confirmed",
+            "archived"
+          ]
+        },
+        {
+          "actual": "完成一个含消融实验的 Agent 项目",
+          "op": "contains",
+          "passed": true,
+          "path": "/observation/projection/value/long_term/confirmed_goals/path-plan:capability-path/statement",
+          "value": "含消融实验"
+        },
+        {
+          "actual": "完成一个含消融实验的 Agent 项目",
+          "op": "contains",
+          "passed": true,
+          "path": "/receipts/1/projection_after/value/long_term/confirmed_goals/path-plan:capability-path/statement",
+          "value": "含消融实验"
+        }
+      ],
+      "counts": {
+        "attempts": 0,
+        "events": 4,
+        "facts": 27,
+        "mutations": 7,
+        "nodes": 27
+      },
+      "formation_gaps": [],
+      "kernel": "value",
+      "passed": true
+    },
+    {
+      "case_id": "practice-supported",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": [
+            "correct_with_support"
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/concept_statuses",
+          "value": [
+            "correct_with_support"
+          ]
+        },
+        {
+          "actual": "supported_success",
+          "op": "eq",
+          "passed": true,
+          "path": "/observation/compiled/practice_feedback",
+          "value": "supported_success"
+        },
+        {
+          "actual": [
+            false
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/grade_independent",
+          "value": [
+            false
+          ]
+        },
+        {
+          "actual": [
+            "fade_support_then_independent_probe"
+          ],
+          "op": "contains",
+          "passed": true,
+          "path": "/lens/actions",
+          "value": "fade_support_then_independent_probe"
+        },
+        {
+          "actual": [
+            "fade_support_then_independent_probe"
+          ],
+          "op": "contains",
+          "passed": true,
+          "path": "/lens/plan_actions",
+          "value": "fade_support_then_independent_probe"
+        },
+        {
+          "actual": "记录显示这次尝试在支持下完成；先逐步撤除提示，再尝试一个无提示小变式，并保留真实帮助等级。记录正式尝试与真实帮助等级，再按原验收条件继续。",
+          "op": "contains",
+          "passed": true,
+          "path": "/observation/plan/phases/1/purpose",
+          "value": "先逐步撤除提示"
+        }
+      ],
+      "counts": {
+        "attempts": 1,
+        "events": 2,
+        "facts": 6,
+        "mutations": 4,
+        "nodes": 6
+      },
+      "formation_gaps": [
+        {
+          "actual_session_id": null,
+          "event_id": 1,
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1
+        }
+      ],
+      "kernel": "practice",
+      "passed": true
+    },
+    {
+      "case_id": "practice-independent",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": [
+            "verified_once"
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/concept_statuses",
+          "value": [
+            "verified_once"
+          ]
+        },
+        {
+          "actual": "independent_success",
+          "op": "eq",
+          "passed": true,
+          "path": "/observation/compiled/practice_feedback",
+          "value": "independent_success"
+        },
+        {
+          "actual": [
+            true
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/grade_independent",
+          "value": [
+            true
+          ]
+        },
+        {
+          "actual": [
+            "independent_variant_or_reasoning_check"
+          ],
+          "op": "contains",
+          "passed": true,
+          "path": "/lens/actions",
+          "value": "independent_variant_or_reasoning_check"
+        },
+        {
+          "actual": [
+            "independent_variant_or_reasoning_check"
+          ],
+          "op": "contains",
+          "passed": true,
+          "path": "/lens/plan_actions",
+          "value": "independent_variant_or_reasoning_check"
+        },
+        {
+          "actual": "记录中有一次明确的独立成功，接下来做无提示小变式或解释理由的检查；这仍不等于稳定掌握。记录正式尝试与真实帮助等级，再按原验收条件继续。",
+          "op": "contains",
+          "passed": true,
+          "path": "/observation/plan/phases/1/purpose",
+          "value": "无提示小变式或解释理由"
+        }
+      ],
+      "counts": {
+        "attempts": 1,
+        "events": 2,
+        "facts": 6,
+        "mutations": 4,
+        "nodes": 6
+      },
+      "formation_gaps": [
+        {
+          "actual_session_id": null,
+          "event_id": 1,
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1
+        }
+      ],
+      "kernel": "practice",
+      "passed": true
+    },
+    {
+      "case_id": "practice-retry",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": [
+            "correct_with_support"
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/concept_statuses",
+          "value": [
+            "correct_with_support"
+          ]
+        },
+        {
+          "actual": "supported_success",
+          "op": "eq",
+          "passed": true,
+          "path": "/observation/compiled/practice_feedback",
+          "value": "supported_success"
+        },
+        {
+          "actual": [
+            true,
+            false
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/grade_independent",
+          "value": [
+            true,
+            false
+          ]
+        },
+        {
+          "actual": [
+            "none",
+            "guided"
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/grade_assistance",
+          "value": [
+            "none",
+            "guided"
+          ]
+        },
+        {
+          "actual": [
+            "original",
+            "retry"
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/attempt_roles",
+          "value": [
+            "original",
+            "retry"
+          ]
+        },
+        {
+          "actual": [
+            "fade_support_then_independent_probe"
+          ],
+          "op": "contains",
+          "passed": true,
+          "path": "/lens/actions",
+          "value": "fade_support_then_independent_probe"
+        },
+        {
+          "actual": [
+            "fade_support_then_independent_probe"
+          ],
+          "op": "contains",
+          "passed": true,
+          "path": "/lens/plan_actions",
+          "value": "fade_support_then_independent_probe"
+        },
+        {
+          "actual": "记录显示这次尝试在支持下完成；先逐步撤除提示，再尝试一个无提示小变式，并保留真实帮助等级。记录正式尝试与真实帮助等级，再按原验收条件继续。",
+          "op": "contains",
+          "passed": true,
+          "path": "/observation/plan/phases/1/purpose",
+          "value": "先逐步撤除提示"
+        }
+      ],
+      "counts": {
+        "attempts": 2,
+        "events": 3,
+        "facts": 12,
+        "mutations": 7,
+        "nodes": 12
+      },
+      "formation_gaps": [
+        {
+          "actual_session_id": null,
+          "event_id": 1,
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1
+        },
+        {
+          "actual_session_id": null,
+          "event_id": 2,
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1
+        }
+      ],
+      "kernel": "practice",
+      "passed": true
+    }
+  ],
+  "source_unchanged": true
+}
