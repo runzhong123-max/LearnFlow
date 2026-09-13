@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.project import Chunk, DomainKnowledgePacket, Project, Source, SourceVersion
 
 
-PACKET_POLICY_VERSION = "domain-knowledge-packet-v2"
+PACKET_POLICY_VERSION = "domain-knowledge-packet-v3"
 SOURCE_POLICY_VERSION = "source-integrity-v1"
 SOURCE_PROFILE_VERSION = "source-profile-v1"
 RETRIEVAL_POLICY_VERSION = "domain-retrieval-rrf-v1"

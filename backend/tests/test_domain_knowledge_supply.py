@@ -115,7 +115,7 @@ def test_gradient_descent_file_is_domain_dense_and_packet_bound():
         packet, lecture_row, mutations = asyncio.run(inspect())
         assert packet.status == "ready"
         assert packet.coverage["ratio"] == 1.0
-        assert packet.policy_version == "domain-knowledge-packet-v2"
+        assert packet.policy_version == "domain-knowledge-packet-v3"
         assert packet.coverage["claim_support_policy"] == "traceable_claim_per_required_facet"
         assert "intent_source_fit" in packet.coverage["retrieval"]["lanes"]
         assert all(
