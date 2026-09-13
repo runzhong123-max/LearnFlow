@@ -1,0 +1,147 @@
+[
+  {
+    "stage": "grade",
+    "at": "2026-09-01T11:00:00Z",
+    "new_event_ids": [
+      1
+    ],
+    "new_attempt_ids": [
+      1
+    ],
+    "submitted_question_form": null,
+    "workbench_evidence_state": "verified_once",
+    "knowledge_retention": null,
+    "knowledge_long_mastery": null,
+    "practice_long_proof": null,
+    "schedule": {
+      "phase": "active",
+      "bucket": "upcoming",
+      "interval_level": 1,
+      "due_at": "2026-09-04T11:00:00",
+      "last_grade": "good",
+      "lapse_count": 0,
+      "successful_reviews": 0
+    }
+  },
+  {
+    "stage": "r1",
+    "at": "2026-09-08T11:00:00Z",
+    "new_event_ids": [
+      2
+    ],
+    "new_attempt_ids": [
+      2
+    ],
+    "submitted_question_form": "validated_variant",
+    "workbench_evidence_state": "verified_once",
+    "knowledge_retention": {
+      "attempt_id": 2,
+      "checkpoint_id": 1,
+      "evidence_id": 2,
+      "question_form": "validated_variant",
+      "status": "retrieved"
+    },
+    "knowledge_long_mastery": null,
+    "practice_long_proof": null,
+    "schedule": {
+      "phase": "active",
+      "bucket": "upcoming",
+      "interval_level": 3,
+      "due_at": "2026-09-22T11:00:00",
+      "last_grade": "easy",
+      "lapse_count": 0,
+      "successful_reviews": 1
+    }
+  },
+  {
+    "stage": "r2",
+    "at": "2026-09-22T11:00:00Z",
+    "new_event_ids": [
+      3
+    ],
+    "new_attempt_ids": [
+      3
+    ],
+    "submitted_question_form": "original",
+    "workbench_evidence_state": "spaced_stable",
+    "knowledge_retention": {
+      "attempt_id": 3,
+      "checkpoint_id": 1,
+      "evidence_id": 3,
+      "question_form": "original",
+      "status": "spaced_stable"
+    },
+    "knowledge_long_mastery": {
+      "evidence_ids": [
+        2,
+        3
+      ],
+      "level": "stable",
+      "policy_version": "review-policy-v1"
+    },
+    "practice_long_proof": {
+      "checkpoint_id": 1,
+      "event_id": 3,
+      "evidence_ids": [
+        2,
+        3
+      ],
+      "kind": "spaced_independent_transfer"
+    },
+    "schedule": {
+      "phase": "active",
+      "bucket": "stable",
+      "interval_level": 5,
+      "due_at": "2026-11-21T11:00:00",
+      "last_grade": "good",
+      "lapse_count": 0,
+      "successful_reviews": 2
+    }
+  },
+  {
+    "stage": "relapse",
+    "at": "2026-09-29T11:00:00Z",
+    "new_event_ids": [
+      4,
+      5
+    ],
+    "new_attempt_ids": [
+      4
+    ],
+    "submitted_question_form": "validated_variant",
+    "workbench_evidence_state": "none",
+    "knowledge_retention": {
+      "attempt_id": 4,
+      "checkpoint_id": 1,
+      "evidence_id": 4,
+      "question_form": "validated_variant",
+      "status": "needs_review"
+    },
+    "knowledge_long_mastery": {
+      "evidence_ids": [
+        2,
+        3
+      ],
+      "level": "stable",
+      "policy_version": "review-policy-v1"
+    },
+    "practice_long_proof": {
+      "checkpoint_id": 1,
+      "event_id": 3,
+      "evidence_ids": [
+        2,
+        3
+      ],
+      "kind": "spaced_independent_transfer"
+    },
+    "schedule": {
+      "phase": "remediation",
+      "bucket": "wrong",
+      "interval_level": 0,
+      "due_at": "2026-09-29T11:00:00",
+      "last_grade": "again",
+      "lapse_count": 1,
+      "successful_reviews": 2
+    }
+  }
+]

@@ -1,0 +1,282 @@
+{
+  "actual_review_attempts": 14,
+  "all_source_gates_passed": true,
+  "artifact_files_verified": 13,
+  "artifact_sha256": {
+    "aggregate.json": "4ec78c212002c2336a08e02771a911ae1ca204a904c7ca3d29b82041f063de29",
+    "artifact-manifest.json": "8963ab7a1c4f1d3c2644146b379a300f377a311213a4cddcdd63dba2b54c7ef3",
+    "freeze.json": "f4cd9bbb3b2370321b93ee0394fb6cc47e60b9add54029502d4ec98bf898f149",
+    "native.jsonl.gz": "91be231496c9c2d0aaf6feab9feb9dfac234d58cb1a525e8c8bc998e8f9db56e"
+  },
+  "counts": {
+    "case_assertions": 80,
+    "execution_complete_count": 14,
+    "groups": {
+      "authored_boundary_challenge": {
+        "failed_case_ids": [],
+        "passed": 2,
+        "total": 2
+      },
+      "authored_safety_challenge": {
+        "failed_case_ids": [
+          "relapse_invalidates_current_stability"
+        ],
+        "passed": 0,
+        "total": 1
+      },
+      "contract": {
+        "failed_case_ids": [],
+        "passed": 11,
+        "total": 11
+      }
+    },
+    "incomplete_operation_case_count": 0,
+    "infrastructure_error_count": 0,
+    "native_counts": {
+      "attempts": 27,
+      "events": 60,
+      "facts": 247,
+      "mutations": 121,
+      "nodes": 247,
+      "schedules": 13
+    },
+    "null_session_assessment_count": 27,
+    "passed": 13,
+    "total": 14
+  },
+  "current_foreign_scope_distractors": 14,
+  "direct_recomputation_equal": true,
+  "event_types": {
+    "concept_attempt_evaluated": 13,
+    "remediation_started": 2,
+    "review_attempt_evaluated": 14,
+    "review_item_deferred": 1,
+    "review_item_skipped": 1,
+    "vnext_learning_path_plan_archived": 1,
+    "vnext_learning_path_plan_committed": 3,
+    "vnext_learning_path_plan_revised": 3,
+    "vnext_teaching_input_received": 22
+  },
+  "field_assertions_passed": 79,
+  "head": "62fd197236c4852b93bdf4a835020f095f2e8bb1",
+  "initial_assessments": 13,
+  "limitations": [
+    "14 authored scenarios, not an empirical long-tail population",
+    "No human learning benefit, teacher rating, LLM comparison, UI or HTTP middleware evaluation",
+    "Validated variants are fixed author-computed closed-choice metadata, not independently validated transfer difficulty",
+    "Native review/assessment lacks session field; path API is learner-global",
+    "Safety challenge long-term invalidation is a predeclared author criterion, not an existing product guarantee",
+    "13 ReviewSchedules are separate isolated fixtures; no live student identities or daily database",
+    "The relapse submission is voluntary early review on 2026-09-29 before its 2026-11-21 due date",
+    "No new model calls or implementation repair; retained failed criterion is not hidden"
+  ],
+  "main_exit_code": 0,
+  "main_run": "/tmp/learnflow-interactions-run-02",
+  "offline_file_database_attempts": 0,
+  "offline_network_attempts": 0,
+  "preserved_failure": [
+    {
+      "case_id": "relapse_invalidates_current_stability",
+      "checks": [
+        {
+          "actual": true,
+          "op": "eq",
+          "passed": false,
+          "path": "/lens/long_stable",
+          "value": false
+        }
+      ]
+    }
+  ],
+  "prior_artifact_files_verified": 12,
+  "prior_run": {
+    "added_source_files": [
+      "evals/five_kernel_interactions/INCIDENTS.md"
+    ],
+    "cases_and_protocol_unchanged": true,
+    "changed_source_files": [
+      "evals/five_kernel_interactions/test_verifier.py",
+      "evals/five_kernel_interactions/verifier.py"
+    ],
+    "misclassification": "Final Attempt.role may become original when failed review opens native remediation; old verifier required review only",
+    "original_execution_complete_count": 14,
+    "original_exit_code": 0,
+    "original_passed": 12,
+    "path": "/tmp/learnflow-interactions-run-01",
+    "posthoc_recheck_with_final_verifier": {
+      "passed": 13,
+      "scores_equal_to_main_run": true,
+      "used_as_independent_samples": false
+    },
+    "source_and_artifacts_preserved": true,
+    "total": 14
+  },
+  "public_calculation_receipts": 26,
+  "receipt_types": {
+    "control": 22,
+    "defer": 1,
+    "grade": 13,
+    "path_archive": 1,
+    "path_commit": 6,
+    "read": 1,
+    "replay": 4,
+    "review": 16
+  },
+  "relapse_stages": [
+    {
+      "at": "2026-09-01T11:00:00Z",
+      "knowledge_long_mastery": null,
+      "knowledge_retention": null,
+      "new_attempt_ids": [
+        1
+      ],
+      "new_event_ids": [
+        1
+      ],
+      "practice_long_proof": null,
+      "schedule": {
+        "bucket": "upcoming",
+        "due_at": "2026-09-04T11:00:00",
+        "interval_level": 1,
+        "lapse_count": 0,
+        "last_grade": "good",
+        "phase": "active",
+        "successful_reviews": 0
+      },
+      "stage": "grade",
+      "submitted_question_form": null,
+      "workbench_evidence_state": "verified_once"
+    },
+    {
+      "at": "2026-09-08T11:00:00Z",
+      "knowledge_long_mastery": null,
+      "knowledge_retention": {
+        "attempt_id": 2,
+        "checkpoint_id": 1,
+        "evidence_id": 2,
+        "question_form": "validated_variant",
+        "status": "retrieved"
+      },
+      "new_attempt_ids": [
+        2
+      ],
+      "new_event_ids": [
+        2
+      ],
+      "practice_long_proof": null,
+      "schedule": {
+        "bucket": "upcoming",
+        "due_at": "2026-09-22T11:00:00",
+        "interval_level": 3,
+        "lapse_count": 0,
+        "last_grade": "easy",
+        "phase": "active",
+        "successful_reviews": 1
+      },
+      "stage": "r1",
+      "submitted_question_form": "validated_variant",
+      "workbench_evidence_state": "verified_once"
+    },
+    {
+      "at": "2026-09-22T11:00:00Z",
+      "knowledge_long_mastery": {
+        "evidence_ids": [
+          2,
+          3
+        ],
+        "level": "stable",
+        "policy_version": "review-policy-v1"
+      },
+      "knowledge_retention": {
+        "attempt_id": 3,
+        "checkpoint_id": 1,
+        "evidence_id": 3,
+        "question_form": "original",
+        "status": "spaced_stable"
+      },
+      "new_attempt_ids": [
+        3
+      ],
+      "new_event_ids": [
+        3
+      ],
+      "practice_long_proof": {
+        "checkpoint_id": 1,
+        "event_id": 3,
+        "evidence_ids": [
+          2,
+          3
+        ],
+        "kind": "spaced_independent_transfer"
+      },
+      "schedule": {
+        "bucket": "stable",
+        "due_at": "2026-11-21T11:00:00",
+        "interval_level": 5,
+        "lapse_count": 0,
+        "last_grade": "good",
+        "phase": "active",
+        "successful_reviews": 2
+      },
+      "stage": "r2",
+      "submitted_question_form": "original",
+      "workbench_evidence_state": "spaced_stable"
+    },
+    {
+      "at": "2026-09-29T11:00:00Z",
+      "knowledge_long_mastery": {
+        "evidence_ids": [
+          2,
+          3
+        ],
+        "level": "stable",
+        "policy_version": "review-policy-v1"
+      },
+      "knowledge_retention": {
+        "attempt_id": 4,
+        "checkpoint_id": 1,
+        "evidence_id": 4,
+        "question_form": "validated_variant",
+        "status": "needs_review"
+      },
+      "new_attempt_ids": [
+        4
+      ],
+      "new_event_ids": [
+        4,
+        5
+      ],
+      "practice_long_proof": {
+        "checkpoint_id": 1,
+        "event_id": 3,
+        "evidence_ids": [
+          2,
+          3
+        ],
+        "kind": "spaced_independent_transfer"
+      },
+      "schedule": {
+        "bucket": "wrong",
+        "due_at": "2026-09-29T11:00:00",
+        "interval_level": 0,
+        "lapse_count": 1,
+        "last_grade": "again",
+        "phase": "remediation",
+        "successful_reviews": 2
+      },
+      "stage": "relapse",
+      "submitted_question_form": "validated_variant",
+      "workbench_evidence_state": "none"
+    }
+  ],
+  "review_read_ownership_denials": 13,
+  "schema": "five-kernel-interactions.delivery-audit.v1",
+  "source_cases_sha256": "eeec5d807fd01fd4dfe762bb5663cb8bc060cb8c007ba02bd464233cf3f2f6d6",
+  "source_files_verified": 219,
+  "source_unchanged": true,
+  "status": "complete_with_preserved_safety_failure",
+  "verifier_tests": {
+    "native_cases_included": false,
+    "passed": 43
+  }
+}

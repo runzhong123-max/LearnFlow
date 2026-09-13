@@ -1,6 +1,8 @@
-# 补充材料 S1 论文主张与证据索引
+# 补充材料 论文主张与证据索引
 
 本材料把“源码中存在”“本轮真实执行”“模型读取结果”和“真实教学效果”分开。原生15项不是15名学生，768次调用也不是768个独立主题。下文只报告保存的实际产物。
+
+S1保留前一版证据的原始范围；S2与S3记录本次新增的对象交互和长尾读取。历史组的“未验证”不因新组而自动改写，新组也不扩大旧组的推断对象。
 
 ## S1.1 五核分别能力的原生证据
 
@@ -62,3 +64,39 @@
 ## S1.5 研究复用建议
 
 这套材料可用于复核教育状态契约、改进变量拆解及复现模型读出。若重编码平面输入或逐核移除，应重新冻结协议并维持同来源信息；若新增最终约束器因子，应区分无约束模型输出与产品执行结果；若引入外部算法，必须实跑官方实现并统一数据、模型、预算和调参权限。以上尚未执行，不计入论文结果。
+
+## S2 教学对象与五核交互
+
+实现审计基线为62fd197，17个对象交互来源文件hash见 [源码索引](sources/object-interaction-evidence.md) 与 [来源清单](sources/object-interaction-source-hashes.json)。该索引说明业务对象和实际前端调用，运行验证限于正式服务/API函数。没有浏览器验证、HTTP中间件或跨宿主最终验收。
+
+- [冻结协议](../../../evals/five_kernel_interactions/PROTOCOL.md) 与 [14个案例](../../../evals/five_kernel_interactions/cases.json)。
+- [读者报告](interaction-validation/delivery/REPORT.md) 与 [完整阶段表](interaction-validation/delivery/RELAPSE_STAGES.json)。
+- [正式run02原始评分](interaction-validation/run-02/aggregate.json)、[原始行与每步快照](interaction-validation/run-02/native.jsonl.gz)、[独立复算](interaction-validation/independent-audit.json)。
+- [首轮原始结果](interaction-validation/run-01/REPORT.md) 与 [验证器修订说明](../../../evals/five_kernel_interactions/INCIDENTS.md)。两轮目录均保存对应harness-source，不能用当前验证器源码冒充首轮版本。
+
+正式执行14/14完整，13/14通过，79/80主断言通过，全部来源门通过。11个既有合同和2个作者组合挑战全部通过，1个作者状态失效挑战失败。实际形成60Events、27Attempts、13ReviewSchedules、121Mutations、247Facts及节点。43个验证器测试包括篡改公开计算结果、缺失计算收据、跨题与跨作用域稳定证据、纠错来源角色变更闭包等负例；它们不是43个学生场景。
+
+关系需要分开解释：路径确认API同时写Structure个人路径与Value目标，但不自动创建LearningTask；任务生命周期、延期和跳过可以产生零核目标操作事件，实际评分另行更新Knowledge/Practice。ReviewSchedule只计算排期，工作台当前证据读取不直接等同长期mastery字段。正式复习会在失败后创建RemediationCase并将来源Attempt.role变为original，独立来源验证必须允许这条有真实闭包的后继变化，不能要求Attempt角色永久不变。
+
+保留的失败为relapse_invalidates_current_stability：9月8日独立变式、22日独立原题满足程序间隔门，29日提前自愿复习变式失败（原排期到期11月21日）。工作台evidence_state降为none，排期进入remediation，Knowledge.retention_status为needs_review，而长期mastery仍为stable、引用旧成功事件2和3。这里没有观察到工作台错误宣称掌握，也没有运行模型验证该长期字段是否实际造成误导。安全标准要求未限定的长期稳定状态随新失败失效，按冻结标准如实判失败。
+
+所有题来自两个作者预置的可计算模板，真实API呈现与判题得到验证；没有人类延迟保持、独立迁移题库或教育效果证据。27条评估事件的session空值保留，路径是learner全局范围。首次验证器误报修订前后的case、driver和80主断言保持相同，最终分母采用run02，不与run01累加。
+
+## S3 原生知识文本长尾读取
+
+- [最终协议](../../../evals/five_kernel_longtail/PROTOCOL.md)、[冻结情境](longtail-validation/scenarios.jsonl) 与 [生成器](../../../evals/five_kernel_longtail/generate.py)。
+- [紧凑结果说明](longtail-validation/SYNTHESIS.md)、[机器汇总](longtail-validation/compact-summary.json) 与 [全分层表](longtail-validation/REPORT.md)。
+- [原生形成](longtail-validation/formation.jsonl.gz)、[全部上下文包](longtail-validation/packets.jsonl.gz)、[逐条件评分](longtail-validation/trials.jsonl) 与 [独立审计](longtail-validation/independent-audit.json)。
+- [首轮形成故障](longtail-validation/failed-run-01/INCIDENT.md)、[第二轮核验器故障](longtail-validation/failed-run-02/INCIDENT.md) 与 [三轮源码保存校验](longtail-validation/failed-run-source-custody.json)。
+
+正式run03完成36个形成快照、228/228次读取，全部来源/作用域/预算/矩阵完整性及重开复算通过；14项独立验证器测试通过。12个作者情境含13个查询，3个后续干扰长度与2个预算构成相关条件。共同配置156条件，其余72条件是只对适用问题关闭别名、错拼或时间组件。正文表7和图5只统计共同配置，不能将局部关闭结果混入默认或原文配置分母。
+
+形成通过正式user_message→reducer→Mutation→State→Fact。主要激活Knowledge自述文本，既无Attempt也不借此生成掌握或长期模块。每条原文不超过500字符，干扰来自32条明示循环片段；实际单库最多522Facts（协议预估约532），未覆盖4096扫描极限、任意长原文或自然教育长尾分布。来源有效不能证明自述内容正确。
+
+主终点为同条、来源有效Fact item中的目标与限定共同交付；非Human head无证据正文，只有引用。run02之后新增的路径/head次要诊断发现，180个有目标条件中没有只靠路径补齐主终点的情况，不能把这个事后诊断并入预声明主分子。无目标负控分别测歧义错拼与两类无证据查询，严格检查有效背景正文是否为空，而不是根据未命中gold判成功拒答。
+
+两档预算的共同组结果均为：干扰4条，默认7/10、原文9/10；64条为6/10、8/10；256条为6/10、7/10。每格负向严格空3/3，时序首项2/2。256条下默认目标入池8/10而原文10/10，说明候选可用与最终内容交付不同。词表外time to live在两组均0/6；BFS别名被词面干扰排挤；唯一错拼schedulr在原文配置514候选时触及512扫描上限，默认242候选时反而保留修正。正文据此保留非单调收益，不能写成原文或完整系统全面领先。
+
+局部关闭结果按两个预算合并的相关条件计：别名共同交付在两配置均8/12→0/12；唯一错拼默认为6/6→0/6，原文为4/6→0/6；时间组件关闭使两配置的最初/当前交付及首项正确均12/12→6/12，失败均在最初问题。歧义错拼负控在各开关下均6/6严格空。该组件消融包括其候选与排序作用，尤其source还改变扫描范围与来源元数据预算，不是纯片段因素或逐核表示消融。
+
+首轮尚未读取即遇Roadmap唯一键错误，保留228错误条件、0packet。修正同项目路线复用，并在0个检索成绩时撤去违背持久事实契约的“同检查点异session必须禁入”假设；异learner/project/checkpoint三种强匹配污染继续保留。第二轮66条件被验证器错误的无关系假设拒绝，另8条件候选与head调用数目相同被保守拒绝。第三轮只补真实SAME_SUBJECT边/端点闭包及精确调用点追踪，未改情境、查询、目标文字、预算与policy。失败源快照与hash全部保存，前两轮不是额外独立样本，也不计有效性能结果。

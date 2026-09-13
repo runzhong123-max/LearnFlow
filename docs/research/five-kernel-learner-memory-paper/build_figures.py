@@ -88,6 +88,58 @@ def architecture():
     save(d,'architecture')
 
 
+def object_interaction():
+    d = Drawing(720, 480)
+    def box(x, y, w, h, title, body, color=BLUE):
+        d.add(Rect(x,y,w,h,strokeColor=GRAY,strokeWidth=.7,fillColor=white))
+        line(d,x,y+h,x+w,y+h,color,2)
+        txt(d,x+w/2,y+h-20,title,12.5,anchor='middle',cjk=True)
+        for j, s in enumerate(body):
+            txt(d,x+w/2,y+h-40-j*17,s,10.7,anchor='middle',cjk=True)
+    def down(x,y1,y2,color=BLACK):
+        line(d,x,y1,x,y2,color,1)
+        d.add(Polygon([x-3,y2+5,x,y2,x+3,y2+5],fillColor=color,strokeColor=None))
+    def up(x,y1,y2,color=BLUE):
+        line(d,x,y1,x,y2,color,1)
+        d.add(Polygon([x-3,y2-5,x,y2,x+3,y2-5],fillColor=color,strokeColor=None))
+    txt(d,16,458,'Teaching objects, workbenches and learner-state authority',16,bold=True)
+    box(20,388,638,50,'工作台入口','路径操作   /   学习任务执行   /   复习呈现与作答'.splitlines())
+    line(d,339,388,339,373,BLACK,1)
+    line(d,121,373,557,373,BLACK,1)
+    for x in (121,339,557): down(x,373,364)
+    txt(d,26,376,'用户操作与业务调用',10.5,cjk=True)
+    box(20,278,203,86,'学习路径','课程图与确认路线\n个人计划部分存于 Structure'.splitlines())
+    box(238,278,203,86,'LearningTask','任务规格、阶段与来源\n对象完成不代替学习证据'.splitlines())
+    box(456,278,202,86,'ReviewSchedule','到期、间隔与调度阶段\n调度更新不直接升级掌握'.splitlines())
+    for x in (121,339,557): line(d,x,278,x,266,BLACK,1)
+    line(d,121,266,557,266,BLACK,1)
+    down(339,266,258)
+    box(20,209,638,49,'Tutor / Learning Design / Practice','协调与状态读取   /   教学设计   /   实践与确定性评价'.splitlines(),GREEN)
+    for x in (81,210,339,468,597): line(d,x,187,x,192,BLUE,1)
+    line(d,81,192,597,192,BLUE,1)
+    up(339,192,209)
+    txt(d,353,194,'有作用域的只读投影',10.5,color=BLUE,cjk=True)
+    for i,(name,label) in enumerate([('Structure','位置与路径关系'),('Knowledge','概念与证据'),
+                                   ('Human','支持与期限'),('Value','目标与优先'),('Practice','尝试与辅助')]):
+        x=20+i*129
+        box(x,132,122,55,name,[label],COLORS[i])
+    line(d,339,103,339,124,BLUE,1)
+    line(d,81,124,597,124,BLUE,1)
+    for x in (81,210,339,468,597): up(x,124,132)
+    txt(d,353,114,'归约后的学习者状态',10.5,color=BLUE,cjk=True)
+    d.add(Rect(20,46,638,57,strokeColor=ORANGE,strokeWidth=.9,fillColor=white))
+    txt(d,339,82,'EvidenceEvent → reducer → KernelMutation → KernelState',12,anchor='middle')
+    txt(d,339,62,'零核目标止于审计；符合契约时形成状态及 Fact / Module / Claim',10.5,anchor='middle',cjk=True)
+    line(d,658,234,687,234,ORANGE,1.3)
+    down(687,234,74,ORANGE)
+    line(d,687,74,658,74,ORANGE,1.3)
+    d.add(Polygon([663,77,658,74,663,71],fillColor=ORANGE,strokeColor=None))
+    txt(d,693,193,'证',10.5,color=ORANGE,cjk=True)
+    txt(d,693,177,'据',10.5,color=ORANGE,cjk=True)
+    txt(d,339,20,'Implementation schematic; service/API verification is distinct from browser or learning-outcome evaluation.',9,anchor='middle')
+    save(d,'object_interaction')
+
+
 def results(data):
     d=Drawing(720,315)
     idx={(g['variant'],g['budget']):g for g in data['groups']}
@@ -143,15 +195,70 @@ def effects(data):
     save(d,'effects')
 
 
+def longtail(data):
+    assert data['matrix_complete'] and data['all_integrity_checks_passed']
+    labels = {
+        ('old_rare_exact','exact'): '旧稀有问题 精确词',
+        ('alias','alias'): '术语别名 两个情境',
+        ('unique_typo','typo'): '唯一错拼',
+        ('out_of_alias_vocabulary','oov'): '词表外表达',
+        ('separated_qualifier','split'): '分离的限定条件',
+        ('source_tail','tail'): '正文尾部观察',
+        ('historical_vs_current','earliest'): '同主题 最初问题',
+        ('historical_vs_current','current'): '同主题 当前问题',
+        ('scope_pollution','owned'): '作用域干扰下的本人来源',
+        ('ambiguous_typo','ambiguous'): '歧义错拼',
+        ('uncovered_exact','absent'): '无证据 精确查询',
+        ('uncovered_generic','absent'): '无证据 普通问法',
+    }
+    d=Drawing(720,480)
+    txt(d,16,455,'Native long-history retrieval',17,bold=True)
+    txt(d,16,431,'A',14,bold=True)
+    txt(d,39,431,'目标观察与限定共同交付',12,cjk=True)
+    x0,x1=257,568
+    for tick in (0,25,50,75,100):
+        x=x0+(x1-x0)*tick/100
+        line(d,x,75,x,416)
+        txt(d,x,57,str(tick),10,anchor='middle')
+    for i,(key,label) in enumerate(labels.items()):
+        y=400-i*25-(25 if i>=9 else 0)
+        if i==9:
+            txt(d,16,y+23,'B',14,bold=True)
+            txt(d,39,y+23,'负向查询 严格无背景正文',12,cjk=True)
+        txt(d,16,y-4,label,11.5,cjk=True)
+        metric='joint_term_qualifier_delivered' if i<9 else 'strict_empty_on_uncovered'
+        scores=[]
+        for variant,color,dy in [('default',BLUE,3.5),('source',ORANGE,-3.5)]:
+            rows=[r for r in data['by_stratum'] if (r['family'],r['query_id'])==key and r['variant']==variant]
+            n=sum(r['metrics'][metric]['numerator'] for r in rows)
+            total=sum(r['metrics'][metric]['denominator'] for r in rows)
+            assert total>0,(key,variant)
+            d.add(Circle(x0+(x1-x0)*n/total,y+dy,3.2,fillColor=color,strokeColor=white,strokeWidth=.5))
+            scores.append(f'{n}/{total}')
+        txt(d,596,y-4,'  /  '.join(scores),10.5)
+    txt(d,596,422,'Default / Source',10,bold=True)
+    txt(d,(x0+x1)/2,37,'Condition success (%)',10.5,anchor='middle')
+    for x,label,color in [(120,'Default',BLUE),(220,'Source',ORANGE)]:
+        d.add(Circle(x,16,3.2,fillColor=color,strokeColor=None));txt(d,x+9,12,label,10.5)
+    txt(d,690,12,'3 histories × 2 budgets; correlated conditions',10,anchor='end')
+    save(d,'longtail')
+
+
 if __name__=='__main__':
     data=json.loads(SOURCE.read_text())
     assert data['actual_responses']==768 and data['audit']['ok'] and data['matrix_complete']
-    architecture(); results(data); effects(data)
+    architecture(); object_interaction(); results(data); effects(data)
+    additional={}
+    longtail_source=HERE/'longtail-validation/aggregate.json'
+    if longtail_source.is_file():
+        longtail(json.loads(longtail_source.read_text()))
+        additional['longtail-validation/aggregate.json']=hashlib.sha256(longtail_source.read_bytes()).hexdigest()
     manifest={'source':str(SOURCE.relative_to(HERE.parents[2])),
               'source_sha256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
               'generator_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
               'figures':{n:hashlib.sha256((OUT/n).read_bytes()).hexdigest() for n in ARTIFACTS},
-              'schematic':'architecture: designed explanatory diagram; no experimental values',
-              'quantitative':'results and effects: direct frozen aggregate data; no fabricated repetitions'}
+              'additional_sources':additional,
+              'schematic':'architecture and object_interaction: explanatory diagrams; no experimental values',
+              'quantitative':'results, effects and longtail: saved aggregate data; no fabricated repetitions'}
     (OUT/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     print(json.dumps({'created':len(ARTIFACTS),'source_responses':data['actual_responses']}))

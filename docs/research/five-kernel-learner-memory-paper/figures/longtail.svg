@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="720" height="480" preserveAspectRatio="xMinYMin meet" viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="720" height="480"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-480)" style="clip-path: url(#clip)">
+		<g transform="">
+			<text x="16" y="455" style="font-family: ArialB; font-size: 17px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,910) scale(1,-1)">Native long-history retrieval</text>
+			<text x="16" y="431" style="font-family: ArialB; font-size: 14px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,862) scale(1,-1)">A</text>
+			<text x="39" y="431" style="font-family: CJK; font-size: 12px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,862) scale(1,-1)">目标观察与限定共同交付</text>
+			<path d="M 257,75 L 257,416 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.7;"/>
+			<text x="254.21923828125" y="57" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,114) scale(1,-1)">0</text>
+			<path d="M 334.75,75 L 334.75,416 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.7;"/>
+			<text x="329.1884765625" y="57" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,114) scale(1,-1)">25</text>
+			<path d="M 412.5,75 L 412.5,416 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.7;"/>
+			<text x="406.9384765625" y="57" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,114) scale(1,-1)">50</text>
+			<path d="M 490.25,75 L 490.25,416 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.7;"/>
+			<text x="484.6884765625" y="57" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,114) scale(1,-1)">75</text>
+			<path d="M 568,75 L 568,416 Z" style="stroke: rgb(85%,87%,88%); stroke-linecap: butt; stroke-width: 0.7;"/>
+			<text x="559.65771484375" y="57" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,114) scale(1,-1)">100</text>
+			<text x="16" y="396" style="font-family: CJK; font-size: 11.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,792) scale(1,-1)">旧稀有问题 精确词</text>
+			<circle cx="568.0" cy="403.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="568.0" cy="396.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="596" y="396" style="font-family: Arial; font-size: 10.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,792) scale(1,-1)">6/6  /  6/6</text>
+			<text x="16" y="371" style="font-family: CJK; font-size: 11.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,742) scale(1,-1)">术语别名 两个情境</text>
+			<circle cx="464.33333333333337" cy="378.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="464.33333333333337" cy="371.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="596" y="371" style="font-family: Arial; font-size: 10.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,742) scale(1,-1)">8/12  /  8/12</text>
+			<text x="16" y="346" style="font-family: CJK; font-size: 11.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,692) scale(1,-1)">唯一错拼</text>
+			<circle cx="568.0" cy="353.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="464.33333333333337" cy="346.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="596" y="346" style="font-family: Arial; font-size: 10.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,692) scale(1,-1)">6/6  /  4/6</text>
+			<text x="16" y="321" style="font-family: CJK; font-size: 11.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,642) scale(1,-1)">词表外表达</text>
+			<circle cx="257.0" cy="328.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="257.0" cy="321.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="596" y="321" style="font-family: Arial; font-size: 10.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,642) scale(1,-1)">0/6  /  0/6</text>
+			<text x="16" y="296" style="font-family: CJK; font-size: 11.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,592) scale(1,-1)">分离的限定条件</text>
+			<circle cx="257.0" cy="303.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="568.0" cy="296.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="596" y="296" style="font-family: Arial; font-size: 10.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,592) scale(1,-1)">0/6  /  6/6</text>
+			<text x="16" y="271" style="font-family: CJK; font-size: 11.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,542) scale(1,-1)">正文尾部观察</text>
+			<circle cx="257.0" cy="278.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="568.0" cy="271.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="596" y="271" style="font-family: Arial; font-size: 10.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,542) scale(1,-1)">0/6  /  6/6</text>
+			<text x="16" y="246" style="font-family: CJK; font-size: 11.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,492) scale(1,-1)">同主题 最初问题</text>
+			<circle cx="568.0" cy="253.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="568.0" cy="246.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="596" y="246" style="font-family: Arial; font-size: 10.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,492) scale(1,-1)">6/6  /  6/6</text>
+			<text x="16" y="221" style="font-family: CJK; font-size: 11.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,442) scale(1,-1)">同主题 当前问题</text>
+			<circle cx="568.0" cy="228.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="568.0" cy="221.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="596" y="221" style="font-family: Arial; font-size: 10.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,442) scale(1,-1)">6/6  /  6/6</text>
+			<text x="16" y="196" style="font-family: CJK; font-size: 11.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,392) scale(1,-1)">作用域干扰下的本人来源</text>
+			<circle cx="568.0" cy="203.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="568.0" cy="196.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="596" y="196" style="font-family: Arial; font-size: 10.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,392) scale(1,-1)">6/6  /  6/6</text>
+			<text x="16" y="173" style="font-family: ArialB; font-size: 14px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,346) scale(1,-1)">B</text>
+			<text x="39" y="173" style="font-family: CJK; font-size: 12px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,346) scale(1,-1)">负向查询 严格无背景正文</text>
+			<text x="16" y="146" style="font-family: CJK; font-size: 11.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,292) scale(1,-1)">歧义错拼</text>
+			<circle cx="568.0" cy="153.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="568.0" cy="146.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="596" y="146" style="font-family: Arial; font-size: 10.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,292) scale(1,-1)">6/6  /  6/6</text>
+			<text x="16" y="121" style="font-family: CJK; font-size: 11.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,242) scale(1,-1)">无证据 精确查询</text>
+			<circle cx="568.0" cy="128.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="568.0" cy="121.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="596" y="121" style="font-family: Arial; font-size: 10.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,242) scale(1,-1)">6/6  /  6/6</text>
+			<text x="16" y="96" style="font-family: CJK; font-size: 11.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,192) scale(1,-1)">无证据 普通问法</text>
+			<circle cx="568.0" cy="103.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<circle cx="568.0" cy="96.5" r="3.2" style="stroke: rgb(100%,100%,100%); stroke-linecap: butt; stroke-width: 0.5; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="596" y="96" style="font-family: Arial; font-size: 10.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,192) scale(1,-1)">6/6  /  6/6</text>
+			<text x="596" y="422" style="font-family: ArialB; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,844) scale(1,-1)">Default / Source</text>
+			<text x="360.271728515625" y="37" style="font-family: Arial; font-size: 10.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,74) scale(1,-1)">Condition success (%)</text>
+			<circle cx="120" cy="16" r="3.2" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(0%,44%,69%); fill-rule: evenodd;"/>
+			<text x="129" y="12" style="font-family: Arial; font-size: 10.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,24) scale(1,-1)">Default</text>
+			<circle cx="220" cy="16" r="3.2" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(83%,36%,0%); fill-rule: evenodd;"/>
+			<text x="229" y="12" style="font-family: Arial; font-size: 10.5px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,24) scale(1,-1)">Source</text>
+			<text x="491.26953125" y="12" style="font-family: Arial; font-size: 10px;fill: rgb(12%,14%,16%); stroke:none;" transform="translate(0,24) scale(1,-1)">3 histories × 2 budgets; correlated conditions</text>
+		</g>
+	</g>
+</svg>

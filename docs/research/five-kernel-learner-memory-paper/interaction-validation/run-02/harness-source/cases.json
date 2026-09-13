@@ -1,0 +1,887 @@
+[
+  {
+    "case_id": "path_lifecycle",
+    "at": "2026-09-22T12:00:00Z",
+    "variant": false,
+    "steps": [
+      {
+        "id": "confirm",
+        "op": "path_commit",
+        "at": "2026-09-01T11:00:00Z",
+        "revision": 1
+      },
+      {
+        "id": "replay",
+        "op": "replay",
+        "at": "2026-09-01T11:00:00Z",
+        "request_from": "confirm"
+      },
+      {
+        "id": "revise",
+        "op": "path_commit",
+        "at": "2026-09-08T11:00:00Z",
+        "revision": 2
+      },
+      {
+        "id": "archive",
+        "op": "path_archive",
+        "at": "2026-09-22T11:00:00Z"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/lens/path_revision",
+        "op": "eq",
+        "value": 2
+      },
+      {
+        "path": "/lens/path_status",
+        "op": "eq",
+        "value": "archived"
+      },
+      {
+        "path": "/lens/goal_status",
+        "op": "eq",
+        "value": "archived"
+      },
+      {
+        "path": "/lens/goal_statement",
+        "op": "contains",
+        "value": "含消融实验"
+      },
+      {
+        "path": "/lens/path_events",
+        "op": "eq",
+        "value": [
+          "vnext_learning_path_plan_committed",
+          "vnext_learning_path_plan_revised",
+          "vnext_learning_path_plan_archived"
+        ]
+      },
+      {
+        "path": "/steps/replay/new_event_count",
+        "op": "eq",
+        "value": 0
+      },
+      {
+        "path": "/observation/path_overlay/active_plan_id",
+        "op": "eq",
+        "value": null
+      }
+    ],
+    "purpose": "contract"
+  },
+  {
+    "case_id": "assessment_creates_schedule",
+    "at": "2026-09-02T12:00:00Z",
+    "variant": false,
+    "steps": [
+      {
+        "id": "grade",
+        "op": "grade",
+        "at": "2026-09-01T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/lens/schedule_count",
+        "op": "eq",
+        "value": 1
+      },
+      {
+        "path": "/lens/attempt_count",
+        "op": "eq",
+        "value": 1
+      },
+      {
+        "path": "/lens/last_grade",
+        "op": "eq",
+        "value": "good"
+      },
+      {
+        "path": "/lens/current_evidence",
+        "op": "eq",
+        "value": "verified_once"
+      },
+      {
+        "path": "/lens/stable_eligible",
+        "op": "eq",
+        "value": false
+      },
+      {
+        "path": "/lens/long_stable",
+        "op": "eq",
+        "value": false
+      }
+    ],
+    "purpose": "contract"
+  },
+  {
+    "case_id": "due_without_learning",
+    "at": "2026-09-22T12:00:00Z",
+    "variant": false,
+    "steps": [
+      {
+        "id": "grade",
+        "op": "grade",
+        "at": "2026-09-01T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "due",
+        "op": "read",
+        "at": "2026-09-22T11:00:00Z"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/lens/attempt_count",
+        "op": "eq",
+        "value": 1
+      },
+      {
+        "path": "/lens/review_count",
+        "op": "eq",
+        "value": 0
+      },
+      {
+        "path": "/lens/bucket",
+        "op": "eq",
+        "value": "overdue"
+      },
+      {
+        "path": "/lens/long_stable",
+        "op": "eq",
+        "value": false
+      },
+      {
+        "path": "/steps/due/new_event_count",
+        "op": "eq",
+        "value": 0
+      }
+    ],
+    "purpose": "contract"
+  },
+  {
+    "case_id": "defer_is_not_evidence",
+    "at": "2026-09-08T12:00:00Z",
+    "variant": false,
+    "steps": [
+      {
+        "id": "grade",
+        "op": "grade",
+        "at": "2026-09-01T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "defer",
+        "op": "defer",
+        "at": "2026-09-08T11:00:00Z"
+      },
+      {
+        "id": "repeat",
+        "op": "replay",
+        "at": "2026-09-08T11:00:00Z",
+        "request_from": "defer"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/lens/attempt_count",
+        "op": "eq",
+        "value": 1
+      },
+      {
+        "path": "/lens/defer_count",
+        "op": "eq",
+        "value": 1
+      },
+      {
+        "path": "/steps/repeat/new_event_count",
+        "op": "eq",
+        "value": 0
+      },
+      {
+        "path": "/steps/repeat/response/idempotent_replay",
+        "op": "eq",
+        "value": true
+      },
+      {
+        "path": "/lens/long_stable",
+        "op": "eq",
+        "value": false
+      },
+      {
+        "path": "/lens/defer_moves_one_day",
+        "op": "eq",
+        "value": true
+      }
+    ],
+    "purpose": "contract"
+  },
+  {
+    "case_id": "assisted_review",
+    "at": "2026-09-08T12:00:00Z",
+    "variant": false,
+    "steps": [
+      {
+        "id": "grade",
+        "op": "grade",
+        "at": "2026-09-01T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "review",
+        "op": "review",
+        "at": "2026-09-08T11:00:00Z",
+        "correct": true,
+        "assistance": "hint"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/lens/review_forms",
+        "op": "eq",
+        "value": [
+          "original"
+        ]
+      },
+      {
+        "path": "/lens/review_independent",
+        "op": "eq",
+        "value": [
+          false
+        ]
+      },
+      {
+        "path": "/lens/retention",
+        "op": "eq",
+        "value": "retrieved_with_support"
+      },
+      {
+        "path": "/lens/last_grade",
+        "op": "eq",
+        "value": "hard"
+      },
+      {
+        "path": "/lens/long_stable",
+        "op": "eq",
+        "value": false
+      },
+      {
+        "path": "/lens/plan_actions",
+        "op": "contains",
+        "value": "fade_support_then_independent_probe"
+      }
+    ],
+    "purpose": "contract"
+  },
+  {
+    "case_id": "independent_original",
+    "at": "2026-09-08T12:00:00Z",
+    "variant": false,
+    "steps": [
+      {
+        "id": "grade",
+        "op": "grade",
+        "at": "2026-09-01T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "review",
+        "op": "review",
+        "at": "2026-09-08T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/lens/review_forms",
+        "op": "eq",
+        "value": [
+          "original"
+        ]
+      },
+      {
+        "path": "/lens/review_independent",
+        "op": "eq",
+        "value": [
+          true
+        ]
+      },
+      {
+        "path": "/lens/retention",
+        "op": "eq",
+        "value": "retrieved"
+      },
+      {
+        "path": "/lens/long_stable",
+        "op": "eq",
+        "value": false
+      },
+      {
+        "path": "/lens/plan_actions",
+        "op": "contains",
+        "value": "independent_variant_or_reasoning_check"
+      }
+    ],
+    "purpose": "contract"
+  },
+  {
+    "case_id": "independent_variant",
+    "at": "2026-09-08T12:00:00Z",
+    "variant": true,
+    "steps": [
+      {
+        "id": "grade",
+        "op": "grade",
+        "at": "2026-09-01T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "review",
+        "op": "review",
+        "at": "2026-09-08T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/lens/review_forms",
+        "op": "eq",
+        "value": [
+          "validated_variant"
+        ]
+      },
+      {
+        "path": "/lens/retention",
+        "op": "eq",
+        "value": "retrieved"
+      },
+      {
+        "path": "/lens/last_grade",
+        "op": "eq",
+        "value": "easy"
+      },
+      {
+        "path": "/lens/stable_eligible",
+        "op": "eq",
+        "value": false
+      },
+      {
+        "path": "/lens/long_stable",
+        "op": "eq",
+        "value": false
+      }
+    ],
+    "purpose": "contract"
+  },
+  {
+    "case_id": "spaced_original_is_not_stable",
+    "at": "2026-09-22T12:00:00Z",
+    "variant": false,
+    "steps": [
+      {
+        "id": "grade",
+        "op": "grade",
+        "at": "2026-09-01T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "r1",
+        "op": "review",
+        "at": "2026-09-08T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "r2",
+        "op": "review",
+        "at": "2026-09-22T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/lens/review_forms",
+        "op": "eq",
+        "value": [
+          "original",
+          "original"
+        ]
+      },
+      {
+        "path": "/lens/stable_eligible",
+        "op": "eq",
+        "value": false
+      },
+      {
+        "path": "/lens/long_stable",
+        "op": "eq",
+        "value": false
+      },
+      {
+        "path": "/lens/retention",
+        "op": "eq",
+        "value": "retrieved"
+      }
+    ],
+    "purpose": "contract"
+  },
+  {
+    "case_id": "spaced_variant_contract",
+    "at": "2026-09-22T12:00:00Z",
+    "variant": true,
+    "steps": [
+      {
+        "id": "grade",
+        "op": "grade",
+        "at": "2026-09-01T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "r1",
+        "op": "review",
+        "at": "2026-09-08T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "r2",
+        "op": "review",
+        "at": "2026-09-22T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/lens/review_forms",
+        "op": "eq",
+        "value": [
+          "validated_variant",
+          "original"
+        ]
+      },
+      {
+        "path": "/lens/stable_eligible",
+        "op": "eq",
+        "value": true
+      },
+      {
+        "path": "/lens/long_stable",
+        "op": "eq",
+        "value": true
+      },
+      {
+        "path": "/lens/retention",
+        "op": "eq",
+        "value": "spaced_stable"
+      },
+      {
+        "path": "/lens/current_evidence",
+        "op": "eq",
+        "value": "spaced_stable"
+      },
+      {
+        "path": "/lens/stable_source_coverage",
+        "op": "eq",
+        "value": true
+      }
+    ],
+    "purpose": "contract"
+  },
+  {
+    "case_id": "nonresponse_and_idempotence",
+    "at": "2026-09-08T12:00:00Z",
+    "variant": false,
+    "steps": [
+      {
+        "id": "grade",
+        "op": "grade",
+        "at": "2026-09-01T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "missing",
+        "op": "review",
+        "at": "2026-09-08T11:00:00Z",
+        "response_status": "answered",
+        "empty": true,
+        "expected_http": 422
+      },
+      {
+        "id": "skip",
+        "op": "review",
+        "at": "2026-09-08T11:00:00Z",
+        "response_status": "skipped"
+      },
+      {
+        "id": "skip_replay",
+        "op": "replay",
+        "at": "2026-09-08T11:00:00Z",
+        "request_from": "skip"
+      },
+      {
+        "id": "unknown",
+        "op": "review",
+        "at": "2026-09-08T11:00:00Z",
+        "response_status": "unknown"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/steps/missing/new_attempt_count",
+        "op": "eq",
+        "value": 0
+      },
+      {
+        "path": "/steps/missing/http_status",
+        "op": "eq",
+        "value": 422
+      },
+      {
+        "path": "/steps/skip/new_attempt_count",
+        "op": "eq",
+        "value": 0
+      },
+      {
+        "path": "/steps/skip_replay/new_event_count",
+        "op": "eq",
+        "value": 0
+      },
+      {
+        "path": "/steps/unknown/response/outcome",
+        "op": "eq",
+        "value": "unknown"
+      },
+      {
+        "path": "/lens/last_attempt_status",
+        "op": "eq",
+        "value": "abstained"
+      },
+      {
+        "path": "/lens/retention",
+        "op": "eq",
+        "value": "retrieval_gap"
+      },
+      {
+        "path": "/lens/long_stable",
+        "op": "eq",
+        "value": false
+      }
+    ],
+    "purpose": "contract"
+  },
+  {
+    "case_id": "review_submission_replay",
+    "at": "2026-09-08T12:00:00Z",
+    "variant": false,
+    "steps": [
+      {
+        "id": "grade",
+        "op": "grade",
+        "at": "2026-09-01T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "review",
+        "op": "review",
+        "at": "2026-09-08T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "replay",
+        "op": "replay",
+        "at": "2026-09-08T11:00:00Z",
+        "request_from": "review"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/lens/attempt_count",
+        "op": "eq",
+        "value": 2
+      },
+      {
+        "path": "/lens/review_count",
+        "op": "eq",
+        "value": 1
+      },
+      {
+        "path": "/steps/replay/new_attempt_count",
+        "op": "eq",
+        "value": 0
+      },
+      {
+        "path": "/steps/replay/new_event_count",
+        "op": "eq",
+        "value": 0
+      },
+      {
+        "path": "/steps/replay/response/idempotent_replay",
+        "op": "eq",
+        "value": true
+      }
+    ],
+    "purpose": "contract"
+  },
+  {
+    "case_id": "cross_week_current_support",
+    "at": "2026-09-22T12:00:00Z",
+    "variant": true,
+    "steps": [
+      {
+        "id": "path",
+        "op": "path_commit",
+        "at": "2026-09-01T11:00:00Z",
+        "revision": 1
+      },
+      {
+        "id": "grade",
+        "op": "grade",
+        "at": "2026-09-01T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "old_anchor",
+        "op": "control",
+        "at": "2026-09-01T11:00:00Z",
+        "text": "先回到递归基础定义。"
+      },
+      {
+        "id": "review",
+        "op": "review",
+        "at": "2026-09-08T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "revise",
+        "op": "path_commit",
+        "at": "2026-09-21T11:00:00Z",
+        "revision": 2
+      },
+      {
+        "id": "time",
+        "op": "control",
+        "at": "2026-09-22T11:00:00Z",
+        "text": "本次只有25分钟。"
+      },
+      {
+        "id": "support",
+        "op": "control",
+        "at": "2026-09-22T11:20:00Z",
+        "text": "请拆成小步，每次只处理一个问题。"
+      },
+      {
+        "id": "priority",
+        "op": "control",
+        "at": "2026-09-22T11:40:00Z",
+        "text": "本次优先：检索与复习边界分析。"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/lens/path_revision",
+        "op": "eq",
+        "value": 2
+      },
+      {
+        "path": "/lens/goal_statement",
+        "op": "contains",
+        "value": "含消融实验"
+      },
+      {
+        "path": "/observation/compiled/current_priority",
+        "op": "contains",
+        "value": "检索与复习边界分析"
+      },
+      {
+        "path": "/observation/compiled/return_anchor",
+        "op": "absent",
+        "value": null
+      },
+      {
+        "path": "/observation/plan/estimated_minutes",
+        "op": "eq",
+        "value": 20
+      },
+      {
+        "path": "/observation/compiled/small_steps",
+        "op": "eq",
+        "value": true
+      }
+    ],
+    "purpose": "authored_boundary_challenge"
+  },
+  {
+    "case_id": "cross_week_expired_support",
+    "at": "2026-09-22T12:00:00Z",
+    "variant": true,
+    "steps": [
+      {
+        "id": "path",
+        "op": "path_commit",
+        "at": "2026-09-01T11:00:00Z",
+        "revision": 1
+      },
+      {
+        "id": "grade",
+        "op": "grade",
+        "at": "2026-09-01T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "old_anchor",
+        "op": "control",
+        "at": "2026-09-01T11:00:00Z",
+        "text": "先回到递归基础定义。"
+      },
+      {
+        "id": "time",
+        "op": "control",
+        "at": "2026-09-01T11:00:00Z",
+        "text": "本次只有25分钟。"
+      },
+      {
+        "id": "support",
+        "op": "control",
+        "at": "2026-09-01T11:20:00Z",
+        "text": "请拆成小步，每次只处理一个问题。"
+      },
+      {
+        "id": "review",
+        "op": "review",
+        "at": "2026-09-08T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "revise",
+        "op": "path_commit",
+        "at": "2026-09-21T11:00:00Z",
+        "revision": 2
+      },
+      {
+        "id": "priority",
+        "op": "control",
+        "at": "2026-09-22T11:40:00Z",
+        "text": "本次优先：检索与复习边界分析。"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/lens/path_revision",
+        "op": "eq",
+        "value": 2
+      },
+      {
+        "path": "/lens/goal_statement",
+        "op": "contains",
+        "value": "含消融实验"
+      },
+      {
+        "path": "/observation/compiled/current_priority",
+        "op": "contains",
+        "value": "检索与复习边界分析"
+      },
+      {
+        "path": "/observation/compiled/return_anchor",
+        "op": "absent",
+        "value": null
+      },
+      {
+        "path": "/observation/plan/estimated_minutes",
+        "op": "eq",
+        "value": 35
+      },
+      {
+        "path": "/observation/compiled/small_steps",
+        "op": "absent",
+        "value": null
+      },
+      {
+        "path": "/observation/compiled/max_minutes",
+        "op": "absent",
+        "value": null
+      }
+    ],
+    "purpose": "authored_boundary_challenge"
+  },
+  {
+    "case_id": "relapse_invalidates_current_stability",
+    "at": "2026-09-29T12:00:00Z",
+    "variant": true,
+    "steps": [
+      {
+        "id": "grade",
+        "op": "grade",
+        "at": "2026-09-01T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "r1",
+        "op": "review",
+        "at": "2026-09-08T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "r2",
+        "op": "review",
+        "at": "2026-09-22T11:00:00Z",
+        "correct": true,
+        "assistance": "none"
+      },
+      {
+        "id": "relapse",
+        "op": "review",
+        "at": "2026-09-29T11:00:00Z",
+        "correct": false,
+        "assistance": "none"
+      }
+    ],
+    "assertions": [
+      {
+        "path": "/lens/stable_eligible",
+        "op": "eq",
+        "value": false
+      },
+      {
+        "path": "/lens/current_evidence",
+        "op": "eq",
+        "value": "none"
+      },
+      {
+        "path": "/lens/retention",
+        "op": "eq",
+        "value": "needs_review"
+      },
+      {
+        "path": "/lens/long_stable",
+        "op": "eq",
+        "value": false
+      }
+    ],
+    "purpose": "authored_safety_challenge"
+  }
+]

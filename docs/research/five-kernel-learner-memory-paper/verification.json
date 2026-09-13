@@ -1,74 +1,154 @@
 {
+  "schema": "learnflow.paper-verification.v2",
   "date": "2026-09-13",
+  "product_baseline": "62fd197236c4852b93bdf4a835020f095f2e8bb1",
   "artifact_checks": {
-    "pages": 18,
-    "extracted_chinese_characters": 11830,
+    "pages": 26,
+    "extracted_chinese_characters": 17562,
     "unique_reference_urls": 18,
     "pdf_link_annotations": 25,
-    "docx_tables": 5,
-    "docx_figures": 3,
-    "title_border_removed": true
+    "docx_tables": 7,
+    "docx_figures": 5,
+    "title_border_removed": true,
+    "local_links_checked": 66,
+    "missing_local_links": 0
   },
   "visual_qa": {
     "render": "bundled LibreOffice with task-local Fontconfig and bundled Poppler",
+    "render_directory": "/tmp/learnflow-paper-interaction-final-02",
     "all_pages_opened_and_checked": true,
     "page_ranges": {
-      "paper_methods": [
+      "eval_gap_audit": [
         1,
         2,
         3,
         4,
         5,
-        6
-      ],
-      "five_kernel_audit": [
+        6,
         7,
         8,
-        9,
+        9
+      ],
+      "paper_methods": [
         10,
         11,
-        12
-      ],
-      "root": [
+        12,
         13,
         14,
         15,
         16,
         17,
         18
+      ],
+      "five_kernel_audit": [
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26
       ]
     },
-    "issues_remaining": []
+    "pending_pages": [],
+    "issues_remaining": [],
+    "root_additional_pages": [
+      5
+    ],
+    "nonblocking_observations": [
+      "Page 5 has additional lower whitespace before the complete figure on page 6; no clipping, missing text or orphan caption was found."
+    ]
   },
-  "tests": {
-    "command": "PYTHONDONTWRITEBYTECODE=1 backend/venv/bin/python -m pytest -q -p no:cacheprovider evals/five_kernel_capabilities evals/education_memory_counterfactual",
-    "passed": 97,
-    "failed": 0,
-    "scope": "isolated paper integration checkout on 917b8a0",
-    "warnings": "Existing pytest-asyncio fixture-loop/deprecation notices"
+  "tests": [
+    {
+      "command": "PYTHONDONTWRITEBYTECODE=1 backend/venv/bin/python -m pytest -q -p no:cacheprovider evals/five_kernel_capabilities evals/education_memory_counterfactual evals/five_kernel_interactions evals/five_kernel_longtail",
+      "cwd": "repository root",
+      "passed": 154,
+      "failed": 0,
+      "elapsed_seconds": 24.18,
+      "breakdown": {
+        "existing_evaluations": 97,
+        "new_interaction_verifier": 43,
+        "new_longtail_verifier": 14
+      },
+      "scope": "integrated main checkout at the recorded product baseline; four evaluation packages"
+    },
+    {
+      "command": "PYTHONDONTWRITEBYTECODE=1 venv/bin/python -m pytest -q -p no:cacheprovider tests/test_learning_tasks.py tests/test_review.py tests/test_learner_state.py tests/test_architecture_registry.py",
+      "cwd": "backend",
+      "passed": 63,
+      "failed": 0,
+      "elapsed_seconds": 10.53,
+      "scope": "targeted product regressions; not the full backend suite"
+    }
+  ],
+  "test_total_without_double_counting": 217,
+  "test_warnings": "Existing pytest-asyncio, datetime, Pydantic and Starlette deprecation warnings; warnings were not treated as passing research observations.",
+  "experiments": {
+    "native_interactions": {
+      "formal_run": "run-02",
+      "scenarios_executed": 14,
+      "scenarios_passed": 13,
+      "main_assertions_passed": 79,
+      "main_assertions_total": 80,
+      "source_gates_passed": true,
+      "infrastructure_errors": 0,
+      "preserved_failure": "After failed review, current workbench and short-term retention downgrade while long-term Knowledge mastery remains stable. No production fix was made."
+    },
+    "native_longtail": {
+      "formal_run": "run-03",
+      "formation_snapshots": 36,
+      "reads_executed": 228,
+      "expected_reads": 228,
+      "all_integrity_checks_passed": true,
+      "histories": [
+        4,
+        64,
+        256
+      ],
+      "budgets": [
+        1800,
+        3200
+      ],
+      "default_joint_per_budget": [
+        "7/10",
+        "6/10",
+        "6/10"
+      ],
+      "source_joint_per_budget": [
+        "9/10",
+        "8/10",
+        "7/10"
+      ],
+      "interpretation": "These are correlated author-designed conditions, not independent learners. Integrity success is distinct from retrieval quality. OOV and long-history ranking failures plus a source-mode typo regression remain."
+    },
+    "historical_evidence_rechecked": {
+      "native_capability_cases": 15,
+      "saved_model_responses": 768,
+      "new_model_calls": 0
+    },
+    "failed_runs_preserved": [
+      "interaction-validation/run-01",
+      "longtail-validation/failed-run-01",
+      "longtail-validation/failed-run-02"
+    ],
+    "raw_recomputation_and_manuscript_audit": "artifact-audit.json"
   },
-  "contract_impact": "none; research files only",
+  "contract_impact": "none; independent research evaluations, manuscript and artifacts only; no production contracts or implementation changes",
   "not_executed": [
     "new hosted-model experiment",
     "production backend full suite",
     "frontend builds",
-    "UI and cross-host end-to-end checks",
+    "HTTP middleware, browser and cross-host end-to-end checks",
     "real learner effectiveness study",
     "push",
     "deployment"
   ],
   "delivered_hashes": {
-    "manuscript_zh.md": "914292c1b40e72d178b0224e856a9f055a8b1093c9caed668abec7cec8f1e4a4",
-    "five_kernel_learner_memory_zh.docx": "edceb10980cc7391cf807f102669a6a6a981b6c077e81c394a0cd1934d425dea",
-    "five_kernel_learner_memory_zh.pdf": "e38a43e613a5ca75cfd16a1a9303a2712dc82b22a16181a885253236edcafc6b",
-    "artifact-audit.json": "f88d794f6c779a3d8fe2ecf21d794beed1035783da4571501a93eac64d3b48b8"
-  },
-  "integrated_main_regression": {
-    "head_before_research_commit": "055d31aa109f7cf006011f16f4ad1c552bb71b87",
-    "passed": 97,
-    "failed": 0,
-    "elapsed_seconds": 22.18,
-    "scope": "same two evaluation directories after integration into main",
-    "warning": "Existing pytest-asyncio deprecation warning"
+    "manuscript_zh.md": "509b05bd38743d5c9f3a0791865e91916c2259433faa34f0d06044d28b54c9b6",
+    "five_kernel_learner_memory_zh.docx": "58184bd0dc78b1cd68109cd5ade9808b9895a65a3bafeca3ccd44d9686c2c225",
+    "five_kernel_learner_memory_zh.pdf": "863a02cf85f7afa49fbd4bdb57c7778e2f592107333a05987e8e38868d001f62",
+    "artifact-audit.json": "36ea96c5b83d594fc193462514b468567fe3955f3b7db45ab548c5f0bf930bc1"
   }
 }

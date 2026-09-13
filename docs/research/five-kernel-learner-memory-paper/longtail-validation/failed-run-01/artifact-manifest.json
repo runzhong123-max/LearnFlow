@@ -1,0 +1,15 @@
+{
+  "schema": "learnflow.native-knowledge-longtail.v1",
+  "files": {
+    "PROTOCOL.md": "ee07afa77a804b17435dd09aac5090db06703ab7b274e61a1bfc73185878b8e9",
+    "REPORT.md": "5092d2d1f7941f7474ecacdc97489cb74db17732ce97069d04fbd3350cb47d05",
+    "aggregate.json": "41ff1474d7ffd36f464ccf63ab6b3c1425bf234f84b5026a3777b521a197ddcb",
+    "errors.jsonl": "c26465318d79e770cf29efaa73b9f0bbac5c0636590d4893974e0f0f11d03fb7",
+    "formation.jsonl.gz": "3c340cf5a7d5196a58866bdc6cbd2d44235d6a5780ebd9df429545a02c5246a5",
+    "manifest.json": "ef347ca1cf9294a6fdfe63d3daef811fb23b2a91253a44cbd099851c7788f592",
+    "packets.jsonl.gz": "444361db40b7e5ddc3002590806c48a224e1859211c81961ce6c758c824d116c",
+    "saved-recheck.json": "3d274cf8369b2304b15d1a173e6f9b3ecf11c430d99f65bac2802d5bce19bc72",
+    "scenarios.jsonl": "5fe525fe35df83c43d1d37e0ce6094872c1e884d1ba544581848aa1b61ccf703",
+    "trials.jsonl": "c26465318d79e770cf29efaa73b9f0bbac5c0636590d4893974e0f0f11d03fb7"
+  }
+}

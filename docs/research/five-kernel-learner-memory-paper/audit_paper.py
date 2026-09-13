@@ -9,13 +9,17 @@ import gzip
 import hashlib
 import json
 import re
+import subprocess
 import sys
 import tarfile
+from unittest.mock import patch
 
 HERE=Path(__file__).resolve().parent
 REPO=HERE.parents[2]
 sys.path.insert(0,str(REPO))
 from evals.five_kernel_capabilities.verifier import verify
+from evals.five_kernel_interactions.verifier import verify as verify_interaction
+from evals.five_kernel_longtail import run as longtail_runner
 
 
 def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
@@ -31,8 +35,14 @@ def main():
         checked.append({'run':name,'manifest_files':len(manifest['files'])})
     run=HERE/'native-capabilities/native-02'
     frozen=json.loads((run/'freeze.json').read_text())
-    source_drift=[f for f,h in frozen['source_hashes'].items() if sha(REPO/f)!=h]
-    assert not source_drift,source_drift
+    # Historical evidence must be checked against its frozen product version,
+    # not invalidated or relabelled as current when unrelated product work lands.
+    source_drift=[f for f,h in frozen['source_hashes'].items() if not (REPO/f).is_file() or sha(REPO/f)!=h]
+    historical_checked=[]
+    for file in source_drift:
+        original=subprocess.check_output(['git','show',f"{frozen['head']}:{file}"],cwd=REPO)
+        assert hashlib.sha256(original).hexdigest()==frozen['source_hashes'][file],file
+        historical_checked.append(file)
     cases=json.loads((REPO/'evals/five_kernel_capabilities/cases.json').read_text())
     with gzip.open(run/'native.jsonl.gz','rt',encoding='utf8') as f:raw={r['case_id']:r for r in map(json.loads,f)}
     scores=[verify(c,raw[c['case_id']]) for c in cases]
@@ -77,13 +87,66 @@ def main():
     assert sha(REPO/fig['source'])==fig['source_sha256']
     assert sha(HERE/'build_figures.py')==fig['generator_sha256']
     for file,h in fig['figures'].items():assert sha(HERE/'figures'/file)==h,file
+    for file,h in fig.get('additional_sources',{}).items():assert sha(HERE/file)==h,file
+    object_sources=json.loads((HERE/'sources/object-interaction-source-hashes.json').read_text())
+    for file,h in object_sources['files'].items():
+        original=subprocess.check_output(['git','show',f"{object_sources['baseline']}:{file}"],cwd=REPO)
+        assert hashlib.sha256(original).hexdigest()==h,file
+    for name in ('run-01','run-02'):
+        directory=HERE/'interaction-validation'/name
+        im=json.loads((directory/'artifact-manifest.json').read_text())
+        for file,h in im['files'].items():assert sha(directory/file)==h,(name,file)
+    directory=HERE/'interaction-validation/run-02'
+    icases=json.loads((directory/'harness-source/cases.json').read_text())
+    with gzip.open(directory/'native.jsonl.gz','rt') as f:iraw={r['case_id']:r for r in map(json.loads,f)}
+    iscores=[verify_interaction(c,iraw[c['case_id']]) for c in icases]
+    iresult=json.loads((directory/'aggregate.json').read_text())
+    assert iscores==iresult['scores']
+    assert iresult['passed']==13 and iresult['total']==14
+    assert iresult['case_assertions']==80 and iresult['execution_complete_count']==14
+    assert iresult['source_unchanged'] and iresult['reverification_equal']
+    assert iresult['infrastructure_error_count']==0
+    assert '| 既有业务合同 | 11/11 |' in manuscript
+    assert '| 作者组合边界 | 2/2 |' in manuscript
+    assert '| 作者状态失效挑战 | 0/1 |' in manuscript
+    ld=HERE/'longtail-validation'
+    for directory in (ld,ld/'failed-run-01',ld/'failed-run-02'):
+        for filename in ('artifact-manifest.json','handoff-manifest.json'):
+            if not (directory/filename).exists():continue
+            lm=json.loads((directory/filename).read_text())
+            for file,h in lm['files'].items():assert sha(directory/file)==h,(directory.name,file)
+    # Suppress only the verifier's derived receipt file write. All formation,
+    # packet and score inputs are reopened from immutable delivered bytes.
+    with patch.object(longtail_runner,'save',lambda *_:None):
+        lr=longtail_runner.reverify_saved(ld)
+    assert lr['all_checks_passed'] and lr['raw_packets']==228 and lr['formation_snapshots']==36
+    la=json.loads((ld/'aggregate.json').read_text())
+    assert la['matrix_complete'] and la['all_integrity_checks_passed']
+    for history in (4,64,256):
+        for budget in (1800,3200):
+            cells=[]
+            for metric in ('joint_term_qualifier_delivered','strict_empty_on_uncovered'):
+                for variant in ('default','source'):
+                    rows=[r for r in la['by_stratum'] if (r['history'],r['budget'],r['variant'])==(history,budget,variant)]
+                    numerator=sum(r['metrics'][metric]['numerator'] for r in rows)
+                    denominator=sum(r['metrics'][metric]['denominator'] for r in rows)
+                    cells.append(f'{numerator}/{denominator}')
+            expected=f"| {history} | {budget:,} | "+' | '.join(cells)+' |'
+            assert expected in manuscript,expected
     assert 'REFERENCES_INSERTION_POINT' not in manuscript
     out={'kind':'independent_delivery_recomputation','native_runs':checked,
-         'native02_source_files_checked':len(frozen['source_hashes']),'source_drift':source_drift,
+         'native02_source_files_checked':len(frozen['source_hashes']),
+         'native02_live_source_differences':source_drift,
+         'native02_historical_source_verified':historical_checked,
+         'source_drift_during_native02_run':not stored['source_unchanged'],
          'native02_case_scores_recomputed':len(scores),'case_field_assertions':66,
          'native02_all_scores_match':True,'failed_native01_preserved':True,
          'failed_source_files_checked':len(old_sources),'formal_table_rows_checked':8,
          'references_checked':18,'figure_files_checked':len(fig['figures']),
+         'object_interaction_source_files_checked':len(object_sources['files']),
+         'interaction_cases_recomputed':14,'interaction_passed':13,
+         'interaction_assertions':80,'interaction_failure_preserved':True,
+         'longtail_raw_reverification':lr,'longtail_table_rows_checked':6,
          'primary_formal_responses':formal['actual_responses'],
          'scope':'No new model responses or educational-effect estimates; visual QA recorded separately.'}
     (HERE/'artifact-audit.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n')

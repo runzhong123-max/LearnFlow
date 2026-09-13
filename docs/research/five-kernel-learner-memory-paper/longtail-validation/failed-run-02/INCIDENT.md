@@ -1,0 +1,1 @@
+时间：2026-09-13T10:55:40.087962+00:00。run-02实际完整形成36快照并执行228读取，全部raw保留。当前验证器错误假设原生user_message不会生成关系路径，导致66条件unexpected_nontext_projection；实际record_event确实形成SAME_SUBJECT边。另8条件因head与候选元数据调用大小相同而不同集合，保守报candidate_trace_unresolved；不能仅凭调用大小识别候选入口。后继只修独立路径源链/范围核验与按冻结调用点记录的候选追踪；不改数据/query/目标/公开policy/预算/主评分。保留原冻结源，当前没有通过完整性门的性能结果。

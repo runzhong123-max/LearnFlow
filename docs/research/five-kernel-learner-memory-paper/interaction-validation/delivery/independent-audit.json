@@ -1,0 +1,143 @@
+{
+  "audit_kind": "read_only_saved_raw_reverification_no_new_samples",
+  "product_head": "62fd197236c4852b93bdf4a835020f095f2e8bb1",
+  "source_files": 219,
+  "source_mismatches": [],
+  "artifact_mismatches_both_runs": [],
+  "matrix_complete": true,
+  "scores_equal_saved": true,
+  "passed": 13,
+  "total": 14,
+  "assertions": 80,
+  "all_source_gates_pass": true,
+  "failures": [
+    {
+      "case_id": "relapse_invalidates_current_stability",
+      "failed_checks": [
+        {
+          "path": "/lens/long_stable",
+          "op": "eq",
+          "value": false,
+          "actual": true,
+          "passed": false
+        }
+      ]
+    }
+  ],
+  "public_calculation_receipts": 26,
+  "independently_recomputed_grade_mismatches": [],
+  "unchanged_between_run01_run02": {
+    "cases.py": true,
+    "cases.json": true,
+    "native.py": true,
+    "run.py": true
+  },
+  "relapse_timeline": [
+    {
+      "step": "r1",
+      "at": "2026-09-08T11:00:00Z",
+      "attempt_ids": [
+        2
+      ],
+      "event_ids": [
+        2
+      ],
+      "form": "validated_variant",
+      "outcome": "correct",
+      "retention": {
+        "concept:1": {
+          "attempt_id": 2,
+          "checkpoint_id": 1,
+          "evidence_id": 2,
+          "question_form": "validated_variant",
+          "status": "retrieved"
+        }
+      },
+      "long_mastery": null,
+      "current_evidence": "verified_once"
+    },
+    {
+      "step": "r2",
+      "at": "2026-09-22T11:00:00Z",
+      "attempt_ids": [
+        3
+      ],
+      "event_ids": [
+        3
+      ],
+      "form": "original",
+      "outcome": "correct",
+      "retention": {
+        "concept:1": {
+          "attempt_id": 3,
+          "checkpoint_id": 1,
+          "evidence_id": 3,
+          "question_form": "original",
+          "status": "spaced_stable"
+        }
+      },
+      "long_mastery": {
+        "review:concept:1": {
+          "evidence_ids": [
+            2,
+            3
+          ],
+          "level": "stable",
+          "policy_version": "review-policy-v1"
+        }
+      },
+      "current_evidence": "spaced_stable"
+    },
+    {
+      "step": "relapse",
+      "at": "2026-09-29T11:00:00Z",
+      "attempt_ids": [
+        4
+      ],
+      "event_ids": [
+        4,
+        5
+      ],
+      "form": "validated_variant",
+      "outcome": "incorrect",
+      "retention": {
+        "concept:1": {
+          "attempt_id": 4,
+          "checkpoint_id": 1,
+          "evidence_id": 4,
+          "question_form": "validated_variant",
+          "status": "needs_review"
+        }
+      },
+      "long_mastery": {
+        "review:concept:1": {
+          "evidence_ids": [
+            2,
+            3
+          ],
+          "level": "stable",
+          "policy_version": "review-policy-v1"
+        }
+      },
+      "current_evidence": "none"
+    }
+  ],
+  "calibration_audit": {
+    "test_file": "/tmp/learnflow-interaction-validation-20260913/evals/five_kernel_interactions/test_verifier.py",
+    "statically_counted_parameterized_tests": 43,
+    "read_coverage": [
+      "missing calculation receipt",
+      "all graders agree on wrong result",
+      "source/scope/identity tampering",
+      "stable eligibility missing/support/failure/other item",
+      "remediation original-role source closure"
+    ],
+    "tests_rerun_by_this_auditor": false
+  },
+  "limitations": [
+    "injected elapsed time, not human retention",
+    "fixed author-computed validated variant, not independently validated transfer difficulty",
+    "API function execution, not HTTP middleware/browser or cross-host end-to-end",
+    "long stable safety failure remains despite correct current-workbench downgrade"
+  ]
+}

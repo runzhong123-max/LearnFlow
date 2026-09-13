@@ -1,0 +1,11 @@
+{
+  "schema": "learnflow.native-knowledge-longtail.v1",
+  "all_checks_passed": true,
+  "errors": [],
+  "formation_snapshots": 36,
+  "raw_packets": 228,
+  "trial_rows": 228,
+  "product_rerun": false,
+  "verifier": "standard-library verifier from saved raw snapshots",
+  "expected_conditions": 228
+}

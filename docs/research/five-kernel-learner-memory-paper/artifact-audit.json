@@ -11,7 +11,21 @@
     }
   ],
   "native02_source_files_checked": 219,
-  "source_drift": [],
+  "native02_live_source_differences": [
+    "backend/app/api/auth.py",
+    "backend/app/core/config.py",
+    "backend/app/services/api_keys.py",
+    "backend/app/services/architecture_registry.py",
+    "backend/app/services/domain_knowledge.py"
+  ],
+  "native02_historical_source_verified": [
+    "backend/app/api/auth.py",
+    "backend/app/core/config.py",
+    "backend/app/services/api_keys.py",
+    "backend/app/services/architecture_registry.py",
+    "backend/app/services/domain_knowledge.py"
+  ],
+  "source_drift_during_native02_run": false,
   "native02_case_scores_recomputed": 15,
   "case_field_assertions": 66,
   "native02_all_scores_match": true,
@@ -19,7 +33,24 @@
   "failed_source_files_checked": 8,
   "formal_table_rows_checked": 8,
   "references_checked": 18,
-  "figure_files_checked": 9,
+  "figure_files_checked": 15,
+  "object_interaction_source_files_checked": 17,
+  "interaction_cases_recomputed": 14,
+  "interaction_passed": 13,
+  "interaction_assertions": 80,
+  "interaction_failure_preserved": true,
+  "longtail_raw_reverification": {
+    "schema": "learnflow.native-knowledge-longtail.v1",
+    "all_checks_passed": true,
+    "errors": [],
+    "formation_snapshots": 36,
+    "raw_packets": 228,
+    "trial_rows": 228,
+    "product_rerun": false,
+    "verifier": "standard-library verifier from saved raw snapshots",
+    "expected_conditions": 228
+  },
+  "longtail_table_rows_checked": 6,
   "primary_formal_responses": 768,
   "scope": "No new model responses or educational-effect estimates; visual QA recorded separately."
 }

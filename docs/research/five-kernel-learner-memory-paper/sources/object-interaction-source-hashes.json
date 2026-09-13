@@ -1,0 +1,23 @@
+{
+  "baseline": "62fd197236c4852b93bdf4a835020f095f2e8bb1",
+  "kind": "read_only_source_audit_not_runtime_validation",
+  "files": {
+    "frontend/src/main.tsx": "9c3da766d03ac17cb25174a1328bac5701bbb9e5c8f0b05c2e652ce3accc8b94",
+    "frontend/src/formal-runtime.ts": "bbc6748cb2abdd7d5da222f880a6c55342f50935e0bbdcbfe83500f78d35e55e",
+    "frontend/src/ReviewWorkbenchPage.tsx": "fbd4e315e0bf80aa20bac4ed8d09f889b0ac14874d90fa02558cfbe32f7bf15f",
+    "backend/app/services/architecture_registry.py": "1d9c90695d0059cfa507a68924f0b0b040656fc993aa201660127da9b9f01f3c",
+    "backend/app/services/learning_tasks.py": "910bf158809a3a2b51729755a153e54411dd8ae7f9d719a0742e94e7ca3dd225",
+    "backend/app/services/review.py": "201c40b09b7bf92b7ba98111ec5e6d91ea1c79ac3fb6bd7873fcf04ea28307ae",
+    "backend/app/models/learning.py": "c7928365df1b84c73a004ab0e9134c4e972467e42e23664321abd5ea6ea50ca2",
+    "packages/learning-core/src/learnflow_core/learning_runtime.py": "b88bb8926af5ab1a0cfbc844d64c6bd4fe33377bf106a8d63d73e1fbbb1f7f3a",
+    "packages/learning-core/src/learnflow_core/registry_core.py": "d21780b509fbbd7a920dc6c5d18953ef347d30af90807a3349da7a617676861b",
+    "packages/learning-core/src/learnflow_core/five_kernel_context.py": "3ba9676e02bc170222f313b5a74b9742add4fac5c261137970b4a464652b5f6e",
+    "packages/learning-core/src/learnflow_core/memory_source.py": "2b5869f665653583bfed8b2961f84d077405b3d861a1962034cdda86dda07c3b",
+    "packages/learning-core/src/learnflow_core/memory_excerpt.py": "802009117fc51d3ec5e5fc4f6b858e9f4914830084dd45b9804c628a9776215e",
+    "packages/learning-core/src/learnflow_core/memory_paths.py": "92ab3cb4750d7d5ebab4f61051cf6ae132255d553368c8d944d4efe3df9bdf62",
+    "packages/learning-core/src/learnflow_core/memory_query.py": "8ff8c571a8ac24e6b8c6235ca510572a666fe4121de04c238e4f7ef433b4a996",
+    "packages/learning-core/src/learnflow_core/api/learner_state.py": "d2e981056e12ad6c378bc77236dc3f586b7989f334418e36a872d27e5e8c659e",
+    "packages/learning-core/src/learnflow_core/api/phase3.py": "48564f798c40f4f9b973b3205965e71f5a8cec8fb9457bcd46feb10818c249d3",
+    "packages/learning-core/src/learnflow_core/api/review.py": "77c2aae53fe7514b5b99b38638e228397b5a4ba726809833f1e3ec67c767015d"
+  }
+}

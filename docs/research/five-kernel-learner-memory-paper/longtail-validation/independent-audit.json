@@ -1,0 +1,100 @@
+{
+  "audit_kind": "read_only_saved_raw_reverification_no_product_execution",
+  "run": "/tmp/learnflow-longtail-run-03",
+  "head": "62fd197236c4852b93bdf4a835020f095f2e8bb1",
+  "frozen_source_files": 192,
+  "source_mismatches": [],
+  "artifact_mismatches": [],
+  "condition_matrix_complete": true,
+  "formation_matrix_complete": true,
+  "formation_audit_mismatches": [],
+  "saved_score_mismatches": [],
+  "source_scope_budget_check_failures": [],
+  "conditions_with_paths": 66,
+  "base_configuration_metrics": {
+    "default:1800": {
+      "target_in_candidate": {
+        "numerator": 28,
+        "denominator": 30
+      },
+      "joint_term_qualifier_delivered": {
+        "numerator": 19,
+        "denominator": 30
+      },
+      "first_item_is_target": {
+        "numerator": 6,
+        "denominator": 6
+      },
+      "strict_empty_on_uncovered": {
+        "numerator": 9,
+        "denominator": 9
+      }
+    },
+    "default:3200": {
+      "target_in_candidate": {
+        "numerator": 28,
+        "denominator": 30
+      },
+      "joint_term_qualifier_delivered": {
+        "numerator": 19,
+        "denominator": 30
+      },
+      "first_item_is_target": {
+        "numerator": 6,
+        "denominator": 6
+      },
+      "strict_empty_on_uncovered": {
+        "numerator": 9,
+        "denominator": 9
+      }
+    },
+    "source:1800": {
+      "target_in_candidate": {
+        "numerator": 30,
+        "denominator": 30
+      },
+      "joint_term_qualifier_delivered": {
+        "numerator": 24,
+        "denominator": 30
+      },
+      "first_item_is_target": {
+        "numerator": 6,
+        "denominator": 6
+      },
+      "strict_empty_on_uncovered": {
+        "numerator": 9,
+        "denominator": 9
+      }
+    },
+    "source:3200": {
+      "target_in_candidate": {
+        "numerator": 30,
+        "denominator": 30
+      },
+      "joint_term_qualifier_delivered": {
+        "numerator": 24,
+        "denominator": 30
+      },
+      "first_item_is_target": {
+        "numerator": 6,
+        "denominator": 6
+      },
+      "strict_empty_on_uncovered": {
+        "numerator": 9,
+        "denominator": 9
+      }
+    }
+  },
+  "data_sha_unchanged_run02_run03": true,
+  "run01_run02_remain": true,
+  "limitations": [
+    "12 authored scenarios,13 correlated queries,228 reading conditions,0 humans",
+    "native self-reported Knowledge text;not five-kernel independent ablation",
+    "fixed4/64/256 distractors,not natural long-tail frequency or4096 boundary",
+    "source changes candidate scan,source text and metadata budget",
+    "primary joint metric requires actual item,not path/head reference",
+    "cross-session active Fact sharing legal;tested foreign learner/project/checkpoint",
+    "path/head diagnostics added after run02 and cannot replace primary endpoint",
+    "no new sample,product run,model or network invocation by auditor"
+  ]
+}

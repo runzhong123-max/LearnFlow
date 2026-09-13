@@ -1,0 +1,27 @@
+{
+  "files": {
+    "PROTOCOL.md": "a01c714ab4a4e0a5b66de4e2d6543bfb644584e40d121346ea5678ae29d239a3",
+    "REPORT.md": "74fd2c0d30da6fdd49936623e202f4bf893d8cc0c1796821a3d0801da363e23b",
+    "SYNTHESIS.md": "f260feb7bba59529de19969261331c698f2be8541a82768e3a48f64de11ac3e1",
+    "aggregate.json": "d67c79be912bee95aec9d3ef1cc683ad3f56b8268bc637b0d10bd011997d2c97",
+    "artifact-manifest.json": "f51233167fcddd4ae9ff4933a5d45105dd5b240c9fb8b8586fa39cca3a3ee61c",
+    "compact-summary.json": "1f8f355a899c6e0faaeab98b93fefb30d67e20a925d7554a9730b5951bb5e1fe",
+    "errors.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "failed-run-source-custody.json": "59503d01da258b8e8b3fa7c2d348fb32853a29fd142a6689b4bf0a8e141f06dc",
+    "formation.jsonl.gz": "97b7c3dc6b56327d2a810f9b8a6e7a3552c462b272edde1964d9579c1c3ef471",
+    "frozen-eval-source/PROTOCOL.md": "a01c714ab4a4e0a5b66de4e2d6543bfb644584e40d121346ea5678ae29d239a3",
+    "frozen-eval-source/__init__.py": "89d3486474d0c06a9a38ff4387e258ab6178a17871e9420a73c20888a5b3cede",
+    "frozen-eval-source/data/scenarios.jsonl": "5fe525fe35df83c43d1d37e0ce6094872c1e884d1ba544581848aa1b61ccf703",
+    "frozen-eval-source/generate.py": "96004c5b456b1e5405b1dd9d9883b9222c7b69ad6ed5d53588458bd074e09c50",
+    "frozen-eval-source/run.py": "1afa4e15d788bc6d4a100d1f48562beed2928186dc1cb0109477a988433065d4",
+    "frozen-eval-source/test_verifier.py": "bcff07c541eb2ed0785935e168bdeccdd60e219cf1aaf077a014343324ea6e13",
+    "frozen-eval-source/verifier.py": "0ef69d55be5444453fcd2d570ae06556c7d606bc3b34a6b67cfe5299d16ddb09",
+    "manifest.json": "518c47b4128e754f841ad6753ea937f0fe2783cee8923c0b568ee06e58f1f764",
+    "packets.jsonl.gz": "4804182f18e843777084f1775ea9ca23c69cdc645050a7cc687921433707d27e",
+    "saved-recheck.json": "8b761d9bf1168696b962ac60bbf492f5c1b00b640529caf86f270235e0f25ca8",
+    "scenarios.jsonl": "5fe525fe35df83c43d1d37e0ce6094872c1e884d1ba544581848aa1b61ccf703",
+    "stdout.log": "6229dbcc5b2952859f2b08998bb9923647c47db93ed7f08ae8424cca280d468c",
+    "trials.jsonl": "ffa4fddfa594dfe0e0f14fa91e13f77630712a4f33f1abb1e623b0056da91293",
+    "verifier-tests.log": "88438af76fc8a617736ee27fc3a0abc12c7d172b5527747570af8a07e24207c7"
+  }
+}

@@ -1,0 +1,725 @@
+{
+  "schema": "learnflow-longtail-compact-handoff.v1",
+  "run": "run-03",
+  "status": "valid_descriptive_result",
+  "actual_conditions": 228,
+  "formation_snapshots": 36,
+  "scenario_count": 12,
+  "query_count": 13,
+  "common_by_history_budget": [
+    {
+      "history": 4,
+      "budget": 1800,
+      "variant": "default",
+      "metrics": {
+        "target_in_candidate": {
+          "numerator": 10,
+          "denominator": 10
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 7,
+          "denominator": 10
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 3,
+          "denominator": 3
+        },
+        "first_item_is_target": {
+          "numerator": 2,
+          "denominator": 2
+        },
+        "secondary_path_only_joint_delivered": {
+          "numerator": 0,
+          "denominator": 10
+        },
+        "secondary_target_head_reference": {
+          "numerator": 7,
+          "denominator": 10
+        }
+      }
+    },
+    {
+      "history": 4,
+      "budget": 1800,
+      "variant": "source",
+      "metrics": {
+        "target_in_candidate": {
+          "numerator": 10,
+          "denominator": 10
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 9,
+          "denominator": 10
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 3,
+          "denominator": 3
+        },
+        "first_item_is_target": {
+          "numerator": 2,
+          "denominator": 2
+        },
+        "secondary_path_only_joint_delivered": {
+          "numerator": 0,
+          "denominator": 10
+        },
+        "secondary_target_head_reference": {
+          "numerator": 7,
+          "denominator": 10
+        }
+      }
+    },
+    {
+      "history": 4,
+      "budget": 3200,
+      "variant": "default",
+      "metrics": {
+        "target_in_candidate": {
+          "numerator": 10,
+          "denominator": 10
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 7,
+          "denominator": 10
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 3,
+          "denominator": 3
+        },
+        "first_item_is_target": {
+          "numerator": 2,
+          "denominator": 2
+        },
+        "secondary_path_only_joint_delivered": {
+          "numerator": 0,
+          "denominator": 10
+        },
+        "secondary_target_head_reference": {
+          "numerator": 7,
+          "denominator": 10
+        }
+      }
+    },
+    {
+      "history": 4,
+      "budget": 3200,
+      "variant": "source",
+      "metrics": {
+        "target_in_candidate": {
+          "numerator": 10,
+          "denominator": 10
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 9,
+          "denominator": 10
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 3,
+          "denominator": 3
+        },
+        "first_item_is_target": {
+          "numerator": 2,
+          "denominator": 2
+        },
+        "secondary_path_only_joint_delivered": {
+          "numerator": 0,
+          "denominator": 10
+        },
+        "secondary_target_head_reference": {
+          "numerator": 7,
+          "denominator": 10
+        }
+      }
+    },
+    {
+      "history": 64,
+      "budget": 1800,
+      "variant": "default",
+      "metrics": {
+        "target_in_candidate": {
+          "numerator": 10,
+          "denominator": 10
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 6,
+          "denominator": 10
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 3,
+          "denominator": 3
+        },
+        "first_item_is_target": {
+          "numerator": 2,
+          "denominator": 2
+        },
+        "secondary_path_only_joint_delivered": {
+          "numerator": 0,
+          "denominator": 10
+        },
+        "secondary_target_head_reference": {
+          "numerator": 1,
+          "denominator": 10
+        }
+      }
+    },
+    {
+      "history": 64,
+      "budget": 1800,
+      "variant": "source",
+      "metrics": {
+        "target_in_candidate": {
+          "numerator": 10,
+          "denominator": 10
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 10
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 3,
+          "denominator": 3
+        },
+        "first_item_is_target": {
+          "numerator": 2,
+          "denominator": 2
+        },
+        "secondary_path_only_joint_delivered": {
+          "numerator": 0,
+          "denominator": 10
+        },
+        "secondary_target_head_reference": {
+          "numerator": 1,
+          "denominator": 10
+        }
+      }
+    },
+    {
+      "history": 64,
+      "budget": 3200,
+      "variant": "default",
+      "metrics": {
+        "target_in_candidate": {
+          "numerator": 10,
+          "denominator": 10
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 6,
+          "denominator": 10
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 3,
+          "denominator": 3
+        },
+        "first_item_is_target": {
+          "numerator": 2,
+          "denominator": 2
+        },
+        "secondary_path_only_joint_delivered": {
+          "numerator": 0,
+          "denominator": 10
+        },
+        "secondary_target_head_reference": {
+          "numerator": 1,
+          "denominator": 10
+        }
+      }
+    },
+    {
+      "history": 64,
+      "budget": 3200,
+      "variant": "source",
+      "metrics": {
+        "target_in_candidate": {
+          "numerator": 10,
+          "denominator": 10
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 10
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 3,
+          "denominator": 3
+        },
+        "first_item_is_target": {
+          "numerator": 2,
+          "denominator": 2
+        },
+        "secondary_path_only_joint_delivered": {
+          "numerator": 0,
+          "denominator": 10
+        },
+        "secondary_target_head_reference": {
+          "numerator": 1,
+          "denominator": 10
+        }
+      }
+    },
+    {
+      "history": 256,
+      "budget": 1800,
+      "variant": "default",
+      "metrics": {
+        "target_in_candidate": {
+          "numerator": 8,
+          "denominator": 10
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 6,
+          "denominator": 10
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 3,
+          "denominator": 3
+        },
+        "first_item_is_target": {
+          "numerator": 2,
+          "denominator": 2
+        },
+        "secondary_path_only_joint_delivered": {
+          "numerator": 0,
+          "denominator": 10
+        },
+        "secondary_target_head_reference": {
+          "numerator": 1,
+          "denominator": 10
+        }
+      }
+    },
+    {
+      "history": 256,
+      "budget": 1800,
+      "variant": "source",
+      "metrics": {
+        "target_in_candidate": {
+          "numerator": 10,
+          "denominator": 10
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 7,
+          "denominator": 10
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 3,
+          "denominator": 3
+        },
+        "first_item_is_target": {
+          "numerator": 2,
+          "denominator": 2
+        },
+        "secondary_path_only_joint_delivered": {
+          "numerator": 0,
+          "denominator": 10
+        },
+        "secondary_target_head_reference": {
+          "numerator": 1,
+          "denominator": 10
+        }
+      }
+    },
+    {
+      "history": 256,
+      "budget": 3200,
+      "variant": "default",
+      "metrics": {
+        "target_in_candidate": {
+          "numerator": 8,
+          "denominator": 10
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 6,
+          "denominator": 10
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 3,
+          "denominator": 3
+        },
+        "first_item_is_target": {
+          "numerator": 2,
+          "denominator": 2
+        },
+        "secondary_path_only_joint_delivered": {
+          "numerator": 0,
+          "denominator": 10
+        },
+        "secondary_target_head_reference": {
+          "numerator": 1,
+          "denominator": 10
+        }
+      }
+    },
+    {
+      "history": 256,
+      "budget": 3200,
+      "variant": "source",
+      "metrics": {
+        "target_in_candidate": {
+          "numerator": 10,
+          "denominator": 10
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 7,
+          "denominator": 10
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 3,
+          "denominator": 3
+        },
+        "first_item_is_target": {
+          "numerator": 2,
+          "denominator": 2
+        },
+        "secondary_path_only_joint_delivered": {
+          "numerator": 0,
+          "denominator": 10
+        },
+        "secondary_target_head_reference": {
+          "numerator": 1,
+          "denominator": 10
+        }
+      }
+    }
+  ],
+  "local_ablations": [
+    {
+      "component": "aliases",
+      "base": "default",
+      "on": {
+        "target_in_candidate": {
+          "numerator": 12,
+          "denominator": 12
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 12
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 0,
+          "denominator": 0
+        },
+        "first_item_is_target": {
+          "numerator": 0,
+          "denominator": 0
+        }
+      },
+      "off": {
+        "target_in_candidate": {
+          "numerator": 8,
+          "denominator": 12
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 0,
+          "denominator": 12
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 0,
+          "denominator": 0
+        },
+        "first_item_is_target": {
+          "numerator": 0,
+          "denominator": 0
+        }
+      }
+    },
+    {
+      "component": "aliases",
+      "base": "source",
+      "on": {
+        "target_in_candidate": {
+          "numerator": 12,
+          "denominator": 12
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 12
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 0,
+          "denominator": 0
+        },
+        "first_item_is_target": {
+          "numerator": 0,
+          "denominator": 0
+        }
+      },
+      "off": {
+        "target_in_candidate": {
+          "numerator": 12,
+          "denominator": 12
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 0,
+          "denominator": 12
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 0,
+          "denominator": 0
+        },
+        "first_item_is_target": {
+          "numerator": 0,
+          "denominator": 0
+        }
+      }
+    },
+    {
+      "component": "fuzzy",
+      "base": "default",
+      "on": {
+        "target_in_candidate": {
+          "numerator": 6,
+          "denominator": 6
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 6,
+          "denominator": 6
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 6,
+          "denominator": 6
+        },
+        "first_item_is_target": {
+          "numerator": 0,
+          "denominator": 0
+        }
+      },
+      "off": {
+        "target_in_candidate": {
+          "numerator": 4,
+          "denominator": 6
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 0,
+          "denominator": 6
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 6,
+          "denominator": 6
+        },
+        "first_item_is_target": {
+          "numerator": 0,
+          "denominator": 0
+        }
+      }
+    },
+    {
+      "component": "fuzzy",
+      "base": "source",
+      "on": {
+        "target_in_candidate": {
+          "numerator": 6,
+          "denominator": 6
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 4,
+          "denominator": 6
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 6,
+          "denominator": 6
+        },
+        "first_item_is_target": {
+          "numerator": 0,
+          "denominator": 0
+        }
+      },
+      "off": {
+        "target_in_candidate": {
+          "numerator": 6,
+          "denominator": 6
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 0,
+          "denominator": 6
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 6,
+          "denominator": 6
+        },
+        "first_item_is_target": {
+          "numerator": 0,
+          "denominator": 0
+        }
+      }
+    },
+    {
+      "component": "temporal",
+      "base": "default",
+      "on": {
+        "target_in_candidate": {
+          "numerator": 12,
+          "denominator": 12
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 12,
+          "denominator": 12
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 0,
+          "denominator": 0
+        },
+        "first_item_is_target": {
+          "numerator": 12,
+          "denominator": 12
+        }
+      },
+      "off": {
+        "target_in_candidate": {
+          "numerator": 10,
+          "denominator": 12
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 6,
+          "denominator": 12
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 0,
+          "denominator": 0
+        },
+        "first_item_is_target": {
+          "numerator": 6,
+          "denominator": 12
+        }
+      }
+    },
+    {
+      "component": "temporal",
+      "base": "source",
+      "on": {
+        "target_in_candidate": {
+          "numerator": 12,
+          "denominator": 12
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 12,
+          "denominator": 12
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 0,
+          "denominator": 0
+        },
+        "first_item_is_target": {
+          "numerator": 12,
+          "denominator": 12
+        }
+      },
+      "off": {
+        "target_in_candidate": {
+          "numerator": 12,
+          "denominator": 12
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 6,
+          "denominator": 12
+        },
+        "strict_empty_on_uncovered": {
+          "numerator": 0,
+          "denominator": 0
+        },
+        "first_item_is_target": {
+          "numerator": 6,
+          "denominator": 12
+        }
+      }
+    }
+  ],
+  "secondary": {
+    "path_only_joint": {
+      "numerator": 0,
+      "denominator": 180
+    },
+    "non_human_head_has_body_anywhere": false,
+    "head_reference_is_not_body": true
+  },
+  "failure_cases": [
+    {
+      "case_id": "alias_breadth",
+      "histories": [
+        64,
+        256
+      ],
+      "variants": [
+        "default",
+        "source"
+      ],
+      "finding": "Target is in candidate pool but not delivered; actual higher-ranked unrelated binary-search-tree and CSS priority records share Chinese query fragments. This is an observed ranking outcome, not a controlled decomposition of every score term."
+    },
+    {
+      "case_id": "typo_scheduler",
+      "histories": [
+        256
+      ],
+      "variants": [
+        "source"
+      ],
+      "finding": "514 scoped documents; manifest.query_plan.fuzzy_scan.texts=512 and truncated=true; no correction and no item. Default corrects and delivers. This illustrates component interaction, not superiority of universally smaller pools."
+    },
+    {
+      "case_id": "oov_ttl",
+      "histories": [
+        4,
+        64,
+        256
+      ],
+      "variants": [
+        "default",
+        "source"
+      ],
+      "finding": "time to live is not in frozen alias table; all six conditions per common config fail target item delivery despite source candidate inclusion."
+    },
+    {
+      "case_id": "split_lru",
+      "histories": [
+        4,
+        64,
+        256
+      ],
+      "variants": [
+        "default"
+      ],
+      "finding": "Target item delivered, qualifier absent. default joint0/6; source6/6."
+    },
+    {
+      "case_id": "tail_aba",
+      "histories": [
+        4,
+        64,
+        256
+      ],
+      "variants": [
+        "default"
+      ],
+      "finding": "Target tail beyond compact node text is not delivered. default joint0/6; source6/6."
+    }
+  ],
+  "integrity": {
+    "network_attempts": 0,
+    "model_attempts": 0,
+    "source_drift": [],
+    "saved_raw_recheck_passed": true,
+    "unit_tests_passed": 14
+  },
+  "incidents": [
+    {
+      "run": "run-01",
+      "actual_reads": 0,
+      "failed_conditions": 228,
+      "reason": "Roadmap unique-key setup error and incompatible session-negative expectation corrected before any retrieval outcome; raw errors and full eval source retained"
+    },
+    {
+      "run": "run-02",
+      "actual_reads": 228,
+      "integrity_rejections": 74,
+      "reason": "66 false rejections of actual SAME_SUBJECT paths and 8 ambiguous cardinality-only candidate traces; scorer/instrumentation corrected with data/gold/policy unchanged; raw and full eval source retained"
+    }
+  ],
+  "limits": [
+    "Knowledge native self-report text primary endpoint, not five-kernel-by-kernel ablation",
+    "12 author-written situations, correlated history/budget/query conditions; zero independent students",
+    "source changes scan, source projection, and metadata cost",
+    "all common budget results identical in these cases; no inference about all budgets",
+    "off variants only locally applicable; no complete component interaction factorial",
+    "scope negatives learner/project/checkpoint; same-checkpoint active Fact cross-session allowed",
+    "no semantic embedding/QA/learning-outcome evaluation",
+    "secondary path-only introduced after native path discovery, did not change item primary scores"
+  ]
+}
