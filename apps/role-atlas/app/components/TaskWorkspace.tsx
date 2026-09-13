@@ -2,13 +2,11 @@
 
 import {
   BookOpenCheck,
-  GitBranch,
   Network,
   Plus,
   Route,
-  ShieldCheck,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { RoleCardNode } from "@/app/components/RoleCardView";
 import WorkProcessForestView, { type WorkProcessPayload } from "@/app/components/WorkProcessForestView";
 
@@ -116,6 +114,21 @@ export function buildTaskViewBundle(nodes: RoleCardNode[], edges: TaskEdge[], ta
   };
 }
 
+function TaskBrief({ summary }: { summary: string }) {
+  // Older packages encode these fields in the summary. Only separate a complete
+  // labelled suffix; free-form or incomplete descriptions remain intact.
+  const match = summary.match(/^([\s\S]*?)[（(]对象[:：]([\s\S]*?)[；;]交付[:：]([\s\S]*?)[；;]完成标准[:：]([\s\S]*?)[）)]\s*$/);
+  if (!match) return <p className="task-purpose">{summary}</p>;
+  return <>
+    <p className="task-purpose">{match[1]}</p>
+    <dl className="task-brief-fields">
+      <div><dt>工作对象</dt><dd>{match[2]}</dd></div>
+      <div><dt>交付结果</dt><dd>{match[3]}</dd></div>
+      <div><dt>完成标准</dt><dd>{match[4]}</dd></div>
+    </dl>
+  </>;
+}
+
 function compactLabel(label: string, max = 16) {
   return label.length > max ? `${label.slice(0, max)}…` : label;
 }
@@ -202,7 +215,7 @@ function TaskRelatedSummary({ bundle, selectedId, onSelect, onReference }: { bun
   ];
   return (
     <aside className="task-related-summary" aria-label="任务关联对象清单">
-      <header><Network size={13} /><span><b>关系清单</b><small>与雷达图使用同一组稳定 ID</small></span></header>
+      <header><Network size={16} /><span><b>完成任务需要什么</b><small>选择能力或知识技能，查看具体要求</small></span></header>
       <div className="task-related-scroll">
         {groups.map((group) => (
           <section key={group.label}>
@@ -244,58 +257,75 @@ export default function TaskWorkspace({
     return nodes.filter((node) => node.type === "task" && (!needle || `${node.label} ${node.summary}`.toLowerCase().includes(needle))).sort(compareNodes);
   }, [nodes, query]);
   const bundle = useMemo(() => buildTaskViewBundle(nodes, edges, taskId), [nodes, edges, taskId]);
+  const indexRef = useRef<HTMLDivElement>(null);
+  const detailRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const index = indexRef.current;
+    const active = index?.querySelector<HTMLButtonElement>("button.active");
+    if (index && active) {
+      const offset = active.getBoundingClientRect().left - index.getBoundingClientRect().left;
+      index.scrollLeft += offset - (index.clientWidth - active.offsetWidth) / 2;
+    }
+  }, [taskId, tasks]);
+  useEffect(() => { detailRef.current?.scrollTo({ top: 0 }); }, [taskId]);
 
   if (!bundle) return <div className="task-workspace-empty">当前岗位包还没有可展开的典型工作任务。</div>;
 
   const relationCount = bundle.edges.length;
   const sourceCount = new Set(bundle.nodes.flatMap((node) => node.evidence_summary.source_refs)).size;
+  const scenarioCount = workProcess?.workProcess.scenarios.filter((scenario) => scenario.task_refs.includes(bundle.task.id)).length || 0;
   return (
     <div className="task-workspace">
       <aside className="task-index" aria-label="典型工作任务">
-        <header><span>TYPICAL TASKS</span><h2>典型工作任务</h2><p>任务是岗位能力图与真实工作过程的连接点。</p></header>
-        <div className="task-index-scroll">
+        <header><h2>典型工作任务</h2><p>{tasks.length} 项任务 · 选择一项，了解工作与能力要求</p></header>
+        <div className="task-index-scroll" ref={indexRef}>
           {tasks.map((task, index) => (
-            <button className={task.id === bundle.task.id ? "active" : ""} key={task.id} onClick={() => onTaskChange(task)}>
+            <button className={task.id === bundle.task.id ? "active" : ""} aria-pressed={task.id === bundle.task.id} title={task.label} key={task.id} onClick={() => onTaskChange(task)}>
               <i>{String(index + 1).padStart(2, "0")}</i>
-              <span><b>{task.label}</b><small>{task.summary}</small></span>
+              <span><b>{task.label}</b></span>
             </button>
           ))}
         </div>
       </aside>
 
-      <section className="task-detail">
+      <section className="task-detail" ref={detailRef} aria-label={bundle.task.label}>
         <header className="task-detail-header">
           <div className="task-detail-copy">
-            <span>典型工作任务 · {bundle.task.lifecycle === "accepted" ? "已接受" : "候选"}</span>
+            <span>任务说明 <em>{bundle.task.lifecycle === "accepted" ? "已接受" : bundle.task.lifecycle === "deprecated" ? "已弃用" : "候选 · 待核实"}</em></span>
             <h2>{bundle.task.label}</h2>
-            <p>{bundle.task.summary}</p>
+            <TaskBrief summary={bundle.task.summary} />
           </div>
           <div className="task-detail-actions">
             {onConvert && <button type="button" disabled={converting} onClick={() => onConvert(bundle.task)}>{converting ? "正在准备转换…" : "转为学习任务 →"}</button>}
             <button className="secondary" onClick={() => onOpenEvidence(bundle.nodes)}><BookOpenCheck size={13} /> 查看证据</button>
-            <button draggable onDragStart={() => onDragStart(bundle.task)} onDragEnd={onDragEnd} onClick={() => onReference(bundle.task)}><Plus size={13} /> 引用任务</button>
+            <button className="secondary" draggable onDragStart={() => onDragStart(bundle.task)} onDragEnd={onDragEnd} onClick={() => onReference(bundle.task)}><Plus size={13} /> 引用任务</button>
           </div>
-          {conversionHint && <p className="task-conversion-hint">{conversionHint}</p>}
-          <div className="task-detail-facts">
-            <span><ShieldCheck size={12} /><b>{bundle.task.evidence_summary.max_confidence.toFixed(2)}</b><small>任务置信</small></span>
-            <span><Network size={12} /><b>{relationCount}</b><small>结构关系</small></span>
-            <span><BookOpenCheck size={12} /><b>{sourceCount}</b><small>关联来源</small></span>
-            <span><GitBranch size={12} /><b>{workProcess?.workProcess.scenarios.filter((scenario) => scenario.task_refs.includes(bundle.task.id)).length || 0}</b><small>事理场景</small></span>
-          </div>
+          <details className="task-research-details" key={bundle.task.id}>
+            <summary><BookOpenCheck size={14} /> {sourceCount} 个关联来源 <span>研究依据与使用说明</span></summary>
+            <div className="task-detail-facts">
+              <span><b>{bundle.task.evidence_summary.max_confidence.toFixed(2)}</b><small>任务置信（非掌握程度）</small></span>
+              <span><b>{relationCount}</b><small>结构关系</small></span>
+              <span><b>{scenarioCount}</b><small>事理场景</small></span>
+            </div>
+            {conversionHint && <p className="task-conversion-hint">{conversionHint}</p>}
+          </details>
         </header>
 
         <nav className="task-perspectives" aria-label="典型任务视角">
-          <button className={perspective === "relations" ? "active" : ""} onClick={() => onPerspectiveChange("relations")}><Network size={13} /><span><b>关系雷达</b><small>任务与能力、能力单元、知识技能</small></span></button>
-          <button className={perspective === "process" ? "active" : ""} onClick={() => onPerspectiveChange("process")}><Route size={13} /><span><b>事理流程</b><small>事件、分支、返工、交付物与所用知识技能</small></span></button>
+          <button aria-pressed={perspective === "relations"} className={perspective === "relations" ? "active" : ""} onClick={() => onPerspectiveChange("relations")}><Network size={13} /><span><b>能力要求</b><small>需要具备什么</small></span></button>
+          <button aria-pressed={perspective === "process"} className={perspective === "process" ? "active" : ""} onClick={() => onPerspectiveChange("process")}><Route size={13} /><span><b>工作过程</b><small>如何完成 · {scenarioCount} 个事理场景</small></span></button>
         </nav>
 
         <div className={`task-perspective-stage ${perspective}`}>
           {perspective === "relations" ? (
             <div className="task-relation-layout">
-              <TaskRelationshipRadar bundle={bundle} selectedId={selectedId} onSelect={onSelect} />
               <TaskRelatedSummary bundle={bundle} selectedId={selectedId} onSelect={onSelect} onReference={onReference} />
+              <details className="task-radar-disclosure" key={bundle.task.id}>
+                <summary><Network size={15} /> 关系雷达 <span>展开查看能力之间的连接</span></summary>
+                <TaskRelationshipRadar bundle={bundle} selectedId={selectedId} onSelect={onSelect} />
+              </details>
             </div>
-          ) : workProcess ? (
+          ) : workProcess && scenarioCount > 0 ? (
             <WorkProcessForestView
               payload={workProcess}
               query=""
@@ -309,7 +339,7 @@ export default function TaskWorkspace({
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
             />
-          ) : <div className="task-workspace-empty">该岗位包尚未装载事理过程。</div>}
+          ) : <div className="task-process-empty"><Route size={24} /><h3>工作过程待补充</h3><p>这项任务尚未建立具体场景、操作步骤与交付物。可在研究对话中引用任务，补充工作过程。</p><button onClick={() => onReference(bundle.task)}><Plus size={14} /> 引用任务到研究对话</button></div>}
         </div>
       </section>
     </div>

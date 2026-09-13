@@ -48,10 +48,46 @@ test("典型任务工作台提供关系雷达、事理流程、证据与引用�
 
   assert.match(html, /典型工作任务/);
   assert.match(html, /关系雷达/);
-  assert.match(html, /事理流程/);
+  assert.match(html, /工作过程/);
+  assert.match(html, /完成任务需要什么/);
+  assert.match(html, /<details class="task-radar-disclosure">/);
   assert.match(html, /查看证据/);
   assert.match(html, /引用任务/);
   assert.match(html, /disabled="">正在准备转换/);
   assert.match(html, /当前版本仅保存为私有岗位包/);
   assert.match(html, /知识点 \/ 技能点/);
+});
+
+function renderTask(summary: string, perspective: "relations" | "process" = "relations") {
+  const task = { ...nodes.find((node) => node.type === "task")!, summary };
+  return renderToStaticMarkup(createElement(TaskWorkspace, {
+    nodes: [task], edges: [], taskId: task.id, query: "", selectedId: task.id, perspective,
+    workProcess: processPayload,
+    onTaskChange() {}, onPerspectiveChange() {}, onSelect() {}, onReference() {},
+    onDragStart() {}, onDragEnd() {}, onOpenEvidence() {},
+  }));
+}
+
+test("旧任务摘要仅在完整标记后缀时拆分，保留自由文本与原文内容", () => {
+  const html = renderTask("完成配置。（对象：云平台；交付：配置说明；完成标准：符合规划）");
+  assert.match(html, /<dt>工作对象<\/dt><dd>云平台<\/dd>/);
+  assert.match(html, /<dt>交付结果<\/dt><dd>配置说明<\/dd>/);
+  assert.match(html, /<dt>完成标准<\/dt><dd>符合规划<\/dd>/);
+  assert.match(html, /完成配置。/);
+  const incomplete = "说明（对象：云平台；交付：尚待确认）";
+  assert.ok(renderTask(incomplete).includes(incomplete));
+  assert.doesNotMatch(renderTask(incomplete), /task-brief-fields/);
+});
+
+test("无任务场景时展示补充入口，不把其他任务的流程当成本任务流程", () => {
+  const task = { ...nodes.find((node) => node.type === "task")!, id: "task:no-scenario" };
+  const html = renderToStaticMarkup(createElement(TaskWorkspace, {
+    nodes: [task], edges: [], taskId: task.id, query: "", selectedId: task.id,
+    perspective: "process", workProcess: processPayload,
+    onTaskChange() {}, onPerspectiveChange() {}, onSelect() {}, onReference() {},
+    onDragStart() {}, onDragEnd() {}, onOpenEvidence() {},
+  }));
+  assert.match(html, /工作过程待补充/);
+  assert.match(html, /引用任务到研究对话/);
+  assert.doesNotMatch(html, /class="process-forest/);
 });

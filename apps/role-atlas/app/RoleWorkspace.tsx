@@ -1372,7 +1372,7 @@ function RoleWorkspaceSession({ projectId: routeProjectId, initialConversationId
             <button className={semanticDensity === "complete" ? "active" : ""} onClick={() => setSemanticDensity("complete")}>全部</button>
           </div> : null}
           <span className="graph-count">{view === "tasks"
-            ? `${taskNodes.length} 个典型任务 · ${taskPerspective === "relations" ? "关系雷达" : "事理流程"}`
+            ? `${taskNodes.length} 个典型任务 · ${taskPerspective === "relations" ? "能力要求" : "工作过程"}`
             : view === "evidence" ? `${evidenceScope.sourceIds.length || evidenceSources.length} 个来源`
             : `${nodeCount}/${courseData?.nodes.length || 0} 节点 · ${edgeCount} 关系`}</span>
         </div>
@@ -1475,7 +1475,7 @@ function RoleWorkspaceSession({ projectId: routeProjectId, initialConversationId
         </div>
 
         <footer className="graph-footer">
-          {view === "tasks" ? <><span><i className="dot orange" />任务是语义图与事理图的桥</span><span><Network size={11} />关系雷达</span><span><GitBranch size={11} />流程、分支与返工</span><span>知识技能附着到实际工作事件</span></> : view === "evidence" ? <><span><BookOpenCheck size={11} />来源与定位</span><span>证据状态来自岗位包，不由前端推测</span></> : view === "cards" ? <><span><Layers3 size={11} />上下切换维度</span><span>左右浏览同维度卡片</span><span>典型任务可进入双视角详情</span></> : <><span><i className="dot blue" />产业/岗位</span><span><i className="dot orange" />任务</span><span><i className="dot violet" />能力/单元</span><span><i className="dot green" />知识技能</span><span><i className="dash" />候选内容</span></>}
+          {view === "tasks" ? <span>选择任务了解工作要求 · 引用到对话继续研究</span> : view === "evidence" ? <><span><BookOpenCheck size={11} />来源与定位</span><span>证据状态来自岗位包，不由前端推测</span></> : view === "cards" ? <><span><Layers3 size={11} />上下切换维度</span><span>左右浏览同维度卡片</span><span>典型任务可进入双视角详情</span></> : <><span><i className="dot blue" />产业/岗位</span><span><i className="dot orange" />任务</span><span><i className="dot violet" />能力/单元</span><span><i className="dot green" />知识技能</span><span><i className="dash" />候选内容</span></>}
         </footer>
       </section>
 
