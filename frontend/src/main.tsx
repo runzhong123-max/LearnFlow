@@ -74,7 +74,6 @@ import {
 import ComposerCapabilityPicker from './ComposerCapabilityPicker'
 import AuthGate, { type AuthGateSession } from './AuthGate'
 import AccountModelSettings from './AccountModelSettings'
-import PersonalApiKeys from './PersonalApiKeys'
 import { isIpAccountConsole } from './ip-account-console'
 import {
   activeLearningPlanProjection,
@@ -4721,9 +4720,8 @@ void initializeRuntimeClient().then(() => root.render(
       <div className="settings-intro page-hero">
         <h1>LearnFlow 个人设置</h1>
         <UserIdentity displayName={auth.account.display_name} username={auth.account.username} avatar={auth.account.avatar} size="lg" />
-        <p>签发个人 API Key，复制到 LearnFlow 桌面端即可连接。</p>
+        <p>请通过域名使用账号密码登录 LearnFlow。</p>
       </div>
-      <PersonalApiKeys key={auth.account.id} />
       <button type="button" className="button-secondary" style={{ marginTop: 20 }} onClick={() => { void auth.signOut() }}>退出账号</button>
     </main>
     : isConversionPage

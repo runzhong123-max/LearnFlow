@@ -1,4 +1,4 @@
-"""Per-process API-key sessions. Remote credentials never reach the local webview.
+"""Per-process cloud cookie sessions (legacy API-key support is opt-in). Remote credentials never reach the local webview.
 
 The shell chooses one HTTPS authority. This adapter never converts a local
 learner into a cloud learner, stores passwords, or retries mutations.
@@ -39,7 +39,7 @@ class CloudSession:
     client: httpx.AsyncClient
     csrf: str = ""
     learner_id: int = 0
-    auth_method: str = "api_key"
+    auth_method: str = "cookie"
 
 
 class CloudApiKeyAuth(httpx.Auth):
@@ -62,8 +62,7 @@ class CloudApiKeyAuth(httpx.Auth):
 async def cloud_mutation_headers(session) -> dict[str, str]:
     if getattr(session, "auth_method", "cookie") == "api_key":
         return {}
-    # Compatibility for explicitly constructed legacy device adapters. New
-    # cloud connections can only create an API-key session.
+    # Cookie sessions keep their CSRF token inside the sidecar.
     if not getattr(session, "csrf", ""):
         response = await session.client.get("/api/auth/csrf")
         response.raise_for_status()
@@ -80,12 +79,12 @@ class CloudConnection:
         self.login_lock = asyncio.Lock()
         self.generation = 0
 
-    def client(self, api_key: str):
+    def client(self, api_key: str | None = None):
         return httpx.AsyncClient(base_url=self.origin, follow_redirects=False,
                                 trust_env=False, transport=self.transport,
-                                auth=CloudApiKeyAuth(self.origin, api_key),
+                                auth=CloudApiKeyAuth(self.origin, api_key) if api_key else None,
                                 timeout=httpx.Timeout(900, connect=15),
-                                headers={"Accept": "application/json"})
+                                headers={"Accept": "application/json", "Origin": self.origin, "Referer": self.origin + "/"})
 
     async def close(self):
         self.generation += 1
@@ -99,6 +98,44 @@ class CloudConnection:
         self.pet_handles = {k: v for k, v in self.pet_handles.items() if v[0] != token}
         if session:
             await session.client.aclose()
+
+    async def password_login(self, path: str, body: bytes):
+        generation = self.generation
+        async with self.login_lock:
+            if generation != self.generation:
+                return JSONResponse({"detail": "登录已取消，请重试"}, 409)
+            client = self.client()
+            try:
+                response = await client.post("/api/" + path, content=body,
+                                             headers={"Content-Type": "application/json"})
+                if response.status_code != 200:
+                    await client.aclose()
+                    if response.status_code in {400, 401, 403, 422, 429}:
+                        # Do not reflect rejected passwords or arbitrary upstream content.
+                        return JSONResponse({"detail": "登录失败，请检查账号密码或稍后重试"}, response.status_code,
+                                            headers={"Cache-Control": "no-store"})
+                    return JSONResponse({"detail": "认证服务暂不可用"}, 503)
+                account = response.json()
+                learner_id = account.get("learner_id") if isinstance(account, dict) else None
+                if type(learner_id) is not int or learner_id <= 0:
+                    raise ValueError("invalid learner")
+                if generation != self.generation:
+                    await client.aclose()
+                    return JSONResponse({"detail": "登录已取消，请重试"}, 409)
+                await self.close()
+                if self.generation != generation + 1:
+                    await client.aclose()
+                    return JSONResponse({"detail": "登录已取消，请重试"}, 409)
+                handle = secrets.token_urlsafe(48)
+                self.sessions[handle] = CloudSession(client, learner_id=learner_id)
+                pet_handle = 'lfpet_cloud_' + secrets.token_urlsafe(48)
+                self.pet_handles[pet_handle] = (handle, time.monotonic() + 600)
+                account.update(desktop_auth_token=handle, desktop_pet_capability_token=pet_handle,
+                               identity_authority=self.origin, auth_method="cookie")
+                return JSONResponse(account, headers={"Cache-Control": "no-store"})
+            except (httpx.HTTPError, ValueError):
+                await client.aclose()
+                return JSONResponse({"detail": "无法安全连接认证服务，请检查网络和服务器证书"}, 503)
 
     async def forward(self, request: Request, path: str):
         if not valid_desktop_request(request):
@@ -130,6 +167,10 @@ class CloudConnection:
             if session is not None or not token or not self.sessions:
                 await self.close()
             return JSONResponse({"ok": True}, headers={"Cache-Control": "no-store"})
+        if path in {"auth/login", "auth/register"} and request.method == "POST" and not settings.auth_api_keys_enabled:
+            return await self.password_login(path, bytes(body))
+        if path.startswith("auth/api-key") and not settings.auth_api_keys_enabled:
+            return JSONResponse({"detail": "此功能暂未开放"}, 404)
         if path in {"auth/login", "auth/register", "demo/login", "auth/csrf"}:
             return JSONResponse({"detail": "云端连接请使用个人 API Key"}, 403)
         if path == "auth/api-key/connect" and request.method == "POST":
@@ -167,7 +208,7 @@ class CloudConnection:
                         await client.aclose()
                         return JSONResponse({"detail": "连接操作已取消，请重新连接"}, 409)
                     handle = secrets.token_urlsafe(48)
-                    self.sessions[handle] = CloudSession(client, learner_id=learner_id)
+                    self.sessions[handle] = CloudSession(client, learner_id=learner_id, auth_method="api_key")
                     pet_handle = 'lfpet_cloud_' + secrets.token_urlsafe(48)
                     self.pet_handles[pet_handle] = (handle, time.monotonic() + 600)
                     account["desktop_auth_token"] = handle
@@ -183,7 +224,7 @@ class CloudConnection:
                 return JSONResponse({"authenticated": False, "identity_authority": self.origin})
             if path == "demo/status":
                 return JSONResponse({"enabled": False})
-            return JSONResponse({"detail": "请先使用个人 API Key 连接服务器"}, 401)
+            return JSONResponse({"detail": "请使用网页端同一账号登录"}, 401)
         headers = {k: v for k, v in request.headers.items()
                    if k.lower() in {"accept", "content-type", "range", "if-none-match"}}
         try:
@@ -223,6 +264,8 @@ class CloudConnection:
             url = "/api/" + path
             if request.url.query:
                 url += "?" + request.url.query
+            if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+                headers.update(await cloud_mutation_headers(session))
             upstream = await session.client.send(session.client.build_request(
                 request.method, url, content=bytes(body), headers=headers), stream=True)
             if 300 <= upstream.status_code < 400:

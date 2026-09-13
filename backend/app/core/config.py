@@ -161,6 +161,7 @@ class Settings(BaseSettings):
     auth_login_backoff_max_seconds: int = 5 * 60
     # URL-safe base64 for exactly 32 random bytes. It is a deployment secret,
     # never persisted in the application database or returned by an API.
+    auth_api_keys_enabled: bool = False
     auth_api_key_kek: str = Field(default="", repr=False)
     auth_api_key_kek_version: int = 1
     # Server-only capability used by the vNext Tutor proxy to resolve the

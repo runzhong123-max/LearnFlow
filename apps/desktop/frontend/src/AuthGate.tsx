@@ -4,7 +4,6 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 
 import {
   activateFormalIdentity,
-  connectFormalApiKey,
   getFormalAuthStatus,
   getFormalDemoStatus,
   invalidateFormalIdentity,
@@ -121,7 +120,7 @@ export default function AuthGate({ children }: AuthGateProps) {
       setBusy(false)
       setMode('login')
       setDevLoginEnabled(false)
-      setError(isCloudDesktopRuntime() ? '连接已失效，请重新输入 API Key。' : '登录已失效，请重新登录。')
+      setError('登录已失效，请重新登录。')
     }
     window.addEventListener('learnflow:unauthorized', handleUnauthorized)
     return () => window.removeEventListener('learnflow:unauthorized', handleUnauthorized)
@@ -151,25 +150,6 @@ export default function AuthGate({ children }: AuthGateProps) {
     setError('')
     setAccount(nextAccount)
     setDevLoginEnabled(!isCloudDesktopRuntime() && nextAccount.dev_test_login_enabled === true)
-  }
-
-  const submitApiKey = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    const apiKey = field(new FormData(event.currentTarget), 'api_key')
-    event.currentTarget.reset()
-    setError('')
-    if (!apiKey) {
-      setError('请输入个人 API Key。')
-      return
-    }
-    setBusy(true)
-    try {
-      authenticate(await connectFormalApiKey(apiKey))
-    } catch (connectionError) {
-      setError(errorMessage(connectionError, '连接失败，请检查 API Key 后重试。'))
-    } finally {
-      setBusy(false)
-    }
   }
 
   const submitLogin = async (event: FormEvent<HTMLFormElement>) => {
@@ -286,17 +266,18 @@ export default function AuthGate({ children }: AuthGateProps) {
         <div className={styles.brand}><img className={styles.brandMark} src="/brand-mark.png" alt="" width={40} height={40} /><strong>LearnFlow</strong></div>
         <header className={styles.cloudHeader}>
           <h1 id="cloud-connect-title">连接 LearnFlow</h1>
-          <p>使用个人 API Key，继续你的项目和学习记录。</p>
+          <p>使用网页端同一账号，继续你的项目和学习记录。</p>
         </header>
-        <form className={styles.form} onSubmit={submitApiKey} autoComplete="off">
+        <form className={styles.form} onSubmit={submitLogin} autoComplete="off">
           <div className={styles.cloudDestination} role="status" aria-label="连接目标：LearnFlow 云端">
             <span className={styles.cloudDestinationMark} aria-hidden="true" />
             <span><strong>LearnFlow 云端</strong><small>连接地址由应用统一管理</small></span>
           </div>
-          <label><span>API Key</span><input name="api_key" type="password" autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} required maxLength={128} disabled={busy} autoFocus aria-describedby="cloud-key-help" /></label>
-          <p id="cloud-key-help" className={styles.cloudHelp}>使用账号管理员签发的个人 API Key，仅在本次运行中保存。退出应用后需重新输入。</p>
+          <label><span>账号</span><input name="username" autoComplete="username" autoCapitalize="none" spellCheck={false} required disabled={busy} autoFocus /></label>
+          <label><span>密码</span><input name="password" type="password" autoComplete="current-password" required disabled={busy} /></label>
+          <p className={styles.cloudHelp}>与网页端共用账号。密码不会保存在本机。</p>
           {error && <p className={styles.error} role="alert">{error}</p>}
-          <button className={styles.primary} type="submit" disabled={busy}>{busy ? '正在连接…' : '连接'}</button>
+          <button className={styles.primary} type="submit" disabled={busy}>{busy ? '正在登录…' : '登录'}</button>
         </form>
         <details className={styles.legacyWorkspace}>
           <summary>旧本地工作区</summary>

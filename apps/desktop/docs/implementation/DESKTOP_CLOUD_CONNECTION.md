@@ -1,3 +1,5 @@
+> 2026-09-13：默认恢复 `https://learn.learnflow.club` 与账密登录；个人 API Key 签发、复制与认证默认停用，历史实现保留。当前规则见仓库 `docs/implementation/DOMAIN_PASSWORD_LOGIN.md`。
+
 # 桌面云端账号与设备连接
 
 2026-09-09：默认云端入口升级为 `https://8.148.28.98` + 个人 API Key。新客户端只通过严格证书校验的 HTTPS 传输，不再转发云密码或 Cookie；账号、项目、Tutor、五核与权限仍由原云端账号负责。API Key 仅存在本次 sidecar 进程内，页面只获得随机本机会话句柄；退出立即清除本机连接，离线也可退出。密钥签发、撤销、原账号兼容和 IP 证书部署见[完整契约](../../../../docs/implementation/DESKTOP_IP_API_KEY.md)。

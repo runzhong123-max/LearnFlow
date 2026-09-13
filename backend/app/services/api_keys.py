@@ -13,10 +13,14 @@ from fastapi import HTTPException, Request
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
+
 from app.models.learning import AuthApiKey, AuthApiKeySecret, Learner, LearnerProfile, UserAccount
 
 def api_token_from_request(request: Request) -> str | None:
     """An explicit Authorization value never falls back to a browser cookie."""
+    if not settings.auth_api_keys_enabled:
+        raise HTTPException(401, "请使用账号密码登录")
     values = request.headers.getlist("authorization")
     if not values:
         return None
@@ -40,6 +44,8 @@ def metadata(key: AuthApiKey, *, copy_available: bool = False) -> dict:
 
 
 async def resolve_api_key(db: AsyncSession, token: str):
+    if not settings.auth_api_keys_enabled:
+        raise HTTPException(404, "此功能暂未开放")
     now = datetime.utcnow()
     row = (await db.execute(
         select(AuthApiKey, UserAccount, Learner, LearnerProfile)
@@ -58,6 +64,8 @@ async def resolve_api_key(db: AsyncSession, token: str):
 
 
 async def issue_api_key(db: AsyncSession, account: UserAccount, name: str, days: int):
+    if not settings.auth_api_keys_enabled:
+        raise HTTPException(404, "此功能暂未开放")
     if account.status != "active" or type(days) is not int or not 1 <= days <= 90:
         raise ValueError("Account must be active and expiry must be between 1 and 90 days")
     name = name.strip()

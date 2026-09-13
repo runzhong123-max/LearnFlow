@@ -9,7 +9,6 @@ import {
 } from './formal-runtime.ts'
 import { UserIdentity } from '../../packages/learning-client/src/identity/UserIdentity'
 import styles from './AccountModelSettings.module.css'
-import PersonalApiKeys from './PersonalApiKeys'
 
 type AccountModelSettingsProps = {
   account: FormalAccount
@@ -62,7 +61,6 @@ export default function AccountModelSettings({ account, onSignOut }: AccountMode
         {error ? <p className={styles.error} role="alert">{error}</p> : null}
       </section>
 
-      <PersonalApiKeys key={account.id} />
 
       {account.role === 'admin' ? (
         <section className={styles.card} aria-labelledby="admin-account-title">

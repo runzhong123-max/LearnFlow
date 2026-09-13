@@ -1,3 +1,5 @@
+> 2026-09-13：默认恢复 `https://learn.learnflow.club` 与账密登录；个人 API Key 签发、复制与认证默认停用，历史实现保留。当前规则见仓库 `docs/implementation/DOMAIN_PASSWORD_LOGIN.md`。
+
 > 2026-09-09 个人 Key 签发台部署增量：HTTPS `/account` 为独立账号页，`/account-api/auth/*` 仅允许列明的账号认证与 Key 管理接口，Cookie + CSRF + 密码复核，拒绝 Authorization。原 `/api/*` Key-only、根 404、HTTP 426 均保持。该条取代下文“所有非 API 路径 404”的旧描述。见 [账号台合同](../../docs/implementation/DESKTOP_IP_API_KEY.md)。
 
 # 桌面专用 IP HTTPS API 入口

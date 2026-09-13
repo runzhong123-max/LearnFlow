@@ -132,7 +132,7 @@ class Settings(BaseSettings):
     # Desktop sidecar mode. Keep disabled in browser/server deployments.
     desktop_mode: bool = False
     desktop_token: str = ""
-    cloud_platform_url: str = "https://8.148.28.98"
+    cloud_platform_url: str = "https://learn.learnflow.club"
     local_agent_runs_dir: str = ""  # empty -> platform temp directory
     local_agent_default_timeout_seconds: int = 900
     local_agent_max_output_bytes: int = 2 * 1024 * 1024
@@ -157,6 +157,7 @@ class Settings(BaseSettings):
     auth_login_backoff_max_seconds: int = 5 * 60
     # URL-safe base64 for exactly 32 random bytes. It is a deployment secret,
     # never persisted in the application database or returned by an API.
+    auth_api_keys_enabled: bool = False
     auth_api_key_kek: str = Field(default="", repr=False)
     auth_api_key_kek_version: int = 1
     # Server-only capability used by the vNext Tutor proxy to resolve the

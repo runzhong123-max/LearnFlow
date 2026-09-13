@@ -85,6 +85,9 @@ class _AuthRoute(APIRoute):
 
         async def protected(request: Request):
             is_key_management = request.url.path.startswith("/api/auth/api-keys")
+            if is_key_management and not settings.auth_api_keys_enabled:
+                return JSONResponse(status_code=404, content={"detail": "此功能暂未开放"},
+                                    headers={"Cache-Control": "no-store"})
             try:
                 response = await handler(request)
             except RequestValidationError:

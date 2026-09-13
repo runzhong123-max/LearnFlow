@@ -9,6 +9,11 @@ VALID_KEY = "lfak_" + "a" * 43
 OTHER_KEY = "lfak_" + "b" * 43
 
 
+@pytest.fixture(autouse=True)
+def enable_retained_api_keys(monkeypatch):
+    monkeypatch.setattr(settings, "auth_api_keys_enabled", True)
+
+
 @pytest.fixture
 def relay(monkeypatch):
     monkeypatch.setattr(settings, 'desktop_mode', True)

@@ -911,7 +911,7 @@ fn show_platform_workspace(app: &tauri::AppHandle) -> Result<(), String> {
     // Same authority the sidecar is given. A separate literal here meant the
     // window kept opening an address the rest of the app had already moved off.
     let url = validated_platform_url(
-        option_env!("LEARNFLOW_API_ORIGIN").unwrap_or("https://8.148.28.98"),
+        option_env!("LEARNFLOW_API_ORIGIN").unwrap_or("https://learn.learnflow.club"),
     )?;
     let origin = url.origin();
     tauri::WebviewWindowBuilder::new(app, "platform", tauri::WebviewUrl::External(url))
@@ -1204,7 +1204,7 @@ pub fn run() {
             let pet_preferences_path = app_data_dir.join("desktop-pet-settings.json");
             let pet_preferences = load_desktop_pet_preferences(&pet_preferences_path);
             let api_origin = validated_platform_url(
-                option_env!("LEARNFLOW_API_ORIGIN").unwrap_or("https://8.148.28.98")
+                option_env!("LEARNFLOW_API_ORIGIN").unwrap_or("https://learn.learnflow.club")
             ).map_err(std::io::Error::other)?.origin().ascii_serialization();
             let command = app
                 .shell()

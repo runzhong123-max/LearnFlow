@@ -1,3 +1,5 @@
+> 2026-09-13：默认恢复 `https://learn.learnflow.club` 与账密登录；个人 API Key 签发、复制与认证默认停用，历史实现保留。当前规则见仓库 `docs/implementation/DOMAIN_PASSWORD_LOGIN.md`。
+
 # 桌面公网 IP 与个人 API Key
 
 2026-09-09，合同 `learnflow.desktop-api-key.v1`，registry Web `2026-09-09.2` / Desktop `2026-09-09.2-desktop`。

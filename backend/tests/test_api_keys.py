@@ -22,6 +22,12 @@ PASSWORD = "Api-key-tests-2026!"
 BROWSER = {"Origin": "http://testserver", "Sec-Fetch-Site": "same-origin"}
 
 
+@pytest.fixture(autouse=True)
+def enable_retained_api_keys(monkeypatch):
+    monkeypatch.setenv("AUTH_API_KEYS_ENABLED", "true")
+    monkeypatch.setattr(settings, "auth_api_keys_enabled", True)
+
+
 @pytest.fixture
 def owner(monkeypatch):
     monkeypatch.setattr(settings, "auth_argon2_time_cost", 1)
@@ -288,3 +294,14 @@ def test_key_validation_never_echoes_password(owner):
         assert secret_password not in response.text
         assert "sensitive-invalid-input" not in response.text
         assert response.headers["cache-control"] == "no-store"
+
+
+def test_disabled_keys_reject_all_management_and_existing_token(owner, monkeypatch):
+    created = issue(owner)
+    monkeypatch.setattr(settings, "auth_api_keys_enabled", False)
+    for method, path in [("GET", "/api/auth/api-keys"), ("POST", "/api/auth/api-keys"),
+                         ("POST", f"/api/auth/api-keys/{created['metadata']['id']}/reveal"),
+                         ("DELETE", f"/api/auth/api-keys/{created['metadata']['id']}")]:
+        assert owner.request(method, path).status_code == 404
+    assert owner.get("/api/auth/me").status_code == 200
+    assert owner.get("/api/auth/me", headers=key_headers(created["api_key"])).status_code == 401

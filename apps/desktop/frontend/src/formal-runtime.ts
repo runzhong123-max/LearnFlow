@@ -592,11 +592,13 @@ export function loginFormalDemoAccount() {
 
 export async function loginFormalAccount(username: string, password: string) {
   demoLoginInitialization = undefined
-  clearRuntimeAuth()
+  invalidateFormalIdentity()
+  const generation = identityGeneration
   const account = await jsonRequest<FormalAccount>('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify({ username, password }),
   })
+  if (generation !== identityGeneration) throw new FormalRequestError(409, '登录已取消，请重新登录。')
   return activateFormalIdentity(account)
 }
 
