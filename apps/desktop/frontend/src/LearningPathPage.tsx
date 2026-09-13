@@ -165,7 +165,7 @@ export default function LearningPathPage({ state, onStatusChange, onAddPersonalN
 
   return (
     <section className="path-page">
-      <header className="path-heading">
+      <header className="path-heading page-hero">
         <div><h1>学习路径</h1><p>查看课程之间的前置关系，以及你正在走的路线。</p></div>
         <div className="path-heading-metrics" aria-label="当前星图概览">
           <span><strong>{visibleNodes.length}</strong><small>可见节点</small></span>

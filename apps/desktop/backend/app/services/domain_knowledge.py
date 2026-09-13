@@ -816,6 +816,7 @@ def _knowledge_units(rows: list[tuple[Chunk, SourceVersion, Source]]) -> dict[st
     by_version: dict[int, list[Chunk]] = {}
     for chunk, version, _ in rows:
         by_version.setdefault(version.id, []).append(chunk)
+    canonical_versions: set[int] = set()
     for chunk, version, source in rows[:24]:
         meta = dict(chunk.meta_data or {})
         heading_candidates: list[str] = []
@@ -832,6 +833,32 @@ def _knowledge_units(rows: list[tuple[Chunk, SourceVersion, Source]]) -> dict[st
         heading_candidates = list(dict.fromkeys(heading_candidates))
         locator = str(heading_candidates[0] if heading_candidates else f"chunk-{chunk.index}")[:240]
         profile = infer_source_profile(source, version, by_version.get(version.id, [chunk]))
+        if (
+            version.id not in canonical_versions
+            and version.status == "active"
+            and not bool(dict(version.inspection or {}).get("quarantined"))
+            and int(profile["dimensions"]["credibility"]["score"]) >= 3
+            and (version.source_role == "canonical" or "normative" in profile["content_roles"] or "research" in profile["content_roles"])
+        ):
+            canonical_versions.add(version.id)
+            claims.append({
+                "id": f"canonical:{version.id}",
+                "statement": f"权威参考来源：{source.url or dict(source.meta_data or {}).get('title') or f'source:{source.id}'}",
+                "evidence": {
+                    "source_id": source.id,
+                    "source_version_id": version.id,
+                    "chunk_id": chunk.id,
+                    "locator": "source-profile",
+                },
+                "facets": ["canonical_sources"],
+                "critical": True,
+                "support": {
+                    "traceable": True,
+                    "strongest_authority_score": int(profile["dimensions"]["credibility"]["score"]),
+                    "independent_source_count": 1,
+                    "level": _support_level(int(profile["dimensions"]["credibility"]["score"]), 1),
+                },
+            })
         evidence = {
             "source_id": source.id,
             "source_version_id": version.id,
@@ -928,7 +955,7 @@ def _coverage(brief: dict[str, Any], units: dict[str, Any], rows: list[tuple[Chu
         *[
             {**concept, "statement": concept.get("label", "")}
             for concept in list(units.get("concepts") or [])
-            if set(concept.get("facets") or []) & {"definition", "scope"}
+            if set(concept.get("facets") or []) & set(brief["required_knowledge"])
         ],
     ]
     profiles = {

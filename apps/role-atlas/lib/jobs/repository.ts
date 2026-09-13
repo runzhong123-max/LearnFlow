@@ -6,7 +6,7 @@ import { loadLargeText, storeLargeText } from "@/db/large-text";
 import { canonicalStringify } from "@/lib/versioning/canonical";
 import { roleJobClaimStatements } from "./claim-transaction";
 import { iterationRunBrief } from "@/lib/iteration/brief";
-import { loadIterationOutcome, type IterationOutcome } from "./iteration-outcome";
+import { loadIterationOutcome, normalizeIterationOutcome, projectJobResult } from "./iteration-outcome";
 import type { RoleJobCheckpoint, RoleJobDescriptor, RoleJobKind, RoleJobStatus } from "./runtime";
 
 type RoleJobRow = {
@@ -168,8 +168,8 @@ export async function getRoleJob(jobId: string) {
   const jobOwner = { table: "role_jobs", id: row.id };
   const resultJson = await loadLargeText(d1, { ...jobOwner, column: "result_json" }, row.result_json);
   const checkpointJson = await loadLargeText(d1, { ...jobOwner, column: "checkpoint_json" }, row.checkpoint_json);
-  const result = parseJson<{ outcome?: IterationOutcome }>(resultJson);
-  const outcome = result?.outcome || await loadIterationOutcome({ id: row.id, projectId: row.project_id, kind: row.kind, status: row.status },
+  const result = parseJson<{ outcome?: unknown }>(resultJson);
+  const outcome = normalizeIterationOutcome(result?.outcome) || await loadIterationOutcome({ id: row.id, projectId: row.project_id, kind: row.kind, status: row.status },
     async (id, projectId) => {
       const iteration = await d1.prepare("SELECT id,project_id,result_json FROM snapshot_iteration_runs WHERE id=? AND project_id=?")
         .bind(id, projectId).first<{ id: string; project_id: string | null; result_json: string | null }>();
@@ -181,7 +181,7 @@ export async function getRoleJob(jobId: string) {
     ...descriptor(row),
     iterationBrief: iterationRunBrief(parseJson<{ iteration?: unknown }>(row.input_json)?.iteration),
     checkpoint: parseJson<RoleJobCheckpoint>(checkpointJson),
-    result: outcome ? { ...result, outcome } : result,
+    result: projectJobResult(result, outcome),
     leaseExpiresAt: row.lease_expires_at || undefined,
     error: row.error || undefined,
     completedAt: row.completed_at || undefined,

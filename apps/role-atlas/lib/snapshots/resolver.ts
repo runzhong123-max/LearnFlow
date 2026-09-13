@@ -25,9 +25,12 @@ export async function resolveSnapshot(input: Partial<SnapshotReference>): Promis
         source: "project",
       };
     }
+    return null; // Explicit project/version selectors must never fall through to another namespace.
   }
+  if (input.versionId) return null;
 
-  if (input.snapshotId === rolePackageRuntime.package.manifest.snapshot_id) {
+  if (input.snapshotId === rolePackageRuntime.package.manifest.snapshot_id
+    && (!input.packageVersion || input.packageVersion === bundledRoleSnapshot().packages.rolePackage.packageVersion)) {
     const result = bundledRoleSnapshot();
     if (input.packageVersion && input.packageVersion !== result.packages.rolePackage.packageVersion) return null;
     return {

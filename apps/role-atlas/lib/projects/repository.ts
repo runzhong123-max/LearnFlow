@@ -1,7 +1,8 @@
+import { projectResultIdentity } from "./result-identity";
 import { and, asc, desc, eq, inArray, isNull, ne } from "drizzle-orm";
 import { ensureAppSchema, getD1, getDb } from "@/db";
 import { loadLargeText, storeLargeText } from "@/db/large-text";
-import { buildEvents, buildRuns, conversations, messages, projects, projectVersions, riskEvents, riskRuns } from "@/db/schema";
+import { buildEvents, buildRuns, conversations, messages, projects, projectVersions } from "@/db/schema";
 import type { AgentEvent } from "@/lib/agent/events";
 import type { BuildEvent } from "@/lib/build/events";
 import type { ColdStartBuildResult, ColdStartRequest } from "@/lib/build/types";
@@ -107,11 +108,24 @@ export async function getProjectWorkspace(projectId: string, snapshotId?: string
         .where(eq(projectVersions.projectId, projectId))
         .orderBy(desc(projectVersions.createdAt))
         .limit(1);
+  if (snapshotId && versionRows[0] && versionRows[0].snapshotId !== snapshotId) return null;
   let result: ColdStartBuildResult | null = null;
   if (versionRows[0]) {
     const packageJson = await loadLargeText(getD1(), { table: "project_versions", id: versionRows[0].id, column: "package_json" }, versionRows[0].packageJson);
-    try { result = packageJson ? normalizeRolePackage(JSON.parse(packageJson) as ColdStartBuildResult) : null; }
+    try { result = packageJson ? projectResultIdentity(normalizeRolePackage(JSON.parse(packageJson) as ColdStartBuildResult), projectId) : null; }
     catch { result = null; }
+  }
+  if (!result && !snapshotId && !versionId && !versionRows.length) {
+    const [latest] = await db.select({ id: buildRuns.id, resultJson: buildRuns.resultJson }).from(buildRuns)
+      .where(and(eq(buildRuns.projectId, projectId), eq(buildRuns.status, "completed")))
+      .orderBy(desc(buildRuns.completedAt)).limit(1);
+    if (latest?.resultJson) {
+      const saved = await loadLargeText(getD1(), { table: "build_runs", id: latest.id, column: "result_json" }, latest.resultJson);
+      try {
+        const draft = saved ? JSON.parse(saved) as ColdStartBuildResult : null;
+        if (draft?.projectId === projectId && draft.researchRun?.protocol === "role-research/v2" && draft.deliveryReadiness?.ready === false) result = draft;
+      } catch { /* Invalid artifacts do not become a project baseline. */ }
+    }
   }
   return { project, conversations: conversationRows, version: versionRows[0] || null, result };
 }
@@ -256,10 +270,10 @@ export async function completeFastBuildSnapshot(result: ColdStartBuildResult, co
     result,
     sourceRunId: result.runId,
     sourceKind: "cold_start",
-    sourceInput: { kind: "cold_start_fast_snapshot", brief: result.brief },
+    sourceInput: { kind: result.deliveryReadiness ? "cold_start_complete" : "cold_start_fast_snapshot", brief: result.brief },
     conversationId,
     ...execution,
-    message: `建立“${result.brief.roleTitle}”岗位内核快照`,
+    message: `建立“${result.brief.roleTitle}”${result.deliveryReadiness ? "完整首版" : "岗位内核快照"}`,
     authorKind: "agent",
   });
 }
@@ -362,111 +376,13 @@ export async function getProjectVersion(projectId: string, versionId?: string | 
   const packageJson = await loadLargeText(getD1(), { table: "project_versions", id: version.id, column: "package_json" }, version.packageJson);
   if (!packageJson) return null;
   try {
-    return { version, result: normalizeRolePackage(JSON.parse(packageJson) as ColdStartBuildResult) };
+    return { version, result: projectResultIdentity(normalizeRolePackage(JSON.parse(packageJson) as ColdStartBuildResult), projectId) };
   } catch {
     return null;
   }
 }
 
-export async function startRiskRun(request: RiskRunRequest & { projectId: string }, baseVersionId: string) {
-  await ensureAppSchema();
-  const d1 = getD1();
-  const now = new Date().toISOString();
-  await d1.batch([
-    d1.prepare(`INSERT INTO risk_runs (id, project_id, base_version_id, status, mode, phase, input_json, started_at)
-      VALUES (?, ?, ?, 'running', ?, 'baseline', ?, ?)
-      ON CONFLICT(id) DO UPDATE SET status='running', mode=excluded.mode, phase='baseline', input_json=excluded.input_json, checkpoint_json=NULL, result_json=NULL, error=NULL, completed_at=NULL`)
-      .bind(request.runId, request.projectId, baseVersionId, request.mode, JSON.stringify(request), now),
-    d1.prepare(`INSERT INTO build_runs (id, project_id, status, input_json, started_at)
-      VALUES (?, ?, 'running', ?, ?)
-      ON CONFLICT(id) DO UPDATE SET status='running', input_json=excluded.input_json, result_json=NULL, error=NULL, completed_at=NULL`)
-      .bind(request.runId, request.projectId, JSON.stringify({ kind: "risk_repair", ...request }), now),
-  ]);
-}
-
-export async function appendRiskEvent(event: RiskEvent & { projectId: string }) {
-  await ensureAppSchema();
-  const db = getDb();
-  await db.insert(riskEvents).values({
-    runId: event.runId,
-    projectId: event.projectId,
-    seq: event.seq,
-    kind: event.kind,
-    eventJson: JSON.stringify(event),
-  }).onConflictDoNothing();
-}
-
-export async function saveRiskCheckpoint(runId: string, phase: string, checkpoint: unknown) {
-  await ensureAppSchema();
-  const stored = await storeLargeText(getD1(), { table: "risk_runs", id: runId, column: "checkpoint_json" }, JSON.stringify(checkpoint));
-  const db = getDb();
-  await db.update(riskRuns).set({ phase, checkpointJson: stored }).where(eq(riskRuns.id, runId));
-}
-
-export async function completeRiskRun(result: RiskRunResult & { projectId: string }, conversationId?: string) {
-  await ensureAppSchema();
-  const d1 = getD1();
-  const now = new Date().toISOString();
-  const committed = result.improved
-    ? await commitProjectVersion({
-      projectId: result.projectId,
-      result: result.candidate,
-      sourceRunId: result.runId,
-      sourceKind: "iteration",
-      sourceInput: { kind: "risk_repair", mode: result.mode },
-      conversationId,
-      message: `完成岗位风险研究与修复`,
-      authorKind: "agent",
-    })
-    : null;
-  const versionId = committed?.id || null;
-  if (result.improved && versionId) result.candidateVersionId = versionId;
-  const storedResult = await storeLargeText(d1, { table: "risk_runs", id: result.runId, column: "result_json" }, JSON.stringify(result));
-  const storedCandidate = await storeLargeText(d1, { table: "build_runs", id: result.runId, column: "result_json" }, JSON.stringify(result.candidate));
-  const statements = [
-    d1.prepare("UPDATE risk_runs SET status=?, phase='version', candidate_version_id=?, result_json=?, completed_at=? WHERE id=?")
-      .bind(result.status === "no_improvement" ? "no_improvement" : "completed", result.improved ? versionId : null, storedResult, now, result.runId),
-    d1.prepare("UPDATE build_runs SET status='completed', result_json=?, completed_at=? WHERE id=?")
-      .bind(storedCandidate, now, result.runId),
-    d1.prepare("DELETE FROM risk_issues WHERE run_id=?").bind(result.runId),
-    d1.prepare("DELETE FROM risk_patches WHERE run_id=?").bind(result.runId),
-  ];
-  for (const issue of result.auditAfter.issues) {
-    statements.push(d1.prepare(`INSERT INTO risk_issues (id, project_id, run_id, fingerprint, profile, severity, status, issue_json)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(issue.id, result.projectId, result.runId, issue.fingerprint, issue.profile, issue.severity, issue.status, JSON.stringify(issue)));
-  }
-  for (const patch of result.patches) {
-    statements.push(d1.prepare(`INSERT INTO risk_patches (id, project_id, run_id, iteration, status, patch_json)
-      VALUES (?, ?, ?, ?, ?, ?)`)
-      .bind(patch.id, result.projectId, result.runId, patch.iteration, patch.status, JSON.stringify(patch)));
-  }
-  await d1.batch(statements);
-  return versionId;
-}
-
 /** Mirror a storage-neutral snapshot candidate into a project timeline. */
-export async function saveProjectCandidateFromSnapshotRisk(
-  result: RiskRunResult,
-  projectId: string,
-  conversationId?: string,
-) {
-  if (!result.improved) return null;
-  const request = { kind: "snapshot_risk_repair", ...result.snapshotRef, mode: result.mode };
-  const committed = await commitProjectVersion({
-    projectId,
-    result: result.candidate,
-    sourceRunId: result.runId,
-    sourceKind: "iteration",
-    sourceInput: request,
-    conversationId,
-    parentVersionId: result.snapshotRef.versionId || null,
-    message: "完成岗位风险研究与修复",
-    authorKind: "agent",
-  });
-  return committed.id;
-}
-
 /** Mirror a unified iteration result into the owning project's version tree. */
 export async function saveProjectCandidateFromIteration(
   result: SnapshotIterationResult,
@@ -482,6 +398,7 @@ export async function saveProjectCandidateFromIteration(
   };
   const committed = await commitProjectVersion({
     projectId,
+    adopt: result.createdSnapshot && result.contract.research?.adoption !== "review" && !result.researchRun?.changeSets.some(change => change.status === "needs_review"),
     result: result.candidate,
     sourceRunId: result.runId,
     sourceKind: result.workItems.some((item) => item.origin === "workspace" || item.kind === "instantiate") ? "workspace" : "iteration",
@@ -494,29 +411,4 @@ export async function saveProjectCandidateFromIteration(
     reuseSnapshotId: result.createdSnapshot ? undefined : result.baseSnapshotId,
   });
   return committed.id;
-}
-
-export async function failRiskRun(runId: string, projectId: string, error: string, cancelled = false) {
-  await ensureAppSchema();
-  const d1 = getD1();
-  const status = cancelled ? "cancelled" : "failed";
-  const now = new Date().toISOString();
-  await d1.batch([
-    d1.prepare("UPDATE risk_runs SET status=?, error=?, completed_at=? WHERE id=? AND project_id=? AND status!='cancelled'").bind(status, error, now, runId, projectId),
-    d1.prepare("UPDATE build_runs SET status=?, error=?, completed_at=? WHERE id=? AND project_id=? AND status!='cancelled'").bind(status, error, now, runId, projectId),
-  ]);
-}
-
-export async function getLatestRiskRun(projectId: string) {
-  await ensureAppSchema();
-  const db = getDb();
-  const [run] = await db.select().from(riskRuns).where(eq(riskRuns.projectId, projectId)).orderBy(desc(riskRuns.startedAt)).limit(1);
-  if (!run) return null;
-  const resultJson = await loadLargeText(getD1(), { table: "risk_runs", id: run.id, column: "result_json" }, run.resultJson);
-  const events = await db.select().from(riskEvents).where(eq(riskEvents.runId, run.id)).orderBy(asc(riskEvents.seq));
-  return {
-    ...run,
-    result: resultJson ? JSON.parse(resultJson) as RiskRunResult : null,
-    events: events.map((event) => JSON.parse(event.eventJson) as RiskEvent),
-  };
 }

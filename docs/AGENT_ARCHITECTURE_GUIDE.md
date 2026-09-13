@@ -1178,7 +1178,7 @@ Tutor 将用户带入第一关。Lecture Agent 生成来源约束讲义；Concep
 
 Visual Hub 查询展示工作台：Web / 桌面均使用 `/visual-hub`，由 learning_design_agent 所有，复用 retrieve_learning_visual。认证后的 gallery / preview API 只读维护版本；浏览与调参不创建学习证据。registry 2026-09-07.8 登记两个宿主绑定，见 [Visual Hub](VISUAL_HUB.md)。
 
-Web 独立 Hub 地址为 `/visualize`，侧栏直接跳转，保留 `/visual-hub` 别名；经过现有 AuthGate，未开放匿名 API。桌面继续使用内嵌 `/visual-hub`。Web registry 2026-09-07.9 仅更新页面绑定，无事件或数据迁移。
+Web 与桌面都把 Hub 作为工作区内的标签页渲染：地址仍为 `/visualize`（保留 `/visual-hub` 别名），经现有 AuthGate，未开放匿名 API。此前 Web 的侧栏跳转到不带侧栏与标签栏的独立页面，标题因此无法与其他功能页面共用同一条左边界；现改为在应用内打开同一标签页。两端共用 `packages/learning-client/src/visuals/VisualHubPage.tsx`，页面使用与其他功能页相同的页面框（标题与内容同一条左边界）、只按语义保留边界线，搜索、重试、翻页、关闭等动作改为图标按钮。Web registry 2026-09-07.9 的页面绑定、路由与 API 全部不变，无事件、五核或数据库变更；`Contract impact`：无契约变更，仅为承载方式与视觉一致性。
 
 公共维护库修正（registry 2026-09-07.10）：`/visualize` 与别名无需登录。gallery/preview 仅开放已登记维护作品；preview 允许有界参数重算，拒绝任意 spec，固定 public:maintained 展示 scope。公共播放器不执行个人预测写回或要求完成预测才能播放。生成、私有 workspace、compile/inspect/predict 继续认证，无五核或数据库变更。
 
@@ -1195,3 +1195,5 @@ Contract impact（2026-09-09.3）：Graph Hub 公开岗位与典型任务复用 
 
 
 Contract impact（2026-09-09.6）：既有 curriculum_source_runtime 的课程组织升级为 role-course/v2。经签名委托和固定岗位包校验后，模型先阅读 scoped 课程目录并整批判断包含关系，只为未覆盖要求提出合并课程；代码校验目录引用、要求覆盖、证据与 v2 契约后沿既有源图提交链保存。模型调用有硬时限，失败进入原挂载重试，不按细项臆造节点。历史回执、三类 Agent、五核及零 target 审计语义不变。阶段展示订阅后台日志，浏览器不再重复启动增量研究。详见 ECOSYSTEM_GATEWAY_V1.md。
+
+Role Atlas 研究主管、调查员、复核员属于 Tutor 岗位生产接口内部职责，使用 `role-research/v2` 研究记录与 `role-task-definition/v1` 内容契约。研究结果、复核意见、候选采用与 Hub 发布彼此独立，不能作为学生掌握证据。完整边界见 [岗位研究协议](implementation/ROLE_RESEARCH_PROTOCOL.md)。

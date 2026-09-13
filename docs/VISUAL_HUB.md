@@ -40,7 +40,7 @@ Contract impact：新增内部只读 Hub 端点和维护专用 interactive_html 
 
 ## 查询与展示页面
 
-侧栏“图解与动画”进入 `/visual-hub`。关键词、课程模块和形式筛选后分页展示；点击作品读取维护版本，不调用模型、不创建私有副本。预览只保留主题、参数、画面与主要播放控制。原有插件保存/从零生成入口不变。
+侧栏“图解与动画”在工作区内打开 `/visualize`（别名 `/visual-hub`）。关键词、课程模块和形式筛选后分页展示；点击作品读取维护版本，不调用模型、不创建私有副本。预览只保留主题、参数、画面与主要播放控制。原有插件保存/从零生成入口不变。
 
 - `POST /api/visuals/gallery`：认证、只读；query/module_id/kind/offset/limit，分页只返回 ready 作品。
 - `POST /api/visuals/preview`：认证、只读；固定 id/version，返回已登记 HTML 或 VisualSpec bundle，拒绝任意路径/脚本。
@@ -49,6 +49,6 @@ Contract impact：新增内部只读 Hub 端点和维护专用 interactive_html 
 
 Contract impact（本批）：新增 visual_hub 工作台及两个只读 API 绑定，两端 registry 升至 2026-09-07.8。沿用 retrieve_learning_visual 和 learning_design_agent；既有 API、事件、五核语义向后兼容。
 
-Web 独立 Hub 地址为 `/visualize`，侧栏直接跳转，保留 `/visual-hub` 别名；经过现有 AuthGate，未开放匿名 API。桌面继续使用内嵌 `/visual-hub`。Web registry 2026-09-07.9 仅更新页面绑定，无事件或数据迁移。
+Web 与桌面都把 Hub 作为工作区内的标签页渲染：地址仍为 `/visualize`（保留 `/visual-hub` 别名），经现有 AuthGate，未开放匿名 API。此前 Web 的侧栏跳转到不带侧栏与标签栏的独立页面，标题因此无法与其他功能页面共用同一条左边界；现改为在应用内打开同一标签页。两端共用 `packages/learning-client/src/visuals/VisualHubPage.tsx`，页面使用与其他功能页相同的页面框（标题与内容同一条左边界）、只按语义保留边界线，搜索、重试、翻页、关闭等动作改为图标按钮。Web registry 2026-09-07.9 的页面绑定、路由与 API 全部不变，无事件、五核或数据库变更；`Contract impact`：无契约变更，仅为承载方式与视觉一致性。
 
 公共维护库修正（registry 2026-09-07.10）：`/visualize` 与别名无需登录。gallery/preview 仅开放已登记维护作品；preview 允许有界参数重算，拒绝任意 spec，固定 public:maintained 展示 scope。公共播放器不执行个人预测写回或要求完成预测才能播放。生成、私有 workspace、compile/inspect/predict 继续认证，无五核或数据库变更。

@@ -1,9 +1,10 @@
 {
-  "scope": "Chinese narrative reframed around evidence-driven learner memory; retained experiments unchanged",
+  "revision_date": "2026-09-13",
+  "scope": "Five-kernel teaching responsibilities, actual system services, literature-based experimental proposals and engineering review; retained measurement tables unchanged",
   "product_contract_impact": "none",
   "new_experiments_run": false,
   "product_tests_rerun": false,
-  "retained_derived_results_recomputed": "passed; identical to existing derived_results.json",
+  "retained_derived_results": "Existing derived_results.json unchanged; builder validated source hashes and table assertions. No new score computation.",
   "retained_input_hash_validation": "passed",
   "table_data_assertions": {
     "education_rows": 24,
@@ -11,12 +12,12 @@
     "status": "passed"
   },
   "references_numbered": 18,
-  "docx_tables": 5,
+  "docx_tables": 6,
   "docx_figures": 4,
-  "rendered_docx_pages": 17,
+  "rendered_docx_pages": 22,
   "visual_review": {
     "status": "passed",
-    "pages_inspected": 17,
+    "pages_inspected": 22,
     "checks": [
       "Chinese glyphs",
       "table headers and pagination",
@@ -24,22 +25,66 @@
       "all reference entries",
       "no clipping or overlap"
     ],
-    "final_render_equivalence": "All 17 pages of the rebuilt narrative version individually inspected."
+    "final_render_equivalence": "All 22 predecessor pages reviewed individually; changed final pages 14, 15, 20, 21 re-inspected; other 18 final page PNG hashes identical."
   },
   "figure_formats": [
     "editable SVG",
     "vector PDF",
     "450 dpi PNG"
   ],
-  "source_validation_scope": "Retained experiment snapshot 0da6615eeb2a5dded4101535e8534cd5494b43a9; not concurrent workspace changes.",
+  "source_validation_scope": {
+    "retained_experiment_snapshot": "0da6615eeb2a5dded4101535e8534cd5494b43a9",
+    "static_engineering_audit_snapshot": "0edeef1ae2b711b1e72502f39fd391eeafa35c21",
+    "concurrent_product_work_included": false
+  },
+  "narrative_validation": {
+    "old_experiment_tables_2_to_5_now_3_to_6": "byte-identical table bodies",
+    "references_and_declarations": "byte-identical",
+    "figures_2_to_4": "all nine files unchanged",
+    "figure_1": "redrawn as teaching responsibilities, authoritative state formation, and product services",
+    "results_interpretation": "no_episodes retains time controls; raw target non-delivery distinguished from state changes and control routing",
+    "proposed_experiments": "explicitly not executed",
+    "engineering_findings": "static conditional risks and proposals; no end-to-end bug reproduction or product changes"
+  },
+  "posthoc_retained_log_audit": {
+    "status": "executed and passed",
+    "new_experiment": false,
+    "script": "audit_retained_evidence.py",
+    "result": "retained_evidence_audit.json",
+    "source_files": 8,
+    "raw_target_instances": 1152,
+    "has_mutation_no_fact": 430,
+    "no_mutation": 722,
+    "no_episodes_time_controls_per_budget": 144,
+    "semantic_adjudication_of_722_targets": false,
+    "raw_inputs_required": "Four formation.jsonl and four raw.jsonl.gz local retained shards; not all detailed inputs distributed with public paper assets"
+  },
+  "literature_review": {
+    "sections": 6,
+    "comparison_table_rows": 7,
+    "reference_count": 18,
+    "primary_sources_rechecked": [
+      "DeepTutor 2604.26962v1",
+      "LongMemEval 2410.10813v2",
+      "LoCoMo ACL 2024.acl-long.747",
+      "Tutor CoPilot 2410.03017v2"
+    ],
+    "external_results_reproduced": false
+  },
   "files_sha256": {
-    "LearnFlow_Educational_Memory_Manuscript_ZH.docx": "6f827a638f56d8fa15ce8a3def16089736db58b46d3e046ab0c257f0903152e7",
-    "manuscript_zh.md": "625e5139adf65d63372dcdff4e603532c9773c597f18a1842f8f4d51cdf99592",
-    "build_paper_zh.py": "cd1c4c817cbb0809907b8e7dbf75a5162ac0dc3e9f57cc3804d40d8f0a470e3d",
-    "图表设计与复现说明.md": "0392bd12358d6d44d4efafaa7f9f3d813b8df14034cafd7d986d7ee7a4d6c171",
-    "figures_zh/fig1_architecture.pdf": "9fa7a3db7a117c848b6b3e34189fa7110420bb35530776a3a02436785192f43d",
-    "figures_zh/fig1_architecture.png": "ac153b05900b510e924240cbb55283ce39760de0929548795ff1e7073fa0ee5e",
-    "figures_zh/fig1_architecture.svg": "0ca44495524d423574429698d548876333371be74137c8da01886c41921a5f7a",
+    "LearnFlow_Educational_Memory_Manuscript_ZH.docx": "9cba1716a60f2acf2475ca910e50d274761601030eabc79b9c403cd51b0db713",
+    "manuscript_zh.md": "4ceb1e2127690ec019068f669baf1b8825701093190499491e90f6b1d924b3f5",
+    "build_paper_zh.py": "93d635a4abe944bf6f88bbbeabb793d3901745f0403566379a162fd3ddb2b621",
+    "图表设计与复现说明.md": "b59171903ef9a495783509affaeb3330613602850fec0effd88dc433111d379f",
+    "五核研究主张与工程路线.md": "45216be7153e0df8abbf08d4d078c8e6a2a99b3dea079a3e4b836eec14c6de4c",
+    "audit_retained_evidence.py": "159f21ac3e35382082cc63994bba0f7599bf5b119a021becc5fee395ad90aed9",
+    "retained_evidence_audit.json": "65a48b3acaa04138579d4244da7f6c80e80f0536cabdfa0337e006c70a1f2274",
+    "derived_results.json": "68dd17ba6d6d9fe531d3950d92bb6ae99aaf25186c51076fd4b966ff9e6d1c3e",
+    "references_zh.bib": "8742ee7627255a68971692faa4f25f52f73fe825a4a3f5c3fc4b6e0ce42ad58a",
+    "literature_review_sources.md": "2266020653efb7cc1091519cb847664dc02409e39fea7a8183d11fd32d9c4aaa",
+    "figures_zh/fig1_architecture.pdf": "ee2c647ca10314585d81c4367748aada73c7feb2299244bac3fea42d04c5d561",
+    "figures_zh/fig1_architecture.png": "45316ce42c8e15fcd87e2449172db0e32b39d565a37d7b74d6c8c03a3c9c678b",
+    "figures_zh/fig1_architecture.svg": "b1b2640a85cb94006231b6addf038f37b25d85ea2f52e2076f022f75f4ad1ccd",
     "figures_zh/fig2_temporal.pdf": "3867a84fd597612fb1e9cf276422035f0017d917b3cabc403ef7692e511ad4ac",
     "figures_zh/fig2_temporal.png": "b73443bd8bd246ed62450d3d97d1764a1b013c20b2a6c1bbbf977921eb11e2e7",
     "figures_zh/fig2_temporal.svg": "c97103f554ce5ecc82f4bba4e3493d248fce5d3462be03f40e4f00e046ba20a4",
@@ -48,24 +93,6 @@
     "figures_zh/fig3_education.svg": "2310f8c20a82db6edea9ac62e50acc85eda436b82ab1cda0b35a298348c8d5cd",
     "figures_zh/fig4_locomo.pdf": "0714c1e15de0adec9787bd7d04f3594904e33562ae5725c10b58d31acefb9b7b",
     "figures_zh/fig4_locomo.png": "476e7967a24c674d9354bd9ce11d26cdaf3b829187fc0ab64e18bdd3ff0f2b8b",
-    "figures_zh/fig4_locomo.svg": "599744256558aec46d2fb933779b0ada6ea8e2eb63c3b44c21139a24a389afe3",
-    "references_zh.bib": "8742ee7627255a68971692faa4f25f52f73fe825a4a3f5c3fc4b6e0ce42ad58a",
-    "literature_review_sources.md": "1bc257f3efd03bbd1be918641ebead8e2d05892e52d18681fefd5d52371b526a"
-  },
-  "literature_review": {
-    "sections": 6,
-    "comparison_table_rows": 7,
-    "new_references": 5,
-    "primary_source_checks": "passed within disclosed public-access scope",
-    "deeptutor_version": "2604.26962v1",
-    "external_results_reproduced": false,
-    "methods_results_discussion_comparison": "Narrative and results order revised; all retained results body paragraphs and tables 2-5 unchanged.",
-    "all_12_figure_files": "unchanged"
-  },
-  "narrative_validation": {
-    "experiment_tables_2_to_5": "byte-identical",
-    "results_body_paragraphs": "all preserved verbatim; reordered sections",
-    "references_and_declarations": "byte-identical",
-    "new_experiments": false
+    "figures_zh/fig4_locomo.svg": "599744256558aec46d2fb933779b0ada6ea8e2eb63c3b44c21139a24a389afe3"
   }
 }

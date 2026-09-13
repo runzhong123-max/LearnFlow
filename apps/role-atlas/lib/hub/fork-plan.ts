@@ -11,11 +11,12 @@ export async function planHubFork(input: { ownerSubjectId: string; releaseId: st
   const runId = `fork-run:${key}`;
   const conversationId = `fork-chat:${key}`;
   const packageId = `role-package:project:${projectId}`;
-  const result = structuredClone(input.result);
+  let result = structuredClone(input.result);
   result.runId = runId;
+  result.projectId = projectId;
   result.brief.projectId = projectId;
   result.snapshot.id = `snapshot:fork:${key}`;
-  refreshRolePackageManifest(result, { packageId, packageVersion: "1.0.0" });
+  result = refreshRolePackageManifest(result, { packageId, packageVersion: "1.0.0" });
   const upstream: ForkOrigin = { packageLineId: input.packageLineId, releaseId: input.releaseId,
     packageId: input.manifest.packageId, packageVersion: input.manifest.packageVersion,
     snapshotId: input.manifest.snapshotId, rootHash: input.manifest.rootHash,

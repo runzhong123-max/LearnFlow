@@ -1,3 +1,4 @@
+import { latestRolePackageReference, rolePackageToolArguments } from '../../../../packages/learning-client/src/role-packages/reference.ts'
 import { conversionContextMessage } from '../../../../packages/learning-client/src/work-task-conversion/context.ts'
 import { explicitProjectGuidanceMode, hasProjectGuidanceConversation, projectGuidanceDirectRequest, projectGuidanceConfirmation, projectGuidanceObjects } from '../../../../packages/learning-client/src/project-guidance/contract.ts'
 import { VISUAL_PLUGIN_PLANNER_INSTRUCTIONS, visualPluginRequest, visualPluginReferences } from '../../../../packages/learning-client/src/visuals/plugin-host.ts'
@@ -1116,6 +1117,8 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
   }
   const toolDefinitions = runtimeToolDefinitions(input)
 
+  let selectedRolePackage = latestRolePackageReference(input.messages)
+
   const executeRegisteredPluginTool = async (
     call: AgentToolCall,
     callSequence: number,
@@ -1132,6 +1135,7 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
     const pluginSignal = AbortSignal.timeout(Math.max(1,Math.min(registered.contribution.timeoutMs || 30000,deadline-Date.now())))
     let acceptingPluginStages = true
     try {
+      call = { ...call, arguments: rolePackageToolArguments(registered.pluginId, registered.contribution.id, call.arguments, selectedRolePackage) }
       if (registered.pluginId === 'learning_task_conversion'
         && ['prepare_learning_task_intake', 'draft_learning_task'].includes(registered.contribution.id)
         && explicitProjectGuidanceMode(latestMessage) !== 'learning'
@@ -1178,6 +1182,9 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
           }),
         },
       })
+      selectedRolePackage = latestRolePackageReference([{ toolRuns: [{ plugin: {
+        pluginId: execution.pluginId, toolId: execution.contribution.id, result: execution.result,
+      } }] }]) || selectedRolePackage
       return {
         run: {
           id: `plugin-tool-${pluginStartedAt}-${callSequence}`,

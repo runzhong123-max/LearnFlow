@@ -1,3 +1,4 @@
+import { checkedRolePackageBundle, type RolePackageBundle } from '../../../packages/learning-client/src/role-packages/bundle.ts'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { delimiter, dirname, join, resolve } from 'node:path'
@@ -9,6 +10,7 @@ import {
   type PluginJson,
   type PluginToolResult,
 } from '../../src/plugin-api.ts'
+import { rolePackageInstallRoot } from './package-file.ts'
 const {
   ROLE_CAPABILITY_PLUGIN,
   ROLE_OBJECT_SCHEMA_VERSION,
@@ -139,6 +141,13 @@ export type PackageSelector = {
   packageId?: string
   packageVersion?: string
   snapshotId?: string
+  /**
+   * Optional content pin. A reference fixes the full immutable identity
+   * (packageId + packageVersion + snapshotId + rootHash); carrying the hash
+   * through later reads keeps them from silently resolving to different bytes
+   * that happen to share the same id, version and snapshot.
+   */
+  rootHash?: string
 }
 
 const PACKAGE_ROOT = fileURLToPath(new URL('./data/packages', import.meta.url))
@@ -170,7 +179,7 @@ export type RolePackageSource = {
   accessScope: 'official' | 'reviewed_public' | 'owner_private' | 'simulation_all' | 'installed'
 }
 
-function defaultPackageSources(): RolePackageSource[] {
+export function defaultPackageSources(): RolePackageSource[] {
   const sources: RolePackageSource[] = [{ root: PACKAGE_ROOT, sourceKind: 'official_builtin', accessScope: 'official' }]
   const explicitRoots = (process.env.LEARNFLOW_ROLE_AGENT_PACKAGE_ROOTS || '').split(delimiter).filter(Boolean)
   const inferredRoots = process.env.NODE_ENV === 'production' ? [] : [
@@ -181,6 +190,14 @@ function defaultPackageSources(): RolePackageSource[] {
     if (existsSync(absolute) && !sources.some(source => resolve(source.root) === absolute)) {
       sources.push({ root: absolute, sourceKind: 'role_agent_simulation', accessScope: 'simulation_all' })
     }
+  }
+  // Packages installed at runtime land outside the bundled root. Without this
+  // source they would be on disk yet invisible to resolve(), which is exactly
+  // how a pinned reference ends up failing with role_package_not_found.
+  const installRoot = rolePackageInstallRoot()
+  if (installRoot !== resolve(PACKAGE_ROOT) && existsSync(installRoot)
+    && !sources.some(source => resolve(source.root) === installRoot)) {
+    sources.push({ root: installRoot, sourceKind: 'installed', accessScope: 'installed' })
   }
   return sources
 }
@@ -203,16 +220,19 @@ function discoverManifests(root: string) {
 
 function loadPackage(manifestPath: string, source: RolePackageSource): LoadedRolePackage {
   const manifest = asObject(readJson(manifestPath).value, 'manifest') as unknown as StaticPackageManifest
+  return loadPackageContent(manifest, path => readJson(join(dirname(manifestPath), path)), source)
+}
+
+function loadPackageContent(manifest: StaticPackageManifest, read: (path: string) => { raw: string; value: unknown }, source: RolePackageSource): LoadedRolePackage {
   if (manifest.packageProtocol !== 'static-role-package' || !manifest.packageId || !manifest.snapshotId || !manifest.rootHash) {
-    throw new Error(`role_package_invalid:${manifestPath}`)
+    throw new Error(`role_package_invalid:${manifest.packageId}`)
   }
-  const directory = dirname(manifestPath)
   function componentValue(entrypoint: string, label: string) {
     const filename = manifest.entrypoints[entrypoint]
     if (!filename || filename.includes('..') || filename.startsWith('/')) throw new Error(`role_package_invalid:${label}_entrypoint`)
-    const loaded = readJson(join(directory, filename))
+    const loaded = read(filename)
     if (manifest.hashes[filename] !== sha256(loaded.raw)) throw new Error(`role_package_hash_mismatch:${filename}`)
-    return loaded.value
+    return loaded.value as PluginJson
   }
   const component = (entrypoint: string, label: string) => asObject(componentValue(entrypoint, label), label)
   const semantic = component('semanticGraph', 'semantic') as unknown as LoadedRolePackage['semantic']
@@ -331,7 +351,18 @@ export class RolePackageRuntime {
   readonly packages: readonly LoadedRolePackage[]
   readonly discoveryIssues: readonly string[]
 
-  constructor(root: string | RolePackageSource[] = defaultPackageSources()) {
+  constructor(root: string | RolePackageSource[] | { bundles: RolePackageBundle[] } = defaultPackageSources()) {
+    if (typeof root === 'object' && !Array.isArray(root)) {
+      this.packages = root.bundles.map(value => {
+        const bundle = checkedRolePackageBundle(value)
+        return loadPackageContent(bundle.manifest as unknown as StaticPackageManifest,
+          path => ({ raw: bundle.components[path], value: JSON.parse(bundle.components[path]) }),
+          { root: 'authenticated-gateway', sourceKind: bundle.manifest.visibility === 'private' ? 'owner_private' : 'installed',
+            accessScope: bundle.manifest.visibility === 'private' ? 'owner_private' : 'installed' })
+      })
+      this.discoveryIssues = []
+      return
+    }
     const sources: RolePackageSource[] = typeof root === 'string'
       ? [{ root: resolve(root), sourceKind: 'installed', accessScope: 'installed' }]
       : root.map(source => ({ ...source, root: resolve(source.root) }))
@@ -369,15 +400,47 @@ export class RolePackageRuntime {
       && (!selector.snapshotId || item.manifest.snapshotId === selector.snapshotId)
     ))
     if (matches.length !== 1) {
-      throw new Error(matches.length
-        ? 'role_package_ambiguous:provide packageId, packageVersion or snapshotId'
-        : 'role_package_not_found:the requested immutable package is not installed')
+      throw this.resolutionFailure(selector, matches.length ? 'ambiguous' : 'missing')
     }
-    return matches[0]
+    const match = matches[0]
+    // Matching id + version + snapshot is not enough to claim the pinned
+    // content: those three fields describe a release slot, not its bytes. When
+    // the caller carries a rootHash, an installed package with different
+    // content must fail loudly instead of quietly answering from other bytes.
+    if (selector.rootHash && match.manifest.rootHash !== selector.rootHash) {
+      throw this.resolutionFailure(selector, 'content')
+    }
+    return match
+  }
+
+  /**
+   * A pinned reference can only resolve against packages this runtime can see.
+   * A bare "not installed" reads like a transient fault, so the caller retries
+   * other body-dependent tools and loops; the model cannot tell a missing本体
+   * from a hiccup. Naming what IS installed and how to install the rest makes
+   * the failure terminal: the next useful action is an operator command or a
+   * different choice, never another read.
+   *
+   * Only identities the runtime already exposes through list_role_packages are
+   * repeated here, so this adds no disclosure.
+   */
+  private resolutionFailure(selector: PackageSelector, reason: 'missing' | 'content' | 'ambiguous') {
+    const code = reason === 'content' ? 'role_package_root_hash_mismatch'
+      : reason === 'ambiguous' ? 'role_package_ambiguous' : 'role_package_not_found'
+    const requested = [selector.packageId, selector.packageVersion, selector.snapshotId].filter(Boolean).join(' / ') || '(未指定)'
+    const installed = this.packages.length
+      ? this.packages.map(item => `${item.manifest.packageId}@${item.manifest.packageVersion} (${item.manifest.snapshotId})`).join('、')
+      : '无'
+    const guidance = reason === 'content'
+      ? '本机存在同 id/版本/快照的岗位包，但内容哈希不同，不能沿用旧引用继续读取。'
+      : reason === 'ambiguous'
+        ? '选择器同时匹配多个已安装版本，请补充 packageId、packageVersion 或 snapshotId 后重试。'
+        : '该不可变版本在本机不可用，重试读取不会成功。请让运维执行 npm run role:import-release 安装该版本，或改选下方已安装版本。'
+    return new Error(`${code}:${guidance} 请求=${requested}；本机已安装=${installed}；安装完成后需重启 LearnFlow 前端以重建岗位包索引。`)
   }
 
   private hasSelector(selector: PackageSelector) {
-    return Boolean(selector.packageId || selector.packageVersion || selector.snapshotId)
+    return Boolean(selector.packageId || selector.packageVersion || selector.snapshotId || selector.rootHash)
   }
 
   private resolveForQuery(selector: PackageSelector, query: string) {
@@ -627,6 +690,10 @@ export class RolePackageRuntime {
           packageId: pkg.manifest.packageId,
           packageVersion: pkg.manifest.packageVersion,
           snapshotId: pkg.manifest.snapshotId,
+          // The reference verified this hash against the selected immutable
+          // package. Reusing it downstream keeps every later read pinned to the
+          // exact bytes the learner chose, not merely the same release slot.
+          rootHash: pkg.manifest.rootHash,
         },
         boundary: '引用固定到本次 ToolRun；后续工具必须复用精确 selector，不得按标题静默切换版本。',
       },
@@ -895,6 +962,7 @@ export function packageSelector(input: Record<string, PluginJson>): PackageSelec
     packageId: typeof input.packageId === 'string' && input.packageId ? input.packageId : undefined,
     packageVersion: typeof input.packageVersion === 'string' && input.packageVersion ? input.packageVersion : undefined,
     snapshotId: typeof input.snapshotId === 'string' && input.snapshotId ? input.snapshotId : undefined,
+    rootHash: typeof input.rootHash === 'string' && input.rootHash ? input.rootHash : undefined,
   }
 }
 

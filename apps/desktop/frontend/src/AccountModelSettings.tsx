@@ -17,6 +17,7 @@ import {
   type FormalModelCredentialMetadata,
   type FormalVisionCredentialMetadata,
 } from './formal-runtime.ts'
+import { UserIdentity } from '../../../../packages/learning-client/src/identity/UserIdentity'
 import styles from './AccountModelSettings.module.css'
 
 
@@ -289,8 +290,7 @@ export default function AccountModelSettings({
           <i>{account.role === 'admin' ? '管理员' : '学习者'}</i>
         </div>
         <div className={styles.accountRow}>
-          <div className={styles.avatar}>{account.display_name.slice(0, 1).toUpperCase()}</div>
-          <div><strong>{account.display_name}</strong><span>@{account.username} · 账号 {account.account_number}</span></div>
+          <UserIdentity displayName={account.display_name} username={account.username} avatar={account.avatar} detail={`账号 ${account.account_number}`} size="lg" />
           <button type="button" className={styles.secondary} disabled={Boolean(busyAction)} onClick={() => { void signOut() }}>{busyAction === 'logout' ? '正在退出…' : '切换账号'}</button>
         </div>
         <div className={styles.syncRow}>

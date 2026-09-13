@@ -20,7 +20,8 @@ test("对话表单的九种选择进入实际契约和工作计划，保留空�
       const contract = createIterationContract(request, base);
       const work = planIterationWork({ runId: request.runId, contract, opportunities: discoverIterationOpportunities({ request, contract, inspection: inspectSnapshot(base) }) });
       assert.equal(contract.mode, mode);
-      assert.equal(contract.initiativeProfile, initiativeProfile);
+      assert.equal(contract.initiativeProfile, "user_directed", "选中对象独立决定改动范围");
+      assert.equal(contract.research?.adoption, "automatic");
       assert.equal(contract.changeIntents[0], intent);
       assert.equal(contract.targetAsOf, "2026-09-07");
       assert.deepEqual(contract.targetIds, [target.id]);

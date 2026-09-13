@@ -1,5 +1,6 @@
 import { stableHash } from "@/lib/build/compiler";
 import { iterationTargetNodes } from "./targets";
+import { compareResearchQuality } from "@/lib/research/quality";
 import { learningRegressionReasons, sourceFingerprints } from "./preserve-graph";
 import { findingIdentity } from "./inspector";
 import type { ColdStartBuildResult, WebSearchCategory } from "@/lib/build/types";
@@ -42,6 +43,7 @@ function intentsFromRequest(request: SnapshotIterationRequest): IterationIntent[
 }
 
 export function createIterationContract(request: SnapshotIterationRequest, result: ColdStartBuildResult): IterationContract {
+  if (request.research) request = { ...request, prompt: request.research.objective ?? request.prompt, targetIds: request.research.targetIds, initiativeProfile: request.research.changeScope === "selected" ? "user_directed" : "autonomous", maxRounds: request.research.budget.revisions, maxWorkItems: request.research.budget.tasks };
   const profile = request.initiativeProfile;
   const mode = request.mode || "auto";
   const prompt = request.prompt.trim();
@@ -63,6 +65,8 @@ export function createIterationContract(request: SnapshotIterationRequest, resul
   const graphRadius = profile === "autonomous" ? "global" as const : profile === "co_guided" ? 2 : 1;
   return {
     id: `iteration-contract:${stableHash(`${request.runId}:${profile}:${objective}`)}`,
+    research: request.research,
+    stopPolicy: { maxRounds: request.maxRounds, stagnantRounds: request.research?.budget.stagnantRounds ?? request.stagnantRoundLimit ?? 3 },
     initiativeProfile: profile,
     mode,
     objective,
@@ -87,12 +91,6 @@ export function createIterationContract(request: SnapshotIterationRequest, resul
       "已接受核心不得产生新的结构错误或显著证据回退",
       "允许有明确认识状态和证据边界的研究前沿增长",
       "本轮必须产生风险降低、信息增量或用户目标满足中的至少一项",
-    ],
-    stopConditions: [
-      "达到来源、任务或轮次预算",
-      "新增研究不再提高目标覆盖、证据或问题解决程度",
-      "剩余问题依赖用户判断、组织资料或真实工作区",
-      "继续变化会造成已接受核心回退",
     ],
     inferredFrom: [
       `发起方式：${profile}`,
@@ -261,9 +259,6 @@ export function planIterationWork(input: {
     const kind = opportunity.intents.find((intent) => input.contract.changeIntents.includes(intent))
       || opportunity.intents[0]
       || "verify";
-    const dependencies = kind === "repair" ? [] : protocolItems
-      .filter((item) => item.id !== opportunity.id)
-      .map((item) => `work:${stableHash(`${input.runId}:${item.id}`)}`);
     return {
       id: `work:${stableHash(`${input.runId}:${opportunity.id}`)}`,
       kind,
@@ -274,7 +269,6 @@ export function planIterationWork(input: {
       findingIds: opportunity.findingIds,
       priority: Math.max(1, Math.round(opportunity.expectedValue - index * 1.5)),
       requiresResearch: opportunity.requiresResearch,
-      dependencies,
       status: "planned",
     };
   });
@@ -383,7 +377,7 @@ export function planIterationResearch(input: {
     workItemIds: researchItems.map((item) => item.id),
     queries: input.request.webResearch ? [...queries.values()].sort((left, right) => right.priority - left.priority).slice(0, 32) : [],
     rationale: researchItems.map((item) => `${item.title}：${item.detail}`),
-    stopConditions: input.contract.stopConditions,
+    stopPolicy: input.contract.stopPolicy,
   };
 }
 
@@ -409,10 +403,12 @@ export function evaluateIteration(input: {
   const targetDateBlocked = input.contract.targetAsOf !== input.base.snapshot.asOf
     && input.after.findings.some((finding) => finding.layer === "temporal" && finding.severity === "error");
   const scope = reviewIterationScope(input.base, input.candidate, input.contract);
-  const learningReasons = [...learningRegressionReasons(input.base, input.candidate, input.migrations), ...scope.reasons];
+  const reviewedChanges = input.contract.research ? input.candidate.researchRun?.changeSets.filter(change => (change.status === "needs_review" || (change.status === "candidate" && change.checks.some(check => check.layer === "evidence" && check.passed))) && change.checks.some(check => check.layer === "integrity" && check.passed)) || [] : [];
+  const retired = new Set(reviewedChanges.flatMap(change => change.operations.filter(operation => ["replace", "split", "deprecate"].includes(operation.kind)).map(operation => operation.targetId)));
+  const learningReasons = [...learningRegressionReasons(input.base, input.candidate, input.migrations, retired), ...scope.reasons];
   if (input.previousAccepted) {
     const prior = input.previousAccepted;
-    const priorLosses = learningRegressionReasons(prior.candidate, input.candidate, input.migrations);
+    const priorLosses = learningRegressionReasons(prior.candidate, input.candidate, input.migrations, retired);
     if (priorLosses.length || input.after.core.errorCount > prior.inspection.core.errorCount
       || input.after.core.unsupportedAcceptedCount > prior.inspection.core.unsupportedAcceptedCount
       || input.after.coverage.tasksWithoutSkills > prior.inspection.coverage.tasksWithoutSkills
@@ -425,6 +421,8 @@ export function evaluateIteration(input: {
   if (!recoversEmptyTaskLayer && input.after.coverage.tasksWithoutSkills > input.before.coverage.tasksWithoutSkills) {
     learningReasons.push(`任务缺少知识技能覆盖 ${input.before.coverage.tasksWithoutSkills} → ${input.after.coverage.tasksWithoutSkills}，不能以其他维度增益抵消`);
   }
+  const quality = compareResearchQuality(input.base, input.candidate);
+  if (input.contract.research && quality.regressed.length) learningReasons.push(`任务转换信息发生回退：${quality.regressed.join("、")}`);
   const coreRegression = learningReasons.length > 0 || targetDateBlocked || !input.after.protocolValid
     || input.after.core.errorCount > input.before.core.errorCount
     || input.after.core.unsupportedAcceptedCount > input.before.core.unsupportedAcceptedCount
@@ -432,7 +430,7 @@ export function evaluateIteration(input: {
   const healthImproved = input.after.audit.metrics.score >= input.before.audit.metrics.score + 0.5
     || input.after.core.errorCount < input.before.core.errorCount
     || resolvedFindings > introducedFindings;
-  const informationScore = Math.max(0,
+  const informationScore = input.contract.research ? Math.max(0, (quality.conversionImproved ? 300 : 0) + (quality.expressionImproved ? 200 : 0) + resolvedFindings * 100 - introducedFindings * 100) : Math.max(0,
     newSources * 8
     + newSemanticNodes * 3
     + newProcessScenarios * 6
@@ -440,6 +438,7 @@ export function evaluateIteration(input: {
     - introducedFindings * 3,
   );
   const objectiveSignals = [
+    ...(input.contract.research ? [quality.conversionImproved ? "典型任务转换信息改善" : "", quality.expressionImproved ? "明确的表达缺陷减少（仍待学生反馈验证）" : ""] : []),
     newSources ? `新增 ${newSources} 个来源` : "",
     newSemanticNodes ? `新增 ${newSemanticNodes} 个语义节点` : "",
     newProcessScenarios ? `新增 ${newProcessScenarios} 个事理场景` : "",
@@ -465,12 +464,12 @@ export function evaluateIteration(input: {
     return (newEvidence && JSON.stringify(before.learningDefinition) !== JSON.stringify(after.learningDefinition))
       || (Boolean(oldMode) && ["ambiguous", "graph_gap"].includes(oldMode!) && Boolean(newMode) && !["ambiguous", "graph_gap"].includes(newMode!));
   });
-  const repairProgress = selectedResolved || coverageImproved || evidenceImproved || mountDefinitionImproved;
+  const repairProgress = reviewedChanges.length > 0 || Boolean(input.contract.research && quality.conversionImproved) || selectedResolved || coverageImproved || evidenceImproved || mountDefinitionImproved;
   const targetedResolution = selectedFindings.some(f => f.targetIds.some(id => input.contract.targetIds.includes(id)) && !afterIds.has(findingIdentity(f)));
   const targetProgress = scope.targetedChange || targetedResolution || recoversEmptyTaskLayer;
   const meaningful = input.after.protocolValid && !coreRegression
     && targetProgress
-    && (input.contract.mode === "risk_repair" ? repairProgress : healthImproved || informationScore > 0);
+    && (input.contract.mode === "risk_repair" ? repairProgress : healthImproved || informationScore > 0 || reviewedChanges.length > 0);
   return {
     meaningful,
     coreRegression,

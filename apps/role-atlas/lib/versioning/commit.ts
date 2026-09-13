@@ -107,6 +107,7 @@ export async function projectVersionHeadState(projectId: string, versionId: stri
 }
 
 export async function commitProjectVersion(input: {
+  adopt?: boolean;
   projectId: string;
   result: ColdStartBuildResult;
   sourceRunId: string;
@@ -182,12 +183,12 @@ export async function commitProjectVersion(input: {
   const storedBuildResultJson = await storeLargeText(d1, { table: "build_runs", id: input.sourceRunId, column: "result_json" }, fullPackageJson);
   try {
     const committed = await d1.batch([...versionCommitStatements(d1, {
-      id, projectId: input.projectId, sourceRunId: input.sourceRunId, sourceKind: input.sourceKind,
+      id, adopt: input.adopt, projectId: input.projectId, sourceRunId: input.sourceRunId, sourceKind: input.sourceKind,
       sourceInput: JSON.stringify(input.sourceInput || { kind: input.sourceKind }), parentVersionId,
       expectedHeadId: parentVersionId, version, snapshotId: result.snapshot.id,
       rootHash: snapshot.contentHash, status, message: input.message, authorKind: input.authorKind || "agent",
       packageJson: storedVersionPackageJson ?? "", buildResultJson: storedBuildResultJson ?? "", now, conversationId: input.conversationId, jobId: input.jobId, jobOwner: input.jobOwner,
-    }), automaticMountEnqueueStatement(d1, { projectId: input.projectId, versionId: id, conversationId: input.conversationId, now })]);
+    }), ...(input.adopt === false ? [] : [automaticMountEnqueueStatement(d1, { projectId: input.projectId, versionId: id, conversationId: input.conversationId, now })])]);
     if (!committed[1].meta.changes) throw new Error("BUILD_RUN_PROJECT_CONFLICT");
   } catch (error) {
     // The unique project/source-run constraint is the idempotency authority, not the earlier read.
@@ -305,4 +306,11 @@ export async function adoptProjectVersion(input: {
   const adopted = (Boolean(batch[0].meta.changes) || (state.appliedToHead && input.expectedHeadVersionId === input.versionId))
     && (!input.conversationId || conversationSwitched);
   return { adopted, conversationSwitched, ...state };
+}
+
+/** Read-only provenance lookup for completion recovery; it never adopts a version. */
+export async function committedRunProvenance(projectId: string, sourceRunId: string) {
+  const [row] = await getDb().select({ projectId: projectVersions.projectId, sourceRunId: projectVersions.sourceRunId, parentVersionId: projectVersions.parentVersionId })
+    .from(projectVersions).where(and(eq(projectVersions.projectId, projectId), eq(projectVersions.sourceRunId, sourceRunId))).limit(1);
+  return row || null;
 }

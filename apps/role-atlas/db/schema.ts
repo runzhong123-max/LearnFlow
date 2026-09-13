@@ -111,57 +111,6 @@ export const projectVersions = sqliteTable("project_versions", {
   uniqueIndex("idx_project_versions_project_source_run").on(table.projectId, table.sourceRunId),
 ]);
 
-export const riskRuns = sqliteTable("risk_runs", {
-  id: text("id").primaryKey(),
-  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
-  baseVersionId: text("base_version_id").notNull().references(() => projectVersions.id, { onDelete: "cascade" }),
-  candidateVersionId: text("candidate_version_id"),
-  status: text("status", { enum: ["running", "completed", "no_improvement", "failed", "cancelled"] }).notNull().default("running"),
-  mode: text("mode").notNull(),
-  phase: text("phase").notNull().default("baseline"),
-  inputJson: text("input_json").notNull(),
-  checkpointJson: text("checkpoint_json"),
-  resultJson: text("result_json"),
-  error: text("error"),
-  startedAt: text("started_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-  completedAt: text("completed_at"),
-}, (table) => [index("idx_risk_runs_project_started").on(table.projectId, table.startedAt)]);
-
-export const riskEvents = sqliteTable("risk_events", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  runId: text("run_id").notNull().references(() => riskRuns.id, { onDelete: "cascade" }),
-  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
-  seq: integer("seq").notNull(),
-  kind: text("kind").notNull(),
-  eventJson: text("event_json").notNull(),
-  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-}, (table) => [uniqueIndex("idx_risk_events_run_seq").on(table.runId, table.seq)]);
-
-export const riskIssues = sqliteTable("risk_issues", {
-  id: text("id").notNull(),
-  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
-  runId: text("run_id").notNull().references(() => riskRuns.id, { onDelete: "cascade" }),
-  fingerprint: text("fingerprint").notNull(),
-  profile: text("profile").notNull(),
-  severity: text("severity").notNull(),
-  status: text("status").notNull(),
-  issueJson: text("issue_json").notNull(),
-  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-}, (table) => [
-  uniqueIndex("idx_risk_issues_run_id").on(table.runId, table.id),
-  index("idx_risk_issues_project_fingerprint").on(table.projectId, table.fingerprint),
-]);
-
-export const riskPatches = sqliteTable("risk_patches", {
-  id: text("id").notNull(),
-  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
-  runId: text("run_id").notNull().references(() => riskRuns.id, { onDelete: "cascade" }),
-  iteration: integer("iteration").notNull(),
-  status: text("status").notNull(),
-  patchJson: text("patch_json").notNull(),
-  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-}, (table) => [uniqueIndex("idx_risk_patches_run_id").on(table.runId, table.id)]);
-
 /** Storage-neutral snapshot history used by skills outside a project tree. */
 export const snapshotVersions = sqliteTable("snapshot_versions", {
   snapshotId: text("snapshot_id").primaryKey(),
@@ -175,33 +124,6 @@ export const snapshotVersions = sqliteTable("snapshot_versions", {
   packageJson: text("package_json").notNull(),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
-
-export const snapshotRiskRuns = sqliteTable("snapshot_risk_runs", {
-  id: text("id").primaryKey(),
-  baseSnapshotId: text("base_snapshot_id").notNull(),
-  candidateSnapshotId: text("candidate_snapshot_id"),
-  projectId: text("project_id"),
-  projectVersionId: text("project_version_id"),
-  status: text("status").notNull().default("running"),
-  mode: text("mode").notNull(),
-  phase: text("phase").notNull().default("snapshot"),
-  inputJson: text("input_json").notNull(),
-  checkpointJson: text("checkpoint_json"),
-  resultJson: text("result_json"),
-  error: text("error"),
-  startedAt: text("started_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-  completedAt: text("completed_at"),
-}, (table) => [index("idx_snapshot_risk_runs_base_started").on(table.baseSnapshotId, table.startedAt)]);
-
-export const snapshotRiskEvents = sqliteTable("snapshot_risk_events", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  runId: text("run_id").notNull().references(() => snapshotRiskRuns.id, { onDelete: "cascade" }),
-  snapshotId: text("snapshot_id").notNull(),
-  seq: integer("seq").notNull(),
-  kind: text("kind").notNull(),
-  eventJson: text("event_json").notNull(),
-  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-}, (table) => [uniqueIndex("idx_snapshot_risk_events_run_seq").on(table.runId, table.seq)]);
 
 /** Durable runs for the unified discover/research/repair/expand iteration skill. */
 export const snapshotIterationRuns = sqliteTable("snapshot_iteration_runs", {

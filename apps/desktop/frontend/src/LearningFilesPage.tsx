@@ -32,7 +32,7 @@ export default function LearningFilesPage({ onOpen, onOpenTasks }: Props) {
 
   return (
     <section className="learning-files-page">
-      <header className="file-page-heading"><div><h1>讲义与练习</h1><p>集中查看学习任务生成的阅读材料和练习。</p></div><button type="button" className="learning-files-refresh" disabled={loading} onClick={() => void refresh()}><span aria-hidden="true">↻</span>{loading ? '刷新中' : '刷新'}</button></header>
+      <header className="file-page-heading page-hero"><div><h1>讲义与练习</h1><p>集中查看学习任务生成的阅读材料和练习。</p></div><button type="button" className="learning-files-refresh" disabled={loading} onClick={() => void refresh()}><span aria-hidden="true">↻</span>{loading ? '刷新中' : '刷新'}</button></header>
       {error && <div className="formal-inline-error" role="alert">{error}</div>}
       <div className="learning-files-overview">
         <div className="learning-files-stats" aria-label="学习文件概览">

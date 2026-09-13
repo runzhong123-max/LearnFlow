@@ -9,7 +9,7 @@
 1. 复制 `.env.example` 为 `.env`，填写三个同根域名。`AUTH_COOKIE_DOMAIN` 必须是共同父域，例如 `.example.com`。
 2. 生成三个独立密钥：`AUTH_RUNTIME_BRIDGE_TOKEN` 至少 32 字符；`AUTH_API_KEY_KEK` 是 32 随机字节的 URL-safe Base64；`ROLE_PACKAGE_LAUNCH_SECRET` 至少 32 字节并由两产品共享。
 3. 把 DNS 的三个域名都指向服务器。Caddy 会自动申请 HTTPS 证书。
-4. 确认 Role Atlas `packages/` 中含 LearnFlow 要读取的已发布岗位包；公共 Graph Hub 目录应导出到 `output/graph-hub/catalogs/public.json`。个人未审核目录放在 `output/graph-hub/subjects/<sha256(learnflow:learner:<id>)>/catalog.json`，由 Graph Hub 用该主体执行 `export-view` 生成；LearnFlow 会按当前正式 learner id 确定性选择目录，不接受模型传 owner。新 Release 发布后，先通过 `/api/releases/<releaseId>/export?format=json` 下载，再执行 LearnFlow 的 `npm run role:import-file -- --file <文件> --root <role-agent/packages>`，随后重启 `learnflow-frontend`；这样生产进程会重新建立不可变岗位包索引。
+4. 确认 Role Atlas `packages/` 中含 LearnFlow 要读取的已发布岗位包；公共 Graph Hub 目录应导出到 `output/graph-hub/catalogs/public.json`。个人未审核目录放在 `output/graph-hub/subjects/<sha256(learnflow:learner:<id>)>/catalog.json`，由 Graph Hub 用该主体执行 `export-view` 生成；LearnFlow 会按当前正式 learner id 确定性选择目录，不接受模型传 owner。新 Release 发布后，执行 `npm run role:import-release -- --release <releaseId> --root <role-agent/packages>`，随后重启 `learnflow-frontend`；这样生产进程会重新建立不可变岗位包索引。来源默认取 `ROLE_ATLAS_PUBLIC_URL`，只接受 HTTPS（localhost 可用 HTTP），下载后仍按组件哈希与 rootHash 独立校验再原子安装，同一内容重复安装保持幂等。离线环境继续使用 `npm run role:import-file -- --file <文件> --root <role-agent/packages>`。
 
 ## 从现有本地环境迁移数据
 

@@ -1,0 +1,98 @@
+{
+  "kind": "posthoc_read_only_retabulation_not_new_experiment",
+  "source_run": "formal-03",
+  "formation_cases": 1584,
+  "raw_target_gap_counts": {
+    "raw_statement / reference_event_formed_no_memory_fact": 1152
+  },
+  "source_operation_counts": {
+    "learner_statement / production_input": 936,
+    "support_feedback / text_only_partial_adapter": 144,
+    "task_paused / text_only_partial_adapter": 72
+  },
+  "event_projection_counts": {
+    "no_mutation": 722,
+    "has_mutation_no_fact": 430
+  },
+  "kernel_sets": {
+    "no_mutation / none": 722,
+    "has_mutation_no_fact / human": 144,
+    "has_mutation_no_fact / value": 214,
+    "has_mutation_no_fact / structure": 72
+  },
+  "examples_without_raw_text": {
+    "no_mutation": {
+      "case_id": "clp-e25259c8cdf3e464ea85",
+      "pattern": "gap_unresolved",
+      "event_id": 6,
+      "event_type": "vnext_teaching_input_received",
+      "payload_field_types": {
+        "text": "str"
+      },
+      "input_characters": 42,
+      "operation_kind": "learner_statement",
+      "operation_status": "production_input",
+      "mutation_rows": [],
+      "fact_count": 0
+    },
+    "has_mutation_no_fact": {
+      "case_id": "clp-ae089b2ffe6d83fbab9c",
+      "pattern": "temporary_constraint_active",
+      "event_id": 4,
+      "event_type": "vnext_teaching_input_received",
+      "payload_field_types": {
+        "text": "str"
+      },
+      "input_characters": 54,
+      "operation_kind": "learner_statement",
+      "operation_status": "production_input",
+      "mutation_rows": [
+        {
+          "event_id": 4,
+          "id": 6,
+          "kernel": "human",
+          "learner_id": 1,
+          "status": "applied"
+        }
+      ],
+      "fact_count": 0
+    }
+  },
+  "no_episodes_actual_plans": {
+    "1800": {
+      "conditions": 1584,
+      "episode_count": 0,
+      "action:limit_session": 144
+    },
+    "3200": {
+      "conditions": 1584,
+      "episode_count": 0,
+      "action:limit_session": 144
+    }
+  },
+  "no_episodes_guidance": {
+    "1800": {
+      "human / time_budget / explicit_request": 144
+    },
+    "3200": {
+      "human / time_budget / explicit_request": 144
+    }
+  },
+  "raw_source_sha256": {
+    "evals/education_memory_v2/runs/formal-03/education-00/formation.jsonl": "29230ee4f0cf5301bd3f6a4e49addca4e2630179679b9705f98eaa8b560f3e7d",
+    "evals/education_memory_v2/runs/formal-03/education-01/formation.jsonl": "ec48913a69bd4ff7702fef87e41c79b14023a2c1991c372f26e6db2cfc5d2570",
+    "evals/education_memory_v2/runs/formal-03/education-02/formation.jsonl": "47d8bfd1d0e493ac5b966c78ef3402c16dc0e1122e18186abbc086b37934c7c3",
+    "evals/education_memory_v2/runs/formal-03/education-03/formation.jsonl": "92a1c0911f7eeb2353095f4426b727a9967e6abddecf982815b7ab25a3b8e277",
+    "evals/education_memory_v2/runs/formal-03/education-00/raw.jsonl.gz": "cc93016f6cc27a77ddbf8e5a0461272e16791fa62ef1010bfe4b0cf8ff2db64a",
+    "evals/education_memory_v2/runs/formal-03/education-01/raw.jsonl.gz": "26bc80450484def23859a07645427549c2627494a0217ed69aa158bd2415ab9a",
+    "evals/education_memory_v2/runs/formal-03/education-02/raw.jsonl.gz": "50d071a08187fdf4bd6f80c496518e25527d19914f82c31fa15900b70cd70a49",
+    "evals/education_memory_v2/runs/formal-03/education-03/raw.jsonl.gz": "19fd5a4a7b842e1dbc3d314607c6b6b2e05ce4fafdc62fa6c69f2d1d9f76a5b7"
+  },
+  "script_sha256": "159f21ac3e35382082cc63994bba0f7599bf5b119a021becc5fee395ad90aed9",
+  "limitations": [
+    "722 no-mutation targets are not individually semantically adjudicated; no-mutation alone does not prove parser failure.",
+    "430 mutation-without-Fact targets do not establish a new memory failure; product excludes teaching control keys from Fact synthesis.",
+    "Targets can repeat source-like language across distinct synthetic cases; count is expected evidence instances, not unique learners or statements.",
+    "No runtime, original scoring, gold or product files changed."
+  ]
+}

@@ -6,7 +6,7 @@ import { SnapshotRoleRuntime, CORE_ROLE_TOOL_NAMES } from "@/lib/agent/snapshot-
 import { packageLearningSource, resolveRoleLearningPoints } from "@/lib/learning-path/resolution";
 import { validateLearningPathGraphV2, validateGraphExtensionProposalV2, validateRoleLearningAlignmentV2, type LearningPathGraphV2, type RolePackageRef, type GraphExtensionProposalV2, type RoleLearningAlignmentV2 } from "@/lib/learning-path/contract";
 import { GatewayError, packageRefSchema, type Actor, type GatewayRequest } from "./protocol";
-export type LoadedPackage = { packageRef: RolePackageRef; title: string; result: ColdStartBuildResult };
+export type LoadedPackage = { packageRef: RolePackageRef; title: string; result: ColdStartBuildResult; bundle?: import("@/lib/packages/types").StaticRolePackageBundle };
 export type AgentRun = { runId: string; status: "running" | "completed" | "failed"; packageRef: RolePackageRef; result?: { answer: string; citations: unknown[]; packageRef: RolePackageRef }; error?: { code: string }; agentVersion: string; workflowVersion: string };
 export interface GatewayRepository {
   search(actor: Actor, input: { query: string; offset: number; limit: number }): Promise<unknown>;
@@ -22,7 +22,15 @@ export async function dispatchGateway(request: GatewayRequest, actor: Actor, dep
   const repo = deps.repository;
   switch (request.operation) {
     case "catalog.search": return repo.search(actor, z.object({ query: z.string().max(300).default(""), offset: z.number().int().min(0).max(10000).default(0), limit: z.number().int().min(1).max(30).default(20) }).strict().parse(request.payload));
-    case "package.resolve": { const p = z.object({ packageRef: packageRefSchema }).strict().parse(request.payload); return repo.load(actor, p.packageRef); }
+    case "package.resolve": {
+      const p = z.object({ packageRef: packageRefSchema, format: z.literal("bundle").optional() }).strict().parse(request.payload);
+      const loaded = await repo.load(actor, p.packageRef);
+      if (p.format === "bundle") {
+        if (!loaded.bundle) throw new GatewayError("PACKAGE_ARTIFACT_UNAVAILABLE", 502);
+        return { packageRef: loaded.packageRef, title: loaded.title, bundle: loaded.bundle };
+      }
+      return { packageRef: loaded.packageRef, title: loaded.title, result: loaded.result };
+    }
     case "role.query": {
       const p = z.object({ packageRef: packageRefSchema, tool: z.enum(CORE_ROLE_TOOL_NAMES), args: z.record(z.string(), z.unknown()).default({}) }).strict().parse(request.payload);
       const loaded = await repo.load(actor, p.packageRef);

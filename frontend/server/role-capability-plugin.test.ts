@@ -152,6 +152,9 @@ test('package catalog requires an exact user selection before producing a pinned
     packageId: candidate.packageId,
     packageVersion: candidate.packageVersion,
     snapshotId: candidate.snapshotId,
+    // 引用已校验过这个内容哈希；把它留在 requiredSelector 里，后续读取才能
+    // 继续固定到用户选定的同一份字节，而不只是同名版本槽位。
+    rootHash: candidate.rootHash,
   })
   assert.equal((selected.result.presentation?.state as any).rootHash, candidate.rootHash)
   await assert.rejects(() => loaded.execute('role_capability_graph__reference_role_package', {
@@ -160,6 +163,28 @@ test('package catalog requires an exact user selection before producing a pinned
     snapshotId: candidate.snapshotId,
     rootHash: '0'.repeat(64),
   }, executionContext), /role_package_reference_mismatch/)
+})
+
+test('引用之后的岗位读取继续按内容哈希解析，同槽位不同字节必须显式失败', async () => {
+  const loaded = await registry()
+  const catalog = await loaded.execute('role_capability_graph__list_role_packages', {}, executionContext)
+  const candidate = (catalog.result.payload as any).packages[0]
+  const selector = {
+    packageId: candidate.packageId,
+    packageVersion: candidate.packageVersion,
+    snapshotId: candidate.snapshotId,
+  }
+  const pinned = await loaded.execute('role_capability_graph__explore_role', {
+    ...selector, rootHash: candidate.rootHash, query: '这个岗位做什么',
+  }, executionContext)
+  assert.equal((pinned.result.payload as any).kind, 'role_overview', '带正确内容哈希的读取必须正常返回岗位事实')
+
+  await assert.rejects(() => loaded.execute('role_capability_graph__explore_role', {
+    ...selector, rootHash: '0'.repeat(64), query: '这个岗位做什么',
+  }, executionContext), /role_package_root_hash_mismatch/)
+
+  // 省略内容哈希时保持既有兼容行为，不会让旧调用点失效。
+  await loaded.execute('role_capability_graph__explore_role', { ...selector, query: '这个岗位做什么' }, executionContext)
 })
 
 test('role-agent simulation source exposes every valid static package as referenceable', () => {
@@ -317,4 +342,31 @@ test('role object cards keep the source workspace lane interaction inside the pl
   assert.match(cssSource, /flex:0 0 218px/)
   assert.match(cssSource, /flex-basis:292px/)
   assert.match(cssSource, /max-height:min\(68vh,720px\)/)
+})
+
+test('Hub reference reads an uninstalled package by exact hash, rechecks permission and never enters shared runtime', async () => {
+  const local = new RolePackageRuntime().packages[0]
+  const manifestPath = (await import('node:fs')).readdirSync(join(local.source.root), { recursive: true })
+    .map(path => join(local.source.root, String(path))).find(path => path.endsWith('/manifest.json') && JSON.parse(readFileSync(path, 'utf8')).rootHash === local.manifest.rootHash)!
+  const manifest = { ...JSON.parse(readFileSync(manifestPath, 'utf8')), packageId: 'role:remote-only:test', visibility: 'private', rootHash: '' }
+  manifest.rootHash = createHash('sha256').update(canonicalStringify(manifest)).digest('hex')
+  const components = Object.fromEntries(Object.keys(manifest.hashes).map(path => [path, readFileSync(join(manifestPath, '..', path), 'utf8')]))
+  const ref = { packageId: manifest.packageId, packageVersion: manifest.packageVersion, snapshotId: manifest.snapshotId, rootHash: manifest.rootHash }
+  const loaded = await registry()
+  let reads = 0, allowed = true
+  const rolePackageHost = { resolve: async (requested: unknown) => { reads++; assert.deepEqual(requested, ref); if (!allowed) throw new Error('PACKAGE_NOT_FOUND'); return { manifest, components } } }
+  const context = { ...executionContext, rolePackageHost }
+  const referenced = await loaded.execute('role_capability_graph__reference_role_package', ref, context)
+  assert.deepEqual((referenced.result.payload as any).requiredSelector, ref)
+  const task = local.semantic.nodes.find(node => node.type === 'task')!
+  const details = await loaded.execute('role_capability_graph__read_role_objects', { ...ref, objectIds: [task.id] }, context)
+  assert.ok(JSON.stringify(details.result).includes(task.label))
+  assert.ok(details.result.objects?.every(object => object.value.packageId === ref.packageId))
+  assert.equal(reads, 2)
+  await assert.rejects(loaded.execute('role_capability_graph__read_role_objects', { ...ref, objectIds: [task.id] }, executionContext), /role_package_not_found/)
+  allowed = false
+  await assert.rejects(loaded.execute('role_capability_graph__audit_role_package', ref, context), /PACKAGE_NOT_FOUND/)
+  allowed = true
+  await assert.rejects(loaded.execute('role_capability_graph__audit_role_package', ref, { ...context, rolePackageHost: { resolve: async () => ({ manifest: { ...manifest, rootHash: 'a'.repeat(64) }, components }) } }), /root_hash_mismatch/)
+  await assert.rejects(loaded.execute('role_capability_graph__audit_role_package', ref, { ...context, rolePackageHost: { resolve: async () => ({ manifest, components: { ...components, [manifest.entrypoints.semanticGraph]: '{}' } }) } }), /integrity_failed/)
 })
