@@ -129,6 +129,7 @@ export type TutorToolRun = {
     purpose: string
     itemCount: number
   }
+  workspaceFile?: { path: string; revision: string }
   learningFile?: {
     kind: 'lecture' | 'practice' | 'source'
     ref: string

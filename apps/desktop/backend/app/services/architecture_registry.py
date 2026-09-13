@@ -45,7 +45,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-13.5-desktop"
+REGISTRY_VERSION = "2026-09-13.6-desktop"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 DATA_CONTRACTS = {
@@ -1007,6 +1007,8 @@ WORKBENCHES = {
                           ("continue_micro_learning", "analyze_teach_back", "evaluate_attempt",
                            "request_remediation_explanation", "retry_attempt",
                            "evaluate_transfer_variant", "plan_review_queue")),
+        WorkbenchContract("project_code_paper", "Project Atomic Code Paper", "WorkspaceCodePaper", "tutor_agent",
+                          ("inspect_workspace_files", "apply_workspace_change", "request_project_hint", "save_project_workbench", "record_project_device_report"), "vnext"),
         WorkbenchContract("project_tutor", "Project Tutor", "/projects/:projectId", "tutor_agent",
                           ("record_project_device_report", "read_project_device_report", "add_source", "read_project_roadmap", "revise_project_roadmap", "plan_learning_path", "apply_learning_path", "navigate_checkpoint",
                            "manage_project_conversations", "manage_learning_tasks", "plan_learning_task",
@@ -1634,6 +1636,7 @@ _FRONTEND_COMPONENT_TARGETS = {
     "workbench:vnext_lecture_file": ("frontend/src/LectureFilePage.tsx", "LectureFilePage", "/files/lecture/"),
     "workbench:vnext_practice_file": ("frontend/src/PracticeFilePage.tsx", "PracticeFilePage", "/files/practice/"),
     "workbench:learning_tasks": ("frontend/src/LearningTasksPage.tsx", "LearningTasksPage", "/tasks"),
+    "workbench:project_code_paper": ("frontend/src/WorkspaceCodePaper.tsx", "WorkspaceCodePaper", ""),
     "workbench:project_tutor": ("frontend/src/ProjectWorkspacePage.tsx", "ProjectWorkspacePage", "/projects/"),
     "workbench:review": ("frontend/src/ReviewWorkbenchPage.tsx", "ReviewWorkbenchPage", "/review"),
     "workbench:competition_demo": ("frontend/src/ReviewWorkbenchPage.tsx", "ReviewWorkbenchPage", "/review"),

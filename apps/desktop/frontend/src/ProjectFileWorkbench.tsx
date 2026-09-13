@@ -13,6 +13,7 @@ import {
 export type FileSelection = { path?: string; hash?: string; startLine?: number; endLine?: number; text: string; title: string }
 type OpenFile = WorkspaceFile & { draft: string; conflict?: boolean }
 type Props = {
+  browserOnly?: boolean; onOpenCode?: (path: string) => Promise<void>
   projectId: number; checkpointId?: number; openPaths: string[]; activePath?: string
   onLayout: (paths: string[], active: string) => void
   onAsk: (selection: FileSelection) => void
@@ -30,7 +31,7 @@ const runLabels: Record<string, string> = { proposed: '等待确认', queued: '�
 
 function allFiles(nodes: WorkspaceNode[]): string[] { return nodes.flatMap(node => node.is_directory ? allFiles(node.children || []) : node.kind === 'protected' ? [] : [node.path]) }
 
-export default function ProjectFileWorkbench({ projectId, checkpointId, openPaths, activePath, onLayout, onAsk, onArtifact, onDirtyChange, starterFiles = [], sessionId, engineeringContext, assistance, assistanceAvailable }: Props) {
+export default function ProjectFileWorkbench({ projectId, checkpointId, openPaths, activePath, onLayout, onAsk, onArtifact, onDirtyChange, starterFiles = [], sessionId, engineeringContext, assistance, assistanceAvailable, browserOnly = false, onOpenCode }: Props) {
   const [tree, setTree] = useState<WorkspaceTree>()
   const [recommendations, setRecommendations] = useState<WorkspaceRecommendations>()
   const [recommendationError, setRecommendationError] = useState('')
@@ -74,8 +75,6 @@ export default function ProjectFileWorkbench({ projectId, checkpointId, openPath
     if (!desktop) return
     let live = true
     void refresh()
-    void listExperimentProfiles(projectId).then(result => live && setProfiles(result.profiles)).catch(failure => live && setError(failure.message))
-    void listExperimentRuns(projectId).then(result => { if (live) { setRuns(result.runs); setCurrentRun(result.runs[0]) } }).catch(failure => live && setError(failure.message))
     void Promise.all(openPaths.map(path => readProjectFile(projectId, path).catch(() => undefined))).then(result => {
       if (!live) return
       const opened = result.filter((file): file is WorkspaceFile => !!file).map(file => ({ ...file, draft: file.content || '' }))
@@ -83,6 +82,13 @@ export default function ProjectFileWorkbench({ projectId, checkpointId, openPath
     })
     return () => { live = false }
   }, [projectId, desktop])
+  useEffect(() => {
+    if (!desktop || browserOnly) return
+    let live = true
+    void listExperimentProfiles(projectId).then(result => live && setProfiles(result.profiles)).catch(failure => live && setError(failure.message))
+    void listExperimentRuns(projectId).then(result => { if (live) { setRuns(result.runs); setCurrentRun(result.runs[0]) } }).catch(failure => live && setError(failure.message))
+    return () => { live = false }
+  }, [projectId, desktop, browserOnly])
   useEffect(() => {
     let live = true
     setRecommendations(undefined); setRecommendationError('')
@@ -128,6 +134,7 @@ export default function ProjectFileWorkbench({ projectId, checkpointId, openPath
     try { await action() } catch (failure) { setError(failure instanceof Error ? failure.message : '操作失败') } finally { setBusy('') }
   }
   const open = async (path: string) => {
+    if (browserOnly && onOpenCode) { await onOpenCode(path); return }
     if (!files.some(file => file.path === path)) {
       const loaded = await readProjectFile(projectId, path)
       const next = [...files, { ...loaded, draft: loaded.content || '' }]
@@ -190,7 +197,7 @@ export default function ProjectFileWorkbench({ projectId, checkpointId, openPath
   const renderTree = (nodes: WorkspaceNode[]) => nodes.map(node => node.is_directory ? <details key={node.path} open><summary>{node.name}</summary><div>{renderTree(node.children || [])}</div></details> : <div className={`pw-tree-file ${active === node.path ? 'active' : ''}`} key={node.path}><input type="checkbox" aria-label={`运行包含 ${node.path}`} checked={selectedFiles.includes(node.path)} disabled={node.kind === 'protected'} onChange={event => setSelectedFiles(previous => event.target.checked ? [...previous, node.path] : previous.filter(path => path !== node.path))} /><button type="button" disabled={node.kind === 'protected'} title={node.path} onClick={() => void runAction('open', () => open(node.path))}>{node.name}{files.find(file => file.path === node.path && file.draft !== file.content) ? ' •' : ''}</button></div>)
 
   if (!desktop) return <div className="pw-empty"><span>LOCAL WORKSPACE</span><h2>把实验带到你的电脑上</h2><p>用 LearnFlow 桌面端打开这个项目，就能关联真实工程、编辑代码、构建和运行。你现在可以继续规划、读资料、写假设和整理交付。</p></div>
-  return <div className="pw-file-workbench">
+  return <div className={`pw-file-workbench${browserOnly ? ' pw-file-browser' : ''}`}>
     {error && <div className="pw-error" role="alert">{error}</div>}{notice && <div className="pw-notice" role="status">{notice}</div>}
     {unlinked || !tree ? <div className="pw-directory-link"><h2>关联你的实验目录</h2><p>项目使用真实文件。可以继续在熟悉的 IDE 中编辑，回到这里和导师讨论。</p><label>本地绝对路径<input value={root} onChange={event => setRoot(event.target.value)} placeholder="/Users/you/projects/sat-lab" /></label><label className="pw-checkbox"><input type="checkbox" checked={createDir} onChange={event => setCreateDir(event.target.checked)} />目录不存在时创建</label><button disabled={!root.trim() || !!busy} onClick={() => void runAction('link', async () => { await linkProjectDirectory(projectId, root.trim(), createDir); await refresh() })}>关联目录</button>{!unlinked && <p>正在读取目录…</p>}</div> : <>
       {starterFiles.length > 0 && <div className="pw-starter-files"><strong>案例初始工程</strong><p>{starterFiles.map(file => file.path).join(' · ')}</p><button disabled={!!busy} onClick={() => void runAction('starter', async () => { let created = 0; const skipped: string[] = []; for (const file of starterFiles) { let exists = true; try { await readProjectFile(projectId, file.path) } catch (failure) { if (failure instanceof WorkbenchRequestError && failure.status === 404) exists = false; else throw failure } if (exists) { skipped.push(file.path); continue } await writeProjectFile(projectId, file.path, file.content, null); created++ } await refresh(); setNotice(`已准备 ${created} 个初始文件${skipped.length ? `；已存在的 ${skipped.join('、')} 保持原样` : ''}。`) })}>准备初始文件</button></div>}
@@ -205,23 +212,24 @@ export default function ProjectFileWorkbench({ projectId, checkpointId, openPath
           {recommendations?.truncated && <small>这里是部分结果，可从全部文件继续查找。</small>}
         </div> : <div>{renderTree(tree.nodes)}</div>}
         <details className="pw-new-file"><summary>新建文件</summary><form onSubmit={event => { event.preventDefault(); if (newPath.trim()) void runAction('create', async () => { await writeProjectFile(projectId, newPath.trim(), '', null); await refresh(); await open(newPath.trim()); setNewPath('') }) }}><input aria-label="新建文件路径" placeholder="新文件，如 src/main.c" value={newPath} onChange={event => setNewPath(event.target.value)} /><button disabled={!newPath.trim() || !!busy}>创建</button></form></details></aside>
-        <section className="pw-editor-main"><nav className="pw-file-tabs" aria-label="打开的文件">{files.map(file => <div className={active === file.path ? 'active' : ''} key={file.path}><button onClick={() => { setActive(file.path); onLayout(files.map(item => item.path), file.path) }}>{file.path.split('/').pop()}{file.draft !== file.content ? ' •' : ''}</button><button aria-label={`关闭 ${file.path}`} onClick={() => close(file)}>×</button></div>)}</nav>
+        <section className="pw-editor-main" hidden={browserOnly}><nav className="pw-file-tabs" aria-label="打开的文件">{files.map(file => <div className={active === file.path ? 'active' : ''} key={file.path}><button onClick={() => { setActive(file.path); onLayout(files.map(item => item.path), file.path) }}>{file.path.split('/').pop()}{file.draft !== file.content ? ' •' : ''}</button><button aria-label={`关闭 ${file.path}`} onClick={() => close(file)}>×</button></div>)}</nav>
           {current ? <><div className="pw-editor-toolbar"><code title={current.path}>{current.path}</code><button onMouseDown={event => event.preventDefault()} onClick={ask} disabled={current.content === null}>选区提问</button><button disabled={!!busy || current.content === null || current.draft !== current.content} onClick={() => void runAction('file-report', () => attachFile(current))}>{isCloudDesktopRuntime() ? '加入云端交付' : '加入交付'}</button><button disabled={!!busy || current.content === null || current.read_only || current.draft === current.content} onClick={() => void runAction('save', save)}>保存 ⌘/Ctrl S</button><button onClick={() => void runAction('reload', reload)}>重读</button></div>
           {current.conflict && <div className="pw-error">磁盘文件已被其他编辑器修改，当前草稿已保留。请复制需要保留的内容后重读磁盘版本，再合并保存。</div>}
           {current.content === null ? <div className="pw-empty"><p>此文件不支持文本编辑。</p><button onClick={() => void runAction('external', async () => { await revealProjectFile(projectId, current.path, true) })}>用系统应用打开</button></div> : <div className="pw-code-area"><pre aria-hidden="true">{current.draft.split('\n').map((_, index) => index + 1).join('\n')}</pre><textarea ref={editor} aria-label={`编辑 ${current.path}`} spellCheck={false} wrap="off" value={current.draft} readOnly={current.read_only} onChange={event => { const draft = event.target.value; setFiles(previous => previous.map(file => file.path === current.path ? { ...file, draft } : file)) }} onScroll={event => { const gutter = event.currentTarget.previousElementSibling; if (gutter) gutter.scrollTop = event.currentTarget.scrollTop }} onKeyDown={event => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') { event.preventDefault(); void runAction('save', save) } if (event.key === 'Tab') { event.preventDefault(); const input = event.currentTarget; const start = input.selectionStart; const end = input.selectionEnd; const draft = current.draft.slice(0, start) + '  ' + current.draft.slice(end); setFiles(previous => previous.map(file => file.path === current.path ? { ...file, draft } : file)); requestAnimationFrame(() => { input.selectionStart = input.selectionEnd = start + 2 }) } }} /></div>}</> : <div className="pw-empty"><h3>从左侧打开文件</h3><p>先写下预测，再动手验证。勾选的文件会一同进入运行快照。</p></div>}
         </section>
       </div>
-      <section className="pw-run-panel" aria-label="构建与运行"><header><strong>实验台</strong><select aria-label="运行环境" value={profileId} onChange={event => setProfileId(event.target.value)}>{profiles.map(profile => <option key={profile.id} value={profile.id}>{profile.name}{!profile.available ? ' · 编译器不可用' : ''}</option>)}</select>{(['syntax', 'build', 'run', 'verify'] as ExperimentAction[]).map(action => <button key={action} disabled={!!busy || !selectedFiles.length || !profiles.find(profile => profile.id === profileId)?.available || !!currentRun && runningStatuses.has(currentRun.status)} onClick={() => void runAction(action, () => preview(action))}>{actions[action]}</button>)}</header>
+      <section hidden={browserOnly} className="pw-run-panel" aria-label="构建与运行"><header><strong>实验台</strong><select aria-label="运行环境" value={profileId} onChange={event => setProfileId(event.target.value)}>{profiles.map(profile => <option key={profile.id} value={profile.id}>{profile.name}{!profile.available ? ' · 编译器不可用' : ''}</option>)}</select>{(['syntax', 'build', 'run', 'verify'] as ExperimentAction[]).map(action => <button key={action} disabled={!!busy || !selectedFiles.length || !profiles.find(profile => profile.id === profileId)?.available || !!currentRun && runningStatuses.has(currentRun.status)} onClick={() => void runAction(action, () => preview(action))}>{actions[action]}</button>)}</header>
         <details className="pw-run-input"><summary>输入与预期输出</summary><div><label>标准输入<textarea maxLength={8192} value={stdin} onChange={event => setStdin(event.target.value)} placeholder="程序通过 stdin 读取的内容" /></label><label>预期标准输出（验证用例）<textarea maxLength={8192} value={expected} onChange={event => setExpected(event.target.value)} placeholder="填写本次预测，再运行对比" /></label></div></details>
         {currentRun?.status === 'proposed' && <div className="pw-run-confirm"><strong>确认运行固定快照</strong><p>{currentRun.manifest.length} 个文件 · {actions[currentRun.action]} · {currentRun.snapshot_hash.slice(0, 12)}</p><p>{currentRun.result.warning || profiles.find(profile => profile.id === profileId)?.warning || '这是本机进程运行；文件系统、网络和密钥不受沙箱隔离。请仅运行你信任的工程。'}</p><button disabled={!!busy} onClick={() => void runAction('confirm-run', async () => { const next = await confirmExperimentRun(projectId, currentRun); setCurrentRun(next); setRuns(previous => [next, ...previous.filter(run => run.id !== next.id)]) })}>确认在本机执行</button><button onClick={() => setCurrentRun(undefined)}>暂不运行</button></div>}
         {currentRun && <div className="pw-run-output"><header><strong>#{currentRun.id} · {actions[currentRun.action]} · {runLabels[currentRun.status] || currentRun.status}</strong><span>{currentRun.result.passed === true ? '用例通过' : currentRun.result.passed === false ? '用例未通过' : ''}</span><button onClick={() => onAsk({ title: `运行 #${currentRun.id}`, text: JSON.stringify({ run_id: currentRun.id, snapshot_hash: currentRun.snapshot_hash, action: currentRun.action, status: currentRun.status, result: currentRun.result }, null, 2) })}>请导师解释</button><button disabled={!['completed', 'failed', 'timed_out', 'output_limited'].includes(currentRun.status)} onClick={() => void runAction('report', () => attachRun(currentRun))}>{isCloudDesktopRuntime() ? '加入云端交付' : '加入交付'}</button></header>{currentRun.result.error && <p className="pw-error">{currentRun.result.error}</p>}{currentRun.result.steps?.map((step, index) => <div key={index}><small>{step.name} · exit {step.exit_code}{step.timed_out ? ' · 超时' : ''}</small><pre>{step.stdout || ''}{step.stderr ? `\n${step.stderr}` : ''}{!step.stdout && !step.stderr ? '（无输出）' : ''}</pre></div>)}{runningStatuses.has(currentRun.status) && <p role="status">执行中，输出完成后自动更新…</p>}</div>}
         {runs.length > 0 && <details className="pw-run-history"><summary>运行历史（{runs.length}）</summary>{runs.map(run => <button key={run.id} onClick={() => setCurrentRun(run)}>#{run.id} {actions[run.action]} · {runLabels[run.status] || run.status}</button>)}</details>}
         <small className="pw-boundary">运行记录用于观察与复现。正式练习和独立验证会另外记录学习证据。</small>
       </section>
-      {isCloudDesktopRuntime() && <LocalAgentPanel key={`${projectId}:${checkpointId || 0}`} projectId={projectId} checkpointId={checkpointId} sessionId={sessionId} context={engineeringContext} assistance={assistance} assistanceAvailable={assistanceAvailable} blocked={dirty} onAsk={onAsk} onApplied={async () => {
+      {!browserOnly && isCloudDesktopRuntime() && <LocalAgentPanel key={`${projectId}:${checkpointId || 0}`} projectId={projectId} checkpointId={checkpointId} sessionId={sessionId} context={engineeringContext} assistance={assistance} assistanceAvailable={assistanceAvailable} blocked={dirty} onAsk={onAsk} onApplied={async paths => {
         await refresh()
         const opened = await Promise.all(state.current.map(file => readProjectFile(projectId, file.path).catch(() => undefined)))
         setFiles(previous => mergeWorkspaceRefresh(previous, opened))
+        if (onOpenCode) for (const path of paths || []) await onOpenCode(path)
         setNotice('工程改动已应用；期间新增的编辑已保留。请检查冲突与结果，再和当前导师复盘。')
       }} />}
     </>}

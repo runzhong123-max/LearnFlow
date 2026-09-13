@@ -26,7 +26,7 @@ const activeStates = new Set(['queued', 'running'])
 export default function LocalAgentPanel({ projectId, checkpointId, sessionId, context, assistance, assistanceAvailable, blocked = false, onAsk, onApplied }: {
   projectId: number; checkpointId?: number; sessionId?: number; context?: string
   assistance?: StageAssistance; assistanceAvailable?: boolean
-  blocked?: boolean; onAsk: (selection: FileSelection) => void; onApplied: () => Promise<void>
+  blocked?: boolean; onAsk: (selection: FileSelection) => void; onApplied: (paths?: string[]) => Promise<void>
 }) {
   const readOnly = assistance ? assistance.execution_mode !== 'workspace_write' : assistanceAvailable === false
   const unavailable = assistanceAvailable === false
@@ -119,7 +119,7 @@ export default function LocalAgentPanel({ projectId, checkpointId, sessionId, co
         {run.advice && <div className="pw-agent-advice"><strong>助手的分析</strong><pre>{run.advice}</pre></div>}
         {!!events.length && <details><summary>操作记录（最近 {events.length} 条）</summary><pre>{events.map(event => `${event.sequence} ${event.event_type}\n${JSON.stringify(event.payload, null, 2)}`).join('\n')}</pre></details>}
         {run.diff_text && <details><summary>检查文件改动（{run.changed_files.length}）</summary><pre>{run.diff_text}</pre></details>}
-        {run.status === 'completed' && run.can_apply === true && <>{deleted.map(file => <label key={file.path}><input type="checkbox" checked={deletions.includes(file.path)} onChange={() => setDeletions(toggle(deletions, file.path))} />确认删除 {file.path}</label>)}{moved.map(file => <label key={file.path}><input type="checkbox" checked={moves.includes(file.path)} onChange={() => setMoves(toggle(moves, file.path))} />确认移动 {file.path} → {file.destination_path || file.path}</label>)}<button className="pw-primary" disabled={!!busy || stalePolicy || unavailable || blocked || !run.result_hash || deletions.length !== deleted.length || moves.length !== moved.length} onClick={() => void act('apply', async () => { update(await applyEngineeringRun(projectId, run, deletions, moves)); await onApplied() })}>确认应用这份改动</button></>}
+        {run.status === 'completed' && run.can_apply === true && <>{deleted.map(file => <label key={file.path}><input type="checkbox" checked={deletions.includes(file.path)} onChange={() => setDeletions(toggle(deletions, file.path))} />确认删除 {file.path}</label>)}{moved.map(file => <label key={file.path}><input type="checkbox" checked={moves.includes(file.path)} onChange={() => setMoves(toggle(moves, file.path))} />确认移动 {file.path} → {file.destination_path || file.path}</label>)}<button className="pw-primary" disabled={!!busy || stalePolicy || unavailable || blocked || !run.result_hash || deletions.length !== deleted.length || moves.length !== moved.length} onClick={() => void act('apply', async () => { const applied = await applyEngineeringRun(projectId, run, deletions, moves); update(applied); await onApplied(applied.changed_files.filter(file => !['deleted', 'delete'].includes(file.operation || file.change || file.kind || file.status || '')).map(file => file.destination_path || file.path)) })}>确认应用这份改动</button></>}
         {!activeStates.has(run.status) && run.status !== 'proposed' && <button onClick={discuss}>交给导师复盘</button>}
       </article>}
     </div>

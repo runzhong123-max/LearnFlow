@@ -66,3 +66,20 @@ test('file question papers retain exact code and distinct revisions after restor
   assert.deepEqual(paperAncestorChain(sheets, 'new').map(sheet => sheet.id), ['new'])
   assert.equal(deletePaperSheet(sheets, 'old').sheets[0].artifact?.revision, 'def')
 })
+
+test('atomic code papers restore by project and path while historical selections remain separate', () => {
+  const artifact = { kind: 'workspace_file' as const, ref: 'src/clause.c', path: 'src/clause.c', title: 'clause.c', projectId: 7 }
+  const sheets = sanitizePaperSheets([
+    { id: 'old-code', artifact, messages: [{ id: 'advice-1' }] },
+    { id: 'current-code', artifact, messages: [{ id: 'advice-2' }] },
+    { id: 'other-project', artifact: { ...artifact, projectId: 8 }, messages: [] },
+    { id: 'selection', artifact: { ...artifact, ref: 'src/clause.c@hash:1-2', revision: 'hash', startLine: 1, endLine: 2 }, quote: 'return 0;', messages: [] },
+  ])
+  assert.equal(sheets.length, 3)
+  const code = findPaperSheetByArtifact(sheets, artifact)!
+  assert.equal(code.id, 'current-code')
+  assert.equal(code.artifact?.ref, code.artifact?.path)
+  assert.deepEqual(code.messages, [{ id: 'advice-1' }, { id: 'advice-2' }])
+  assert.equal(findPaperSheetByArtifact(sheets, { ...artifact, projectId: 8 })?.id, 'other-project')
+  assert.equal(sheets.find(sheet => sheet.id === 'selection')?.quote, 'return 0;')
+})

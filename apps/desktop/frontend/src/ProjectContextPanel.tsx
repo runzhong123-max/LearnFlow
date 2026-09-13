@@ -15,8 +15,9 @@ import type { FormalProjectCheckpoint, FormalProjectWorkspace } from './project'
 
 type PanelTab = 'checkpoints' | 'sources' | 'files'
 
-export default function ProjectContextPanel({ projectId, onClose, onOpenCheckpoint, onOpenFree, onOpenFile, onGenerateFiles, onWorkspaceChange }: {
+export default function ProjectContextPanel({ projectId, initialTab = 'checkpoints', onClose, onOpenCheckpoint, onOpenFree, onOpenFile, onGenerateFiles, onWorkspaceChange }: {
   projectId: number
+  initialTab?: PanelTab
   onClose: () => void
   onOpenCheckpoint: (workspace: FormalProjectWorkspace, checkpoint: FormalProjectCheckpoint) => void
   onOpenFree: (workspace: FormalProjectWorkspace, session: { session_id: number; title: string }) => void
@@ -25,7 +26,7 @@ export default function ProjectContextPanel({ projectId, onClose, onOpenCheckpoi
   onWorkspaceChange?: (workspace: FormalProjectWorkspace) => void
 }) {
   const [workspace, setWorkspace] = useState<FormalProjectWorkspace>()
-  const [activeTab, setActiveTab] = useState<PanelTab>('checkpoints')
+  const [activeTab, setActiveTab] = useState<PanelTab>(initialTab)
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   const [url, setUrl] = useState('')

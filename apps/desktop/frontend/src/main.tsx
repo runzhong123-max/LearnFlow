@@ -1,3 +1,5 @@
+import type { WorkspaceCodeDraft } from './WorkspaceCodePaper'
+import { readProjectFile } from './project-workbench-api'
 import { teachingAffordances } from './teaching-affordances.ts'
 import { existingQuoteSheet, type TeachingAffordances } from '../../../../packages/learning-client/src/teaching/affordances.ts'
 import '../../../../packages/learning-client/src/teaching/affordances.css'
@@ -270,6 +272,7 @@ type Conversation = {
 }
 
 type WorkspaceTab = {
+  projectCheckpointId?: number | null
   id: string
   kind: 'visual-hub' | 'chat' | 'settings' | 'projects' | 'project' | 'learning-path' | 'profile' | 'tasks' | 'review' | 'learning-files' | 'lecture-file' | 'practice-file'
   title: string
@@ -340,6 +343,7 @@ const LearningVerificationPanel = lazy(() => import('./LearningVerificationPanel
 const PracticeFilePage = lazy(() => import('./PracticeFilePage'))
 const SourceFilePage = lazy(() => import('./SourceFilePage'))
 const ProjectsPage = lazy(() => import('./ProjectsPage'))
+const WorkspaceCodePaper = lazy(() => import('./WorkspaceCodePaper'))
 const ProjectWorkspacePage = lazy(() => import('./ProjectWorkspacePage'))
 const ProjectContextPanel = lazy(() => import('./ProjectContextPanel'))
 
@@ -793,6 +797,12 @@ async function avatarDataUrlFromFile(file: File) {
 
 function App({ auth }: { auth: AuthGateSession }) {
   const [workspace, setWorkspace] = useState<PersistedState>(() => restoreState(auth.account.learner_id))
+  const [codeDrafts, setCodeDrafts] = useState<Record<string, WorkspaceCodeDraft>>({})
+  useEffect(() => {
+    const protect = (event: BeforeUnloadEvent) => { if (Object.keys(codeDrafts).length) { event.preventDefault(); event.returnValue = '' } }
+    window.addEventListener('beforeunload', protect)
+    return () => window.removeEventListener('beforeunload', protect)
+  }, [codeDrafts])
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [pluginDraftReferences, setPluginDraftReferences] = useState<Record<string, LearnFlowPluginObject[]>>({})
   const [toolChoices, setToolChoices] = useState<Record<string, TutorToolChoice>>({})
@@ -1471,7 +1481,7 @@ function App({ auth }: { auth: AuthGateSession }) {
     const intro = role === 'tutor'
       ? `这是“${projectWorkspace.project.name}”的项目 Tutor。规划必须围绕项目目标“${projectWorkspace.project.objective}”与真实产物展开；我会先读取项目来源和五核，再给出需要你确认的关卡路线。`
       : role === 'checkpoint'
-        ? `现在进入关卡“${checkpoint!.title}”。本对话绑定正式学习任务，会自然使用带领学习；讲义与练习可以生成、留存并在对话纸张或独立标签页中打开。`
+        ? `现在进入关卡“${checkpoint!.title}”。我们沿这段对话推进：阅读讲义、完成练习，并维护本关的代码文件。文件会留在对话中，点击即可打开纸张继续。`
         : `这是“${projectWorkspace.project.name}”的项目自由对话。它共享项目来源与五核 scope，但不会自动推进关卡。`
     const conversation: Conversation = {
       ...base, id: uid('chat'), title, updatedAt: now, mode,
@@ -1501,6 +1511,29 @@ function App({ auth }: { auth: AuthGateSession }) {
     setProjectTutorConversationIds(previous => previous[projectWorkspace.project.id] === conversation.id
       ? previous : { ...previous, [projectWorkspace.project.id]: conversation.id })
     return conversation
+  }
+
+  const openWorkspaceCodePaper = (conversationId: string, path: string, sourceMessageId = '') => {
+    setWorkspace(previous => ({ ...previous, conversations: previous.conversations.map(conversation => {
+      if (conversation.id !== conversationId || !conversation.projectId) return conversation
+      const existing = conversation.sheets.find(sheet => sheet.artifact?.kind === 'workspace_file' && sheet.artifact.ref === path)
+      const sheet: FollowUpSheet = existing || { id: uid('sheet'), title: path, quote: '', sourceMessageId, parentSheetId: 'main', messages: [], createdAt: Date.now(), artifact: { kind: 'workspace_file', ref: path, path, title: path, projectId: conversation.projectId } }
+      return { ...conversation, sheets: existing ? conversation.sheets : [...conversation.sheets, sheet], activeSheetId: sheet.id }
+    }) }))
+    setPaperDeskView(null)
+  }
+
+  const attachWorkspaceCodeFile = async (projectWorkspace: FormalProjectWorkspace, checkpoint: FormalProjectCheckpoint | undefined, path: string) => {
+    // A result card is only created after the scoped file service really reads it.
+    const file = await readProjectFile(projectWorkspace.project.id, path)
+    const conversation = prepareProjectTutor(projectWorkspace, checkpoint)
+    if (!conversation) return
+    const messageId = uid('message')
+    setWorkspace(previous => ({ ...previous, conversations: previous.conversations.map(item => {
+      if (item.id !== conversation.id) return item
+      if (item.messages.some(message => message.toolRuns?.some(run => run.workspaceFile?.path === file.path && run.workspaceFile.revision === file.sha256))) return { ...item, activeSheetId: 'main' }
+      return { ...item, activeSheetId: 'main', updatedAt: Date.now(), messages: [...item.messages, { id: messageId, role: 'assistant', content: '', createdAt: Date.now(), toolRuns: [{ id: uid('tool'), kind: 'file', status: 'completed', title: file.path, detail: '文件已读取，打开代码纸继续实现。', durationMs: 0, toolName: 'inspect_workspace_files', workspaceFile: { path: file.path, revision: file.sha256 } }] }] }
+    }) }))
   }
 
   const askProjectSelection = (selection: {
@@ -2621,6 +2654,15 @@ function App({ auth }: { auth: AuthGateSession }) {
     } : previous)
 
     try {
+      const currentPaper = activeSheet(conversation)
+      let selectionContext = paperSelectionContext(currentPaper)
+      if (conversation.projectId && currentPaper?.artifact?.kind === 'workspace_file' && currentPaper.artifact.ref === currentPaper.artifact.path) {
+        const path = currentPaper.artifact.path!
+        const draft = codeDrafts[`${conversation.projectId}:${path}`]
+        const file = draft?.base || await readProjectFile(conversation.projectId, path)
+        const code = draft?.content ?? file.content ?? ''
+        selectionContext = `当前原子代码文件：${path}\n版本：${draft ? '未保存草稿' : file.sha256}\n以下为待分析文件内容：\n${code.slice(0, 24000)}${code.length > 24000 ? '\n（文件较长，此处仅包含开头；需要其余部分时请明确指出。）' : ''}`
+      }
       const formalTaskForTurn = learningProjection?.task.formalTaskId
         ? formalSnapshotForTurn?.learning_tasks.find(task => task.id === learningProjection.task.formalTaskId)
         : undefined
@@ -2632,7 +2674,7 @@ function App({ auth }: { auth: AuthGateSession }) {
         mode,
         messages: contextMessages,
         toolChoice: toolChoices[draftKey] || 'auto',
-        selectionContext: paperSelectionContext(activeSheet(conversation)),
+        selectionContext,
         activeArtifactContext: (() => { const artifact = activeSheet(conversation)?.artifact; return artifact && ['lecture', 'practice', 'source'].includes(artifact.kind) ? artifact as PaperArtifact & { kind: 'lecture' | 'practice' | 'source' } : undefined })(),
         learningTaskContext: learningProjection ? learningTaskTutorContext(learningProjection) : undefined,
         learningPlanContext: planningProjection ? learningPlanTutorContext(planningProjection) : undefined,
@@ -3368,12 +3410,24 @@ function App({ auth }: { auth: AuthGateSession }) {
           <ProjectWorkspacePage
             key={tab.projectId}
             projectId={tab.projectId}
+            checkpointId={tab.projectCheckpointId}
+            onCheckpointChange={id => setWorkspace(previous => ({ ...previous, tabs: previous.tabs.map(item => item.id === tab.id ? { ...item, projectCheckpointId: id } : item) }))}
             onDirtyChange={dirty => { if (dirty) dirtyProjectFiles.current.add(tab.projectId!); else dirtyProjectFiles.current.delete(tab.projectId!) }}
             onOpenTutor={projectWorkspace => openProjectConversation(projectWorkspace, 'tutor')}
             onOpenCheckpoint={(projectWorkspace, checkpoint) => openProjectConversation(projectWorkspace, 'checkpoint', { checkpoint })}
             onOpenFree={(projectWorkspace, session) => openProjectConversation(projectWorkspace, 'free', { session })}
             onOpenFile={file => openTab(learningFileTab(file))}
-            onGenerateFiles={generateTaskFiles}
+            onGenerateFiles={async task => {
+              const updated = await generateFormalLearningFiles(task)
+              const projectWorkspace = await loadFormalProject(tab.projectId!)
+              syncProjectWorkspace(projectWorkspace)
+              const checkpoint = projectWorkspace.roadmap.checkpoints.find(item => item.learning_task?.id === task.id)
+              const conversation = prepareProjectTutor(projectWorkspace, checkpoint)
+              const files = taskLearningFiles(updated)
+              if (!files.length) throw new Error(updated.file_generation?.gaps?.join('；') || '学习文件未生成，请重试。')
+              if (conversation) setWorkspace(previous => ({ ...previous, conversations: previous.conversations.map(item => item.id !== conversation.id ? item : { ...item, activeSheetId: 'main', messages: [...item.messages, { id: uid('message'), role: 'assistant', content: '', createdAt: Date.now(), toolRuns: files.map(file => ({ id: uid('tool'), kind: 'file', status: 'completed', title: file.title, detail: file.kind === 'lecture' ? '讲义已准备好' : '练习已准备好', durationMs: 0, learningFile: file })) }] }) }))
+            }}
+            onOpenCodeFile={attachWorkspaceCodeFile}
             onPrepareTutor={prepareProjectTutor}
             renderTutor={(projectWorkspace, checkpoint) => {
               const sessionId = checkpoint?.session_id || projectWorkspace.project_tutor.session_id
@@ -3588,11 +3642,11 @@ function App({ auth }: { auth: AuthGateSession }) {
       }, 30)
     }
     return (
-      <section className={`chat-page${conversation.projectId ? ' project-chat-page' : ''}${embedded ? ' project-embedded-tutor' : ''}`}>
+      <section className={`chat-page${conversation.projectId ? ' project-chat-page' : ''}${embedded ? ' project-embedded-tutor' : ''}${sheet?.artifact?.kind === 'workspace_file' && sheet.artifact.ref === sheet.artifact.path ? ' project-code-chat' : ''}`}>
         <header className="chat-heading page-hero">
           <h1>{conversation.title}</h1>
           <div className="chat-state-stack">
-            {conversation.projectId && !embedded && <button type="button" className="project-panel-toggle" onClick={() => openTab({ id: `project:${conversation.projectId}`, kind: 'project', title: '项目工作台', projectId: conversation.projectId })}>项目工作台</button>}
+            {conversation.projectId && !embedded && <button type="button" className="project-panel-toggle" onClick={() => openTab({ id: `project:${conversation.projectId}`, kind: 'project', title: conversation.title, projectId: conversation.projectId, projectCheckpointId: conversation.checkpointId || null })}>项目工作台</button>}
             {visibleSkill && <span className="skill-badge">{visibleSkill.name}</span>}
           </div>
         </header>
@@ -3796,7 +3850,8 @@ function App({ auth }: { auth: AuthGateSession }) {
                       }} />
                     </Suspense>
                   )}
-                  {sheet && (!sheet.artifact || ['workspace_file', 'project_note'].includes(sheet.artifact.kind)) && (
+                  {sheet?.artifact?.kind === 'workspace_file' && sheet.artifact.ref === sheet.artifact.path && conversation.projectId && <Suspense fallback={<p>正在打开代码纸…</p>}><WorkspaceCodePaper key={`${conversation.projectId}:${sheet.artifact.path}`} projectId={conversation.projectId} checkpointId={conversation.checkpointId} path={sheet.artifact.path!} draft={codeDrafts[`${conversation.projectId}:${sheet.artifact.path}`]} onDraft={draft => { const key = `${conversation.projectId}:${sheet.artifact?.path}`; setCodeDrafts(previous => { const next = { ...previous }; if (draft) next[key] = draft; else delete next[key]; return next }) }} busy={Boolean(pendingMode)} onHelp={prompt => runTutorTurn(conversation.id, prompt)} /></Suspense>}
+                  {sheet && (!sheet.artifact || sheet.artifact.kind === 'project_note' || (sheet.artifact.kind === 'workspace_file' && sheet.artifact.ref !== sheet.artifact.path)) && (
                     <blockquote className="selected-quote">
                       <span>{sheet.artifact?.path ? `${sheet.artifact.path} · L${sheet.artifact.startLine || 1}–${sheet.artifact.endLine || sheet.artifact.startLine || 1} · ${sheet.artifact.revision?.slice(0, 8) || '未保存草稿'}` : '本页从这段内容展开'}</span>
                       <p style={{ whiteSpace: 'pre-wrap' }}>{sheet.quote}</p>
@@ -3840,6 +3895,7 @@ function App({ auth }: { auth: AuthGateSession }) {
                       conversationId: conversation.id,
                       sheetId: conversation.activeSheetId,
                     })}
+                    onOpenWorkspaceFile={(path, sourceMessageId) => openWorkspaceCodePaper(conversation.id, path, sourceMessageId)}
                     onAttachLearningFile={(file, sourceMessageId) => attachLearningFileToConversation(file, conversation.id, {
                       sourceMessageId,
                       parentSheetId: conversation.activeSheetId,
@@ -4283,7 +4339,9 @@ function App({ auth }: { auth: AuthGateSession }) {
                     key={entry.key}
                     className={entry.conversation && activeConversation?.id === entry.conversation.id ? 'active' : ''}
                     onClick={() => {
-                      if (entry.conversation) {
+                      if (entry.role !== 'free') {
+                        openTab({ ...projectTab(projectWorkspace.project), projectCheckpointId: entry.checkpoint?.id || null })
+                      } else if (entry.conversation) {
                         openTab(chatTab(entry.conversation))
                       } else if (projectWorkspace) {
                         openProjectConversation(projectWorkspace, entry.role, {
@@ -4534,7 +4592,7 @@ function App({ auth }: { auth: AuthGateSession }) {
   )
 }
 
-function ToolRunCard({ run, sourceMessageId, conversationId, compactPluginResult, onPluginPrompt, onPluginReference, onOpenLearningTask, onOpenProject, onConfirmProject, onOpenPluginResult, onOpenLearningFile, onAttachLearningFile, onAcceptPathProposal, onAcceptPathPlan, onAcceptProjectRoadmap, onAcceptProjectLearningFile, activePathPlanId, pathPlanBusyId, pathPlanWriteError, projectBusyKey, projectError, learningFileProposalError }: {
+function ToolRunCard({ run, sourceMessageId, conversationId, compactPluginResult, onPluginPrompt, onPluginReference, onOpenLearningTask, onOpenProject, onConfirmProject, onOpenPluginResult, onOpenLearningFile, onOpenWorkspaceFile, onAttachLearningFile, onAcceptPathProposal, onAcceptPathPlan, onAcceptProjectRoadmap, onAcceptProjectLearningFile, activePathPlanId, pathPlanBusyId, pathPlanWriteError, projectBusyKey, projectError, learningFileProposalError }: {
   run: TutorToolRun
   sourceMessageId: string
   conversationId: string
@@ -4546,6 +4604,7 @@ function ToolRunCard({ run, sourceMessageId, conversationId, compactPluginResult
   onConfirmProject?: (target: { candidateId: string; rootHash: string }) => Promise<{ projectId: number; sessionId?: number }>
   onOpenPluginResult: (run: TutorToolRun, sourceMessageId: string) => void
   onOpenLearningFile: (file: { kind: 'lecture' | 'practice'; ref: string; title: string }) => void
+  onOpenWorkspaceFile: (path: string, sourceMessageId: string) => void
   onAttachLearningFile: (file: { kind: 'lecture' | 'practice'; ref: string; title: string }, sourceMessageId: string) => void
   onAcceptPathProposal: (proposal: PersonalPathNodeProposal) => void
   onAcceptPathPlan: (proposal: LearningPathPlanProposal) => void
@@ -4588,6 +4647,7 @@ function ToolRunCard({ run, sourceMessageId, conversationId, compactPluginResult
         <i>{run.status === 'running' ? '…' : run.status === 'completed' ? '✓' : '!'}</i>
       </header>
       <p>{run.detail}</p>
+      {run.workspaceFile && <button type="button" className="workspace-code-result" onClick={() => onOpenWorkspaceFile(run.workspaceFile!.path, sourceMessageId)}>打开代码纸 ↗</button>}
       {actionableLearningFile && (
         <Suspense fallback={<div className="learning-file-preview-loading">正在展开文件开头…</div>}>
           <LearningFileMessagePreview
@@ -4734,7 +4794,7 @@ function ToolDecisionBridge({
   )
 }
 
-function MessageList({ teachingBusy, onTeachingQuestion, messages, learnerAvatar, learnerName, conversationId, onPluginPrompt, onPluginReference, onOpenLearningTask, onOpenProject, onConfirmProject, onOpenPluginResult, onQuoteFollowUp, onOpenLearningFile, onAttachLearningFile, onAcceptPathProposal, onAcceptPathPlan, onAcceptProjectRoadmap, onAcceptProjectLearningFile, activePathPlanId, pathPlanBusyId, pathPlanWriteErrors, projectBusyKey, projectError, learningFileProposalErrors }: {
+function MessageList({ teachingBusy, onTeachingQuestion, messages, learnerAvatar, learnerName, conversationId, onPluginPrompt, onPluginReference, onOpenLearningTask, onOpenProject, onConfirmProject, onOpenPluginResult, onQuoteFollowUp, onOpenLearningFile, onOpenWorkspaceFile, onAttachLearningFile, onAcceptPathProposal, onAcceptPathPlan, onAcceptProjectRoadmap, onAcceptProjectLearningFile, activePathPlanId, pathPlanBusyId, pathPlanWriteErrors, projectBusyKey, projectError, learningFileProposalErrors }: {
   teachingBusy: boolean
   onTeachingQuestion: (question: string) => void
   messages: Message[]
@@ -4749,6 +4809,7 @@ function MessageList({ teachingBusy, onTeachingQuestion, messages, learnerAvatar
   onOpenPluginResult: (run: TutorToolRun, sourceMessageId: string) => void
   onQuoteFollowUp: (messageId: string, quote: string) => void
   onOpenLearningFile: (file: { kind: 'lecture' | 'practice'; ref: string; title: string }) => void
+  onOpenWorkspaceFile: (path: string, sourceMessageId: string) => void
   onAttachLearningFile: (file: { kind: 'lecture' | 'practice'; ref: string; title: string }, sourceMessageId: string) => void
   onAcceptPathProposal: (proposal: PersonalPathNodeProposal) => void
   onAcceptPathPlan: (proposal: LearningPathPlanProposal) => void
@@ -4869,6 +4930,7 @@ function MessageList({ teachingBusy, onTeachingQuestion, messages, learnerAvatar
                       onConfirmProject={onConfirmProject}
                       onOpenPluginResult={onOpenPluginResult}
                       onOpenLearningFile={onOpenLearningFile}
+                      onOpenWorkspaceFile={onOpenWorkspaceFile}
                       onAttachLearningFile={onAttachLearningFile}
                       onAcceptPathProposal={onAcceptPathProposal}
                       onAcceptPathPlan={onAcceptPathPlan}

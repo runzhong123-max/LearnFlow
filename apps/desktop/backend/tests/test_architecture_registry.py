@@ -45,7 +45,7 @@ def test_registry_has_three_agents_five_kernels_and_no_drift():
     assert set(ACTION_BOARD) == set(CAPABILITY_OWNERS)
     assert validate_registry() == []
     manifest = registry_manifest()
-    assert REGISTRY_VERSION == "2026-09-13.5-desktop"
+    assert REGISTRY_VERSION == "2026-09-13.6-desktop"
     cloud_contract = next(item for item in manifest['data_contracts'] if item['id'] == 'desktop_cloud_connection_v1')
     assert cloud_contract['kernel_write_path'] == 'none'
     assert manifest["schema_valid"] is True
@@ -807,3 +807,15 @@ def test_memory_evidence_projection_cannot_acquire_write_authority(monkeypatch):
     assert contract["mode"] == "scoped_read_only_projection"
     monkeypatch.setitem(contract, "kernel_write_path", "direct_state")
     assert "invalid scoped read-only projection: memory_evidence_v1" in validate_registry()
+
+
+def test_project_code_paper_reuses_tutor_file_and_assistance_capabilities():
+    from app.services.architecture_registry import WORKBENCHES, IMPLEMENTATION_BINDINGS
+
+    paper = WORKBENCHES['project_code_paper']
+    assert paper.owner_agent == 'tutor_agent'
+    assert set(paper.capabilities) == {
+        'inspect_workspace_files', 'apply_workspace_change', 'request_project_hint',
+        'save_project_workbench', 'record_project_device_report',
+    }
+    assert 'workbench:project_code_paper' in IMPLEMENTATION_BINDINGS
