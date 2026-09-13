@@ -1,0 +1,1299 @@
+{
+  "artifacts_sha256": {
+    "aggregate.json": "c2b756b15dcdf3e67de25c59419830c499eb8cbae2a28498bb07e47ef95d51dc",
+    "cases.jsonl": "e4593d1bcb448e560ff65ca8fd76fcbc96e8931c872f5be4e3f19f7e129104d0",
+    "formations.jsonl.gz": "c48ba0b24bf08bcf22aac9aacd682c3698f104c4b1acf41f1f33c0dda24b6498",
+    "jobs.jsonl": "cfc8eba644e658a813930587a2c5f8d66790b2e7ec8d2451c014d79ecb9c3038",
+    "manifest.json": "2c014b98c6b7b4ccd2a51888e3264388553b4c453b28f0355226fb19f4d75a02",
+    "pairs.jsonl": "2798710ee12654d72ff60c2a298733fdcf90717cf43c6b7ef575927fdd5c4d25",
+    "responses.jsonl": "30850f23b2a7acb832dda63fd292fa2f110df4ecc932bbb8f7cdcd6893022891",
+    "responses.jsonl.attempts.jsonl": "dd96557c9a827bc4c0eb1f0a6d26ee1e406dc609dcc6c49581ffddf6ecc30b4c",
+    "scored.jsonl.gz": "017fa2891d7be03fbf71b51e0e953b57f31fce4800d4ed80b8dd66b9041d3f4f"
+  },
+  "artifacts_unchanged_during_audit": true,
+  "counts": {
+    "cases": 96,
+    "conditions_independently_rescored": 768,
+    "counterfactual_pairs": 48,
+    "groups_recomputed": 8,
+    "ledger_reservations": 768,
+    "pair_rows": 384,
+    "responses": 768,
+    "scored_rows": 768
+  },
+  "created_at": "2026-09-13T06:08:34.049520+00:00",
+  "enum_failure_cases": [
+    {
+      "budget": 8000,
+      "case_id": "cf-binary_search-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-binary_search-assistance-a:five_kernel_gated:8000",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_gated"
+    },
+    {
+      "budget": 2200,
+      "case_id": "cf-binary_search-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-binary_search-assistance-a:five_kernel_source:2200",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_source"
+    },
+    {
+      "budget": 8000,
+      "case_id": "cf-binary_search-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-binary_search-assistance-a:five_kernel_source:8000",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_source"
+    },
+    {
+      "budget": 2200,
+      "case_id": "cf-bit_mask-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-bit_mask-assistance-a:five_kernel_gated:2200",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_gated"
+    },
+    {
+      "budget": 8000,
+      "case_id": "cf-bit_mask-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-bit_mask-assistance-a:five_kernel_gated:8000",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_gated"
+    },
+    {
+      "budget": 2200,
+      "case_id": "cf-bit_mask-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-bit_mask-assistance-a:five_kernel_source:2200",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_source"
+    },
+    {
+      "budget": 8000,
+      "case_id": "cf-bit_mask-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-bit_mask-assistance-a:five_kernel_source:8000",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_source"
+    },
+    {
+      "budget": 8000,
+      "case_id": "cf-bit_mask-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-bit_mask-assistance-a:flat_source:8000",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "flat_source"
+    },
+    {
+      "budget": 8000,
+      "case_id": "cf-dijkstra-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-dijkstra-assistance-a:five_kernel_gated:8000",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_gated"
+    },
+    {
+      "budget": 8000,
+      "case_id": "cf-dijkstra-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-dijkstra-assistance-a:five_kernel_source:8000",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_source"
+    },
+    {
+      "budget": 8000,
+      "case_id": "cf-dijkstra-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-dijkstra-assistance-a:flat_source:8000",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "flat_source"
+    },
+    {
+      "budget": 2200,
+      "case_id": "cf-lru_cache-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-lru_cache-assistance-a:five_kernel_gated:2200",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_gated"
+    },
+    {
+      "budget": 8000,
+      "case_id": "cf-lru_cache-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-lru_cache-assistance-a:five_kernel_gated:8000",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_gated"
+    },
+    {
+      "budget": 2200,
+      "case_id": "cf-lru_cache-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-lru_cache-assistance-a:five_kernel_source:2200",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_source"
+    },
+    {
+      "budget": 8000,
+      "case_id": "cf-lru_cache-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-lru_cache-assistance-a:five_kernel_source:8000",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_source"
+    },
+    {
+      "budget": 8000,
+      "case_id": "cf-lru_cache-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-lru_cache-assistance-a:flat_source:8000",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "flat_source"
+    },
+    {
+      "budget": 8000,
+      "case_id": "cf-python_alias-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-python_alias-assistance-a:five_kernel_gated:8000",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_gated"
+    },
+    {
+      "budget": 2200,
+      "case_id": "cf-python_alias-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-python_alias-assistance-a:five_kernel_source:2200",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_source"
+    },
+    {
+      "budget": 8000,
+      "case_id": "cf-python_alias-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-python_alias-assistance-a:five_kernel_source:8000",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_source"
+    },
+    {
+      "budget": 2200,
+      "case_id": "cf-rpn_stack-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-rpn_stack-assistance-a:five_kernel_source:2200",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_source"
+    },
+    {
+      "budget": 8000,
+      "case_id": "cf-rpn_stack-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-rpn_stack-assistance-a:five_kernel_source:8000",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_source"
+    },
+    {
+      "budget": 8000,
+      "case_id": "cf-sql_group-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-sql_group-assistance-a:five_kernel_gated:8000",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_gated"
+    },
+    {
+      "budget": 2200,
+      "case_id": "cf-sql_group-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-sql_group-assistance-a:five_kernel_source:2200",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_source"
+    },
+    {
+      "budget": 8000,
+      "case_id": "cf-topological_sort-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-topological_sort-assistance-a:five_kernel_gated:8000",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_gated"
+    },
+    {
+      "budget": 2200,
+      "case_id": "cf-topological_sort-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-topological_sort-assistance-a:five_kernel_source:2200",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_source"
+    },
+    {
+      "budget": 8000,
+      "case_id": "cf-topological_sort-assistance-a",
+      "contrast": "assistance",
+      "expected_next_step": "reduce_help_then_check",
+      "job_id": "cf-topological_sort-assistance-a:five_kernel_source:8000",
+      "parse_error": "schema_enum_mismatch",
+      "raw_latest_assistance": "guided",
+      "raw_next_step": "reduce_help_then_check",
+      "raw_next_step_matches_reference": true,
+      "raw_schema_errors": [
+        "invalid:latest_assistance"
+      ],
+      "scored_false_abstention": true,
+      "variant": "five_kernel_source"
+    }
+  ],
+  "error_summary": {
+    "active_support_time_cap_error": 64,
+    "active_support_time_cap_error_null_minutes": 64,
+    "active_support_time_cap_error_support_recognized": 64,
+    "expired_control_reactivated": 317,
+    "expired_control_reactivated_counting_unit": "field violations among reader-valid outputs; a single job can misuse both priority and anchor",
+    "expired_control_reactivated_unique_valid_jobs": 191,
+    "false_abstention_counting_unit": "pipeline failure flag; all 26 were schema-invalid outputs rather than raw explicit abstentions",
+    "inactive_support_activated": 12,
+    "parsed_field_error_counts": {
+      "current_priority": 126,
+      "return_anchor": 191,
+      "support_active": 12,
+      "time_budget_minutes": 72
+    },
+    "parsed_field_errors": 401,
+    "raw_explicit_assessment_abstention": 0,
+    "raw_schema_error_counts": {
+      "invalid:latest_assistance": 26
+    },
+    "schema_failures": 26,
+    "scored_false_abstention": 26
+  },
+  "errors": [],
+  "finish_reason_counts": {
+    "stop": 768
+  },
+  "frozen_input_artifact_hashes_checked": 5,
+  "frozen_primary_artifacts_unchanged_after_sensitivity": true,
+  "groups": [
+    {
+      "action_obligation_fulfilled": 94,
+      "budget": 2200,
+      "condition_denominator": 96,
+      "error_diagnostics_counts": {
+        "active_support_time_cap_error": 8,
+        "expired_control_reactivated": 0,
+        "inactive_support_activated": 0,
+        "schema_failures": 2,
+        "scored_false_abstention": 2
+      },
+      "field_correct": {
+        "assessment_event_id": 94,
+        "current_priority": 94,
+        "independent_success_supported": 94,
+        "latest_assistance": 94,
+        "latest_result": 94,
+        "next_step": 94,
+        "return_anchor": 94,
+        "stable_mastery_supported": 94,
+        "support_active": 94,
+        "time_budget_minutes": 86
+      },
+      "metrics": {
+        "action_correct": 94,
+        "citation_complete": 94,
+        "citation_valid": 94,
+        "false_abstention": 2,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "whole_record_correct": 86
+      },
+      "pair_denominator": 48,
+      "pair_joint_numerator": 38,
+      "reader_valid_outputs": 94,
+      "variant": "five_kernel_gated"
+    },
+    {
+      "action_obligation_fulfilled": 89,
+      "budget": 2200,
+      "condition_denominator": 96,
+      "error_diagnostics_counts": {
+        "active_support_time_cap_error": 8,
+        "expired_control_reactivated": 15,
+        "inactive_support_activated": 0,
+        "schema_failures": 7,
+        "scored_false_abstention": 7
+      },
+      "field_correct": {
+        "assessment_event_id": 89,
+        "current_priority": 89,
+        "independent_success_supported": 89,
+        "latest_assistance": 89,
+        "latest_result": 89,
+        "next_step": 89,
+        "return_anchor": 74,
+        "stable_mastery_supported": 89,
+        "support_active": 89,
+        "time_budget_minutes": 81
+      },
+      "metrics": {
+        "action_correct": 89,
+        "citation_complete": 89,
+        "citation_valid": 89,
+        "false_abstention": 7,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "whole_record_correct": 66
+      },
+      "pair_denominator": 48,
+      "pair_joint_numerator": 25,
+      "reader_valid_outputs": 89,
+      "variant": "five_kernel_source"
+    },
+    {
+      "action_obligation_fulfilled": 96,
+      "budget": 2200,
+      "condition_denominator": 96,
+      "error_diagnostics_counts": {
+        "active_support_time_cap_error": 8,
+        "expired_control_reactivated": 0,
+        "inactive_support_activated": 0,
+        "schema_failures": 0,
+        "scored_false_abstention": 0
+      },
+      "field_correct": {
+        "assessment_event_id": 96,
+        "current_priority": 96,
+        "independent_success_supported": 96,
+        "latest_assistance": 96,
+        "latest_result": 96,
+        "next_step": 96,
+        "return_anchor": 96,
+        "stable_mastery_supported": 96,
+        "support_active": 96,
+        "time_budget_minutes": 88
+      },
+      "metrics": {
+        "action_correct": 96,
+        "citation_complete": 96,
+        "citation_valid": 96,
+        "false_abstention": 0,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "whole_record_correct": 88
+      },
+      "pair_denominator": 48,
+      "pair_joint_numerator": 40,
+      "reader_valid_outputs": 96,
+      "variant": "flat_gated"
+    },
+    {
+      "action_obligation_fulfilled": 96,
+      "budget": 2200,
+      "condition_denominator": 96,
+      "error_diagnostics_counts": {
+        "active_support_time_cap_error": 8,
+        "expired_control_reactivated": 154,
+        "inactive_support_activated": 5,
+        "schema_failures": 0,
+        "scored_false_abstention": 0
+      },
+      "field_correct": {
+        "assessment_event_id": 96,
+        "current_priority": 27,
+        "independent_success_supported": 96,
+        "latest_assistance": 96,
+        "latest_result": 96,
+        "next_step": 96,
+        "return_anchor": 11,
+        "stable_mastery_supported": 96,
+        "support_active": 91,
+        "time_budget_minutes": 86
+      },
+      "metrics": {
+        "action_correct": 96,
+        "citation_complete": 96,
+        "citation_valid": 96,
+        "false_abstention": 0,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "whole_record_correct": 11
+      },
+      "pair_denominator": 48,
+      "pair_joint_numerator": 3,
+      "reader_valid_outputs": 96,
+      "variant": "flat_source"
+    },
+    {
+      "action_obligation_fulfilled": 89,
+      "budget": 8000,
+      "condition_denominator": 96,
+      "error_diagnostics_counts": {
+        "active_support_time_cap_error": 8,
+        "expired_control_reactivated": 0,
+        "inactive_support_activated": 0,
+        "schema_failures": 7,
+        "scored_false_abstention": 7
+      },
+      "field_correct": {
+        "assessment_event_id": 89,
+        "current_priority": 89,
+        "independent_success_supported": 89,
+        "latest_assistance": 89,
+        "latest_result": 89,
+        "next_step": 89,
+        "return_anchor": 89,
+        "stable_mastery_supported": 89,
+        "support_active": 89,
+        "time_budget_minutes": 81
+      },
+      "metrics": {
+        "action_correct": 89,
+        "citation_complete": 89,
+        "citation_valid": 89,
+        "false_abstention": 7,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "whole_record_correct": 81
+      },
+      "pair_denominator": 48,
+      "pair_joint_numerator": 33,
+      "reader_valid_outputs": 89,
+      "variant": "five_kernel_gated"
+    },
+    {
+      "action_obligation_fulfilled": 89,
+      "budget": 8000,
+      "condition_denominator": 96,
+      "error_diagnostics_counts": {
+        "active_support_time_cap_error": 8,
+        "expired_control_reactivated": 16,
+        "inactive_support_activated": 0,
+        "schema_failures": 7,
+        "scored_false_abstention": 7
+      },
+      "field_correct": {
+        "assessment_event_id": 89,
+        "current_priority": 89,
+        "independent_success_supported": 89,
+        "latest_assistance": 89,
+        "latest_result": 89,
+        "next_step": 89,
+        "return_anchor": 73,
+        "stable_mastery_supported": 89,
+        "support_active": 89,
+        "time_budget_minutes": 81
+      },
+      "metrics": {
+        "action_correct": 89,
+        "citation_complete": 89,
+        "citation_valid": 89,
+        "false_abstention": 7,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "whole_record_correct": 65
+      },
+      "pair_denominator": 48,
+      "pair_joint_numerator": 25,
+      "reader_valid_outputs": 89,
+      "variant": "five_kernel_source"
+    },
+    {
+      "action_obligation_fulfilled": 96,
+      "budget": 8000,
+      "condition_denominator": 96,
+      "error_diagnostics_counts": {
+        "active_support_time_cap_error": 8,
+        "expired_control_reactivated": 2,
+        "inactive_support_activated": 0,
+        "schema_failures": 0,
+        "scored_false_abstention": 0
+      },
+      "field_correct": {
+        "assessment_event_id": 96,
+        "current_priority": 96,
+        "independent_success_supported": 96,
+        "latest_assistance": 96,
+        "latest_result": 96,
+        "next_step": 96,
+        "return_anchor": 94,
+        "stable_mastery_supported": 96,
+        "support_active": 96,
+        "time_budget_minutes": 86
+      },
+      "metrics": {
+        "action_correct": 96,
+        "citation_complete": 96,
+        "citation_valid": 96,
+        "false_abstention": 0,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "whole_record_correct": 84
+      },
+      "pair_denominator": 48,
+      "pair_joint_numerator": 37,
+      "reader_valid_outputs": 96,
+      "variant": "flat_gated"
+    },
+    {
+      "action_obligation_fulfilled": 93,
+      "budget": 8000,
+      "condition_denominator": 96,
+      "error_diagnostics_counts": {
+        "active_support_time_cap_error": 8,
+        "expired_control_reactivated": 130,
+        "inactive_support_activated": 7,
+        "schema_failures": 3,
+        "scored_false_abstention": 3
+      },
+      "field_correct": {
+        "assessment_event_id": 93,
+        "current_priority": 36,
+        "independent_success_supported": 93,
+        "latest_assistance": 93,
+        "latest_result": 93,
+        "next_step": 93,
+        "return_anchor": 20,
+        "stable_mastery_supported": 93,
+        "support_active": 86,
+        "time_budget_minutes": 81
+      },
+      "metrics": {
+        "action_correct": 93,
+        "citation_complete": 93,
+        "citation_valid": 93,
+        "false_abstention": 3,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "whole_record_correct": 18
+      },
+      "pair_denominator": 48,
+      "pair_joint_numerator": 5,
+      "reader_valid_outputs": 93,
+      "variant": "flat_source"
+    }
+  ],
+  "limitations": [
+    "Published primary scores were recomputed exactly; diagnostic raw-JSON inspection does not repair or replace those scores.",
+    "Reader rejects schema-invalid JSON as parsed=None. Consequently false_abstention includes invalid output and must not be described as voluntary model abstention or failure to propose an action.",
+    "Raw enum-failure JSON can contain a correct next_step, but remains contract-invalid; action_correct is therefore a pipeline-level result, not a pure semantic action-selection metric.",
+    "Whole-record correctness includes temporal controls, required citations and output schema; high action correctness alone is not whole-record teaching adequacy.",
+    "An active support request imposes a declared 20-minute benchmark cap. Its violation is protocol inconsistency, not evidence of student harm or learning loss.",
+    "Stable mastery is a fixed-negative corpus constraint; zero unsupported stable claims does not demonstrate general mastery calibration.",
+    "One hosted-model completion per condition, eight authored topic clusters and 48 paired trajectories do not establish repeat-run variance or population effects.",
+    "The hosted requested and returned aliases plus reported fingerprint are provenance metadata, not independently verified immutable weights.",
+    "Both budgets deliver every critical source in the prior input audit; lower budget mainly removes distractor/background records.",
+    "Source/input hash checks and saved response-ledger consistency do not independently attest provider network execution beyond retained artifacts."
+  ],
+  "paired_differences_recomputed": [
+    {
+      "a": "five_kernel_gated",
+      "b": "flat_gated",
+      "budget": 2200,
+      "comparison": "grouping_gated",
+      "delta": -0.020833333333333332,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance.",
+      "topic_cluster_bootstrap_95_percentile": [
+        -0.05208333333333333,
+        0.0
+      ],
+      "topic_clusters": 8
+    },
+    {
+      "a": "five_kernel_source",
+      "b": "flat_source",
+      "budget": 2200,
+      "comparison": "grouping_source",
+      "delta": 0.5729166666666666,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance.",
+      "topic_cluster_bootstrap_95_percentile": [
+        0.5104166666666666,
+        0.6354166666666667
+      ],
+      "topic_clusters": 8
+    },
+    {
+      "a": "five_kernel_gated",
+      "b": "five_kernel_source",
+      "budget": 2200,
+      "comparison": "eligibility_five",
+      "delta": 0.20833333333333331,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance.",
+      "topic_cluster_bootstrap_95_percentile": [
+        0.17708333333333331,
+        0.23958333333333334
+      ],
+      "topic_clusters": 8
+    },
+    {
+      "a": "flat_gated",
+      "b": "flat_source",
+      "budget": 2200,
+      "comparison": "eligibility_flat",
+      "delta": 0.8020833333333334,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance.",
+      "topic_cluster_bootstrap_95_percentile": [
+        0.7395833333333333,
+        0.8645833333333334
+      ],
+      "topic_clusters": 8
+    },
+    {
+      "a": "five_kernel_gated",
+      "b": "flat_gated",
+      "budget": 8000,
+      "comparison": "grouping_gated",
+      "delta": -0.03125,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance.",
+      "topic_cluster_bootstrap_95_percentile": [
+        -0.07291666666666666,
+        0.03125
+      ],
+      "topic_clusters": 8
+    },
+    {
+      "a": "five_kernel_source",
+      "b": "flat_source",
+      "budget": 8000,
+      "comparison": "grouping_source",
+      "delta": 0.4895833333333333,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance.",
+      "topic_cluster_bootstrap_95_percentile": [
+        0.30208333333333337,
+        0.625
+      ],
+      "topic_clusters": 8
+    },
+    {
+      "a": "five_kernel_gated",
+      "b": "five_kernel_source",
+      "budget": 8000,
+      "comparison": "eligibility_five",
+      "delta": 0.16666666666666666,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance.",
+      "topic_cluster_bootstrap_95_percentile": [
+        0.13541666666666666,
+        0.19791666666666666
+      ],
+      "topic_clusters": 8
+    },
+    {
+      "a": "flat_gated",
+      "b": "flat_source",
+      "budget": 8000,
+      "comparison": "eligibility_flat",
+      "delta": 0.6875,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance.",
+      "topic_cluster_bootstrap_95_percentile": [
+        0.5104166666666666,
+        0.8125
+      ],
+      "topic_clusters": 8
+    }
+  ],
+  "post_hoc_alias_sensitivity": {
+    "designation": "Post hoc diagnostic only, not a replacement of frozen primary scores.",
+    "groups": [
+      {
+        "action_delta_count": 2,
+        "alias_sensitivity": {
+          "action_correct": 96,
+          "pair_denominator": 48,
+          "pair_joint_success": 40,
+          "whole_record_correct": 88
+        },
+        "budget": 2200,
+        "condition_denominator": 96,
+        "modified_response_count": 2,
+        "pair_joint_delta_count": 2,
+        "primary": {
+          "action_correct": 94,
+          "pair_denominator": 48,
+          "pair_joint_success": 38,
+          "whole_record_correct": 86
+        },
+        "variant": "five_kernel_gated",
+        "whole_record_delta_count": 2
+      },
+      {
+        "action_delta_count": 7,
+        "alias_sensitivity": {
+          "action_correct": 96,
+          "pair_denominator": 48,
+          "pair_joint_success": 32,
+          "whole_record_correct": 73
+        },
+        "budget": 2200,
+        "condition_denominator": 96,
+        "modified_response_count": 7,
+        "pair_joint_delta_count": 7,
+        "primary": {
+          "action_correct": 89,
+          "pair_denominator": 48,
+          "pair_joint_success": 25,
+          "whole_record_correct": 66
+        },
+        "variant": "five_kernel_source",
+        "whole_record_delta_count": 7
+      },
+      {
+        "action_delta_count": 0,
+        "alias_sensitivity": {
+          "action_correct": 96,
+          "pair_denominator": 48,
+          "pair_joint_success": 40,
+          "whole_record_correct": 88
+        },
+        "budget": 2200,
+        "condition_denominator": 96,
+        "modified_response_count": 0,
+        "pair_joint_delta_count": 0,
+        "primary": {
+          "action_correct": 96,
+          "pair_denominator": 48,
+          "pair_joint_success": 40,
+          "whole_record_correct": 88
+        },
+        "variant": "flat_gated",
+        "whole_record_delta_count": 0
+      },
+      {
+        "action_delta_count": 0,
+        "alias_sensitivity": {
+          "action_correct": 96,
+          "pair_denominator": 48,
+          "pair_joint_success": 3,
+          "whole_record_correct": 11
+        },
+        "budget": 2200,
+        "condition_denominator": 96,
+        "modified_response_count": 0,
+        "pair_joint_delta_count": 0,
+        "primary": {
+          "action_correct": 96,
+          "pair_denominator": 48,
+          "pair_joint_success": 3,
+          "whole_record_correct": 11
+        },
+        "variant": "flat_source",
+        "whole_record_delta_count": 0
+      },
+      {
+        "action_delta_count": 7,
+        "alias_sensitivity": {
+          "action_correct": 96,
+          "pair_denominator": 48,
+          "pair_joint_success": 40,
+          "whole_record_correct": 88
+        },
+        "budget": 8000,
+        "condition_denominator": 96,
+        "modified_response_count": 7,
+        "pair_joint_delta_count": 7,
+        "primary": {
+          "action_correct": 89,
+          "pair_denominator": 48,
+          "pair_joint_success": 33,
+          "whole_record_correct": 81
+        },
+        "variant": "five_kernel_gated",
+        "whole_record_delta_count": 7
+      },
+      {
+        "action_delta_count": 7,
+        "alias_sensitivity": {
+          "action_correct": 96,
+          "pair_denominator": 48,
+          "pair_joint_success": 32,
+          "whole_record_correct": 72
+        },
+        "budget": 8000,
+        "condition_denominator": 96,
+        "modified_response_count": 7,
+        "pair_joint_delta_count": 7,
+        "primary": {
+          "action_correct": 89,
+          "pair_denominator": 48,
+          "pair_joint_success": 25,
+          "whole_record_correct": 65
+        },
+        "variant": "five_kernel_source",
+        "whole_record_delta_count": 7
+      },
+      {
+        "action_delta_count": 0,
+        "alias_sensitivity": {
+          "action_correct": 96,
+          "pair_denominator": 48,
+          "pair_joint_success": 37,
+          "whole_record_correct": 84
+        },
+        "budget": 8000,
+        "condition_denominator": 96,
+        "modified_response_count": 0,
+        "pair_joint_delta_count": 0,
+        "primary": {
+          "action_correct": 96,
+          "pair_denominator": 48,
+          "pair_joint_success": 37,
+          "whole_record_correct": 84
+        },
+        "variant": "flat_gated",
+        "whole_record_delta_count": 0
+      },
+      {
+        "action_delta_count": 3,
+        "alias_sensitivity": {
+          "action_correct": 96,
+          "pair_denominator": 48,
+          "pair_joint_success": 5,
+          "whole_record_correct": 18
+        },
+        "budget": 8000,
+        "condition_denominator": 96,
+        "modified_response_count": 3,
+        "pair_joint_delta_count": 0,
+        "primary": {
+          "action_correct": 93,
+          "pair_denominator": 48,
+          "pair_joint_success": 5,
+          "whole_record_correct": 18
+        },
+        "variant": "flat_source",
+        "whole_record_delta_count": 0
+      }
+    ],
+    "interpretation_limits": [
+      "This repairs one output-schema alias after viewing results; it is not a prespecified primary analysis or a model rerun.",
+      "Changes identify schema-adherence contribution to primary gaps; they do not independently establish general semantic understanding or five-kernel superiority.",
+      "All other raw fields, required citation checks, full/available-evidence rules, condition denominators and pair denominators are unchanged."
+    ],
+    "modified_job_ids": [
+      "cf-binary_search-assistance-a:five_kernel_gated:8000",
+      "cf-binary_search-assistance-a:five_kernel_source:2200",
+      "cf-binary_search-assistance-a:five_kernel_source:8000",
+      "cf-bit_mask-assistance-a:five_kernel_gated:2200",
+      "cf-bit_mask-assistance-a:five_kernel_gated:8000",
+      "cf-bit_mask-assistance-a:five_kernel_source:2200",
+      "cf-bit_mask-assistance-a:five_kernel_source:8000",
+      "cf-bit_mask-assistance-a:flat_source:8000",
+      "cf-dijkstra-assistance-a:five_kernel_gated:8000",
+      "cf-dijkstra-assistance-a:five_kernel_source:8000",
+      "cf-dijkstra-assistance-a:flat_source:8000",
+      "cf-lru_cache-assistance-a:five_kernel_gated:2200",
+      "cf-lru_cache-assistance-a:five_kernel_gated:8000",
+      "cf-lru_cache-assistance-a:five_kernel_source:2200",
+      "cf-lru_cache-assistance-a:five_kernel_source:8000",
+      "cf-lru_cache-assistance-a:flat_source:8000",
+      "cf-python_alias-assistance-a:five_kernel_gated:8000",
+      "cf-python_alias-assistance-a:five_kernel_source:2200",
+      "cf-python_alias-assistance-a:five_kernel_source:8000",
+      "cf-rpn_stack-assistance-a:five_kernel_source:2200",
+      "cf-rpn_stack-assistance-a:five_kernel_source:8000",
+      "cf-sql_group-assistance-a:five_kernel_gated:8000",
+      "cf-sql_group-assistance-a:five_kernel_source:2200",
+      "cf-topological_sort-assistance-a:five_kernel_gated:8000",
+      "cf-topological_sort-assistance-a:five_kernel_source:2200",
+      "cf-topological_sort-assistance-a:five_kernel_source:8000"
+    ],
+    "modified_responses": 26,
+    "other_fields_changed": false,
+    "raw_json_examined": 768,
+    "single_transformation": {
+      "field": "latest_assistance",
+      "from": "guided",
+      "to": "supported"
+    },
+    "status": "completed"
+  },
+  "reader_status_counts": {
+    "ok": 742,
+    "parse_error": 26
+  },
+  "representative_error_cases": {
+    "active_support_time_cap_error": [
+      {
+        "actual_minutes": null,
+        "actual_support_active": true,
+        "budget": 2200,
+        "case_id": "cf-binary_search-support_expiry-a",
+        "contrast": "support_expiry",
+        "expected_minutes": 20,
+        "job_id": "cf-binary_search-support_expiry-a:five_kernel_gated:2200",
+        "required_event_ids": [
+          9,
+          10,
+          11,
+          12
+        ],
+        "variant": "five_kernel_gated"
+      },
+      {
+        "actual_minutes": null,
+        "actual_support_active": true,
+        "budget": 8000,
+        "case_id": "cf-binary_search-support_expiry-a",
+        "contrast": "support_expiry",
+        "expected_minutes": 20,
+        "job_id": "cf-binary_search-support_expiry-a:five_kernel_gated:8000",
+        "required_event_ids": [
+          9,
+          10,
+          11,
+          12
+        ],
+        "variant": "five_kernel_gated"
+      },
+      {
+        "actual_minutes": null,
+        "actual_support_active": true,
+        "budget": 2200,
+        "case_id": "cf-binary_search-support_expiry-a",
+        "contrast": "support_expiry",
+        "expected_minutes": 20,
+        "job_id": "cf-binary_search-support_expiry-a:five_kernel_source:2200",
+        "required_event_ids": [
+          9,
+          10,
+          11,
+          12
+        ],
+        "variant": "five_kernel_source"
+      },
+      {
+        "actual_minutes": null,
+        "actual_support_active": true,
+        "budget": 8000,
+        "case_id": "cf-binary_search-support_expiry-a",
+        "contrast": "support_expiry",
+        "expected_minutes": 20,
+        "job_id": "cf-binary_search-support_expiry-a:five_kernel_source:8000",
+        "required_event_ids": [
+          9,
+          10,
+          11,
+          12
+        ],
+        "variant": "five_kernel_source"
+      }
+    ],
+    "expired_control_reactivated": [
+      {
+        "actual": "二分查找边界术语整理",
+        "budget": 2200,
+        "case_id": "cf-binary_search-assistance-a",
+        "contrast": "assistance",
+        "control_evidence": [
+          {
+            "event_id": 9,
+            "expires_at": "2026-09-01T08:00:00+00:00",
+            "occurred_at": "2026-09-01T00:00:00",
+            "value": "二分查找边界术语整理"
+          }
+        ],
+        "expected": null,
+        "field": "current_priority",
+        "job_id": "cf-binary_search-assistance-a:flat_source:2200",
+        "query_at": "2026-09-01T12:00:00+00:00",
+        "variant": "flat_source"
+      },
+      {
+        "actual": "二分查找边界基础定义",
+        "budget": 2200,
+        "case_id": "cf-binary_search-assistance-a",
+        "contrast": "assistance",
+        "control_evidence": [
+          {
+            "event_id": 10,
+            "expires_at": "2026-09-01T09:00:00+00:00",
+            "occurred_at": "2026-09-01T01:00:00",
+            "value": "二分查找边界基础定义"
+          }
+        ],
+        "expected": null,
+        "field": "return_anchor",
+        "job_id": "cf-binary_search-assistance-a:flat_source:2200",
+        "query_at": "2026-09-01T12:00:00+00:00",
+        "variant": "flat_source"
+      },
+      {
+        "actual": "二分查找边界术语整理",
+        "budget": 8000,
+        "case_id": "cf-binary_search-assistance-a",
+        "contrast": "assistance",
+        "control_evidence": [
+          {
+            "event_id": 9,
+            "expires_at": "2026-09-01T08:00:00+00:00",
+            "occurred_at": "2026-09-01T00:00:00",
+            "value": "二分查找边界术语整理"
+          }
+        ],
+        "expected": null,
+        "field": "current_priority",
+        "job_id": "cf-binary_search-assistance-a:flat_source:8000",
+        "query_at": "2026-09-01T12:00:00+00:00",
+        "variant": "flat_source"
+      },
+      {
+        "actual": "二分查找边界基础定义",
+        "budget": 8000,
+        "case_id": "cf-binary_search-assistance-a",
+        "contrast": "assistance",
+        "control_evidence": [
+          {
+            "event_id": 10,
+            "expires_at": "2026-09-01T09:00:00+00:00",
+            "occurred_at": "2026-09-01T01:00:00",
+            "value": "二分查找边界基础定义"
+          }
+        ],
+        "expected": null,
+        "field": "return_anchor",
+        "job_id": "cf-binary_search-assistance-a:flat_source:8000",
+        "query_at": "2026-09-01T12:00:00+00:00",
+        "variant": "flat_source"
+      }
+    ],
+    "inactive_support_activated": [
+      {
+        "budget": 8000,
+        "case_id": "cf-binary_search-support_expiry-b",
+        "contrast": "support_expiry",
+        "job_id": "cf-binary_search-support_expiry-b:flat_source:8000",
+        "variant": "flat_source"
+      },
+      {
+        "budget": 2200,
+        "case_id": "cf-bit_mask-support_expiry-b",
+        "contrast": "support_expiry",
+        "job_id": "cf-bit_mask-support_expiry-b:flat_source:2200",
+        "variant": "flat_source"
+      },
+      {
+        "budget": 8000,
+        "case_id": "cf-bit_mask-support_expiry-b",
+        "contrast": "support_expiry",
+        "job_id": "cf-bit_mask-support_expiry-b:flat_source:8000",
+        "variant": "flat_source"
+      },
+      {
+        "budget": 8000,
+        "case_id": "cf-dijkstra-support_expiry-b",
+        "contrast": "support_expiry",
+        "job_id": "cf-dijkstra-support_expiry-b:flat_source:8000",
+        "variant": "flat_source"
+      }
+    ]
+  },
+  "returned_system_fingerprint_counts": {
+    "aeb56401ca74e127821c4f9126dcb669": 768
+  },
+  "run_path": "/tmp/learnflow-memory-cf-formal-01",
+  "schema_version": "learnflow.counterfactual-results-independent-audit.v1",
+  "source_manifest_files_checked": 198,
+  "source_verifier_sha256": "f16f71b21eea20cbcc56a506a85de5b1e2c9f5267a60dfebbb55cf6f55c4a13e",
+  "status": "passed",
+  "usage_totals_recomputed": {
+    "completion_tokens": 62816,
+    "prompt_cache_hit_tokens": 1608573,
+    "prompt_cache_miss_tokens": 938947,
+    "prompt_tokens": 2547520,
+    "total_tokens": 2610336
+  },
+  "verifier_matches_root": true
+}

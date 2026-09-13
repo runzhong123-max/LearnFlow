@@ -1,0 +1,2045 @@
+{
+  "audit_scope": "Frozen case, formation, canonical packet, serialized job and transport inputs only; no responses or model scores read.",
+  "created_at": "2026-09-13T06:01:19.666599+00:00",
+  "limitations": [
+    "No model responses, model quality scores, transport outcomes, or runtime model identity were audited.",
+    "Operational oracle consistency is not independent human pedagogical ground truth or student learning gain.",
+    "Self-report versus assessment replaces the evidence channel and associated fields; it is not a single-field representation ablation.",
+    "Outcome-order and priority-order contrasts swap values at two positions; other single-factor contrasts change one input field.",
+    "Formal concept API receipts have session_id=null; ownership can be verified at learner/project/checkpoint, not as native same-session graded evidence.",
+    "Unrepresented remediation_started events are retained in normalization audits; complete canonical delivery is not complete delivery of every raw native event.",
+    "Both budgets preserve required sources in the audited sets; smaller budget primarily removes background records, not critical evidence.",
+    "Four conditions share base canonical fields and records; gated inputs intentionally add derived eligibility annotations.",
+    "Author-generated dev and formal fixtures are not independent human-authored tests. Families provide fewer independent units than repeated conditions.",
+    "Native Mutation serialized key order may change in JSON; Fact binding was checked by predicate/key/value and source IDs, not by re-enumerating sorted patch keys to reconstruct ordinal."
+  ],
+  "runs": [
+    {
+      "artifacts_sha256": {
+        "cases.jsonl": "675dcc127b466a5f66b459a40c7f2b812cb72951b0543cd1940bb50940a8a68f",
+        "formations.jsonl.gz": "91c70a234d746b587ac770cec2c1a883e6ba6113bd4988f4314bd40dc4070712",
+        "jobs.jsonl": "c80a90775626510d5bf15a706143241f7b490d20d1a6587d2e5a1cfb53c50b45",
+        "packets.jsonl.gz": "9c1b8dee7e98e5a4ce41d1e93bc6cda6866f830915b3e036fbc89080be1229ff",
+        "transport.jsonl": "ee3a0a999dbd953698b792c26a6d20cd732a0d9cdfb9fcab1eb48b92dbd0992f"
+      },
+      "artifacts_unchanged_during_audit": true,
+      "budget_coverage": {
+        "2200": {
+          "all_canonical_records_conditions": 0,
+          "all_required_sources_conditions": 96,
+          "conditions": 96,
+          "formed_record_occurrences": 1904,
+          "required_source_occurrences": 320,
+          "required_source_occurrences_delivered": 320,
+          "selected_record_occurrences": 480
+        },
+        "8000": {
+          "all_canonical_records_conditions": 96,
+          "all_required_sources_conditions": 96,
+          "conditions": 96,
+          "formed_record_occurrences": 1904,
+          "required_source_occurrences": 320,
+          "required_source_occurrences_delivered": 320,
+          "selected_record_occurrences": 1904
+        }
+      },
+      "case_family_count": 2,
+      "checks": {
+        "attempts": 74,
+        "concept_null_session": 74,
+        "concept_receipts": 74,
+        "conditions_checked": 192,
+        "events": 384,
+        "fact_reference_checks_repeated_two_budgets": 1748,
+        "facts": 1194,
+        "four_condition_groups_equal": 48,
+        "independent_control_formation_gaps": 0,
+        "mutations": 776,
+        "nodes": 1194,
+        "pairs_checked": 12
+      },
+      "contrast_counts": {
+        "assistance": 4,
+        "latest_outcome": 4,
+        "priority_update": 4,
+        "self_report_vs_assessment": 4,
+        "support_expiry": 4,
+        "time_budget": 4
+      },
+      "errors": [],
+      "formation_gaps": [
+        {
+          "count": 74,
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "missing_required_sources": [],
+      "normalization_event_audit_unique_cases": [
+        {
+          "count": 284,
+          "disposition": "represented",
+          "reason": ""
+        },
+        {
+          "count": 48,
+          "disposition": "excluded",
+          "reason": "scope_mismatch"
+        },
+        {
+          "count": 48,
+          "disposition": "excluded",
+          "reason": "future_or_undated"
+        },
+        {
+          "count": 4,
+          "disposition": "unrepresented",
+          "reason": ""
+        }
+      ],
+      "pair_selected_logical_record_differences": [
+        {
+          "budget": 2200,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-breadth_first-self_report_vs_assessment"
+        },
+        {
+          "budget": 8000,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-breadth_first-self_report_vs_assessment"
+        },
+        {
+          "budget": 2200,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-sql_join-self_report_vs_assessment"
+        },
+        {
+          "budget": 8000,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-sql_join-self_report_vs_assessment"
+        }
+      ],
+      "pairs": [
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "assistance",
+          "expected_semantic_changes": [
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-breadth_first-assistance"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "latest_outcome",
+          "expected_semantic_changes": [
+            "latest_result",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-breadth_first-latest_outcome"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "priority_update",
+          "expected_semantic_changes": [
+            "current_priority"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            },
+            {
+              "field": "text",
+              "step_index": 12
+            }
+          ],
+          "pair_id": "cf-breadth_first-priority_update"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "self_report_vs_assessment",
+          "expected_semantic_changes": [
+            "latest_result",
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            },
+            {
+              "field": "id",
+              "step_index": 10
+            },
+            {
+              "field": "item",
+              "step_index": 10
+            },
+            {
+              "field": "op",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "text",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-breadth_first-self_report_vs_assessment"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "support_expiry",
+          "expected_semantic_changes": [
+            "time_budget_minutes",
+            "support_active"
+          ],
+          "input_field_changes": [
+            {
+              "field": "at",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-breadth_first-support_expiry"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "time_budget",
+          "expected_semantic_changes": [
+            "time_budget_minutes"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-breadth_first-time_budget"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "assistance",
+          "expected_semantic_changes": [
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-sql_join-assistance"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "latest_outcome",
+          "expected_semantic_changes": [
+            "latest_result",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-sql_join-latest_outcome"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "priority_update",
+          "expected_semantic_changes": [
+            "current_priority"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            },
+            {
+              "field": "text",
+              "step_index": 12
+            }
+          ],
+          "pair_id": "cf-sql_join-priority_update"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "self_report_vs_assessment",
+          "expected_semantic_changes": [
+            "latest_result",
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            },
+            {
+              "field": "id",
+              "step_index": 10
+            },
+            {
+              "field": "item",
+              "step_index": 10
+            },
+            {
+              "field": "op",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "text",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-sql_join-self_report_vs_assessment"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "support_expiry",
+          "expected_semantic_changes": [
+            "time_budget_minutes",
+            "support_active"
+          ],
+          "input_field_changes": [
+            {
+              "field": "at",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-sql_join-support_expiry"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "time_budget",
+          "expected_semantic_changes": [
+            "time_budget_minutes"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-sql_join-time_budget"
+        }
+      ],
+      "path": "/tmp/learnflow-memory-cf-dev-01",
+      "rows": {
+        "cases": 24,
+        "formations": 24,
+        "jobs": 192,
+        "packets": 48,
+        "pairs": 12,
+        "transport": 192
+      },
+      "status": "passed",
+      "token_ranges": [
+        {
+          "budget": 2200,
+          "maximum": 2195,
+          "minimum": 1669,
+          "variant": "five_kernel_gated"
+        },
+        {
+          "budget": 2200,
+          "maximum": 2177,
+          "minimum": 1649,
+          "variant": "flat_gated"
+        },
+        {
+          "budget": 2200,
+          "maximum": 2093,
+          "minimum": 1593,
+          "variant": "five_kernel_source"
+        },
+        {
+          "budget": 2200,
+          "maximum": 2075,
+          "minimum": 1573,
+          "variant": "flat_source"
+        },
+        {
+          "budget": 8000,
+          "maximum": 6467,
+          "minimum": 5763,
+          "variant": "five_kernel_gated"
+        },
+        {
+          "budget": 8000,
+          "maximum": 6448,
+          "minimum": 5743,
+          "variant": "flat_gated"
+        },
+        {
+          "budget": 8000,
+          "maximum": 6055,
+          "minimum": 5385,
+          "variant": "five_kernel_source"
+        },
+        {
+          "budget": 8000,
+          "maximum": 6036,
+          "minimum": 5365,
+          "variant": "flat_source"
+        }
+      ],
+      "unrepresented_native_events": [
+        {
+          "case_id": "cf-breadth_first-latest_outcome-a",
+          "disposition": "unrepresented",
+          "event_id": 12,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        },
+        {
+          "case_id": "cf-breadth_first-latest_outcome-b",
+          "disposition": "unrepresented",
+          "event_id": 13,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        },
+        {
+          "case_id": "cf-sql_join-latest_outcome-a",
+          "disposition": "unrepresented",
+          "event_id": 12,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        },
+        {
+          "case_id": "cf-sql_join-latest_outcome-b",
+          "disposition": "unrepresented",
+          "event_id": 13,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        }
+      ]
+    },
+    {
+      "artifacts_sha256": {
+        "cases.jsonl": "e4593d1bcb448e560ff65ca8fd76fcbc96e8931c872f5be4e3f19f7e129104d0",
+        "formations.jsonl.gz": "c48ba0b24bf08bcf22aac9aacd682c3698f104c4b1acf41f1f33c0dda24b6498",
+        "jobs.jsonl": "cfc8eba644e658a813930587a2c5f8d66790b2e7ec8d2451c014d79ecb9c3038",
+        "packets.jsonl.gz": "852e8d5baaa0a42a6d052db93bd921a6447a3c29c2c889ae69ac637f6259bac9",
+        "transport.jsonl": "661de63fff8661b8a57231e434cc114c54ab9ee2d8d8f0cabfbf95c1e2b7f9c2"
+      },
+      "artifacts_unchanged_during_audit": true,
+      "budget_coverage": {
+        "2200": {
+          "all_canonical_records_conditions": 0,
+          "all_required_sources_conditions": 384,
+          "conditions": 384,
+          "formed_record_occurrences": 7616,
+          "required_source_occurrences": 1280,
+          "required_source_occurrences_delivered": 1280,
+          "selected_record_occurrences": 1744
+        },
+        "8000": {
+          "all_canonical_records_conditions": 384,
+          "all_required_sources_conditions": 384,
+          "conditions": 384,
+          "formed_record_occurrences": 7616,
+          "required_source_occurrences": 1280,
+          "required_source_occurrences_delivered": 1280,
+          "selected_record_occurrences": 7616
+        }
+      },
+      "case_family_count": 8,
+      "checks": {
+        "attempts": 296,
+        "concept_null_session": 296,
+        "concept_receipts": 296,
+        "conditions_checked": 768,
+        "events": 1536,
+        "fact_reference_checks_repeated_two_budgets": 6992,
+        "facts": 4776,
+        "four_condition_groups_equal": 192,
+        "independent_control_formation_gaps": 0,
+        "mutations": 3104,
+        "nodes": 4776,
+        "pairs_checked": 48
+      },
+      "contrast_counts": {
+        "assistance": 16,
+        "latest_outcome": 16,
+        "priority_update": 16,
+        "self_report_vs_assessment": 16,
+        "support_expiry": 16,
+        "time_budget": 16
+      },
+      "errors": [],
+      "formation_gaps": [
+        {
+          "count": 296,
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "missing_required_sources": [],
+      "normalization_event_audit_unique_cases": [
+        {
+          "count": 1136,
+          "disposition": "represented",
+          "reason": ""
+        },
+        {
+          "count": 192,
+          "disposition": "excluded",
+          "reason": "scope_mismatch"
+        },
+        {
+          "count": 192,
+          "disposition": "excluded",
+          "reason": "future_or_undated"
+        },
+        {
+          "count": 16,
+          "disposition": "unrepresented",
+          "reason": ""
+        }
+      ],
+      "pair_selected_logical_record_differences": [
+        {
+          "budget": 2200,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-binary_search-self_report_vs_assessment"
+        },
+        {
+          "budget": 8000,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-binary_search-self_report_vs_assessment"
+        },
+        {
+          "budget": 2200,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-bit_mask-self_report_vs_assessment"
+        },
+        {
+          "budget": 8000,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-bit_mask-self_report_vs_assessment"
+        },
+        {
+          "budget": 2200,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-dijkstra-self_report_vs_assessment"
+        },
+        {
+          "budget": 8000,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-dijkstra-self_report_vs_assessment"
+        },
+        {
+          "budget": 2200,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-lru_cache-self_report_vs_assessment"
+        },
+        {
+          "budget": 8000,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-lru_cache-self_report_vs_assessment"
+        },
+        {
+          "budget": 2200,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-python_alias-self_report_vs_assessment"
+        },
+        {
+          "budget": 8000,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-python_alias-self_report_vs_assessment"
+        },
+        {
+          "budget": 2200,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-rpn_stack-self_report_vs_assessment"
+        },
+        {
+          "budget": 8000,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-rpn_stack-self_report_vs_assessment"
+        },
+        {
+          "budget": 2200,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-sql_group-self_report_vs_assessment"
+        },
+        {
+          "budget": 8000,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-sql_group-self_report_vs_assessment"
+        },
+        {
+          "budget": 2200,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-topological_sort-self_report_vs_assessment"
+        },
+        {
+          "budget": 8000,
+          "only_a": [
+            [
+              "self-report",
+              "self_report",
+              "knowledge"
+            ]
+          ],
+          "only_b": [
+            [
+              "result",
+              "assessment",
+              "practice"
+            ]
+          ],
+          "pair_id": "cf-topological_sort-self_report_vs_assessment"
+        }
+      ],
+      "pairs": [
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "assistance",
+          "expected_semantic_changes": [
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-binary_search-assistance"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "latest_outcome",
+          "expected_semantic_changes": [
+            "latest_result",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-binary_search-latest_outcome"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "priority_update",
+          "expected_semantic_changes": [
+            "current_priority"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            },
+            {
+              "field": "text",
+              "step_index": 12
+            }
+          ],
+          "pair_id": "cf-binary_search-priority_update"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "self_report_vs_assessment",
+          "expected_semantic_changes": [
+            "latest_result",
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            },
+            {
+              "field": "id",
+              "step_index": 10
+            },
+            {
+              "field": "item",
+              "step_index": 10
+            },
+            {
+              "field": "op",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "text",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-binary_search-self_report_vs_assessment"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "support_expiry",
+          "expected_semantic_changes": [
+            "time_budget_minutes",
+            "support_active"
+          ],
+          "input_field_changes": [
+            {
+              "field": "at",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-binary_search-support_expiry"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "time_budget",
+          "expected_semantic_changes": [
+            "time_budget_minutes"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-binary_search-time_budget"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "assistance",
+          "expected_semantic_changes": [
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-bit_mask-assistance"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "latest_outcome",
+          "expected_semantic_changes": [
+            "latest_result",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-bit_mask-latest_outcome"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "priority_update",
+          "expected_semantic_changes": [
+            "current_priority"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            },
+            {
+              "field": "text",
+              "step_index": 12
+            }
+          ],
+          "pair_id": "cf-bit_mask-priority_update"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "self_report_vs_assessment",
+          "expected_semantic_changes": [
+            "latest_result",
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            },
+            {
+              "field": "id",
+              "step_index": 10
+            },
+            {
+              "field": "item",
+              "step_index": 10
+            },
+            {
+              "field": "op",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "text",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-bit_mask-self_report_vs_assessment"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "support_expiry",
+          "expected_semantic_changes": [
+            "time_budget_minutes",
+            "support_active"
+          ],
+          "input_field_changes": [
+            {
+              "field": "at",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-bit_mask-support_expiry"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "time_budget",
+          "expected_semantic_changes": [
+            "time_budget_minutes"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-bit_mask-time_budget"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "assistance",
+          "expected_semantic_changes": [
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-dijkstra-assistance"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "latest_outcome",
+          "expected_semantic_changes": [
+            "latest_result",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-dijkstra-latest_outcome"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "priority_update",
+          "expected_semantic_changes": [
+            "current_priority"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            },
+            {
+              "field": "text",
+              "step_index": 12
+            }
+          ],
+          "pair_id": "cf-dijkstra-priority_update"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "self_report_vs_assessment",
+          "expected_semantic_changes": [
+            "latest_result",
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            },
+            {
+              "field": "id",
+              "step_index": 10
+            },
+            {
+              "field": "item",
+              "step_index": 10
+            },
+            {
+              "field": "op",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "text",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-dijkstra-self_report_vs_assessment"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "support_expiry",
+          "expected_semantic_changes": [
+            "time_budget_minutes",
+            "support_active"
+          ],
+          "input_field_changes": [
+            {
+              "field": "at",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-dijkstra-support_expiry"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "time_budget",
+          "expected_semantic_changes": [
+            "time_budget_minutes"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-dijkstra-time_budget"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "assistance",
+          "expected_semantic_changes": [
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-lru_cache-assistance"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "latest_outcome",
+          "expected_semantic_changes": [
+            "latest_result",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-lru_cache-latest_outcome"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "priority_update",
+          "expected_semantic_changes": [
+            "current_priority"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            },
+            {
+              "field": "text",
+              "step_index": 12
+            }
+          ],
+          "pair_id": "cf-lru_cache-priority_update"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "self_report_vs_assessment",
+          "expected_semantic_changes": [
+            "latest_result",
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            },
+            {
+              "field": "id",
+              "step_index": 10
+            },
+            {
+              "field": "item",
+              "step_index": 10
+            },
+            {
+              "field": "op",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "text",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-lru_cache-self_report_vs_assessment"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "support_expiry",
+          "expected_semantic_changes": [
+            "time_budget_minutes",
+            "support_active"
+          ],
+          "input_field_changes": [
+            {
+              "field": "at",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-lru_cache-support_expiry"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "time_budget",
+          "expected_semantic_changes": [
+            "time_budget_minutes"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-lru_cache-time_budget"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "assistance",
+          "expected_semantic_changes": [
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-python_alias-assistance"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "latest_outcome",
+          "expected_semantic_changes": [
+            "latest_result",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-python_alias-latest_outcome"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "priority_update",
+          "expected_semantic_changes": [
+            "current_priority"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            },
+            {
+              "field": "text",
+              "step_index": 12
+            }
+          ],
+          "pair_id": "cf-python_alias-priority_update"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "self_report_vs_assessment",
+          "expected_semantic_changes": [
+            "latest_result",
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            },
+            {
+              "field": "id",
+              "step_index": 10
+            },
+            {
+              "field": "item",
+              "step_index": 10
+            },
+            {
+              "field": "op",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "text",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-python_alias-self_report_vs_assessment"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "support_expiry",
+          "expected_semantic_changes": [
+            "time_budget_minutes",
+            "support_active"
+          ],
+          "input_field_changes": [
+            {
+              "field": "at",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-python_alias-support_expiry"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "time_budget",
+          "expected_semantic_changes": [
+            "time_budget_minutes"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-python_alias-time_budget"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "assistance",
+          "expected_semantic_changes": [
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-rpn_stack-assistance"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "latest_outcome",
+          "expected_semantic_changes": [
+            "latest_result",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-rpn_stack-latest_outcome"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "priority_update",
+          "expected_semantic_changes": [
+            "current_priority"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            },
+            {
+              "field": "text",
+              "step_index": 12
+            }
+          ],
+          "pair_id": "cf-rpn_stack-priority_update"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "self_report_vs_assessment",
+          "expected_semantic_changes": [
+            "latest_result",
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            },
+            {
+              "field": "id",
+              "step_index": 10
+            },
+            {
+              "field": "item",
+              "step_index": 10
+            },
+            {
+              "field": "op",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "text",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-rpn_stack-self_report_vs_assessment"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "support_expiry",
+          "expected_semantic_changes": [
+            "time_budget_minutes",
+            "support_active"
+          ],
+          "input_field_changes": [
+            {
+              "field": "at",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-rpn_stack-support_expiry"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "time_budget",
+          "expected_semantic_changes": [
+            "time_budget_minutes"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-rpn_stack-time_budget"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "assistance",
+          "expected_semantic_changes": [
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-sql_group-assistance"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "latest_outcome",
+          "expected_semantic_changes": [
+            "latest_result",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-sql_group-latest_outcome"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "priority_update",
+          "expected_semantic_changes": [
+            "current_priority"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            },
+            {
+              "field": "text",
+              "step_index": 12
+            }
+          ],
+          "pair_id": "cf-sql_group-priority_update"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "self_report_vs_assessment",
+          "expected_semantic_changes": [
+            "latest_result",
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            },
+            {
+              "field": "id",
+              "step_index": 10
+            },
+            {
+              "field": "item",
+              "step_index": 10
+            },
+            {
+              "field": "op",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "text",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-sql_group-self_report_vs_assessment"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "support_expiry",
+          "expected_semantic_changes": [
+            "time_budget_minutes",
+            "support_active"
+          ],
+          "input_field_changes": [
+            {
+              "field": "at",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-sql_group-support_expiry"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "time_budget",
+          "expected_semantic_changes": [
+            "time_budget_minutes"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-sql_group-time_budget"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "assistance",
+          "expected_semantic_changes": [
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-topological_sort-assistance"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "latest_outcome",
+          "expected_semantic_changes": [
+            "latest_result",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-topological_sort-latest_outcome"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "priority_update",
+          "expected_semantic_changes": [
+            "current_priority"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            },
+            {
+              "field": "text",
+              "step_index": 12
+            }
+          ],
+          "pair_id": "cf-topological_sort-priority_update"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "self_report_vs_assessment",
+          "expected_semantic_changes": [
+            "latest_result",
+            "latest_assistance",
+            "independent_success_supported",
+            "next_step"
+          ],
+          "input_field_changes": [
+            {
+              "field": "assistance_level",
+              "step_index": 10
+            },
+            {
+              "field": "id",
+              "step_index": 10
+            },
+            {
+              "field": "item",
+              "step_index": 10
+            },
+            {
+              "field": "op",
+              "step_index": 10
+            },
+            {
+              "field": "response",
+              "step_index": 10
+            },
+            {
+              "field": "text",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-topological_sort-self_report_vs_assessment"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "support_expiry",
+          "expected_semantic_changes": [
+            "time_budget_minutes",
+            "support_active"
+          ],
+          "input_field_changes": [
+            {
+              "field": "at",
+              "step_index": 10
+            }
+          ],
+          "pair_id": "cf-topological_sort-support_expiry"
+        },
+        {
+          "all_other_semantic_fields_invariant": true,
+          "contrast": "time_budget",
+          "expected_semantic_changes": [
+            "time_budget_minutes"
+          ],
+          "input_field_changes": [
+            {
+              "field": "text",
+              "step_index": 11
+            }
+          ],
+          "pair_id": "cf-topological_sort-time_budget"
+        }
+      ],
+      "path": "/tmp/learnflow-memory-cf-formal-01",
+      "rows": {
+        "cases": 96,
+        "formations": 96,
+        "jobs": 768,
+        "packets": 192,
+        "pairs": 48,
+        "transport": 768
+      },
+      "status": "passed",
+      "token_ranges": [
+        {
+          "budget": 2200,
+          "maximum": 2199,
+          "minimum": 1654,
+          "variant": "five_kernel_gated"
+        },
+        {
+          "budget": 2200,
+          "maximum": 2180,
+          "minimum": 1634,
+          "variant": "flat_gated"
+        },
+        {
+          "budget": 2200,
+          "maximum": 2083,
+          "minimum": 1578,
+          "variant": "five_kernel_source"
+        },
+        {
+          "budget": 2200,
+          "maximum": 2064,
+          "minimum": 1558,
+          "variant": "flat_source"
+        },
+        {
+          "budget": 8000,
+          "maximum": 6677,
+          "minimum": 5852,
+          "variant": "five_kernel_gated"
+        },
+        {
+          "budget": 8000,
+          "maximum": 6658,
+          "minimum": 5832,
+          "variant": "flat_gated"
+        },
+        {
+          "budget": 8000,
+          "maximum": 6265,
+          "minimum": 5473,
+          "variant": "five_kernel_source"
+        },
+        {
+          "budget": 8000,
+          "maximum": 6246,
+          "minimum": 5454,
+          "variant": "flat_source"
+        }
+      ],
+      "unrepresented_native_events": [
+        {
+          "case_id": "cf-binary_search-latest_outcome-a",
+          "disposition": "unrepresented",
+          "event_id": 12,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        },
+        {
+          "case_id": "cf-binary_search-latest_outcome-b",
+          "disposition": "unrepresented",
+          "event_id": 13,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        },
+        {
+          "case_id": "cf-bit_mask-latest_outcome-a",
+          "disposition": "unrepresented",
+          "event_id": 12,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        },
+        {
+          "case_id": "cf-bit_mask-latest_outcome-b",
+          "disposition": "unrepresented",
+          "event_id": 13,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        },
+        {
+          "case_id": "cf-dijkstra-latest_outcome-a",
+          "disposition": "unrepresented",
+          "event_id": 12,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        },
+        {
+          "case_id": "cf-dijkstra-latest_outcome-b",
+          "disposition": "unrepresented",
+          "event_id": 13,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        },
+        {
+          "case_id": "cf-lru_cache-latest_outcome-a",
+          "disposition": "unrepresented",
+          "event_id": 12,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        },
+        {
+          "case_id": "cf-lru_cache-latest_outcome-b",
+          "disposition": "unrepresented",
+          "event_id": 13,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        },
+        {
+          "case_id": "cf-python_alias-latest_outcome-a",
+          "disposition": "unrepresented",
+          "event_id": 12,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        },
+        {
+          "case_id": "cf-python_alias-latest_outcome-b",
+          "disposition": "unrepresented",
+          "event_id": 13,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        },
+        {
+          "case_id": "cf-rpn_stack-latest_outcome-a",
+          "disposition": "unrepresented",
+          "event_id": 12,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        },
+        {
+          "case_id": "cf-rpn_stack-latest_outcome-b",
+          "disposition": "unrepresented",
+          "event_id": 13,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        },
+        {
+          "case_id": "cf-sql_group-latest_outcome-a",
+          "disposition": "unrepresented",
+          "event_id": 12,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        },
+        {
+          "case_id": "cf-sql_group-latest_outcome-b",
+          "disposition": "unrepresented",
+          "event_id": 13,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        },
+        {
+          "case_id": "cf-topological_sort-latest_outcome-a",
+          "disposition": "unrepresented",
+          "event_id": 12,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        },
+        {
+          "case_id": "cf-topological_sort-latest_outcome-b",
+          "disposition": "unrepresented",
+          "event_id": 13,
+          "event_type": "remediation_started",
+          "fact_count": 6,
+          "mutation_count": 2
+        }
+      ]
+    }
+  ],
+  "schema_version": "learnflow.counterfactual-input-independent-audit.v1",
+  "status": "passed",
+  "token_count_method": "Independent cl100k_base count of ensure_ascii=False, sort_keys=True, compact-separator JSON serialization of complete messages; not guaranteed to equal hosted provider tokenizer.",
+  "verifier_source": {
+    "path": "/tmp/learnflow-memory-cf-verifier-20260913/evals/education_memory_counterfactual/verifier.py",
+    "sha256": "f16f71b21eea20cbcc56a506a85de5b1e2c9f5267a60dfebbb55cf6f55c4a13e"
+  }
+}

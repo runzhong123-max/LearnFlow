@@ -1,0 +1,1076 @@
+{
+  "schema": "learnflow.counterfactual-reader.v1",
+  "split": "dev",
+  "expected_jobs": 192,
+  "actual_responses": 192,
+  "matrix_complete": true,
+  "audit": {
+    "source_drift": [],
+    "artifact_drift": [],
+    "ok": true
+  },
+  "case_count": 24,
+  "paired_families": 12,
+  "groups": [
+    {
+      "budget": 2200,
+      "variant": "five_kernel_gated",
+      "n": 24,
+      "reader_completed": 24,
+      "all_normalized_records_delivered": 0,
+      "full_input": 0,
+      "available_evidence_whole_correct": 22,
+      "available_evidence_action_correct": 24,
+      "required_sources_delivered": 80,
+      "required_sources_total": 80,
+      "selection_changed_reference_cases": 0,
+      "metrics": {
+        "whole_record_correct": 22,
+        "action_correct": 24,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "false_abstention": 0,
+        "citation_valid": 24,
+        "citation_complete": 24
+      },
+      "fields": {
+        "assessment_event_id": 24,
+        "current_priority": 24,
+        "independent_success_supported": 24,
+        "latest_assistance": 24,
+        "latest_result": 24,
+        "next_step": 24,
+        "return_anchor": 24,
+        "stable_mastery_supported": 24,
+        "support_active": 24,
+        "time_budget_minutes": 22
+      },
+      "pair_joint_success": 10,
+      "pair_denominator": 12
+    },
+    {
+      "budget": 2200,
+      "variant": "flat_gated",
+      "n": 24,
+      "reader_completed": 24,
+      "all_normalized_records_delivered": 0,
+      "full_input": 0,
+      "available_evidence_whole_correct": 22,
+      "available_evidence_action_correct": 24,
+      "required_sources_delivered": 80,
+      "required_sources_total": 80,
+      "selection_changed_reference_cases": 0,
+      "metrics": {
+        "whole_record_correct": 22,
+        "action_correct": 24,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "false_abstention": 0,
+        "citation_valid": 24,
+        "citation_complete": 24
+      },
+      "fields": {
+        "assessment_event_id": 24,
+        "current_priority": 24,
+        "independent_success_supported": 24,
+        "latest_assistance": 24,
+        "latest_result": 24,
+        "next_step": 24,
+        "return_anchor": 24,
+        "stable_mastery_supported": 24,
+        "support_active": 24,
+        "time_budget_minutes": 22
+      },
+      "pair_joint_success": 10,
+      "pair_denominator": 12
+    },
+    {
+      "budget": 2200,
+      "variant": "five_kernel_source",
+      "n": 24,
+      "reader_completed": 24,
+      "all_normalized_records_delivered": 0,
+      "full_input": 0,
+      "available_evidence_whole_correct": 18,
+      "available_evidence_action_correct": 24,
+      "required_sources_delivered": 80,
+      "required_sources_total": 80,
+      "selection_changed_reference_cases": 0,
+      "metrics": {
+        "whole_record_correct": 18,
+        "action_correct": 24,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "false_abstention": 0,
+        "citation_valid": 24,
+        "citation_complete": 24
+      },
+      "fields": {
+        "assessment_event_id": 24,
+        "current_priority": 24,
+        "independent_success_supported": 24,
+        "latest_assistance": 24,
+        "latest_result": 24,
+        "next_step": 24,
+        "return_anchor": 20,
+        "stable_mastery_supported": 24,
+        "support_active": 24,
+        "time_budget_minutes": 22
+      },
+      "pair_joint_success": 8,
+      "pair_denominator": 12
+    },
+    {
+      "budget": 2200,
+      "variant": "flat_source",
+      "n": 24,
+      "reader_completed": 24,
+      "all_normalized_records_delivered": 0,
+      "full_input": 0,
+      "available_evidence_whole_correct": 2,
+      "available_evidence_action_correct": 24,
+      "required_sources_delivered": 80,
+      "required_sources_total": 80,
+      "selection_changed_reference_cases": 0,
+      "metrics": {
+        "whole_record_correct": 2,
+        "action_correct": 24,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "false_abstention": 0,
+        "citation_valid": 24,
+        "citation_complete": 24
+      },
+      "fields": {
+        "assessment_event_id": 24,
+        "current_priority": 6,
+        "independent_success_supported": 24,
+        "latest_assistance": 24,
+        "latest_result": 24,
+        "next_step": 24,
+        "return_anchor": 2,
+        "stable_mastery_supported": 24,
+        "support_active": 22,
+        "time_budget_minutes": 21
+      },
+      "pair_joint_success": 1,
+      "pair_denominator": 12
+    },
+    {
+      "budget": 8000,
+      "variant": "five_kernel_gated",
+      "n": 24,
+      "reader_completed": 22,
+      "all_normalized_records_delivered": 24,
+      "full_input": 24,
+      "available_evidence_whole_correct": 20,
+      "available_evidence_action_correct": 22,
+      "required_sources_delivered": 80,
+      "required_sources_total": 80,
+      "selection_changed_reference_cases": 0,
+      "metrics": {
+        "whole_record_correct": 20,
+        "action_correct": 22,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "false_abstention": 2,
+        "citation_valid": 22,
+        "citation_complete": 22
+      },
+      "fields": {
+        "assessment_event_id": 22,
+        "current_priority": 22,
+        "independent_success_supported": 22,
+        "latest_assistance": 22,
+        "latest_result": 22,
+        "next_step": 22,
+        "return_anchor": 22,
+        "stable_mastery_supported": 22,
+        "support_active": 22,
+        "time_budget_minutes": 20
+      },
+      "pair_joint_success": 8,
+      "pair_denominator": 12
+    },
+    {
+      "budget": 8000,
+      "variant": "flat_gated",
+      "n": 24,
+      "reader_completed": 24,
+      "all_normalized_records_delivered": 24,
+      "full_input": 24,
+      "available_evidence_whole_correct": 21,
+      "available_evidence_action_correct": 24,
+      "required_sources_delivered": 80,
+      "required_sources_total": 80,
+      "selection_changed_reference_cases": 0,
+      "metrics": {
+        "whole_record_correct": 21,
+        "action_correct": 24,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "false_abstention": 0,
+        "citation_valid": 24,
+        "citation_complete": 24
+      },
+      "fields": {
+        "assessment_event_id": 24,
+        "current_priority": 24,
+        "independent_success_supported": 24,
+        "latest_assistance": 24,
+        "latest_result": 24,
+        "next_step": 24,
+        "return_anchor": 24,
+        "stable_mastery_supported": 24,
+        "support_active": 24,
+        "time_budget_minutes": 21
+      },
+      "pair_joint_success": 9,
+      "pair_denominator": 12
+    },
+    {
+      "budget": 8000,
+      "variant": "five_kernel_source",
+      "n": 24,
+      "reader_completed": 22,
+      "all_normalized_records_delivered": 24,
+      "full_input": 24,
+      "available_evidence_whole_correct": 16,
+      "available_evidence_action_correct": 22,
+      "required_sources_delivered": 80,
+      "required_sources_total": 80,
+      "selection_changed_reference_cases": 0,
+      "metrics": {
+        "whole_record_correct": 16,
+        "action_correct": 22,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "false_abstention": 2,
+        "citation_valid": 22,
+        "citation_complete": 22
+      },
+      "fields": {
+        "assessment_event_id": 22,
+        "current_priority": 22,
+        "independent_success_supported": 22,
+        "latest_assistance": 22,
+        "latest_result": 22,
+        "next_step": 22,
+        "return_anchor": 18,
+        "stable_mastery_supported": 22,
+        "support_active": 22,
+        "time_budget_minutes": 20
+      },
+      "pair_joint_success": 6,
+      "pair_denominator": 12
+    },
+    {
+      "budget": 8000,
+      "variant": "flat_source",
+      "n": 24,
+      "reader_completed": 24,
+      "all_normalized_records_delivered": 24,
+      "full_input": 24,
+      "available_evidence_whole_correct": 8,
+      "available_evidence_action_correct": 24,
+      "required_sources_delivered": 80,
+      "required_sources_total": 80,
+      "selection_changed_reference_cases": 0,
+      "metrics": {
+        "whole_record_correct": 8,
+        "action_correct": 24,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "false_abstention": 0,
+        "citation_valid": 24,
+        "citation_complete": 24
+      },
+      "fields": {
+        "assessment_event_id": 24,
+        "current_priority": 12,
+        "independent_success_supported": 24,
+        "latest_assistance": 24,
+        "latest_result": 24,
+        "next_step": 24,
+        "return_anchor": 8,
+        "stable_mastery_supported": 24,
+        "support_active": 22,
+        "time_budget_minutes": 22
+      },
+      "pair_joint_success": 1,
+      "pair_denominator": 12
+    }
+  ],
+  "paired_differences": [
+    {
+      "budget": 2200,
+      "comparison": "grouping_gated",
+      "a": "five_kernel_gated",
+      "b": "flat_gated",
+      "delta": 0.0,
+      "topic_cluster_bootstrap_95_percentile": [
+        0.0,
+        0.0
+      ],
+      "topic_clusters": 2,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance."
+    },
+    {
+      "budget": 2200,
+      "comparison": "grouping_source",
+      "a": "five_kernel_source",
+      "b": "flat_source",
+      "delta": 0.6666666666666667,
+      "topic_cluster_bootstrap_95_percentile": [
+        0.5833333333333334,
+        0.75
+      ],
+      "topic_clusters": 2,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance."
+    },
+    {
+      "budget": 2200,
+      "comparison": "eligibility_five",
+      "a": "five_kernel_gated",
+      "b": "five_kernel_source",
+      "delta": 0.16666666666666666,
+      "topic_cluster_bootstrap_95_percentile": [
+        0.16666666666666666,
+        0.16666666666666666
+      ],
+      "topic_clusters": 2,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance."
+    },
+    {
+      "budget": 2200,
+      "comparison": "eligibility_flat",
+      "a": "flat_gated",
+      "b": "flat_source",
+      "delta": 0.8333333333333333,
+      "topic_cluster_bootstrap_95_percentile": [
+        0.75,
+        0.9166666666666666
+      ],
+      "topic_clusters": 2,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance."
+    },
+    {
+      "budget": 8000,
+      "comparison": "grouping_gated",
+      "a": "five_kernel_gated",
+      "b": "flat_gated",
+      "delta": -0.041666666666666664,
+      "topic_cluster_bootstrap_95_percentile": [
+        -0.08333333333333333,
+        0.0
+      ],
+      "topic_clusters": 2,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance."
+    },
+    {
+      "budget": 8000,
+      "comparison": "grouping_source",
+      "a": "five_kernel_source",
+      "b": "flat_source",
+      "delta": 0.3333333333333333,
+      "topic_cluster_bootstrap_95_percentile": [
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "topic_clusters": 2,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance."
+    },
+    {
+      "budget": 8000,
+      "comparison": "eligibility_five",
+      "a": "five_kernel_gated",
+      "b": "five_kernel_source",
+      "delta": 0.16666666666666666,
+      "topic_cluster_bootstrap_95_percentile": [
+        0.16666666666666666,
+        0.16666666666666666
+      ],
+      "topic_clusters": 2,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance."
+    },
+    {
+      "budget": 8000,
+      "comparison": "eligibility_flat",
+      "a": "flat_gated",
+      "b": "flat_source",
+      "delta": 0.5416666666666667,
+      "topic_cluster_bootstrap_95_percentile": [
+        0.5,
+        0.5833333333333334
+      ],
+      "topic_clusters": 2,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance."
+    }
+  ],
+  "usage_totals": {
+    "completion_tokens": 15640,
+    "prompt_cache_hit_tokens": 406016,
+    "prompt_cache_miss_tokens": 237520,
+    "prompt_tokens": 643536,
+    "total_tokens": 659176
+  },
+  "missing_usage": 0,
+  "reader_status_counts": {
+    "ok": 188,
+    "parse_error": 4
+  },
+  "models": [
+    "deepseek-flash"
+  ],
+  "requested_models": [
+    "deepseek-v4-flash"
+  ],
+  "formation_audit": {
+    "cf-breadth_first-assistance-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-breadth_first-assistance-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-breadth_first-latest_outcome-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-breadth_first-latest_outcome-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-breadth_first-priority_update-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-breadth_first-priority_update-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-breadth_first-self_report_vs_assessment-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-breadth_first-self_report_vs_assessment-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-breadth_first-support_expiry-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-breadth_first-support_expiry-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-breadth_first-time_budget-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-breadth_first-time_budget-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_join-assistance-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_join-assistance-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_join-latest_outcome-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_join-latest_outcome-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_join-priority_update-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_join-priority_update-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_join-self_report_vs_assessment-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_join-self_report_vs_assessment-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_join-support_expiry-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_join-support_expiry-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_join-time_budget-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_join-time_budget-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    }
+  },
+  "limitations": [
+    "Author-generated synthetic cases; no independent teacher annotation.",
+    "Operational evidence/action consistency only; no student learning gain.",
+    "Closed-choice formal grading; Python/SQL oracles validate authored answers, not human coding skill.",
+    "Grouping test retains kernel labels and equal typed records; not full production memory versus another system.",
+    "Hosted model alias and one completion per condition; weight immutability and repeat variance unmeasured.",
+    "cl100k budget is a proxy; actual provider usage reported separately."
+  ]
+}

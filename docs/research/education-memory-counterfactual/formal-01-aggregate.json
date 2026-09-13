@@ -1,0 +1,2990 @@
+{
+  "schema": "learnflow.counterfactual-reader.v1",
+  "split": "formal",
+  "expected_jobs": 768,
+  "actual_responses": 768,
+  "matrix_complete": true,
+  "audit": {
+    "source_drift": [],
+    "artifact_drift": [],
+    "ok": true
+  },
+  "case_count": 96,
+  "paired_families": 48,
+  "groups": [
+    {
+      "budget": 2200,
+      "variant": "five_kernel_gated",
+      "n": 96,
+      "reader_completed": 94,
+      "all_normalized_records_delivered": 0,
+      "full_input": 0,
+      "available_evidence_whole_correct": 86,
+      "available_evidence_action_correct": 94,
+      "required_sources_delivered": 320,
+      "required_sources_total": 320,
+      "selection_changed_reference_cases": 0,
+      "metrics": {
+        "whole_record_correct": 86,
+        "action_correct": 94,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "false_abstention": 2,
+        "citation_valid": 94,
+        "citation_complete": 94
+      },
+      "fields": {
+        "assessment_event_id": 94,
+        "current_priority": 94,
+        "independent_success_supported": 94,
+        "latest_assistance": 94,
+        "latest_result": 94,
+        "next_step": 94,
+        "return_anchor": 94,
+        "stable_mastery_supported": 94,
+        "support_active": 94,
+        "time_budget_minutes": 86
+      },
+      "pair_joint_success": 38,
+      "pair_denominator": 48
+    },
+    {
+      "budget": 2200,
+      "variant": "flat_gated",
+      "n": 96,
+      "reader_completed": 96,
+      "all_normalized_records_delivered": 0,
+      "full_input": 0,
+      "available_evidence_whole_correct": 88,
+      "available_evidence_action_correct": 96,
+      "required_sources_delivered": 320,
+      "required_sources_total": 320,
+      "selection_changed_reference_cases": 0,
+      "metrics": {
+        "whole_record_correct": 88,
+        "action_correct": 96,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "false_abstention": 0,
+        "citation_valid": 96,
+        "citation_complete": 96
+      },
+      "fields": {
+        "assessment_event_id": 96,
+        "current_priority": 96,
+        "independent_success_supported": 96,
+        "latest_assistance": 96,
+        "latest_result": 96,
+        "next_step": 96,
+        "return_anchor": 96,
+        "stable_mastery_supported": 96,
+        "support_active": 96,
+        "time_budget_minutes": 88
+      },
+      "pair_joint_success": 40,
+      "pair_denominator": 48
+    },
+    {
+      "budget": 2200,
+      "variant": "five_kernel_source",
+      "n": 96,
+      "reader_completed": 89,
+      "all_normalized_records_delivered": 0,
+      "full_input": 0,
+      "available_evidence_whole_correct": 66,
+      "available_evidence_action_correct": 89,
+      "required_sources_delivered": 320,
+      "required_sources_total": 320,
+      "selection_changed_reference_cases": 0,
+      "metrics": {
+        "whole_record_correct": 66,
+        "action_correct": 89,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "false_abstention": 7,
+        "citation_valid": 89,
+        "citation_complete": 89
+      },
+      "fields": {
+        "assessment_event_id": 89,
+        "current_priority": 89,
+        "independent_success_supported": 89,
+        "latest_assistance": 89,
+        "latest_result": 89,
+        "next_step": 89,
+        "return_anchor": 74,
+        "stable_mastery_supported": 89,
+        "support_active": 89,
+        "time_budget_minutes": 81
+      },
+      "pair_joint_success": 25,
+      "pair_denominator": 48
+    },
+    {
+      "budget": 2200,
+      "variant": "flat_source",
+      "n": 96,
+      "reader_completed": 96,
+      "all_normalized_records_delivered": 0,
+      "full_input": 0,
+      "available_evidence_whole_correct": 11,
+      "available_evidence_action_correct": 96,
+      "required_sources_delivered": 320,
+      "required_sources_total": 320,
+      "selection_changed_reference_cases": 0,
+      "metrics": {
+        "whole_record_correct": 11,
+        "action_correct": 96,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "false_abstention": 0,
+        "citation_valid": 96,
+        "citation_complete": 96
+      },
+      "fields": {
+        "assessment_event_id": 96,
+        "current_priority": 27,
+        "independent_success_supported": 96,
+        "latest_assistance": 96,
+        "latest_result": 96,
+        "next_step": 96,
+        "return_anchor": 11,
+        "stable_mastery_supported": 96,
+        "support_active": 91,
+        "time_budget_minutes": 86
+      },
+      "pair_joint_success": 3,
+      "pair_denominator": 48
+    },
+    {
+      "budget": 8000,
+      "variant": "five_kernel_gated",
+      "n": 96,
+      "reader_completed": 89,
+      "all_normalized_records_delivered": 96,
+      "full_input": 96,
+      "available_evidence_whole_correct": 81,
+      "available_evidence_action_correct": 89,
+      "required_sources_delivered": 320,
+      "required_sources_total": 320,
+      "selection_changed_reference_cases": 0,
+      "metrics": {
+        "whole_record_correct": 81,
+        "action_correct": 89,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "false_abstention": 7,
+        "citation_valid": 89,
+        "citation_complete": 89
+      },
+      "fields": {
+        "assessment_event_id": 89,
+        "current_priority": 89,
+        "independent_success_supported": 89,
+        "latest_assistance": 89,
+        "latest_result": 89,
+        "next_step": 89,
+        "return_anchor": 89,
+        "stable_mastery_supported": 89,
+        "support_active": 89,
+        "time_budget_minutes": 81
+      },
+      "pair_joint_success": 33,
+      "pair_denominator": 48
+    },
+    {
+      "budget": 8000,
+      "variant": "flat_gated",
+      "n": 96,
+      "reader_completed": 96,
+      "all_normalized_records_delivered": 96,
+      "full_input": 96,
+      "available_evidence_whole_correct": 84,
+      "available_evidence_action_correct": 96,
+      "required_sources_delivered": 320,
+      "required_sources_total": 320,
+      "selection_changed_reference_cases": 0,
+      "metrics": {
+        "whole_record_correct": 84,
+        "action_correct": 96,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "false_abstention": 0,
+        "citation_valid": 96,
+        "citation_complete": 96
+      },
+      "fields": {
+        "assessment_event_id": 96,
+        "current_priority": 96,
+        "independent_success_supported": 96,
+        "latest_assistance": 96,
+        "latest_result": 96,
+        "next_step": 96,
+        "return_anchor": 94,
+        "stable_mastery_supported": 96,
+        "support_active": 96,
+        "time_budget_minutes": 86
+      },
+      "pair_joint_success": 37,
+      "pair_denominator": 48
+    },
+    {
+      "budget": 8000,
+      "variant": "five_kernel_source",
+      "n": 96,
+      "reader_completed": 89,
+      "all_normalized_records_delivered": 96,
+      "full_input": 96,
+      "available_evidence_whole_correct": 65,
+      "available_evidence_action_correct": 89,
+      "required_sources_delivered": 320,
+      "required_sources_total": 320,
+      "selection_changed_reference_cases": 0,
+      "metrics": {
+        "whole_record_correct": 65,
+        "action_correct": 89,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "false_abstention": 7,
+        "citation_valid": 89,
+        "citation_complete": 89
+      },
+      "fields": {
+        "assessment_event_id": 89,
+        "current_priority": 89,
+        "independent_success_supported": 89,
+        "latest_assistance": 89,
+        "latest_result": 89,
+        "next_step": 89,
+        "return_anchor": 73,
+        "stable_mastery_supported": 89,
+        "support_active": 89,
+        "time_budget_minutes": 81
+      },
+      "pair_joint_success": 25,
+      "pair_denominator": 48
+    },
+    {
+      "budget": 8000,
+      "variant": "flat_source",
+      "n": 96,
+      "reader_completed": 93,
+      "all_normalized_records_delivered": 96,
+      "full_input": 96,
+      "available_evidence_whole_correct": 18,
+      "available_evidence_action_correct": 93,
+      "required_sources_delivered": 320,
+      "required_sources_total": 320,
+      "selection_changed_reference_cases": 0,
+      "metrics": {
+        "whole_record_correct": 18,
+        "action_correct": 93,
+        "unsupported_independent_claim": 0,
+        "unsupported_stable_claim": 0,
+        "false_abstention": 3,
+        "citation_valid": 93,
+        "citation_complete": 93
+      },
+      "fields": {
+        "assessment_event_id": 93,
+        "current_priority": 36,
+        "independent_success_supported": 93,
+        "latest_assistance": 93,
+        "latest_result": 93,
+        "next_step": 93,
+        "return_anchor": 20,
+        "stable_mastery_supported": 93,
+        "support_active": 86,
+        "time_budget_minutes": 81
+      },
+      "pair_joint_success": 5,
+      "pair_denominator": 48
+    }
+  ],
+  "paired_differences": [
+    {
+      "budget": 2200,
+      "comparison": "grouping_gated",
+      "a": "five_kernel_gated",
+      "b": "flat_gated",
+      "delta": -0.020833333333333332,
+      "topic_cluster_bootstrap_95_percentile": [
+        -0.05208333333333333,
+        0.0
+      ],
+      "topic_clusters": 8,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance."
+    },
+    {
+      "budget": 2200,
+      "comparison": "grouping_source",
+      "a": "five_kernel_source",
+      "b": "flat_source",
+      "delta": 0.5729166666666666,
+      "topic_cluster_bootstrap_95_percentile": [
+        0.5104166666666666,
+        0.6354166666666667
+      ],
+      "topic_clusters": 8,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance."
+    },
+    {
+      "budget": 2200,
+      "comparison": "eligibility_five",
+      "a": "five_kernel_gated",
+      "b": "five_kernel_source",
+      "delta": 0.20833333333333331,
+      "topic_cluster_bootstrap_95_percentile": [
+        0.17708333333333331,
+        0.23958333333333334
+      ],
+      "topic_clusters": 8,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance."
+    },
+    {
+      "budget": 2200,
+      "comparison": "eligibility_flat",
+      "a": "flat_gated",
+      "b": "flat_source",
+      "delta": 0.8020833333333334,
+      "topic_cluster_bootstrap_95_percentile": [
+        0.7395833333333333,
+        0.8645833333333334
+      ],
+      "topic_clusters": 8,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance."
+    },
+    {
+      "budget": 8000,
+      "comparison": "grouping_gated",
+      "a": "five_kernel_gated",
+      "b": "flat_gated",
+      "delta": -0.03125,
+      "topic_cluster_bootstrap_95_percentile": [
+        -0.07291666666666666,
+        0.03125
+      ],
+      "topic_clusters": 8,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance."
+    },
+    {
+      "budget": 8000,
+      "comparison": "grouping_source",
+      "a": "five_kernel_source",
+      "b": "flat_source",
+      "delta": 0.4895833333333333,
+      "topic_cluster_bootstrap_95_percentile": [
+        0.30208333333333337,
+        0.625
+      ],
+      "topic_clusters": 8,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance."
+    },
+    {
+      "budget": 8000,
+      "comparison": "eligibility_five",
+      "a": "five_kernel_gated",
+      "b": "five_kernel_source",
+      "delta": 0.16666666666666666,
+      "topic_cluster_bootstrap_95_percentile": [
+        0.13541666666666666,
+        0.19791666666666666
+      ],
+      "topic_clusters": 8,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance."
+    },
+    {
+      "budget": 8000,
+      "comparison": "eligibility_flat",
+      "a": "flat_gated",
+      "b": "flat_source",
+      "delta": 0.6875,
+      "topic_cluster_bootstrap_95_percentile": [
+        0.5104166666666666,
+        0.8125
+      ],
+      "topic_clusters": 8,
+      "qualification": "Exploratory author-generated topic clusters; not population inference or confirmatory significance."
+    }
+  ],
+  "usage_totals": {
+    "completion_tokens": 62816,
+    "prompt_cache_hit_tokens": 1608573,
+    "prompt_cache_miss_tokens": 938947,
+    "prompt_tokens": 2547520,
+    "total_tokens": 2610336
+  },
+  "missing_usage": 0,
+  "reader_status_counts": {
+    "ok": 742,
+    "parse_error": 26
+  },
+  "models": [
+    "deepseek-flash"
+  ],
+  "requested_models": [
+    "deepseek-v4-flash"
+  ],
+  "formation_audit": {
+    "cf-binary_search-assistance-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-binary_search-assistance-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-binary_search-latest_outcome-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-binary_search-latest_outcome-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-binary_search-priority_update-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-binary_search-priority_update-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-binary_search-self_report_vs_assessment-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-binary_search-self_report_vs_assessment-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-binary_search-support_expiry-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-binary_search-support_expiry-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-binary_search-time_budget-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-binary_search-time_budget-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-bit_mask-assistance-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-bit_mask-assistance-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-bit_mask-latest_outcome-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-bit_mask-latest_outcome-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-bit_mask-priority_update-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-bit_mask-priority_update-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-bit_mask-self_report_vs_assessment-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-bit_mask-self_report_vs_assessment-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-bit_mask-support_expiry-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-bit_mask-support_expiry-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-bit_mask-time_budget-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-bit_mask-time_budget-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-dijkstra-assistance-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-dijkstra-assistance-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-dijkstra-latest_outcome-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-dijkstra-latest_outcome-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-dijkstra-priority_update-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-dijkstra-priority_update-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-dijkstra-self_report_vs_assessment-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-dijkstra-self_report_vs_assessment-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-dijkstra-support_expiry-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-dijkstra-support_expiry-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-dijkstra-time_budget-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-dijkstra-time_budget-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-lru_cache-assistance-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-lru_cache-assistance-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-lru_cache-latest_outcome-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-lru_cache-latest_outcome-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-lru_cache-priority_update-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-lru_cache-priority_update-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-lru_cache-self_report_vs_assessment-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-lru_cache-self_report_vs_assessment-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-lru_cache-support_expiry-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-lru_cache-support_expiry-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-lru_cache-time_budget-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-lru_cache-time_budget-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-python_alias-assistance-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-python_alias-assistance-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-python_alias-latest_outcome-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-python_alias-latest_outcome-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-python_alias-priority_update-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-python_alias-priority_update-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-python_alias-self_report_vs_assessment-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-python_alias-self_report_vs_assessment-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-python_alias-support_expiry-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-python_alias-support_expiry-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-python_alias-time_budget-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-python_alias-time_budget-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-rpn_stack-assistance-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-rpn_stack-assistance-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-rpn_stack-latest_outcome-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-rpn_stack-latest_outcome-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-rpn_stack-priority_update-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-rpn_stack-priority_update-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-rpn_stack-self_report_vs_assessment-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-rpn_stack-self_report_vs_assessment-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-rpn_stack-support_expiry-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-rpn_stack-support_expiry-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-rpn_stack-time_budget-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-rpn_stack-time_budget-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_group-assistance-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_group-assistance-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_group-latest_outcome-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_group-latest_outcome-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_group-priority_update-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_group-priority_update-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_group-self_report_vs_assessment-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_group-self_report_vs_assessment-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_group-support_expiry-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_group-support_expiry-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_group-time_budget-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-sql_group-time_budget-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-topological_sort-assistance-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-topological_sort-assistance-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-topological_sort-latest_outcome-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-topological_sort-latest_outcome-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result-1",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "result-2",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-topological_sort-priority_update-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-topological_sort-priority_update-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-topological_sort-self_report_vs_assessment-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-topological_sort-self_report_vs_assessment-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-topological_sort-support_expiry-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-topological_sort-support_expiry-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-topological_sort-time_budget-a": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    },
+    "cf-topological_sort-time_budget-b": {
+      "native_gaps": [
+        {
+          "actual_session_id": null,
+          "operation_id": "result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "foreign-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 2,
+          "severity": "known_scope_fidelity_limit"
+        },
+        {
+          "actual_session_id": null,
+          "operation_id": "future-result",
+          "reason": "formal_concept_api_has_no_session_parameter",
+          "requested_session_id": 1,
+          "severity": "known_scope_fidelity_limit"
+        }
+      ],
+      "independent_control_gaps": []
+    }
+  },
+  "limitations": [
+    "Author-generated synthetic cases; no independent teacher annotation.",
+    "Operational evidence/action consistency only; no student learning gain.",
+    "Closed-choice formal grading; Python/SQL oracles validate authored answers, not human coding skill.",
+    "Grouping test retains kernel labels and equal typed records; not full production memory versus another system.",
+    "Hosted model alias and one completion per condition; weight immutability and repeat variance unmeasured.",
+    "cl100k budget is a proxy; actual provider usage reported separately."
+  ]
+}

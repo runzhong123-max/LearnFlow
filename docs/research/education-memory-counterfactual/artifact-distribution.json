@@ -1,0 +1,35 @@
+{
+  "synthetic_data_only": true,
+  "production_code_baseline": "a9375aa37f4575384394d595ede2395b07d9c7a2",
+  "archives_preserve_raw_failed_calls": true,
+  "files": {
+    "dev-01-failed.tar.gz": {
+      "sha256": "0a46b14c43f1817679b0aa1a18247c072b1ba340b2e871811cd5e7f851533bc5",
+      "bytes": 724439
+    },
+    "dev-02.tar.gz": {
+      "sha256": "1d5f1198b44202808a5b225aa7d65f15e448939a3cf94f93c021a8d2846d8305",
+      "bytes": 664787
+    },
+    "formal-01.tar.gz": {
+      "sha256": "c0cc4e333fe807e940f1774dfcf3d5a903fa9a364817a5f764d4e31add958c0d",
+      "bytes": 2647648
+    },
+    "learnflow-counterfactual-reader-smoke.jsonl": {
+      "sha256": "a89e2ea9ae62097fd2cbc453b4b76ea76328febc52a0dd74cbb1f149ecf1b59c",
+      "bytes": 2281
+    },
+    "learnflow-counterfactual-reader-smoke.jsonl.attempts.jsonl": {
+      "sha256": "4af79c4420493c7d7aa7123f989153b924151ae5e8473b02d80fd16c305d37f2",
+      "bytes": 400
+    },
+    "learnflow-memory-cf-canary-response.jsonl": {
+      "sha256": "a50b28a636e652d926f1fa67493ffdd9a897677aba1fd5491d74b5c78fc47f2a",
+      "bytes": 2782
+    },
+    "learnflow-memory-cf-canary-response.jsonl.attempts.jsonl": {
+      "sha256": "7a0aa01dc404f38772c37fab298a3d2ede0956a7fc2916b0944c7a3fbe6c3879",
+      "bytes": 446
+    }
+  }
+}
