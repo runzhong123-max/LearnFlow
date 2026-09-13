@@ -19,6 +19,38 @@ function count(value: unknown) { return typeof value === "number" && Number.isFi
 function text(value: unknown) { return typeof value === "string" ? value.slice(0, 600) : ""; }
 function lines(value: unknown) { return [...new Set(list(value).map(text).filter(Boolean))].slice(0, 6); }
 
+/** Validate stored JSON before any UI dereferences it; incomplete counts remain unknown. */
+export function normalizeIterationOutcome(value: unknown): IterationOutcome | undefined {
+  const raw = record(value), work = record(raw.work), research = record(raw.research);
+  const validCount = (v: unknown) => typeof v === "number" && Number.isFinite(v) && v >= 0;
+  if (!["completed", "no_change", "waiting_user"].includes(String(raw.status)) || typeof raw.createdSnapshot !== "boolean"
+    || ![work.total, work.completed, work.unresolved, research.queries, research.selectedSources, research.failures, raw.remainingGapCount].every(validCount)
+    || ![raw.summary, raw.reasons, raw.remainingGaps].every(Array.isArray)) return undefined;
+  const coverage = record(raw.coverage);
+  return {
+    status: raw.status as IterationOutcome["status"], createdSnapshot: raw.createdSnapshot,
+    summary: lines(raw.summary), reasons: lines(raw.reasons), remainingGapCount: count(raw.remainingGapCount),
+    remainingGaps: list(raw.remainingGaps).map(record).map(gap => ({ code: text(gap.code), title: text(gap.title) })).filter(gap => gap.title).slice(0, 8),
+    work: { total: count(work.total), completed: count(work.completed), unresolved: count(work.unresolved) },
+    research: { queries: count(research.queries), selectedSources: count(research.selectedSources), failures: count(research.failures) },
+    ...([coverage.tasks, coverage.knowledgeSkills, coverage.tasksWithoutSkills, coverage.tasksWithoutProcess].every(validCount) ? { coverage: {
+      tasks: count(coverage.tasks), knowledgeSkills: count(coverage.knowledgeSkills), tasksWithoutSkills: count(coverage.tasksWithoutSkills), tasksWithoutProcess: count(coverage.tasksWithoutProcess),
+    } } : {}),
+  };
+}
+
+/** Read compatibility only: never rewrite the saved job or manufacture missing totals. */
+export function projectJobResult(value: unknown, recovered?: IterationOutcome) {
+  if (!value && !recovered) return undefined;
+  const raw = record(value);
+  const outcome = normalizeIterationOutcome(raw.outcome) || recovered;
+  const legacyStopReason = raw.draft === true && typeof raw.outcome === "string" ? text(raw.outcome) : undefined;
+  return { ...raw, outcome,
+    ...(legacyStopReason && typeof raw.stopReason !== "string" ? { stopReason: legacyStopReason } : {}),
+    ...(raw.outcome != null && !outcome && !legacyStopReason ? { outcomeUnavailable: true } : {}),
+  };
+}
+
 export function iterationOutcome(value: unknown): IterationOutcome | undefined {
   const result = record(value);
   if (!["completed", "no_change", "waiting_user"].includes(String(result.status))) return undefined;
@@ -74,7 +106,8 @@ export async function loadIterationOutcome(
   } catch { return undefined; }
 }
 
-export function iterationOutcomePresentation(outcome?: IterationOutcome) {
+export function iterationOutcomePresentation(value?: unknown) {
+  const outcome = normalizeIterationOutcome(value);
   if (!outcome) return undefined;
   if (outcome.status === "waiting_user") return outcome.createdSnapshot ? { tone: "partial", label: "候选待审阅", message: "候选版本已保存，审阅后可采用；当前版本保持不变。" } : { tone: "partial", label: "需要补充资料", message: "本轮检查已结束，尚未生成新版本。请查看未解决的问题。" };
   if (!outcome.createdSnapshot || outcome.status === "no_change") return { tone: "no-change", label: "未生成新版本", message: "本轮没有可保存的有效更新，仍保留原版本。查看本轮结果可了解原因与剩余缺口。" };

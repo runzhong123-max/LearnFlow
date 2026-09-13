@@ -206,7 +206,7 @@ export async function POST(request: Request) {
       if (buildRequest.research) await checkpointRoleJob({ jobId: buildRequest.runId, owner: jobOwner, kind: "cold_start", phase: "research.commit", state: { researchCheckpoint: latestResearchCheckpoint, completedResult: kernel } });
       if (buildRequest.research && !kernel.deliveryReadiness?.ready) {
         await completeBuildStageRun(buildRequest.runId, buildRequest.projectId, kernel);
-        await completeRoleJob({ jobId: buildRequest.runId, owner: jobOwner, phase: "draft", result: { outcome: kernel.researchRun?.stopReason || "insufficient_material", draft: true, blockers: kernel.deliveryReadiness?.blockers || ["首版尚未完整"] } });
+        await completeRoleJob({ jobId: buildRequest.runId, owner: jobOwner, phase: "draft", result: { stopReason: kernel.researchRun?.stopReason || "insufficient_material", draft: true, blockers: kernel.deliveryReadiness?.blockers || ["首版尚未完整"] } });
         buildEvent.payload.completed = false;
         buildEvent.payload.draft = true;
         journal.publish(buildEvent);
