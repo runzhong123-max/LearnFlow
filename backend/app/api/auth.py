@@ -815,23 +815,16 @@ async def list_model_credential_models(
     serves. Asking the provider keeps the list correct without this codebase
     tracking every vendor's releases.
     """
-    if not model_credential_configured(current.account):
-        raise HTTPException(409, "尚未配置账户模型凭据")
-    try:
-        provider_config = account_model_provider_config(current.account)
-    except ModelCredentialFormatError:
-        raise HTTPException(422, "账户模型凭据格式无效，请在设置中重新保存 API Key") from None
-    except ModelCredentialEncryptionUnavailable:
-        _raise_model_credential_kek_error()
-    except ModelCredentialDecryptionError:
-        raise HTTPException(500, "账户模型凭据无法解密，请检查 KEK 版本或密文完整性") from None
-
-    base_url = _validated_model_base_url(provider_config.base_url or settings.llm_base_url)
+    # Web inference uses the platform-managed provider, not legacy account keys.
+    api_key = str(settings.llm_api_key or "").strip()
+    if not api_key or api_key in {"***", "sk-your-key-here"}:
+        raise HTTPException(503, "后台模型服务尚未配置")
+    base_url = _validated_model_base_url(settings.llm_base_url)
     try:
         async with httpx.AsyncClient(timeout=20, trust_env=False) as client:
             response = await client.get(
                 f"{base_url.rstrip('/')}/models",
-                headers={"Authorization": f"Bearer {provider_config.api_key}"},
+                headers={"Authorization": f"Bearer {api_key}"},
             )
     except httpx.HTTPError:
         raise HTTPException(502, "无法连接模型服务商，请检查地址与网络") from None
