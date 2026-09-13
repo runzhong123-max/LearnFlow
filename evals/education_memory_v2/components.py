@@ -8,7 +8,8 @@ import json
 import math
 
 COMPONENT_FIELDS = ("enable_episodes", "max_episodes", "max_episode_facts", "enable_bm25",
-                    "enable_aliases", "enable_fuzzy", "enable_temporal", "enable_summary_boost")
+                    "enable_aliases", "enable_fuzzy", "enable_temporal", "enable_summary_boost",
+                    "enable_source_text", "enable_compact_episodes", "candidate_mode")
 COMPONENT_VARIANTS = {"no_episodes": "enable_episodes", "no_bm25": "enable_bm25",
                       "no_aliases": "enable_aliases", "no_fuzzy": "enable_fuzzy",
                       "no_temporal": "enable_temporal", "no_summary_boost": "enable_summary_boost"}
@@ -18,8 +19,28 @@ LOCOMO_VARIANTS = ("full", "recent_facts", "no_bm25", "no_aliases", "no_fuzzy",
                    "no_temporal", "no_memory")
 
 
+# Explicit experimental presets. Original defaults and original variant lists stay unchanged.
+UPGRADE_VERSION = "learnflow-memory-upgrade.v1"
+UPGRADE_PRESETS = {
+    "legacy": {},
+    "source": {"enable_source_text": True},
+    "compact": {"enable_compact_episodes": True},
+    "bm25": {"candidate_mode": "corpus_bm25"},
+    "hybrid": {"candidate_mode": "hybrid"},
+    "source_hybrid": {"enable_source_text": True, "candidate_mode": "hybrid"},
+    "education_full": {"enable_source_text": True, "candidate_mode": "hybrid", "enable_compact_episodes": True},
+    "education_full_no_episodes": {"enable_source_text": True, "candidate_mode": "hybrid", "enable_compact_episodes": True, "enable_episodes": False},
+    "education_full_no_paths": {"enable_source_text": True, "candidate_mode": "hybrid", "enable_compact_episodes": True, "max_paths": 0},
+}
+UPGRADE_VARIANTS = tuple(UPGRADE_PRESETS)
+
+
 def policy_for(base, variant, budget):
     changes = {"token_budget": budget}
+    if variant in UPGRADE_PRESETS:
+        changes.update(enable_source_text=False, enable_compact_episodes=False, candidate_mode="legacy")
+        changes.update({name: True for name in COMPONENT_VARIANTS.values()})
+        changes.update(UPGRADE_PRESETS[variant])
     if variant in COMPONENT_VARIANTS:
         changes[COMPONENT_VARIANTS[variant]] = False
     if variant == "no_relations":
@@ -28,6 +49,8 @@ def policy_for(base, variant, budget):
 
 
 def budget_body(packet):
+    policy = packet.get("manifest", {}).get("policy", {}) or {}
+    fields = COMPONENT_FIELDS if any(name in policy for name in ("enable_source_text", "enable_compact_episodes", "candidate_mode")) else COMPONENT_FIELDS[:-3]
     return {"heads": packet.get("kernel_heads", {}), "items": packet.get("items", []),
             "paths": packet.get("relation_paths", []),
             "personal_concept_graph": packet.get("personal_concept_graph", {}),
@@ -36,7 +59,7 @@ def budget_body(packet):
             "learning_episodes": packet.get("learning_episodes", []),
             "retrieval_diagnostics": packet.get("retrieval_diagnostics", {}),
             "component_policy": {name: (packet.get("manifest", {}).get("policy", {}) or {}).get(name)
-                                 for name in COMPONENT_FIELDS}}
+                                 for name in fields}}
 
 
 def packet_tokens(packet):

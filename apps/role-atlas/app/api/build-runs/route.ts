@@ -11,6 +11,7 @@ import { intakeBuildGuard } from "@/lib/intake/build-guard";
 import { z } from "zod/v4";
 import { createRecordedModelInvoker } from "@/lib/research-collection/model";
 import { createColdStartSkill } from "@/lib/build/graph";
+import { roleDeliveryReadiness } from "@/lib/research/task-definition";
 import { assertTaskKernel } from "@/lib/build/completion";
 import type { BuildEvent } from "@/lib/build/events";
 import { coldStartRequestSchema, type ColdStartBuildResult } from "@/lib/build/types";
@@ -203,6 +204,7 @@ export async function POST(request: Request) {
       }
       await assertRoleJobLease(buildRequest.runId, jobOwner);
       const kernel = buildEvent.payload.result as ColdStartBuildResult;
+      if (buildRequest.research) kernel.deliveryReadiness = roleDeliveryReadiness(kernel);
       if (buildRequest.research) await checkpointRoleJob({ jobId: buildRequest.runId, owner: jobOwner, kind: "cold_start", phase: "research.commit", state: { researchCheckpoint: latestResearchCheckpoint, completedResult: kernel } });
       if (buildRequest.research && !kernel.deliveryReadiness?.ready) {
         await completeBuildStageRun(buildRequest.runId, buildRequest.projectId, kernel);
@@ -221,7 +223,7 @@ export async function POST(request: Request) {
           buildEvent.payload.appliedToHead = committed.appliedToHead;
           buildEvent.payload.currentHeadVersionId = committed.currentHeadVersionId;
           await completeBuildStageRun(buildRequest.runId, buildRequest.projectId, kernel);
-          await completeRoleJob({ jobId: buildRequest.runId, owner: jobOwner, phase: "kernel.completed", result: { snapshotId: kernel.snapshot.id, candidateSnapshotId: kernel.snapshot.id, projectVersionId: committed.id, appliedToHead: committed.appliedToHead, currentHeadVersionId: committed.currentHeadVersionId } });
+          await completeRoleJob({ jobId: buildRequest.runId, owner: jobOwner, phase: buildRequest.research ? "research.completed" : "kernel.completed", result: { snapshotId: kernel.snapshot.id, candidateSnapshotId: kernel.snapshot.id, projectVersionId: committed.id, appliedToHead: committed.appliedToHead, currentHeadVersionId: committed.currentHeadVersionId } });
         } catch {
           throw new Error("PERSISTENCE_FAILED");
         }

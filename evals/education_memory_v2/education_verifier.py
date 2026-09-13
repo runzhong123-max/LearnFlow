@@ -175,7 +175,11 @@ def _excerpt_error(text: Any, metadata: Any, source: Any) -> list[str]:
 def _estimated_tokens(packet: dict) -> int:
     # Independent reconstruction: do not import product or driver helpers.
     fields = ("enable_episodes", "max_episodes", "max_episode_facts", "enable_bm25",
-              "enable_aliases", "enable_fuzzy", "enable_temporal", "enable_summary_boost")
+              "enable_aliases", "enable_fuzzy", "enable_temporal", "enable_summary_boost",
+              "enable_source_text", "enable_compact_episodes", "candidate_mode")
+    declared = (packet.get("manifest", {}).get("policy", {}) or {})
+    if not any(name in declared for name in ("enable_source_text", "enable_compact_episodes", "candidate_mode")):
+        fields = fields[:-3]  # Historical v3 packet compatibility; new presets require all fields.
     body = {"heads": packet.get("kernel_heads", {}), "items": packet.get("items", []),
             "paths": packet.get("relation_paths", []),
             "personal_concept_graph": packet.get("personal_concept_graph", {}),
@@ -186,6 +190,93 @@ def _estimated_tokens(packet: dict) -> int:
             "component_policy": {name: (packet.get("manifest", {}).get("policy", {}) or {}).get(name)
                                  for name in fields}}
     return max(1, math.ceil(len(json.dumps(body, ensure_ascii=False, sort_keys=True, default=str)) / 3.2))
+
+
+
+# Independent source selector. These explicit protocol allow-lists deliberately
+# do not import the production resolver; a forged path must fail closed.
+_SOURCE_KEYS = {
+    "structure": {"path_position", "path_dependencies", "resume_anchor", "focus_transition", "deferred_threads", "navigation_blocker"},
+    "knowledge": {"concept_understanding", "knowledge_gap", "pending_question", "misconceptions", "active_concepts", "recent_errors", "retention_status"},
+    "value": {"current_priority", "current_motivation", "goal_candidate", "interest_signal", "relevance_reason"},
+    "practice": {"current_attempt", "assistance_level", "artifact_state", "recent_feedback", "transfer_readiness", "review_history"},
+}
+_SOURCE_SENSITIVE = {"answer", "answers", "answer_indexes", "correct_answer", "correct_indexes", "expected", "expected_output", "solution", "solutions", "test_cases", "judge_config", "private", "hidden_tests", "correct_response", "gold", "submission", "hidden_answer", "gold_answer", "answer_key"}
+
+
+def _has_sensitive(value):
+    if isinstance(value, dict):
+        return any(str(key).casefold() in _SOURCE_SENSITIVE or _has_sensitive(child) for key, child in value.items())
+    if isinstance(value, list):
+        return any(_has_sensitive(child) for child in value)
+    return False
+
+
+def _original_source(packet, item, detail, node):
+    metadata = detail.get("source_text") or {}
+    kind, path = metadata.get("source_kind"), metadata.get("source_path")
+    if kind is None and path is None or kind == "node_text" and path == "/text":
+        return node.get("text") if node else None
+    if not node or node.get("node_type") != "fact" or node.get("kernel") == "human":
+        return None
+    fact = _lookup(packet.get("_source_facts") or {}, item.get("id"))
+    if not fact:
+        return None
+    event = _lookup(packet.get("_source_events") or {}, fact.get("event_id"))
+    mutation = _lookup(packet.get("_source_mutations") or {}, fact.get("mutation_id"))
+    if not event or not mutation or mutation.get("status") != "applied":
+        return None
+    if any(_key(metadata.get(key)) != _key(fact.get(field)) for key, field in
+           (("source_event_id", "event_id"), ("source_mutation_id", "mutation_id"))):
+        return None
+    if (_key(mutation.get("event_id")) != _key(fact.get("event_id")) or
+            mutation.get("kernel") != node.get("kernel") or
+            _key(mutation.get("learner_id")) != _key(node.get("learner_id"))):
+        return None
+    if any(_key(event.get(key)) != _key(node.get(key)) for key in
+           ("learner_id", "project_id", "checkpoint_id", "session_id")):
+        return None
+    if any(_key(fact.get(key)) != _key(node.get(key)) for key in ("project_id", "checkpoint_id", "session_id")):
+        return None
+    value, payload = fact.get("object_value"), node.get("payload") or {}
+    kernel, key, scope = node.get("kernel"), payload.get("key"), payload.get("scope")
+    if scope not in ("short_term", "long_term") or fact.get("predicate") != f"{scope}.{key}":
+        return None
+    patch = mutation.get("patch") or {}
+    if not isinstance(patch.get(scope), dict) or key not in patch[scope] or patch[scope][key] != value:
+        return None
+    excluded = {"transient_expires_at", "adaptation_source", "adaptation_scope", "teaching_directives", "teaching_preferences"}
+    ordered, seen = [], set()
+    for section in ("short_term", "long_term"):
+        section_values = patch.get(section) or {}
+        if not isinstance(section_values, dict):
+            return None
+        for candidate_key, candidate_value in section_values.items():
+            marker = (candidate_key, json.dumps(candidate_value, ensure_ascii=False, sort_keys=True, default=str))
+            if candidate_key in excluded or marker in seen:
+                continue
+            seen.add(marker)
+            ordered.append((section, candidate_key, candidate_value))
+    ordinal = fact.get("fact_ordinal")
+    if type(ordinal) is not int or not 0 <= ordinal < len(ordered) or ordered[ordinal] != (scope, key, value):
+        return None
+    if any(_has_sensitive(obj) for obj in (value, event.get("payload"), patch)):
+        return None
+    rendered = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, sort_keys=True)
+    rendered = " ".join(rendered.split())
+    compact = rendered if len(rendered) <= 220 else rendered[:219] + "…"
+    if node.get("text") != f"{key}: {compact}":
+        return None
+    if kind == "fact_object_value" and path == "/object_value" and key in _SOURCE_KEYS.get(kernel, set()):
+        original = value
+    elif kind == "fact_object_field" and isinstance(value, dict):
+        allowed = {("knowledge", "concept_observation", "learner_concept_observation_recorded", "/object_value/statement"): "statement",
+                   ("structure", "concept_relation", "learner_concept_relation_recorded", "/object_value/rationale"): "rationale"}
+        field = allowed.get((kernel, key, event.get("event_type"), path))
+        original = value.get(field) if field else None
+    else:
+        return None
+    return original if isinstance(original, str) and original.strip() and len(original) <= 65536 else None
 
 
 def _source_association(source: dict | None, item: dict, detail: dict, events: dict) -> tuple[set, bool, list]:
@@ -240,7 +331,7 @@ def verify_trial(packet: dict, plan: dict, case: dict, rubric: dict, expected_ev
     associations = {}
     for path, item, detail in visible:
         source = _lookup(sources, item.get("id"))
-        errors = _excerpt_error(item.get("text"), detail.get("source_text"), source.get("text") if source else None)
+        errors = _excerpt_error(item.get("text"), detail.get("source_text"), _original_source(packet, item, detail, source))
         if errors:
             excerpt_errors.append({"path": path, "id": item.get("id"), "reasons": errors})
         current_scope_errors = []

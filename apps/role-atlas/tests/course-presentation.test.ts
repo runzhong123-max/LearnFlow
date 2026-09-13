@@ -34,8 +34,8 @@ test("legacy receipts are retained and never misrepresented as committed courses
   const { result, mount } = fixture(); for (const point of mount.result!.points) delete point.course;
   assert.equal(courseGroups(result, mount).length, 1);
   assert.ok(courseGroups(result, mount).every(group => !group.mounted));
-  assert.equal(courseGraphPayload(result, mount).nodes.filter(node => node.type === "knowledge_skill").length, 0);
-  assert.equal(courseGraphPayload(result, mount).edges.length, 0);
+  assert.equal(courseGraphPayload(result, mount).nodes.filter(node => node.type === "knowledge_skill").length, 3);
+  assert.equal(courseGraphPayload(result, mount).edges.length, 3);
   mount.snapshotId = "other-snapshot";
   assert.ok(courseGroups(result, mount).every(group => !group.mounted));
 });
@@ -55,4 +55,13 @@ test("fine-point relations never become prerequisites between whole courses", ()
   result.semantic.edges.push({ ...result.semantic.edges[0], id: "fine-prereq", source: points[0].id, target: points[2].id, type: "prerequisite" });
   assert.ok(!courseGraphPayload(result, mount).edges.some(edge => edge.id === "fine-prereq"));
   assert.ok(result.semantic.edges.some(edge => edge.id === "fine-prereq"));
+});
+
+ test("无回执的知识技能与能力支撑边保持可见，旧快照回执不能覆盖当前点", () => {
+  const { result, mount, points } = fixture();
+  const plain = courseGraphPayload(result);
+  assert.deepEqual(plain.nodes.map(node => node.id), result.semantic.nodes.map(node => node.id));
+  assert.equal(plain.edges.length, result.semantic.edges.length);
+  mount.snapshotId = "stale";
+  assert.ok(courseGraphPayload(result, mount).nodes.some(node => node.id === points[0].id));
 });

@@ -1,0 +1,34 @@
+{
+  "schema": "learnflow-research-publication.v1",
+  "formal_local_archive": "evals/education_memory_upgrade/runs/formal-03",
+  "formal_files_copied": {
+    "aggregate.json": {
+      "original": "aggregate.json",
+      "sha256": "7e55812c2f90643033a1743ffa3aaa8653eec987402294b973b8e2705ffb99ea"
+    },
+    "suite.json": {
+      "original": "suite.json",
+      "sha256": "1ca936e0450be69900f9411bfc32490836a5be340a9cd5ab2703b7ab3319e238"
+    },
+    "PROTOCOL.md": {
+      "original": "PROTOCOL.md",
+      "sha256": "61854d689987c7ff8ce9a5f0529c951cf2b84a145e4c72fe3cd94ae83b6f3ab7"
+    },
+    "artifact-manifest.json": {
+      "original": "artifact-manifest.json",
+      "sha256": "e2debf5308483e135cfc8439f729bf34b9d6c246965c21041a5c32db54dae6d7"
+    },
+    "machine-report.md": {
+      "original": "REPORT.md",
+      "sha256": "e37d12b2e36f2bf8a9cfed0f6bd6f190e2c236e937adebc86b6788bbc6847382"
+    }
+  },
+  "raw_archive_receipt": "local-archive-receipt.json",
+  "frozen_manifest_scope": "artifact-manifest.json addresses the complete original run, not only this public document directory. Original REPORT.md is copied here as machine-report.md. Human report is generated separately.",
+  "not_published": [
+    "LoCoMo source conversations, raw packet and formation/trial data",
+    "Local execution and test logs",
+    "Model weights, temporary environments, databases"
+  ],
+  "supplement": "The 24-case/96-condition post-hoc native source probe is published separately at evals/education_memory_source_probe; it is excluded from the formal aggregate and ranking. See SOURCE_PROBE_NOTES.md for custody/log publication caveat."
+}

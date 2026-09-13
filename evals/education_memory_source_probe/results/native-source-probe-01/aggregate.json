@@ -1,0 +1,614 @@
+{
+  "schema": "learnflow.native-source-probe.v1",
+  "post_hoc": true,
+  "formal03_scores_changed": false,
+  "conditions": 96,
+  "matrix_complete": true,
+  "candidate_pairs": [
+    {
+      "case_id": "source-probe-asyncio-early",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 0
+    },
+    {
+      "case_id": "source-probe-asyncio-early",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 0
+    },
+    {
+      "case_id": "source-probe-asyncio-split_qualifier",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-asyncio-split_qualifier",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-asyncio-tail",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-asyncio-tail",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-binary_search-early",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 0
+    },
+    {
+      "case_id": "source-probe-binary_search-early",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 0
+    },
+    {
+      "case_id": "source-probe-binary_search-split_qualifier",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-binary_search-split_qualifier",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-binary_search-tail",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-binary_search-tail",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-container-early",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 0
+    },
+    {
+      "case_id": "source-probe-container-early",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 0
+    },
+    {
+      "case_id": "source-probe-container-split_qualifier",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-container-split_qualifier",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-container-tail",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-container-tail",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-dijkstra-early",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 0
+    },
+    {
+      "case_id": "source-probe-dijkstra-early",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 0
+    },
+    {
+      "case_id": "source-probe-dijkstra-split_qualifier",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-dijkstra-split_qualifier",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-dijkstra-tail",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-dijkstra-tail",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-lru_cache-early",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 0
+    },
+    {
+      "case_id": "source-probe-lru_cache-early",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 0
+    },
+    {
+      "case_id": "source-probe-lru_cache-split_qualifier",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-lru_cache-split_qualifier",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-lru_cache-tail",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-lru_cache-tail",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-tcp-early",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 0
+    },
+    {
+      "case_id": "source-probe-tcp-early",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 0
+    },
+    {
+      "case_id": "source-probe-tcp-split_qualifier",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-tcp-split_qualifier",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-tcp-tail",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-tcp-tail",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-transaction-early",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 0
+    },
+    {
+      "case_id": "source-probe-transaction-early",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 0
+    },
+    {
+      "case_id": "source-probe-transaction-split_qualifier",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-transaction-split_qualifier",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-transaction-tail",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-transaction-tail",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-validation-early",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 0
+    },
+    {
+      "case_id": "source-probe-validation-early",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 0
+    },
+    {
+      "case_id": "source-probe-validation-split_qualifier",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-validation-split_qualifier",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-validation-tail",
+      "budget": 1800,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    },
+    {
+      "case_id": "source-probe-validation-tail",
+      "budget": 3200,
+      "candidate_sets_equal_and_verified": true,
+      "joint_delta": 1
+    }
+  ],
+  "groups": [
+    {
+      "budget": 1800,
+      "pattern": "early",
+      "variant": "legacy",
+      "conditions": 8,
+      "checks_passed": 8,
+      "runtime_errors": 0,
+      "metrics": {
+        "target_fact_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "term_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        }
+      }
+    },
+    {
+      "budget": 1800,
+      "pattern": "early",
+      "variant": "source",
+      "conditions": 8,
+      "checks_passed": 8,
+      "runtime_errors": 0,
+      "metrics": {
+        "target_fact_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "term_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        }
+      }
+    },
+    {
+      "budget": 1800,
+      "pattern": "tail",
+      "variant": "legacy",
+      "conditions": 8,
+      "checks_passed": 8,
+      "runtime_errors": 0,
+      "metrics": {
+        "target_fact_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "term_delivered": {
+          "numerator": 0,
+          "denominator": 8
+        },
+        "qualifier_delivered": {
+          "numerator": 0,
+          "denominator": 8
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 0,
+          "denominator": 8
+        }
+      }
+    },
+    {
+      "budget": 1800,
+      "pattern": "tail",
+      "variant": "source",
+      "conditions": 8,
+      "checks_passed": 8,
+      "runtime_errors": 0,
+      "metrics": {
+        "target_fact_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "term_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        }
+      }
+    },
+    {
+      "budget": 1800,
+      "pattern": "split_qualifier",
+      "variant": "legacy",
+      "conditions": 8,
+      "checks_passed": 8,
+      "runtime_errors": 0,
+      "metrics": {
+        "target_fact_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "term_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "qualifier_delivered": {
+          "numerator": 0,
+          "denominator": 8
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 0,
+          "denominator": 8
+        }
+      }
+    },
+    {
+      "budget": 1800,
+      "pattern": "split_qualifier",
+      "variant": "source",
+      "conditions": 8,
+      "checks_passed": 8,
+      "runtime_errors": 0,
+      "metrics": {
+        "target_fact_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "term_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        }
+      }
+    },
+    {
+      "budget": 3200,
+      "pattern": "early",
+      "variant": "legacy",
+      "conditions": 8,
+      "checks_passed": 8,
+      "runtime_errors": 0,
+      "metrics": {
+        "target_fact_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "term_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        }
+      }
+    },
+    {
+      "budget": 3200,
+      "pattern": "early",
+      "variant": "source",
+      "conditions": 8,
+      "checks_passed": 8,
+      "runtime_errors": 0,
+      "metrics": {
+        "target_fact_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "term_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        }
+      }
+    },
+    {
+      "budget": 3200,
+      "pattern": "tail",
+      "variant": "legacy",
+      "conditions": 8,
+      "checks_passed": 8,
+      "runtime_errors": 0,
+      "metrics": {
+        "target_fact_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "term_delivered": {
+          "numerator": 0,
+          "denominator": 8
+        },
+        "qualifier_delivered": {
+          "numerator": 0,
+          "denominator": 8
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 0,
+          "denominator": 8
+        }
+      }
+    },
+    {
+      "budget": 3200,
+      "pattern": "tail",
+      "variant": "source",
+      "conditions": 8,
+      "checks_passed": 8,
+      "runtime_errors": 0,
+      "metrics": {
+        "target_fact_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "term_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        }
+      }
+    },
+    {
+      "budget": 3200,
+      "pattern": "split_qualifier",
+      "variant": "legacy",
+      "conditions": 8,
+      "checks_passed": 8,
+      "runtime_errors": 0,
+      "metrics": {
+        "target_fact_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "term_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "qualifier_delivered": {
+          "numerator": 0,
+          "denominator": 8
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 0,
+          "denominator": 8
+        }
+      }
+    },
+    {
+      "budget": 3200,
+      "pattern": "split_qualifier",
+      "variant": "source",
+      "conditions": 8,
+      "checks_passed": 8,
+      "runtime_errors": 0,
+      "metrics": {
+        "target_fact_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "term_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        },
+        "joint_term_qualifier_delivered": {
+          "numerator": 8,
+          "denominator": 8
+        }
+      }
+    }
+  ],
+  "all_checks_passed": true,
+  "runtime_errors": 0,
+  "interpretation": "Post-hoc synthetic native Fact source-reader calibration only; no unseen evaluation, teacher judgement, learning gain, natural-language generalization, or addition to the Formal03 ranking."
+}

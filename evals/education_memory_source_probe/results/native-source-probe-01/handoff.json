@@ -1,0 +1,177 @@
+{
+  "schema": "learnflow.native-source-probe.handoff.v1",
+  "post_hoc": true,
+  "protocol_and_scores_unchanged_after_execution": true,
+  "only_run": "native-source-probe-01",
+  "commands": [
+    {
+      "purpose": "Verifier unit calibration (before freeze)",
+      "cwd": "/tmp/learnflow-memory-source/evals/education_memory_source_probe",
+      "command": "/Users/a1-6/LearnFlow/backend/venv/bin/python -m unittest test_verifier -v",
+      "exit_code": 0,
+      "tests_passed": 9
+    },
+    {
+      "purpose": "Freeze protocol/data/code before retrieval",
+      "cwd": "/tmp/learnflow-memory-source/evals/education_memory_source_probe",
+      "command": "/Users/a1-6/LearnFlow/backend/venv/bin/python run.py prepare --repo /tmp/learnflow-memory-upgrade-20260913 --output /tmp/learnflow-native-source-probe-01",
+      "exit_code": 0
+    },
+    {
+      "purpose": "Execute fixed 96-condition matrix",
+      "cwd": "/tmp/learnflow-memory-source/evals/education_memory_source_probe",
+      "command": "/Users/a1-6/LearnFlow/backend/venv/bin/python run.py execute --output /tmp/learnflow-native-source-probe-01 > /tmp/learnflow-native-source-probe-01.execution.log 2>&1",
+      "exit_code": 0,
+      "log": "execution.log"
+    }
+  ],
+  "pre_freeze_command_error": {
+    "reason": "Initial test file creation used an incorrect relative directory; unittest import failed before any retrieval or prepare. Corrected working directory, then all 9 tests passed.",
+    "impact": "No data/protocol/scoring or experiment output changed based on retrieval results."
+  },
+  "actual_case_count": 24,
+  "actual_condition_count": 96,
+  "candidate_pool_sizes": [
+    4
+  ],
+  "conditions_per_variant": 48,
+  "joint_legacy": 16,
+  "joint_source": 48,
+  "example": [
+    {
+      "variant": "source",
+      "budget": 1800,
+      "packet_token_estimate": 1751,
+      "candidate_count": 4,
+      "target_item": {
+        "confidence": 1.0,
+        "detail": {
+          "evidence_grade": "self_reported",
+          "predicate": "short_term.knowledge_gap",
+          "source_event_id": 1,
+          "source_text": {
+            "chars": 460,
+            "ranges": [
+              [
+                0,
+                460
+              ]
+            ],
+            "sha256": "ba8cf1cde04c16d7780691f208e09363ac7457d97bfe310911e574d6c94e772b",
+            "source_event_id": 1,
+            "source_kind": "fact_object_value",
+            "source_mutation_id": 2,
+            "source_path": "/object_value"
+          }
+        },
+        "evidence_refs": [
+          1
+        ],
+        "id": 2,
+        "kernel": "knowledge",
+        "memory_kind": "gap",
+        "node_type": "fact",
+        "occurred_at": "2026-09-01T09:00:00",
+        "provenance": {
+          "event_type": "user_message",
+          "key": "knowledge_gap",
+          "reason": "用户表达了待澄清的知识疑问；疑问不等于误解",
+          "scope": "short_term"
+        },
+        "retrieval": {
+          "reasons": [
+            "salience",
+            "lexical_match",
+            "kernel_head_ref",
+            "project_scope",
+            "checkpoint_scope",
+            "session_scope",
+            "original_fact_for_detail",
+            "candidate_pool_bm25"
+          ],
+          "score": 15.6602
+        },
+        "salience": 0.76,
+        "schema_version": "memory-item.v2",
+        "scope": {
+          "checkpoint_id": 1,
+          "project_id": 1,
+          "session_id": 1
+        },
+        "status": "active",
+        "subject": {
+          "id": "1",
+          "key": "checkpoint:1",
+          "type": "checkpoint"
+        },
+        "text": "我不懂Python协程，请保留这次学习练习的实际边界。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练。本次观察：协程切换顺序已记录。限制条件：仅无共享状态通过，共享变量竞争尚未验证。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记"
+      }
+    },
+    {
+      "variant": "legacy",
+      "budget": 1800,
+      "packet_token_estimate": 1650,
+      "candidate_count": 4,
+      "target_item": {
+        "confidence": 1.0,
+        "detail": {
+          "evidence_grade": "self_reported",
+          "predicate": "short_term.knowledge_gap",
+          "source_event_id": 1,
+          "source_text": {
+            "chars": 235,
+            "ranges": [
+              [
+                0,
+                235
+              ]
+            ],
+            "sha256": "e9e2f3a69e901b4a889882dc61fa845aede269340279f46dbea3498b9bc6cf75"
+          }
+        },
+        "evidence_refs": [
+          1
+        ],
+        "id": 2,
+        "kernel": "knowledge",
+        "memory_kind": "gap",
+        "node_type": "fact",
+        "occurred_at": "2026-09-01T09:00:00",
+        "provenance": {
+          "event_type": "user_message",
+          "key": "knowledge_gap",
+          "reason": "用户表达了待澄清的知识疑问；疑问不等于误解",
+          "scope": "short_term"
+        },
+        "retrieval": {
+          "reasons": [
+            "salience",
+            "lexical_match",
+            "kernel_head_ref",
+            "project_scope",
+            "checkpoint_scope",
+            "session_scope",
+            "original_fact_for_detail",
+            "candidate_pool_bm25"
+          ],
+          "score": 14.5897
+        },
+        "salience": 0.76,
+        "schema_version": "memory-item.v2",
+        "scope": {
+          "checkpoint_id": 1,
+          "project_id": 1,
+          "session_id": 1
+        },
+        "status": "active",
+        "subject": {
+          "id": "1",
+          "key": "checkpoint:1",
+          "type": "checkpoint"
+        },
+        "text": "knowledge_gap: 我不懂Python协程，请保留这次学习练习的实际边界。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以便下次继续核对。我把练习过程逐段记录，以…"
+      }
+    }
+  ],
+  "claim_limit": "Purpose-built post-hoc positional source-reader mechanism probe. Synthetic user self-reports, not verified mastery, teacher judgments, unseen examples, or learning outcomes. Not part of Formal03 ranking. Equal candidates reduce scan-range confounding; text ranking and source metadata overhead remain coupled to source flag."
+}

@@ -1,0 +1,240 @@
+{
+  "schema": "learnflow-memory-upgrade-validation.v1",
+  "experiments_status": "completed_integrity_verified",
+  "executed_passed": [
+    {
+      "check": "Web full suite, final product code",
+      "passed": 1138,
+      "skipped": 1,
+      "seconds": 156.73,
+      "log": "/tmp/learnflow-memory-v4-web-tests-final.log"
+    },
+    {
+      "check": "shared contracts",
+      "result": "core 0.2.6; 6 shared services, 8 memory helpers including memory_source and memory_candidates, 25 shared APIs, 148 common events; passed"
+    },
+    {
+      "check": "Web frontend build",
+      "result": "exit 0; chunk-size warning",
+      "log": "/tmp/learnflow-memory-v4-web-build.log"
+    },
+    {
+      "check": "Desktop frontend build",
+      "result": "exit 0; chunk-size warning",
+      "log": "/tmp/learnflow-memory-v4-desktop-build.log"
+    },
+    {
+      "check": "Final explicitly selected independent verifier tests, including output-freeze regression",
+      "passed": 95,
+      "log": "/tmp/learnflow-memory-v4-verifiers-final.log"
+    },
+    {
+      "check": "Education pilot 02",
+      "cases": 4,
+      "conditions": 72,
+      "status": "completed"
+    },
+    {
+      "check": "LoCoMo pilot 02",
+      "questions": 2,
+      "conditions": 36,
+      "status": "completed"
+    },
+    {
+      "check": "Desktop full suite, isolated Python3.12 with semantic dependencies",
+      "passed": 1158,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 290.83,
+      "log": "/tmp/learnflow-memory-v4-desktop-isolated-full.log",
+      "user_environment_modified": false,
+      "environment_limitation": "Temporary venv uses .pth host packages with semantic packages overlaid. This is actual runtime evidence, not a clean lock satisfying all host dependency declarations."
+    },
+    {
+      "check": "Web full suite, clean jointly-resolved Python3.12 semantic environment",
+      "passed": 1138,
+      "skipped": 1,
+      "failed": 0,
+      "seconds": 383.35,
+      "log": "/tmp/learnflow-memory-semantic-clean-web-full.log",
+      "environment_limitation": "This clean environment has different NumPy/SciPy versions from the formal experiment; results are runtime regression evidence, not a substitute experiment score."
+    },
+    {
+      "check": "Desktop full suite, clean jointly-resolved Python3.12 semantic environment",
+      "passed": 1158,
+      "skipped": 0,
+      "failed": 0,
+      "seconds": 360.99,
+      "log": "/tmp/learnflow-memory-semantic-clean-desktop-full.log"
+    },
+    {
+      "check": "Clean jointly-resolved dependency installation and pip check",
+      "result": "125 packages from both host requirements plus compatible semantic pins; installed with wheel hashes; No broken requirements found."
+    },
+    {
+      "check": "Shared core wheel build and metadata",
+      "result": "Built 0.2.6 wheel in isolated copy; core Python>=3.10 preserved, memory-semantic extra and both new shared modules verified. Installed application not replaced.",
+      "evidence": "packaging-check.json"
+    },
+    {
+      "check": "Education quality replication across completed Formal02 and Formal03 education shards",
+      "conditions_compared": 28512,
+      "quality_field_differences": 0,
+      "evidence": "education-replication-audit.json",
+      "note": "Excludes runtime timings only; not additional independent learners. Formal02 whole suite remains incomplete and excluded from ranking."
+    },
+    {
+      "check": "Post-hoc native Fact source mechanism experiment",
+      "cases": 24,
+      "conditions": 96,
+      "errors": 0,
+      "candidate_pairs_equal": 48,
+      "independent_saved_packet_recheck": "96/96 identical",
+      "not_in_primary_ranking": true,
+      "evidence": "SOURCE_PROBE_NOTES.md"
+    },
+    {
+      "check": "Native source probe independent verifier tests in main",
+      "passed": 9,
+      "log": "/tmp/learnflow-memory-v4-source-verifier-main.log"
+    },
+    {
+      "check": "Formal03 complete matrix and saved artifact integrity audit",
+      "conditions": 64260,
+      "job_exit_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "evidence": "aggregate.json / artifact-manifest.json / suite.json"
+    },
+    {
+      "check": "Final publication CLI regression after whitespace-only cleanup",
+      "passed": 15,
+      "failed": 0,
+      "seconds": 0.06,
+      "command": "backend/venv/bin/python -m pytest evals/education_memory_upgrade/test_upgrade.py -q",
+      "note": "Existing asyncio deprecation warnings only."
+    }
+  ],
+  "executed_failed_or_invalid": [
+    {
+      "check": "Initial integrated source import",
+      "result": "circular import; fixed with lazy import and fresh-process regression"
+    },
+    {
+      "check": "Initial full host suites",
+      "result": "each 2 stale version assertions failed; updated to registered core/retrieval versions"
+    },
+    {
+      "check": "Semantic pilot 01",
+      "result": "4 cases failed on removed tokenizer API; retained and excluded; fixed and reverified"
+    },
+    {
+      "check": "Formal 01",
+      "result": "aborted because output files were included in source drift detection; no conditions counted; dedicated regression added"
+    },
+    {
+      "check": "Desktop current venv full suite with semantic opt-in",
+      "passed": 1153,
+      "failed": 1,
+      "skipped": 4,
+      "reason": "Python 3.12 environment lacks torch and sentence-transformers",
+      "log": "/tmp/learnflow-memory-v4-desktop-tests-final.log"
+    },
+    {
+      "check": "Formal 02",
+      "result": "All four education shards exited 0; partial LoCoMo retained. Stopped to change compute partition from 2 to 10 conversation shards and workers from 4 to 6; algorithm/data/model/budgets/scoring unchanged. Excluded from final ranking."
+    },
+    {
+      "check": "Initial Web and Desktop npm test in worktree",
+      "result": "Both stopped at visual compiler tests: fallback system Python lacked jsonschema. Reran with explicit host LEARNFLOW_PYTHON."
+    },
+    {
+      "check": "Web and Desktop npm test with explicit Python",
+      "result": "Both fail one existing visual-repair guidance assertion (0 calls vs expected 2), independently reproduced at base main commit 0d0802f. All related TS files unchanged. Fresh visual workflow now returns a draft without model calls; test expectation is stale, not date expiry. Failure preserved. Remaining configured groups executed separately."
+    },
+    {
+      "check": "Web auth test in sandbox",
+      "result": "Initial 1 failure: loopback listen EPERM. Authorized unsandboxed rerun passed all 31."
+    },
+    {
+      "check": "First final staged diff --check",
+      "result": "Trailing spaces in Matplotlib SVG path lines and one run_suite.py CLI line, plus CSV CRLF line endings; formatting cleaned after experiment, exact frozen CLI snapshot preserved, Python AST and parsed CSV values identical; no scores changed."
+    }
+  ],
+  "not_executed": [
+    "Teacher blind ratings and real student learning-gain study",
+    "Official Mem0/A-MEM/SimpleMem/Hindsight/Zep end-to-end reproduction",
+    "Deployment, daily database migration, installed application replacement"
+  ],
+  "contract_impact": "Read-time policy v4/core0.2.6 only; no state writer, Event schema or database migration. New optional dependency environment is separate from installed Desktop application.",
+  "frontend_test_groups": [
+    {
+      "host": "frontend",
+      "tests": 553,
+      "pass": 552,
+      "fail": 1,
+      "skipped": 0,
+      "log_files": [
+        "/tmp/learnflow-memory-v4-web-frontend-tests-final.log",
+        "/tmp/learnflow-memory-v4-frontend-web-path.log",
+        "/tmp/learnflow-memory-v4-frontend-web-formal.log",
+        "/tmp/learnflow-memory-v4-frontend-web-auth-unsandboxed.log",
+        "/tmp/learnflow-memory-v4-frontend-web-plugins.log",
+        "/tmp/learnflow-memory-v4-frontend-web-conversion.log"
+      ],
+      "note": "All configured npm test groups executed; original aggregate command stopped at profile failure, remaining groups run separately. Web auth rerun with loopback allowed."
+    },
+    {
+      "host": "apps/desktop/frontend",
+      "tests": 467,
+      "pass": 466,
+      "fail": 1,
+      "skipped": 0,
+      "log_files": [
+        "/tmp/learnflow-memory-v4-desktop-frontend-tests-final.log",
+        "/tmp/learnflow-memory-v4-frontend-desktop-path.log",
+        "/tmp/learnflow-memory-v4-frontend-desktop-formal.log",
+        "/tmp/learnflow-memory-v4-frontend-desktop-auth.log",
+        "/tmp/learnflow-memory-v4-frontend-desktop-plugins.log",
+        "/tmp/learnflow-memory-v4-frontend-desktop-conversion.log"
+      ],
+      "note": "All configured npm test groups executed; original aggregate command stopped at profile failure, remaining groups run separately. Web auth rerun with loopback allowed."
+    }
+  ],
+  "semantic_dependency_evidence": "../../../packages/learning-core/semantic-dependency-validation.json",
+  "note": "Compatible optional extra merged only after frozen experiment launch; retrieval/evaluation Python sources and formal runtime unchanged.",
+  "formal_run": {
+    "run": "formal-03",
+    "conditions": {
+      "education": 28512,
+      "locomo": 35748
+    },
+    "total_conditions": 64260,
+    "all_jobs_exit_zero": true,
+    "integrity_verified": true,
+    "model_source_unchanged": true,
+    "source_drift": [],
+    "wall_seconds": 5262.417476541945,
+    "aggregate_sha256": "7e55812c2f90643033a1743ffa3aaa8653eec987402294b973b8e2705ffb99ea",
+    "local_raw_archive": "evals/education_memory_upgrade/runs/formal-03",
+    "runtime": "Python3.14.6, original Web environment; not the clean compatibility environment",
+    "supplemental_source_conditions": 96,
+    "supplemental_source_in_primary_ranking": false
+  },
+  "local_log_archive_index": "validation-log-manifest.json",
+  "plot_validation": "Both generated PNG figures visually inspected; labels and data visible without clipping; SVG exports retained.",
+  "publication_source_formatting": "source-formatting-provenance.json"
+}

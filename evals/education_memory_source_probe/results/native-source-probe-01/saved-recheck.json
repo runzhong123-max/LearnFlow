@@ -1,0 +1,13 @@
+{
+  "schema": "learnflow.native-source-probe.saved-recheck.v1",
+  "conditions_rechecked": 96,
+  "snapshots": 24,
+  "packets": 96,
+  "score_or_check_mismatches": [],
+  "artifact_hash_mismatches": [],
+  "source_mismatches": [],
+  "candidate_pool_sizes": [
+    4
+  ],
+  "all_checks_passed": true
+}

@@ -6,6 +6,7 @@ import { invokeStructured } from "@/lib/build/model";
 
 import { taskDefinitionSchema } from "./task-schema";
 export { taskDefinitionSchema, taskFieldSchema, type TaskDefinition } from "./task-schema";
+import { inspectLearningSupport } from "./learning-support";
 const coreFields = ["goal", "trigger", "inputs", "actors", "activities", "deliverables", "qualityCriteria"] as const;
 export function inspectTaskDefinitions(result: ColdStartBuildResult) {
   const tasks = result.semantic.nodes.filter(node => node.type === "task" && node.lifecycle !== "rejected" && node.granularity !== "detail");
@@ -18,8 +19,9 @@ export function inspectTaskDefinitions(result: ColdStartBuildResult) {
       else if (value.review?.status !== "supported") gaps.push(`${field}:review`);
       else if (!value.evidence.length || value.evidence.some(span => !result.sources.segments.some(segment => segment.id === span.segmentId && segment.text.includes(span.quote)))) gaps.push(`${field}:evidence`);
     }
-    const skills = result.semantic.edges.some(edge => edge.source === task.id && edge.type === "requires_skill" && edge.lifecycle !== "rejected");
-    const capabilities = result.semantic.edges.some(edge => edge.source === task.id && edge.type === "requires_capability" && edge.lifecycle !== "rejected");
+    const activeNodes = new Map(result.semantic.nodes.filter(node => node.lifecycle !== "rejected").map(node => [node.id, node]));
+    const skills = result.semantic.edges.some(edge => edge.source === task.id && ["requires_skill", "requires_knowledge"].includes(edge.type) && edge.lifecycle !== "rejected" && activeNodes.get(edge.target)?.type === "knowledge_skill");
+    const capabilities = result.semantic.edges.some(edge => edge.source === task.id && edge.type === "requires_capability" && edge.lifecycle !== "rejected" && activeNodes.get(edge.target)?.type === "capability");
     const process = result.process.bridges.some(bridge => bridge.semanticNodeId === task.id && bridge.type === "realizes_task");
     if (!skills) gaps.push("knowledge_skills");
     if (!capabilities) gaps.push("capabilities");
@@ -29,7 +31,7 @@ export function inspectTaskDefinitions(result: ColdStartBuildResult) {
 }
 export function roleDeliveryReadiness(result: ColdStartBuildResult) {
   const tasks = inspectTaskDefinitions(result);
-  const blockers = tasks.flatMap(task => task.gaps.map(gap => `${task.label}: ${gap}`));
+  const blockers = [...tasks.flatMap(task => task.gaps.map(gap => `${task.label}: ${gap}`)), ...inspectLearningSupport(result).map(gap => `${gap.label}：${gap.reason}`)];
   if (!tasks.length) blockers.push("缺少核心典型任务");
   if (!result.semantic.nodes.some(node => node.type === "market_role" && node.summary.trim())) blockers.push("缺少岗位职责边界");
   if (result.audit.issues.some(issue => issue.severity === "error")) blockers.push("存在未解决的重大审计问题");

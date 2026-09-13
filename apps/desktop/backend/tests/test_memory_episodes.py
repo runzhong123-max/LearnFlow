@@ -29,7 +29,7 @@ def independent_budget(packet):
                   adaptation_directives=packet['adaptation_directives'], teaching_guidance=packet['teaching_guidance'],
                   learning_episodes=packet['learning_episodes'], retrieval_diagnostics=packet['retrieval_diagnostics'],
                   component_policy={k: v for k, v in packet['manifest']['policy'].items()
-                                    if k.startswith('enable_') or k in ('max_episodes', 'max_episode_facts')})
+                                    if k.startswith('enable_') or k in ('max_episodes', 'max_episode_facts', 'candidate_mode')})
     return max(1, math.ceil(len(json.dumps(values, ensure_ascii=False, sort_keys=True, default=str)) / 3.2))
 
 

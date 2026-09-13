@@ -1,0 +1,11 @@
+{
+  "schema": "learnflow-local-run-archive.v1",
+  "source": "/tmp/learnflow-memory-upgrade-formal-03",
+  "destination": "/Users/a1-6/LearnFlow/evals/education_memory_upgrade/runs/formal-03",
+  "files": 110,
+  "bytes": 429195098,
+  "manifest_files_verified": 109,
+  "all_copied_files_sha256_equal": true,
+  "archived_at": "2026-09-13",
+  "git_publication": "ignored; includes raw records and local execution logs; not for automatic publication"
+}

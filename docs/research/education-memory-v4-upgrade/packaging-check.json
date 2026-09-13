@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "/tmp/learnflow-memory-desktop-semantic-clean-venv/bin/python",
+    "-m",
+    "pip",
+    "wheel",
+    "--no-build-isolation",
+    "--no-deps",
+    "--wheel-dir",
+    "/var/folders/51/p_zjtt0515z_f_9zqgp_6cth0000gn/T/learnflow-core-v4-package-ne3ljtn3/dist",
+    "/var/folders/51/p_zjtt0515z_f_9zqgp_6cth0000gn/T/learnflow-core-v4-package-ne3ljtn3/source"
+  ],
+  "exit_code": 0,
+  "log": "/var/folders/51/p_zjtt0515z_f_9zqgp_6cth0000gn/T/learnflow-core-v4-package-ne3ljtn3/wheel.log",
+  "pyproject_sha256": "7fd6b740fe87861a12febd4eeda7c786ca1ec2cbf6a93935d07443fcd1750266",
+  "wheel": "/var/folders/51/p_zjtt0515z_f_9zqgp_6cth0000gn/T/learnflow-core-v4-package-ne3ljtn3/dist/learnflow_core-0.2.6-py3-none-any.whl",
+  "wheel_sha256": "6f93c548f2e3cd2ef26238382cab6ff5e72d75123b4f620dd8a7bead48a12dbf",
+  "metadata_verified": true,
+  "includes_new_shared_modules": true
+}

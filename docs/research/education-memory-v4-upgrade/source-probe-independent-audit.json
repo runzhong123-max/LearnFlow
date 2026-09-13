@@ -1,0 +1,1863 @@
+{
+  "status": "independent_readonly_posthoc_probe_audit",
+  "conditions": 96,
+  "cases": 24,
+  "formations": 24,
+  "packets": 96,
+  "matrix_exact": true,
+  "verification_mismatches": [],
+  "all_reverified_checks_passed": true,
+  "saved_errors_rows": 0,
+  "candidate_pool_sizes": {
+    "4": 96
+  },
+  "equal_candidate_pairs": 48,
+  "query_gold_term_qualifier_errors": [],
+  "other_policy_differences": [],
+  "artifact_hash_errors": [],
+  "source_hash_errors": [],
+  "source_files_checked": 192,
+  "source_kind_counts_in_target_hits": {
+    "node_text": 96,
+    "fact_object_value": 72
+  },
+  "pair_changes": {
+    "item_id_or_order": 24,
+    "channel_diagnostics": 48,
+    "retrieval_scores": 48,
+    "token_estimate": 48
+  },
+  "examples": [
+    {
+      "case_id": "source-probe-asyncio-early",
+      "budget": 1800,
+      "changes": {
+        "item_id_or_order": true,
+        "channel_diagnostics": true,
+        "bm25_diagnostics": false,
+        "retrieval_scores": true,
+        "token_estimate": true
+      },
+      "item_ids": {
+        "legacy": [
+          2,
+          1
+        ],
+        "source": [
+          2,
+          4
+        ]
+      },
+      "channels": {
+        "legacy": {
+          "bm25": {
+            "candidates": 4,
+            "truncated": false
+          },
+          "fuzzy": {
+            "candidates": 3,
+            "truncated": false
+          },
+          "head": {
+            "candidates": 4,
+            "truncated": false
+          },
+          "literal": {
+            "candidates": 4,
+            "truncated": false
+          },
+          "recent": {
+            "candidates": 4,
+            "truncated": false
+          },
+          "scope": {
+            "candidates": 4,
+            "truncated": false
+          }
+        },
+        "source": {
+          "bm25": {
+            "candidates": 4,
+            "truncated": false
+          },
+          "corpus": {
+            "candidates": 4,
+            "truncated": false
+          },
+          "fuzzy": {
+            "candidates": 3,
+            "truncated": false
+          },
+          "head": {
+            "candidates": 4,
+            "truncated": false
+          },
+          "literal": {
+            "candidates": 4,
+            "truncated": false
+          },
+          "recent": {
+            "candidates": 4,
+            "truncated": false
+          },
+          "scope": {
+            "candidates": 4,
+            "truncated": false
+          }
+        }
+      },
+      "bm25": {
+        "legacy": {
+          "documents": 4,
+          "enabled": true,
+          "matched": 4,
+          "selected": 2,
+          "text_limit": 65536,
+          "truncated_documents": 0
+        },
+        "source": {
+          "documents": 4,
+          "enabled": true,
+          "matched": 4,
+          "selected": 2,
+          "text_limit": 65536,
+          "truncated_documents": 0
+        }
+      },
+      "tokens": {
+        "legacy": 1650,
+        "source": 1751
+      }
+    }
+  ],
+  "recomputed": [
+    {
+      "condition": [
+        "source-probe-asyncio-early",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2267,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-asyncio-early",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2570,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-asyncio-early",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1751,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-asyncio-early",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1650,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-asyncio-split_qualifier",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1650,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-asyncio-split_qualifier",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1751,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-asyncio-split_qualifier",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2570,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-asyncio-split_qualifier",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2267,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-asyncio-tail",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1751,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-asyncio-tail",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": false,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1650,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-asyncio-tail",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": false,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2267,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-asyncio-tail",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2570,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-binary_search-early",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2554,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-binary_search-early",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1633,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-binary_search-early",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2250,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-binary_search-early",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1735,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-binary_search-split_qualifier",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2554,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-binary_search-split_qualifier",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1633,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-binary_search-split_qualifier",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1735,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-binary_search-split_qualifier",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2251,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-binary_search-tail",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2554,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-binary_search-tail",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1735,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-binary_search-tail",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": false,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2251,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-binary_search-tail",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": false,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1633,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-container-early",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1634,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-container-early",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1735,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-container-early",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2555,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-container-early",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2251,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-container-split_qualifier",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1735,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-container-split_qualifier",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2251,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-container-split_qualifier",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1633,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-container-split_qualifier",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2555,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-container-tail",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2555,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-container-tail",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": false,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2251,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-container-tail",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1735,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-container-tail",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": false,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1634,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-dijkstra-early",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2268,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-dijkstra-early",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1651,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-dijkstra-early",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2572,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-dijkstra-early",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1752,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-dijkstra-split_qualifier",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2268,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-dijkstra-split_qualifier",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1752,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-dijkstra-split_qualifier",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1651,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-dijkstra-split_qualifier",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2572,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-dijkstra-tail",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": false,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1651,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-dijkstra-tail",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2572,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-dijkstra-tail",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": false,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2268,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-dijkstra-tail",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1752,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-lru_cache-early",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1667,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-lru_cache-early",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1769,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-lru_cache-early",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2301,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-lru_cache-early",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2605,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-lru_cache-split_qualifier",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2301,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-lru_cache-split_qualifier",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2605,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-lru_cache-split_qualifier",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1769,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-lru_cache-split_qualifier",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1667,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-lru_cache-tail",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": false,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2301,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-lru_cache-tail",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": false,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1667,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-lru_cache-tail",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2605,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-lru_cache-tail",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1769,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-tcp-early",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1769,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-tcp-early",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1667,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-tcp-early",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2301,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-tcp-early",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2605,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-tcp-split_qualifier",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2301,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-tcp-split_qualifier",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2604,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-tcp-split_qualifier",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1667,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-tcp-split_qualifier",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1768,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-tcp-tail",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": false,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2301,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-tcp-tail",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2604,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-tcp-tail",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": false,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1667,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-tcp-tail",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1768,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-transaction-early",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1633,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-transaction-early",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1735,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-transaction-early",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2554,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-transaction-early",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2251,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-transaction-split_qualifier",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1633,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-transaction-split_qualifier",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2554,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-transaction-split_qualifier",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1735,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-transaction-split_qualifier",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2251,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-transaction-tail",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2554,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-transaction-tail",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1735,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-transaction-tail",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": false,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2251,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-transaction-tail",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": false,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1633,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-validation-early",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2251,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-validation-early",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2554,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-validation-early",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1735,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-validation-early",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1634,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-validation-split_qualifier",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2555,
+        "expanded_target_items": 2
+      }
+    },
+    {
+      "condition": [
+        "source-probe-validation-split_qualifier",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1735,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-validation-split_qualifier",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1634,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-validation-split_qualifier",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2251,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-validation-tail",
+        "source",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1735,
+        "expanded_target_items": 1
+      }
+    },
+    {
+      "condition": [
+        "source-probe-validation-tail",
+        "legacy",
+        1800
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": false,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 1634,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-validation-tail",
+        "legacy",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": false,
+        "qualifier_delivered": false,
+        "joint_term_qualifier_delivered": false,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2251,
+        "expanded_target_items": 0
+      }
+    },
+    {
+      "condition": [
+        "source-probe-validation-tail",
+        "source",
+        3200
+      ],
+      "checks_passed": true,
+      "metrics": {
+        "target_fact_delivered": true,
+        "term_delivered": true,
+        "qualifier_delivered": true,
+        "joint_term_qualifier_delivered": true,
+        "budget_ok": true,
+        "source_ranges_scope_chain_ok": true,
+        "token_estimate": 2555,
+        "expanded_target_items": 2
+      }
+    }
+  ]
+}

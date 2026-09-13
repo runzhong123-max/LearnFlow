@@ -1,4 +1,4 @@
-export const researchStages = ["搜集扩大资料", "确定岗位边界", "梳理任务与能力", "展开工作过程", "深度研究与完善", "匹配学习课程"] as const;
+export const researchStages = ["搜集扩大资料", "确定岗位边界", "梳理任务与能力", "展开工作过程", "深度研究与完善", "连接知识技能与学习路径"] as const;
 export type ResearchProgress = { active: boolean; stage: number; message: string; status: string };
 export function researchStage(kind: string, payload: Record<string, unknown> = {}): number | undefined {
   if (/followup|inspection|risk_repair/.test(kind)) return 4;
@@ -10,7 +10,8 @@ export function researchStage(kind: string, payload: Record<string, unknown> = {
   return undefined;
 }
 export function progressForJob(job: { status: string; phase: string }, previous?: ResearchProgress): ResearchProgress {
+  if (job.status === "completed" && job.phase === "draft") return { active: false, stage: 4, status: "draft", message: "首版仍有缺口，研究草稿已保存" };
   const active = ["queued", "running", "recovering", "cancelling", "waiting_user"].includes(job.status);
-  const stage = Math.max(previous?.stage || 0, researchStage(job.phase) || 0);
-  return { active, stage, status: job.status, message: job.status === "queued" ? "任务已接收，等待后台执行" : job.status === "recovering" ? "正在从保存处继续研究" : active ? previous?.message || researchStages[stage] : job.status === "completed" ? job.phase === "kernel.completed" ? "岗位骨架已保存，后台将继续展开研究" : "研究结果已保存，学习课程由后台继续核对" : job.status === "interrupted" ? "研究被中断，检查点与已有成果已保留，可重试" : "已有成果已保留，请查看任务记录" };
+  const stage = Math.max(previous?.stage || 0, job.status === "completed" && job.phase === "research.completed" ? 5 : researchStage(job.phase) || 0);
+  return { active, stage, status: job.status, message: job.status === "queued" ? "任务已接收，等待后台执行" : job.status === "recovering" ? "正在从保存处继续研究" : active ? previous?.message || researchStages[stage] : job.status === "completed" ? job.phase === "kernel.completed" ? "岗位骨架已保存，后台将继续展开研究" : "岗位内容已保存，正在自动连接学习节点" : job.status === "interrupted" ? "研究被中断，检查点与已有成果已保留，可重试" : "已有成果已保留，请查看任务记录" };
 }

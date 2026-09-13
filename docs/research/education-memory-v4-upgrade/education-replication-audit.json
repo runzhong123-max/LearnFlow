@@ -1,0 +1,55 @@
+{
+  "schema": "learnflow-memory-upgrade-working-education.v1",
+  "run_paths": {
+    "02": "/tmp/learnflow-memory-upgrade-formal-02",
+    "03": "/tmp/learnflow-memory-upgrade-formal-03"
+  },
+  "source_commit": "0d0802f34e1099dfc468a1ca77316c583870440f",
+  "source_hashes_identical_between_runs": true,
+  "conditions": {
+    "education": 28512
+  },
+  "cases": 1584,
+  "families": 72,
+  "source_audit": {
+    "02": {
+      "matched_paths_over_shards": 812,
+      "missing": 0,
+      "mismatched": 0
+    },
+    "03": {
+      "matched_paths_over_shards": 812,
+      "missing": 0,
+      "mismatched": 0
+    }
+  },
+  "denominator_audit": {
+    "02": {
+      "cases": 1584,
+      "inconsistent_cases": 0
+    },
+    "03": {
+      "cases": 1584,
+      "inconsistent_cases": 0
+    }
+  },
+  "quality_stability": {
+    "comparisons": 28512,
+    "equal_conditions": 28512,
+    "different_conditions": 0,
+    "different_metric_conditions": 0,
+    "changed_field_counts": {},
+    "examples": [],
+    "comparison_policy": "Compare every trial field and every audited derived metric recursively, excluding only named runtime-timing keys; retain token/character budgets, planned session duration checks, source/control/semantic hashes, component diagnostics and provenance IDs.",
+    "excluded_runtime_keys": [
+      "elapsed_ms",
+      "elapsed_seconds",
+      "latency_ms",
+      "wall_clock_ms",
+      "wall_time_seconds"
+    ]
+  },
+  "status": "completed_education_replication_audit",
+  "scope": "Formal02 and Formal03 complete education shards only; no additional independent learners; runtime timings excluded. Formal02 was interrupted on the auxiliary LoCoMo track and is not a final suite result.",
+  "source_working_analysis_sha256": "c4c8db97fef3c24c71e236b13b48461751e3902f1c8ce0833fe85e7329f6a700"
+}

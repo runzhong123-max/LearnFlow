@@ -1,0 +1,170 @@
+{
+  "schema_version": "learnflow.semantic-dependency-validation.v1",
+  "observed_at_utc": "2026-09-13T02:07:05.889814+00:00",
+  "purpose": "host dependency compatibility validation; not a rerun or replacement of the formal matrix",
+  "environment": {
+    "python": "3.12.13",
+    "system": "Darwin",
+    "machine": "arm64",
+    "device": "cpu",
+    "executable": "/tmp/learnflow-memory-desktop-semantic-clean-venv/bin/python",
+    "foreign_host_venv_package_paths_present": false,
+    "runtime_proof": "/tmp/learnflow-memory-semantic-clean-runtime.json"
+  },
+  "resolution": {
+    "combined_hosts": [
+      "backend/requirements.txt",
+      "apps/desktop/backend/requirements.txt"
+    ],
+    "package_count": 125,
+    "dry_run_report": "/tmp/learnflow-memory-semantic-clean-resolve.json",
+    "dry_run_log": "/tmp/learnflow-memory-semantic-clean-resolve.log",
+    "install_report": "/tmp/learnflow-memory-semantic-clean-install.json",
+    "install_log": "/tmp/learnflow-memory-semantic-clean-install.log",
+    "hash_locked_input": "/tmp/learnflow-memory-semantic-clean-combined-lock.txt",
+    "pip_check": "No broken requirements found.",
+    "pip_check_log": "/tmp/learnflow-memory-semantic-clean-pip-check.log"
+  },
+  "proposal": {
+    "extra": "memory-semantic",
+    "core_requires_python": ">=3.10",
+    "direct_pins": [
+      "numpy==1.26.4",
+      "torch==2.13.0",
+      "sentence-transformers==5.6.1",
+      "transformers==5.14.1",
+      "tokenizers==0.22.2",
+      "safetensors==0.8.0",
+      "huggingface-hub==1.26.0",
+      "scikit-learn==1.9.0",
+      "scipy==1.17.1",
+      "httpx==0.27.2"
+    ],
+    "transitive_semantic_pin_count": 42,
+    "transitive_manifest": "requirements-semantic.txt",
+    "transitive_manifest_sha256": "b8db435b6ec7c487cc6c99c402aefc3a96c670d85b475ce401471212de63432e",
+    "host_only_packages_excluded_from_semantic_manifest": true,
+    "integration_instruction": "Merge only the project.optional-dependencies block into integration pyproject.toml; preserve its existing version 0.2.6 or later."
+  },
+  "model": {
+    "model_id": "thenlper/gte-small",
+    "revision": "17e1f347d17fe144873b1201da91788898c639cd",
+    "model_safetensors_sha256": "9a1eb90bbac323ea08aa5629b624fe6ae75db121b904799c2266a1e2c2de22d2",
+    "actual_combined_identity": "88d0602e36126d904c5d4e15dbca817aee0e282abff8dc22a8d7b994473abe55",
+    "frozen_model_files_rechecked": 10,
+    "frozen_model_unchanged": true
+  },
+  "candidate_tests": {
+    "passed": 26,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 51.07,
+    "log": "/tmp/learnflow-memory-semantic-clean-candidate.log",
+    "junit_xml": "/tmp/learnflow-memory-semantic-clean-candidate.xml"
+  },
+  "full_host_tests": [
+    {
+      "host": "web",
+      "cwd": "/tmp/learnflow-memory-upgrade-20260913/backend",
+      "argv": [
+        "/tmp/learnflow-memory-desktop-semantic-clean-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "--disable-warnings",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp=/tmp/learnflow-memory-semantic-clean-web-full-pytest",
+        "--junitxml=/tmp/learnflow-memory-semantic-clean-web-full.xml"
+      ],
+      "environment": {
+        "HF_HUB_OFFLINE": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "LEARNFLOW_TEST_LOCAL_SEMANTIC": "1",
+        "LEARNFLOW_MEMORY_EMBEDDING_MODEL_PATH": "/tmp/learnflow-gte-small-complete",
+        "PYTHONPATH": "/tmp/learnflow-memory-upgrade-20260913/packages/learning-core/src:/tmp/learnflow-memory-upgrade-20260913/backend"
+      },
+      "status": "passed",
+      "log": "/tmp/learnflow-memory-semantic-clean-web-full.log",
+      "junit_xml": "/tmp/learnflow-memory-semantic-clean-web-full.xml",
+      "passed": 1138,
+      "failed": 0,
+      "skipped": 1,
+      "seconds": 383.35,
+      "warnings_reported": 150909,
+      "junit_counts": {
+        "tests": 1139,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      "skip_details": [
+        {
+          "class": "tests.test_auth_production",
+          "name": "test_account_model_credential_encrypted_crud_empty_preserve_and_test",
+          "reason": "旧的账户私有密钥 CRUD 已由平台后台统一凭据取代"
+        }
+      ]
+    },
+    {
+      "host": "desktop",
+      "cwd": "/tmp/learnflow-memory-upgrade-20260913/apps/desktop/backend",
+      "argv": [
+        "/tmp/learnflow-memory-desktop-semantic-clean-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "--disable-warnings",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp=/tmp/learnflow-memory-semantic-clean-desktop-full-pytest",
+        "--junitxml=/tmp/learnflow-memory-semantic-clean-desktop-full.xml"
+      ],
+      "environment": {
+        "HF_HUB_OFFLINE": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "LEARNFLOW_TEST_LOCAL_SEMANTIC": "1",
+        "LEARNFLOW_MEMORY_EMBEDDING_MODEL_PATH": "/tmp/learnflow-gte-small-complete",
+        "PYTHONPATH": "/tmp/learnflow-memory-upgrade-20260913/packages/learning-core/src:/tmp/learnflow-memory-upgrade-20260913/apps/desktop/backend"
+      },
+      "status": "passed",
+      "log": "/tmp/learnflow-memory-semantic-clean-desktop-full.log",
+      "junit_xml": "/tmp/learnflow-memory-semantic-clean-desktop-full.xml",
+      "passed": 1158,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 360.99,
+      "warnings_reported": 151783,
+      "junit_counts": {
+        "tests": 1158,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    }
+  ],
+  "limits": [
+    "Only macOS arm64 CPU and clean Python3.12.13 were validated for this compatible proposal.",
+    "The core Python>=3.10 baseline remains unchanged. The fixed SciPy/scikit-learn metadata rejects semantic-extra installation on Python3.10; Python3.11 semantic use was not validated.",
+    "Other Python/platform/GPU combinations need separate resolution and runtime checks. Linux PyTorch metadata adds platform-specific CUDA dependencies.",
+    "The earlier Python3.12 .pth overlay passed 1158 tests but had NumPy/HTTPX declaration conflicts. It is distinct from this clean environment.",
+    "Formal results retain their original Python3.14.6/NumPy2.5.1 runtime. Equal model hashes do not make different dependency environments identical.",
+    "Full-suite elapsed times had host resource contention and are not performance-ranking evidence."
+  ],
+  "no_changes_to": [
+    "current formal experiment environment",
+    "frozen integration source or evaluation algorithms",
+    "user existing Web/Desktop venvs",
+    "frozen model snapshot",
+    "installed application"
+  ]
+}

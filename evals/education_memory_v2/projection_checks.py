@@ -264,12 +264,29 @@ def verify_component_intervention(packet, case):
     if variant is None:
         return check("component_intervention", [], 0, "An explicit driver-side condition is required")
     errors = []
+    original_variant = variant
+    if variant == "education_full_no_episodes":
+        variant = "no_episodes"
+    elif variant == "education_full_no_paths":
+        variant = "no_relations"
     policy = (packet.get("manifest") or {}).get("policy") or {}
     diagnostics = packet.get("retrieval_diagnostics") or {}
     if variant == "no_memory":
         if packet.get("learning_episodes") or packet.get("items") or packet.get("relation_paths"):
             errors.append("historical_evidence_in_no_memory")
         return check("component_intervention", errors, 1, "No historical packet output in no_memory")
+    upgrade_presets = {
+        "legacy": (False, False, "legacy"), "source": (True, False, "legacy"),
+        "compact": (False, True, "legacy"), "bm25": (False, False, "corpus_bm25"),
+        "hybrid": (False, False, "hybrid"), "source_hybrid": (True, False, "hybrid"),
+        "education_full": (True, True, "hybrid"),
+        "education_full_no_episodes": (True, True, "hybrid"),
+        "education_full_no_paths": (True, True, "hybrid"),
+    }
+    if original_variant in upgrade_presets:
+        actual = tuple(policy.get(name) for name in ("enable_source_text", "enable_compact_episodes", "candidate_mode"))
+        if actual != upgrade_presets[original_variant]:
+            errors.append("upgrade_preset_configuration")
     components = ("episodes", "bm25", "aliases", "fuzzy", "temporal", "summary_boost")
     for name in components:
         enabled = policy.get("enable_" + name)
