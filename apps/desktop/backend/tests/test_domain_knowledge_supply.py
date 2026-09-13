@@ -11,7 +11,7 @@ from app.main import app
 from app.models.learning import EvidenceEvent, KernelMutation, LearningTask
 from app.models.project import Chunk, DomainKnowledgePacket, Lecture, Source, SourceVersion
 from app.services.chunker import SourceProcessor
-from app.services.domain_knowledge import _coverage, build_domain_brief
+from app.services.domain_knowledge import _coverage, build_domain_brief, infer_source_profile
 
 
 def _register(client: TestClient) -> int:
@@ -59,6 +59,17 @@ def test_coverage_counts_faceted_concept_evidence():
     )
     assert coverage["ratio"] == 1.0
     assert coverage["facets"][0]["covered"] is True
+
+
+def test_known_official_cloud_sources_provide_canonical_authority():
+    for url in (
+        "https://docs.aws.amazon.com/whitepapers/latest/aws-overview/storage.html",
+        "https://learn.microsoft.com/azure/storage/common/storage-introduction",
+        "https://cloud.google.com/storage/docs",
+    ):
+        profile = infer_source_profile(Source(type="url", url=url), SourceVersion(authority_tier="learner_owned"), [])
+        assert profile["dimensions"]["credibility"]["score"] == 4
+        assert "normative" in profile["content_roles"]
 
 
 def test_gradient_descent_file_is_domain_dense_and_packet_bound():

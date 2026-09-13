@@ -381,7 +381,10 @@ def infer_source_profile(
 
     official = (
         authority_tier == "official"
-        or any(token in host for token in ("docs.python.org", "ietf.org", "rfc-editor.org", "w3.org"))
+        or any(token in host for token in (
+            "docs.python.org", "docs.aws.amazon.com", "learn.microsoft.com",
+            "cloud.google.com", "nist.gov", "ietf.org", "rfc-editor.org", "w3.org",
+        ))
     )
     academic = authority_tier == "academic" or any(
         token in host for token in ("arxiv.org", "acm.org", "ieee.org", "openreview.net")
@@ -434,7 +437,7 @@ def infer_source_profile(
             kinds.append("structured_document")
     kinds = list(dict.fromkeys(kinds))
 
-    authority_score = {
+    authority_score = 4 if official else {
         "official": 4, "curated": 3, "academic": 3,
         "repository": 3, "learner_owned": 2,
     }.get(authority_tier, 1)
