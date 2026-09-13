@@ -1,5 +1,6 @@
 "use client";
 
+import LearningSupportDetail from "./components/LearningSupportDetail";
 import TaskDefinitionDetail from "./components/TaskDefinitionDetail";
 
 import { courseGraphPayload } from "@/lib/learning-path/course-presentation";
@@ -1447,6 +1448,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
                   <p>{selectedNode.summary}</p>
                   <LearningNodeConnection mount={activeMount} nodeIds={expandCourseNodes([selectedNode]).map(node => node.id)} />
                   {["task", "typical_task"].includes(selectedNode.type) && <TaskDefinitionDetail value={selectedNode.data.taskDefinition} />}
+                  <LearningSupportDetail result={projectResult || undefined} nodeIds={expandCourseNodes([selectedNode]).map(node => node.id)} />
                   <LearningNodeSemantics nodes={(projectResult?.semantic.nodes || []).filter(node => expandCourseNodes([selectedNode]).some(selected => selected.id === node.id))} />
                   <div className="evidence-metrics">
                     <span><ShieldCheck size={13} /><b>{selectedNode.evidence_summary.max_confidence.toFixed(2)}</b><small>置信上限</small></span>

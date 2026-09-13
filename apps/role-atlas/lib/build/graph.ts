@@ -1,3 +1,4 @@
+import { carryDeliveryProgress } from "@/lib/research/delivery-progress";
 import { linkResearchFindings } from "@/lib/research/change-set";
 import { researchQuality } from "@/lib/research/quality";
 import { buildResearchAgent, type ResearchAgentParts, type ResearchAgentCheckpoint } from "@/lib/iteration/research-agent";
@@ -555,14 +556,14 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     emit(state.request, "build.run.started", "system", { roleTitle: state.request.roleTitle, workflowVersion: COLD_START_WORKFLOW_VERSION });
     if (state.request.research && !options?.researchPerformed) {
       const settings = state.request.research;
-      sharedResearch ||= buildResearchAgent({ model: originalModel, searchConfig: options?.searchConfig, budget: settings.budget, onCheckpoint: options?.onResearchCheckpoint });
+      sharedResearch ||= buildResearchAgent({ model: originalModel, searchConfig: options?.searchConfig, budget: settings.budget, depth: settings.depth, yieldForSynthesis: true, onCheckpoint: options?.onResearchCheckpoint });
       if (options?.researchCheckpoint && !sharedResearch.record()) sharedResearch.restore(options.researchCheckpoint);
       model = sharedResearch.model;
       const prepared = prepareBuildInput(state.request);
       const contract: IterationContract = { id: state.request.runId, research: settings, objective: settings.objective || `研究${state.request.roleTitle}的岗位边界、典型任务、知识能力和完整工作过程，面向高职学生，优先支持下游项目转换`, initiativeProfile: "autonomous", mode: "deep_research", targetIds: [], targetAsOf: state.request.snapshotAsOf, changeIntents: ["expand", "verify"], evidencePolicy: [], acceptancePolicy: [], inferredFrom: ["cold_start"], budgets: { maxRounds: settings.budget.revisions, maxSources: settings.budget.queries, maxWorkItems: settings.budget.tasks, graphRadius: "global" } };
       try {
       const cards = await sharedResearch.plan({ contract, sources: prepared, graph: state.result, workItems: [], round: (sharedResearch.record()?.agenda.revision || 0) + 1, context: { role: state.request.roleTitle, boundary: state.request.roleDescription, targetAsOf: state.request.snapshotAsOf, audience: state.request.audience, currentQuality: state.result?.deliveryReadiness }, signal: config.signal });
-      const results = await runResearchWorkers({ cards, concurrency: sharedResearch.concurrency, runOne: card => sharedResearch!.run(card, { request: state.request, assets: prepared.assets, segments: prepared.segments, graph: state.result, signal: config.signal }) });
+      const results = await runResearchWorkers({ cards: cards.slice(0, sharedResearch.concurrency), concurrency: sharedResearch.concurrency, runOne: card => sharedResearch!.run(card, { request: state.request, assets: prepared.assets, segments: prepared.segments, graph: state.result, signal: config.signal }) });
       emit(state.request, "build.research.completed", "evidence", { taskCount: cards.length, findingCount: results.reduce((sum, result) => sum + result.claims.length, 0), budget: sharedResearch.budgetLedger.snapshot() });
       } catch (error) {
         if (config.signal?.aborted) throw error;
@@ -1189,6 +1190,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       targetedResearchQueries: state.targetedResearchQueries,
     };
     const result = compileRolePackage({ request: state.request, brief: prepared.brief, assets: prepared.assets, segments: prepared.segments, semantic: state.semantic!, process: state.process!, laneFailures: state.laneFailures, research: state.researchReport, mentions: state.mentions, relationPropositions: state.relationPropositions, workItems: state.workItems, buildMetrics: metrics });
+    if (state.request.research && state.bestResult) carryDeliveryProgress(state.bestResult, result);
     result.process.capsules = completeProcessCapsules(state.kernelResult?.process.capsules || createProcessCapsules(result.semantic.nodes, state.mentions), result);
     const degraded = !result.semantic.nodes.some(node => node.type === "task") || state.laneFailures.length > 0 || result.process.capsules.some((capsule) => capsule.expansionStatus === "degraded");
     result.build = {
@@ -1230,7 +1232,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     emit(state.request, "build.package.validation.completed", "system", { validation: result.validation });
     const repairCodes = new Set(["TASK_SKILL_GAP", "TASK_LEARNING_KIND_GAP", "TASK_CAPABILITY_GAP", "TASK_CAPABILITY_UNIT_GAP", "CAPABILITY_UNIT_CULTIVATION_GAP", "CAPABILITY_NOT_CROSS_TASK", "TASK_PROCESS_GAP", "TASK_PROCESS_INCOMPLETE", "NO_PROCESS_SCENARIOS", "SCENARIO_WITHOUT_EVENT", "SCENARIO_WITHOUT_ARTIFACT"]);
     const repairable = inspection.findings.filter(finding => repairCodes.has(finding.code) && finding.suggestedAction === "research");
-    const score = inspection.hardBlockers.length * 1_000 + inspection.coverage.tasksWithoutSkills * 10 + inspection.coverage.tasksWithoutProcess * 8 + repairable.length;
+    const score = (result.semantic.nodes.some(node => node.type === "task") ? 0 : 100_000) + inspection.hardBlockers.length * 1_000 + inspection.coverage.tasksWithoutSkills * 10 + inspection.coverage.tasksWithoutProcess * 8 + repairable.length;
     const better = state.bestQualityScore === undefined || score <= state.bestQualityScore;
     const activeTasks = result.semantic.nodes.filter(node => node.type === "task" && node.lifecycle !== "rejected");
     const wanted = new Set(repairable.flatMap(finding => finding.targetIds));
@@ -1278,9 +1280,10 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
         const remaining = sharedResearch!.budgetLedger.snapshot().remainingResearch;
         const exhausted = remaining.tokens < 1000 || remaining.turns < 1 || run.agenda.revision >= state.request.research.budget.revisions;
         researchContinue = !run.stopReason && !result.deliveryReadiness?.ready && !exhausted && researchStagnant < state.request.research.budget.stagnantRounds && run.agenda.tasks.some(task => task.status !== "failed");
-        if (!researchContinue) await sharedResearch!.finish(run.stopReason || (result.deliveryReadiness?.ready ? "goal_reached" : exhausted ? "budget_exhausted" : researchStagnant >= state.request.research.budget.stagnantRounds ? "no_progress" : "insufficient_material"));
+        if (!researchContinue) await sharedResearch!.finish(result.deliveryReadiness?.ready ? "goal_reached" : run.stopReason || (exhausted ? "budget_exhausted" : researchStagnant >= state.request.research.budget.stagnantRounds ? "no_progress" : "insufficient_material"));
         result.researchRun = sharedResearch!.record();
       }
+      if (result.deliveryReadiness?.ready && result.build?.enrichment) result.build.enrichment.status = "complete";
       result = refreshRolePackageManifest(result, { status: result.deliveryReadiness?.ready ? "ready" : "candidate" });
     }
     if (researchContinue) return { result, bestResult: result, researchContinue, researchStagnant, researchSignature };

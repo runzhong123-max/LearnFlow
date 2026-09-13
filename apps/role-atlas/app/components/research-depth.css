@@ -1,0 +1,3 @@
+.research-depth-picker { display: grid; gap: 8px; font-size: 13px; }
+.research-depth-picker select { width: 100%; padding: 9px 10px; border: 1px solid var(--line, #dfe5df); border-radius: 6px; color: inherit; background: var(--panel, #fbfcfa); }
+.research-depth-picker small { font-size: 12px; line-height: 1.6; opacity: .8; }

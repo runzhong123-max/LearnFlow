@@ -1,3 +1,4 @@
+import { depthProfiles, researchDepthContext, type ResearchDepth } from "@/lib/research/depth";
 import type { ModelInvoker } from "@/lib/agent/model";
 import type { ResearchLoopCheckpoint } from "@/lib/agent/research-loop";
 import type { SearchProviderConfig } from "@/lib/search/providers";
@@ -30,9 +31,10 @@ export type ResearchAgentParts = {
 };
 export function buildResearchAgent(input: {
   model: ModelInvoker; searchConfig?: SearchProviderConfig; budgetLedger?: BudgetLedger; concurrency?: number;
-  budget?: Partial<ResearchBudgetConfig>; onDegrade?: (reason: string) => void;
+  depth?: ResearchDepth; budget?: Partial<ResearchBudgetConfig>; yieldForSynthesis?: boolean; onDegrade?: (reason: string) => void;
   onCheckpoint?: (checkpoint: ResearchAgentCheckpoint) => Promise<void>;
 }): ResearchAgentParts {
+  const depth = depthProfiles[input.depth || "high"];
   const config = researchBudgetSchema.parse(input.budget || {});
   const ledger = input.budgetLedger || ledgerForRun({ queryBudget: config.queries, maxRounds: config.revisions, tokens: config.tokens });
   let store = new ResearchSourceStore(), sessions: Record<string, ResearchLoopCheckpoint> = {}, results: ResearchWorkerResult[] = [];
@@ -45,7 +47,7 @@ export function buildResearchAgent(input: {
   const model = meteredModel(input.model, ledger, "general", save), reviewModel = meteredModel(input.model, ledger, "evidence_review", save);
   const supervisor = createResearchSupervisor({ model, onDegrade: info => input.onDegrade?.(info.reason) });
   return {
-    model, reviewModel, budgetLedger: ledger, concurrency: input.concurrency ?? config.concurrency, snapshot,
+    model, reviewModel, budgetLedger: ledger, concurrency: input.concurrency ?? Math.min(config.concurrency, depth.parallelQuestions), snapshot,
     record: () => run ? structuredClone({ ...run, budget: ledger.snapshot() }) : undefined,
     updateRecord: async value => { if (run && value.id !== run.id) throw new Error("RESEARCH_RUN_ID_MISMATCH"); run = structuredClone(value); await save(); },
     finish: async reason => { if (run) run.stopReason = reason; await save(); },
@@ -69,7 +71,7 @@ export function buildResearchAgent(input: {
       planning = true;
       await save();
       const supervisorKey = `supervisor:${run.agenda.revision}`;
-      const cards = await supervisor.plan({ contract, workItems, round, signal, checkpoint: sessions[supervisorKey], onCheckpoint: async value => { sessions[supervisorKey] = value; await save(); }, tools: [...createReadOnlyToolset(store), ...researchRecordTools({ run, store, graph, save }), ...(graph ? [changeProposalTool({ base: base || graph, run, save })] : [])], context: { graph: context, sourceIndex: store.assets.slice(0, 20).map(asset => ({ id: asset.id, title: asset.title, segments: store.segments.filter(segment => segment.sourceId === asset.id).slice(0, 6).map(segment => segment.id) })), agenda: { revision: run.agenda.revision, tasks: run.agenda.tasks.map(task => ({ id: task.id, question: task.question.slice(0, 300), status: task.status })), gaps: run.agenda.gaps.slice(-12) }, findings: run.findings.slice(-24).map(item => ({ id: item.id, statement: item.claim.statement.slice(0, 500), review: item.review, nextQuestion: item.nextQuestion })), budget: ledger.snapshot() } });
+      const cards = await supervisor.plan({ contract, workItems, round, signal, planningTurns: input.yieldForSynthesis ? depth.turnsPerBatch : undefined, checkpoint: sessions[supervisorKey], onCheckpoint: async value => { sessions[supervisorKey] = value; await save(); }, tools: [...createReadOnlyToolset(store), ...researchRecordTools({ run, store, graph, save }), ...(graph ? [changeProposalTool({ base: base || graph, run, save })] : [])], context: { researchDepth: researchDepthContext(run.intent.depth), graph: context, sourceIndex: store.assets.slice(0, 20).map(asset => ({ id: asset.id, title: asset.title, segments: store.segments.filter(segment => segment.sourceId === asset.id).slice(0, 6).map(segment => segment.id) })), agenda: { revision: run.agenda.revision, tasks: run.agenda.tasks.map(task => ({ id: task.id, question: task.question.slice(0, 300), status: task.status })), gaps: run.agenda.gaps.slice(-12) }, findings: run.findings.slice(-24).map(item => ({ id: item.id, statement: item.claim.statement.slice(0, 500), review: item.review, nextQuestion: item.nextQuestion })), budget: ledger.snapshot() } });
       const remaining = Math.max(0, config.tasks - run.agenda.tasks.length);
       const distinct = [...new Map(cards.map(card => [card.id, card])).values()];
       const selected: ResearchTaskCard[] = [];
@@ -98,11 +100,11 @@ export function buildResearchAgent(input: {
       await save();
       let result: ResearchWorkerResult;
       do {
-      result = await runResearchWorker({ model, reviewModel, card, tools, segments: store.segments, context: { objective: run?.intent.objective, roleBoundary: run?.intent.roleBoundary, changeScope: run?.intent.changeScope, sourceIndex: store.assets.slice(0, 20).map(asset => ({ id: asset.id, title: asset.title, locator: asset.locator, segments: store.segments.filter(segment => segment.sourceId === asset.id).slice(0, 6).map(segment => segment.id) })), selectedObjects: context.graph?.semantic.nodes.filter(node => card.targetIds?.includes(node.id)).slice(0, 6), budget: ledger.snapshot() }, signal: context.signal,
-        budget: { maxTurns: config.turnsPerBatch, maxToolCalls: (sessions[card.id]?.toolCalls || 0) + config.turnsPerBatch * 8, maxTranscriptChars: 64_000 },
+      result = await runResearchWorker({ model, reviewModel, card, tools, segments: store.segments, context: { researchDepth: researchDepthContext(run?.intent.depth || input.depth), objective: run?.intent.objective, roleBoundary: run?.intent.roleBoundary, changeScope: run?.intent.changeScope, sourceIndex: store.assets.slice(0, 20).map(asset => ({ id: asset.id, title: asset.title, locator: asset.locator, segments: store.segments.filter(segment => segment.sourceId === asset.id).slice(0, 6).map(segment => segment.id) })), selectedObjects: context.graph?.semantic.nodes.filter(node => card.targetIds?.includes(node.id)).slice(0, 6), budget: ledger.snapshot() }, signal: context.signal,
+        budget: { maxTurns: input.yieldForSynthesis ? Math.min(config.turnsPerBatch, depth.turnsPerBatch) : config.turnsPerBatch, maxToolCalls: (sessions[card.id]?.toolCalls || 0) + config.turnsPerBatch * 8, maxTranscriptChars: 64_000 },
         checkpoint: sessions[card.id], onCheckpoint: async state => { sessions[card.id] = state; await save(); },
       });
-      } while (result.stopReason === "max_turns" && ledger.snapshot().remainingResearch.tokens > 1000 && ledger.snapshot().remainingResearch.turns > 0 && !context.signal?.aborted);
+      } while (!input.yieldForSynthesis && result.stopReason === "max_turns" && ledger.snapshot().remainingResearch.tokens > 1000 && ledger.snapshot().remainingResearch.turns > 0 && !context.signal?.aborted);
       if (run) {
         for (const item of result.claims) {
           const existing = run.findings.find(finding => finding.claim.statement === item.claim.statement && JSON.stringify(finding.claim.evidenceSpans) === JSON.stringify(item.claim.evidenceSpans));
@@ -114,7 +116,7 @@ export function buildResearchAgent(input: {
         }
         run.agenda.findingRefs = run.findings.map(finding => finding.id);
         run.agenda.gaps = [...new Set([...run.agenda.gaps, ...(result.gaps || []), ...(result.stopReason !== "final" ? [`${card.question}：${result.stopDetail || result.stopReason}`] : [])])];
-        if (task) task.status = result.stopReason === "final" ? result.gaps?.length ? "known_gap" : "completed" : result.stopReason === "model_error" ? "failed" : "known_gap";
+        if (task) task.status = input.yieldForSynthesis && result.stopReason === "max_turns" ? "queued" : result.stopReason === "final" ? result.gaps?.length ? "known_gap" : "completed" : result.stopReason === "model_error" ? "failed" : "known_gap";
       }
       results = [...results.filter(old => old.cardId !== result.cardId), result]; await save(); return result;
     },
@@ -122,7 +124,7 @@ export function buildResearchAgent(input: {
 }
 export function researchAgentEnabled(env: Record<string, string | undefined> = process.env) { return String(env.ROLE_ATLAS_RESEARCH_AGENT ?? "1").trim() !== "0"; }
 export function ledgerForRun(input: { queryBudget: number; maxRounds: number; tokens?: number }) {
-  const total = { queries: input.queryBudget, tokens: input.tokens ?? 2_000_000, turns: 1_000_000 };
+  const total = { queries: input.queryBudget, tokens: input.tokens ?? 5_000_000, turns: 1_000_000 };
   return createBudgetLedger({ total, reviewReserve: defaultReviewReserve(total) });
 }
 export type { ColdStartBuildResult } from "@/lib/build/types";

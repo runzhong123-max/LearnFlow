@@ -2,6 +2,7 @@
 
 import ResearchRunDetail from "@/app/components/ResearchRunDetail";
 import IterationOptions from "@/app/components/IterationOptions";
+import { normalizeResearchDepth, type ResearchDepth } from "@/lib/research/depth";
 import { researchOptionsSchema } from "@/lib/research/protocol";
 
 
@@ -220,7 +221,7 @@ function FinalResultMessage({ result, resultHref, resultLinkLabel, onAccept, onS
 export default function IterationWorkspace({ snapshotId, projectId, versionId, conversationId, initialProfile = "co_guided", initialPrompt = "", initialTargetIds = "", embedded = false, onClose, onComplete, onSettingsRequest }: { snapshotId: string; projectId?: string; versionId?: string; conversationId?: string; initialProfile?: InitiativeProfile; initialPrompt?: string; initialTargetIds?: string; embedded?: boolean; onClose?: () => void; onComplete?: (result: SnapshotIterationResult) => void; onSettingsRequest?: () => void }) {
   const [workspace, setWorkspace] = useState<WorkspaceEnvelope | null>(null);
   const [adoption, setAdoption] = useState<"automatic" | "review">("automatic");
-  const [depth, setDepth] = useState<"focused" | "deep">("deep");
+  const [depth, setDepth] = useState<ResearchDepth>("high");
   const [initiativeProfile, setInitiativeProfile] = useState<InitiativeProfile>(initialProfile);
   const [mode, setMode] = useState<Exclude<IterationMode, "auto">>("deep_research");
   const [prompt, setPrompt] = useState(initialPrompt);
@@ -322,7 +323,7 @@ export default function IterationWorkspace({ snapshotId, projectId, versionId, c
         method: "POST",
         headers: { "content-type": "application/json" },
         signal: controller.signal,
-        body: JSON.stringify({ iteration: { research: researchOptionsSchema.parse({ objective: chosenPrompt.trim(), targetIds: parsedTargetIds, changeScope: parsedTargetIds.length ? "selected" : "role", adoption, budget: depth === "focused" ? { tokens: 500_000, queries: 128, tasks: 32, revisions: 8 } : {} }), runId: crypto.randomUUID(), snapshotRef: workspace.reference, projectId: workspace.reference.projectId, conversationId: workspace.reference.projectId ? conversationId : undefined, initiativeProfile: chosenProfile, mode: chosenMode === "auto" ? "auto" : chosenMode, prompt: chosenPrompt.trim(), targetIds: parsedTargetIds, targetAsOf: targetAsOf || undefined, supplementalSources, learningPathGraph, webResearch, maxRounds: 12, sourceLimit: 64, maxWorkItems: 32 }, providerConfig, searchConfig }),
+        body: JSON.stringify({ iteration: { research: researchOptionsSchema.parse({ objective: chosenPrompt.trim(), targetIds: parsedTargetIds, changeScope: parsedTargetIds.length ? "selected" : "role", adoption, depth }), runId: crypto.randomUUID(), snapshotRef: workspace.reference, projectId: workspace.reference.projectId, conversationId: workspace.reference.projectId ? conversationId : undefined, initiativeProfile: chosenProfile, mode: chosenMode === "auto" ? "auto" : chosenMode, prompt: chosenPrompt.trim(), targetIds: parsedTargetIds, targetAsOf: targetAsOf || undefined, supplementalSources, learningPathGraph, webResearch, maxRounds: 12, sourceLimit: 64, maxWorkItems: 32 }, providerConfig, searchConfig }),
       });
       if (!response.ok || !response.body) throw new Error((await response.json().catch(() => ({})) as { error?: string }).error || `请求失败（${response.status}）`);
       const reader = response.body.getReader();
@@ -362,7 +363,7 @@ export default function IterationWorkspace({ snapshotId, projectId, versionId, c
           <span className="cold-kicker">ITERATION BRIEF</span>
           <h1>{workspace?.title || "岗位快照迭代"}</h1>
           <p>先在这里明确基本信息。开始后，右侧会像 Agent 工作会话一样实时展示分析、工具调用、耗时和最终产物。</p>
-          <IterationOptions disabled={running} value={{ mode, initiativeProfile, targetIds, targetAsOf, adoption, depth }} onChange={value => { setMode(value.mode); setInitiativeProfile(value.initiativeProfile); setTargetIds(value.targetIds); setTargetAsOf(value.targetAsOf); setAdoption(value.adoption || "automatic"); setDepth(value.depth || "deep"); }} />
+          <IterationOptions disabled={running} value={{ mode, initiativeProfile, targetIds, targetAsOf, adoption, depth }} onChange={value => { setMode(value.mode); setInitiativeProfile(value.initiativeProfile); setTargetIds(value.targetIds); setTargetAsOf(value.targetAsOf); setAdoption(value.adoption || "automatic"); setDepth(normalizeResearchDepth(value.depth)); }} />
           <label><span>本轮想获得什么</span><textarea value={prompt} disabled={running} onChange={(event) => setPrompt(event.target.value)} placeholder={initiativeProfile === "autonomous" ? "可以留空，Agent 会自动发现并研究" : "例如：重点研究 Agent 系统开发任务及其学习路径，同时检查相关节点是否重复"} /></label>
           <label className="cold-web-toggle"><span><Globe2 size={13} /><b>自主定向研究</b><small>按工作项并行检索、抽取与去重</small></span><input type="checkbox" checked={webResearch} disabled={running} onChange={(event) => setWebResearch(event.target.checked)} /></label>
           <details className="iteration-source-input"><summary>添加资料（附件、URL、文本）</summary><SourceMaterials value={materials} onChange={setMaterials} disabled={running} onBusyChange={setMaterialsBusy} /></details>

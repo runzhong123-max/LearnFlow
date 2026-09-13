@@ -722,7 +722,7 @@ export function capabilityDerivationPrompt(input: { roleTitle: string; roleDescr
     return rightRelevant - leftRelevant || right.confidence - left.confidence;
   }).slice(0, 24);
   return {
-    system: `你是跨任务能力归纳器。只返回紧凑 JSON。用户确认的 confirmedRoleBoundary 限定岗位范围。能力必须概括两个或以上任务中反复出现的情境—可观察行为—质量标准，不能是工具名、知识点、单个任务或抽象口号。能力单元必须能被学生在日常学习中反复练习、留下作品并接受反馈，而不是给能力换一个近义词。每个能力单元都要写明练习情境、一次可完成的微练习、练习频率、反馈信号、证据作品、从模仿到迁移的递进和独立完成标准。仅有一个已证实任务时，可以提出该任务支持的候选能力，但不得声称已验证跨任务迁移。培养契约是教学设计，不代表学习者已掌握。所有说明字段各写一条不超过 60 个汉字的短句；observableBehaviors 最多 3 条。只能引用给定任务 ID 与 mention ID，参考 evidenceSegments 核实情境与可观察行为；证据不足时少返回。岗位内核最多保留 4 个区分度高的能力，每个能力最多 3 个可培养能力单元。`,
+    system: `你是跨任务能力归纳器。只返回紧凑 JSON。能力单元描述岗位中的可观察表现（如资源配置与核对、异常定位与验证），不是练习、记录表、实验或微任务名称；练习方式只放在 cultivation 对应字段，不能当作能力单元本身。用户确认的 confirmedRoleBoundary 限定岗位范围。能力必须概括两个或以上任务中反复出现的情境—可观察行为—质量标准，不能是工具名、知识点、单个任务或抽象口号。能力单元必须能被学生在日常学习中反复练习、留下作品并接受反馈，而不是给能力换一个近义词。每个能力单元都要写明练习情境、一次可完成的微练习、练习频率、反馈信号、证据作品、从模仿到迁移的递进和独立完成标准。仅有一个已证实任务时，可以提出该任务支持的候选能力，但不得声称已验证跨任务迁移。培养契约是教学设计，不代表学习者已掌握。所有说明字段各写一条不超过 60 个汉字的短句；observableBehaviors 最多 3 条。只能引用给定任务 ID 与 mention ID，参考 evidenceSegments 核实情境与可观察行为；证据不足时少返回。根据实际任务与工作行为决定能力和单元数量，不以固定数量截断覆盖。避免只覆盖部署、监控等显眼技术动作而遗漏资料明确要求的服务支撑、需求沟通、数据保护等职责；不同职责确有相同表现时才共享能力。单次结构容量仅用于分批交付，不能据此宣布内容齐全。`,
     user: JSON.stringify({
       roleTitle: input.roleTitle,
       confirmedRoleBoundary: input.roleDescription,

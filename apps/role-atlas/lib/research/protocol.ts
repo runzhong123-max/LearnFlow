@@ -1,3 +1,4 @@
+import { researchDepths } from "./depth";
 import { z } from "zod/v4";
 import type { ChatMessage } from "@/lib/agent/native-model";
 import type { BudgetLedgerSnapshot } from "@/lib/iteration/budget-ledger";
@@ -5,7 +6,7 @@ import type { Claim } from "@/lib/iteration/evidence-review";
 
 export const RESEARCH_PROTOCOL = "role-research/v2" as const;
 export const researchBudgetSchema = z.object({
-  tokens: z.number().int().min(1000).max(20_000_000).default(2_000_000),
+  tokens: z.number().int().min(1000).max(20_000_000).default(5_000_000),
   queries: z.number().int().min(1).max(20_000).default(512),
   tasks: z.number().int().min(1).max(1000).default(128),
   revisions: z.number().int().min(1).max(400).default(32),
@@ -16,6 +17,7 @@ export const researchBudgetSchema = z.object({
 export type ResearchBudgetConfig = z.infer<typeof researchBudgetSchema>;
 export const researchOptionsSchema = z.object({
   protocol: z.literal(RESEARCH_PROTOCOL).default(RESEARCH_PROTOCOL),
+  depth: z.enum(researchDepths).default("high"),
   objective: z.string().max(8000).optional(),
   targetIds: z.array(z.string().max(240)).max(128).default([]),
   changeScope: z.enum(["selected", "role"]).default("role"),

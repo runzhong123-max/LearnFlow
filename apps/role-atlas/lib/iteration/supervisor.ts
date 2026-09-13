@@ -36,6 +36,7 @@ export function supervisorPrompt(input: {
     system: [
       "你是岗位研究主管。根据用户目标、图谱缺口和已有发现制定可执行的研究议程。",
       "你可以提出新问题、追踪相邻岗位、拆分合并任务并重规划。调查不等于获准修改图谱。优先支持项目转换、学生理解、重要内容覆盖。",
+      "冷启动先调查能形成典型工作任务的职责、输入、交付物，再派生能力与知识技能；每批优先推进最直接改善交付的少量问题。培训政策、标准征集通知、证书申报不是岗位工作任务，不得让它们挤占首版任务研究。",
       "对每个工作项给出：一句可回答的研究问题、应当依据的证据类别、几条值得先试的检索方向。",
       "证据类别只能取：official_standard（官方标准与规范）、job_market（招聘市场）、primary_docs（一手技术文档）、incident（事故与复盘）、academic（学术资料）。",
       "研究问题必须能通过查资料回答，不要写“深入了解”“全面掌握”这类无法验证的目标。",
@@ -98,6 +99,7 @@ export type ResearchSupervisor = {
     checkpoint?: ResearchLoopCheckpoint;
     onCheckpoint?: (value: ResearchLoopCheckpoint) => Promise<void>;
     round: number;
+    planningTurns?: number;
     signal?: AbortSignal;
   }) => Promise<ResearchTaskCard[]>;
 };
@@ -107,7 +109,7 @@ export function createResearchSupervisor(input: {
   onDegrade?: (degrade: SupervisorDegrade) => void;
 }): ResearchSupervisor {
   return {
-    async plan({ contract, workItems, signal, context, tools, checkpoint, onCheckpoint }) {
+    async plan({ contract, workItems, signal, context, tools, checkpoint, onCheckpoint, planningTurns }) {
       const researchable = workItems.filter(item => item.requiresResearch);
 
       const fallback = () => deterministicCards({ contract, workItems: researchable });
@@ -115,13 +117,13 @@ export function createResearchSupervisor(input: {
       let drafts: ResearchCardDraft[] | undefined;
       try {
         const prompt = supervisorPrompt({ contract, workItems: researchable, context });
-        const native = input.model.chat && tools?.length ? await runResearchLoop<{ cards: ResearchCardDraft[] }>({ model: input.model, checkpoint, onCheckpoint, system: `${prompt.system}\n可调用工具下钻资料、查看研究记录，最终返回 {"cards":[{"question":"可调查的问题","reason":"调查理由","sourceClass":"primary_docs","queriesHint":[]}]}。不要因无现存工作项而停止。`, task: prompt.user, tools, signal, budget: { maxTurns: 32, maxToolCalls: 128, maxTranscriptChars: 64_000 }, validateFinal: value => planSchema.parse(value) }) : undefined;
-        if (native && !native.final) throw new Error(native.stopReason === "budget_exhausted" ? "RESEARCH_BUDGET_EXHAUSTED" : `SUPERVISOR_${native.stopReason}`);
+        const native = input.model.chat && tools?.length ? await runResearchLoop<{ cards: ResearchCardDraft[] }>({ model: input.model, checkpoint, onCheckpoint, system: `${prompt.system}\n可调用工具下钻资料、查看研究记录，最终返回 {"cards":[{"question":"可调查的问题","reason":"调查理由","sourceClass":"primary_docs","queriesHint":[]}]}。不要因无现存工作项而停止。`, task: prompt.user, tools, signal, budget: { maxTurns: planningTurns ?? 32, maxToolCalls: 128, maxTranscriptChars: 64_000 }, validateFinal: value => planSchema.parse(value) }) : undefined;
+        if (native && !native.final && native.stopReason !== "max_turns") throw new Error(native.stopReason === "budget_exhausted" ? "RESEARCH_BUDGET_EXHAUSTED" : `SUPERVISOR_${native.stopReason}`);
         const parsed = native?.final || await invokeStructured({
           model: input.model,
           schema: planSchema,
           system: prompt.system,
-          user: prompt.user,
+          user: native?.stopReason === "max_turns" ? JSON.stringify({ goal: JSON.parse(prompt.user), researchSession: native.checkpoint?.messages, instruction: "已到本批调查交接点。依据已读资料先提出少量可执行研究问题及理由；未读材料保持未知，后续可继续调查。返回 cards JSON，不继续工具调用。" }) : prompt.user,
           signal,
           thinking: "disabled",
           maxCompletionTokens: 12_000,

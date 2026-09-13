@@ -584,7 +584,7 @@ export async function invokeStructured<T>(input: {
 }) {
   let content = "";
   if (input.model.chat) {
-    const response = await input.model.chat({ messages: [{ role: "system", content: input.system }, { role: "user", content: input.user }], signal: input.signal, thinking: input.thinking, maxCompletionTokens: input.maxCompletionTokens, timeoutMs: input.timeoutMs, totalTimeoutMs: input.totalTimeoutMs });
+    const response = await input.model.chat({ messages: [{ role: "system", content: input.system }, { role: "user", content: input.user }], signal: input.signal, thinking: input.thinking ?? "disabled", maxCompletionTokens: input.maxCompletionTokens, timeoutMs: input.timeoutMs, totalTimeoutMs: input.totalTimeoutMs });
     if (response.finishReason !== "stop" || response.message.tool_calls?.length) throw new Error(`结构化回答未完整结束：${response.finishReason}`);
     content = response.message.content || "";
     const extracted = extractJson(content);

@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowDownToLine, Check, ChevronRight, LoaderCircle, Send, Sparkles, Wrench, X } from "lucide-react";
+import ResearchDepthPicker from "./ResearchDepthPicker";
+import { normalizeResearchDepth, type ResearchDepth } from "@/lib/research/depth";
 import SourceMaterials from "./SourceMaterials";
 import MarkdownContent from "./MarkdownContent";
 import { PROVIDER_SESSION_KEY } from "@/lib/providers";
@@ -14,7 +16,7 @@ import { safeSourceUrl } from "@/lib/presentation/citations";
 import type { IntakeTurnInput, IntakeView } from "@/lib/intake/types";
 
 type Scope = { projectId: string; conversationId: string };
-type Draft = { title: string; market: string; goal: string; materials: SourceInput[]; scope?: Scope; reply?: string; improving?: boolean };
+type Draft = { depth?: ResearchDepth; title: string; market: string; goal: string; materials: SourceInput[]; scope?: Scope; reply?: string; improving?: boolean };
 function config(key: string) { try { return JSON.parse(sessionStorage.getItem(key) || "null") || undefined; } catch { return undefined; } }
 async function json(response: Response) {
   const body = await response.json().catch(() => ({})) as { error?: string; intake?: IntakeView; projectUrl?: string };
@@ -135,7 +137,7 @@ export default function RoleIntakePane({ projectId, conversationId, actorSubject
       await json(await fetch("/api/build-runs", { method: "POST", headers: { "content-type": "application/json", prefer: "respond-async" }, body: JSON.stringify({
         conversationId: scope.conversationId, intakeConfirmation: { revisionId: confirmed.revisionId, contentHash: confirmed.contentHash },
         providerConfig: config(PROVIDER_SESSION_KEY), searchConfig: config(SEARCH_PROVIDER_SESSION_KEY), webResearch: true,
-        build: { runId: startingRun.current, projectId: scope.projectId, roleTitle: confirmed.roleTitle, roleDescription: confirmed.description, market: confirmed.market, audience: ["岗位研究者"], snapshotAsOf: new Date().toISOString().slice(0, 10), sources: [], learningPathGraph },
+        build: { runId: startingRun.current, projectId: scope.projectId, roleTitle: confirmed.roleTitle, roleDescription: confirmed.description, market: confirmed.market, audience: ["岗位研究者"], snapshotAsOf: new Date().toISOString().slice(0, 10), sources: [], learningPathGraph, research: { depth: normalizeResearchDepth(draft.depth) } },
       }) }));
       try { sessionStorage.removeItem(storageKey); sessionStorage.removeItem(`${storageKey}:creation`); sessionStorage.removeItem(`role-atlas.intake-draft:${JSON.stringify([actorSubjectId, scope.projectId, scope.conversationId])}`); } catch { /* optional */ }
       if (alive.current) callbacks.current.onStarted(scope);
@@ -163,6 +165,7 @@ export default function RoleIntakePane({ projectId, conversationId, actorSubject
         <button className="tool-submit" disabled={locked || materialsBusy || draft.title.trim().length < 2} onClick={() => void turn("draft", draft.goal)}><Sparkles size={14} />生成岗位说明</button>
       </> : <p>{reviewing ? "确认下面的岗位说明后，开始深度研究、生成图谱并挂载学习路径。" : "说说你感兴趣或想从事的工作，我会帮你缩小范围。"}</p>}
     </div>
+    <ResearchDepthPicker value={normalizeResearchDepth(draft.depth)} onChange={depth => setDraft(current => ({ ...current, depth }))} disabled={locked} />
     {intake && previousIntakeHistory(intake).length > 0 && <details className="intake-history"><summary>查看之前的输入与讨论</summary>{previousIntakeHistory(intake).map(item => <div key={item.id} className={`message ${item.role}`}><small>{item.role === "user" ? "你的输入" : "岗位助手"}</small><MarkdownContent text={item.text} /></div>)}</details>}
     {!reviewing && intake?.assistantMessage && <div className="message assistant"><MarkdownContent text={intake.assistantMessage} /></div>}
     {intake?.hubMatches?.length ? <div className="intake-hub-matches"><small>Graph Hub 中已有相关岗位</small>{intake.hubMatches.map(match => <article key={match.releaseId}><b>{match.title}</b><p>{match.summary}</p><details><summary>查看岗位内容</summary>{[["工作任务", match.tasks], ["工作能力", match.capabilities], ["工作场景", match.scenarios]].map(([label, values]) => <div key={String(label)}><b>{String(label)}</b><ul>{(values as string[]).map((text, index) => <li key={index}>{text}</li>)}</ul></div>)}</details><button disabled={locked} onClick={() => void pull(match.releaseId)}><ArrowDownToLine size={13} />拉取并查看</button></article>)}</div> : null}

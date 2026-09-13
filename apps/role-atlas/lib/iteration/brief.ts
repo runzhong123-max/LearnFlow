@@ -1,3 +1,4 @@
+import { normalizeResearchDepth, type ResearchDepth } from "@/lib/research/depth";
 import { researchOptionsSchema } from "@/lib/research/protocol";
 import { DEFAULT_ITERATION_BUDGET, snapshotIterationRequestSchema, type InitiativeProfile, type IterationMode, type SnapshotIterationRequest } from "./types";
 import type { LearningPathGraphInput, SourceInput } from "@/lib/build/types";
@@ -13,9 +14,9 @@ export const iterationProfileOptions = [
   { id: "autonomous", label: "自动发现", detail: "检查全岗位，选择值得研究的问题；目标可以留空" },
   { id: "user_directed", label: "定向研究", detail: "按目标和节点选择研究工作，协议错误仍会全局检查" },
 ] as const;
-export type IterationDraft = { mode: Exclude<IterationMode, "auto">; initiativeProfile: InitiativeProfile; targetIds: string; targetAsOf: string; adoption?: "automatic" | "review"; depth?: "focused" | "deep" };
+export type IterationDraft = { mode: Exclude<IterationMode, "auto">; initiativeProfile: InitiativeProfile; targetIds: string; targetAsOf: string; adoption?: "automatic" | "review"; depth?: ResearchDepth | "focused" | "deep" };
 export function defaultIterationDraft(deepening = false, selectedNodeIds: string[] = []): IterationDraft {
-  return { mode: "deep_research", initiativeProfile: deepening ? "user_directed" : "co_guided", targetIds: deepening ? selectedNodeIds.join(", ") : "", targetAsOf: "", adoption: "automatic", depth: "deep" };
+  return { mode: "deep_research", initiativeProfile: deepening ? "user_directed" : "co_guided", targetIds: deepening ? selectedNodeIds.join(", ") : "", targetAsOf: "", adoption: "automatic", depth: "high" };
 }
 export function parseIterationTargets(value: string) { return [...new Set(value.split(/[\s,，]+/u).map((id) => id.trim()).filter(Boolean))]; }
 export function iterationBriefError(input: { initiativeProfile: InitiativeProfile; prompt: string; targetIds: string[]; targetAsOf?: string }) {
@@ -34,7 +35,7 @@ export function conversationIterationRequest(input: {
   const targetIds = parseIterationTargets(draft.targetIds);
   const error = iterationBriefError({ ...draft, prompt: input.prompt, targetIds });
   if (error) throw new Error(error);
-  const research = researchOptionsSchema.parse({ objective: input.prompt.trim(), targetIds, changeScope: draft.initiativeProfile === "user_directed" || targetIds.length ? "selected" : "role", adoption: draft.adoption || "automatic", budget: draft.depth === "focused" ? { tokens: 500_000, queries: 128, tasks: 32, revisions: 8 } : {} });
+  const research = researchOptionsSchema.parse({ objective: input.prompt.trim(), targetIds, changeScope: draft.initiativeProfile === "user_directed" || targetIds.length ? "selected" : "role", adoption: draft.adoption || "automatic", depth: normalizeResearchDepth(draft.depth) });
   return snapshotIterationRequestSchema.parse({
     research,
     runId: input.runId, projectId: context.projectId, conversationId: context.conversationId,
@@ -47,11 +48,12 @@ export function conversationIterationRequest(input: {
   });
 }
 
-export type IterationRunBrief = Pick<SnapshotIterationRequest, "initiativeProfile" | "mode" | "prompt" | "targetIds" | "targetAsOf" | "webResearch"> & { sourceCount: number; learningPathProvided: boolean };
+export type IterationRunBrief = Pick<SnapshotIterationRequest, "initiativeProfile" | "mode" | "prompt" | "targetIds" | "targetAsOf" | "webResearch"> & { sourceCount: number; learningPathProvided: boolean; depth?: ResearchDepth };
 /** Explicit projection of the saved request; never return credentials or full source documents. */
 export function iterationRunBrief(value: unknown): IterationRunBrief | undefined {
   const parsed = snapshotIterationRequestSchema.safeParse(value);
   if (!parsed.success) return undefined;
   const request = parsed.data;
-  return { initiativeProfile: request.initiativeProfile, mode: request.mode, prompt: request.prompt, targetIds: request.targetIds, targetAsOf: request.targetAsOf, webResearch: request.webResearch, sourceCount: request.supplementalSources.length, learningPathProvided: Boolean(request.learningPathGraph) };
+  const recordedDepth = (value as { research?: { depth?: unknown } }).research?.depth;
+  return { depth: recordedDepth ? request.research?.depth : undefined, initiativeProfile: request.initiativeProfile, mode: request.mode, prompt: request.prompt, targetIds: request.targetIds, targetAsOf: request.targetAsOf, webResearch: request.webResearch, sourceCount: request.supplementalSources.length, learningPathProvided: Boolean(request.learningPathGraph) };
 }

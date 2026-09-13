@@ -179,3 +179,18 @@ test("同一工作项只产生一张卡，不会因模型重复而被研究两�
   assert.equal(cards.length, 1);
   assert.equal(cards[0].question, "第一个问法是什么？");
 });
+
+test("主管到批次边界先整理议程，保留工具会话而非静默降为零任务", async () => {
+  let calls = 0;
+  const model: ModelInvoker = async function* () { throw new Error("native only"); };
+  model.chat = async request => {
+    calls += 1;
+    if (request.tools?.length) return { message: { role: "assistant", content: "", tool_calls: [{ id: `read-${calls}`, type: "function", function: { name: "read", arguments: "{}" } }] }, finishReason: "tool_calls", usage: { inputTokens: 100, outputTokens: 20, estimated: false } };
+    const context = JSON.parse(String(request.messages[1].content));
+    assert.ok(context.researchSession.some((message: { role: string }) => message.role === "tool"));
+    return { message: { role: "assistant", content: JSON.stringify({ cards: [{ question: "维护任务如何形成可交付结果？", sourceClass: "job_market", reason: "材料尚缺交付物" }] }) }, finishReason: "stop", usage: { inputTokens: 100, outputTokens: 50, estimated: false } };
+  };
+  const cards = await createResearchSupervisor({ model }).plan({ contract: contract(), workItems: [], round: 1, planningTurns: 2, tools: [{ name: "read", description: "读取资料", args: {}, parameters: { type: "object", properties: {} }, run: async () => ({ summary: "原文材料" }) }] });
+  assert.equal(calls, 3);
+  assert.equal(cards.length, 1);
+});

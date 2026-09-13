@@ -15,6 +15,20 @@ function source(overrides: Partial<SourceAsset> & Pick<SourceAsset, "id" | "titl
   };
 }
 
+test("职业标准征集通知不得挤掉实际岗位职责材料", () => {
+  const segments = [
+    { id: "s1", sourceId: "notice", ordinal: 0, contentHash: "1", text: "云计算工程师职业标准征集，开发单位进行职业调查、专家论证。" },
+    { id: "s2", sourceId: "job", ordinal: 0, contentHash: "2", text: "云计算工程师岗位职责：部署云主机，处理故障并交付运维记录。" },
+  ];
+  const assets = qualifySources([
+    source({ id: "notice", title: "关于征集职业技能标准和开发单位的通告", locator: "https://example.gov.cn/notice", sourceTier: "authoritative", searchCategories: ["official_standard"] }),
+    source({ id: "job", title: "云计算工程师岗位职责", searchCategories: ["job_market"] }),
+  ], segments);
+  const routed = selectKernelSourceShards({ shards: createSourceShards({ assets, segments }), assets, roleTitle: "云计算工程师", maxPublicShards: 1 });
+  assert.deepEqual(routed.selected.map(shard => shard.sourceId), ["job"]);
+  assert.ok(routed.deferred.some(shard => shard.sourceId === "notice"));
+});
+
 test("来源资格按可承担的证据角色判定，不把教程营销页冒充官方或工作实践", () => {
   const segments = [{ id: "seg:one", sourceId: "src:noisy", ordinal: 0, contentHash: "x", text: "零基础速成教程，立即报名并加微信领取简历模板。" }];
   const noisy = qualifySource(source({ id: "src:noisy", title: "速成课", locator: "https://blog.csdn.net/example", sourceTier: "contextual", searchCategories: ["official_standard", "work_practice"] }), segments);

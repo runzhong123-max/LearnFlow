@@ -226,7 +226,12 @@ export function selectKernelSourceShards(input: {
   const sourceScore = (shards: SourceShard[]) => {
     const asset = assets.get(shards[0].sourceId);
     const roles = new Set(shards[0].qualification.evidenceRoles);
-    return (asset?.sourceTier === "authoritative" ? 40 : asset?.sourceTier === "primary" ? 32 : 0)
+    // Institutional authority is not evidence of this role's daily work.
+    // Recruitment/standard-development notices must not outrank actual duties.
+    const title = asset?.title || "";
+    const administrative = /征集.*(?:标准|开发单位)|标准.*(?:开发单位|征集)|教学标准.*发布|培育项目|培训招生/u.test(title);
+    const duties = roles.has("job_market") || roles.has("work_practice");
+    return (administrative ? -200 : 0) + (duties ? 80 : 0) + (asset?.sourceTier === "authoritative" ? 40 : asset?.sourceTier === "primary" ? 32 : 0)
       + (normalizeConcept(`${asset?.title || ""} ${shards[0].segments.map(segment => segment.text).join(" ")}`).includes(fullRole) ? 40 : 0)
       + (shards[0].qualification.status === "accepted" ? 14 : 0)
       + (roles.has("official_standard") ? 30 : roles.has("job_market") ? 24 : roles.has("work_practice") ? 20 : 8)

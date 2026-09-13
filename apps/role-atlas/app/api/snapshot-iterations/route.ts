@@ -199,6 +199,8 @@ export async function POST(request: Request) {
     ? buildResearchAgent({
       model,
       budget: iterationRequest.research?.budget,
+      depth: iterationRequest.research.depth,
+      yieldForSynthesis: true,
       onCheckpoint: async researchCheckpoint => {
         latestResearchState = { ...latestResearchState, researchCheckpoint };
         await assertRoleJobLease(iterationRequest.runId, jobOwner);
@@ -206,7 +208,7 @@ export async function POST(request: Request) {
       },
       ...(searchConfig ? { searchConfig } : {}),
       budgetLedger: ledgerForRun({
-        queryBudget: iterationRequest.queryBudget ?? DEFAULT_ITERATION_BUDGET.queryBudget,
+        queryBudget: iterationRequest.research.budget.queries,
         maxRounds: iterationRequest.maxRounds,
         tokens: iterationRequest.research?.budget.tokens,
       }),

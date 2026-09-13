@@ -12,7 +12,9 @@ Role Atlas 面向计算机专业群的高职学生和教师，负责可追溯的
 
 `buildResearchAgent` 是冷启动与迭代共用的研究内核：ResearchIntent → ResearchAgenda / ResearchTask → ResearchFinding → ChangeSet → ResearchRun。现有 LangGraph 负责固定生命周期；主管负责动态问题，后台任务保留租约、事件游标、取消与版本事务。
 
-新运行默认 2,000,000 token、512 个搜索查询、128 个独立任务、32 次议程修订、4 个调查员；调查员每批 32 次模型交互，能在账本内继续批次。20% token 预留复核，查询不预扣复核份额。规划、调查、综合与复核共用账本。调用前持久化预占，成功后按 usage 对账；不确定失败保留预占。没有 usage 时按字符保守估算，原始调用记录标记 estimated。恢复不能重置预算，工具调用 ID 与结果保持对应。
+新运行提供 Low（聚焦）、Medium（标准）、High（深入，默认）、Max（充分）四档研究深度。它们分别强调核心交付、常见情境交叉核对、反证与遗漏、跨情境及高影响异常。所有档位使用相同的完整性交付门禁；不以固定 token 数、节点数或用时定义深度。调查按深度以 4/6/8/12 次交互为一次可续批的节奏，分别并行最多 2/3/4/4 个问题，随后及时综合。达到批次边界不等于耗尽预算。实际时长和 usage 按运行记录，尚无统计基线时只给相对消耗提示。
+
+底层异常保护默认 5,000,000 token、512 次查询、128 个任务、32 次议程修订；支持显式配置且沿用持久化预算。调查与生成共享余额，不设固定阶段份额；复核预留 20%，查询不预扣复核份额。调用前持久化预占，按 usage 对账；不确定失败保留预占，没有 usage 时标记 estimated。恢复不重置预算、会话或工具调用 ID。旧表单 focused/deep 分别兼容为 low/high；旧运行不重写已有预算。
 
 原生接口保存 messages、tool_calls、tool_call_id、reasoning_content 与 finish_reason。MiMo 使用 api-key 和 max_completion_tokens；DeepSeek 使用 Bearer 和 max_tokens。工具参数在本地验证，不依赖强制选工具或 strict schema。
 
@@ -38,14 +40,32 @@ ChangeSet 记录固定 snapshot ID / 基线内容哈希、动机、发现引用�
 
 本轮仅本地重构，不推送、部署、迁移日常数据库或替换用户应用。真实模型连接验收与离线确定性回归分开报告；没有学生反馈时，不声称已证明学生理解改善。
 
-完整执行结果、失败修正和未执行项见 [本轮验收记录](../../apps/role-atlas/reports/research-v2/validation.md)。
+协议重构记录见 [初始验收记录](../../apps/role-atlas/reports/research-v2/validation.md)，本次修复与四档深度的通过、失败及未执行项见 [2026-09-13 验收记录](../../apps/role-atlas/reports/research-v2/depth-delivery-validation-2026-09-13.md)。
 
 ## 冷启动知识技能闭环（2026-09-13）
 
-冷启动内容就绪必须包含有效任务—能力关系、能力—能力单元归属，以及能力/单元—知识技能支撑。知识技能须区分类型、有学习范围、可观察要求和来源；悬空边、被拒绝对象、普通 related_to 关系不能代替支撑。能力可通过所属单元获得知识技能支撑；每个单元和知识技能点须有明确连接。deriveLearningSupport 使用现有研究账本和复核预算，只把本地引用核验且原文复核支持的关系写成候选研究推断。未解决的连接与定义缺口进入下一轮议程；预算或资料不足仍保留草稿，不制造关系凑完整。提交时重新计算内容就绪，不能信任旧检查点的 ready 标记。
+冷启动内容就绪必须包含有效任务—能力关系、能力—能力单元归属，以及能力/单元—知识技能支撑。知识技能须区分类型、有学习范围、可观察要求和来源；悬空边、被拒绝对象、普通 related_to 关系不能代替支撑。能力可通过所属单元获得知识技能支撑；每个单元和知识技能点须有明确连接。deriveLearningSupport 使用现有研究账本和复核预算，只把本地引用核验且经独立复核的学习建议写成候选研究推断；部分支持保留为带限制的候选建议，不支持、冲突与未完成复核不连接。未解决的连接与定义缺口进入下一轮议程；预算或资料不足仍保留草稿，不制造关系凑完整。提交时重新计算内容就绪，不能信任旧检查点的 ready 标记。
 
 内容版本保存后，既有持久自动连接任务继续消费同版本私有制品，复用 Learning Design 所有的课程/节点目录与源图提交：优先复用已有路径节点，缺少时建立课程或节点，再附岗位语义。连接回执仍固定包与快照引用，原节点不覆写、学习状态不变。整条冷启动流程在真实回执完整后才显示完成；缺失回执、部分连接及失败不是已完成。研究停止的草稿不再显示后台仍运行。
 
 Role Atlas 不再显示单独的“学习路径挂载”面板、静态预览和手动确认提示。路径节点直接出现在岗位图谱中，岗位知识技能作为其语义与细项；路径身份在节点详情显示。尚未连接的知识技能保留其原 ID 与关系，绝不因缺回执被隐藏；旧回执不套用到新快照。原手动 API 为外部兼容保留，不作为新冷启动必经步骤。
 
-Contract impact：现有岗位研究内部实现与完成策略收紧，沿用 registry 的 role_research_run_v2 与 frontend:role_research.quality 绑定；没有新增对外工具或能力。岗位包 3.1.0、role-learning-auto/v1、role-course/v2 与两端只读导入格式不变；无五核、事件语义或数据库迁移。回归：learning-support、course-presentation、run-status、research-v2、automatic-learning-mount。
+Contract impact：现有岗位研究内部实现与完成策略明确，沿用 registry 的 role_research_run_v2 与 frontend:role_research.quality 绑定；没有新增对外工具或能力。岗位包 3.1.0、role-learning-auto/v1、role-course/v2 与两端只读导入格式不变；无五核、事件语义或数据库迁移。回归：learning-support、course-presentation、run-status、research-v2、automatic-learning-mount。
+
+## 冷启动交付修复（2026-09-13，YML 对照）
+
+可复用的 YML 设计原则是逐层产生可消费的结构化结果，而不是先完成所有背景调查才开始生成。任务抽取优先实际岗位职责，标准征集或培训行政通知只作背景；来源机构权威不等于描述目标岗位工作。结构化生成默认关闭额外思考通道以保留 JSON 输出额度，固定的 taskDefinition 协议版本由生成适配器补齐，错误仍保留具体原因。
+
+完整首版表示任务信息可以使用且限制明确，不表示每个接口字段都是招聘原文事实。核心 goal/activities 仍要求独立复核支持。trigger/inputs/actors/deliverables/qualityCriteria 可以是带精确材料引用的 synthesis；部分支持时须保留复核理由和适用限制。直接事实的部分支持、冲突、无法判断、缺少实际引用继续阻断。字段复核反馈最多修正两次，不能无限重试直到模型表示同意。能力单元描述可观察职业表现，具体微练习只放入培养说明；支撑关系以研究推断复核，不能误要求招聘原文明示课程或练习。
+
+Contract impact：沿用 role_research_run_v2 内部生成与质量策略，岗位包、任务字段 schema、外部接口及稳定引用保持兼容；不改五核、不新增事件或数据库迁移。新增默认预算仅作用于新运行，历史恢复继续按原请求与支出。回归见 research-agent、cold-start-workflow、learning-support，真实模型验收入口 scripts/verify-cold-start-delivery.ts（隔离输出，无业务库写入）。
+
+
+### 2026-09-13 四档深度与冷启动修复验收
+
+`research.depth` 为可选输入，缺省 High；保存后进入 ResearchIntent、主管和调查员上下文。冷启动、项目内迭代及快照迭代使用同一选项。仅扩展岗位研究请求与呈现，不修改岗位包 3.1.0、LearnFlow 主 Agent、五核、学习证据或采用权限。历史显式预算与支出保留。
+
+参考 YML 仅提取“先形成典型任务，再逐层派生并连接”的方法，不导入其配置或凭据。真实模型重放使用公开岗位材料、隔离输出文件；测试不会创建生产项目或修改学生状态。引文片段 ID 错误只在当前给定资料中存在唯一逐字匹配时自动修正；修正后仍独立复核语义。补全与重新编译时保留语义和来源均未变化的任务字段及学习连接；语义、来源变化时重新核查，显式拒绝的关系不恢复，避免反复覆盖已完成产物。
+
+
+学习连接的断言仅表达知识技能与能力的学习支撑，不把节点里的教学设计当成雇主原文事实。独立复核 supported 可记支持；uncertain 只保存 `research_inference + partially_supported + candidate`，并保留复核限制；unsupported/conflicting 或复核缺失不能添加关系。任务核心职责仍要求 supported，不能沿用学习映射的候选规则。完整性表示内容链条可读可转换，不代表每个教学建议已由企业证明。
