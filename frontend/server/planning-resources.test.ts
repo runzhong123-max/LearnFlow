@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { resourceCandidates, planningResourcePrompt, planningSourceType } from '../src/planning-resources.ts'
+import { resourceCandidates, planningResourcePrompt, planningSourceType, planningResourceRuns } from '../src/planning-resources.ts'
 import { systemPrompt } from '../src/tutor.ts'
 import type { TutorToolRun, SearchSource } from '../src/tooling.ts'
 
@@ -24,4 +24,18 @@ test('repository roots use repository ingestion while chapters remain web source
   assert.equal(planningSourceType('https://github.com/org/book'), 'github')
   assert.equal(planningSourceType('https://github.com/org/book/blob/main/chapter.md'), 'url')
   assert.equal(planningSourceType('https://github.com.evil.example/org/book'), 'url')
+})
+
+test('inline resource tools belong to one planning response and retain failed searches for retry', () => {
+  const search = { id: 'search-one', kind: 'search', toolName: 'search_computer_knowledge', status: 'completed', sources: [
+    { url: 'https://example.com/book-one', title: 'Book one' },
+  ] } as TutorToolRun
+  const failed = { ...search, id: 'search-two', status: 'failed', sources: [] } as TutorToolRun
+  const memory = { ...search, id: 'memory', kind: 'memory' } as TutorToolRun
+  const video = { ...failed, id: 'video', toolName: 'search_learning_videos' } as TutorToolRun
+  assert.deepEqual(planningResourceRuns([search, memory, video], 'learning_plan'), [search])
+  assert.deepEqual(planningResourceRuns([failed], 'learning_plan'), [failed])
+  assert.deepEqual(resourceCandidates(planningResourceRuns([failed], 'learning_plan')), [])
+  assert.deepEqual(planningResourceRuns([search], 'simple_explanation'), [])
+  assert.match(planningResourcePrompt('C++', false, 'sources'), /对话内的推荐工具结果/)
 })

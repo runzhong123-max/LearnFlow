@@ -6,11 +6,26 @@ import { planningResourcePrompt, resourceCandidates, planningSourceType } from '
 import './planning-resources.css'
 
 type SavedSource = { id: number; name: string; url: string; status: string; error: string }
-export default function PlanningResourceWorkbench({ projectId, topic, runs, pending, onRequest, onProjectChange }: {
+type ResourceToolProps = {
   projectId?: number; topic: string; runs: TutorToolRun[]; pending: boolean
   onRequest: (prompt: string) => void
   onProjectChange: (workspace: FormalProjectWorkspace) => void
-}) {
+}
+
+export default function PlanningResourceWorkbench(props: ResourceToolProps) {
+  const [opened, setOpened] = useState(false)
+  const count = resourceCandidates(props.runs).length
+  const running = props.runs.some(run => run.status === 'running')
+  const failed = props.runs.some(run => run.status === 'failed')
+  return <details className="planning-resource-tool" onToggle={event => {
+    if (event.currentTarget.open) setOpened(true)
+  }}>
+    <summary><strong>推荐书籍与仓库</strong><span>{running ? '正在检索…' : count ? `${count} 项候选 · 查看与选择` : failed ? '检索失败 · 重试或添加资料' : '暂无候选 · 添加资料'}</span></summary>
+    {opened && <PlanningResourcePanel {...props} />}
+  </details>
+}
+
+function PlanningResourcePanel({ projectId, topic, runs, pending, onRequest, onProjectChange }: ResourceToolProps) {
   const [sources, setSources] = useState<SavedSource[]>([])
   const [url, setUrl] = useState('')
   const [busy, setBusy] = useState(false)
@@ -50,13 +65,13 @@ export default function PlanningResourceWorkbench({ projectId, topic, runs, pend
     finally { setBusy(false) }
   }
   const request = (stage: 'sources' | 'roadmap' | 'schedule') => onRequest(planningResourcePrompt(topic, Boolean(projectId), stage))
-  return <section className="planning-resources" aria-label="学习资料工作台">
-    <header><div><small>{projectId ? '项目 Tutor · 围绕当前项目' : '普通对话 · 探索学习方向'}</small><h3>先选资料，再安排学习</h3></div><button type="button" disabled={pending || busy} onClick={() => request('sources')}>推荐书籍与仓库</button></header>
+  return <section className="planning-resources" aria-label="推荐资料工具结果">
+    <header><div><small>{projectId ? '项目 Tutor · 围绕当前项目' : '普通对话 · 探索学习方向'}</small><h3>选择本轮推荐资料</h3></div><button type="button" disabled={pending || busy} onClick={() => request('sources')}>重新推荐</button></header>
     <p>{projectId ? '选择后保存到本项目；Tutor 将据此设置关卡并安排长期学习。' : '选择后保存到你的资料库；先比较方向与学习负担，再形成长期计划。'}</p>
     <div className="planning-resource-add"><input aria-label="教材或仓库链接" value={url} onChange={e => setUrl(e.target.value)} placeholder="粘贴开放教材、文档或仓库链接" /><button type="button" disabled={busy || !url.trim()} onClick={() => void add(url.trim())}>选择此链接</button><button type="button" disabled={busy} onClick={() => fileInput.current?.click()}>上传资料</button><input ref={fileInput} type="file" hidden onChange={e => { const file = e.target.files?.[0]; if (file) void add(file) }} /></div>
     {busy && <p role="status">正在保存并处理资料…</p>}{error && <p role="alert">{error}</p>}
     <details open={!sources.length}><summary>候选资料 · {candidates.length}</summary>
-      {!candidates.length && <p>点击“推荐书籍与仓库”开始检索，也可以直接上传你的教材。检索失败时可以继续添加链接。</p>}
+      {!candidates.length && <p>点击“重新推荐”再次检索，也可以直接上传你的教材。检索失败时可以继续添加链接。</p>}
       <div className="planning-resource-candidates">{candidates.map(source => <article key={source.url}><a href={source.url} target="_blank" rel="noopener noreferrer">{source.title}</a><small>{source.quality === 'repository' ? '仓库' : source.role === 'textbook' ? '教材' : '网页资料'} · {source.readState === 'page_excerpt' ? '已读相关片段' : '待阅读核验'} · 许可需以来源为准</small><p>{source.reason || source.snippet.slice(0, 180)}</p><button type="button" disabled={busy || sources.some(s => s.url === source.url && s.status === 'processed')} onClick={() => void add(source.url)}>{sources.some(s => s.url === source.url && s.status === 'processed') ? '已接入' : projectId ? '选入本项目' : '选入资料库'}</button></article>)}</div>
     </details>
     <details open><summary>{projectId ? '本项目资料' : '我的资料库'} · {sources.length}</summary>{!loaded && !error && <p>正在读取资料…</p>}{sources.map(source => <div className="planning-resource-saved" key={source.id}><span>{source.name}</span><small>{source.status === 'processed' ? '已处理，可用于规划' : source.status === 'failed' ? '处理失败' : source.status === 'quarantined' ? '已隔离' : '尚未处理'}</small>{source.error && <small>{source.error}</small>}{!['processed', 'quarantined'].includes(source.status) && <button type="button" disabled={busy} onClick={() => void retry(source.id)}>重试处理</button>}</div>)}</details>

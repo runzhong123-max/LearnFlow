@@ -3,6 +3,7 @@ import { runtimeFetch } from './runtime-client.ts'
 import { existingQuoteSheet, type TeachingAffordances } from '../../packages/learning-client/src/teaching/affordances.ts'
 import '../../packages/learning-client/src/teaching/affordances.css'
 import PlanningResourceWorkbench from './PlanningResourceWorkbench'
+import { planningResourcePrompt, planningResourceRuns } from './planning-resources'
 import { UserAvatar, UserIdentity } from '../../packages/learning-client/src/identity/UserIdentity'
 import { conversationTitle, recentConversations } from './conversation-display.ts'
 import { readTabLayout, saveTabLayout, consumeLayoutReset, withoutTabLayout } from './workspace-layout.ts'
@@ -3640,6 +3641,18 @@ function App({ auth }: { auth: AuthGateSession }) {
                   )}
                   <MessageList
                     messages={messages}
+                    renderResourceTool={isDesktopRuntime() || activePluginIds.includes('learning_task_conversion') ? undefined : message => {
+                      const runs = planningResourceRuns(message.toolRuns || [], message.tutorMode || conversation.mode)
+                      return runs.length ? <PlanningResourceWorkbench
+                        key={`${conversation.id}:${message.id}:${conversation.projectId || 'library'}`}
+                        projectId={conversation.projectId}
+                        topic={formalProjectWorkspaces[conversation.projectId || 0]?.project.name || planProjection?.plan.objective || conversation.title}
+                        runs={runs}
+                        pending={Boolean(pendingMode)}
+                        onProjectChange={syncProjectWorkspace}
+                        onRequest={prompt => { void runTutorTurn(conversation.id, prompt) }}
+                      /> : null
+                    }}
                     learnerAvatar={auth.account.avatar}
                     learnerName={auth.account.display_name}
                     onPluginPrompt={prompt => { void runTutorTurn(conversation.id, prompt, { hideUserMessage: true }) }}
@@ -3689,15 +3702,6 @@ function App({ auth }: { auth: AuthGateSession }) {
             {hasWorkbench && paperMode === 'stack' && <span className="paper-desktop-hint">点击桌面空白，平铺全部纸张</span>}
           </div>
         </div>
-        {!isDesktopRuntime() && conversation.mode === 'learning_plan' && !activePluginIds.includes('learning_task_conversion') && <PlanningResourceWorkbench
-          key={`${conversation.id}:${conversation.projectId || 'library'}`}
-          projectId={conversation.projectId}
-          topic={formalProjectWorkspaces[conversation.projectId || 0]?.project.name || planProjection?.plan.objective || conversation.title}
-          runs={conversation.messages.flatMap(message => message.toolRuns || [])}
-          pending={Boolean(pendingMode)}
-          onProjectChange={syncProjectWorkspace}
-          onRequest={prompt => { void runTutorTurn(conversation.id, prompt) }}
-        />}
         <div className="composer-dock">
           <form className="composer" onSubmit={event => sendMessage(conversation.id, event)}>
             {planProjection && conversation.mode === 'learning_plan'
@@ -3940,6 +3944,12 @@ function App({ auth }: { auth: AuthGateSession }) {
                   </summary>
                   <div className="source-attachment-popover">
                     <header><strong>{conversation.projectId ? '项目来源' : '本对话资料'}</strong><span>资料只是上下文，不代表已掌握。</span></header>
+                    {!isDesktopRuntime() && conversation.mode === 'learning_plan' && !activePluginIds.includes('learning_task_conversion') && <button type="button" disabled={Boolean(pendingMode)} onClick={event => {
+                      event.currentTarget.closest('details')?.removeAttribute('open')
+                      const topic = drafts[draftKey]?.trim() || formalProjectWorkspaces[conversation.projectId || 0]?.project.name || planProjection?.plan.objective || conversation.title
+                      void runTutorTurn(conversation.id, planningResourcePrompt(topic, Boolean(conversation.projectId), 'sources'))
+                    }}>推荐书籍与仓库</button>}
+
                     <label className="source-file-picker">
                       <input
                         type="file"
@@ -4549,7 +4559,8 @@ function ToolDecisionBridge({
   )
 }
 
-function MessageList({ teachingBusy, onTeachingQuestion, messages, learnerAvatar, learnerName, conversationId, onPluginPrompt, onPluginReference, onOpenLearningTask, onOpenProject, onOpenPluginResult, onQuoteFollowUp, onOpenLearningFile, onAttachLearningFile, onAcceptPathProposal, onAcceptPathPlan, onAcceptProjectRoadmap, onAcceptProjectLearningFile, activePathPlanId, pathPlanBusyId, pathPlanWriteErrors, projectBusyKey, projectError, learningFileProposalErrors }: {
+function MessageList({ renderResourceTool, teachingBusy, onTeachingQuestion, messages, learnerAvatar, learnerName, conversationId, onPluginPrompt, onPluginReference, onOpenLearningTask, onOpenProject, onOpenPluginResult, onQuoteFollowUp, onOpenLearningFile, onAttachLearningFile, onAcceptPathProposal, onAcceptPathPlan, onAcceptProjectRoadmap, onAcceptProjectLearningFile, activePathPlanId, pathPlanBusyId, pathPlanWriteErrors, projectBusyKey, projectError, learningFileProposalErrors }: {
+  renderResourceTool?: (message: Message) => ReactNode
   teachingBusy: boolean
   onTeachingQuestion: (question: string) => void
   messages: Message[]
@@ -4700,6 +4711,7 @@ function MessageList({ teachingBusy, onTeachingQuestion, messages, learnerAvatar
                   </Fragment>
                 )
               })}
+              {!message.pluginResultProjection && renderResourceTool?.(message)}
               {!message.pluginResultProjection && message.agentTrace && <AgentTraceSummary trace={message.agentTrace} />}
               {message.streaming && <div className="streaming-phase"><i />{message.streamingPhase || '正在形成回答'}</div>}
               {message.pluginResultProjection ? null : message.learningActionLabel ? (
