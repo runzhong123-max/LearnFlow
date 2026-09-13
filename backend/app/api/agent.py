@@ -1,3 +1,4 @@
+from learnflow_core.teaching_affordances import TeachingAffordancesRequest, generate_teaching_affordances
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -851,6 +852,36 @@ async def tutor_turn(
         raise HTTPException(400, str(exc)) from exc
     except RuntimeError as exc:
         raise _skill_run_error(exc) from exc
+
+
+@router.post("/sessions/{session_id}/teaching-affordances")
+async def teaching_response_affordances(
+    session_id: int,
+    data: TeachingAffordancesRequest,
+    db: AsyncSession = Depends(get_db),
+    current: CurrentLearner = Depends(get_current_learner),
+):
+    """Optional presentation only, scoped to the authenticated Tutor session."""
+    await _owned_session(db, current.learner.id, session_id)
+    # Formal Tutor already saved its reply; browser replies are saved with this
+    # metadata by the existing vNext sync after the enhancement completes.
+    existing = (await db.execute(select(AgentMessage).where(
+        AgentMessage.session_id == session_id,
+        AgentMessage.id == data.message_id,
+        AgentMessage.role == "assistant",
+        AgentMessage.content == data.content,
+    ).order_by(AgentMessage.id.desc()).limit(1))).scalar_one_or_none()
+    if data.message_id is not None and existing is None:
+        raise HTTPException(404, "Teaching source message not found")
+    cached = (existing.meta_data or {}).get("teachingAffordances") if existing else None
+    if isinstance(cached, dict) and cached.get("sourceText") == data.content:
+        return cached
+    result = await generate_teaching_affordances(data, current.account)
+    if existing is not None:
+        existing.meta_data = {**(existing.meta_data or {}), "teachingAffordances": result,
+            "vnext": {**dict((existing.meta_data or {}).get("vnext") or {}), "tutorMode": data.mode}}
+        await db.commit()
+    return result
 
 
 @router.post("/sessions/{session_id}/visual-plans")

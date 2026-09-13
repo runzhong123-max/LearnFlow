@@ -164,6 +164,7 @@ export type AgentTurnRequest = {
 }
 
 export type AgentTurnResponse = {
+  formalMessageId?: number
   reply: string
   /** Opaque provider payload. Persist and return it to thinking models, but never render it. */
   reasoningContent?: string

@@ -44,12 +44,19 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-13.3"
+REGISTRY_VERSION = "2026-09-13.4"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Source-data contracts, not Agent-callable tools or learner-state writers.
 # The referenced TypeScript module owns field semantics; this registry owns discovery.
 DATA_CONTRACTS = {
+    "teaching_affordances_v1": {
+        "schema_version": "learnflow-teaching-affordances/v1", "owner": "tutor_agent", "origin": "builtin",
+        "mode": "response_presentation", "lifecycle": "implemented",
+        "authority_path": "packages/learning-core/src/learnflow_core/teaching_affordances.py",
+        "binding_ids": ["py:tutor.affordances", "api:tutor.affordances", "frontend:tutor.affordances"], "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "optional scoped presentation API and message metadata; three follow-ups and zero to three exact-text anchors; reuses open_selection_followup; no scoring, event or state changes",
+    },
     "role_package_import_v3_1": {
         "schema_version": "role-task-definition/v1", "owner": "tutor_agent", "origin": "builtin",
         "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "docs/implementation/ROLE_RESEARCH_PROTOCOL.md",
@@ -1394,6 +1401,8 @@ _REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 
 
 _PYTHON_BINDING_TARGETS = {
+    "py:tutor.affordances": ("learnflow_core.teaching_affordances", "generate_teaching_affordances"),
+    "api:tutor.affordances": ("app.api.agent", "teaching_response_affordances"),
     "py:auth.api_key_identity": ("app.services.auth", "current_learner_from_request"),
     "py:work_task_conversion.context": ("learnflow_core.agent_observations", "read_work_task_conversion_context"),
     "py:work_task_conversion.projection": ("learnflow_core.work_task_conversion_context", "conversion_context_projection"),
@@ -1622,6 +1631,7 @@ _API_BINDING_TARGETS = {
 
 
 _FRONTEND_HANDLER_TARGETS = {
+    "frontend:tutor.affordances": ("frontend/src/teaching-affordances.ts", "teachingAffordances", ""),
     "frontend:role_package.import_file": ("frontend/plugins/role_capability_graph/package-file.ts", "inspectRolePackageFile", ""),
     "frontend:role_research.run": ("apps/role-atlas/lib/iteration/research-agent.ts", "buildResearchAgent", ""),
     "frontend:role_research.native": ("apps/role-atlas/lib/agent/native-model.ts", "createChatInvoker", ""),

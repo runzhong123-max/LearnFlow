@@ -45,10 +45,17 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-13.3-desktop"
+REGISTRY_VERSION = "2026-09-13.4-desktop"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 DATA_CONTRACTS = {
+    "teaching_affordances_v1": {
+        "schema_version": "learnflow-teaching-affordances/v1", "owner": "tutor_agent", "origin": "builtin",
+        "mode": "response_presentation", "lifecycle": "implemented",
+        "authority_path": "packages/learning-core/src/learnflow_core/teaching_affordances.py",
+        "binding_ids": ["py:tutor.affordances", "api:tutor.affordances", "frontend:tutor.affordances"], "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "optional scoped presentation API and message metadata; three follow-ups and zero to three exact-text anchors; reuses open_selection_followup; no scoring, event or state changes",
+    },
     "role_package_import_v3_1": {
         "schema_version": "role-task-definition/v1", "owner": "tutor_agent", "origin": "builtin",
         "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "../../docs/implementation/ROLE_RESEARCH_PROTOCOL.md",
@@ -1324,6 +1331,8 @@ _REPOSITORY_ROOT = Path(sys._MEIPASS) if getattr(sys, "frozen", False) else Path
 
 
 _PYTHON_BINDING_TARGETS = {
+    "py:tutor.affordances": ("learnflow_core.teaching_affordances", "generate_teaching_affordances"),
+    "api:tutor.affordances": ("app.api.agent", "teaching_response_affordances"),
     "py:desktop.conversion_import": ("app.services.cloud_conversion_import", "import_handoff"),
     "py:work_task_conversion.context": ("learnflow_core.agent_observations", "read_work_task_conversion_context"),
     "py:work_task_conversion.projection": ("learnflow_core.work_task_conversion_context", "conversion_context_projection"),
@@ -1551,6 +1560,7 @@ _API_BINDING_TARGETS = {
 
 
 _FRONTEND_HANDLER_TARGETS = {
+    "frontend:tutor.affordances": ("frontend/src/teaching-affordances.ts", "teachingAffordances", ""),
     "frontend:role_package.import_file": ("frontend/plugins/role_capability_graph/package-file.ts", "inspectRolePackageFile", ""),
     "native:desktop.conversion_handoff": ("desktop/src-tauri/src/conversion_handoff.rs", "parse_conversion_ticket", ""),
     "frontend:platform.open": ("frontend/src/runtime-client.ts", "openPlatformWorkspace", ""),

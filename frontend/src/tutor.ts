@@ -500,6 +500,7 @@ export async function requestTutorReply(options: {
       const at = Date.now()
       return {
         reply: payload.message.trim(),
+        formalMessageId: payload.message_id,
         toolRuns: [],
         trace: {
           version: 'vnext-agent-trace.v1', turnId: `desktop-${at}`,

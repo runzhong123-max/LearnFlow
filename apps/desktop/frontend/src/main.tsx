@@ -1,3 +1,6 @@
+import { teachingAffordances } from './teaching-affordances.ts'
+import { existingQuoteSheet, type TeachingAffordances } from '../../../../packages/learning-client/src/teaching/affordances.ts'
+import '../../../../packages/learning-client/src/teaching/affordances.css'
 import { conversionMessagePresentation } from '../../../../packages/learning-client/src/work-task-conversion/presentation.ts'
 import { UserAvatar, UserIdentity } from '../../../../packages/learning-client/src/identity/UserIdentity'
 import { taskLearningFiles, fileKindForStage, fileProgressMessage } from './learning-file-flow'
@@ -184,6 +187,7 @@ import {
 import './styles.css'
 
 type Message = {
+  teachingAffordances?: TeachingAffordances
   displayContent?: string
   id: string
   role: 'assistant' | 'user' | 'system'
@@ -392,6 +396,7 @@ function messageFromFormal(message: FormalTutorMessage): Message {
     id: String(message.meta_data?.client_message_id || `formal-message-${message.id}`),
     role: message.role,
     content: message.content,
+    teachingAffordances: teachingAffordances(vnext.teachingAffordances || message.meta_data?.teachingAffordances, message.content),
     displayContent: conversionMessagePresentation(message.meta_data?.work_task_conversion) || (typeof vnext.displayContent === 'string' ? vnext.displayContent : undefined),
     createdAt: message.created_at ? Date.parse(message.created_at) || Date.now() : Date.now(),
     tutorMode,
@@ -421,6 +426,7 @@ function messageFromFormal(message: FormalTutorMessage): Message {
 
 function syncMessageMetaData(message: Message): Record<string, unknown> {
   return {
+    teachingAffordances: message.teachingAffordances,
     displayContent: message.displayContent,
     tutorMode: message.tutorMode,
     toolRuns: message.toolRuns,
@@ -1777,8 +1783,12 @@ function App({ auth }: { auth: AuthGateSession }) {
   }
 
   const createFollowUpSheet = (conversationId: string, sourceMessageId: string, quote: string) => {
-    const cleaned = quote.replace(/\s+/g, ' ').trim().slice(0, 1200)
+    const cleaned = quote.trim().slice(0, 1200)
     if (cleaned.length < 2) return
+    const conversation = workspace.conversations.find(item => item.id === conversationId)
+    if (!conversation) return
+    const existing = existingQuoteSheet(conversation.sheets, sourceMessageId, conversation.activeSheetId, cleaned)
+    if (existing) { setActiveSheet(conversationId, existing.id); return }
     setPaperDeskView(null)
     const sheet: FollowUpSheet = {
       id: uid('sheet'),
@@ -2216,7 +2226,7 @@ function App({ auth }: { auth: AuthGateSession }) {
       }
       if (learningProjection) {
         const step = currentLearningSkillStep(learningProjection)
-        const supportRequested = isSupportRequest(content)
+        const supportRequested = isSupportRequest(content) || content.startsWith('请直接解释：')
         const additions: Array<Omit<LearningEvent, 'id' | 'sequence' | 'taskId' | 'at'>> = [{
           type: 'vnext_learning_task_learner_replied',
           detail: `学生回应：${content.slice(0, 80)}`,
@@ -2653,8 +2663,22 @@ function App({ auth }: { auth: AuthGateSession }) {
         referencedPluginObjects: options.referencedPluginObjects,
         onEvent: event => updateLiveTurn(conversationId, event),
       })
+      let affordances: TeachingAffordances | undefined
+      if ((mode === 'simple_explain' || mode === 'guided_learning') && formalSessionId && reply.trace?.stopReason === 'final_answer' && reply.reply.length <= 60000) {
+        setLiveTurns(previous => previous[conversationId] ? {
+          ...previous, [conversationId]: { ...previous[conversationId], content: reply.reply, phase: '正在整理追问' },
+        } : previous)
+        try {
+          const response = await runtimeFetch(`/api/agent/sessions/${formalSessionId}/teaching-affordances`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message_id: reply.formalMessageId, content: reply.reply, question: (directUserText || content).slice(0, 12000), mode }),
+            signal: AbortSignal.timeout(10000),
+          })
+          if (response.ok) affordances = teachingAffordances(await response.json(), reply.reply)
+        } catch { /* Optional enhancement never replaces or fails the answer. */ }
+      }
       const finishedMessage = finishTurn(conversationId, sheetId, mode, {
-        role: 'assistant', content: reply.reply, reasoningContent: reply.reasoningContent, toolRuns: reply.toolRuns, agentTrace: reply.trace,
+        role: 'assistant', content: reply.reply, teachingAffordances: affordances, reasoningContent: reply.reasoningContent, toolRuns: reply.toolRuns, agentTrace: reply.trace,
         persistedByTutor: isLocalLearningRuntime() && !visualPluginTurn,
         learningSkillId: learningProjection?.skillId,
         learningSubstateId: turnStep?.substateId,
@@ -3799,6 +3823,8 @@ function App({ auth }: { auth: AuthGateSession }) {
                     }}
                     onOpenPluginResult={(run, sourceMessageId) => openPluginResultPaper(conversation.id, sourceMessageId, run)}
                     onQuoteFollowUp={(messageId, quote) => createFollowUpSheet(conversation.id, messageId, quote)}
+                    teachingBusy={Boolean(pendingMode)}
+                    onTeachingQuestion={question => { void runTutorTurn(conversation.id, `请直接解释：${question}`, { directUserText: `请直接解释：${question}` }) }}
                     onAcceptPathProposal={acceptPersonalPathNode}
                     onAcceptPathPlan={acceptLearningPathPlan}
                     activePathPlanId={projectLearnerPath(workspace.learningPath).activePlan?.id}
@@ -4710,7 +4736,9 @@ function ToolDecisionBridge({
   )
 }
 
-function MessageList({ messages, learnerAvatar, learnerName, conversationId, onPluginPrompt, onPluginReference, onOpenLearningTask, onOpenProject, onConfirmProject, onOpenPluginResult, onQuoteFollowUp, onOpenLearningFile, onAttachLearningFile, onAcceptPathProposal, onAcceptPathPlan, onAcceptProjectRoadmap, onAcceptProjectLearningFile, activePathPlanId, pathPlanBusyId, pathPlanWriteErrors, projectBusyKey, projectError, learningFileProposalErrors }: {
+function MessageList({ teachingBusy, onTeachingQuestion, messages, learnerAvatar, learnerName, conversationId, onPluginPrompt, onPluginReference, onOpenLearningTask, onOpenProject, onConfirmProject, onOpenPluginResult, onQuoteFollowUp, onOpenLearningFile, onAttachLearningFile, onAcceptPathProposal, onAcceptPathPlan, onAcceptProjectRoadmap, onAcceptProjectLearningFile, activePathPlanId, pathPlanBusyId, pathPlanWriteErrors, projectBusyKey, projectError, learningFileProposalErrors }: {
+  teachingBusy: boolean
+  onTeachingQuestion: (question: string) => void
   messages: Message[]
   learnerAvatar?: string | null
   learnerName: string
@@ -4866,7 +4894,12 @@ function MessageList({ messages, learnerAvatar, learnerName, conversationId, onP
                 <div className="learning-action-chip"><span>学习任务</span>{message.learningActionLabel}</div>
               ) : (
                 <Suspense fallback={<div className="markdown-loading">正在排版…</div>}>
-                  <MarkdownContent content={humanizeLearningFileReferences(
+                  <MarkdownContent
+                    affordances={!message.streaming && message.role === 'assistant' && (message.tutorMode === 'simple_explain' || message.tutorMode === 'guided_learning') ? teachingAffordances(message.teachingAffordances, message.content) : undefined}
+                    teachingBusy={teachingBusy}
+                    onTeachingQuestion={onTeachingQuestion}
+                    onTeachingQuote={quote => onQuoteFollowUp(message.id, quote)}
+                    content={humanizeLearningFileReferences(
                     humanizeTutorMessageContent(message),
                     (message.toolRuns || []).flatMap(run => run.learningFile
                       && (run.learningFile.kind === 'lecture' || run.learningFile.kind === 'practice')

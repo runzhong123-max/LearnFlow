@@ -3543,6 +3543,7 @@ async def process_turn(
         await learning_task_view(db, item) for item in session_learning_tasks
     ]
     response = {
+        "message_id": assistant.id,
         "session_id": session.id,
         "session_title": session.title,
         "chat_mode": current_chat_mode,

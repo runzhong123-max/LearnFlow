@@ -950,7 +950,7 @@ export async function requestFormalTutorTurn(sessionId: number, input: {
   selected_skill_id?: string
   context?: Record<string, unknown>
 }, signal?: AbortSignal) {
-  return jsonRequest<{ message?: unknown }>(`/api/agent/sessions/${sessionId}/turns`, {
+  return jsonRequest<{ message?: unknown; message_id?: number }>(`/api/agent/sessions/${sessionId}/turns`, {
     method: 'POST', body: JSON.stringify(input), signal,
   })
 }

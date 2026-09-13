@@ -22,9 +22,10 @@
     "test:plugins": "node --experimental-strip-types --test server/plugin-api.test.ts server/role-capability-plugin.test.ts server/role-package-release-install.test.ts server/role-package-install-root.test.ts server/role-package-resolution-failure.test.ts server/role-package-file-import.test.ts server/role-package-hub-import.test.ts server/tool-capability-catalog.test.ts server/learning-task-conversion-plugin.test.ts server/learning-task-conversion-intake.test.ts",
     "role:import-file": "node --experimental-strip-types scripts/import-role-package-file.mjs",
     "role:import-hub": "node --experimental-strip-types scripts/import-role-package-hub.mjs",
-    "test": "npm run test:search && npm run test:learning && npm run test:planning && npm run test:profile && npm run test:path && npm run test:formal && npm run test:auth && npm run test:plugins && npm run test:conversion",
+    "test": "npm run test:teaching && npm run test:search && npm run test:learning && npm run test:planning && npm run test:profile && npm run test:path && npm run test:formal && npm run test:auth && npm run test:plugins && npm run test:conversion",
     "test:visuals": "node --experimental-strip-types --test server/visual-teaching-skill.test.ts server/visualize-runtime.test.ts",
-    "test:conversion": "node --experimental-strip-types --test ../../../packages/learning-client/src/work-task-conversion/*.test.ts"
+    "test:conversion": "node --experimental-strip-types --test ../../../packages/learning-client/src/work-task-conversion/*.test.ts",
+    "test:teaching": "node --experimental-strip-types --test ../../../packages/learning-client/src/teaching/affordances.test.ts server/paper-workbench.test.ts"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.8.0",
