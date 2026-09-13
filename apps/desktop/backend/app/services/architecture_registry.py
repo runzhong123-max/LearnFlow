@@ -45,7 +45,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-13.4-desktop"
+REGISTRY_VERSION = "2026-09-13.5-desktop"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 DATA_CONTRACTS = {
@@ -55,6 +55,14 @@ DATA_CONTRACTS = {
         "authority_path": "packages/learning-core/src/learnflow_core/teaching_affordances.py",
         "binding_ids": ["py:tutor.affordances", "api:tutor.affordances", "frontend:tutor.affordances"], "kernel_reads": [], "kernel_write_path": "none",
         "compatibility": "optional scoped presentation API and message metadata; three follow-ups and zero to three exact-text anchors; reuses open_selection_followup; no scoring, event or state changes",
+    },
+    "memory_evidence_v1": {
+        "schema_version": "learnflow.memory-evidence.v1", "owner": "tutor_agent", "origin": "builtin",
+        "mode": "scoped_read_only_projection", "lifecycle": "implemented",
+        "authority_path": "docs/implementation/MEMORY_EVIDENCE_WORKBENCH.md",
+        "binding_ids": ["py:memory.evidence", "api:memory.evidence_list", "api:memory.evidence", "frontend:memory.evidence"],
+        "kernel_reads": list(KERNEL_NAMES), "kernel_write_path": "none",
+        "compatibility": "additive source cards and bounded recorded backlinks; existing correction capability and event authority retained; no raw answers or new database",
     },
     "role_package_import_v3_1": {
         "schema_version": "role-task-definition/v1", "owner": "tutor_agent", "origin": "builtin",
@@ -1305,7 +1313,7 @@ EVENTS = {
         _event("remediation_retry_evaluated", "retry_attempt", ("knowledge", "practice"), "graded_retry", origin="fused"),
         _event("remediation_variant_evaluated", "evaluate_transfer_variant", ("knowledge", "practice"), "transfer_evidence", origin="fused"),
         _event("remediation_completed", "evaluate_transfer_variant", ("knowledge", "human", "practice"), "evidence_writeback", origin="fused"),
-        _event("review_attempt_evaluated", "evaluate_review_attempt", ("knowledge", "practice"), "spaced_retrieval"),
+        _event("review_attempt_evaluated", "evaluate_review_attempt", ("knowledge", "practice"), "spaced_retrieval_with_current_qualification_invalidation"),
         _event("review_reflection_recorded", "record_review_reflection", ("knowledge",), "learner_self_report"),
         _event("review_item_skipped", "manage_review_item", (), "operational"),
         _event("review_item_deferred", "manage_review_item", (), "operational"),
@@ -1333,6 +1341,7 @@ _REPOSITORY_ROOT = Path(sys._MEIPASS) if getattr(sys, "frozen", False) else Path
 _PYTHON_BINDING_TARGETS = {
     "py:tutor.affordances": ("learnflow_core.teaching_affordances", "generate_teaching_affordances"),
     "api:tutor.affordances": ("app.api.agent", "teaching_response_affordances"),
+    "py:memory.evidence": ("learnflow_core.memory_evidence", "evidence_card"),
     "py:desktop.conversion_import": ("app.services.cloud_conversion_import", "import_handoff"),
     "py:work_task_conversion.context": ("learnflow_core.agent_observations", "read_work_task_conversion_context"),
     "py:work_task_conversion.projection": ("learnflow_core.work_task_conversion_context", "conversion_context_projection"),
@@ -1445,6 +1454,8 @@ _PYTHON_MEMBER_BINDING_TARGETS = {
 
 
 _API_BINDING_TARGETS = {
+    "api:memory.evidence_list": ("app.api.memory", "/memory/evidence", "GET", "list_memory_evidence"),
+    "api:memory.evidence": ("app.api.memory", "/memory/evidence/{node_id}", "GET", "get_memory_evidence"),
     "api:work_task_conversion.create": ("app.api.work_task_conversions", "/work-task-conversions", "POST", "create_conversion"),
     "api:work_task_conversion.list": ("app.api.work_task_conversions", "/work-task-conversions", "GET", "list_conversions"),
     "api:work_task_conversion.read": ("app.api.work_task_conversions", "/work-task-conversions/{conversion_id}", "GET", "get_conversion"),
@@ -1608,6 +1619,7 @@ _FRONTEND_HANDLER_TARGETS = {
 
 
 _FRONTEND_COMPONENT_TARGETS = {
+    "frontend:memory.evidence": ("frontend/src/MemoryEvidencePanel.tsx", "MemoryEvidencePanel", "/learner-profile"),
     "workbench:work_task_conversion": ("frontend/src/DesktopConversionImport.tsx", "DesktopConversionImport", ""),
     "frontend:learning.verification": ("frontend/src/LearningVerificationPanel.tsx", "LearningVerificationPanel", "/chat/"),
     "frontend:learning.remediation": ("frontend/src/RemediationPanel.tsx", "RemediationPanel", "/files/practice/"),
@@ -1710,7 +1722,7 @@ _TOOL_BINDING_IDS = {
         "api:learning_task_candidates.handoff", "api:learning_task_candidates.confirm",
         "frontend:plugin.learning_task_conversion",
     ),
-    "vnext_five_kernel_profile_reader": ("py:five_kernel.context",),
+    "vnext_five_kernel_profile_reader": ("py:memory.evidence", "api:memory.evidence_list", "api:memory.evidence", "frontend:memory.evidence", "py:five_kernel.context",),
     "vnext_learning_workspace_reader": ("api:learner_state.workspace",),
     "domain_knowledge_reader": ("api:knowledge_library.context",),
     "graph_hub_reader": ("frontend:plugin.graph_hub",),
@@ -2161,7 +2173,12 @@ def validate_registry() -> list[str]:
     for contract_id, contract in DATA_CONTRACTS.items():
         if contract["owner"] not in AGENTS or contract["lifecycle"] not in LIFECYCLE_STATES:
             errors.append(f"invalid data contract owner/lifecycle: {contract_id}")
-        if contract["kernel_reads"] or contract["kernel_write_path"] != "none":
+        if contract.get("mode") == "scoped_read_only_projection":
+            if (contract["owner"] != "tutor_agent" or not contract["kernel_reads"]
+                    or not set(contract["kernel_reads"]).issubset(KERNEL_NAMES)
+                    or contract["kernel_write_path"] != "none"):
+                errors.append(f"invalid scoped read-only projection: {contract_id}")
+        elif contract["kernel_reads"] or contract["kernel_write_path"] != "none":
             errors.append(f"source data contract cannot read/write learner state: {contract_id}")
         if not contract["binding_ids"] or any(key not in IMPLEMENTATION_BINDINGS for key in contract["binding_ids"]):
             errors.append(f"data contract lacks a valid implementation binding: {contract_id}")

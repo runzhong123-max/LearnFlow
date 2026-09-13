@@ -2,7 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 
-SHARED_CORE_VERSION = "0.2.6"
+SHARED_CORE_VERSION = "0.2.7"
 CONCEPT_EVIDENCE_POLICY_VERSION = "concept-evidence.v2"
 PLANNING_GUIDANCE_POLICY_VERSION = "learning-plan-guidance.v2"
 MEMORY_RETRIEVAL_VERSION = "relevance-budget.v4"
@@ -20,6 +20,14 @@ KERNEL_NAMES = ("structure", "knowledge", "human", "value", "practice")
 
 # These are learner policies, not source-data import contracts or new tools.
 EDUCATION_MEMORY_POLICIES = {
+    "review_qualification": {
+        "version": "review-qualification.v2", "owner": "practice_agent",
+        "event": "review_attempt_evaluated", "stable_rule": "review-policy-v1",
+        "failure_invalidates_current_qualification": True,
+        "historical_evidence_preserved": True,
+        "fact_projection": "changed_review_item_only",
+        "write_path": "EvidenceEvent -> reducer -> KernelMutation -> KernelState -> MemoryFact",
+    },
     "ordinary_concept": {
         "version": CONCEPT_EVIDENCE_POLICY_VERSION, "owner": "practice_agent",
         "event": "concept_attempt_evaluated", "ordinary_success_is_stable": False,

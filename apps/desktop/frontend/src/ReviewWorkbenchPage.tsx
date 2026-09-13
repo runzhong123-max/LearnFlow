@@ -1,3 +1,4 @@
+import { MemoryEvidencePanel } from './MemoryEvidencePanel'
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import type { FormalRuntimeConnection } from './formal-runtime'
 import {
@@ -337,7 +338,10 @@ export default function ReviewWorkbenchPage({ connection, onOpenTasks }: { conne
         </main>
         {selected ? <aside className="review-evidence-column">
             <>
+              <div className="lf-evidence-group">
               <EvidencePanel item={selected} />
+              <MemoryEvidencePanel key={`review-evidence:${connection.learner?.id}:${selected.id}`} scopeKey={`${connection.learner?.id}:${selected.id}:${selected.version}`} reviewScheduleId={selected.id} label="查看复习依据与历史变化" />
+              </div>
               <section className="review-memory-panel">
                 <header><div><span className="review-kicker">KNOWLEDGE MEMORY</span><h2>这次学习留下了什么</h2></div><small>{selected.memory_notes.length} 条</small></header>
                 <div className="review-memory-list">{selected.memory_notes.map(note => <MemoryNoteCard key={note.id} note={note} />)}</div>

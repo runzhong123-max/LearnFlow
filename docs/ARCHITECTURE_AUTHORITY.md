@@ -729,3 +729,8 @@ Role Atlas 新研究运行采用 `role-research/v2`，岗位任务详情采用 `
 ## 2026-09-13 记忆检索 v4 可选升级
 
 Contract impact：共享核心 0.2.6 / relevance-budget.v4 新增有界语料候选、本地语义融合、经过原证据链核验的源文本投影与紧凑学习经历开关；默认保留 legacy。新字段纳入预算，无新写权限、五核语义或数据库迁移。两宿主统一登记与回归。实现、限制与复现见 [MEMORY_RETRIEVAL_V4](implementation/MEMORY_RETRIEVAL_V4.md)。
+
+
+### 2026-09-13 学习依据卡片与当前复习资格
+
+共享核心 0.2.7 实现 `learnflow.memory-evidence.v1`：画像与复习工作台消费同一有 scope 的只读来源卡片与已记录反向关联，不创建新的用户画像权威。`review-qualification.v2` 将历史成功与当前稳定资格分开：复习失败经原事件链撤销当前 long-term stable 并使依赖旧事实的投影失效，历史事件和正文保留；达到原间隔门后可以恢复。旧数据通过只读保护阻止失效 stable 进入当前上下文，不迁移数据库。字段兼容性、记录粒度、来源覆盖限制与验收见 [实现说明](implementation/MEMORY_EVIDENCE_WORKBENCH.md)。

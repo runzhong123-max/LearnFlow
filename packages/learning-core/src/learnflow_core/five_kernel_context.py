@@ -820,6 +820,9 @@ async def build_five_kernel_context(
         MemoryArchive.learner_id == learner_id, MemoryArchive.status == "archived",
     ))).scalars().all())
     archived_ids = await _archived_projection_ids(db, learner_id, archives)
+    from .review_qualification import read_guard
+    _, invalid_review_ids = await read_guard(db, learner_id)
+    archived_ids |= invalid_review_ids
     guidance_states = (await db.execute(select(KernelState).where(
         KernelState.learner_id == learner_id,
     ))).scalars().all()

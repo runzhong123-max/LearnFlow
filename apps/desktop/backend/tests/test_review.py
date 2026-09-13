@@ -600,7 +600,7 @@ def test_scheduler_grade_transitions_are_explainable():
     assert again[3] == "remediation"
 
 
-def test_failure_keeps_historical_mastery_but_resets_current_stability_window():
+def test_failure_preserves_history_and_invalidates_current_mastery():
     learner_id, project_id, checkpoint_id, question_id = asyncio.run(_seed_question())
 
     async def scenario():
@@ -670,7 +670,12 @@ def test_failure_keeps_historical_mastery_but_resets_current_stability_window():
     item_key = f"concept:{question_id}"
     assert interval_level == 1
     assert short_term["retention_status"][item_key]["status"] == "retrieved"
-    assert long_term["mastery"][f"review:{item_key}"]["level"] == "stable"
+    qualification = long_term["mastery"][f"review:{item_key}"]
+    assert qualification["level"] == "needs_review"
+    assert qualification["eligibility"] == "invalidated"
+    assert qualification["evidence_ids"] == []
+    assert len(qualification["historical_evidence_ids"]) == 2
+    assert qualification["invalidated_by_event_id"] is not None
 
 
 def test_seeded_demo_opens_review_with_due_variant_and_remediation():

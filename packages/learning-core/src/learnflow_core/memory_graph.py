@@ -207,6 +207,21 @@ def _fact_pairs(mutation: KernelMutation) -> list[tuple[str, str, Any]]:
                 mutation.kernel_name == "human" and scope == "long_term" and key == "learning_preferences"
             ):
                 continue
+            # v2 review qualification facts are per changed item. KernelState
+            # keeps its compatible map, but one item's event must not republish
+            # other projects' historical mastery as newly supported evidence.
+            if scope == "long_term" and key in {"mastery", "proof_chain"} and isinstance(value, dict):
+                changed = {k: v for k, v in value.items() if isinstance(v, dict)
+                           and v.get("policy_version") == "review-qualification.v2"
+                           and v.get("updated_by_event_id") == mutation.event_id}
+                if changed:
+                    value = changed
+            if scope == "short_term" and key in {"retention_status", "review_history"} and isinstance(value, dict):
+                changed = {k: v for k, v in value.items() if isinstance(v, dict)
+                           and v.get("projection_version") == "review-qualification.v2"
+                           and v.get("evidence_id") == mutation.event_id}
+                if changed:
+                    value = changed
             marker = (key, json.dumps(value, ensure_ascii=False, sort_keys=True, default=str))
             if marker in seen:
                 continue
@@ -309,6 +324,33 @@ async def create_facts_for_mutation(
         ))).scalars().all())
         await invalidate_fact_projections(db, event.learner_id, aggregates, status="superseded")
     created: list[MemoryNode] = []
+    superseded_review_ids: dict[str, list[int]] = {}
+    if event.event_type == "review_attempt_evaluated":
+        # Supersede current qualification snapshots, never the underlying
+        # successful Attempt/Event. Legacy aggregate snapshots are invalidated
+        # conservatively as a whole; their immutable values remain inspectable.
+        for scope, key, value in _fact_pairs(mutation):
+            if key not in {"mastery", "proof_chain", "retention_status", "review_history"} or not isinstance(value, dict):
+                continue
+            changed_keys = {k for k, v in value.items() if isinstance(v, dict) and (
+                v.get("updated_by_event_id") == event.id and v.get("policy_version") == "review-qualification.v2"
+                or v.get("evidence_id") == event.id and v.get("projection_version") == "review-qualification.v2"
+            )}
+            if not changed_keys:
+                continue
+            rows = (await db.execute(select(MemoryNode, MemoryFact).join(MemoryFact,
+                MemoryFact.node_id == MemoryNode.id).where(
+                    MemoryNode.learner_id == event.learner_id,
+                    MemoryNode.kernel_name == mutation.kernel_name,
+                    MemoryNode.status.in_(("active", "legacy")),
+                    MemoryFact.predicate == f"{scope}.{key}",
+                    MemoryFact.source_event_id != event.id,
+                ))).all()
+            ids = [node.id for node, fact in rows if isinstance(fact.object_value, dict)
+                   and changed_keys.intersection(fact.object_value)]
+            superseded_review_ids[key] = ids
+        await invalidate_fact_projections(db, event.learner_id,
+            list({identifier for ids in superseded_review_ids.values() for identifier in ids}), status="superseded")
     occurred_at = event.occurred_at or event.created_at or datetime.utcnow()
     for ordinal, (scope, key, value) in enumerate(_fact_pairs(mutation)):
         subject = _subject_key(event, mutation.kernel_name, key, value)
@@ -435,6 +477,11 @@ async def create_facts_for_mutation(
                 target_node_id=node.id, relation_type="SAME_SUBJECT", event_id=event.id,
             )
         created.append(node)
+        for prior_id in superseded_review_ids.get(key, ()):
+            await _add_edge(db, learner_id=event.learner_id, source_node_id=node.id,
+                            target_node_id=prior_id, relation_type="SUPERSEDES", event_id=event.id,
+                            payload={"reason": "review_qualification_updated",
+                                     "policy_version": "review-qualification.v2"})
 
     if queue_synthesis:
         for subject in sorted({node.subject_key for node in created}):

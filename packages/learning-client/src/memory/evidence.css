@@ -1,0 +1,15 @@
+.lf-evidence-inspector{margin:16px 0;border-top:1px solid #deded7;color:inherit;font-size:14px}
+.lf-evidence-toggle{display:flex;justify-content:space-between;align-items:center;width:100%;border:0;background:none;color:inherit;padding:14px 0;text-align:left;font:inherit;font-weight:600;cursor:pointer}
+.lf-evidence-content{padding:0 0 12px}.lf-evidence-intro,.lf-evidence-boundary{font-size:12px;line-height:1.65;color:#686b65}
+.lf-evidence-card{padding:14px 0;border-bottom:1px solid #e4e6df;min-width:0}.lf-evidence-card header{display:flex;justify-content:space-between;gap:12px;align-items:start;flex-wrap:wrap}
+.lf-evidence-card time,.lf-evidence-card small{font-size:11px;color:#747870}.lf-evidence-card p{line-height:1.7;overflow-wrap:anywhere}
+.lf-evidence-status{font-size:12px;color:#45675a}.lf-evidence-status.is-historical,.lf-evidence-status.is-expired{color:#767970}.lf-evidence-status.is-invalidated,.lf-evidence-gap{color:#8a592e}
+.lf-evidence-source{padding:12px 0}.lf-evidence-qualifiers{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}.lf-evidence-qualifiers span{font-size:11px;padding:3px 7px;border-radius:4px;background:#eef1eb;color:#4a6155}
+.lf-evidence-source blockquote{margin:10px 0;padding:4px 12px;border-left:2px solid #a9b8aa;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;max-height:220px;overflow:auto;font-size:12px}
+.lf-evidence-source summary{font-size:12px;cursor:pointer}.lf-evidence-source dl{font-size:11px}.lf-evidence-source dt{color:#73776f;margin-top:8px}.lf-evidence-source dd{margin:2px 0;overflow-wrap:anywhere}
+.lf-evidence-links h4{font-size:12px;font-weight:600}.lf-evidence-links button{display:flex;justify-content:space-between;gap:10px;text-align:left;width:100%;padding:9px 0;border:0;border-bottom:1px solid #eef0e9;background:none;color:inherit;cursor:pointer;font:inherit;font-size:12px}
+.lf-evidence-content>button{font:inherit;font-size:12px;border:1px solid #d3dacf;border-radius:5px;background:none;color:inherit;padding:6px 10px;cursor:pointer}
+.lf-evidence-inspector button:focus-visible,.lf-evidence-inspector summary:focus-visible{outline:2px solid #2f7960;outline-offset:3px}
+@media(max-width:600px){.lf-evidence-card header{display:block}.lf-evidence-card header time{display:block;margin-top:5px}.lf-evidence-links button{flex-wrap:wrap}}
+
+.lf-evidence-group{min-width:0}

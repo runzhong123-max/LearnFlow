@@ -1549,6 +1549,7 @@ async def _reduce_event(db: AsyncSession, event: EvidenceEvent):
         knowledge = await _kernel(db, event.learner_id, "knowledge")
         retention = dict((knowledge.short_term or {}).get("retention_status") or {})
         retention[item_key] = {
+            "projection_version": "review-qualification.v2",
             "status": (
                 "spaced_stable" if spaced_stable
                 else "retrieved" if passed and independent
@@ -1576,14 +1577,12 @@ async def _reduce_event(db: AsyncSession, event: EvidenceEvent):
                 "本轮未能提取答案，需要重新学习" if outcome == "unknown"
                 else p.get("prompt", "复习题答错，需要纠错")
             )
+        from learnflow_core.review_qualification import qualification_patch
         long_patch = None
-        if spaced_stable:
-            mastery = dict((knowledge.long_term or {}).get("mastery") or {})
-            mastery[f"review:{item_key}"] = {
-                "level": "stable",
-                "policy_version": "review-policy-v1",
-                "evidence_ids": [row.id for row in matching[-10:]],
-            }
+        mastery = dict((knowledge.long_term or {}).get("mastery") or {})
+        qualification = qualification_patch(mastery.get(f"review:{item_key}"), event, matching)
+        if qualification is not None:
+            mastery[f"review:{item_key}"] = qualification
             long_patch = {"mastery": mastery}
         await _apply_patch(
             db, event, "knowledge", short_patch,
@@ -1594,6 +1593,7 @@ async def _reduce_event(db: AsyncSession, event: EvidenceEvent):
         practice = await _kernel(db, event.learner_id, "practice")
         review_history = dict((practice.short_term or {}).get("review_history") or {})
         review_history[item_key] = {
+            "projection_version": "review-qualification.v2",
             "attempt_id": p.get("attempt_id"),
             "outcome": outcome,
             "assistance_level": p.get("assistance_level", "none"),
@@ -1601,14 +1601,10 @@ async def _reduce_event(db: AsyncSession, event: EvidenceEvent):
             "evidence_id": event.id,
         }
         practice_long = None
-        if spaced_stable:
-            proof_chain = dict((practice.long_term or {}).get("proof_chain") or {})
-            proof_chain[f"review:{item_key}"] = {
-                "event_id": event.id,
-                "checkpoint_id": event.checkpoint_id,
-                "kind": "spaced_independent_transfer",
-                "evidence_ids": [row.id for row in matching[-10:]],
-            }
+        proof_chain = dict((practice.long_term or {}).get("proof_chain") or {})
+        qualification = qualification_patch(proof_chain.get(f"review:{item_key}"), event, matching, practice=True)
+        if qualification is not None:
+            proof_chain[f"review:{item_key}"] = qualification
             practice_long = {"proof_chain": proof_chain}
         await _apply_patch(
             db, event, "practice",
@@ -1929,13 +1925,16 @@ async def get_kernel_projection(db: AsyncSession, learner_id: int | None = None)
     from app.services.memory_graph import active_module_claims, recent_atomic_facts
     from app.services.five_kernel_context import _archived_projection_ids
     archived_node_ids = await _archived_projection_ids(db, learner_id, archives)
+    from .review_qualification import read_guard
+    review_overrides, review_invalid_ids = await read_guard(db, learner_id)
+    archived_node_ids |= review_invalid_ids
     for state in states:
         short = dict(state.short_term or {})
         # This compatibility projection has no session scope. Model candidates
         # are available only through session-filtered transient memory facts.
         short.pop("semantic_candidate", None)
         short.pop("teaching_directives", None)
-        long = dict(state.long_term or {})
+        long = {**dict(state.long_term or {}), **review_overrides.get(state.kernel_name, {})}
         long.pop("teaching_preferences", None)
         for kernel_name, scope, key in archived_paths:
             if kernel_name != state.kernel_name:

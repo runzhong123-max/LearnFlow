@@ -1,3 +1,4 @@
+import { MemoryEvidencePanel } from './MemoryEvidencePanel'
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import type {
   FormalConceptEdge,
@@ -375,6 +376,8 @@ export default function LearnerProfilePage({
       </div>
       <div className="profile-overview-footer"><span>自述用于选择讲解起点，能力以学习表现为准。</span><button type="button" onClick={onOpenPath}>学习路径</button></div>
 
+      <MemoryEvidencePanel key={`evidence:${connection.learner?.id}`} scopeKey={`profile:${connection.learner?.id}:${busyKey}`} label="查看学习依据、历史与关联" />
+
       <details className="profile-input-disclosure">
         <summary>＋ 补充学习经历、阻碍或联想</summary>
         <form onSubmit={event => {
@@ -499,6 +502,7 @@ export default function LearnerProfilePage({
                         <div className="claim-node-heading"><span>可纠正认识 Claim</span><b>{presentVerification(claim)} · {Math.round(claim.confidence * 100)}%</b></div>
                         <p>{presentClaimText(module, claim)}</p>
                         <small>{presentModuleScope(module)} · {presentEvidenceCount(module)} · 未提供形成时间</small>
+                        <MemoryEvidencePanel scopeKey={`claim:${connection.learner?.id}:${claim.status}`} nodeId={claim.id} />
                         <div className="claim-actions">
                           <button type="button" disabled={busyKey === `claim:${claim.id}`} onClick={() => onClaimAction(claim.id, 'confirm')}>仍然准确</button>
                           <details>

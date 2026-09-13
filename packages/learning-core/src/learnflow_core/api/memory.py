@@ -26,6 +26,35 @@ from app.services.memory_graph import KERNEL_NAMES, NODE_TYPES, RELATION_TYPES, 
 router = APIRouter(prefix="/memory", tags=["Inspectable Memory"])
 
 
+@router.get("/evidence")
+async def list_memory_evidence(
+    project_id: int | None = None,
+    checkpoint_id: int | None = None,
+    review_schedule_id: int | None = None,
+    before_id: int | None = None,
+    limit: int = Query(8, ge=1, le=20),
+    current: CurrentLearner = Depends(get_current_learner),
+    db: AsyncSession = Depends(get_db),
+):
+    from learnflow_core.memory_evidence import list_evidence_cards
+    return await list_evidence_cards(db, current.learner.id, project_id=project_id,
+        checkpoint_id=checkpoint_id, review_schedule_id=review_schedule_id,
+        before_id=before_id, limit=limit)
+
+
+@router.get("/evidence/{node_id}")
+async def get_memory_evidence(
+    node_id: int,
+    project_id: int | None = None,
+    checkpoint_id: int | None = None,
+    current: CurrentLearner = Depends(get_current_learner),
+    db: AsyncSession = Depends(get_db),
+):
+    from learnflow_core.memory_evidence import evidence_card
+    return await evidence_card(db, current.learner.id, node_id,
+                               project_id=project_id, checkpoint_id=checkpoint_id)
+
+
 class ClaimFeedbackRequest(BaseModel):
     action: Literal["confirm", "correct", "retract"]
     correction: str = Field(default="", max_length=2000)
