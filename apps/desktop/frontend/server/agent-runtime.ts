@@ -657,7 +657,7 @@ function envelopePrompt(envelope: AgentContextEnvelope) {
 function hasExplicitExternalResourceRequest(input: TutorAgentRuntimeInput) {
   const message = [...input.messages].reverse().find(item => item.role === 'user')?.content || ''
   return input.toolChoice !== 'auto'
-    || /(?:联网|搜索|查找|检索|资料|资源|教材|课程推荐|视频|b站|bilibili|youtube|来源|论文|文档|仓库|官网|最新)/i.test(message)
+    || /(?:联网|搜索|查找|检索|资料|资源|教材|课程推荐|视频|b站|bilibili|来源|论文|文档|仓库|官网|最新)/i.test(message)
 }
 
 function compactKnowledgeGate(input: TutorAgentRuntimeInput) {
@@ -709,7 +709,7 @@ function availableTools(input: TutorAgentRuntimeInput) {
     && (!['design_assessment_blueprint', 'generate_dynamic_practice', 'generate_similar_practice'].includes(tool.name)
       || hasPracticeScope && input.mode === 'guided_learning')
     && (tool.name !== 'inspect_practice_quality' || hasPracticeScope && input.mode === 'guided_learning')
-    && !['generate_learning_diagram', 'generate_learning_animation', 'retrieve_learning_visual'].includes(tool.name)
+    && !['inspect_learning_video', 'generate_learning_diagram', 'generate_learning_animation', 'retrieve_learning_visual'].includes(tool.name)
   ))
   const pluginTools = input.pluginRegistry?.toolDefinitions(pluginActivation(input)) || []
   const tools = [...pluginTools, ...coreTools]
@@ -749,9 +749,9 @@ function explicitToolCall(choice: TutorToolChoice, message: string, projectScope
   }
   if (choice === 'search') return {
     id: `explicit-search-${Date.now()}`,
-    name: /视频|课程视频|b站|bilibili|youtube/i.test(message) ? 'search_learning_videos' : 'search_computer_knowledge',
-    arguments: /视频|课程视频|b站|bilibili|youtube/i.test(message)
-      ? { target: message, platforms: /b站|bilibili/i.test(message) ? ['bilibili'] : /youtube/i.test(message) ? ['youtube'] : ['bilibili', 'youtube'], max_results: 6 }
+    name: /视频|课程视频|b站|bilibili/i.test(message) ? 'search_learning_videos' : 'search_computer_knowledge',
+    arguments: /视频|课程视频|b站|bilibili/i.test(message)
+      ? { target: message, platforms: ['bilibili'], max_results: 6 }
       : { query: message, depth: /深度研究|系统调研|文献综述|研究综述|多来源|全面研究|deep research/i.test(message) ? 'deep' : 'standard' },
   }
   return undefined
@@ -1977,7 +1977,7 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
     if (!reply) throw error
   }
 
-  reply = ensureSearchCitations(reply, runs)
+  reply = repairTutorDraftForObservedGaps(reply, runs)
   const finalVerification = verifyTutorTurnOutcome({
     reply,
     mode: input.mode,

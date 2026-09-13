@@ -19,6 +19,7 @@ import {
 import {
   inspectLearningVideo,
   searchLearningVideos,
+  videoTitleQuery,
   type LearningVideoCandidate,
 } from './learning-video-harness.ts'
 import type { LearningTaskTutorContext } from '../src/learning.ts'
@@ -392,18 +393,14 @@ export const TUTOR_AGENT_TOOL_DEFINITIONS: AgentToolDefinition[] = [
   {
     name: 'search_learning_videos',
     title: '搜索学习视频',
-    description: '当学习目标适合视频演示、分步操作或课程讲解时，跨平台搜索结构化候选。只返回已核验可用性、元数据和推荐理由，内容仍是 discovered；纯文本资料已足够或无需视频时不要调用。搜索和播放都不是掌握证据。',
+    description: '仅在 Bilibili 按视频标题搜索，返回标题、链接及基础元数据。承接最近对话主题；不读取字幕、音频或视频内容，不调用内容核验，不声称已观看或内容覆盖。',
     toolClass: 'perception',
     risk: 'read_only',
     inputSchema: {
       type: 'object',
       properties: {
         target: { type: 'string', description: '视频必须覆盖的具体主题，例如“Python generator 的 yield、暂停恢复与内存收益”' },
-        goal: { type: 'string', description: '学习者看完后应能解释或完成什么' },
-        level: { type: 'string', enum: ['beginner', 'intermediate', 'advanced'] },
-        language: { type: 'string', description: '偏好语言，例如 zh-Hans 或 en' },
-        max_duration_minutes: { type: 'integer', minimum: 1, maximum: 180 },
-        platforms: { type: 'array', items: { type: 'string', enum: ['bilibili', 'youtube'] } },
+        platforms: { type: 'array', items: { type: 'string', enum: ['bilibili'] } },
         max_results: { type: 'integer', minimum: 1, maximum: 10 },
       },
       required: ['target'],
@@ -413,7 +410,7 @@ export const TUTOR_AGENT_TOOL_DEFINITIONS: AgentToolDefinition[] = [
   {
     name: 'inspect_learning_video',
     title: '核验学习视频内容',
-    description: '只核验本轮 search_learning_videos 返回的 candidate_id。读取字幕或已配置 ASR 的带时间点片段，检查目标覆盖、内容缺口与答案泄露风险；不能用任意 URL，也不能把观看表述为掌握。',
+    description: '历史兼容入口：仅返回本轮 Bilibili 标题检索的元数据，不访问字幕、音频或视频内容。当前视频请求仅使用标题搜索。',
     toolClass: 'perception',
     risk: 'read_only',
     inputSchema: {
@@ -1538,20 +1535,20 @@ export async function executeTutorAgentTool(
 
     if (name === 'search_learning_videos') {
       const search = await searchLearningVideos({
-        target: compactText(args.target || query, 500),
+        target: videoTitleQuery(compactText(args.target || query, 500), options.recentMessages || []),
         goal: compactText(args.goal, 500),
         level: ['beginner', 'intermediate', 'advanced'].includes(String(args.level)) ? args.level as any : undefined,
         language: compactText(args.language, 40),
         maxDurationMinutes: Number(args.max_duration_minutes) || undefined,
         platforms: Array.isArray(args.platforms)
-          ? args.platforms.filter(item => item === 'bilibili' || item === 'youtube') as any
+          ? args.platforms.filter(item => item === 'bilibili') as any
           : undefined,
         maxResults: Number(args.max_results) || 6,
       }, options.searchConfiguration)
       return {
         run: {
-          ...base, kind: 'video', status: search.candidates.length ? 'completed' : 'failed', title: '搜索学习视频',
-          detail: `已检索 ${search.providers.map(item => `${item.platform}:${item.status}`).join(' · ')}，保留 ${search.candidates.length} 个候选；候选仍需内容核验。`,
+          ...base, kind: 'video', status: search.status === 'failed' ? 'failed' : 'completed', title: '搜索学习视频',
+          detail: `已检索 ${search.providers.map(item => `${item.platform}:${item.status}`).join(' · ')}，保留 ${search.candidates.length} 个标题匹配候选；未读取视频内容。`,
           observationSummary: `${search.candidates.length} 个 discovered 候选`,
           durationMs: Date.now() - startedAt,
         },
@@ -1573,11 +1570,9 @@ export async function executeTutorAgentTool(
       )
       return {
         run: {
-          ...base, kind: 'video', status: inspection.verificationState === 'content_inspected' ? 'completed' : 'failed', title: '核验学习视频内容',
-          detail: inspection.verificationState === 'content_inspected'
-            ? `已取得 ${inspection.segments.length} 个相关字幕时间点，并检查目标覆盖与答案泄露风险。`
-            : '只核验到视频元数据，尚未取得字幕或 ASR；不能据此声称内容覆盖。',
-          observationSummary: `${inspection.verificationState} · ${inspection.segments.length} 个时间点`,
+          ...base, kind: 'video', status: 'completed', title: '核验学习视频内容',
+          detail: '仅返回标题检索元数据，未读取视频内容。',
+          observationSummary: 'metadata_only · title_only',
           durationMs: Date.now() - startedAt,
         },
         observation: inspection,

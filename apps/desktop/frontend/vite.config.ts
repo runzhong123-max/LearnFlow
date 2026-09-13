@@ -67,7 +67,6 @@ function loadSearchConfiguration(mode: string): SearchProviderConfiguration {
     jinaApiKey: value('JINA_API_KEY'),
     exaApiKey: value('EXA_API_KEY'),
     tavilyApiKey: value('TAVILY_API_KEY'),
-    youtubeApiKey: value('YOUTUBE_API_KEY'),
   }
 }
 

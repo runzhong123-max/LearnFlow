@@ -1,6 +1,6 @@
 import { AI_LATENCY_BUDGETS } from '../src/latency-budgets.ts'
 
-export type LearningVideoPlatform = 'bilibili' | 'youtube'
+export type LearningVideoPlatform = 'bilibili'
 
 export type VideoTranscriptSegment = {
   startSeconds: number
@@ -37,35 +37,23 @@ export type LearningVideoSearchInput = {
 
 export type LearningVideoConfiguration = {
   fetchImpl?: typeof fetch
-  youtubeApiKey?: string
   offlineCatalog?: LearningVideoCandidate[]
 }
 
 export const FIXED_VIDEO_EVAL_CATALOG: LearningVideoCandidate[] = [
   {
-    candidateId: 'youtube:offline-python-generators', platform: 'youtube', platformVideoId: 'offline-python-generators',
+    candidateId: 'bilibili:offline-python-generators', platform: 'bilibili', platformVideoId: 'offline-python-generators',
     title: 'Python generators: iteration without building the whole list',
-    url: 'https://www.youtube.com/watch?v=offline-python-generators', author: 'LearnFlow seeded catalog',
-    durationSeconds: 420, subtitleAvailable: true, language: 'en', verificationState: 'discovered',
-    reasons: ['离线 seeded 候选', '包含可核验字幕与时间点'],
-    transcriptSegments: [
-      { startSeconds: 0, endSeconds: 42, text: 'A generator produces values lazily instead of building an entire list in memory.' },
-      { startSeconds: 42, endSeconds: 110, text: 'A function containing yield returns a generator iterator and resumes after each yield.' },
-      { startSeconds: 110, endSeconds: 190, text: 'Use next to request the next value. StopIteration marks exhaustion.' },
-      { startSeconds: 190, endSeconds: 300, text: 'Generators are useful for streams and large inputs, but they are normally consumed once.' },
-    ],
+    url: 'https://www.bilibili.com/video/offline-python-generators', author: 'LearnFlow seeded catalog',
+    durationSeconds: 420, subtitleAvailable: false, language: 'en', verificationState: 'discovered',
+    reasons: ['离线 seeded 候选', '仅用于标题检索测试'],
   },
   {
     candidateId: 'bilibili:offline-tcp-congestion', platform: 'bilibili', platformVideoId: 'offline-tcp-congestion',
     title: 'TCP 拥塞控制：慢启动到拥塞避免',
     url: 'https://www.bilibili.com/video/offline-tcp-congestion', author: 'LearnFlow seeded catalog',
-    durationSeconds: 540, subtitleAvailable: true, language: 'zh-Hans', verificationState: 'discovered',
-    reasons: ['离线 seeded 候选', '包含可核验字幕与时间点'],
-    transcriptSegments: [
-      { startSeconds: 0, endSeconds: 55, text: '拥塞窗口 cwnd 限制发送方在途数据量，接收窗口解决的是接收端容量问题。' },
-      { startSeconds: 55, endSeconds: 150, text: '慢启动阶段让拥塞窗口按往返轮次近似指数增长，直到门限或检测到拥塞。' },
-      { startSeconds: 150, endSeconds: 260, text: '拥塞避免阶段改为线性增长，以更谨慎地探测可用带宽。' },
-    ],
+    durationSeconds: 540, subtitleAvailable: false, language: 'zh-Hans', verificationState: 'discovered',
+    reasons: ['离线 seeded 候选', '仅用于标题检索测试'],
   },
 ]
 
@@ -75,7 +63,12 @@ function clean(value: unknown, limit = 500) {
 }
 
 function tokens(value: string) {
-  return new Set(clean(value, 1600).toLowerCase().split(/[^\p{L}\p{N}+#.-]+/u).filter(item => item.length > 1))
+  const normalized = clean(value,1600).toLowerCase()
+  const result = new Set(normalized.match(/[a-z0-9][a-z0-9+#.-]+/g) || [])
+  for (const chunk of normalized.match(/[\u3400-\u9fff]+/g) || []) {
+    for (let i=0;i<chunk.length-1;i++) result.add(chunk.slice(i,i+2))
+  }
+  return result
 }
 
 function overlapScore(candidate: string, query: string) {
@@ -109,42 +102,7 @@ async function searchBilibili(query: string, configuration: LearningVideoConfigu
       author: clean(item.author, 120), durationSeconds: parseDuration(item.duration), views: Number(item.play) || undefined,
       publishedAt: item.pubdate ? new Date(Number(item.pubdate) * 1000).toISOString() : undefined,
       subtitleAvailable: false, verificationState: 'discovered' as const,
-      reasons: ['标题与学习目标相关', '已核验公开可用性，内容仍待字幕核验'],
-    }
-  }).filter((item: LearningVideoCandidate) => item.platformVideoId && item.title)
-}
-
-async function searchYouTube(query: string, configuration: LearningVideoConfiguration): Promise<LearningVideoCandidate[]> {
-  if (!configuration.youtubeApiKey) return []
-  const fetcher = configuration.fetchImpl || fetch
-  const searchUrl = new URL('https://www.googleapis.com/youtube/v3/search')
-  searchUrl.search = new URLSearchParams({ part: 'snippet', type: 'video', maxResults: '12', q: query, key: configuration.youtubeApiKey }).toString()
-  const response = await fetcher(searchUrl, { signal: AbortSignal.timeout(AI_LATENCY_BUDGETS.videoProvider) })
-  if (!response.ok) throw new Error(`youtube_search_${response.status}`)
-  const payload = await response.json() as any
-  const items = Array.isArray(payload?.items) ? payload.items : []
-  const ids = items.map((item: any) => clean(item?.id?.videoId, 30)).filter(Boolean)
-  let details = new Map<string, any>()
-  if (ids.length) {
-    const detailsUrl = new URL('https://www.googleapis.com/youtube/v3/videos')
-    detailsUrl.search = new URLSearchParams({ part: 'contentDetails,statistics,status', id: ids.join(','), key: configuration.youtubeApiKey }).toString()
-    const detailResponse = await fetcher(detailsUrl, { signal: AbortSignal.timeout(AI_LATENCY_BUDGETS.videoProvider) })
-    if (detailResponse.ok) {
-      const detailPayload = await detailResponse.json() as any
-      details = new Map((detailPayload.items || []).map((item: any) => [item.id, item]))
-    }
-  }
-  return items.map((item: any) => {
-    const videoId = clean(item?.id?.videoId, 30), detail = details.get(videoId)
-    return {
-      candidateId: `youtube:${videoId}`, platform: 'youtube' as const, platformVideoId: videoId,
-      title: clean(item?.snippet?.title, 240), url: `https://www.youtube.com/watch?v=${videoId}`,
-      author: clean(item?.snippet?.channelTitle, 120), durationSeconds: parseDuration(detail?.contentDetails?.duration),
-      views: Number(detail?.statistics?.viewCount) || undefined, publishedAt: item?.snippet?.publishedAt,
-      subtitleAvailable: Boolean(detail?.contentDetails?.caption && detail.contentDetails.caption !== 'false'),
-      language: item?.snippet?.defaultAudioLanguage || item?.snippet?.defaultLanguage,
-      verificationState: 'discovered' as const,
-      reasons: ['标题与学习目标相关', 'YouTube Data API 已核验可用性，内容仍待字幕核验'],
+      reasons: ['仅按标题匹配，未读取视频内容'],
     }
   }).filter((item: LearningVideoCandidate) => item.platformVideoId && item.title)
 }
@@ -152,100 +110,66 @@ async function searchYouTube(query: string, configuration: LearningVideoConfigur
 export async function searchLearningVideos(input: LearningVideoSearchInput, configuration: LearningVideoConfiguration = {}) {
   const target = clean(input.target, 500)
   if (!target) throw new Error('target_required')
-  const query = clean([target, input.goal, input.level, input.language].filter(Boolean).join(' '), 900)
-  const platforms = input.platforms?.length ? input.platforms : ['bilibili', 'youtube']
+  const query = target
   const maxResults = Math.max(1, Math.min(10, Number(input.maxResults) || 6))
   const providerStatus: Array<{ platform: LearningVideoPlatform | 'offline'; status: string; count: number }> = []
-  const results: LearningVideoCandidate[] = []
-  for (const platform of platforms) {
+  let results: LearningVideoCandidate[] = []
+  if (configuration.offlineCatalog) {
+    results = configuration.offlineCatalog.filter(item => item.platform === 'bilibili')
+    providerStatus.push({platform:'offline',status:results.length?'completed':'empty',count:results.length})
+  } else {
     try {
-      const found = platform === 'bilibili' ? await searchBilibili(query, configuration) : await searchYouTube(query, configuration)
-      results.push(...found)
-      providerStatus.push({ platform, status: found.length ? 'completed' : platform === 'youtube' && !configuration.youtubeApiKey ? 'not_configured' : 'empty', count: found.length })
+      results = await searchBilibili(query, configuration)
+      providerStatus.push({platform:'bilibili',status:results.length?'completed':'empty',count:results.length})
     } catch {
-      providerStatus.push({ platform, status: 'failed', count: 0 })
+      providerStatus.push({platform:'bilibili',status:'failed',count:0})
     }
-  }
-  const offline = (configuration.offlineCatalog || []).filter(item => platforms.includes(item.platform) && overlapScore(`${item.title} ${item.transcriptSegments?.map(segment => segment.text).join(' ')}`, query) > 0)
-  if (!results.length) {
-    results.push(...offline)
-    providerStatus.push({ platform: 'offline', status: offline.length ? 'completed' : 'empty', count: offline.length })
   }
   const maxSeconds = input.maxDurationMinutes ? Math.max(1, Number(input.maxDurationMinutes)) * 60 : undefined
   const ranked = results.filter(item => !maxSeconds || !item.durationSeconds || item.durationSeconds <= maxSeconds)
-    .map(item => ({ item, score: overlapScore(item.title, query) * 10 + (item.subtitleAvailable ? 4 : 0) + Math.log10((item.views || 0) + 1) }))
+    .map(item => ({ item, score: overlapScore(item.title, query) }))
+    .filter(({score}) => score > 0)
     .sort((a, b) => b.score - a.score || a.item.title.localeCompare(b.item.title))
-    .slice(0, maxResults).map(({ item }) => item)
+    .slice(0, maxResults).map(({ item: {transcriptSegments: _transcript, ...item} }) => ({...item,subtitleAvailable:false,reasons:['仅按标题匹配，未读取视频内容']}))
   return {
     schemaVersion: 'learnflow.learning-video-search.v1',
     query: { target, goal: clean(input.goal), level: input.level, language: clean(input.language), maxDurationMinutes: input.maxDurationMinutes },
-    status: ranked.length ? (providerStatus.some(item => item.status === 'failed') ? 'partial' : 'ok') : 'empty',
+    status: ranked.length ? 'ok' : providerStatus.some(item => item.status === 'failed') ? 'failed' : 'empty',
     providers: providerStatus,
     candidates: ranked,
-    boundary: 'discovered 只表示候选可用且元数据相关；必须 inspect 后才能声称内容覆盖，搜索或观看都不是掌握证据。',
+    boundary: '仅检索 Bilibili 视频标题，链接来自搜索结果；未读取字幕、音频或视频内容，不声称内容覆盖、播放可用性或掌握。',
   }
 }
 
-async function inspectBilibili(candidate: LearningVideoCandidate, configuration: LearningVideoConfiguration) {
-  const fetcher = configuration.fetchImpl || fetch
-  const headers = { 'User-Agent': 'Mozilla/5.0 LearnFlow/1.0', Referer: candidate.url }
-  const view = await fetcher(`https://api.bilibili.com/x/web-interface/view?bvid=${encodeURIComponent(candidate.platformVideoId)}`, { headers, signal: AbortSignal.timeout(AI_LATENCY_BUDGETS.videoProvider) })
-  if (!view.ok) throw new Error(`bilibili_view_${view.status}`)
-  const viewPayload = await view.json() as any
-  const cid = viewPayload?.data?.cid
-  if (!cid) throw new Error('bilibili_cid_missing')
-  const player = await fetcher(`https://api.bilibili.com/x/player/v2?bvid=${encodeURIComponent(candidate.platformVideoId)}&cid=${cid}`, { headers, signal: AbortSignal.timeout(AI_LATENCY_BUDGETS.videoProvider) })
-  const playerPayload = player.ok ? await player.json() as any : {}
-  const subtitles = Array.isArray(playerPayload?.data?.subtitle?.subtitles) ? playerPayload.data.subtitle.subtitles : []
-  const selected = subtitles.find((item: any) => /zh|en/i.test(String(item.lan || ''))) || subtitles[0]
-  if (!selected?.subtitle_url) return [] as VideoTranscriptSegment[]
-  const subtitleUrl = String(selected.subtitle_url).startsWith('//') ? `https:${selected.subtitle_url}` : String(selected.subtitle_url)
-  const subtitleResponse = await fetcher(subtitleUrl, { headers, signal: AbortSignal.timeout(AI_LATENCY_BUDGETS.videoProvider) })
-  if (!subtitleResponse.ok) throw new Error(`bilibili_subtitle_${subtitleResponse.status}`)
-  const subtitlePayload = await subtitleResponse.json() as any
-  return (Array.isArray(subtitlePayload?.body) ? subtitlePayload.body : []).slice(0, 1200).map((item: any) => ({
-    startSeconds: Number(item.from) || 0, endSeconds: Number(item.to) || Number(item.from) || 0, text: clean(item.content, 800),
-  })).filter((item: VideoTranscriptSegment) => item.text)
-}
-
+/** Compatibility for saved calls; no subtitle, audio or video requests. */
 export async function inspectLearningVideo(
   candidateId: string,
   candidates: LearningVideoCandidate[],
-  options: { query?: string; outcomes?: string[]; maxSegments?: number } = {},
-  configuration: LearningVideoConfiguration = {},
+  _options: { query?: string; outcomes?: string[]; maxSegments?: number } = {},
+  _configuration: LearningVideoConfiguration = {},
 ) {
-  const candidate = candidates.find(item => item.candidateId === candidateId)
+  const candidate = candidates.find(item => item.candidateId === candidateId && item.platform === 'bilibili')
   if (!candidate) throw new Error('candidate_not_from_current_search')
-  let transcript = candidate.transcriptSegments || []
-  let transcriptState: 'subtitle' | 'unavailable' | 'asr_required' = transcript.length ? 'subtitle' : 'unavailable'
-  if (!transcript.length && candidate.platform === 'bilibili') {
-    try { transcript = await inspectBilibili(candidate, configuration) } catch { transcript = [] }
-    transcriptState = transcript.length ? 'subtitle' : 'asr_required'
-  } else if (!transcript.length && candidate.platform === 'youtube') {
-    transcriptState = candidate.subtitleAvailable ? 'asr_required' : 'asr_required'
-  }
-  const query = clean(options.query || options.outcomes?.join(' ') || candidate.title, 900)
-  const maxSegments = Math.max(1, Math.min(16, Number(options.maxSegments) || 8))
-  const segments = transcript.map(segment => ({ segment, score: overlapScore(segment.text, query) }))
-    .sort((a, b) => b.score - a.score || a.segment.startSeconds - b.segment.startSeconds)
-    .slice(0, maxSegments).map(item => item.segment).sort((a, b) => a.startSeconds - b.startSeconds)
-  const corpus = transcript.map(item => item.text).join(' ')
-  const outcomes = (options.outcomes || []).slice(0, 8).map(outcome => ({
-    outcome: clean(outcome, 300), covered: overlapScore(corpus, outcome) > 0,
-  }))
-  const answerLeakRisk = /(?:正确答案|答案是|标准答案|选项\s*[A-D]|answer is)/i.test(corpus)
+  const {transcriptSegments: _transcript, ...metadata} = candidate
   return {
     schemaVersion: 'learnflow.learning-video-inspection.v1',
-    candidate: { ...candidate, transcriptSegments: undefined },
-    verificationState: transcript.length ? 'content_inspected' : 'metadata_only',
-    transcriptState,
-    segments,
-    outcomes,
-    gaps: [
-      ...(!transcript.length ? ['没有取得可核验字幕；需要显式 ASR 适配器后才能确认内容覆盖'] : []),
-      ...outcomes.filter(item => !item.covered).map(item => `未在字幕中定位：${item.outcome}`),
-    ],
-    answerLeakRisk,
-    boundary: '字幕核验只支持资源选择与带时间点阅读，不形成 LearningAttempt、掌握或迁移证据。',
+    candidate: {...metadata,subtitleAvailable:false},
+    verificationState: 'metadata_only', transcriptState: 'unavailable',
+    segments: [] as VideoTranscriptSegment[], outcomes: [], gaps: ['当前仅支持标题检索，未读取视频内容'],
+    answerLeakRisk: false,
+    boundary: '仅返回标题检索元数据，不形成内容覆盖或掌握证据。',
   }
+}
+
+/** Recover an underspecified follow-up from the preceding user topic. */
+export function videoTitleQuery(target: string, messages: Array<{role:string;content:string}> = []) {
+  const normalize = (value:string) => clean(value).replace(/^(?:请|帮我|给我|可以|能否|能不能|我想|找|推荐|搜索|检索|看|一个|一些|一段|相关的|相关|的|视频|教程|课程|讲一下|讲解一下|什么是|介绍一下|一下|吗|呢|[，。？！?！\s])+/g,'').replace(/(?:的)?(?:视频|教程)[。？！?！\s]*$/,'').trim()
+  const topic = normalize(target)
+  if (topic) return topic
+  for (const message of [...messages].reverse()) {
+    if (message.role !== 'user' || message.content === target) continue
+    const prior = normalize(message.content)
+    if (prior) return prior
+  }
+  return ''
 }

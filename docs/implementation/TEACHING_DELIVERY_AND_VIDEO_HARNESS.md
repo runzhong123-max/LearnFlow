@@ -63,18 +63,18 @@ learner-owned LearningTask + package_readiness
 
 ## 视频 ACI 与 Harness
 
-模型只看两个目标级接口：
+模型只使用 `search_learning_videos`，平台固定 Bilibili。查询承接最近用户主题，仅标题参与匹配与排序；作者、热度、字幕和正文不参与相关性判断。搜索结果不表示已观看、可播放或内容覆盖。成功但无标题匹配是正常空结果，平台请求失败单独标记。
 
-- `search_learning_videos(target, goal, level, language, max_duration_minutes, platforms, max_results)`
-- `inspect_learning_video(candidate_id, query, outcomes, max_segments)`
-
-第二个接口只接受本轮搜索返回的 candidate ID。Bilibili/YouTube 搜索、元数据读取、字幕抓取和离线 seeded catalog 是 Harness 内部机制。没有字幕或 ASR 时返回 `metadata_only + asr_required`，不得把元数据相关性写成内容覆盖。字幕片段显式带开始/结束秒数，输出同时列出 outcome gap 和 answer-leak risk。
-
-所有接口只读、无需确认、零 Kernel target。若以后接入音频 ASR，仍只能补充资源核验，不得直接生成 LearningAttempt 或掌握状态。
+`inspect_learning_video` 仅保留旧调用兼容，不向当前 Tutor 暴露，也不请求字幕、音频或视频；只返回 metadata_only。所有接口只读，零 Kernel target。
 
 ## 兼容与降级
 
 - 无数据库迁移；历史 Checkpoint 在读取时规范化。
 - 离线评测通过显式 fake adapter 注入固定候选；生产环境无网络时返回 empty，而不是伪造链接或把评测数据展示给学习者。
-- 未配置 `YOUTUBE_API_KEY` 时 YouTube 实时搜索返回 `not_configured`；Bilibili 失败不阻断其他 provider。
+- 视频搜索仅使用 Bilibili；不需要额外平台 API Key。
 - 正式学习验证仍唯一走 `LearningAttempt -> EvidenceEvent -> five_kernel_reducer`。
+
+
+Contract impact（2026-09-13.3）：既有视频搜索能力缩减为 Bilibili 标题检索，保留 v1 响应与历史 inspection 读取兼容。废除内容核验前置要求，当前 Tutor 不提供 inspection 工具。已注册的三类 Agent、EvidenceEvent 和五核语义保持不变；没有数据迁移。
+
+本轮验证：Web/桌面后端完整回归分别为 1138 passed / 2 skipped、1156 passed / 5 skipped；注册表更新后专项检查 27/26 passed。两端标题检索与 Tutor 回归 65/66 passed，两个前端 build 通过；共宿主部署配置所属 Role Atlas 的 640 项测试、typecheck、build 通过（测试首次因沙箱 IPC 权限失败，正常权限重跑通过）。共享契约与 diff 检查通过。实时 Bilibili 平台可用性未实测，回归采用可控 API 响应，不调用真实模型、不修改日常数据。

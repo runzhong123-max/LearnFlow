@@ -19,7 +19,7 @@
 | `frontend/npm run build` | 通过，TypeScript 与 Vite production build 成功 |
 | `git diff --check` | 通过 |
 
-后端现有测试仍报告 Python/SQLAlchemy/FastAPI 的弃用警告，本次没有新增失败。视频实时能力另以只读实测确认 Bilibili 搜索可返回 BV 号、作者、时长和播放量，YouTube 搜索可返回元数据与字幕可用标志；自动化回归不依赖网络。
+后端现有测试仍报告 Python/SQLAlchemy/FastAPI 的弃用警告，本次没有新增失败。视频实时能力另以只读实测确认 Bilibili 搜索可返回 BV 号、作者、时长和播放量（当前仅保留标题检索）；自动化回归不依赖网络。
 
 ## 关键断言
 

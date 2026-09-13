@@ -37,7 +37,6 @@ export type SearchProviderConfiguration = {
   jinaApiKey?: string
   exaApiKey?: string
   tavilyApiKey?: string
-  youtubeApiKey?: string
   fetchImpl?: typeof fetch
   now?: () => number
 }

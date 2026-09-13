@@ -89,7 +89,6 @@ services:
       JINA_API_KEY: ${JINA_API_KEY:-}
       EXA_API_KEY: ${EXA_API_KEY:-}
       TAVILY_API_KEY: ${TAVILY_API_KEY:-}
-      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
     volumes:
       - ../../packages:/shared/role-packages:ro
       - ../../output/graph-hub:/shared/graph-hub:ro

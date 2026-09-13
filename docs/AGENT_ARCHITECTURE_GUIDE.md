@@ -105,7 +105,7 @@ Contract impact（`2026-08-28.3`）：Human 的会话内适配采用“显式文
 
 Contract impact（`2026-08-28.1`）：Learning Design 的教学交付投影拆为 Knowledge 输入契约、教学包成熟度和原子任务就绪度。Knowledge 只通过可选、answer-free、scoped `ContextPacket` 提供起点与缺口；缺失时通用包仍可生成。包成熟度只看既有教学资产，任务就绪度只组合 learner-owned LearningTask 与包阶段，并允许最小讲解、仅带领学习或仅练习等透明软降级。旧 `delivery_readiness` 顶层摘要保持兼容；没有新表、事件、Agent、Skill、五核写入或掌握语义变化。详见 `docs/implementation/TEACHING_DELIVERY_AND_VIDEO_HARNESS.md`。
 
-Contract impact（`2026-08-27.8`）：Learning Design 在现有 Checkpoint 上执行轻量 Teaching Contract 门禁和可重建 `delivery_readiness`，不建立新表或第二套学习状态。教学生成失败时由确定性 fallback 保证仍有可继续学习的最小产物。视频推荐作为 `learning_resource_curation`、`learning_file_study` 与 `evidence_grounded_teaching` 可组合的两级 ACI：先搜索候选，再核验本轮候选字幕和时间点；底层 Bilibili/YouTube/字幕/ASR 适配器不直接暴露。任何候选、视频观看或字幕读取都不形成掌握证据。详见 `docs/implementation/TEACHING_DELIVERY_AND_VIDEO_HARNESS.md`。
+Contract impact（`2026-08-27.8`）：Learning Design 在现有 Checkpoint 上执行轻量 Teaching Contract 门禁和可重建 `delivery_readiness`，不建立新表或第二套学习状态。教学生成失败时由确定性 fallback 保证仍有可继续学习的最小产物。视频推荐作为 `learning_resource_curation`、`learning_file_study` 与 `evidence_grounded_teaching` 可组合的 Bilibili 标题检索：只返回标题匹配候选与链接，不读取字幕、音频或视频内容。任何候选、视频观看或字幕读取都不形成掌握证据。详见 `docs/implementation/TEACHING_DELIVERY_AND_VIDEO_HARNESS.md`。
 
 Contract impact（`2026-08-27.6`）：新增文件驱动教学 Skill `learning_file_study` 与当前纸张精确读取 ACI `read_active_learning_file`。Tutor 仍拥有主对话和纸张协调，Learning Design 仍拥有讲义/练习候选，Practice Agent 仍拥有正式提交与判题；Skill 只编排选择、阅读锚点、文件内练习和独立验证。讲义、练习、来源和追问纸允许形成任意深度的有根纸张树，但纸张关系只是可恢复 UI 状态。来源指令不执行，练习答案不进入模型观察，打开和阅读不升级掌握。详见 `docs/implementation/GUIDED_LEARNING_FILE_PAPERS.md`。
 

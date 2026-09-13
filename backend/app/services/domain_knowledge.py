@@ -390,7 +390,7 @@ def infer_source_profile(
     community = any(token in host for token in (
         "stackoverflow.com", "stackexchange.com", "reddit.com", "v2ex.com", "discourse.",
     ))
-    video = any(token in host for token in ("youtube.com", "youtu.be", "bilibili.com"))
+    video = any(token in host for token in ("bilibili.com",))
     repository = authority_tier == "repository" or source.type == "github"
     curated = authority_tier == "curated" or bool(meta.get("foundation"))
     learner_owned = authority_tier == "learner_owned" or source.type in {"file", "inline"}

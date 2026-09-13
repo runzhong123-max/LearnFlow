@@ -45,7 +45,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-13.2-desktop"
+REGISTRY_VERSION = "2026-09-13.3-desktop"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 DATA_CONTRACTS = {
@@ -201,9 +201,9 @@ TOOLS = {
         ToolContract("web_evidence_reader", "Allow-listed Web Evidence Reader", "learning_design_agent", "vnext", "read",
                      (), (), "exact URL from current search -> HTTPS/redirect/content guards -> query-relevant bounded page excerpt -> untrusted evidence page; cacheable and no learner-state write"),
         ToolContract("learning_video_search", "Goal-aligned Learning Video Search", "learning_design_agent", "vnext", "read",
-                     (), (), "structured learning target -> bounded Bilibili/YouTube adapters + offline catalog -> discovered candidate IDs and metadata; no content or mastery claim"),
+                     (), (), "structured learning target -> Bilibili title-only search + explicit offline catalog -> discovered candidate IDs and metadata; no content or mastery claim"),
         ToolContract("learning_video_inspector", "Current-turn Learning Video Inspector", "learning_design_agent", "vnext", "read",
-                     (), (), "candidate ID from current search -> subtitle/ASR availability + timestamped relevant segments + outcome gaps + answer-leak audit; zero learner-state write"),
+                     (), (), "candidate ID from current Bilibili title search -> metadata-only legacy compatibility; no subtitle/audio/video fetch; zero learner-state write"),
         ToolContract("teaching_contract_gate", "Deterministic Teaching Contract Gate", "learning_design_agent", "learnflow", "policy",
                      (), (), "DomainKnowledgePacketRef + TeachingContentBrief -> ready | ready_with_gaps | blocked_knowledge; blocked knowledge never publishes a generic scaffold"),
         ToolContract("source_version_runtime", "Immutable Source Version Runtime", "learning_design_agent", "learnflow", "harness",
