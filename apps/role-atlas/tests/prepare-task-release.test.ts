@@ -1,6 +1,36 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { prepareTaskRelease } from "@/lib/integrations/learnflow/prepare-task-release";
+import { workspaceProjectIdentity } from "@/lib/projects/workspace-identity";
+
+test("encoded Fork routes use the authorized workspace identity for release lookup and preparation", async () => {
+  const projectId = `fork:${"a".repeat(64)}`;
+  const canonical = workspaceProjectIdentity(encodeURIComponent(projectId), projectId)!;
+  let calls = 0;
+  await prepareTaskRelease({ ...input(), projectId: canonical }, async (url, init) => {
+    calls++;
+    if (init?.method === "POST") {
+      assert.equal(JSON.parse(String(init.body)).projectId, projectId);
+      return Response.json({ release });
+    }
+    assert.equal(new URL(String(url), "https://roles.example").searchParams.get("projectId"), projectId);
+    return Response.json({ releases: [] });
+  });
+  assert.equal(calls, 2);
+  assert.equal(workspaceProjectIdentity(projectId, projectId), projectId);
+  assert.throws(() => workspaceProjectIdentity(projectId, "upstream-project"), /PROJECT_SCOPE_MISMATCH/);
+  assert.throws(() => workspaceProjectIdentity("bad%", projectId), /PROJECT_SCOPE_MISMATCH/);
+});
+
+test("missing projects and service errors are not reported as expired login", async () => {
+  for (const status of [404, 503]) {
+    await assert.rejects(prepareTaskRelease(input(), async () => new Response(null, { status })), error => {
+      assert.ok(error instanceof Error);
+      assert.doesNotMatch(error.message, /登录/);
+      return true;
+    });
+  }
+});
 
 const input = () => ({ projectId: "project-1", projectVersionId: "version-1", snapshotId: "snapshot-1", signal: new AbortController().signal });
 const release = { id: "release-1", sourceProjectVersionId: "version-1", snapshotId: "snapshot-1", status: "ready", artifactRootHash: "hash-1" };

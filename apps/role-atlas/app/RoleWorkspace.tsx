@@ -76,6 +76,7 @@ import type { RoleSkillId, WorkspaceSkillId } from "@/lib/skills/workspace";
 import { graphFocusStates } from "@/lib/hub/graph-focus";
 import { readLearnFlowLaunchResponse } from "@/lib/integrations/learnflow/launch-response";
 import { prepareTaskRelease } from "@/lib/integrations/learnflow/prepare-task-release";
+import { workspaceProjectIdentity } from "@/lib/projects/workspace-identity";
 
 type RoleNode = RoleCardNode;
 
@@ -138,7 +139,7 @@ type PackageStatus = {
 type ConversationMode = "explanation" | "iteration";
 type ConversationSummary = { mode?: ConversationMode; id: string; title: string; snapshotId: string | null; versionId: string | null; updatedAt: string };
 type ProjectWorkspaceEnvelope = {
-  project: { title: string; description?: string; market?: string; status: "draft" | "building" | "ready" | "failed" };
+  project: { id?: string; title: string; description?: string; market?: string; status: "draft" | "building" | "ready" | "failed" };
   conversations: ConversationSummary[];
   result: ColdStartBuildResult | null;
 };
@@ -243,7 +244,9 @@ export default function RoleWorkspace(props: RoleWorkspaceProps) {
   // Client routing may reuse the component for a same-named role; identity is the project ID.
   return <RoleWorkspaceSession key={props.projectId || (props.initialNewProject ? "new-role" : "bundled-role")} {...props} />;
 }
-function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProject = false, newProjectBrief }: RoleWorkspaceProps) {
+function RoleWorkspaceSession({ projectId: routeProjectId, initialConversationId, initialNewProject = false, newProjectBrief }: RoleWorkspaceProps) {
+  // The authorized workspace owns identity; route parameters may still be URL encoded.
+  const [projectId, setProjectId] = useState(routeProjectId);
   const [researchAdmin,setResearchAdmin]=useState(false);
   useEffect(()=>{const controller=new AbortController();void fetch("/api/admin/research?view=access",{signal:controller.signal,cache:"no-store"}).then(r=>{if(!controller.signal.aborted)setResearchAdmin(r.ok);}).catch(()=>{});return()=>controller.abort();},[]);
   const [activeConversationId, setActiveConversationId] = useState(initialConversationId || "");
@@ -312,6 +315,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
   const taskUrlHydratedRef = useRef(false);
 
   const applyProjectWorkspace = useCallback((workspace: ProjectWorkspaceEnvelope) => {
+    if (workspace.project.id) setProjectId(workspaceProjectIdentity(routeProjectId, workspace.project.id));
     setProjectStatus(workspace.project.status);
     setWorkspaceTitle(workspace.project.title);
     setProjectBrief({ description: workspace.project.description || "", market: workspace.project.market || "中国大陆" });
@@ -347,7 +351,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
         status: result.packages.rolePackage.status,
       },
     });
-  }, []);
+  }, [routeProjectId]);
 
   async function fetchConversationMessages(conversationId: string, signal?: AbortSignal) {
     const response = await fetch(`/api/conversations/${conversationId}/messages`, { signal });

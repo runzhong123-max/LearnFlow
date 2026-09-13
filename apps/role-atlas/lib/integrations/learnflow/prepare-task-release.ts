@@ -18,7 +18,11 @@ export async function prepareTaskRelease(input: {
     && release.snapshotId === input.snapshotId && ["ready", "published"].includes(release.status)
     && Boolean(release.artifactRootHash);
   const response = await request(`/api/releases?projectId=${encodeURIComponent(input.projectId)}`, { signal: input.signal });
-  if (!response.ok) throw new Error("无法读取当前岗位包，请检查登录状态后重试。");
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) throw new Error("无法读取当前岗位包，请检查登录状态后重试。");
+    if (response.status === 404) throw new Error("当前岗位项目或岗位包不存在，请重新打开项目后重试。");
+    throw new Error(`无法读取当前岗位包（${response.status}），请稍后重试。`);
+  }
   const existing = await response.json() as { releases?: TaskRelease[] };
   const release = existing.releases?.find(matches);
   if (release) return release.id;
