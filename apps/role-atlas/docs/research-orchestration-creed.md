@@ -11,8 +11,9 @@
 | 调查范围不扩大改动权限；缺失对象也可成为研究问题 | iteration/supervisor、iteration/scope、research/semantic-changes | supervisor、research-v2 |
 | 调用前持久化预占，同一账本涵盖规划、调查、综合和复核 | research/metered-model、iteration/budget-ledger | research-v2、budget-ledger |
 | 文本性质、证据关系、复核和采用是不同状态；不强迫填写证伪句 | iteration/evidence-review、research/task-definition | evidence-review、research-v2 |
-| 内核可预览，核心任务接口不足只能保存草稿 | build/graph、research/task-definition、api/build-runs | research-v2、cold-start-research-recovery |
+| 内核可预览；核心任务接口或能力/单元知识技能支撑不足只能保存草稿 | build/graph、research/task-definition、api/build-runs | research-v2、cold-start-research-recovery |
 | 无关增量不是修复；排序不按节点数量累计 | iteration/planner、research/quality、research/views | iteration-capabilities、research-v2 |
+| 支撑关系须查原文并独立复核；路径连接纳入生产，回执未完整不得显示全部完成 | research/learning-support、jobs/run-status | learning-support、run-status、course-presentation |
 | 提交改动必须固定基线、原子编译和保存迁移理由 | research/semantic-changes、research/change-set | research-v2、version-commit-transaction |
 | 默认自动采用，可选先审阅；head 变化、取消或重复运行不能覆盖版本 | versioning/commit-transaction | version-commit-transaction |
 | 仅对需要无环的关系检查循环，工作过程的返工合法 | iteration/augmentation、risk/audit | augmentation、research-v2 |

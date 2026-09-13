@@ -6,7 +6,7 @@ import type { AutomaticMountRecord } from "@/lib/learning-path/automatic-contrac
 
 const progress = (patch: Partial<ResearchProgress> = {}): ResearchProgress => ({ active: true, stage: 2, message: "正在梳理任务与能力", status: "running", ...patch });
 const mount = (status: AutomaticMountRecord["status"], patch: Partial<AutomaticMountRecord> = {}): AutomaticMountRecord => ({
-  id: "mount:one", projectVersionId: "version:one", snapshotId: "snapshot:one", status, attempt: 1, ...patch,
+  id: "mount:one", projectVersionId: "version:one", snapshotId: "snapshot:one", status, attempt: 1, result: { status: "completed", packageRef: { packageId: "p", packageVersion: "v", snapshotId: "snapshot:one", rootHash: "a".repeat(64) }, points: [{ roleNodeId: "point", status: "existing", target: { namespace: "official", id: "linux", revision: 1 } }], unresolved: [], receipts: [] }, ...patch,
 });
 
 test("active research drives one active stage and one headline", () => {
@@ -21,14 +21,14 @@ test("finished research folds the course mount into the final stage instead of a
   const status = projectRunStatus({ progress: progress({ active: false, stage: 4, status: "completed", message: "研究结果已保存" }), mount: mount("running") })!;
   assert.equal(status.stages[4].state, "done");
   assert.equal(status.stages[5].state, "active");
-  assert.equal(status.headline, "正在匹配已有课程，并合并未覆盖的要求");
+  assert.equal(status.headline, "正在复用学习路径节点，并为缺少的内容建立节点");
   assert.equal(status.tone, "active");
 });
 
 test("completed mount closes the whole pipeline with a single done headline", () => {
   const status = projectRunStatus({ progress: progress({ active: false, stage: 4, status: "completed", message: "研究结果已保存" }), mount: mount("completed") })!;
   assert.ok(status.stages.every(stage => stage.state === "done"));
-  assert.equal(status.headline, "研究与课程挂载已完成");
+  assert.equal(status.headline, "岗位图谱与学习节点连接已完成");
   assert.equal(status.tone, "done");
 });
 
@@ -48,4 +48,15 @@ test("a failed mount blocks the final stage with its error, not a generic runnin
 
 test("without progress there is nothing to project", () => {
   assert.equal(projectRunStatus({}), null);
+});
+
+test("草稿优先于旧的已完成回执，不能标成后台仍运行或完整首版", () => {
+  const view = projectRunStatus({ progress: progress({ active: false, status: "completed", stage: 4 }), mount: mount("completed"), readiness: { ready: false, blockers: ["缺少能力单元知识技能支撑"] } })!;
+  assert.equal(view.tone, "attention"); assert.equal(view.stages[4].state, "blocked"); assert.match(view.headline, /草稿/);
+});
+test("没有真实连接回执时不能完成全部冷启动阶段", () => {
+  const view = projectRunStatus({ readiness: { ready: true, blockers: [] } })!;
+  assert.equal(view.tone, "attention"); assert.equal(view.stages[5].state, "blocked");
+  const empty = projectRunStatus({ progress: progress({ active: false, status: "completed", stage: 4 }), mount: mount("completed", { result: undefined }) })!;
+  assert.equal(empty.tone, "attention");
 });

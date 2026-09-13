@@ -2,6 +2,7 @@ import { linkResearchFindings } from "@/lib/research/change-set";
 import { researchQuality } from "@/lib/research/quality";
 import { buildResearchAgent, type ResearchAgentParts, type ResearchAgentCheckpoint } from "@/lib/iteration/research-agent";
 import { runResearchWorkers } from "@/lib/iteration/worker";
+import { deriveLearningSupport } from "@/lib/research/learning-support";
 import { deriveTaskDefinitions } from "@/lib/research/task-definition";
 import type { IterationContract } from "@/lib/iteration/types";
 import { END, getWriter, START, StateGraph, StateSchema } from "@langchain/langgraph";
@@ -1266,6 +1267,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     let result = state.bestResult || state.result!;
     let researchContinue = false, researchStagnant = state.researchStagnant, researchSignature = state.researchSignature;
     if (state.request.research) {
+      await deriveLearningSupport(model, result, config.signal, sharedResearch?.reviewModel || model);
       await deriveTaskDefinitions(model, result, config.signal, sharedResearch?.reviewModel || model);
       const run = sharedResearch?.record();
       if (run) {

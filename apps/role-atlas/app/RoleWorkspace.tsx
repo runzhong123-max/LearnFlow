@@ -3,7 +3,6 @@
 import TaskDefinitionDetail from "./components/TaskDefinitionDetail";
 
 import { courseGraphPayload } from "@/lib/learning-path/course-presentation";
-import type { AutomaticMountRecord } from "@/lib/learning-path/automatic-contract";
 import { formatIntakeDescription } from "@/lib/intake/presentation";
 import { normalizeCitations, citationCaption, type CitationView } from "@/lib/presentation/citations";
 import { snapshotQualitySummary } from "@/lib/iteration/learning-health";
@@ -65,7 +64,7 @@ import "@/app/components/project-workspace.css";
 import ModelSettings from "@/app/settings/ModelSettings";
 import InlineRegistryCenter from "@/app/components/InlineRegistryCenter";
 import InlineVersionCenter from "@/app/components/InlineVersionCenter";
-import LearningPathMapping from "@/app/components/LearningPathMapping";
+import { useAutomaticLearningConnection, LearningNodeConnection, LearningNodeSemantics } from "@/app/components/LearningPathMapping";
 import ProjectManagement from "@/app/components/ProjectManagement";
 import { toProcessReference, type ProcessReferenceNode, type WorkProcessPayload } from "@/app/components/WorkProcessForestView";
 import type { ColdStartBuildResult } from "@/lib/build/types";
@@ -600,7 +599,8 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
     messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
   }, [messages]);
 
-  const [courseMount, setCourseMount] = useState<AutomaticMountRecord | null>(null);
+  const learningConnection = useAutomaticLearningConnection(projectId, conversations.find(conversation => conversation.id === activeConversationId)?.versionId || undefined, projectResult?.snapshot.id);
+  const courseMount = learningConnection.mount;
   const courseData = useMemo(() => projectResult ? courseGraphPayload(projectResult, courseMount) : graphData, [projectResult, courseMount, graphData]);
   const expandCourseNodes = useCallback((nodes: RoleNode[]): RoleNode[] => {
     const originals = new Map((graphData?.nodes || []).map(node => [node.id, node]));
@@ -1302,7 +1302,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
   // One canonical run projection feeds both the stage list and the header chip,
   // so the page can never show "后台增量中" and "已完成" at the same time.
   const activeMount = courseMount?.snapshotId === projectResult?.snapshot.id ? courseMount : undefined;
-  const runStatus = projectRunStatus({ progress: researchProgress[activeConversationId], mount: activeMount });
+  const runStatus = projectRunStatus({ progress: researchProgress[activeConversationId], mount: activeMount, readiness: projectResult?.deliveryReadiness, connectionError: learningConnection.error });
   return (
     <main className={`workspace-shell ${chatCollapsed ? "chat-collapsed" : ""}`}>
       <aside className="sidebar">
@@ -1323,7 +1323,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
             const href = `/projects/${project.id}?conversation=${projectConversations[0]?.id || ""}`;
             return <div className="project-tree" key={project.id}>
               <Link href={href} className={`project-row ${active ? "active" : ""}`}>
-                <FolderKanban size={15} /><span><b>{project.title}</b><small>{project.status === "building" ? "正在构建" : project.status === "failed" ? "构建失败" : project.activeVersionId ? "已有岗位快照" : "等待快照"} · {projectConversations.length} 个会话</small></span>
+                <FolderKanban size={15} /><span><b>{project.title}</b><small>{active && runStatus?.tone === "attention" ? "待补全" : project.status === "building" ? "正在构建" : project.status === "failed" ? "构建失败" : project.activeVersionId ? "已有岗位快照" : "等待快照"} · {projectConversations.length} 个会话</small></span>
               </Link>
             </div>;
           })}
@@ -1347,7 +1347,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
             {projectId && <><button type="button" title="历史版本与比较" onClick={() => setActiveOperation("versions")}><History size={14} />版本历史</button><button type="button" onClick={() => setActiveOperation("publish")}><Upload size={14} />发布</button><div className="project-menu-wrap"><button type="button" onClick={() => setProjectMenuOpen((value) => !value)} aria-label="项目操作" aria-expanded={projectMenuOpen}><MoreHorizontal size={18} /></button>{projectMenuOpen && <div className="project-header-menu"><ProjectManagement projectId={projectId} title={workspaceTitle} variant="delete" /></div>}</div></>}
 
             {launchReleaseId ? <button type="button" className="learnflow-launch" onClick={() => void launchInLearnFlow()} disabled={launchingLearnFlow}><MessageCircle size={13} /> {launchingLearnFlow ? "正在进入…" : "在 LearnFlow 中引用"}</button> : null}
-            <div className={`status-chip ${runStatus?.tone === "attention" || packageStatus?.publishable === false ? "warning" : ""}`}><span /> {runStatus && runStatus.tone !== "idle" && runStatus.tone !== "done" ? runStatus.headline : projectStatus === "building" || enrichmentState.running ? "内核可用 · 后台增量中" : packageStatus ? `快照 ${packageStatus.snapshotAsOf}` : "尚未生成岗位包"}</div>
+            <div className={`status-chip ${runStatus?.tone === "attention" || packageStatus?.publishable === false ? "warning" : ""}`}><span /> {runStatus ? runStatus.headline : projectStatus === "building" || enrichmentState.running ? "内核可用 · 后台增量中" : packageStatus ? `快照 ${packageStatus.snapshotAsOf}` : "尚未生成岗位包"}</div>
           </div>
         </header>
         {workspaceError && <div className="tool-error" role="alert"><AlertTriangle size={14} /><span>{workspaceError}</span>{/登录|身份/.test(workspaceError) && <a href={loginHref || `https://learn.learnflow.club/login?return_to=${encodeURIComponent(typeof window === "undefined" ? "https://roles.learnflow.club/" : window.location.href)}`}>重新登录</a>}</div>}
@@ -1372,18 +1372,16 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
             : `${nodeCount}/${courseData?.nodes.length || 0} 节点 · ${edgeCount} 关系`}</span>
         </div>
 
-        {projectId && enrichmentState.label ? <div className={`enrichment-banner ${enrichmentState.error ? "error" : enrichmentState.running ? "running" : "done"}`}>
-          {enrichmentState.error ? <AlertTriangle size={14} /> : enrichmentState.running ? <Sparkles size={14} /> : <Check size={14} />}
-          <span><b>{enrichmentState.label}</b><small>{enrichmentState.error || (enrichmentState.running ? "当前岗位结构可立即使用；新节点、依赖和事理场景会按不可变子版本自动并入。" : "节点引用仍固定到具体快照；新会话默认使用最新版本。")}</small></span>
+        {projectId && (runStatus?.headline || enrichmentState.label) ? <div className={`enrichment-banner ${runStatus?.tone === "attention" || enrichmentState.error ? "error" : runStatus?.tone === "active" ? "running" : "done"}`}>
+          {runStatus?.tone === "attention" || enrichmentState.error ? <AlertTriangle size={14} /> : runStatus?.tone === "active" ? <Sparkles size={14} /> : <Check size={14} />}
+          <span><b>{runStatus?.headline || enrichmentState.label}</b><small>{enrichmentState.error || (enrichmentState.running ? "当前岗位结构可立即使用；新节点、依赖和事理场景会按不可变子版本自动并入。" : "节点引用仍固定到具体快照；新会话默认使用最新版本。")}</small></span>
         </div> : null}
 
         {projectResult && !enrichmentState.running && snapshotQualitySummary(projectResult).needsResearch && <details className="snapshot-research-details" data-testid="snapshot-quality-status">
           <summary>研究覆盖与后续完善</summary><p>{snapshotQualitySummary(projectResult).label}</p>
           <p>后续研究会优先补充缺少的知识、技能、工作过程和来源。</p>
-          {projectId && <button disabled={Boolean(toolBusy[activeConversationId])} onClick={() => void launchTool("snapshot-iteration", "补充当前岗位各任务缺少的知识和技能，完善工作过程与能力单元，核对来源并更新学习路径挂载。")}>继续完善</button>}
+          {projectId && <button disabled={Boolean(toolBusy[activeConversationId])} onClick={() => void launchTool("snapshot-iteration", "补充当前岗位各任务缺少的知识和技能，完善能力单元与知识技能的支撑关系、工作过程和来源，并自动连接学习路径节点。")}>继续完善</button>}
         </details>}
-
-        {projectResult && <LearningPathMapping key={projectResult.snapshot.id} result={projectResult} projectId={projectId} projectVersionId={skillContext.versionId} selectedNodeId={selectedId} onMountChange={setCourseMount} onPreparePackage={() => { setLearningMountVersionId(skillContext.versionId); setActiveOperation("publish"); }} />}
 
         <div data-testid="workspace-stage" className={`graph-stage ${view === "tasks" ? "tasks-mode" : view === "evidence" ? "evidence-mode" : view === "cards" ? "cards-mode" : ""}`}>
           {(projectId || initialNewProject) && !graphData && !conversationLoading ? <div className="empty-project-stage"><Network size={38} /><h2>{workspaceError ? "暂时无法打开项目" : "岗位图谱将在这里逐步形成"}</h2><p>{workspaceError || "在右侧明确岗位并确认说明后，图谱和学习路径会在这里逐步形成。"}</p>{workspaceError ? <a href={loginHref || `https://learn.learnflow.club/login?return_to=${encodeURIComponent(typeof window === "undefined" ? "https://roles.learnflow.club/" : window.location.href)}`}>重新登录</a> : !showIntake && <button onClick={() => { setIntakeDismissed(false); void launchTool("cold-start-role-package"); }}><Sparkles size={14} />开始岗位研究</button>}</div> : view === "evidence" ? (
@@ -1447,10 +1445,9 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
                   <span className={`node-kind ${selectedNode.lifecycle}`}>{typeLabels[selectedNode.type] ?? selectedNode.type} · {selectedNode.lifecycle === "accepted" ? "已接受" : "待审"}</span>
                   <h2>{selectedNode.label}</h2>
                   <p>{selectedNode.summary}</p>
+                  <LearningNodeConnection mount={activeMount} nodeIds={expandCourseNodes([selectedNode]).map(node => node.id)} />
                   {["task", "typical_task"].includes(selectedNode.type) && <TaskDefinitionDetail value={selectedNode.data.taskDefinition} />}
-                  {Array.isArray(selectedNode.data.courseMemberIds) && <details className="node-technical"><summary>岗位应用与验收 · {selectedNode.facets?.length || 0} 项</summary>
-                    {selectedNode.facets?.map(facet => <div key={facet.nodeId}><button type="button" onClick={() => { if (facet.nodeId) setSelectedId(facet.nodeId); }}>{facet.label}</button><p>{facet.summary}</p></div>)}
-                  </details>}
+                  <LearningNodeSemantics nodes={(projectResult?.semantic.nodes || []).filter(node => expandCourseNodes([selectedNode]).some(selected => selected.id === node.id))} />
                   <div className="evidence-metrics">
                     <span><ShieldCheck size={13} /><b>{selectedNode.evidence_summary.max_confidence.toFixed(2)}</b><small>置信上限</small></span>
                     <span><BookOpenCheck size={13} /><b>{selectedNode.evidence_summary.source_refs.length}</b><small>来源</small></span>
@@ -1507,7 +1504,7 @@ function RoleWorkspaceSession({ projectId, initialConversationId, initialNewProj
         {!modelSummary.configured && (
           <div className="model-banner"><AlertTriangle size={15} /><span><b>还不能发起真实回答</b><small>选择 MiMo V2.5 或 DeepSeek V4 Flash，并保存会话级 API Key。</small></span><button type="button" onClick={() => setActiveOperation("settings")}>去配置</button></div>
         )}
-        {projectId && <ResearchStages progress={researchProgress[activeConversationId]} mount={activeMount} />}
+        {projectId && <ResearchStages progress={researchProgress[activeConversationId]} mount={activeMount} readiness={projectResult?.deliveryReadiness} connectionError={learningConnection.error} />}
         <div className="messages">
           {showIntake && <RoleIntakePane key={`${actorSubjectId}:${projectId || "new"}:${activeConversationId}`} actorSubjectId={actorSubjectId} projectId={projectId} conversationId={activeConversationId || undefined} initialTitle={newProjectBrief?.role || (projectId ? workspaceTitle : "")} initialDescription={newProjectBrief?.description || projectBrief.description} initialMarket={newProjectBrief?.market || projectBrief.market} onBusyChange={setIntakeBusy} onClose={initialNewProject ? undefined : () => setIntakeDismissed(true)} onStarted={(scope) => window.location.assign(`/projects/${encodeURIComponent(scope.projectId)}?conversation=${encodeURIComponent(scope.conversationId)}`)} />}
           {projectId && conversations.filter((conversation) => conversation.id === activeConversationId || toolInstances[conversation.id] || toolBusy[conversation.id]).map((conversation) => {

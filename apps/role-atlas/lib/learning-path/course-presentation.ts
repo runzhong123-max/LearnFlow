@@ -34,20 +34,18 @@ export function courseGraphPayload(result: ColdStartBuildResult, mount?: Automat
       facets: group.members.map(({ node }) => ({ nodeId: node.id, label: node.label, summary: node.summary })),
       evidence_summary: { ...members[0].evidence_summary, source_refs: sourceRefs, binding_refs: bindingRefs,
         max_confidence: Math.max(...members.map(n => n.evidence_summary.max_confidence)) },
-      data: { ...members[0].data, courseMemberIds: members.map(n => n.id) },
+      data: { ...members[0].data, courseMemberIds: members.map(n => n.id), learningPathTarget: group.members[0].mount?.target },
     };
   });
-  const unmounted = new Set(graph.nodes.filter(node => node.type === "knowledge_skill" && !memberToCourse.has(node.id)).map(node => node.id));
   const edges = new Map<string, typeof graph.edges[number]>();
   for (const edge of graph.edges) {
-    if (unmounted.has(edge.source) || unmounted.has(edge.target)) continue;
     const source = memberToCourse.get(edge.source) || edge.source, target = memberToCourse.get(edge.target) || edge.target;
     // A relationship between two fine points is not a course prerequisite.
     if (source === target || memberToCourse.has(edge.source) && memberToCourse.has(edge.target)) continue;
     const key = JSON.stringify([source, target, edge.type]);
     if (!edges.has(key)) edges.set(key, { ...edge, source, target });
   }
-  return { ...graph, nodes: [...graph.nodes.filter(n => n.type !== "knowledge_skill"), ...courses], edges: [...edges.values()] };
+  return { ...graph, nodes: [...graph.nodes.filter(n => !memberToCourse.has(n.id)), ...courses], edges: [...edges.values()] };
 }
 
 export function mountedCourseCounts(mount?: AutomaticMountRecord | null) {
