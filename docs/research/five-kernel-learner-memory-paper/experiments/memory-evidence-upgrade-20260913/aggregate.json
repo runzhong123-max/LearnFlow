@@ -1,0 +1,1299 @@
+{
+  "case_assertions": 80,
+  "execution_complete_count": 14,
+  "frozen_head": "251a6cc736783eadf7909d9e4c4bfde23a4eb745",
+  "groups": {
+    "authored_boundary_challenge": {
+      "failed_case_ids": [],
+      "passed": 2,
+      "total": 2
+    },
+    "authored_safety_challenge": {
+      "failed_case_ids": [],
+      "passed": 1,
+      "total": 1
+    },
+    "contract": {
+      "failed_case_ids": [],
+      "passed": 11,
+      "total": 11
+    }
+  },
+  "incomplete_operation_case_count": 0,
+  "infrastructure_error_count": 0,
+  "kind": "authored_native_business_interaction_validation",
+  "limitations": [
+    "14 authored scenarios, not an empirical long-tail population",
+    "No human learning benefit, teacher rating, LLM comparison, UI or HTTP middleware evaluation",
+    "Validated variants are fixed author-computed closed-choice metadata, not independently validated transfer difficulty",
+    "Native review/assessment lacks session field; path API is learner-global",
+    "Safety challenge long-term invalidation is a predeclared author criterion, not an existing product guarantee"
+  ],
+  "native_counts": {
+    "attempts": 27,
+    "events": 60,
+    "facts": 249,
+    "mutations": 121,
+    "nodes": 249,
+    "schedules": 13
+  },
+  "null_session_assessment_count": 27,
+  "passed": 14,
+  "reverification_equal": true,
+  "scores": [
+    {
+      "case_id": "path_lifecycle",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": 2,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/path_revision",
+          "value": 2
+        },
+        {
+          "actual": "archived",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/path_status",
+          "value": "archived"
+        },
+        {
+          "actual": "archived",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/goal_status",
+          "value": "archived"
+        },
+        {
+          "actual": "完成含消融实验的项目",
+          "op": "contains",
+          "passed": true,
+          "path": "/lens/goal_statement",
+          "value": "含消融实验"
+        },
+        {
+          "actual": [
+            "vnext_learning_path_plan_committed",
+            "vnext_learning_path_plan_revised",
+            "vnext_learning_path_plan_archived"
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/path_events",
+          "value": [
+            "vnext_learning_path_plan_committed",
+            "vnext_learning_path_plan_revised",
+            "vnext_learning_path_plan_archived"
+          ]
+        },
+        {
+          "actual": 0,
+          "op": "eq",
+          "passed": true,
+          "path": "/steps/replay/new_event_count",
+          "value": 0
+        },
+        {
+          "actual": null,
+          "op": "eq",
+          "passed": true,
+          "path": "/observation/path_overlay/active_plan_id",
+          "value": null
+        }
+      ],
+      "counts": {
+        "attempts": 0,
+        "events": 4,
+        "facts": 27,
+        "mutations": 7,
+        "nodes": 27,
+        "schedules": 0
+      },
+      "known_null_session_grade_count": 0,
+      "observed": {
+        "attempt_count": 0,
+        "bucket": null,
+        "current_evidence": null,
+        "defer_count": null,
+        "defer_moves_one_day": false,
+        "goal_statement": "完成含消融实验的项目",
+        "goal_status": "archived",
+        "last_attempt_status": null,
+        "last_grade": null,
+        "long_stable": false,
+        "path_events": [
+          "vnext_learning_path_plan_committed",
+          "vnext_learning_path_plan_revised",
+          "vnext_learning_path_plan_archived"
+        ],
+        "path_revision": 2,
+        "path_status": "archived",
+        "plan_actions": [],
+        "retention": null,
+        "review_count": 0,
+        "review_forms": [],
+        "review_independent": [],
+        "schedule_count": 0,
+        "stable_eligible": false,
+        "stable_source_coverage": false
+      },
+      "passed": true,
+      "purpose": "contract"
+    },
+    {
+      "case_id": "assessment_creates_schedule",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": 1,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/schedule_count",
+          "value": 1
+        },
+        {
+          "actual": 1,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/attempt_count",
+          "value": 1
+        },
+        {
+          "actual": "good",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/last_grade",
+          "value": "good"
+        },
+        {
+          "actual": "verified_once",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/current_evidence",
+          "value": "verified_once"
+        },
+        {
+          "actual": false,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/stable_eligible",
+          "value": false
+        },
+        {
+          "actual": false,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/long_stable",
+          "value": false
+        }
+      ],
+      "counts": {
+        "attempts": 1,
+        "events": 2,
+        "facts": 6,
+        "mutations": 4,
+        "nodes": 6,
+        "schedules": 1
+      },
+      "known_null_session_grade_count": 1,
+      "observed": {
+        "attempt_count": 1,
+        "bucket": "upcoming",
+        "current_evidence": "verified_once",
+        "defer_count": 0,
+        "defer_moves_one_day": false,
+        "goal_statement": null,
+        "goal_status": null,
+        "last_attempt_status": "evaluated",
+        "last_grade": "good",
+        "long_stable": false,
+        "path_events": [],
+        "path_revision": null,
+        "path_status": null,
+        "plan_actions": [
+          "independent_variant_or_reasoning_check"
+        ],
+        "retention": null,
+        "review_count": 0,
+        "review_forms": [],
+        "review_independent": [],
+        "schedule_count": 1,
+        "stable_eligible": false,
+        "stable_source_coverage": false
+      },
+      "passed": true,
+      "purpose": "contract"
+    },
+    {
+      "case_id": "due_without_learning",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": 1,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/attempt_count",
+          "value": 1
+        },
+        {
+          "actual": 0,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/review_count",
+          "value": 0
+        },
+        {
+          "actual": "overdue",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/bucket",
+          "value": "overdue"
+        },
+        {
+          "actual": false,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/long_stable",
+          "value": false
+        },
+        {
+          "actual": 0,
+          "op": "eq",
+          "passed": true,
+          "path": "/steps/due/new_event_count",
+          "value": 0
+        }
+      ],
+      "counts": {
+        "attempts": 1,
+        "events": 2,
+        "facts": 6,
+        "mutations": 4,
+        "nodes": 6,
+        "schedules": 1
+      },
+      "known_null_session_grade_count": 1,
+      "observed": {
+        "attempt_count": 1,
+        "bucket": "overdue",
+        "current_evidence": "verified_once",
+        "defer_count": 0,
+        "defer_moves_one_day": false,
+        "goal_statement": null,
+        "goal_status": null,
+        "last_attempt_status": "evaluated",
+        "last_grade": "good",
+        "long_stable": false,
+        "path_events": [],
+        "path_revision": null,
+        "path_status": null,
+        "plan_actions": [
+          "independent_variant_or_reasoning_check"
+        ],
+        "retention": null,
+        "review_count": 0,
+        "review_forms": [],
+        "review_independent": [],
+        "schedule_count": 1,
+        "stable_eligible": false,
+        "stable_source_coverage": false
+      },
+      "passed": true,
+      "purpose": "contract"
+    },
+    {
+      "case_id": "defer_is_not_evidence",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": 1,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/attempt_count",
+          "value": 1
+        },
+        {
+          "actual": 1,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/defer_count",
+          "value": 1
+        },
+        {
+          "actual": 0,
+          "op": "eq",
+          "passed": true,
+          "path": "/steps/repeat/new_event_count",
+          "value": 0
+        },
+        {
+          "actual": true,
+          "op": "eq",
+          "passed": true,
+          "path": "/steps/repeat/response/idempotent_replay",
+          "value": true
+        },
+        {
+          "actual": false,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/long_stable",
+          "value": false
+        },
+        {
+          "actual": true,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/defer_moves_one_day",
+          "value": true
+        }
+      ],
+      "counts": {
+        "attempts": 1,
+        "events": 3,
+        "facts": 6,
+        "mutations": 4,
+        "nodes": 6,
+        "schedules": 1
+      },
+      "known_null_session_grade_count": 1,
+      "observed": {
+        "attempt_count": 1,
+        "bucket": "upcoming",
+        "current_evidence": "verified_once",
+        "defer_count": 1,
+        "defer_moves_one_day": true,
+        "goal_statement": null,
+        "goal_status": null,
+        "last_attempt_status": "evaluated",
+        "last_grade": "good",
+        "long_stable": false,
+        "path_events": [],
+        "path_revision": null,
+        "path_status": null,
+        "plan_actions": [
+          "independent_variant_or_reasoning_check"
+        ],
+        "retention": null,
+        "review_count": 0,
+        "review_forms": [],
+        "review_independent": [],
+        "schedule_count": 1,
+        "stable_eligible": false,
+        "stable_source_coverage": false
+      },
+      "passed": true,
+      "purpose": "contract"
+    },
+    {
+      "case_id": "assisted_review",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": [
+            "original"
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/review_forms",
+          "value": [
+            "original"
+          ]
+        },
+        {
+          "actual": [
+            false
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/review_independent",
+          "value": [
+            false
+          ]
+        },
+        {
+          "actual": "retrieved_with_support",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/retention",
+          "value": "retrieved_with_support"
+        },
+        {
+          "actual": "hard",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/last_grade",
+          "value": "hard"
+        },
+        {
+          "actual": false,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/long_stable",
+          "value": false
+        },
+        {
+          "actual": [
+            "fade_support_then_independent_probe"
+          ],
+          "op": "contains",
+          "passed": true,
+          "path": "/lens/plan_actions",
+          "value": "fade_support_then_independent_probe"
+        }
+      ],
+      "counts": {
+        "attempts": 2,
+        "events": 3,
+        "facts": 12,
+        "mutations": 7,
+        "nodes": 12,
+        "schedules": 1
+      },
+      "known_null_session_grade_count": 2,
+      "observed": {
+        "attempt_count": 2,
+        "bucket": "upcoming",
+        "current_evidence": "assisted_success",
+        "defer_count": 0,
+        "defer_moves_one_day": false,
+        "goal_statement": null,
+        "goal_status": null,
+        "last_attempt_status": "evaluated",
+        "last_grade": "hard",
+        "long_stable": false,
+        "path_events": [],
+        "path_revision": null,
+        "path_status": null,
+        "plan_actions": [
+          "fade_support_then_independent_probe"
+        ],
+        "retention": "retrieved_with_support",
+        "review_count": 1,
+        "review_forms": [
+          "original"
+        ],
+        "review_independent": [
+          false
+        ],
+        "schedule_count": 1,
+        "stable_eligible": false,
+        "stable_source_coverage": false
+      },
+      "passed": true,
+      "purpose": "contract"
+    },
+    {
+      "case_id": "independent_original",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": [
+            "original"
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/review_forms",
+          "value": [
+            "original"
+          ]
+        },
+        {
+          "actual": [
+            true
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/review_independent",
+          "value": [
+            true
+          ]
+        },
+        {
+          "actual": "retrieved",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/retention",
+          "value": "retrieved"
+        },
+        {
+          "actual": false,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/long_stable",
+          "value": false
+        },
+        {
+          "actual": [
+            "independent_variant_or_reasoning_check"
+          ],
+          "op": "contains",
+          "passed": true,
+          "path": "/lens/plan_actions",
+          "value": "independent_variant_or_reasoning_check"
+        }
+      ],
+      "counts": {
+        "attempts": 2,
+        "events": 3,
+        "facts": 12,
+        "mutations": 7,
+        "nodes": 12,
+        "schedules": 1
+      },
+      "known_null_session_grade_count": 2,
+      "observed": {
+        "attempt_count": 2,
+        "bucket": "upcoming",
+        "current_evidence": "verified_once",
+        "defer_count": 0,
+        "defer_moves_one_day": false,
+        "goal_statement": null,
+        "goal_status": null,
+        "last_attempt_status": "evaluated",
+        "last_grade": "good",
+        "long_stable": false,
+        "path_events": [],
+        "path_revision": null,
+        "path_status": null,
+        "plan_actions": [
+          "independent_variant_or_reasoning_check"
+        ],
+        "retention": "retrieved",
+        "review_count": 1,
+        "review_forms": [
+          "original"
+        ],
+        "review_independent": [
+          true
+        ],
+        "schedule_count": 1,
+        "stable_eligible": false,
+        "stable_source_coverage": false
+      },
+      "passed": true,
+      "purpose": "contract"
+    },
+    {
+      "case_id": "independent_variant",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": [
+            "validated_variant"
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/review_forms",
+          "value": [
+            "validated_variant"
+          ]
+        },
+        {
+          "actual": "retrieved",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/retention",
+          "value": "retrieved"
+        },
+        {
+          "actual": "easy",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/last_grade",
+          "value": "easy"
+        },
+        {
+          "actual": false,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/stable_eligible",
+          "value": false
+        },
+        {
+          "actual": false,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/long_stable",
+          "value": false
+        }
+      ],
+      "counts": {
+        "attempts": 2,
+        "events": 3,
+        "facts": 12,
+        "mutations": 7,
+        "nodes": 12,
+        "schedules": 1
+      },
+      "known_null_session_grade_count": 2,
+      "observed": {
+        "attempt_count": 2,
+        "bucket": "upcoming",
+        "current_evidence": "verified_once",
+        "defer_count": 0,
+        "defer_moves_one_day": false,
+        "goal_statement": null,
+        "goal_status": null,
+        "last_attempt_status": "evaluated",
+        "last_grade": "easy",
+        "long_stable": false,
+        "path_events": [],
+        "path_revision": null,
+        "path_status": null,
+        "plan_actions": [
+          "independent_variant_or_reasoning_check"
+        ],
+        "retention": "retrieved",
+        "review_count": 1,
+        "review_forms": [
+          "validated_variant"
+        ],
+        "review_independent": [
+          true
+        ],
+        "schedule_count": 1,
+        "stable_eligible": false,
+        "stable_source_coverage": false
+      },
+      "passed": true,
+      "purpose": "contract"
+    },
+    {
+      "case_id": "spaced_original_is_not_stable",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": [
+            "original",
+            "original"
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/review_forms",
+          "value": [
+            "original",
+            "original"
+          ]
+        },
+        {
+          "actual": false,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/stable_eligible",
+          "value": false
+        },
+        {
+          "actual": false,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/long_stable",
+          "value": false
+        },
+        {
+          "actual": "retrieved",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/retention",
+          "value": "retrieved"
+        }
+      ],
+      "counts": {
+        "attempts": 3,
+        "events": 4,
+        "facts": 18,
+        "mutations": 10,
+        "nodes": 18,
+        "schedules": 1
+      },
+      "known_null_session_grade_count": 3,
+      "observed": {
+        "attempt_count": 3,
+        "bucket": "upcoming",
+        "current_evidence": "verified_once",
+        "defer_count": 0,
+        "defer_moves_one_day": false,
+        "goal_statement": null,
+        "goal_status": null,
+        "last_attempt_status": "evaluated",
+        "last_grade": "good",
+        "long_stable": false,
+        "path_events": [],
+        "path_revision": null,
+        "path_status": null,
+        "plan_actions": [
+          "independent_variant_or_reasoning_check"
+        ],
+        "retention": "retrieved",
+        "review_count": 2,
+        "review_forms": [
+          "original",
+          "original"
+        ],
+        "review_independent": [
+          true,
+          true
+        ],
+        "schedule_count": 1,
+        "stable_eligible": false,
+        "stable_source_coverage": false
+      },
+      "passed": true,
+      "purpose": "contract"
+    },
+    {
+      "case_id": "spaced_variant_contract",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": [
+            "validated_variant",
+            "original"
+          ],
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/review_forms",
+          "value": [
+            "validated_variant",
+            "original"
+          ]
+        },
+        {
+          "actual": true,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/stable_eligible",
+          "value": true
+        },
+        {
+          "actual": true,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/long_stable",
+          "value": true
+        },
+        {
+          "actual": "spaced_stable",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/retention",
+          "value": "spaced_stable"
+        },
+        {
+          "actual": "spaced_stable",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/current_evidence",
+          "value": "spaced_stable"
+        },
+        {
+          "actual": true,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/stable_source_coverage",
+          "value": true
+        }
+      ],
+      "counts": {
+        "attempts": 3,
+        "events": 4,
+        "facts": 20,
+        "mutations": 10,
+        "nodes": 20,
+        "schedules": 1
+      },
+      "known_null_session_grade_count": 3,
+      "observed": {
+        "attempt_count": 3,
+        "bucket": "stable",
+        "current_evidence": "spaced_stable",
+        "defer_count": 0,
+        "defer_moves_one_day": false,
+        "goal_statement": null,
+        "goal_status": null,
+        "last_attempt_status": "evaluated",
+        "last_grade": "good",
+        "long_stable": true,
+        "path_events": [],
+        "path_revision": null,
+        "path_status": null,
+        "plan_actions": [
+          "independent_variant_or_reasoning_check"
+        ],
+        "retention": "spaced_stable",
+        "review_count": 2,
+        "review_forms": [
+          "validated_variant",
+          "original"
+        ],
+        "review_independent": [
+          true,
+          true
+        ],
+        "schedule_count": 1,
+        "stable_eligible": true,
+        "stable_source_coverage": true
+      },
+      "passed": true,
+      "purpose": "contract"
+    },
+    {
+      "case_id": "nonresponse_and_idempotence",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": 0,
+          "op": "eq",
+          "passed": true,
+          "path": "/steps/missing/new_attempt_count",
+          "value": 0
+        },
+        {
+          "actual": 422,
+          "op": "eq",
+          "passed": true,
+          "path": "/steps/missing/http_status",
+          "value": 422
+        },
+        {
+          "actual": 0,
+          "op": "eq",
+          "passed": true,
+          "path": "/steps/skip/new_attempt_count",
+          "value": 0
+        },
+        {
+          "actual": 0,
+          "op": "eq",
+          "passed": true,
+          "path": "/steps/skip_replay/new_event_count",
+          "value": 0
+        },
+        {
+          "actual": "unknown",
+          "op": "eq",
+          "passed": true,
+          "path": "/steps/unknown/response/outcome",
+          "value": "unknown"
+        },
+        {
+          "actual": "abstained",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/last_attempt_status",
+          "value": "abstained"
+        },
+        {
+          "actual": "retrieval_gap",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/retention",
+          "value": "retrieval_gap"
+        },
+        {
+          "actual": false,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/long_stable",
+          "value": false
+        }
+      ],
+      "counts": {
+        "attempts": 2,
+        "events": 5,
+        "facts": 19,
+        "mutations": 9,
+        "nodes": 19,
+        "schedules": 1
+      },
+      "known_null_session_grade_count": 2,
+      "observed": {
+        "attempt_count": 2,
+        "bucket": "wrong",
+        "current_evidence": "none",
+        "defer_count": 0,
+        "defer_moves_one_day": false,
+        "goal_statement": null,
+        "goal_status": null,
+        "last_attempt_status": "abstained",
+        "last_grade": "again",
+        "long_stable": false,
+        "path_events": [],
+        "path_revision": null,
+        "path_status": null,
+        "plan_actions": [
+          "clarify_nonresponse"
+        ],
+        "retention": "retrieval_gap",
+        "review_count": 1,
+        "review_forms": [
+          "original"
+        ],
+        "review_independent": [
+          true
+        ],
+        "schedule_count": 1,
+        "stable_eligible": false,
+        "stable_source_coverage": false
+      },
+      "passed": true,
+      "purpose": "contract"
+    },
+    {
+      "case_id": "review_submission_replay",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": 2,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/attempt_count",
+          "value": 2
+        },
+        {
+          "actual": 1,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/review_count",
+          "value": 1
+        },
+        {
+          "actual": 0,
+          "op": "eq",
+          "passed": true,
+          "path": "/steps/replay/new_attempt_count",
+          "value": 0
+        },
+        {
+          "actual": 0,
+          "op": "eq",
+          "passed": true,
+          "path": "/steps/replay/new_event_count",
+          "value": 0
+        },
+        {
+          "actual": true,
+          "op": "eq",
+          "passed": true,
+          "path": "/steps/replay/response/idempotent_replay",
+          "value": true
+        }
+      ],
+      "counts": {
+        "attempts": 2,
+        "events": 3,
+        "facts": 12,
+        "mutations": 7,
+        "nodes": 12,
+        "schedules": 1
+      },
+      "known_null_session_grade_count": 2,
+      "observed": {
+        "attempt_count": 2,
+        "bucket": "upcoming",
+        "current_evidence": "verified_once",
+        "defer_count": 0,
+        "defer_moves_one_day": false,
+        "goal_statement": null,
+        "goal_status": null,
+        "last_attempt_status": "evaluated",
+        "last_grade": "good",
+        "long_stable": false,
+        "path_events": [],
+        "path_revision": null,
+        "path_status": null,
+        "plan_actions": [
+          "independent_variant_or_reasoning_check"
+        ],
+        "retention": "retrieved",
+        "review_count": 1,
+        "review_forms": [
+          "original"
+        ],
+        "review_independent": [
+          true
+        ],
+        "schedule_count": 1,
+        "stable_eligible": false,
+        "stable_source_coverage": false
+      },
+      "passed": true,
+      "purpose": "contract"
+    },
+    {
+      "case_id": "cross_week_current_support",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": 2,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/path_revision",
+          "value": 2
+        },
+        {
+          "actual": "完成含消融实验的项目",
+          "op": "contains",
+          "passed": true,
+          "path": "/lens/goal_statement",
+          "value": "含消融实验"
+        },
+        {
+          "actual": "检索与复习边界分析",
+          "op": "contains",
+          "passed": true,
+          "path": "/observation/compiled/current_priority",
+          "value": "检索与复习边界分析"
+        },
+        {
+          "actual": "<missing>",
+          "op": "absent",
+          "passed": true,
+          "path": "/observation/compiled/return_anchor",
+          "value": null
+        },
+        {
+          "actual": 20,
+          "op": "eq",
+          "passed": true,
+          "path": "/observation/plan/estimated_minutes",
+          "value": 20
+        },
+        {
+          "actual": true,
+          "op": "eq",
+          "passed": true,
+          "path": "/observation/compiled/small_steps",
+          "value": true
+        }
+      ],
+      "counts": {
+        "attempts": 2,
+        "events": 9,
+        "facts": 32,
+        "mutations": 15,
+        "nodes": 32,
+        "schedules": 1
+      },
+      "known_null_session_grade_count": 2,
+      "observed": {
+        "attempt_count": 2,
+        "bucket": "due",
+        "current_evidence": "verified_once",
+        "defer_count": 0,
+        "defer_moves_one_day": false,
+        "goal_statement": "完成含消融实验的项目",
+        "goal_status": "confirmed",
+        "last_attempt_status": "evaluated",
+        "last_grade": "easy",
+        "long_stable": false,
+        "path_events": [
+          "vnext_learning_path_plan_committed",
+          "vnext_learning_path_plan_revised"
+        ],
+        "path_revision": 2,
+        "path_status": "active",
+        "plan_actions": [
+          "limit_session",
+          "small_steps",
+          "prioritize_current_goal",
+          "independent_variant_or_reasoning_check"
+        ],
+        "retention": "retrieved",
+        "review_count": 1,
+        "review_forms": [
+          "validated_variant"
+        ],
+        "review_independent": [
+          true
+        ],
+        "schedule_count": 1,
+        "stable_eligible": false,
+        "stable_source_coverage": false
+      },
+      "passed": true,
+      "purpose": "authored_boundary_challenge"
+    },
+    {
+      "case_id": "cross_week_expired_support",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": 2,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/path_revision",
+          "value": 2
+        },
+        {
+          "actual": "完成含消融实验的项目",
+          "op": "contains",
+          "passed": true,
+          "path": "/lens/goal_statement",
+          "value": "含消融实验"
+        },
+        {
+          "actual": "检索与复习边界分析",
+          "op": "contains",
+          "passed": true,
+          "path": "/observation/compiled/current_priority",
+          "value": "检索与复习边界分析"
+        },
+        {
+          "actual": "<missing>",
+          "op": "absent",
+          "passed": true,
+          "path": "/observation/compiled/return_anchor",
+          "value": null
+        },
+        {
+          "actual": 35,
+          "op": "eq",
+          "passed": true,
+          "path": "/observation/plan/estimated_minutes",
+          "value": 35
+        },
+        {
+          "actual": "<missing>",
+          "op": "absent",
+          "passed": true,
+          "path": "/observation/compiled/small_steps",
+          "value": null
+        },
+        {
+          "actual": "<missing>",
+          "op": "absent",
+          "passed": true,
+          "path": "/observation/compiled/max_minutes",
+          "value": null
+        }
+      ],
+      "counts": {
+        "attempts": 2,
+        "events": 9,
+        "facts": 32,
+        "mutations": 15,
+        "nodes": 32,
+        "schedules": 1
+      },
+      "known_null_session_grade_count": 2,
+      "observed": {
+        "attempt_count": 2,
+        "bucket": "due",
+        "current_evidence": "verified_once",
+        "defer_count": 0,
+        "defer_moves_one_day": false,
+        "goal_statement": "完成含消融实验的项目",
+        "goal_status": "confirmed",
+        "last_attempt_status": "evaluated",
+        "last_grade": "easy",
+        "long_stable": false,
+        "path_events": [
+          "vnext_learning_path_plan_committed",
+          "vnext_learning_path_plan_revised"
+        ],
+        "path_revision": 2,
+        "path_status": "active",
+        "plan_actions": [
+          "prioritize_current_goal",
+          "independent_variant_or_reasoning_check"
+        ],
+        "retention": "retrieved",
+        "review_count": 1,
+        "review_forms": [
+          "validated_variant"
+        ],
+        "review_independent": [
+          true
+        ],
+        "schedule_count": 1,
+        "stable_eligible": false,
+        "stable_source_coverage": false
+      },
+      "passed": true,
+      "purpose": "authored_boundary_challenge"
+    },
+    {
+      "case_id": "relapse_invalidates_current_stability",
+      "chain_errors": [],
+      "checks": [
+        {
+          "actual": false,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/stable_eligible",
+          "value": false
+        },
+        {
+          "actual": "none",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/current_evidence",
+          "value": "none"
+        },
+        {
+          "actual": "needs_review",
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/retention",
+          "value": "needs_review"
+        },
+        {
+          "actual": false,
+          "op": "eq",
+          "passed": true,
+          "path": "/lens/long_stable",
+          "value": false
+        }
+      ],
+      "counts": {
+        "attempts": 4,
+        "events": 6,
+        "facts": 35,
+        "mutations": 15,
+        "nodes": 35,
+        "schedules": 1
+      },
+      "known_null_session_grade_count": 4,
+      "observed": {
+        "attempt_count": 4,
+        "bucket": "wrong",
+        "current_evidence": "none",
+        "defer_count": 0,
+        "defer_moves_one_day": false,
+        "goal_statement": null,
+        "goal_status": null,
+        "last_attempt_status": "evaluated",
+        "last_grade": "again",
+        "long_stable": false,
+        "path_events": [],
+        "path_revision": null,
+        "path_status": null,
+        "plan_actions": [
+          "diagnose_first_error"
+        ],
+        "retention": "needs_review",
+        "review_count": 3,
+        "review_forms": [
+          "validated_variant",
+          "original",
+          "validated_variant"
+        ],
+        "review_independent": [
+          true,
+          true,
+          true
+        ],
+        "schedule_count": 1,
+        "stable_eligible": false,
+        "stable_source_coverage": false
+      },
+      "passed": true,
+      "purpose": "authored_safety_challenge"
+    }
+  ],
+  "source_unchanged": true,
+  "total": 14
+}

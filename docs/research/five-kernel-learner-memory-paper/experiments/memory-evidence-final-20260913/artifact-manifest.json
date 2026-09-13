@@ -1,0 +1,17 @@
+{
+  "files": {
+    "REPORT.md": "058e47d0e7acc147763c3ea0ed7c297ef86ebccad42b19757d52cb70e54a0b16",
+    "aggregate.json": "874a5546821b189cdab3169068797c34838018606b0697bbed1351da6097e8d5",
+    "freeze.json": "91b4fa9e44f19c0db4c9203a88dbb1703d78400914a285b3d783365107934dac",
+    "harness-source/INCIDENTS.md": "93955976b72b78f586afa9b7c838ce44207d595d4f03e125e8a0f2f0b9678c7d",
+    "harness-source/PROTOCOL.md": "d1c386733250028dd490f25b4abc61324183a7d3a59e2b118056e064054b2a65",
+    "harness-source/__init__.py": "19b290aa5e95bae3e195dcae94d094e6979b3d86114d2ec5207280569d1434b3",
+    "harness-source/cases.json": "eeec5d807fd01fd4dfe762bb5663cb8bc060cb8c007ba02bd464233cf3f2f6d6",
+    "harness-source/cases.py": "7a0d053c8f7d4292d1e35ca40b931bfcfb8fcbefe6de8d02c0cf4cf1c45d222d",
+    "harness-source/native.py": "465ba09be327305f2767f4927d6b1769a661c6d59b1fe61eb98062cee443d8b5",
+    "harness-source/run.py": "97a556ee6c8c7b2ff815be3f7855b8714ff0225148c1520668d80cb28e35da73",
+    "harness-source/test_verifier.py": "3a53d6c6eeb889bc576cda26d71adaee1ee3797069c5926174a70f5fb4daf003",
+    "harness-source/verifier.py": "52423fc1fe1de72ea8fe252c31234518cc4958d9aa1aa15644a03152b15e9929",
+    "native.jsonl.gz": "29d55219cae9311343f4b0bdae86cbb465672f9d758f695f68f5b68bce6b8a54"
+  }
+}
