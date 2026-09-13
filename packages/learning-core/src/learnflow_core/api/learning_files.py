@@ -12,7 +12,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
 from app.models.learning import AgentSession, LearningAttempt, LearningTask, RemediationCase
 from app.models.project import Checkpoint, ConceptQuestion, Exercise, Lecture, Project, Roadmap
-from app.services.auth import CurrentLearner, get_current_learner, require_owned_checkpoint, require_owned_exercise, require_owned_source
+from app.services.auth import (
+    AccountModelProviderConfig, CurrentLearner, ModelCredentialDecryptionError,
+    ModelCredentialEncryptionUnavailable, account_model_provider_config,
+    get_current_learner, model_credential_configured, require_owned_checkpoint,
+    require_owned_exercise, require_owned_source,
+)
 from app.services.learning_runtime import record_event
 from app.services.learning_tasks import learning_task_view
 from learnflow_core.learning_file_generation import generate_task_files, normalize_file_kinds, task_artifact_checkpoint_id, task_artifact_project_id
@@ -27,6 +32,16 @@ from app.services.assessment_design import (
 
 
 router = APIRouter(prefix="/learning-files", tags=["learning-files"])
+
+
+def _current_model_provider_config(current: CurrentLearner) -> AccountModelProviderConfig | None:
+    """Resolve an account-scoped provider without retaining plaintext state."""
+    if not model_credential_configured(current.account):
+        return None
+    try:
+        return account_model_provider_config(current.account)
+    except (ModelCredentialEncryptionUnavailable, ModelCredentialDecryptionError):
+        return None
 
 
 async def _owned_lecture(db: AsyncSession, learner_id: int, lecture_id: int) -> tuple[Lecture, Checkpoint, Project]:
@@ -501,6 +516,7 @@ async def generate_task_learning_files(
             client_request_id=client_request_id,
             education_stage=current.profile.education_stage or "",
             background=current.profile.background or "",
+            provider_config=_current_model_provider_config(current),
         )
     except RuntimeError as error:
         message = str(error)

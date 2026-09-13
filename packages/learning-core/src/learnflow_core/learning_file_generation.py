@@ -106,7 +106,7 @@ def practice_candidates(artifact: dict, packet: DomainKnowledgePacket) -> list[d
 
 
 async def generate_task_files(db, *, task, file_kinds, source_text, expected_version,
-                              client_request_id, education_stage="", background="") -> dict:
+                              client_request_id, education_stage="", background="", provider_config=None) -> dict:
     from app.services.domain_knowledge import compile_domain_knowledge_packet, ensure_inline_source
     from app.services.learning_tasks import _artifact_refs, _resolved_task_source_text
     from app.services.micro_learning import _ground_artifact_in_packet, generate_micro_learning_artifact
@@ -180,7 +180,8 @@ async def generate_task_files(db, *, task, file_kinds, source_text, expected_ver
         else:
             resolved, _ = await _resolved_task_source_text(db, task, source_text)
             artifact = await generate_micro_learning_artifact(goal=f"{task.title}：{task.objective}", source_text=resolved,
-                education_stage=education_stage, background=background, full_lecture="lecture" in missing)
+                education_stage=education_stage, background=background, full_lecture="lecture" in missing,
+                provider_config=provider_config)
             generation = dict(artifact.get("generation") or {})
             reliable_content = (generation.get("mode") == "model_enhanced" and not dict(artifact.get("content_quality") or {}).get("card_fallback_used")) or str(generation.get("source") or "").startswith("curated.")
             # A complete, cited DomainKnowledgePacket is also a legitimate

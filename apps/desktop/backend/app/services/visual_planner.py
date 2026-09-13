@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import time
 from urllib.parse import urlparse
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from app.core.config import openai_chat_provider_kwargs, settings
+
+if TYPE_CHECKING:
+    from app.services.auth import AccountModelProviderConfig
 
 
 def _message_text(message: Any) -> str:
@@ -25,26 +28,30 @@ def _message_text(message: Any) -> str:
 async def plan_learning_visual(
     *, instructions: str, input_text: str, timeout_ms: int, max_tokens: int,
     response_format: str = "json_object",
+    provider_config: AccountModelProviderConfig | None = None,
 ) -> dict[str, Any]:
     """Run visual planning; shared host validates computation and client renders."""
-    if not settings.llm_api_key.strip():
+    api_key = provider_config.api_key if provider_config else settings.llm_api_key
+    base_url = provider_config.base_url if provider_config else settings.llm_base_url
+    model = provider_config.model if provider_config else settings.llm_model
+    if not api_key.strip():
         raise RuntimeError("visual_planner_not_configured")
 
     from openai import AsyncOpenAI
 
     started = time.perf_counter()
     client = AsyncOpenAI(
-        api_key=settings.llm_api_key,
-        base_url=settings.llm_base_url,
+        api_key=api_key,
+        base_url=base_url,
         max_retries=0,
     )
     provider_kwargs = openai_chat_provider_kwargs(
-        settings.llm_base_url, settings.llm_model, thinking_enabled=False,
+        base_url, model, thinking_enabled=False,
     )
-    if urlparse(settings.llm_base_url).hostname == 'api.deepseek.com' and settings.llm_model.casefold().startswith('deepseek-v4'):
+    if urlparse(base_url).hostname == 'api.deepseek.com' and model.casefold().startswith('deepseek-v4'):
         provider_kwargs = {**provider_kwargs, 'extra_body': {**provider_kwargs.get('extra_body', {}), 'thinking': {'type': 'disabled'}}}
     response = await client.chat.completions.create(
-        model=settings.llm_model,
+        model=model,
         messages=[
             {"role": "system", "content": instructions},
             {"role": "user", "content": input_text},
@@ -63,6 +70,6 @@ async def plan_learning_visual(
         raise RuntimeError("visual_provider_empty")
     return {
         "text": text,
-        "model": str(getattr(response, "model", None) or settings.llm_model),
+        "model": str(getattr(response, "model", None) or model),
         "duration_ms": round((time.perf_counter() - started) * 1000),
     }

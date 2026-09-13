@@ -74,7 +74,7 @@ test('same direct message synchronizes with the same event id and real scope', a
   } finally { globalThis.fetch = originalFetch }
 })
 
-test('visual repair keeps artifact scope; its follow-up explanation and repair receive current guidance', async () => {
+test('visual creation prepares a scoped studio draft; follow-up explanation receives current guidance', async () => {
   const plannerBodies: any[] = []
   const story = {
     story_version: '1', title: '二分查找的边界与中点', goal: '辨认待搜索区间和中点的关系',
@@ -122,12 +122,12 @@ test('visual repair keeps artifact scope; its follow-up explanation and repair r
         source: plannerBodies.length === 1 ? { ...story, story_version: 'invalid' } : story }) } }] }
     },
   })
-  assert.equal(plannerBodies.length, 2)
-  assert.match(JSON.stringify(plannerBodies[1].messages), /visual_builder_source_contract_mismatch/)
-  assert.equal(published, 1)
+  assert.equal(plannerBodies.length, 0)
+  assert.equal(published, 0)
   assert.equal(visual.toolRuns[0]?.toolName, 'educational_visuals__create')
   assert.equal(visual.toolRuns[0]?.status, 'completed')
-  assert.equal((visual.toolRuns[0]?.plugin?.result.payload as any)?.artifact?.revision_id, 'guidance-revision')
+  assert.equal((visual.toolRuns[0]?.plugin?.result.payload as any)?.status, 'search_results')
+  assert.equal((visual.toolRuns[0]?.plugin?.result.payload as any)?.studio_draft?.kind, 'diagram')
   for (const body of plannerBodies) {
     assert.equal(body.messages.some((message: any) => message.content.includes(guidance.instruction)), false)
     assert.doesNotMatch(JSON.stringify(body), /FULL_PACKET_SECRET/)

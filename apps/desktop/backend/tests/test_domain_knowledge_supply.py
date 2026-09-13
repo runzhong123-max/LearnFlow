@@ -11,7 +11,7 @@ from app.main import app
 from app.models.learning import EvidenceEvent, KernelMutation, LearningTask
 from app.models.project import Chunk, DomainKnowledgePacket, Lecture, Source, SourceVersion
 from app.services.chunker import SourceProcessor
-from app.services.domain_knowledge import build_domain_brief
+from app.services.domain_knowledge import _coverage, build_domain_brief
 
 
 def _register(client: TestClient) -> int:
@@ -44,6 +44,21 @@ def test_domain_brief_strips_learning_operations_but_keeps_subject():
     assert brief["subject"] == "梯度下降为什么沿负梯度走"
     assert "带我学" not in brief["subject"]
     assert {"definition", "mechanism", "example", "boundary", "misconception", "assessment_basis"} <= set(brief["required_knowledge"])
+
+
+def test_coverage_counts_faceted_concept_evidence():
+    coverage = _coverage(
+        {"required_knowledge": ["misconception"]},
+        {"claims": [], "concepts": [{
+            "id": "concept:misconception",
+            "label": "常见误区",
+            "facets": ["misconception"],
+            "support": {"traceable": True, "strongest_authority_score": 2},
+        }]},
+        [],
+    )
+    assert coverage["ratio"] == 1.0
+    assert coverage["facets"][0]["covered"] is True
 
 
 def test_gradient_descent_file_is_domain_dense_and_packet_bound():

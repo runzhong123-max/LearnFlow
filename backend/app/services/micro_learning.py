@@ -349,7 +349,7 @@ def _require_fresh_verification_questions(artifact: dict[str, Any], excluded_que
 
 async def generate_micro_learning_artifact(
     *, goal: str, source_text: str, education_stage: str, background: str, full_lecture: bool = False,
-    excluded_question_stems: list[str] | None = None,
+    excluded_question_stems: list[str] | None = None, provider_config: Any | None = None,
 ) -> dict[str, Any]:
     fallback = _fallback_artifact(goal, source_text, verification=excluded_question_stems is not None)
     fallback_source = fallback.pop("_generation_source", "generic_goal_scaffold")
@@ -358,15 +358,18 @@ async def generate_micro_learning_artifact(
         "reason": "model_not_configured",
         "source": fallback_source,
     }
-    if not settings.llm_api_key or settings.llm_api_key in {
+    api_key = str(getattr(provider_config, "api_key", "") or settings.llm_api_key or "")
+    base_url = str(getattr(provider_config, "base_url", "") or settings.llm_base_url or "")
+    model = str(getattr(provider_config, "model", "") or settings.llm_model or "")
+    if not api_key or api_key in {
         "", "***", "sk-your-key-here",
     }:
         _require_fresh_verification_questions(fallback, excluded_question_stems)
         return fallback
     llm = ChatOpenAI(
-        model=settings.llm_model,
-        api_key=settings.llm_api_key,
-        base_url=settings.llm_base_url,
+        model=model,
+        api_key=api_key,
+        base_url=base_url,
         temperature=0.35,
         timeout=max(1.0, settings.micro_learning_artifact_model_budget_seconds),
         max_retries=0,
