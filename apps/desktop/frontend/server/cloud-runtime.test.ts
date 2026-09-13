@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { activateRuntimeAuth, clearRuntimeAuth, getRuntimeClientState, isCloudDesktopRuntime, isLocalLearningRuntime, learnerWorkspaceStorageKey, resolveRuntimeUrl, runtimeFetch } from '../src/runtime-client.ts'
+import { activateRuntimeAuth, clearRuntimeAuth, getRuntimeClientState, isCloudDesktopRuntime, isLocalLearningRuntime, learnerWorkspaceStorageKey, resolveRuntimeUrl, runtimeFetch, switchDesktopWorkspace } from '../src/runtime-client.ts'
 import { connectFormalApiKey, invalidateFormalIdentity, loadFormalTutorSession, logoutFormalAccount } from '../src/formal-runtime.ts'
 
 test('cloud desktop selects the relay and namespaces cloud learner caches', async () => {
@@ -21,6 +21,25 @@ test('cloud desktop selects the relay and namespaces cloud learner caches', asyn
     for (const key of Object.keys(state)) delete (state as Record<string, unknown>)[key]
     Object.assign(state, previous)
   }
+})
+
+test('desktop workspace switching updates the active runtime without relying on a page reload', async () => {
+  await withCloudRuntime(async (values, events) => {
+    const state = getRuntimeClientState()
+    let changes = 0
+    events.addEventListener('learnflow:runtime-changed', () => { changes += 1 })
+    state.cloud = false
+
+    switchDesktopWorkspace(true)
+    assert.equal(state.cloud, true)
+    assert.equal(values.get('learnflow.desktop.workspace-mode'), 'cloud')
+    assert.equal(changes, 1)
+
+    switchDesktopWorkspace(false)
+    assert.equal(state.cloud, false)
+    assert.equal(values.get('learnflow.desktop.workspace-mode'), 'local')
+    assert.equal(changes, 2)
+  })
 })
 
 async function withCloudRuntime(run: (values: Map<string, string>, events: EventTarget) => Promise<void>) {

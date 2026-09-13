@@ -48,7 +48,7 @@ type DesktopPetSelectionCapture = {
 
 type DesktopPetPreferences = {
   schemaVersion: number
-  appearance: 'mist' | 'warm' | 'dusk'
+  appearance: 'sky' | 'mist' | 'warm' | 'dusk'
   shortcut: string
   reviewRemindersEnabled: boolean
   reviewReminderIntervalMinutes: 15 | 30 | 60
@@ -895,7 +895,7 @@ export default function DesktopPet() {
             ? `选中文字后按 ${preferences?.shortcut || DEFAULT_PET_SHORTCUT}`
             : '点我聊聊'
 
-  if (compactView) return <main className={`${styles.pet} ${styles.compactPet}`} data-appearance={preferences?.appearance || 'mist'}>
+  if (compactView) return <main className={`${styles.pet} ${styles.compactPet}`} data-appearance={preferences?.appearance || 'sky'}>
     <header className={styles.compactHeader} data-tauri-drag-region onPointerDown={startWindowDrag}>
       <strong data-tauri-drag-region>Flow</strong>
       <button type="button" onPointerDown={event => event.stopPropagation()} onClick={() => void import('@tauri-apps/api/core').then(({ invoke }) => invoke('close_desktop_pet'))} aria-label="隐藏桌宠">×</button>
@@ -906,7 +906,7 @@ export default function DesktopPet() {
     <button type="button" className={styles.compactCue} onClick={() => setPetView(false)}>{compactCue}</button>
   </main>
 
-  return <main className={styles.pet} data-appearance={preferences?.appearance || 'mist'}>
+  return <main className={styles.pet} data-appearance={preferences?.appearance || 'sky'}>
     <header className={styles.header} data-tauri-drag-region onPointerDown={startWindowDrag}>
       <span onPointerDown={event => event.stopPropagation()}><PetAvatar state={petVisualState} onClick={() => setPetView(true)} /></span>
       <strong data-tauri-drag-region>Flow</strong>
@@ -918,8 +918,8 @@ export default function DesktopPet() {
 
     {preferencesOpen && <section className={styles.preferences} aria-label="桌宠本机设置">
       <label>外观
-        <select value={preferences?.appearance || 'mist'} disabled={busyKey === 'preferences:update'} onChange={event => void updatePreferences({ appearance: event.target.value as DesktopPetPreferences['appearance'] })}>
-          <option value="mist">云雾</option><option value="warm">暖光</option><option value="dusk">夜色</option>
+        <select value={preferences?.appearance || 'sky'} disabled={busyKey === 'preferences:update'} onChange={event => void updatePreferences({ appearance: event.target.value as DesktopPetPreferences['appearance'] })}>
+          <option value="sky">青空</option><option value="mist">云雾</option><option value="warm">暖光</option><option value="dusk">夜色</option>
         </select>
       </label>
       <label>快捷键

@@ -1,4 +1,5 @@
 import { decodeRow } from "./format";
+import { isChunkedLargeText, loadLargeText } from "@/db/large-text";
 export type CollectionDatabase = () => Promise<D1Database>;
 const collectionDb: CollectionDatabase = async () => (await import("./store")).collectionDb();
 /** Intake was added after the original archive; reading an old database must not create it. */
@@ -27,7 +28,13 @@ export async function runs(projectId:string,database: CollectionDatabase = colle
 export async function* rows(table:string,where:string,values:unknown[],database: CollectionDatabase = collectionDb) {
  const db=await database();let offset=0;
  while(true) { const result=await db.prepare(`SELECT * FROM ${table} WHERE ${where} ORDER BY rowid LIMIT 30 OFFSET ?`).bind(...values,offset).all<Record<string,unknown>>();
-  for(const row of result.results) yield decodeRow(row);
+  for(const row of result.results) {
+   for(const column of ["input_json","checkpoint_json","result_json","alignment_json","package_json"]) {
+    const value=row[column];
+    if(typeof value==="string"&&isChunkedLargeText(value)) row[column]=await loadLargeText(db,{table,id:String(row.id),column},value);
+   }
+   yield decodeRow(row);
+  }
   if(result.results.length<30)break;offset+=30;
  }
 }
@@ -51,6 +58,12 @@ export async function runAttachmentIds(kind:RunKind,id:string,database:Collectio
 export async function detail(kind:RunKind,id:string,database: CollectionDatabase = collectionDb) {
  const db=await database();if(kind==="intake"&&!await hasCollectionTable(db,runTables.intake))return null;const row=await db.prepare(`SELECT * FROM ${runTables[kind]} WHERE id=?`).bind(id).first<Record<string,unknown>>();
  if(!row)return null;
+ // Oversized payloads are chunked into chunked_blobs with a marker; reassemble before decoding.
+ const table=runTables[kind];
+ for(const column of ["input_json","checkpoint_json","result_json","alignment_json","package_json"]) {
+  const value=row[column];
+  if(typeof value==="string"&&isChunkedLargeText(value)) row[column]=await loadLargeText(db,{table,id:String(row.id),column},value);
+ }
  const events:Record<string,unknown>[]=[];
  const eventTable=eventTables[kind];
  const count=eventTable?await db.prepare(`SELECT count(*) n FROM ${eventTable} WHERE run_id=?`).bind(id).first<{n:number}>():null;

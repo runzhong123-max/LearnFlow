@@ -366,7 +366,7 @@ export function selectSegmentsForTaskGroup(input: {
     const usefulMention = mentionKinds.some((kind) => kind === "knowledge_skill" || kind === "work_event" || kind === "deliverable") ? 6 : 0;
     return [{ segment, ordinal, score: (direct.has(segment.id) ? 100 : 0) + usefulMention + overlap }];
   }).sort((left, right) => right.score - left.score || left.ordinal - right.ordinal);
-  const maxTokens = Math.max(2_000, input.maxTokens || 7_500);
+  const maxTokens = Math.max(2_000, input.maxTokens || 15_000);
   const selected: SourceSegment[] = [];
   let tokens = 0;
   for (const candidate of scored) {
@@ -374,7 +374,7 @@ export function selectSegmentsForTaskGroup(input: {
     if (selected.length && tokens + size > maxTokens) continue;
     selected.push(candidate.segment);
     tokens += size;
-    if (tokens >= maxTokens || selected.length >= 10) break;
+    if (tokens >= maxTokens || selected.length >= 16) break;
   }
   return selected;
 }

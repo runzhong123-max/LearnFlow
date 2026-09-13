@@ -1,0 +1,103 @@
+{
+  "protocol": "role-research-validation/v2",
+  "date": "2026-09-12",
+  "native": {
+    "source": {
+      "url": "https://api-docs.deepseek.com/guides/tool_calls/",
+      "readable": true,
+      "characters": 8827
+    },
+    "providers": [
+      {
+        "provider": "mimo",
+        "model": "mimo-v2.5",
+        "status": "not_configured",
+        "usage": null
+      },
+      {
+        "provider": "deepseek",
+        "model": "deepseek-v4-flash",
+        "status": "passed",
+        "usage": {
+          "turns": 2,
+          "toolCalls": 1,
+          "inputTokens": 1373,
+          "outputTokens": 158,
+          "estimated": false
+        }
+      }
+    ]
+  },
+  "orchestration": {
+    "status": "passed",
+    "tasks": 1,
+    "toolCalls": 15,
+    "supportedClaims": 4,
+    "stopReasons": [
+      "final"
+    ],
+    "checkpoints": 62,
+    "budget": {
+      "spent": {
+        "queries": 0,
+        "tokens": 52770,
+        "turns": 11
+      },
+      "reserveSpent": {
+        "queries": 0,
+        "tokens": 2363,
+        "turns": 1
+      },
+      "byProduct": {
+        "general": {
+          "queries": 0,
+          "tokens": 52770,
+          "turns": 11
+        },
+        "evidence_review": {
+          "queries": 0,
+          "tokens": 2363,
+          "turns": 1
+        }
+      },
+      "remainingResearch": {
+        "queries": 1,
+        "tokens": 27230,
+        "turns": 799989
+      },
+      "remainingReserve": {
+        "queries": 0,
+        "tokens": 17637,
+        "turns": 199999
+      }
+    },
+    "publicMaterialProof": {
+      "visibility": "public",
+      "packageRootHash": "206e01b0285eb9b7c3ff5e432bbd2ccbc2561f61ba954e730339b249ca084a76",
+      "sources": [
+        {
+          "id": "SRC-GOV-CLASS-2022",
+          "title": "中华人民共和国职业分类大典（2022年版）",
+          "locator": "https://rsj.chifeng.gov.cn/cfsrsjgggs/202504/P020250429626704979199.pdf"
+        }
+      ],
+      "excerpts": [
+        {
+          "id": "SEG-GOV-CLASS-01",
+          "text": "2022年版职业分类大典将人工智能工程技术人员列入数字技术工程技术人员小类，现行职业编码为2-02-38-01。",
+          "excerptType": "close_paraphrase"
+        },
+        {
+          "id": "SEG-GOV-CLASS-02",
+          "text": "该职业面向人工智能算法和深度学习技术的分析、研究、开发，以及人工智能系统的设计、优化、运维、管理和应用。",
+          "excerptType": "close_paraphrase"
+        },
+        {
+          "id": "SEG-GOV-CLASS-03",
+          "text": "主要工作任务包括设计、集成、管理和部署人工智能软硬件系统，开发人工智能系统解决方案，并提供技术咨询和服务。",
+          "excerptType": "close_paraphrase"
+        }
+      ]
+    }
+  }
+}

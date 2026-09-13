@@ -1,3 +1,4 @@
+import { createChatInvoker, type ChatInvoker } from "./native-model";
 import { validateProviderConfig } from "@/lib/provider-validation";
 import { providerChatEndpoint, type ProviderConfig } from "@/lib/providers";
 
@@ -6,7 +7,7 @@ export type ModelStreamPart = {
   delta: string;
 };
 
-export type ModelInvoker = (input: {
+export type ModelInvoker = { (input: {
   system: string;
   user: string;
   signal?: AbortSignal;
@@ -16,7 +17,7 @@ export type ModelInvoker = (input: {
   timeoutMs?: number;
   /** Hard wall-clock deadline. Streaming activity never refreshes it. */
   totalTimeoutMs?: number;
-}) => AsyncIterable<ModelStreamPart>;
+}): AsyncIterable<ModelStreamPart>; chat?: ChatInvoker };
 
 type FetchLike = typeof fetch;
 
@@ -130,7 +131,7 @@ function requestSignal(upstream?: AbortSignal, timeoutMs = 60_000, totalTimeoutM
 export function createModelInvoker(input: ProviderConfig, fetchImpl: FetchLike = fetch): ModelInvoker {
   const config = validateProviderConfig(input);
 
-  return async function* ({ system, user, signal, thinking = "enabled", maxCompletionTokens, timeoutMs, totalTimeoutMs }) {
+  const invoke: ModelInvoker = async function* ({ system, user, signal, thinking = "enabled", maxCompletionTokens, timeoutMs, totalTimeoutMs }) {
     const scopedSignal = requestSignal(signal, timeoutMs, totalTimeoutMs);
     try {
       const body: Record<string, unknown> = {
@@ -177,4 +178,6 @@ export function createModelInvoker(input: ProviderConfig, fetchImpl: FetchLike =
       scopedSignal.cleanup();
     }
   };
+  invoke.chat = createChatInvoker(config, fetchImpl);
+  return invoke;
 }

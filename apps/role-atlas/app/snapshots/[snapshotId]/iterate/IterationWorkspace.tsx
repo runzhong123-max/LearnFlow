@@ -1,5 +1,10 @@
 "use client";
 
+import ResearchRunDetail from "@/app/components/ResearchRunDetail";
+import IterationOptions from "@/app/components/IterationOptions";
+import { researchOptionsSchema } from "@/lib/research/protocol";
+
+
 import {
   AlertTriangle,
   ArrowLeft,
@@ -29,6 +34,7 @@ import {
 import Link from "next/link";
 import SourceMaterials from "@/app/components/SourceMaterials";
 import { useEffect, useMemo, useRef, useState } from "react";
+import IterationProductsPanel from "@/app/components/IterationProductsPanel";
 import type { ColdStartBuildResult, LearningPathGraphInput, SourceInput } from "@/lib/build/types";
 import {
   buildIterationActivityFeed,
@@ -161,14 +167,15 @@ function DiffRow({ label, added, removed, updated }: { label: string; added: num
   return <div className="risk-diff-row"><b>{label}</b><span className="add">+{added}</span><span className="remove">−{removed}</span><span>~{updated}</span></div>;
 }
 
-function FinalResultMessage({ result, resultHref, resultLinkLabel, onAccept }: { result: SnapshotIterationResult; resultHref: string; resultLinkLabel: string; onAccept?: () => void }) {
+function FinalResultMessage({ result, resultHref, resultLinkLabel, onAccept, onStartFromRadar }: { result: SnapshotIterationResult; resultHref: string; resultLinkLabel: string; onAccept?: () => void; onStartFromRadar?: (request: { mode: IterationMode; initiativeProfile: InitiativeProfile; targetIds: string; prompt: string }) => void }) {
   const selectedSources = result.researchReports.reduce((sum, report) => sum + report.selectedSourceCount, 0);
   return (
     <article className={`iteration-final-message ${result.createdSnapshot ? "created" : "unchanged"}`}>
       <div className="iteration-agent-avatar"><Sparkles size={15} /></div>
       <div className="iteration-final-body">
         <span className="iteration-message-author">ROLE AGENT · 最终回答</span>
-        <h3>{result.createdSnapshot ? "本轮迭代完成，已形成新的静态快照" : "本轮研究已完成，当前快照保持不变"}</h3>
+        <ResearchRunDetail run={result.researchRun} />
+        <h3>{result.status === "waiting_user" ? "候选版本已保存，等待审阅后采用" : result.createdSnapshot ? "本轮迭代完成，已形成新的静态快照" : "本轮研究已完成，当前快照保持不变"}</h3>
         <p>{result.summary.slice(0, 3).join(" ")}</p>
         <div className="iteration-result-facts">
           <span><b>{result.evaluation.informationGain.score.toFixed(1)}</b><small>{result.createdSnapshot ? "信息增量" : "未采用候选增量"}</small></span>
@@ -179,6 +186,17 @@ function FinalResultMessage({ result, resultHref, resultLinkLabel, onAccept }: {
         {result.candidateSnapshotId ? <div className="iteration-result-actions">{onAccept
           ? <button type="button" onClick={onAccept}>{resultLinkLabel}<ChevronRight size={13} /></button>
           : <Link href={resultHref}>{resultLinkLabel}<ChevronRight size={13} /></Link>}<code>{result.candidateSnapshotId}</code></div> : null}
+        <IterationProductsPanel
+          products={result.products}
+          {...(onStartFromRadar ? {
+            onStartFromRadar: (request: { mode: IterationMode; initiativeProfile: InitiativeProfile; targetIds: string[]; prompt: string }) => onStartFromRadar({
+              mode: request.mode,
+              initiativeProfile: request.initiativeProfile,
+              targetIds: request.targetIds.join(" "),
+              prompt: request.prompt,
+            }),
+          } : {})}
+        />
         <div className="iteration-result-disclosures">
           <details>
             <summary><ShieldCheck size={14} /><span><b>{result.createdSnapshot ? "结构体检" : "未采用候选体检"}</b><small>{result.inspectionAfter.findings.length} 项发现 · {result.inspectionAfter.hardBlockers.length} 个协议阻断</small></span><ChevronDown size={13} /></summary>
@@ -201,6 +219,8 @@ function FinalResultMessage({ result, resultHref, resultLinkLabel, onAccept }: {
 
 export default function IterationWorkspace({ snapshotId, projectId, versionId, conversationId, initialProfile = "co_guided", initialPrompt = "", initialTargetIds = "", embedded = false, onClose, onComplete, onSettingsRequest }: { snapshotId: string; projectId?: string; versionId?: string; conversationId?: string; initialProfile?: InitiativeProfile; initialPrompt?: string; initialTargetIds?: string; embedded?: boolean; onClose?: () => void; onComplete?: (result: SnapshotIterationResult) => void; onSettingsRequest?: () => void }) {
   const [workspace, setWorkspace] = useState<WorkspaceEnvelope | null>(null);
+  const [adoption, setAdoption] = useState<"automatic" | "review">("automatic");
+  const [depth, setDepth] = useState<"focused" | "deep">("deep");
   const [initiativeProfile, setInitiativeProfile] = useState<InitiativeProfile>(initialProfile);
   const [mode, setMode] = useState<Exclude<IterationMode, "auto">>("deep_research");
   const [prompt, setPrompt] = useState(initialPrompt);
@@ -271,10 +291,19 @@ export default function IterationWorkspace({ snapshotId, projectId, versionId, c
     if (event.kind === "iteration.run.failed") setError(String(event.payload.message || "岗位快照迭代失败。"));
   }
 
-  async function start() {
+  /**
+   * `overrides` exists because the radar action sets several fields and starts
+   * in the same tick; reading component state there would submit the values the
+   * user was looking at before, not the ones they just chose.
+   */
+  async function start(overrides?: { initiativeProfile?: InitiativeProfile; mode?: IterationMode; prompt?: string; targetIds?: string }) {
     if (running || materialsBusy || !workspace) return;
-    const parsedTargetIds = targetIds.split(/[\s,，]+/u).map((value) => value.trim()).filter(Boolean);
-    setSubmittedBrief({ profile: initiativeProfile, mode, objective: prompt.trim() || (initiativeProfile === "autonomous" ? "自动发现当前快照中信息价值最高的问题并研究" : "围绕选定范围深化岗位快照"), targetCount: parsedTargetIds.length, webResearch, hasSupplement: materials.length > 0 });
+    const chosenProfile = overrides?.initiativeProfile || initiativeProfile;
+    const chosenMode = overrides?.mode || mode;
+    const chosenPrompt = overrides?.prompt ?? prompt;
+    const chosenTargets = overrides?.targetIds ?? targetIds;
+    const parsedTargetIds = chosenTargets.split(/[\s,，]+/u).map((value) => value.trim()).filter(Boolean);
+    setSubmittedBrief({ profile: chosenProfile, mode: chosenMode, objective: chosenPrompt.trim() || (chosenProfile === "autonomous" ? "自动发现当前快照中信息价值最高的问题并研究" : "围绕选定范围深化岗位快照"), targetCount: parsedTargetIds.length, webResearch, hasSupplement: materials.length > 0 });
     setRunning(true);
     setError("");
     setEvents([]);
@@ -293,7 +322,7 @@ export default function IterationWorkspace({ snapshotId, projectId, versionId, c
         method: "POST",
         headers: { "content-type": "application/json" },
         signal: controller.signal,
-        body: JSON.stringify({ iteration: { runId: crypto.randomUUID(), snapshotRef: workspace.reference, projectId: workspace.reference.projectId, conversationId: workspace.reference.projectId ? conversationId : undefined, initiativeProfile, mode, prompt: prompt.trim(), targetIds: parsedTargetIds, targetAsOf: targetAsOf || undefined, supplementalSources, learningPathGraph, webResearch, maxRounds: 4, sourceLimit: 20, maxWorkItems: 16 }, providerConfig, searchConfig }),
+        body: JSON.stringify({ iteration: { research: researchOptionsSchema.parse({ objective: chosenPrompt.trim(), targetIds: parsedTargetIds, changeScope: parsedTargetIds.length ? "selected" : "role", adoption, budget: depth === "focused" ? { tokens: 500_000, queries: 128, tasks: 32, revisions: 8 } : {} }), runId: crypto.randomUUID(), snapshotRef: workspace.reference, projectId: workspace.reference.projectId, conversationId: workspace.reference.projectId ? conversationId : undefined, initiativeProfile: chosenProfile, mode: chosenMode === "auto" ? "auto" : chosenMode, prompt: chosenPrompt.trim(), targetIds: parsedTargetIds, targetAsOf: targetAsOf || undefined, supplementalSources, learningPathGraph, webResearch, maxRounds: 12, sourceLimit: 64, maxWorkItems: 32 }, providerConfig, searchConfig }),
       });
       if (!response.ok || !response.body) throw new Error((await response.json().catch(() => ({})) as { error?: string }).error || `请求失败（${response.status}）`);
       const reader = response.body.getReader();
@@ -333,15 +362,8 @@ export default function IterationWorkspace({ snapshotId, projectId, versionId, c
           <span className="cold-kicker">ITERATION BRIEF</span>
           <h1>{workspace?.title || "岗位快照迭代"}</h1>
           <p>先在这里明确基本信息。开始后，右侧会像 Agent 工作会话一样实时展示分析、工具调用、耗时和最终产物。</p>
-          <div className="iteration-profile-picker" role="radiogroup" aria-label="迭代功能类型">
-            {modeOptions.map((option) => <button type="button" role="radio" aria-checked={mode === option.id} disabled={running} className={mode === option.id ? "active" : ""} key={option.id} onClick={() => setMode(option.id)}><span><strong>{option.label}</strong><small>{option.detail}</small></span>{mode === option.id ? <Check size={12} /> : null}</button>)}
-          </div>
-          <div className="iteration-profile-picker" role="radiogroup" aria-label="迭代发起方式">
-            {profileOptions.map((profile) => <button type="button" role="radio" aria-checked={initiativeProfile === profile.id} disabled={running} className={initiativeProfile === profile.id ? "active" : ""} key={profile.id} onClick={() => setInitiativeProfile(profile.id)}><span><strong>{profile.label}</strong><small>{profile.detail}</small></span>{initiativeProfile === profile.id ? <Check size={12} /> : null}</button>)}
-          </div>
+          <IterationOptions disabled={running} value={{ mode, initiativeProfile, targetIds, targetAsOf, adoption, depth }} onChange={value => { setMode(value.mode); setInitiativeProfile(value.initiativeProfile); setTargetIds(value.targetIds); setTargetAsOf(value.targetAsOf); setAdoption(value.adoption || "automatic"); setDepth(value.depth || "deep"); }} />
           <label><span>本轮想获得什么</span><textarea value={prompt} disabled={running} onChange={(event) => setPrompt(event.target.value)} placeholder={initiativeProfile === "autonomous" ? "可以留空，Agent 会自动发现并研究" : "例如：重点研究 Agent 系统开发任务及其学习路径，同时检查相关节点是否重复"} /></label>
-          <label><span>限定节点 ID（可选）</span><textarea value={targetIds} disabled={running} onChange={(event) => setTargetIds(event.target.value)} placeholder="拖入或粘贴节点 ID，逗号分隔" /></label>
-          <label><span>更新到目标时点（可选）</span><input type="date" value={targetAsOf} disabled={running} onChange={(event) => setTargetAsOf(event.target.value)} /></label>
           <label className="cold-web-toggle"><span><Globe2 size={13} /><b>自主定向研究</b><small>按工作项并行检索、抽取与去重</small></span><input type="checkbox" checked={webResearch} disabled={running} onChange={(event) => setWebResearch(event.target.checked)} /></label>
           <details className="iteration-source-input"><summary>添加资料（附件、URL、文本）</summary><SourceMaterials value={materials} onChange={setMaterials} disabled={running} onBusyChange={setMaterialsBusy} /></details>
           <div className="risk-baseline"><span><RefreshCw size={13} /><b>当前不可变快照</b></span><small>{workspace?.version ? `${workspace.version.version} · ${workspace.version.snapshotId}` : "正在读取快照…"}</small></div>
@@ -362,7 +384,12 @@ export default function IterationWorkspace({ snapshotId, projectId, versionId, c
             <article className="iteration-user-message"><span>你发起了 · {modeOptions.find(option => option.id === (result?.contract.mode || submittedBrief?.mode || mode))?.label || "岗位迭代"} · {profileLabel(result?.contract.initiativeProfile || submittedBrief?.profile || initiativeProfile)}</span><p>{objective || "自动发现当前快照中信息价值最高的问题并研究"}</p><small>{submittedBrief?.targetCount ? `限定 ${submittedBrief.targetCount} 个节点 · ` : ""}{submittedBrief?.webResearch ?? webResearch ? "允许联网研究" : "不联网"}{submittedBrief?.hasSupplement ? " · 已附加资料" : ""}</small></article>
             {activities.map((activity) => <ActivityCard activity={activity} key={activity.id} />)}
             {running ? <article className="iteration-thinking-message"><div className="iteration-agent-avatar"><LoaderCircle className="spin" size={15} /></div><div><span className="iteration-message-author">ROLE AGENT · 正在思考</span><h3>{thinking}</h3><p>运行仍在继续，新的工具动作和结果会自动出现在这里。</p><small><Clock3 size={11} /> 已运行 {formatIterationElapsed(elapsed)}</small></div></article> : null}
-            {result ? <FinalResultMessage result={result} resultHref={resultHref} resultLinkLabel={embedded ? "应用新版本并返回工作台" : workspace?.reference.projectId ? "打开项目中的新版本" : "从新快照继续迭代"} onAccept={embedded ? onClose : undefined} /> : null}
+            {result ? <FinalResultMessage result={result} resultHref={resultHref} resultLinkLabel={embedded ? "应用新版本并返回工作台" : workspace?.reference.projectId ? "打开项目中的新版本" : "从新快照继续迭代"} onAccept={embedded ? onClose : undefined} onStartFromRadar={(request) => void start({
+              initiativeProfile: request.initiativeProfile,
+              mode: request.mode,
+              prompt: request.prompt,
+              targetIds: request.targetIds,
+            })} /> : null}
             {error && !events.some((event) => event.kind === "iteration.run.failed") ? <article className="iteration-agent-message failed"><div className="iteration-agent-avatar"><CircleX size={15} /></div><div><span className="iteration-message-author">ROLE AGENT · 运行提示</span><h3>本轮没有继续执行</h3><p>{error}</p></div></article> : null}
             <div ref={conversationEndRef} />
           </div> : null}

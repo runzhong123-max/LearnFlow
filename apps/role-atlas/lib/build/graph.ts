@@ -1,3 +1,9 @@
+import { linkResearchFindings } from "@/lib/research/change-set";
+import { researchQuality } from "@/lib/research/quality";
+import { buildResearchAgent, type ResearchAgentParts, type ResearchAgentCheckpoint } from "@/lib/iteration/research-agent";
+import { runResearchWorkers } from "@/lib/iteration/worker";
+import { deriveTaskDefinitions } from "@/lib/research/task-definition";
+import type { IterationContract } from "@/lib/iteration/types";
 import { END, getWriter, START, StateGraph, StateSchema } from "@langchain/langgraph";
 import { z } from "zod/v4";
 import type { ModelInvoker } from "@/lib/agent/model";
@@ -110,9 +116,16 @@ const BuildState = new StateSchema({
   bestQualityScore: z.number().optional(),
   laneFailures: z.array(z.string()).default(() => []),
   result: z.custom<ColdStartBuildResult>().optional(),
+  researchContinue: z.boolean().default(false),
+  researchStagnant: z.number().default(0),
+  researchSignature: z.string().optional(),
 });
 
 type SkillOptions = {
+  researchAgent?: ResearchAgentParts;
+  researchCheckpoint?: ResearchAgentCheckpoint;
+  onResearchCheckpoint?: (state: ResearchAgentCheckpoint) => Promise<void>;
+  researchPerformed?: boolean;
   initialSeq?: number;
   searchConfig?: SearchProviderConfig;
   sourceLimit?: number;
@@ -336,6 +349,8 @@ function markRecoveredWorkItem(workItems: BuildWorkItemSummary[], stage: string,
 }
 
 export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions) {
+  let sharedResearch = options?.researchAgent;
+  const originalModel = model;
   let seq = options?.initialSeq || 0;
   const cache = options?.cache || new Map<string, unknown>();
   const boundaryVerifier = createBoundaryVerifier(model);
@@ -537,6 +552,24 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
   const researchSources = async (state: typeof BuildState.State, config: { signal?: AbortSignal }) => {
     const runStartedAt = Date.now();
     emit(state.request, "build.run.started", "system", { roleTitle: state.request.roleTitle, workflowVersion: COLD_START_WORKFLOW_VERSION });
+    if (state.request.research && !options?.researchPerformed) {
+      const settings = state.request.research;
+      sharedResearch ||= buildResearchAgent({ model: originalModel, searchConfig: options?.searchConfig, budget: settings.budget, onCheckpoint: options?.onResearchCheckpoint });
+      if (options?.researchCheckpoint && !sharedResearch.record()) sharedResearch.restore(options.researchCheckpoint);
+      model = sharedResearch.model;
+      const prepared = prepareBuildInput(state.request);
+      const contract: IterationContract = { id: state.request.runId, research: settings, objective: settings.objective || `研究${state.request.roleTitle}的岗位边界、典型任务、知识能力和完整工作过程，面向高职学生，优先支持下游项目转换`, initiativeProfile: "autonomous", mode: "deep_research", targetIds: [], targetAsOf: state.request.snapshotAsOf, changeIntents: ["expand", "verify"], evidencePolicy: [], acceptancePolicy: [], inferredFrom: ["cold_start"], budgets: { maxRounds: settings.budget.revisions, maxSources: settings.budget.queries, maxWorkItems: settings.budget.tasks, graphRadius: "global" } };
+      try {
+      const cards = await sharedResearch.plan({ contract, sources: prepared, graph: state.result, workItems: [], round: (sharedResearch.record()?.agenda.revision || 0) + 1, context: { role: state.request.roleTitle, boundary: state.request.roleDescription, targetAsOf: state.request.snapshotAsOf, audience: state.request.audience, currentQuality: state.result?.deliveryReadiness }, signal: config.signal });
+      const results = await runResearchWorkers({ cards, concurrency: sharedResearch.concurrency, runOne: card => sharedResearch!.run(card, { request: state.request, assets: prepared.assets, segments: prepared.segments, graph: state.result, signal: config.signal }) });
+      emit(state.request, "build.research.completed", "evidence", { taskCount: cards.length, findingCount: results.reduce((sum, result) => sum + result.claims.length, 0), budget: sharedResearch.budgetLedger.snapshot() });
+      } catch (error) {
+        if (config.signal?.aborted) throw error;
+        await sharedResearch.finish(error instanceof Error && error.message.includes("BUDGET") ? "budget_exhausted" : "failed");
+        emit(state.request, "build.research.completed", "evidence", { failed: error instanceof Error ? error.message : "research_failed", budget: sharedResearch.budgetLedger.snapshot() });
+      }
+      return { activeRequest: { ...state.request, sources: mergeResearchSources(state.request.sources, sharedResearch.collectedSources()) }, runStartedAt };
+    }
     if (!options?.searchConfig) return { activeRequest: state.request, researchReport: options?.existingResearchReport, runStartedAt };
     const searchPlan = await createRoleSearchPlan({ request: state.request, model, signal: config.signal, onReasoning: (delta) => emit(state.request, "build.reasoning.delta", "evidence", { lane: "search-planning", delta }) });
     const researched = await researchRoleSources({
@@ -728,9 +761,9 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     const visibleNodeCount = kernelResult.semantic.nodes.filter((node) => node.defaultVisibility !== false).length;
     emit(state.request, "build.semantic.patch", "semantic", { phase: "kernel", nodes: kernelResult.semantic.nodes, edges: kernelResult.semantic.edges, visibleNodeCount });
     emit(state.request, "build.lane.completed", "semantic", { lane: "kernel", visibleTaskCount: visibleTasks.length, visibleNodeCount, durationMs: firstKernelMs });
-    emit(state.request, "build.fast_snapshot.completed", "structural", { result: kernelResult, metrics, parentRunId: state.request.runId, compatibilityAlias: true });
-    emit(state.request, "build.kernel.completed", "structural", { result: kernelResult, metrics, visibleTaskCount: visibleTasks.length, visibleNodeCount, backgroundLanes: ["capability", "knowledge", "skill_dependencies", "process", "inspection"] });
-    emit(state.request, "build.enrichment.queued", "system", { baseSnapshotId: kernelResult.snapshot.id, lanes: ["capability", "knowledge", "skill_dependencies", "process", "inspection"] });
+    emit(state.request, "build.fast_snapshot.completed", "structural", { preview: Boolean(state.request.research), result: kernelResult, metrics, parentRunId: state.request.runId, compatibilityAlias: true });
+    emit(state.request, "build.kernel.completed", "structural", { preview: Boolean(state.request.research), result: kernelResult, metrics, visibleTaskCount: visibleTasks.length, visibleNodeCount, backgroundLanes: ["capability", "knowledge", "skill_dependencies", "process", "inspection"] });
+    if (!state.request.research) emit(state.request, "build.enrichment.queued", "system", { baseSnapshotId: kernelResult.snapshot.id, lanes: ["capability", "knowledge", "skill_dependencies", "process", "inspection"] });
     return {
       kernelResult,
       result: kernelResult,
@@ -743,6 +776,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
   };
 
   const needsTaskRecovery = (state: typeof BuildState.State) => {
+    if (state.request.research) return "build_kernel";
     if (state.taskDraft?.nodes.some(node => node.type === "task")) return "build_kernel";
     if (state.taskRecoveryRound >= 2) return "build_kernel";
     const allShards = createSourceShards({ assets: state.prepared!.assets, segments: state.prepared!.segments });
@@ -764,7 +798,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     emit(state.request, "build.targeted_research.started", "evidence", { reason: "missing_task_layer", round, queryCount: options?.searchConfig ? queries.length : 0, message: "尚未找到可支撑岗位任务的证据，正在补充招聘职责和真实工作实践。" });
     if (options?.searchConfig) {
       try {
-        const researched = await researchRoleSources({ request: { ...state.request, roleTitle: role }, config: options.searchConfig, queries, sourceLimit: 6, verifyBoundaries: boundaryVerifier, signal: config.signal });
+        const researched = await researchRoleSources({ request: { ...state.request, roleTitle: role }, config: options.searchConfig, queries, sourceLimit: 16, verifyBoundaries: boundaryVerifier, signal: config.signal });
         activeRequest = { ...activeRequest, sources: mergeResearchSources(activeRequest.sources, researched.sources) };
         report = mergeResearchReports(report, researched.report);
       } catch (error) {
@@ -776,7 +810,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     const assets = qualifySources(raw.assets, raw.segments);
     const prepared = { ...raw, assets };
     const examined = new Set(state.shards.map(shard => shard.id));
-    const routed = selectKernelSourceShards({ shards: createSourceShards({ assets, segments: raw.segments }).filter(shard => !examined.has(shard.id)), assets, roleTitle: role, maxPublicShards: 8 });
+    const routed = selectKernelSourceShards({ shards: createSourceShards({ assets, segments: raw.segments }).filter(shard => !examined.has(shard.id)), assets, roleTitle: role, maxPublicShards: 16 });
     const shards = [...state.shards, ...routed.selected];
     emit(state.request, "build.targeted_research.completed", "evidence", { reason: "missing_task_layer", round, addedSourceShards: routed.selected.length, report });
     return { activeRequest, prepared, researchReport: report, shards, taskRecoveryRound: round, targetedResearchQueries: state.targetedResearchQueries + (options?.searchConfig ? queries.length : 0), laneFailures: failures };
@@ -814,12 +848,12 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
   };
 
   const targetedKnowledgeResearch = async (state: typeof BuildState.State, config: { signal?: AbortSignal }, knowledgeGroups: TaskGroup[]) => {
-    if (!options?.searchConfig || !knowledgeGroups.length) return {};
-    const budget = Math.max(0, 12 - state.targetedResearchQueries);
+    if (state.request.research || !options?.searchConfig || !knowledgeGroups.length) return {};
+    const budget = Math.max(0, 32 - state.targetedResearchQueries);
     // A failed quality check overrides pre-extraction heuristics: the presence
     // of a technical document or mention did not actually close these gaps.
     const needy = knowledgeGroups.filter(group => state.qualityRepairRound > 0
-      || taskGroupNeedsKnowledgeResearch(group, state.mentions, state.prepared!.assets, state.prepared!.segments)).slice(0, Math.min(4, budget));
+      || taskGroupNeedsKnowledgeResearch(group, state.mentions, state.prepared!.assets, state.prepared!.segments)).slice(0, Math.min(8, budget));
     if (!needy.length) return {};
     const category = state.qualityRepairRound === 1 ? "work_practice" : state.qualityRepairRound > 1 ? "education" : "technology";
     const angle = category === "technology" ? "官方文档 原理 操作 验证" : category === "work_practice" ? "项目实践 操作流程 故障诊断 交付 验收" : "实训项目 知识原理 技能练习 评价标准";
@@ -831,7 +865,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
         config: options.searchConfig,
         queries,
         planStrategy: "deterministic",
-        sourceLimit: Math.min(6, Math.max(3, queries.length * 2)),
+        sourceLimit: Math.min(16, Math.max(6, queries.length * 2)),
         verifyBoundaries: boundaryVerifier,
         signal: config.signal,
         onProgress: (progress) => {
@@ -885,11 +919,11 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     const evidenceState = { ...state, prepared: targeted.prepared || state.prepared! };
     const targetedPromise = Promise.resolve(targeted);
     const invokeKnowledgeGroup = async (group: TaskGroup, prefix: string, prepared: PreparedBuild) => {
-      const segments = selectKnowledgeContext({ group, segments: prepared.segments, mentions: state.mentions, assets: prepared.assets, maxTokens: 4_800 });
+      const segments = selectKnowledgeContext({ group, segments: prepared.segments, mentions: state.mentions, assets: prepared.assets, maxTokens: 9_600 });
       const mentions = mentionsForSegments(state.mentions, segments.map((segment) => segment.id));
       const prompt = knowledgeDerivationPrompt({ roleTitle: state.request.roleTitle, roleDescription: state.request.roleDescription, group, mentions, segments, assets: prepared.assets, definitionTargets: (state.semanticDraft?.nodes || []).filter(node => options?.learningDefinitionTargetIds?.includes(node.tempId)), mode: "detail", iterationObjective: options?.iterationObjective });
       const lane = `knowledge:${group.id}${state.qualityRepairRound ? `:pass-${state.qualityRepairRound}` : ""}`;
-      const outputBudget = group.tasks.length > 1 ? 5_600 : 3_600;
+      const outputBudget = group.tasks.length > 1 ? 8_000 : 6_000;
       const draft = await runWorkItem({ request: state.request, workItems, stage: "task-knowledge-derivation", lane, inputRefs: [group.id, ...group.tasks.map(task => task.tempId), ...segments.map((segment) => segment.id)], priority: 7, estimatedInputTokens: estimateTokens(prompt.user), maxOutputTokens: outputBudget, cachePayload: JSON.stringify(prompt), profile: "semantic", invoke: (onReasoning) => invokeStructured({ model, ...prompt, schema: knowledgeDerivationSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: outputBudget, timeoutMs: 65_000, totalTimeoutMs: 95_000, onReasoning }) });
       const checked = inspectKnowledgeDerivation({ draft, group, mentions, segments });
       let accepted = checked.accepted;
@@ -993,10 +1027,10 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       for (let round = 0; round < 2; round += 1) {
         const coverage = capabilityCoverage(combined);
         if (!coverage.uncoveredTaskIds.length && !coverage.capabilitiesWithoutUnits.length && !coverage.unitsWithoutCultivation.length && !coverage.capabilitiesWithoutTransfer.length) break;
-        const capabilitySegments = selectKnowledgeContext({ group: { id: "capability", tasks: state.taskDraft!.nodes.filter(node => node.type === "task"), evidenceSegmentIds: [] }, segments: evidenceState.prepared.segments, mentions: state.mentions, assets: evidenceState.prepared.assets, maxTokens: 3_600 });
+        const capabilitySegments = selectKnowledgeContext({ group: { id: "capability", tasks: state.taskDraft!.nodes.filter(node => node.type === "task"), evidenceSegmentIds: [] }, segments: evidenceState.prepared.segments, mentions: state.mentions, assets: evidenceState.prepared.assets, maxTokens: 7_200 });
         const prompt = capabilityDerivationPrompt({ roleTitle: state.request.roleTitle, roleDescription: state.request.roleDescription, segments: capabilitySegments, tasks: state.taskDraft!.nodes, mentions: state.mentions, coverage, repairAttempt: round > 0 || state.qualityRepairRound > 0, existing: combined.nodes.filter(node => ["capability", "capability_unit"].includes(node.type)).map(node => ({ id: node.tempId, label: node.label, summary: node.summary })) });
         try {
-          const draft = await runWorkItem({ request: state.request, workItems, stage: "cross-task-capability-derivation", lane: round ? "capability:coverage-repair" : "capability:cross-task", inputRefs: [...stableTaskIds], priority: 8, estimatedInputTokens: estimateTokens(prompt.user), maxOutputTokens: 4_800, cachePayload: prompt.user, profile: "semantic", invoke: (onReasoning) => invokeStructured({ model, ...prompt, schema: capabilityDerivationSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: 4_800, timeoutMs: 65_000, totalTimeoutMs: 95_000, onReasoning }) });
+          const draft = await runWorkItem({ request: state.request, workItems, stage: "cross-task-capability-derivation", lane: round ? "capability:coverage-repair" : "capability:cross-task", inputRefs: [...stableTaskIds], priority: 8, estimatedInputTokens: estimateTokens(prompt.user), maxOutputTokens: 8_000, cachePayload: prompt.user, profile: "semantic", invoke: (onReasoning) => invokeStructured({ model, ...prompt, schema: capabilityDerivationSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: 8_000, timeoutMs: 65_000, totalTimeoutMs: 95_000, onReasoning }) });
           const part = prefixDerivedDraft(capabilityToSemanticDraft({ draft, tasks: state.taskDraft!.nodes, mentions: state.mentions }), `q${state.qualityRepairRound}:cross${round}:`, stableTaskIds);
           output = mergeDerivedSemanticDrafts(output, [part]);
           combined = mergeDerivedSemanticDrafts(base, [output]);
@@ -1010,11 +1044,11 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       return output;
     })();
     const invokeProcessGroup = async (group: TaskGroup, prefix: string) => {
-      const segments = selectSegmentsForTaskGroup({ group, segments: evidenceState.prepared.segments, mentions: state.mentions, assets: evidenceState.prepared.assets, purpose: "process", maxTokens: 4_000 });
+      const segments = selectSegmentsForTaskGroup({ group, segments: evidenceState.prepared.segments, mentions: state.mentions, assets: evidenceState.prepared.assets, purpose: "process", maxTokens: 8_000 });
       const mentions = mentionsForSegments(state.mentions, segments.map((segment) => segment.id));
       const prompt = taskProcessPrompt({ roleTitle: state.request.roleTitle, roleDescription: state.request.roleDescription, group, mentions, segments: segments.map((segment) => ({ id: segment.id, sourceKind: sourceKindForSegment(segment, evidenceState.prepared.assets), text: segment.text })) });
       const lane = `process:${group.id}${state.qualityRepairRound ? `:pass-${state.qualityRepairRound}` : ""}`;
-      const draft = await runWorkItem({ request: state.request, workItems, stage: "task-process-expansion", lane, inputRefs: [group.id, ...segments.map((segment) => segment.id)], priority: 6, estimatedInputTokens: estimateTokens(prompt.user), maxOutputTokens: 3_800, cachePayload: prompt.user, profile: "process", invoke: (onReasoning) => invokeStructured({ model, ...prompt, schema: processDraftSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: 3_800, timeoutMs: 55_000, totalTimeoutMs: 90_000, normalize: (value) => normalizeProcessDraft(value, { roleTitle: state.request.roleTitle, rejectOffScope: true, maxScenarios: 3, maxNodes: 30, maxEdges: 60 }), onReasoning }) });
+      const draft = await runWorkItem({ request: state.request, workItems, stage: "task-process-expansion", lane, inputRefs: [group.id, ...segments.map((segment) => segment.id)], priority: 6, estimatedInputTokens: estimateTokens(prompt.user), maxOutputTokens: 6_000, cachePayload: prompt.user, profile: "process", invoke: (onReasoning) => invokeStructured({ model, ...prompt, schema: processDraftSchema, signal: config.signal, thinking: "disabled", maxCompletionTokens: 6_000, timeoutMs: 55_000, totalTimeoutMs: 90_000, normalize: (value) => normalizeProcessDraft(value, { roleTitle: state.request.roleTitle, rejectOffScope: true, maxScenarios: 5, maxNodes: 48, maxEdges: 96 }), onReasoning }) });
       return prefixProcessDraft(draft, prefix);
     };
 
@@ -1218,7 +1252,7 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     return { result, qualityTaskIds, qualityKnowledgeTaskIds, qualityProcessTaskIds, bestResult: better ? result : state.bestResult, bestQualityScore: better ? score : state.bestQualityScore };
   };
 
-  const routeQuality = (state: typeof BuildState.State) => state.qualityTaskIds.length > 0
+  const routeQuality = (state: typeof BuildState.State) => !state.request.research && state.qualityTaskIds.length > 0
     && state.qualityRepairRound < (options?.qualityRepairRounds ?? 2)
     && state.prepared!.assets.some(asset => asset.kind !== "user_brief" && asset.qualification?.status !== "quarantined")
     ? "repair_quality" : "finish_build";
@@ -1228,11 +1262,29 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
       message: "检查发现可补齐的任务支撑缺口，正在更换来源角度补研并保留已有成果。" });
     return { qualityRepairRound: round };
   };
-  const finishBuild = async (state: typeof BuildState.State) => {
-    const result = state.bestResult || state.result!;
+  const finishBuild = async (state: typeof BuildState.State, config: { signal?: AbortSignal }) => {
+    let result = state.bestResult || state.result!;
+    let researchContinue = false, researchStagnant = state.researchStagnant, researchSignature = state.researchSignature;
+    if (state.request.research) {
+      await deriveTaskDefinitions(model, result, config.signal, sharedResearch?.reviewModel || model);
+      const run = sharedResearch?.record();
+      if (run) {
+        linkResearchFindings(result, run);
+        const signature = JSON.stringify({ quality: researchQuality(result), findings: run.findings.map(finding => finding.id) });
+        researchStagnant = signature === state.researchSignature ? state.researchStagnant + 1 : 0;
+        researchSignature = signature;
+        const remaining = sharedResearch!.budgetLedger.snapshot().remainingResearch;
+        const exhausted = remaining.tokens < 1000 || remaining.turns < 1 || run.agenda.revision >= state.request.research.budget.revisions;
+        researchContinue = !run.stopReason && !result.deliveryReadiness?.ready && !exhausted && researchStagnant < state.request.research.budget.stagnantRounds && run.agenda.tasks.some(task => task.status !== "failed");
+        if (!researchContinue) await sharedResearch!.finish(run.stopReason || (result.deliveryReadiness?.ready ? "goal_reached" : exhausted ? "budget_exhausted" : researchStagnant >= state.request.research.budget.stagnantRounds ? "no_progress" : "insufficient_material"));
+        result.researchRun = sharedResearch!.record();
+      }
+      result = refreshRolePackageManifest(result, { status: result.deliveryReadiness?.ready ? "ready" : "candidate" });
+    }
+    if (researchContinue) return { result, bestResult: result, researchContinue, researchStagnant, researchSignature };
     emit(state.request, "build.run.completed", "system", { result, publishable: result.validation.publishable, metrics: result.build?.metrics,
       qualityRepairRounds: state.qualityRepairRound, remainingTaskIds: state.qualityTaskIds, stoppedBecause: state.qualityTaskIds.length ? "research_budget_or_evidence_limit" : "task_support_complete" });
-    return { result };
+    return { result, researchContinue, researchStagnant, researchSignature };
   };
 
   if (options?.execution === "enrichment") {
@@ -1292,6 +1344,6 @@ export function createColdStartSkill(model: ModelInvoker, options?: SkillOptions
     .addEdge("materialize_dual_graph", "audit_and_compile")
     .addConditionalEdges("audit_and_compile", routeQuality, ["repair_quality", "finish_build"])
       .addEdge("repair_quality", "derive_layers")
-      .addEdge("finish_build", END)
+      .addConditionalEdges("finish_build", state => state.researchContinue ? "research_sources" : END, ["research_sources", END])
     .compile({ checkpointer: false }).withConfig({ recursionLimit: 80 });
 }

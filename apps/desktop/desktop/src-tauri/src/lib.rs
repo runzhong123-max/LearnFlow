@@ -74,7 +74,7 @@ impl Default for DesktopPetPreferences {
     fn default() -> Self {
         Self {
             schema_version: 1,
-            appearance: "mist".into(),
+            appearance: "sky".into(),
             shortcut: default_pet_shortcut().into(),
             review_reminders_enabled: false,
             review_reminder_interval_minutes: 30,
@@ -88,8 +88,8 @@ impl Default for DesktopPetPreferences {
 impl DesktopPetPreferences {
     fn normalize(&mut self) {
         self.schema_version = 1;
-        if !matches!(self.appearance.as_str(), "mist" | "warm" | "dusk") {
-            self.appearance = "mist".into();
+        if !matches!(self.appearance.as_str(), "sky" | "mist" | "warm" | "dusk") {
+            self.appearance = "sky".into();
         }
         if self.shortcut.trim().is_empty() || self.shortcut.parse::<Shortcut>().is_err() {
             self.shortcut = default_pet_shortcut().into();

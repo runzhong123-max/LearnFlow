@@ -7,6 +7,7 @@ import {
   type FormalAccount,
   type FormalAdminAccount,
 } from './formal-runtime.ts'
+import { UserIdentity } from '../../packages/learning-client/src/identity/UserIdentity'
 import styles from './AccountModelSettings.module.css'
 import PersonalApiKeys from './PersonalApiKeys'
 
@@ -46,8 +47,7 @@ export default function AccountModelSettings({ account, onSignOut }: AccountMode
           <i>{account.role === 'admin' ? '管理员' : '学习者'}</i>
         </div>
         <div className={styles.accountRow}>
-          <div className={styles.avatar}>{account.display_name.slice(0, 1).toUpperCase()}</div>
-          <div><strong>{account.display_name}</strong><span>@{account.username} · 账号 #{account.account_number} · {quotaLabel}</span></div>
+          <UserIdentity displayName={account.display_name} username={account.username} avatar={account.avatar} detail={`账号 #${account.account_number} · ${quotaLabel}`} size="lg" />
           <button type="button" className={styles.secondary} disabled={busy} onClick={() => { setBusy(true); void onSignOut().catch(signOutError => { setError(signOutError instanceof Error ? signOutError.message : '退出失败'); setBusy(false) }) }}>{busy ? '正在退出…' : '退出并切换账号'}</button>
         </div>
       </section>

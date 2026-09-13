@@ -10,6 +10,8 @@ type Props = {
   sheetId?: string
   onAttach?: (file: { kind: 'source'; ref: string; title: string; projectId?: number }) => void
   onFollowUp?: () => void
+  initialPosition?: number
+  onPositionChange?: (position: number) => void
 }
 
 const CODE_LANGUAGE_BY_EXTENSION: Record<string, string> = {
@@ -45,7 +47,7 @@ function sectionMarkdown(
   return `## ${section.title}\n\n${section.content}`
 }
 
-export default function SourceFilePage({ sourceId, embedded, conversationId, sheetId, onAttach, onFollowUp }: Props) {
+export default function SourceFilePage({ sourceId, embedded, conversationId, sheetId, onAttach, onFollowUp, initialPosition = 0, onPositionChange }: Props) {
   const [file, setFile] = useState<Awaited<ReturnType<typeof loadSourcePaper>>>()
   const [active, setActive] = useState(0)
   const [error, setError] = useState('')
@@ -57,6 +59,7 @@ export default function SourceFilePage({ sourceId, embedded, conversationId, she
     void loadSourcePaper(sourceId).then(result => {
       if (!alive) return
       setFile(result)
+      setActive(Math.max(0, Math.min(initialPosition, result.sections.length - 1)))
       void recordLearningFileAccess('source', String(sourceId), 'opened', {
         conversation_id: conversationId,
         sheet_id: sheetId,
@@ -72,7 +75,7 @@ export default function SourceFilePage({ sourceId, embedded, conversationId, she
   const unit = sourceUnit(formatId)
   return (
     <section className={`source-file-workbench${embedded ? ' learning-file-embedded' : ''}`}>
-      <header className="learning-file-workbench-heading">
+      <header className="learning-file-workbench-heading page-hero">
         <div><span className="source-format-label">{formatLabel}</span><h1>{file.name}</h1>{!embedded && file.url && <code>{file.url}</code>}</div>
         <div>
           {onFollowUp && <button type="button" className="learning-file-subtle-action" onMouseDown={event => event.preventDefault()} onClick={onFollowUp}>选中追问</button>}
@@ -80,14 +83,14 @@ export default function SourceFilePage({ sourceId, embedded, conversationId, she
         </div>
       </header>
       {file.sections.length > 1 && <nav className="source-paper-navigation" aria-label={`资料${unit}`}>
-        <button type="button" disabled={active === 0} onClick={() => setActive(index => Math.max(0, index - 1))} aria-label={`上一${unit}`}>←</button>
+        <button type="button" disabled={active === 0} onClick={() => { const next = Math.max(0, active - 1); setActive(next); onPositionChange?.(next) }} aria-label={`上一${unit}`}>←</button>
         <label>
           <span>{active + 1} / {file.sections.length}</span>
-          <select value={active} onChange={event => setActive(Number(event.target.value))} aria-label={`选择${unit}`}>
+          <select value={active} onChange={event => { const next = Number(event.target.value); setActive(next); onPositionChange?.(next) }} aria-label={`选择${unit}`}>
             {file.sections.map((item, index) => <option value={index} key={item.chunk_id}>第 {index + 1} {unit} · {item.title}</option>)}
           </select>
         </label>
-        <button type="button" disabled={active >= file.sections.length - 1} onClick={() => setActive(index => Math.min(file.sections.length - 1, index + 1))} aria-label={`下一${unit}`}>→</button>
+        <button type="button" disabled={active >= file.sections.length - 1} onClick={() => { const next = Math.min(file.sections.length - 1, active + 1); setActive(next); onPositionChange?.(next) }} aria-label={`下一${unit}`}>→</button>
       </nav>}
       <article className="source-paper-content">
         <Suspense fallback={<div className="page-loading">渲染资料…</div>}>

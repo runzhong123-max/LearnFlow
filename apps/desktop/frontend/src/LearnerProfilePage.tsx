@@ -16,6 +16,7 @@ import {
 } from './profile-presentation'
 
 import { buildProfileOverview, profileGrowthArea, profileTimeLabel } from './profile-overview'
+import { UserAvatar } from '../../../../packages/learning-client/src/identity/UserIdentity'
 import './profile-overview.css'
 
 const KERNELS: Array<{ id: KernelName; name: string; short: string; description: string }> = [
@@ -37,6 +38,9 @@ type Props = {
   onClaimAction: (claimId: number, action: 'confirm' | 'correct' | 'retract', correction?: string) => void
   onRecordSelfReport: (rawText: string) => Promise<boolean>
   onUpdateProfile: (patch: FormalLearnerProfilePatch) => Promise<boolean>
+  /** The signed-in account row, so the profile heading shows the same
+   *  avatar and handle as the sidebar and the thread. */
+  accountIdentity?: { displayName: string; username: string; avatar?: string | null }
 }
 
 type ConceptPosition = {
@@ -293,7 +297,7 @@ function PersonalConceptGraph({ snapshot, kernel }: { snapshot: FormalLearnerSna
 }
 
 export default function LearnerProfilePage({
-  connection, snapshot, busyKey, error, onRefresh, onOpenPath, onMemoryArchive, onClaimAction, onRecordSelfReport, onUpdateProfile,
+  connection, snapshot, busyKey, error, onRefresh, onOpenPath, onMemoryArchive, onClaimAction, onRecordSelfReport, onUpdateProfile, accountIdentity,
 }: Props) {
   const [recordsOpen, setRecordsOpen] = useState(false)
   const [editorOpen, setEditorOpen] = useState(false)
@@ -340,13 +344,16 @@ export default function LearnerProfilePage({
 
   return (
     <section className="profile-page formal-profile-page">
-      <header className="profile-page-heading">
+      <header className="profile-page-heading page-hero">
         <div>
           <h1>{snapshot.learner.display_name}的学习画像</h1>
           <p>你的基础、目标、偏好，以及学习过程中逐渐形成的认识。</p>
         </div>
-        <div className="profile-version formal-authority-badge">
-          <i /> <span>{connection.status === 'connected' ? '已同步' : '离线'}</span>
+        <div className="profile-page-aside">
+          <UserAvatar displayName={snapshot.learner.display_name} avatar={accountIdentity?.avatar} size="lg" />
+          <div className="profile-version formal-authority-badge">
+            <i /> <span>{connection.status === 'connected' ? '已同步' : '离线'}</span>
+          </div>
         </div>
       </header>
 
@@ -362,11 +369,11 @@ export default function LearnerProfilePage({
           }}>{section.id === 'progress' ? '查看依据' : '修改'}</button></header>
           {section.items.length ? <ul>{section.items.map(item => <li key={item.id}>
             <p>{item.text}</p><small>{item.source}</small>
-            <small><time>{profileTimeLabel(item.time)}</time>{item.time ? ' · 记录时间' : ''}</small>
+            {item.time && <small><time>{profileTimeLabel(item.time)}</time></small>}
           </li>)}</ul> : <p className="formal-empty-copy">{section.empty}</p>}
         </section>)}
       </div>
-      <div className="profile-overview-footer"><span>这里呈现当前已读取的资料。自述帮助选择讲解起点，具体能力由学习表现逐步确认。</span><button type="button" onClick={onOpenPath}>打开学习路径</button></div>
+      <div className="profile-overview-footer"><span>自述用于选择讲解起点，能力以学习表现为准。</span><button type="button" onClick={onOpenPath}>学习路径</button></div>
 
       <details className="profile-input-disclosure">
         <summary>＋ 补充学习经历、阻碍或联想</summary>
@@ -382,7 +389,7 @@ export default function LearnerProfilePage({
       </details>
 
       <details ref={recordsRef} className="profile-record-disclosure" open={recordsOpen} onToggle={event => setRecordsOpen(event.currentTarget.open)}>
-        <summary>查看与管理全部学习认识</summary>
+        <summary>全部学习认识与依据</summary>
       <nav className="kernel-tabs" aria-label="五核切换" role="tablist">
         {KERNELS.map(item => (
           <button key={item.id} type="button" role="tab" aria-selected={activeKernel === item.id} className={activeKernel === item.id ? 'active' : ''} onClick={() => setActiveKernel(item.id)}>

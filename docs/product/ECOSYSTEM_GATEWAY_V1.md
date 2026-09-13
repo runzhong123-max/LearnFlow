@@ -128,3 +128,17 @@ Only the authenticated gateway enables the planner, using the verified package p
 Research continuation is owned exclusively by the durable server dispatcher. The browser replays job journals and shows stages outside the scrolling transcript; it no longer submits a competing enrichment request. Queued mounts indicate waiting for research to save its final version, distinct from active matching and retry.
 
 Job replay accepts the additive `view=progress` filter and `hasMore` response field. It filters reasoning deltas before the 200-row limit, retains original cursors and leaves full audit reads unchanged; the conversation promptly drains pending phase pages instead of waiting six seconds per batch.
+
+## 岗位包引用修复（2026-09-13）
+
+插件实现版本：Web 与桌面同步升级到 `1.8.0`，对象 schema 保持 `role-capability.object.v1`。
+
+Contract impact：既有 `ecosystem_gateway_v1` / Tutor 只读能力增加可选传输投影。`package.resolve` 的 payload 可带 `format: "bundle"`，返回 `{packageRef,title,bundle}`；省略时仍返回 `{packageRef,title,result}`，不额外复制正文。协议保持 v1，无新 Agent、学习事件或五核写入权限。
+
+中央 Web Tutor 给岗位插件授予受限 `rolePackageHost.resolve(ref)`。宿主固定请求现有 `/api/ecosystem/dispatch`，凭据只留在宿主；网关每次重新验证当前账号、发布状态和完整四元身份。插件核验 manifest rootHash、各组件原始字节哈希及 snapshot 身份后，在本次调用内构建读取索引；不写安装目录、不加入全局 singleton、不跨账号缓存。内置官方包仍能离线读取；桌面本地身份不因此获得中央委托，只同步导入、引用与读取协议兼容。
+
+签名交接的 requiredSelector 现在包含 rootHash。旧消息可以从原 reference 描述恢复遗漏的 hash；后续工具由宿主补齐已选引用。冲突 selector 不能悄悄切换到其他版本，明确 reference 工具调用才切换引用。该引用只决定读取目标，不提供访问授权。
+
+Hub Fork 同时重写顶层 projectId 与 brief.projectId，并捕获协议规范化返回值。历史错误 Fork 在项目读取投影中修复已知的路由 ID 缺陷，条件限定为 fork 身份且 brief 属于当前项目；不修改历史制品字节、哈希或数据库。项目/版本引用失败不再退回全局示例；内置快照的旧版本也不能遮蔽相同 snapshotId 的其他发布版本。
+
+回归覆盖：未安装包引用后读取任务、哈希与组件篡改拒绝、权限撤销后再次读取拒绝、跨账号无全局缓存、旧交接引用恢复、Fork 编译身份及历史兼容、显式项目隔离与发布版本解析。

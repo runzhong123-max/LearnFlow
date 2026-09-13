@@ -61,7 +61,7 @@ export default function ProjectsPage({ onOpen, onProjectsChanged }: {
 
   return (
     <section className="projects-page">
-      <header className="projects-hero">
+      <header className="projects-hero page-hero">
         <div><span className="eyebrow">YOUR NEXT DISCOVERY</span>
         <h1>从好奇，走到做出来。</h1>
         <p>选一个起点。资料、真实文件、思考纸张与导师，会在同一个项目里陪你向前。</p></div>

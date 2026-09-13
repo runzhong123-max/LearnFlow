@@ -16,8 +16,8 @@ export function selectKnowledgeContext(input: {
   mentions: ConceptMention[];
   maxTokens?: number;
 }) {
-  const budget = Math.max(1, input.maxTokens ?? 4_800);
-  const perSegmentBudget = Math.max(1, Math.min(1_400, Math.floor(budget / Math.max(2, input.group.tasks.length * 2))));
+  const budget = Math.max(1, input.maxTokens ?? 9_600);
+  const perSegmentBudget = Math.max(1, Math.min(2_800, Math.floor(budget / Math.max(2, input.group.tasks.length * 2))));
   const assets = new Map(input.assets.map(asset => [asset.id, asset]));
   const taskTerms = input.group.tasks.map(task => terms(`${task.label} ${task.summary}`));
   const overlap = (text: string, index: number) => {

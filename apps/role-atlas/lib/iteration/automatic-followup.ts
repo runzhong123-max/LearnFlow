@@ -1,5 +1,5 @@
 import type { LearningPathGraphInput } from "@/lib/build/types";
-import type { SnapshotIterationRequest } from "./types";
+import { DEFAULT_ITERATION_BUDGET, type SnapshotIterationRequest } from "./types";
 
 type FollowupInput = {
   runId: string;
@@ -25,9 +25,9 @@ export function createColdStartDeepResearchRequest(input: FollowupInput): Snapsh
     supplementalSources: [],
     learningPathGraph: input.learningPathGraph,
     webResearch: input.webResearch ?? true,
-    maxRounds: 4,
-    sourceLimit: 16,
-    maxWorkItems: 12,
+    maxRounds: DEFAULT_ITERATION_BUDGET.maxRounds,
+    sourceLimit: DEFAULT_ITERATION_BUDGET.sourceLimit,
+    maxWorkItems: DEFAULT_ITERATION_BUDGET.maxWorkItems,
   };
 }
 
@@ -44,8 +44,8 @@ export function createColdStartRiskRepairRequest(input: FollowupInput): Snapshot
     supplementalSources: [],
     learningPathGraph: input.learningPathGraph,
     webResearch: input.webResearch ?? true,
-    maxRounds: 4,
-    sourceLimit: 16,
-    maxWorkItems: 16,
+    maxRounds: DEFAULT_ITERATION_BUDGET.maxRounds,
+    sourceLimit: DEFAULT_ITERATION_BUDGET.sourceLimit,
+    maxWorkItems: DEFAULT_ITERATION_BUDGET.maxWorkItems,
   };
 }

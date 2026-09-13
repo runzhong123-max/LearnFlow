@@ -2,80 +2,85 @@
 <!DOCTYPE svg
   PUBLIC '-//W3C//DTD SVG 1.0//EN'
   'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
-<svg width="518.740157480315pt" height="241pt" preserveAspectRatio="xMinYMin meet" viewBox="0 0 518.740157480315 241" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="518.740157480315pt" height="330pt" preserveAspectRatio="xMinYMin meet" viewBox="0 0 518.740157480315 330" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
 	<title>学习者状态形成与上下文准备</title>
 	<desc>Original vector figure from retained LearnFlow measurements. See manuscript caption for denominators and statistical scope.</desc>
 	<clipPath id="clip">
-		<rect x="0" y="0" width="518.740157480315" height="241"/>
+		<rect x="0" y="0" width="518.740157480315" height="330"/>
 	</clipPath>
-	<g id="group" transform="scale(1,-1) translate(0,-241)" style="clip-path: url(#clip)">
+	<g id="group" transform="scale(1,-1) translate(0,-330)" style="clip-path: url(#clip)">
 		<g transform="">
-			<rect x="0" y="0" width="518.740157480315" height="241" style="stroke: none; stroke-linecap: butt; stroke-width: 0.5; fill: rgb(100%,100%,100%); fill-rule: evenodd;"/>
-			<text x="8" y="227" style="font-family: Arial-Bold; font-size: 8px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,454) scale(1,-1)">a</text>
-			<text x="22" y="227" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,454) scale(1,-1)">学习者状态的权威形成</text>
-			<rect x="8" y="176" width="92" height="35" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(95%,96%,97%); fill-rule: evenodd;"/>
-			<text x="40.0" y="197" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,394) scale(1,-1)">证据事件</text>
-			<text x="32.986669921875" y="185" style="font-family: Arial; font-size: 6.3px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,370) scale(1,-1)">EvidenceEvent</text>
-			<path d="M 101,194 L 107,194 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.6;"/>
-			<polygon points="107 194, 103 196, 103 192" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(9%,9%,10%); fill-rule: evenodd;"/>
-			<rect x="108" y="176" width="92" height="35" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(95%,96%,97%); fill-rule: evenodd;"/>
-			<text x="136.5" y="197" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,394) scale(1,-1)">确定性归约</text>
-			<text x="143.31953125" y="185" style="font-family: Arial; font-size: 6.3px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,370) scale(1,-1)">reducer</text>
-			<path d="M 201,194 L 207,194 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.6;"/>
-			<polygon points="207 194, 203 196, 203 192" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(9%,9%,10%); fill-rule: evenodd;"/>
-			<rect x="208" y="176" width="92" height="35" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(95%,96%,97%); fill-rule: evenodd;"/>
-			<text x="240.0" y="197" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,394) scale(1,-1)">状态变更</text>
-			<text x="232.8128662109375" y="185" style="font-family: Arial; font-size: 6.3px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,370) scale(1,-1)">KernelMutation</text>
-			<path d="M 301,194 L 307,194 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.6;"/>
-			<polygon points="307 194, 303 196, 303 192" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(9%,9%,10%); fill-rule: evenodd;"/>
-			<rect x="308" y="176" width="92" height="35" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(95%,96%,97%); fill-rule: evenodd;"/>
-			<text x="340.0" y="197" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,394) scale(1,-1)">五核状态</text>
-			<text x="337.539404296875" y="185" style="font-family: Arial; font-size: 6.3px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,370) scale(1,-1)">KernelState</text>
-			<path d="M 401,194 L 407,194 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.6;"/>
-			<polygon points="407 194, 403 196, 403 192" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(9%,9%,10%); fill-rule: evenodd;"/>
-			<rect x="408" y="176" width="92" height="35" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(95%,96%,97%); fill-rule: evenodd;"/>
-			<text x="433.0" y="197" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,394) scale(1,-1)">长期记忆投影</text>
-			<text x="424.24111328125" y="185" style="font-family: Arial; font-size: 6.3px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,370) scale(1,-1)">Fact / Module / Claim</text>
-			<text x="8" y="160" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,320) scale(1,-1)">状态维度</text>
-			<rect x="78" y="152" width="75" height="19" style="stroke: rgb(72%,76%,79%); stroke-linecap: butt; stroke-width: 0.4; fill: none; fill-rule: evenodd;"/>
-			<text x="108.5" y="158" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,316) scale(1,-1)">结构</text>
-			<rect x="165" y="152" width="75" height="19" style="stroke: rgb(72%,76%,79%); stroke-linecap: butt; stroke-width: 0.4; fill: none; fill-rule: evenodd;"/>
-			<text x="195.5" y="158" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,316) scale(1,-1)">知识</text>
-			<rect x="252" y="152" width="75" height="19" style="stroke: rgb(72%,76%,79%); stroke-linecap: butt; stroke-width: 0.4; fill: none; fill-rule: evenodd;"/>
-			<text x="282.5" y="158" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,316) scale(1,-1)">人因</text>
-			<rect x="339" y="152" width="75" height="19" style="stroke: rgb(72%,76%,79%); stroke-linecap: butt; stroke-width: 0.4; fill: none; fill-rule: evenodd;"/>
-			<text x="369.5" y="158" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,316) scale(1,-1)">价值</text>
-			<rect x="426" y="152" width="75" height="19" style="stroke: rgb(72%,76%,79%); stroke-linecap: butt; stroke-width: 0.4; fill: none; fill-rule: evenodd;"/>
-			<text x="456.5" y="158" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,316) scale(1,-1)">实践</text>
-			<text x="8" y="128" style="font-family: Arial-Bold; font-size: 8px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,256) scale(1,-1)">b</text>
-			<text x="22" y="128" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,256) scale(1,-1)">只读投影与有预算的教学准备</text>
-			<rect x="8" y="67" width="116" height="43" style="stroke: rgb(66%,70%,74%); stroke-linecap: butt; stroke-width: 0.6; fill: none; fill-rule: evenodd;"/>
-			<text x="34.5" y="94" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,188) scale(1,-1)">来源与适用范围检查</text>
-			<text x="21.571728515624997" y="81" style="font-family: Arial Unicode MS; font-size: 5.7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,162) scale(1,-1)">Fact → Mutation → Event → Attempt</text>
-			<rect x="142" y="67" width="110" height="43" style="stroke: rgb(66%,70%,74%); stroke-linecap: butt; stroke-width: 0.6; fill: none; fill-rule: evenodd;"/>
-			<text x="169.0" y="94" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,188) scale(1,-1)">最新优先连续前缀</text>
-			<text x="162.8" y="81" style="font-family: Arial Unicode MS; font-size: 5.7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,162) scale(1,-1)">超限即停止，不跳到旧片段</text>
-			<rect x="270" y="67" width="108" height="43" style="stroke: rgb(66%,70%,74%); stroke-linecap: butt; stroke-width: 0.6; fill: none; fill-rule: evenodd;"/>
-			<text x="306.5" y="94" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,188) scale(1,-1)">有限上下文</text>
-			<text x="289.8" y="81" style="font-family: Arial Unicode MS; font-size: 5.7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,162) scale(1,-1)">评估结果、辅助条件、时间</text>
-			<rect x="396" y="67" width="104" height="43" style="stroke: rgb(66%,70%,74%); stroke-linecap: butt; stroke-width: 0.6; fill: none; fill-rule: evenodd;"/>
-			<text x="423.5" y="94" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,188) scale(1,-1)">确定性教学动作</text>
-			<text x="414.749072265625" y="81" style="font-family: Arial Unicode MS; font-size: 5.7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,162) scale(1,-1)">诊断 / 撤除辅助 / 变式检查</text>
-			<path d="M 125,89 L 140,89 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.6;"/>
-			<polygon points="140 89, 136 91, 136 87" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(9%,9%,10%); fill-rule: evenodd;"/>
-			<path d="M 253,89 L 268,89 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.6;"/>
-			<polygon points="268 89, 264 91, 264 87" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(9%,9%,10%); fill-rule: evenodd;"/>
-			<path d="M 379,89 L 394,89 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.6;"/>
-			<polygon points="394 89, 390 91, 390 87" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(9%,9%,10%); fill-rule: evenodd;"/>
-			<path d="M 455,176 L 510,176 Z" style="stroke: rgb(49%,53%,56%); stroke-linecap: butt; stroke-width: 0.5; stroke-dasharray: 2, 2;"/>
-			<path d="M 510,176 L 510,119 Z" style="stroke: rgb(49%,53%,56%); stroke-linecap: butt; stroke-width: 0.5; stroke-dasharray: 2, 2;"/>
-			<path d="M 510,119 L 67,119 Z" style="stroke: rgb(49%,53%,56%); stroke-linecap: butt; stroke-width: 0.5; stroke-dasharray: 2, 2;"/>
-			<path d="M 67,119 L 67,111 Z" style="stroke: rgb(49%,53%,56%); stroke-linecap: butt; stroke-width: 0.6;"/>
-			<polygon points="67 111, 65 115, 69 115" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(49%,53%,56%); fill-rule: evenodd;"/>
-			<text x="8" y="43" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,86) scale(1,-1)">准入约束</text>
-			<text x="63" y="43" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,86) scale(1,-1)">最多 3 个片段，每片段最多 6 条事实；来源与辅助限定整体保留。</text>
-			<text x="8" y="24" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,48) scale(1,-1)">证据边界</text>
-			<text x="63" y="24" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,48) scale(1,-1)">生成计划、摘要和讲解均不直接升级掌握状态。</text>
+			<rect x="0" y="0" width="518.740157480315" height="330" style="stroke: none; stroke-linecap: butt; stroke-width: 0.5; fill: rgb(100%,100%,100%); fill-rule: evenodd;"/>
+			<text x="8" y="316" style="font-family: Arial-Bold; font-size: 8px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,632) scale(1,-1)">a</text>
+			<text x="22" y="316" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,632) scale(1,-1)">五核按教学问题分工，共用身份、主题与证据来源</text>
+			<rect x="8" y="243" width="92" height="59" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(95%,96%,97%); fill-rule: evenodd;"/>
+			<text x="31.82763671875" y="287" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,574) scale(1,-1)">结构 Structure</text>
+			<text x="24.749999999999996" y="270" style="font-family: Arial Unicode MS; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,540) scale(1,-1)">走到哪里，如何返回</text>
+			<text x="30.615673828125" y="255" style="font-family: Arial Unicode MS; font-size: 6.1px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,510) scale(1,-1)">位置 / 依赖 / 锚点</text>
+			<rect x="108" y="243" width="92" height="59" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(95%,96%,97%); fill-rule: evenodd;"/>
+			<text x="128.708740234375" y="287" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,574) scale(1,-1)">知识 Knowledge</text>
+			<text x="131.25" y="270" style="font-family: Arial Unicode MS; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,540) scale(1,-1)">理解证据是什么</text>
+			<text x="130.615673828125" y="255" style="font-family: Arial Unicode MS; font-size: 6.1px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,510) scale(1,-1)">概念 / 缺口 / 错误</text>
+			<rect x="208" y="243" width="92" height="59" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(95%,96%,97%); fill-rule: evenodd;"/>
+			<text x="234.744873046875" y="287" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,574) scale(1,-1)">人因 Human</text>
+			<text x="234.5" y="270" style="font-family: Arial Unicode MS; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,540) scale(1,-1)">当前如何支持</text>
+			<text x="233.1578369140625" y="255" style="font-family: Arial Unicode MS; font-size: 6.1px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,510) scale(1,-1)">明确请求 / 时效</text>
+			<rect x="308" y="243" width="92" height="59" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(95%,96%,97%); fill-rule: evenodd;"/>
+			<text x="337.075927734375" y="287" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,574) scale(1,-1)">价值 Value</text>
+			<text x="328.0" y="270" style="font-family: Arial Unicode MS; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,540) scale(1,-1)">为何学，优先什么</text>
+			<text x="330.615673828125" y="255" style="font-family: Arial Unicode MS; font-size: 6.1px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,510) scale(1,-1)">目标 / 确认 / 更新</text>
+			<rect x="408" y="243" width="92" height="59" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(95%,96%,97%); fill-rule: evenodd;"/>
+			<text x="433.384521484375" y="287" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,574) scale(1,-1)">实践 Practice</text>
+			<text x="428.0" y="270" style="font-family: Arial Unicode MS; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,540) scale(1,-1)">在何种条件下做成</text>
+			<text x="430.615673828125" y="255" style="font-family: Arial Unicode MS; font-size: 6.1px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,510) scale(1,-1)">尝试 / 辅助 / 迁移</text>
+			<text x="8" y="229" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,458) scale(1,-1)">不同核独立判断；学习位置、自述兴趣与受助成功不能互相替代为掌握。</text>
+			<text x="8" y="208" style="font-family: Arial-Bold; font-size: 8px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,416) scale(1,-1)">b</text>
+			<text x="22" y="208" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,416) scale(1,-1)">统一事件更新与版本化记忆</text>
+			<rect x="8" y="160" width="92" height="34" style="stroke: rgb(66%,70%,74%); stroke-linecap: butt; stroke-width: 0.6; fill: none; fill-rule: evenodd;"/>
+			<text x="36.5" y="181" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,362) scale(1,-1)">行为与证据</text>
+			<text x="32.986669921875" y="169" style="font-family: Arial; font-size: 6.3px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,338) scale(1,-1)">EvidenceEvent</text>
+			<path d="M 101,177 L 107,177 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<polygon points="107 177, 103 179, 103 175" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(9%,9%,10%); fill-rule: evenodd;"/>
+			<rect x="108" y="160" width="92" height="34" style="stroke: rgb(66%,70%,74%); stroke-linecap: butt; stroke-width: 0.6; fill: none; fill-rule: evenodd;"/>
+			<text x="136.5" y="181" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,362) scale(1,-1)">确定性归约</text>
+			<text x="143.31953125" y="169" style="font-family: Arial; font-size: 6.3px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,338) scale(1,-1)">reducer</text>
+			<path d="M 201,177 L 207,177 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<polygon points="207 177, 203 179, 203 175" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(9%,9%,10%); fill-rule: evenodd;"/>
+			<rect x="208" y="160" width="92" height="34" style="stroke: rgb(66%,70%,74%); stroke-linecap: butt; stroke-width: 0.6; fill: none; fill-rule: evenodd;"/>
+			<text x="233.0" y="181" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,362) scale(1,-1)">合法状态变更</text>
+			<text x="232.8128662109375" y="169" style="font-family: Arial; font-size: 6.3px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,338) scale(1,-1)">KernelMutation</text>
+			<path d="M 301,177 L 307,177 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<polygon points="307 177, 303 179, 303 175" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(9%,9%,10%); fill-rule: evenodd;"/>
+			<rect x="308" y="160" width="92" height="34" style="stroke: rgb(66%,70%,74%); stroke-linecap: butt; stroke-width: 0.6; fill: none; fill-rule: evenodd;"/>
+			<text x="333.0" y="181" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,362) scale(1,-1)">五核当前状态</text>
+			<text x="337.539404296875" y="169" style="font-family: Arial; font-size: 6.3px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,338) scale(1,-1)">KernelState</text>
+			<path d="M 401,177 L 407,177 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<polygon points="407 177, 403 179, 403 175" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(9%,9%,10%); fill-rule: evenodd;"/>
+			<rect x="408" y="160" width="92" height="34" style="stroke: rgb(66%,70%,74%); stroke-linecap: butt; stroke-width: 0.6; fill: none; fill-rule: evenodd;"/>
+			<text x="429.5" y="181" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,362) scale(1,-1)">记忆及历史版本</text>
+			<text x="424.24111328125" y="169" style="font-family: Arial; font-size: 6.3px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,338) scale(1,-1)">Fact / Module / Claim</text>
+			<text x="8" y="143" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,286) scale(1,-1)">纠正追加证据与后继版本，保留历史；不同核采用各自的内容与巩固门槛。</text>
+			<text x="8" y="119" style="font-family: Arial-Bold; font-size: 8px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,238) scale(1,-1)">c</text>
+			<text x="22" y="119" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,238) scale(1,-1)">按教学用途提供只读证据</text>
+			<rect x="8" y="78" width="492" height="29" style="stroke: rgb(0%,44%,69%); stroke-linecap: butt; stroke-width: 0.6; fill: rgb(95%,96%,97%); fill-rule: evenodd;"/>
+			<text x="158.418212890625" y="95" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,190) scale(1,-1)">范围与来源检查 → 当前适用证据 → 预算准入 → ContextPacket</text>
+			<text x="192.25" y="84" style="font-family: Arial Unicode MS; font-size: 6.5px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,168) scale(1,-1)">结果、辅助、时间、来源和未知项共同送达</text>
+			<path d="M 85,77 L 85,66 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<polygon points="85 66, 83 70, 87 70" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(9%,9%,10%); fill-rule: evenodd;"/>
+			<rect x="8" y="34" width="154" height="31" style="stroke: rgb(66%,70%,74%); stroke-linecap: butt; stroke-width: 0.6; fill: none; fill-rule: evenodd;"/>
+			<text x="68.858642578125" y="52" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,104) scale(1,-1)">Tutor 辅导</text>
+			<text x="50.8744873046875" y="40" style="font-family: Arial Unicode MS; font-size: 6.3px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,80) scale(1,-1)">相关概念 / 当前支持需求</text>
+			<path d="M 254,77 L 254,66 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<polygon points="254 66, 252 70, 256 70" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(9%,9%,10%); fill-rule: evenodd;"/>
+			<rect x="177" y="34" width="154" height="31" style="stroke: rgb(66%,70%,74%); stroke-linecap: butt; stroke-width: 0.6; fill: none; fill-rule: evenodd;"/>
+			<text x="240.0" y="52" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,104) scale(1,-1)">学习规划</text>
+			<text x="213.5744873046875" y="40" style="font-family: Arial Unicode MS; font-size: 6.3px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,80) scale(1,-1)">目标与路径 / 诊断与独立检查</text>
+			<path d="M 423,77 L 423,66 Z" style="stroke: rgb(9%,9%,10%); stroke-linecap: butt; stroke-width: 0.6;"/>
+			<polygon points="423 66, 421 70, 425 70" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(9%,9%,10%); fill-rule: evenodd;"/>
+			<rect x="346" y="34" width="154" height="31" style="stroke: rgb(66%,70%,74%); stroke-linecap: butt; stroke-width: 0.6; fill: none; fill-rule: evenodd;"/>
+			<text x="405.5" y="52" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,104) scale(1,-1)">练习与复习</text>
+			<text x="379.4244873046875" y="40" style="font-family: Arial Unicode MS; font-size: 6.3px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,80) scale(1,-1)">理解与实践证据 / 所属业务对象</text>
+			<text x="8" y="15" style="font-family: Arial Unicode MS; font-size: 7px;fill: rgb(9%,9%,10%); stroke:none;" transform="translate(0,30) scale(1,-1)">新的学习行为回到事件入口；讲解、计划和模型生成不直接升级掌握。</text>
 		</g>
 	</g>
 </svg>

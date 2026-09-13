@@ -146,6 +146,9 @@ export type PluginToolResult = {
 }
 
 export type PluginToolContext = {
+  /** Authenticated, read-only package transport; no model-supplied URL or credentials. */
+  rolePackageHost?: import('../../packages/learning-client/src/role-packages/reference.ts').RolePackageHost
+
   /** Host-granted private artifact services; no credentials or direct learner-state writes. */
   artifactHost?: import('../../packages/learning-client/src/visuals/plugin-host.ts').ArtifactHost
 

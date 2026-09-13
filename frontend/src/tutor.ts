@@ -134,12 +134,30 @@ export function buildProviderRequest(options: {
   return { endpoint, body }
 }
 
-export function textFromTutorProviderResponse(payload: unknown): string {
+type TutorProviderTextOptions = {
+  allowStructuredJson?: boolean
+}
+
+function textFromTutorContentPart(part: unknown): string {
+  if (typeof part === 'string') return part
+  if (Array.isArray(part)) {
+    return part.map(textFromTutorContentPart).filter(Boolean).join('\n')
+  }
+  if (!part || typeof part !== 'object') return ''
+  const value = part as Record<string, unknown>
+  for (const key of ['text', 'output_text', 'value', 'content']) {
+    const text = textFromTutorContentPart(value[key])
+    if (text) return text
+  }
+  return ''
+}
+
+export function textFromTutorProviderResponse(payload: unknown, options: TutorProviderTextOptions = {}): string {
   if (typeof payload === 'string') return payload.trim()
   if (!payload || typeof payload !== 'object') return ''
   const root = payload as Record<string, unknown>
-  if (typeof root.output_text === 'string') return root.output_text.trim()
-  if (typeof root.delta === 'string') return root.delta
+  const directText = textFromTutorContentPart(root.output_text) || textFromTutorContentPart(root.delta)
+  if (directText) return directText.trim()
 
   if (Array.isArray(root.choices)) {
     const first = root.choices[0]
@@ -147,21 +165,22 @@ export function textFromTutorProviderResponse(payload: unknown): string {
       const message = (first as Record<string, unknown>).message
       if (message && typeof message === 'object') {
         const content = (message as Record<string, unknown>).content
-        if (typeof content === 'string') return content.trim()
-        if (Array.isArray(content)) {
-          return content
-            .map(part => part && typeof part === 'object' ? (part as Record<string, unknown>).text : '')
-            .filter((part): part is string => typeof part === 'string')
-            .join('\n')
-            .trim()
+        const text = textFromTutorContentPart(content)
+        if (text) return text.trim()
+        if (options.allowStructuredJson && content && typeof content === 'object' && !Array.isArray(content)) {
+          try {
+            return JSON.stringify(content)
+          } catch {
+            return ''
+          }
         }
       }
       const delta = (first as Record<string, unknown>).delta
-      if (delta && typeof delta === 'object' && typeof (delta as Record<string, unknown>).content === 'string') {
-        return String((delta as Record<string, unknown>).content)
-      }
+      const deltaText = textFromTutorContentPart(delta)
+      if (deltaText) return deltaText.trim()
       const text = (first as Record<string, unknown>).text
-      if (typeof text === 'string') return text.trim()
+      const choiceText = textFromTutorContentPart(text)
+      if (choiceText) return choiceText.trim()
     }
   }
 
@@ -170,17 +189,36 @@ export function textFromTutorProviderResponse(payload: unknown): string {
     root.output.forEach(item => {
       if (!item || typeof item !== 'object') return
       const content = (item as Record<string, unknown>).content
-      if (!Array.isArray(content)) return
-      content.forEach(part => {
-        if (!part || typeof part !== 'object') return
-        const text = (part as Record<string, unknown>).text
-        if (typeof text === 'string') parts.push(text)
-      })
+      const text = textFromTutorContentPart(content)
+      if (text) parts.push(text)
     })
-    return parts.join('\n').trim()
+    const outputText = parts.join('\n').trim()
+    if (outputText) return outputText
+  }
+
+  if (options.allowStructuredJson && !('choices' in root) && !('output' in root) && !('error' in root)) {
+    try {
+      return JSON.stringify(payload)
+    } catch {
+      return ''
+    }
   }
 
   return ''
+}
+
+export function tutorProviderResponseIssue(payload: unknown): string {
+  if (!payload || typeof payload !== 'object') return '响应不是 JSON 对象'
+  const root = payload as Record<string, any>
+  const errorMessage = typeof root.error?.message === 'string' ? root.error.message.trim() : ''
+  if (errorMessage) return `模型服务错误：${errorMessage}`
+  const choice = root.choices?.[0]
+  if (Array.isArray(choice?.message?.tool_calls) || choice?.message?.function_call) return '模型只返回了工具调用，没有返回可用于当前步骤的正文'
+  if (choice?.message?.refusal) return '模型拒绝生成当前内容'
+  const incomplete = incompleteTutorProviderReason(payload)
+  if (incomplete) return `模型输出未完成（${incomplete}）`
+  if (root.status === 'incomplete') return '模型返回了未完成响应'
+  return '响应格式中没有可识别的正文'
 }
 
 export function incompleteTutorProviderReason(payload: unknown): string {

@@ -43,7 +43,7 @@ const postSchema = z.object({
   snapshotRef: snapshotReferenceSchema,
   workspace: workspaceIngestionRequestSchema,
   conversationId: z.string().min(4).max(100).optional(),
-  iteration: workspaceUpgradeIterationSchema.default({ prompt: "", webResearch: true, maxRounds: 4, sourceLimit: 20, maxWorkItems: 16 }),
+  iteration: workspaceUpgradeIterationSchema.default({ prompt: "", webResearch: true, maxRounds: 12, sourceLimit: 64, maxWorkItems: 32 }),
   providerConfig: z.unknown().optional(),
   searchConfig: z.unknown().optional(),
 });

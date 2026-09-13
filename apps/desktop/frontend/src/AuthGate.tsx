@@ -19,7 +19,7 @@ import {
   type FormalRegistrationInput,
 } from './formal-runtime.ts'
 import styles from './AuthGate.module.css'
-import { isCloudDesktopRuntime, isDesktopRuntime, switchDesktopWorkspace, getRuntimeClientState } from './runtime-client'
+import { isCloudDesktopRuntime, isDesktopRuntime, switchDesktopWorkspace } from './runtime-client'
 import { PASSWORD_MIN_LENGTH, PASSWORD_POLICY_MESSAGE, passwordPolicyError } from './password-policy.ts'
 
 export type AuthGateSession = {
@@ -98,6 +98,19 @@ export default function AuthGate({ children }: AuthGateProps) {
 
   useEffect(() => {
     void probeSession()
+  }, [])
+
+  useEffect(() => {
+    const handleRuntimeChange = () => {
+      setAccount(undefined)
+      setDevLoginEnabled(false)
+      setMode('login')
+      setBusy(false)
+      setError('')
+      void probeSession()
+    }
+    window.addEventListener('learnflow:runtime-changed', handleRuntimeChange)
+    return () => window.removeEventListener('learnflow:runtime-changed', handleRuntimeChange)
   }, [])
 
   useEffect(() => {
@@ -276,7 +289,10 @@ export default function AuthGate({ children }: AuthGateProps) {
           <p>使用个人 API Key，继续你的项目和学习记录。</p>
         </header>
         <form className={styles.form} onSubmit={submitApiKey} autoComplete="off">
-          <label><span>服务器</span><input value={getRuntimeClientState().cloudOrigin || ''} readOnly aria-readonly="true" /></label>
+          <div className={styles.cloudDestination} role="status" aria-label="连接目标：LearnFlow 云端">
+            <span className={styles.cloudDestinationMark} aria-hidden="true" />
+            <span><strong>LearnFlow 云端</strong><small>连接地址由应用统一管理</small></span>
+          </div>
           <label><span>API Key</span><input name="api_key" type="password" autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} required maxLength={128} disabled={busy} autoFocus aria-describedby="cloud-key-help" /></label>
           <p id="cloud-key-help" className={styles.cloudHelp}>使用账号管理员签发的个人 API Key，仅在本次运行中保存。退出应用后需重新输入。</p>
           {error && <p className={styles.error} role="alert">{error}</p>}
@@ -295,10 +311,14 @@ export default function AuthGate({ children }: AuthGateProps) {
     <main className={styles.shell}>
       <section className={styles.hero}>
         <div className={styles.brand}><img className={styles.brandMark} src="/brand-mark.png" alt="" width={40} height={40} /><strong>LearnFlow</strong></div>
-        <p className={styles.eyebrow}>你的专属学习空间</p>
-        <h1>每个账号，一段独立的学习旅程。</h1>
-        <p className={styles.heroCopy}>从一次提问到一段长期计划，LearnFlow 会陪你延续理解、练习与成长。</p>
-        <div className={styles.securityNote}><span>↗</span><p><strong>学习记录只属于你</strong><small>登录后继续上一次学习，不同账号彼此独立。</small></p></div>
+        <p className={styles.eyebrow}>LEARNFLOW · PERSONAL STUDY</p>
+        <h1>把每一次提问，接成一条学习路径。</h1>
+        <p className={styles.heroCopy}>对话、讲义、练习与复习都留在同一段学习上下文里，下一次打开时继续向前。</p>
+        <ul className={styles.heroPoints}>
+          <li><span>01</span><div><strong>延续上下文</strong><small>从上次对话与任务继续</small></div></li>
+          <li><span>02</span><div><strong>看见路径</strong><small>把目标拆成可行动的节点</small></div></li>
+          <li><span>03</span><div><strong>记录进展</strong><small>用练习表现更新学习画像</small></div></li>
+        </ul>
       </section>
 
       <section className={styles.card} aria-labelledby="auth-title">
@@ -309,12 +329,12 @@ export default function AuthGate({ children }: AuthGateProps) {
 
         {mode === 'login' ? (
           <form className={styles.form} onSubmit={submitLogin}>
-            <header><p className={styles.eyebrow}>WELCOME BACK</p><h2 id="auth-title">继续本地学习</h2><span>此处使用本机旧账号，与云端账号独立。</span></header>
+            <header><p className={styles.eyebrow}>欢迎回来</p><h2 id="auth-title">继续本地学习</h2><span>登录本机账号，回到你的对话、任务和学习记录。</span></header>
             <label><span>用户名</span><input name="username" autoComplete="username" required maxLength={32} autoFocus /></label>
             <label><span>密码</span><input name="password" type="password" autoComplete="current-password" required maxLength={128} /></label>
             {error ? <p className={styles.error} role="alert">{error}</p> : null}
             <button className={styles.primary} type="submit" disabled={busy}>{busy ? '正在登录…' : '登录 LearnFlow'}</button>
-            {isDesktopRuntime() && <button type="button" disabled={busy} onClick={() => switchDesktopWorkspace(true)}>返回云端连接</button>}
+            {isDesktopRuntime() && <button type="button" className={styles.workspaceSwitch} disabled={busy} onClick={() => switchDesktopWorkspace(true)}>使用云端账号连接</button>}
           </form>
         ) : (
           <form className={styles.form} onSubmit={submitRegistration}>

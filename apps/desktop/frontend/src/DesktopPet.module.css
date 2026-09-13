@@ -1,4 +1,15 @@
 .pet { box-sizing: border-box; display: flex; height: 100vh; min-height: 0; flex-direction: column; overflow: hidden; border: 1px solid rgba(133, 104, 255, .42); border-radius: 24px; background: radial-gradient(circle at 20% 8%, #f5efff, #e8f7ff 45%, #edf5ff); color: #27305a; font-family: Inter, "Microsoft YaHei", sans-serif; }
+.pet[data-appearance="sky"] { border-color: rgba(30, 148, 111, .38); background: radial-gradient(circle at 18% 4%, #e3fff4 0%, #edfaff 46%, #f2f8f4 100%); color: #203c31; }
+.pet[data-appearance="sky"] .header button, .pet[data-appearance="sky"] .compactHeader strong, .pet[data-appearance="sky"] .compactHeader button { color: #4d806c; }
+.pet[data-appearance="sky"] .preferences, .pet[data-appearance="sky"] .taskPanel, .pet[data-appearance="sky"] .reviewReminder, .pet[data-appearance="sky"] .contextChip, .pet[data-appearance="sky"] .pastedImageTray { border-color: rgba(43, 143, 105, .2); background: rgba(255,255,255,.66); }
+.pet[data-appearance="sky"] .preferences label, .pet[data-appearance="sky"] .contextChip span, .pet[data-appearance="sky"] .empty, .pet[data-appearance="sky"] .status, .pet[data-appearance="sky"] .reviewReminder span { color: #648073; }
+.pet[data-appearance="sky"] .preferences select, .pet[data-appearance="sky"] .preferences button, .pet[data-appearance="sky"] .composer { border-color: #c8dfd4; color: #2d5141; }
+.pet[data-appearance="sky"] .assistant { background: rgba(255,255,255,.86); box-shadow: 0 4px 12px rgba(29, 111, 78, .08); }
+.pet[data-appearance="sky"] .user { background: #16815d; }
+.pet[data-appearance="sky"] .sendButton { background: #29a77c; }
+.pet[data-appearance="sky"] .sendButton:hover:not(:disabled) { background: #147553; }
+.pet[data-appearance="sky"] .composer:focus-within { border-color: #65b392; box-shadow: 0 0 0 3px rgba(36, 150, 109, .12), 0 7px 20px rgba(29, 111, 78, .1); }
+.pet[data-appearance="sky"] .compactCue { color: #477160; box-shadow: 0 3px 9px rgba(29, 111, 78, .1); }
 .pet[data-appearance="warm"] { border-color: rgba(219, 140, 69, .42); background: radial-gradient(circle at 18% 8%, #fff5e7, #fff0df 45%, #f5f2ff); color: #5b3c2b; }
 .pet[data-appearance="dusk"] { border-color: rgba(132, 143, 255, .55); background: radial-gradient(circle at 20% 8%, #292b57, #1d2445 48%, #151b35); color: #eef1ff; }
 .header { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; padding: 12px 15px; cursor: grab; user-select: none; }

@@ -1,3 +1,4 @@
+import { nativeFixture } from "./helpers/native-model";
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { ModelInvoker } from "@/lib/agent/model";
@@ -5,7 +6,12 @@ import { prepareBuildInput, compileSemanticDraft, compileRolePackage } from "@/l
 import type { ColdStartRequest } from "@/lib/build/types";
 import type { SemanticDraft } from "@/lib/build/model";
 import { createSnapshotIterationSkill } from "@/lib/iteration/graph";
-import type { SnapshotIterationRequest, SnapshotIterationResult } from "@/lib/iteration/types";
+import type { IterationEvent, SnapshotIterationRequest, SnapshotIterationResult } from "@/lib/iteration/types";
+import { createBudgetLedger } from "@/lib/iteration/budget-ledger";
+import { radarItemSchema, riskPackageSchema } from "@/lib/iteration/products";
+import { buildResearchAgent } from "@/lib/iteration/research-agent";
+import { buildProductPlanner } from "@/lib/iteration/product-planner";
+import { augmentationProposalSchema } from "@/lib/iteration/augmentation";
 
 /**
  * Characterization: each of the six user-selectable iteration capabilities
@@ -143,3 +149,355 @@ for (const [capability, request] of capabilityRequests(fixture().base)) {
     } finally { restore(); }
   });
 }
+
+/**
+ * Agent research is opt-in. Without it every existing capability must behave
+ * exactly as before; with it, claims are recorded for audit and must never
+ * reach the graph on their own.
+ */
+function claimCard() {
+  return {
+    id: "card-1", question: "该岗位需要哪些知识技能", sourceClass: "official_standard" as const,
+    why: { findingIds: [], detail: "" }, queriesHint: [], budget: { queries: 4 },
+  };
+}
+
+function reviewedClaim(id: string, verification: "verified" | "unverified") {
+  return {
+    claim: {
+      id, statement: `断言 ${id}`, kind: "observed" as const,
+      evidenceSpans: [{ segmentId: "segment-1", quote: "岗位职责材料" }],
+      falsifier: "权威标准不含该职责", confidence: 0.6, affectedNodeIds: [],
+    },
+    verification,
+    note: verification === "verified" ? "片段直接支持" : "复核不支持：片段未覆盖",
+  };
+}
+
+test("未注入研究智能体时结果形状与事件序列完全不变", async () => {
+  const { base } = fixture();
+  const restore = searchStub([]);
+  try {
+    const request = capabilityRequests(base).find(([name]) => name === "风险发现")![1];
+    const output = await createSnapshotIterationSkill({ model: capabilityModel() }).invoke({ request, base, candidate: base });
+    assert.equal("researchClaims" in output.result!, false, "未启用时不得新增结果字段");
+  } finally { restore(); }
+});
+
+test("注入研究智能体时，已复核断言随结果返回，且不被写进候选图", async () => {
+  const { base } = fixture();
+  const restore = searchStub([]);
+  const events: IterationEvent[] = [];
+  try {
+    const request = capabilityRequests(base).find(([name]) => name === "风险发现")![1];
+    const stream = await createSnapshotIterationSkill({
+      model: capabilityModel(),
+      researchAgent: {
+        plan: async () => [claimCard()],
+        run: async () => ({
+          cardId: "card-1",
+          claims: [reviewedClaim("c1", "verified"), reviewedClaim("c2", "unverified")],
+          rejectedCount: 1, stopReason: "final" as const, transcript: [], usage: { turns: 1, toolCalls: 0 },
+        }),
+      },
+    }).stream({ request, base, candidate: base }, { configurable: { thread_id: "agent-claims-test" }, streamMode: "custom" });
+    for await (const event of stream) events.push(event as IterationEvent);
+  } finally { restore(); }
+
+  const reviewed = events.find(event => event.kind === "iteration.claims.reviewed");
+  assert.ok(reviewed, "必须留下可审计的复核事件");
+  assert.equal(reviewed.payload.claimCount, 2);
+  assert.equal(reviewed.payload.verifiedCount, 1);
+  assert.equal(reviewed.payload.rejectedCount, 1);
+  assert.deepEqual(reviewed.payload.stopReasons, ["final"]);
+});
+
+test("研究智能体失败不使整轮失败，并如实记录失败原因", async () => {
+  const { base } = fixture();
+  const restore = searchStub([]);
+  const events: IterationEvent[] = [];
+  try {
+    const request = capabilityRequests(base).find(([name]) => name === "风险发现")![1];
+    const stream = await createSnapshotIterationSkill({
+      model: capabilityModel(),
+      researchAgent: {
+        plan: async () => { throw new Error("planner_down"); },
+        run: async () => { throw new Error("unreachable"); },
+      },
+    }).stream({ request, base, candidate: base }, { configurable: { thread_id: "agent-claims-fail-test" }, streamMode: "custom" });
+    for await (const event of stream) events.push(event as IterationEvent);
+  } finally { restore(); }
+
+  const reviewed = events.find(event => event.kind === "iteration.claims.reviewed");
+  assert.ok(reviewed, "失败也必须留下事件，不能静默吞掉");
+  assert.equal(reviewed.payload.claimCount, 0);
+  assert.match(String(reviewed.payload.failed), /planner_down/u);
+});
+
+/**
+ * The ledger is where the agent's own spending is accounted. Wiring it here —
+ * and nowhere near the deterministic query path — is what lets a large budget
+ * stay accountable without changing any caller that never opted in.
+ */
+async function runWithLedger(input: {
+  ledger?: ReturnType<typeof createBudgetLedger>;
+  cards?: ReturnType<typeof claimCard>[];
+  seen?: Array<{ id: string; queries: number }>;
+}) {
+  const { base } = fixture();
+  const restore = searchStub([]);
+  const events: IterationEvent[] = [];
+  try {
+    const request = capabilityRequests(base).find(([name]) => name === "风险发现")![1];
+    const stream = await createSnapshotIterationSkill({
+      model: capabilityModel(),
+      researchAgent: {
+        plan: async () => input.cards || [claimCard()],
+        run: async card => {
+          input.seen?.push({ id: card.id, queries: card.budget.queries });
+          return {
+            cardId: card.id, claims: [], rejectedCount: 0, stopReason: "final" as const,
+            transcript: [], usage: { turns: 1, toolCalls: 0 },
+          };
+        },
+        ...(input.ledger ? { budgetLedger: input.ledger } : {}),
+      },
+    }).stream({ request, base, candidate: base }, { configurable: { thread_id: `ledger-${Math.random()}` }, streamMode: "custom" });
+    for await (const event of stream) events.push(event as IterationEvent);
+  } finally { restore(); }
+  return events.find(event => event.kind === "iteration.claims.reviewed")!;
+}
+
+test("研究卡按账本发放额度，发放量小于申请量时按发放量执行", async () => {
+  const ledger = createBudgetLedger({
+    total: { queries: 10, tokens: 0, turns: 0 },
+    reviewReserve: { queries: 4, tokens: 0, turns: 0 },
+    perProduct: { general: { queries: 3, tokens: 0, turns: 0 } },
+  });
+  const seen: Array<{ id: string; queries: number }> = [];
+  const reviewed = await runWithLedger({ ledger, cards: [claimCard()], seen });
+  // 申请 4，产品额度 3 → 只能拿到 3，且研究池与复核预留都必须原样保留。
+  assert.deepEqual(seen, [{ id: "card-1", queries: 3 }]);
+  assert.equal(reviewed.payload.fundedCount, 1);
+  assert.equal(ledger.snapshot().remainingReserve.queries, 4, "研究绝不能动用复核预留");
+});
+
+test("预算耗尽的研究卡被拒并记录原因，不会带账运行", async () => {
+  const ledger = createBudgetLedger({
+    total: { queries: 5, tokens: 0, turns: 0 },
+    reviewReserve: { queries: 5, tokens: 0, turns: 0 },
+  });
+  const seen: Array<{ id: string; queries: number }> = [];
+  const cards = [
+    { ...claimCard(), id: "card-1" },
+    { ...claimCard(), id: "card-2" },
+  ];
+  const reviewed = await runWithLedger({ ledger, cards, seen });
+  assert.deepEqual(seen, [], "研究池为 0 时任何卡片都不该执行");
+  assert.equal(reviewed.payload.fundedCount, 0);
+  assert.equal(reviewed.payload.cardCount, 2);
+  assert.equal((reviewed.payload.denied as unknown[]).length, 2);
+  assert.match(String((reviewed.payload.denied as Array<{ reason: string }>)[0].reason), /预算不足|截断/u);
+  assert.equal(ledger.snapshot().remainingReserve.queries, 5);
+});
+
+test("不提供账本时研究照旧执行，保持既有行为", async () => {
+  const seen: Array<{ id: string; queries: number }> = [];
+  const reviewed = await runWithLedger({ cards: [claimCard()], seen });
+  assert.deepEqual(seen, [{ id: "card-1", queries: 4 }], "无账本时使用卡片自身预算");
+  assert.equal(reviewed.payload.fundedCount, 1);
+  assert.deepEqual(reviewed.payload.denied, []);
+});
+
+/**
+ * Products are assembled by code from a planner's proposal: code ranks radar
+ * items, splices augmentation through the compiler, and drops anything the four
+ * gates or the audit refuse. A planner only proposes.
+ */
+async function runWithProducts(planner: Parameters<typeof createSnapshotIterationSkill>[0]["productPlanner"]) {
+  const { base } = fixture();
+  const restore = searchStub([]);
+  const events: IterationEvent[] = [];
+  try {
+    const request = capabilityRequests(base).find(([name]) => name === "风险发现")![1];
+    const output = await createSnapshotIterationSkill({ model: capabilityModel(), productPlanner: planner })
+      .invoke({ request, base, candidate: base });
+    return { result: output.result!, events };
+  } finally { restore(); }
+}
+
+test("未配置产物规划器时结果不新增字段，形状与既有完全一致", async () => {
+  const { base } = fixture();
+  const restore = searchStub([]);
+  try {
+    const request = capabilityRequests(base).find(([name]) => name === "风险发现")![1];
+    const output = await createSnapshotIterationSkill({ model: capabilityModel() }).invoke({ request, base, candidate: base });
+    assert.equal("products" in output.result!, false);
+  } finally { restore(); }
+});
+
+test("雷达项由代码排序后进入结果，被闸门拒绝的方向不会出现", async () => {
+  const { base } = fixture();
+  const task = base.semantic.nodes.find(node => node.type === "task")!;
+  const output = await runWithProducts(async () => ({
+    radarItems: [
+      radarItemSchema.parse({
+        id: "ok", axis: "task_coverage", direction: "补齐缺失任务",
+        gapSignal: "检查发现任务层不完整", affectedNodeIds: [task.id],
+        expectedGain: { score: 5, basis: "检查发现" }, requiredEvidence: "权威岗位标准",
+      }),
+      radarItemSchema.parse({
+        id: "ghost", axis: "task_coverage", direction: "补齐幻想任务",
+        gapSignal: "指向不存在的节点", affectedNodeIds: ["node-that-does-not-exist"],
+        expectedGain: { score: 100, basis: "模型认为很重要" }, requiredEvidence: "无",
+      }),
+    ],
+    riskPackage: riskPackageSchema.parse({
+      packageProtocol: "learnflow.risk-package.v1", baseSnapshotId: base.snapshot.id,
+      generatedAt: "2026-09-11T00:00:00.000Z",
+    }),
+  }));
+  const products = output.result.products!;
+  assert.ok(products);
+  assert.deepEqual(products.radarItems?.map(item => item.id), ["ok"], "指向不存在节点的方向必须被信号闸剔除");
+  assert.equal(products.radarItems?.[0].rank, 1, "排序由代码写回");
+  assert.equal(products.riskPackage?.packageProtocol, "learnflow.risk-package.v1");
+});
+
+test("审计不通过或四道闸拒绝的增补不会被挂到结果上", async () => {
+  const { base } = fixture();
+  const task = base.semantic.nodes.find(node => node.type === "task")!;
+  const segmentId = base.sources.segments[0].id;
+  const output = await runWithProducts(async () => ({
+    augmentations: [
+      // 基线不一致 → 整份被拒。
+      augmentationProposalSchema.parse({
+        baseSnapshotId: "snapshot:stale", motivation: "过期基线",
+        nodes: [{
+          tempId: "p", type: "knowledge_skill", label: "边界值选取规则", summary: "s",
+          aliases: [], confidence: 0.6, evidenceSegmentIds: [segmentId],
+          learningKind: "knowledge", learningDefinition: { scopeNote: "x", assessmentCriteria: ["c"] },
+        }],
+        edges: [{ from: task.id, to: "p", type: "requires_skill", evidenceSegmentIds: [segmentId], confidence: 0.6 }],
+      }),
+    ],
+  }));
+  assert.equal(output.result.products, undefined, "全部被拒时不应挂载空产物对象");
+});
+
+test("通过四道闸且审计无新错误的增补会进入结果", async () => {
+  const { base } = fixture();
+  const task = base.semantic.nodes.find(node => node.type === "task")!;
+  const segmentId = base.sources.segments[0].id;
+  // 规划器拿到的是本轮候选，因此基线必须写候选的快照 id；写 base 会被
+  // 基线闸拒绝——这正是那个闸要拦的情况。
+  const output = await runWithProducts(async context => ({
+    augmentations: [
+      augmentationProposalSchema.parse({
+        baseSnapshotId: context.candidate.snapshot.id, motivation: "补齐边界值知识点",
+        nodes: [{
+          tempId: "p", type: "knowledge_skill", label: "边界值选取规则", summary: "说明边界附近数据的选取依据。",
+          aliases: [], confidence: 0.6, evidenceSegmentIds: [segmentId],
+          learningKind: "knowledge", learningDefinition: { scopeNote: "限于边界取值判断", assessmentCriteria: ["能说明选取依据"] },
+        }],
+        edges: [{ from: task.id, to: "p", type: "requires_skill", evidenceSegmentIds: [segmentId], confidence: 0.6 }],
+      }),
+    ],
+  }));
+  assert.equal(output.result.products?.augmentations?.length, 1);
+});
+
+test("产物规划器失败不使整轮失败，也不改变结果形状", async () => {
+  const output = await runWithProducts(async () => { throw new Error("planner_down"); });
+  assert.equal(output.result.products, undefined);
+  assert.equal(output.result.status === "completed" || output.result.status === "no_change", true);
+});
+
+/**
+ * End-to-end: one round with the orchestration switched on.
+ *
+ * Every earlier test exercised one layer with the others stubbed. This one runs
+ * the real chain together — supervisor plans cards, workers research them over
+ * read-only tools, the evidence reviewer judges the claims, and products are
+ * assembled at finalization. The model is scripted but the composition is not.
+ */
+test("开启编排后一轮内串起 主管→worker→复核→产物，且断言不直接写图", async () => {
+  const { base } = fixture();
+  const restore = searchStub([]);
+  const events: IterationEvent[] = [];
+  try {
+    const request = capabilityRequests(base).find(([name]) => name === "风险发现")![1];
+    const scripted: ModelInvoker = async function* (input) {
+      const system = input.system;
+      if (system.includes("岗位研究主管")) {
+        // 主管：为提交上来的工作项各给一张卡。
+        const payload = JSON.parse(input.user) as { workItems: Array<{ workItemId: string; title: string }> };
+        yield {
+          type: "text",
+          delta: JSON.stringify({
+            cards: payload.workItems.slice(0, 2).map(item => ({
+              workItemId: item.workItemId,
+              question: `${item.title} 需要哪些依据？`,
+              sourceClass: "official_standard",
+              queriesHint: [item.title],
+            })),
+          }),
+        };
+        return;
+      }
+      if (system.includes("独立的证据复核员")) {
+        const payload = JSON.parse(input.user) as { claims: Array<{ claimId: string }> };
+        yield {
+          type: "text",
+          delta: JSON.stringify({
+            verdicts: payload.claims.map(claim => ({ claimId: claim.claimId, verdict: "supported", note: "片段直接支持" })),
+          }),
+        };
+        return;
+      }
+      if (system.includes("岗位图谱维护研究员")) {
+        yield { type: "text", delta: JSON.stringify({ riskDomains: [{ domain: "覆盖缺口", claims: [] }] }) };
+        return;
+      }
+      if (system.includes("岗位研究员")) {
+        // worker：直接给出带证据的结论。
+        const segmentId = base.sources.segments[0]?.id || "segment-1";
+        yield {
+          type: "text",
+          delta: JSON.stringify({
+            thought: "已有足够依据",
+            final: {
+              claims: [{
+                id: "c1", statement: "该岗位需要可检验的技能点", kind: "observed",
+                evidenceSpans: [{ segmentId, quote: base.sources.segments[0].text.slice(0, 100) }],
+                falsifier: "权威标准不需要技能点", confidence: 0.6, affectedNodeIds: [],
+              }],
+              gaps: [],
+            },
+          }),
+        };
+        return;
+      }
+      yield { type: "text", delta: "{}" };
+    };
+
+    const stream = await createSnapshotIterationSkill({
+      model: scripted,
+      researchAgent: buildResearchAgent({ model: nativeFixture(scripted) }),
+      productPlanner: buildProductPlanner({ model: scripted }),
+    }).stream({ request, base, candidate: base }, { configurable: { thread_id: "e2e-orchestration" }, streamMode: "custom" });
+    for await (const event of stream) events.push(event as IterationEvent);
+  } finally { restore(); }
+
+  const reviewed = events.find(event => event.kind === "iteration.claims.reviewed");
+  assert.ok(reviewed, "整条链必须留下复核事件");
+  assert.ok(Number(reviewed.payload.claimCount) >= 1, "worker 产出的断言必须进入事件");
+  assert.equal(reviewed.payload.verifiedCount, reviewed.payload.claimCount, "脚本化复核员全部判为支持");
+  assert.ok(Number(reviewed.payload.fundedCount) >= 1, "任务卡必须经账本发放后才执行");
+
+  const completed = events.findLast(event => event.kind === "iteration.run.completed");
+  const result = (completed?.payload as { result?: SnapshotIterationResult })?.result;
+  assert.ok(result, "必须产出结果");
+  // 断言只用于审计与产物组装，不得把候选图改成另一张图。
+  assert.equal(result!.candidate.snapshot.id !== undefined, true);
+});

@@ -289,7 +289,7 @@ test("任务派生组超时后只二分重跑该组，并把完全恢复的父�
   assert.equal(result.process.scenarios.length, 2);
   assert.ok(result.build!.workItems.some((item) => item.stage === "task-knowledge-derivation" && item.status === "recovered"));
   assert.ok(result.build!.workItems.some((item) => item.stage === "task-process-expansion" && item.status === "recovered"));
-  assert.ok(result.build!.workItems.every((item) => item.maxOutputTokens <= (item.stage === "task-knowledge-derivation" ? 5_600 : item.stage === "cross-task-capability-derivation" ? 4_800 : 3_800)), "知识、能力培养规格和过程各自遵守有界输出预算");
+  assert.ok(result.build!.workItems.every((item) => item.maxOutputTokens <= (item.stage === "task-knowledge-derivation" ? 8_000 : item.stage === "cross-task-capability-derivation" ? 8_000 : 6_000)), "知识、能力培养规格和过程各自遵守有界输出预算");
   assert.equal(result.audit.issues.some((issue) => issue.code === "LANE_FALLBACK" && /派生失败|展开失败/u.test(issue.detail)), false);
   assert.ok(result.audit.issues.some((issue) => issue.detail.includes("知识技能覆盖缺口")), "局部恢复只产出知识，没有实操技能时仍保留质量缺口");
 });

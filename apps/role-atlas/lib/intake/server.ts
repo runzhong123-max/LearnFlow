@@ -69,7 +69,7 @@ export async function turnIntake(input: OwnedInput & { request: Request; turn: I
       projectId: input.projectId, revisionId: claim.revisionId, turn, previous: claim.previous, project, history: current.history, signal,
       dependencies: {
         model,
-        research: searchConfig ? args => researchRoleSources({ ...args, config: searchConfig, sourceLimit: 6,
+        research: searchConfig ? args => researchRoleSources({ ...args, config: searchConfig, sourceLimit: 32,
           signal: AbortSignal.any([signal, AbortSignal.timeout(45_000)]) }) : undefined,
         hub: query => suggestIntakeHubMatches(query, { boundaryVerifier: createHubBoundaryVerifier(model) }),
       },

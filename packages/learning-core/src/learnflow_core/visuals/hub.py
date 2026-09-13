@@ -100,11 +100,14 @@ def compile_work(source, template_ref=None):
     if path.resolve().parent != (ROOT / 'works').resolve():
         raise ValueError('visual_hub_asset_path_invalid')
     payload = path.read_bytes()
-    if sha256(payload).hexdigest() != work['sha256']:
+    # Git 在 Windows 上可能把维护资源落盘为 CRLF，而清单按 LF 字节生成。
+    # 统一换行后再校验，保证桌面端与云端的完整性语义一致。
+    canonical_payload = payload.replace(b'\r\n', b'\n')
+    if sha256(canonical_payload).hexdigest() != work['sha256']:
         raise ValueError('visual_hub_asset_digest_mismatch')
     csp = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'"
     resize = "<script>new ResizeObserver(()=>parent.postMessage({type:'learnflow-visual-height',height:document.body.scrollHeight},'*')).observe(document.body);</script>"
-    html = '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="'+csp+'"><style>'+BASE_STYLE+'</style></head><body>'+payload.decode('utf-8')+resize+'</body></html>'
+    html = '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="'+csp+'"><style>'+BASE_STYLE+'</style></head><body>'+canonical_payload.decode('utf-8')+resize+'</body></html>'
     return {'runtime_version': 'maintained-html/1', 'html': html, 'params': {},
         'verification': {'status':'pass','scope':work['scope'], 'method':'maintained_asset_digest',
                          'meaning':'The reviewed version is intact; this is not a learner assessment.'},

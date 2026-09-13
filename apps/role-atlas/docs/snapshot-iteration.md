@@ -41,6 +41,11 @@ Skill 支持三种发起方式：
 - 回收在 `getLatestSnapshotIteration` 读取路径惰性执行，`UPDATE` 仅匹配 `status='running'`，重复调用幂等；事件、检查点与已有成果全部保留。
 - `interrupted` 是可重试状态：`startSnapshotIteration` 允许从 `failed` 或 `interrupted` 复活同一运行；用户侧文案为“研究被中断，检查点与已有成果已保留，可重试”。
 
+### 大载荷分块存储与预算上限（2026-09-11）
+
+- D1（workerd SQLite）单列值超过约 2 MB 会以 `SQLITE_TOOBIG` 拒绝写入；完整图谱的检查点与结果随预算扩大必然越线。`db/large-text.ts` 把超过 1 MB 的 JSON 按 UTF-8 边界切成 800 KB 块写入 `chunked_blobs`，主列只存 `chunked:v1:<块数>` 标记；小值原样内联，旧行不受影响。覆盖 `snapshot_iteration_runs`、`role_jobs`、`risk_runs`、`snapshot_risk_runs`、`workspace_ingestion_runs` 的检查点/结果列，`build_runs.result_json` 与 `project_versions` / `snapshot_versions` 的 `package_json`（内容哈希始终对完整文本计算）。所有读取点经 `loadLargeText` 还原，缺块时报 `CHUNKED_BLOB_INCOMPLETE` 而不是拼出残缺内容。
+- 研究预算全面上调到各自上限：迭代与工作区升级 `maxRounds=12`、`sourceLimit=64`、`maxWorkItems=32`；风险运行 `maxIterations=4`、`sourceLimit=64`；冷启动内核与增量检索 `sourceLimit=64`；全局查询预算 48→192、来源合并上限 80→320、单域名选材上限 2→4、模型边界判定候选 24→48。`web-research.ts` 不再把 `sourceLimit` 钳到 20。
+
 ### 风险修复与自动发现（2026-09-08）
 
 - 风险修复包含已诊断的任务知识技能缺口、错误映射、孤立节点和过程缺口。这些修复可以需要研究证据，不因其 `research` 分类而被误排除；普通边界扩展仍归深度研究。

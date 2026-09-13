@@ -1,3 +1,8 @@
+import { compileResearchChanges } from "@/lib/research/semantic-changes";
+import { describeChangeSet, linkResearchFindings } from "@/lib/research/change-set";
+import { compareResearchQuality, reviewedFindingKeys } from "@/lib/research/quality";
+import { stopResearch, type ResearchRun, type ResearchStopReason } from "@/lib/research/protocol";
+import type { ResearchAgentCheckpoint } from "./research-agent";
 import { END, getWriter, START, StateGraph, StateSchema } from "@langchain/langgraph";
 import { z } from "zod/v4";
 import type { ModelInvoker } from "@/lib/agent/model";
@@ -5,15 +10,17 @@ import { prepareBuildInput, stableHash } from "@/lib/build/compiler";
 import { qualifySources } from "@/lib/build/workflow";
 import { refreshRolePackageManifest } from "@/lib/packages/role-package-manifest";
 import { createColdStartSkill, mergeResearchReports } from "@/lib/build/graph";
-import type { ColdStartBuildResult, ColdStartRequest, SourceInput, WebResearchReport } from "@/lib/build/types";
+import type { ColdStartBuildResult, ColdStartRequest, SourceAsset, SourceInput, SourceSegment, WebResearchReport } from "@/lib/build/types";
 import { applyGraphPatch, computeSemanticDiff, proposeSafePatch } from "@/lib/risk/patch";
 import type { GraphPatch } from "@/lib/risk/types";
+import type { AugmentationProposal } from "./augmentation";
 import { reconstructSourceInputs } from "@/lib/risk/research";
 import { researchRoleSources } from "@/lib/search/web-research";
 import { createBoundaryVerifier } from "@/lib/search/boundary-verdicts";
 import type { SearchProviderConfig } from "@/lib/search/providers";
 import { applyInspectionToSnapshot, findingIdentity, inspectSnapshot } from "./inspector";
 import { preserveIterationGraph } from "./preserve-graph";
+import { runResearchWorkers, type ResearchTaskCard, type ResearchWorkerResult, type ReviewedClaim } from "./worker";
 import {
   createIterationContract,
   discoverIterationOpportunities,
@@ -21,6 +28,10 @@ import {
   planIterationResearch,
   planIterationWork,
 } from "./planner";
+import { DEFAULT_ITERATION_BUDGET } from "./types";
+import type { BudgetLedger } from "./budget-ledger";
+import { rankRadarItems } from "./products";
+import { applyAugmentation } from "./augmentation-splice";
 import type {
   IterationContract,
   IterationEvent,
@@ -32,9 +43,12 @@ import type {
   SnapshotInspection,
   SnapshotIterationRequest,
   SnapshotIterationResult,
+  IterationProducts,
+  IterationProductProposal,
 } from "./types";
 
 const IterationState = new StateSchema({
+  researchCheckpoint: z.custom<ResearchAgentCheckpoint>().optional(),
   request: z.custom<SnapshotIterationRequest>(),
   base: z.custom<ColdStartBuildResult>(),
   candidate: z.custom<ColdStartBuildResult>(),
@@ -52,6 +66,13 @@ const IterationState = new StateSchema({
   activeResearchPlan: z.custom<IterationResearchPlan>().optional(),
   researchPlans: z.custom<IterationResearchPlan[]>().default(() => []),
   researchReports: z.custom<WebResearchReport[]>().default(() => []),
+  /**
+   * Claims produced by agent research this round, each carrying an
+   * evidence-review verdict. Round-scoped like activeResearchPlan: reset on the
+   * next round so a stale claim can never be attributed to new work.
+   */
+  reviewedFindingKeys: z.array(z.string()).default([]),
+  researchClaims: z.custom<ReviewedClaim[]>().default(() => []),
   researchedSources: z.custom<SourceInput[]>().default(() => []),
   patches: z.custom<GraphPatch[]>().default(() => []),
   migrations: z.record(z.string(), z.string()).default(() => ({})),
@@ -72,7 +93,7 @@ export function currentIterationResearchReport(plan: IterationResearchPlan | und
     && report.queries.every(query => queryIds.has(query.id)));
 }
 
-export function mergeIterationSources(current: SourceInput[], incoming: SourceInput[], limit = 80) {
+export function mergeIterationSources(current: SourceInput[], incoming: SourceInput[], limit = 320) {
   const seen = new Set<string>();
   const ordered = [
     ...incoming.filter((source) => source.kind === "workspace_observation" || source.kind === "private_document"),
@@ -86,14 +107,14 @@ export function mergeIterationSources(current: SourceInput[], incoming: SourceIn
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
-  }).slice(0, Math.max(4, Math.min(limit, 80)));
+  }).slice(0, Math.max(4, Math.min(limit, 320)));
 }
 
 export function iterationRepairFocus(input: { candidate: ColdStartBuildResult; contract?: IterationContract; workItems: IterationWorkItem[] }) {
   const objects = new Map([...input.candidate.semantic.nodes, ...input.candidate.process.scenarios, ...input.candidate.process.nodes].map(node => [node.id, node]));
   return [input.contract?.objective,
     "本轮只针对下列发现补证、补充具体知识技能及合法关系。保留已有任务 ID 和证据；不能把用户观察、组织事实或无来源推断伪装成已修复。",
-    ...input.workItems.filter(item => item.status !== "completed" && item.status !== "skipped").slice(0, 16).map(item => [
+    ...input.workItems.filter(item => item.status !== "completed" && item.status !== "skipped").slice(0, 32).map(item => [
       `${item.kind}：${item.title}。${item.detail.slice(0, 300)}`,
       ...item.targetIds.slice(0, 4).map(id => { const node = objects.get(id); return node ? `${id} | ${node.label} | ${node.summary.slice(0, 350)}` : id; }),
     ].join("\n")),
@@ -106,6 +127,7 @@ function coldStartRequest(input: {
 }): ColdStartRequest {
   const { state } = input;
   return {
+    research: state.request.research,
     runId: `${state.request.runId}:round:${state.round}`.slice(0, 100),
     projectId: state.request.projectId || state.request.snapshotRef.projectId || `snapshot:${stableHash(state.request.snapshotRef.snapshotId)}`,
     roleTitle: state.base.brief.roleTitle,
@@ -114,8 +136,8 @@ function coldStartRequest(input: {
     audience: state.base.brief.audience,
     snapshotAsOf: state.contract?.targetAsOf || state.base.snapshot.asOf,
     // Existing mature snapshots can legitimately exceed the cold-start UI's
-    // 20-source input limit. Internal iteration must not discard that history.
-    sources: input.sources.slice(0, 80),
+    // source input limit. Internal iteration must not discard that history.
+    sources: input.sources.slice(0, 320),
     learningPathGraph: state.request.learningPathGraph,
   };
 }
@@ -174,9 +196,68 @@ export function createSnapshotIterationSkill(input: {
   initialSeq?: number;
   searchConfig?: SearchProviderConfig;
   onCheckpoint?: (phase: string, state: Record<string, unknown>) => Promise<void>;
+  /**
+   * Optional agent research. When omitted the iteration runs exactly as before,
+   * so this stays an opt-in capability rather than a behaviour change.
+   *
+   * The agent never writes to the graph. It returns claims that already carry an
+   * evidence-review verdict, the iteration records them as a zero-target event,
+   * and the deterministic rebuild/evaluate path remains the only writer.
+   */
+  researchAgent?: {
+    reviewModel?: ModelInvoker;
+    collectedSources?: () => SourceInput[];
+    record?: () => ResearchRun | undefined;
+    updateRecord?: (value: ResearchRun) => Promise<void>;
+    finish?: (reason: ResearchStopReason) => Promise<void>;
+    snapshot?: () => ResearchAgentCheckpoint;
+    restore?: (value: ResearchAgentCheckpoint) => void;
+    plan: (input: {
+      contract: IterationContract;
+      workItems: IterationWorkItem[];
+      round: number;
+      context?: unknown;
+      graph?: ColdStartBuildResult;
+      base?: ColdStartBuildResult;
+      signal?: AbortSignal;
+    }) => Promise<ResearchTaskCard[] | undefined>;
+    /**
+     * `run` receives the round's current request plus the candidate's own
+     * segments/assets, so a caller can build read-only tools over exactly the
+     * material this round has — not over whatever happens to be on disk.
+     */
+    run: (card: ResearchTaskCard, input: {
+      signal?: AbortSignal;
+      request: ColdStartRequest;
+      segments: SourceSegment[];
+      assets: SourceAsset[];
+      graph?: ColdStartBuildResult;
+    }) => Promise<ResearchWorkerResult>;
+    concurrency?: number;
+    /**
+     * Caller-owned ledger. When present, agent research is charged through it so
+     * a large budget stays accountable and the review reserve stays untouchable.
+     * Absent means agent research runs unfunded, exactly as before.
+     */
+    budgetLedger?: BudgetLedger;
+  };
+  /**
+   * Optional product planning at finalization. The planner proposes; code ranks
+   * radar items, splices augmentation through the compiler, and decides what the
+   * result may carry. Absent means the result shape is exactly as before.
+   */
+  productPlanner?: (input: {
+    contract: IterationContract;
+    base: ColdStartBuildResult;
+    candidate: ColdStartBuildResult;
+    claims: ReviewedClaim[];
+    round: number;
+    signal?: AbortSignal;
+  }) => Promise<IterationProductProposal | undefined>;
 }) {
   let seq = input.initialSeq || 0;
   const boundaryVerifier = createBoundaryVerifier(input.model);
+  const budgetLedger = input.researchAgent?.budgetLedger;
   const emit = (state: Pick<IterationStateType, "request">, kind: IterationEventKind, phase: IterationEvent["phase"], payload: Record<string, unknown>) => {
     const event: IterationEvent = {
       version: "1.0",
@@ -197,7 +278,9 @@ export function createSnapshotIterationSkill(input: {
       round: state.round,
       stagnantRounds: state.stagnantRounds,
       roundBefore: state.roundBefore,
+      researchCheckpoint: input.researchAgent?.snapshot?.() || state.researchCheckpoint,
       collectedSources: state.collectedSources,
+      reviewedFindingKeys: state.reviewedFindingKeys,
       contract: state.contract,
       candidate: state.candidate,
       activeResearchPlan: state.activeResearchPlan,
@@ -275,7 +358,8 @@ export function createSnapshotIterationSkill(input: {
     });
     const enabled = state.request.webResearch && Boolean(input.searchConfig);
     const previousQueries = new Set(state.researchPlans.flatMap(item => item.queries.map(query => `${query.category}:${query.query}`)));
-    const remainingQueryBudget = Math.max(0, 48 - state.researchPlans.reduce((sum, item) => sum + item.queries.length, 0));
+    const queryBudget = state.request.queryBudget ?? DEFAULT_ITERATION_BUDGET.queryBudget;
+    const remainingQueryBudget = Math.max(0, queryBudget - state.researchPlans.reduce((sum, item) => sum + item.queries.length, 0));
     const activeResearchPlan = { ...plan, queries: enabled ? plan.queries.filter(query => !previousQueries.has(`${query.category}:${query.query}`)).slice(0, remainingQueryBudget) : [] };
     emit(state, "iteration.research.plan.created", "research", {
       plan: activeResearchPlan,
@@ -286,15 +370,91 @@ export function createSnapshotIterationSkill(input: {
     return update;
   };
 
+  /**
+   * Assemble the round's products. The planner only proposes: ranking, splicing
+   * and what may be attached are decided here, and a planner failure leaves the
+   * result shape untouched rather than failing the round.
+   */
+  const assembleProducts = async (state: IterationStateType): Promise<IterationProducts | undefined> => {
+    if (!input.productPlanner) return undefined;
+    let proposed: IterationProductProposal | undefined;
+    try {
+      proposed = await input.productPlanner({
+        contract: state.contract!,
+        base: state.base,
+        candidate: state.candidate,
+        claims: state.researchClaims,
+        round: state.round,
+      });
+    } catch (error) {
+      emit(state, "iteration.claims.reviewed", "research", {
+        round: state.round, cardCount: 0, claimCount: 0, verifiedCount: 0, rejectedCount: 0,
+        productsFailed: error instanceof Error ? error.message.slice(0, 300) : "product_planner_failed",
+      });
+      return undefined;
+    }
+    if (!proposed) return undefined;
+
+    const nodeIds = new Set(state.candidate.semantic.nodes.map(node => node.id));
+    const severity = new Map<string, "info" | "warning" | "error">();
+    for (const issue of state.inspectionAfter?.audit?.issues || state.inspectionBefore?.audit?.issues || []) {
+      for (const id of issue.targetIds) severity.set(id, issue.severity);
+    }
+    const radar = proposed.radarItems?.length
+      ? rankRadarItems({
+        items: proposed.radarItems,
+        knownNodeIds: nodeIds,
+        nodeSeverity: severity,
+        objective: state.contract?.objective,
+      })
+      : undefined;
+
+    // Only an augmentation that survives the four gates AND leaves the audit
+    // without new errors may be attached; anything else is reported, not merged.
+    const augmentations: AugmentationProposal[] = [];
+    const augmentationRejections: string[] = [];
+    for (const proposal of proposed.augmentations || []) {
+      const spliced = applyAugmentation({ base: state.candidate, proposal });
+      if (spliced.auditClean && (spliced.report.acceptedNodes.length || spliced.report.acceptedEdges.length)) {
+        augmentations.push(proposal);
+        continue;
+      }
+      augmentationRejections.push(...spliced.report.rejections.map(item => `${item.ref}: ${item.reason}`));
+      augmentationRejections.push(...spliced.newErrors);
+    }
+
+    const products: IterationProducts = {
+      ...(proposed.riskPackage ? { riskPackage: proposed.riskPackage } : {}),
+      ...(radar ? { radarItems: radar.ranked } : {}),
+      ...(augmentations.length ? { augmentations } : {}),
+    };
+    if (radar?.rejections.length || augmentationRejections.length) {
+      emit(state, "iteration.claims.reviewed", "research", {
+        round: state.round, cardCount: 0, claimCount: 0, verifiedCount: 0, rejectedCount: 0,
+        radarRejections: radar?.rejections || [], augmentationRejections,
+      });
+    }
+    return Object.keys(products).length ? products : undefined;
+  };
+
   const research = async (state: IterationStateType, config: { signal?: AbortSignal }) => {
     const plan = state.activeResearchPlan!;
     const activeIds = new Set(plan.workItemIds);
     const runningItems = state.workItems.map((item) => activeIds.has(item.id) ? { ...item, status: "running" as const } : item);
     for (const item of runningItems.filter((item) => item.status === "running")) emit(state, "iteration.work.item.started", "research", { workItem: item });
+    if (state.request.research && input.researchAgent) {
+      const claims = await runAgentResearch(state, runningItems, config.signal);
+      const sources = input.researchAgent.collectedSources?.() || [];
+      const update = { researchedSources: sources, collectedSources: mergeIterationSources(state.collectedSources, sources, state.collectedSources.length + sources.length), workItems: runningItems, researchClaims: claims, researchCheckpoint: input.researchAgent.snapshot?.() };
+      await checkpoint("research", state, update);
+      return update;
+    }
     if (!plan.queries.length || !input.searchConfig) {
       // Fetch completion is not defect resolution. Existing sources may still
       // support a focused derivation; evaluation owns the terminal work status.
-      const update = { researchedSources: [], workItems: runningItems };
+      // Agent research carries its own tools, so it is not gated on the
+      // deterministic retrieval config being present.
+      const update = { researchedSources: [], workItems: runningItems, researchClaims: await runAgentResearch(state, runningItems, config.signal) };
       await checkpoint("research", state, update);
       return update;
     }
@@ -325,13 +485,101 @@ export function createSnapshotIterationSkill(input: {
       collectedSources: mergeIterationSources(state.collectedSources || [], researched.sources, 80),
       researchReports: [...state.researchReports, researched.report],
       workItems: runningItems,
+      // Round-scoped: a fresh research step replaces this round's claims.
+      researchClaims: state.researchClaims,
     };
+    const agentClaims = await runAgentResearch(state, runningItems, config.signal);
+    update.researchClaims = agentClaims;
     await checkpoint("research", state, update);
     return update;
   };
 
+  /**
+   * Optional agent research on top of the deterministic retrieval above.
+   *
+   * Claims are recorded for later rounds and for audit; they are never written
+   * into the candidate graph here. A planner or worker failure leaves the round
+   * exactly as the deterministic path left it.
+   */
+  const runAgentResearch = async (state: IterationStateType, items: IterationWorkItem[], signal?: AbortSignal): Promise<ReviewedClaim[]> => {
+    if (!input.researchAgent) return [];
+    try {
+      const cards = await input.researchAgent.plan({
+        contract: state.contract!,
+        workItems: items.filter(item => item.requiresResearch),
+        round: state.round,
+        graph: state.candidate, base: state.base,
+        context: { role: state.candidate.brief, nodes: state.candidate.semantic.nodes.map(node => ({ id: node.id, type: node.type, label: node.label, summary: node.summary })), quality: state.candidate.deliveryReadiness, findings: state.inspectionWorking?.findings },
+        signal,
+      });
+      if (!cards?.length) return [];
+      /**
+       * Agent research is where new spending happens, so it is where the ledger
+       * binds. The deterministic query path above keeps its own historical
+       * budget untouched, which is why wiring the ledger here changes nothing
+       * for a caller that never opted into a research agent.
+       *
+       * A card that cannot be funded is dropped with its reason rather than run
+       * on credit, and the review reserve is never reachable from this side.
+       */
+      const funded: typeof cards = [];
+      const denied: Array<{ cardId: string; reason: string }> = [];
+      for (const card of cards) {
+        if (!budgetLedger || state.request.research) { funded.push(card); continue; }
+        const grant = budgetLedger.charge("general", { queries: card.budget.queries });
+        if (grant.granted.queries <= 0) {
+          denied.push({ cardId: card.id, reason: grant.reason || "预算不足" });
+          continue;
+        }
+        funded.push({ ...card, budget: { ...card.budget, queries: grant.granted.queries } });
+      }
+      if (!funded.length) {
+        emit(state, "iteration.claims.reviewed", "research", {
+          round: state.round, cardCount: cards.length, fundedCount: 0,
+          claimCount: 0, verifiedCount: 0, rejectedCount: 0, denied,
+        });
+        return [];
+      }
+      const workerContext = {
+        request: coldStartRequest({ state, sources: reconstructSourceInputs(state.candidate) }),
+        segments: state.candidate.sources.segments,
+        assets: state.candidate.sources.assets, graph: state.candidate,
+      };
+      const results = await runResearchWorkers({
+        cards: funded,
+        concurrency: input.researchAgent.concurrency,
+        runOne: card => input.researchAgent!.run(card, { signal, ...workerContext }),
+      });
+      const claims = results.flatMap(result => result.claims);
+      emit(state, "iteration.claims.reviewed", "research", {
+        round: state.round,
+        cardCount: cards.length,
+        fundedCount: funded.length,
+        denied,
+        claimCount: claims.length,
+        verifiedCount: claims.filter(item => item.verification === "verified").length,
+        rejectedCount: claims.filter(item => item.verification === "unverified").length,
+        stopReasons: results.map(result => result.stopReason),
+      });
+      return claims;
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      if (state.request.research) await input.researchAgent.finish?.(error instanceof Error && error.message.includes("BUDGET") ? "budget_exhausted" : "failed");
+      // Agent research is an enhancement; its failure must not fail the round.
+      emit(state, "iteration.claims.reviewed", "research", {
+        round: state.round,
+        cardCount: 0,
+        claimCount: 0,
+        verifiedCount: 0,
+        rejectedCount: 0,
+        failed: error instanceof Error ? error.message.slice(0, 300) : "agent_research_failed",
+      });
+      return [];
+    }
+  };
+
   const rebuild = async (state: IterationStateType, config: { signal?: AbortSignal }) => {
-    const incoming = mergeIterationSources(state.collectedSources || [], [...state.request.supplementalSources, ...state.researchedSources], 80);
+    const incoming = mergeIterationSources(state.collectedSources || [], [...state.request.supplementalSources, ...state.researchedSources], state.request.research ? state.collectedSources.length + state.request.supplementalSources.length + state.researchedSources.length : 80);
     const hasUsableEvidence = state.candidate.sources.assets.some(asset => asset.kind !== "user_brief"
       && asset.qualification?.status !== "quarantined"
       && state.candidate.sources.segments.some(segment => segment.sourceId === asset.id && segment.text.trim()));
@@ -357,7 +605,7 @@ export function createSnapshotIterationSkill(input: {
     // invites out-of-scope additions; anchor the rebuild on the base instead.
     const directedAtExisting = state.contract?.initiativeProfile === "user_directed"
       && Boolean(state.contract.targetIds.length);
-    const anchored = hasExistingTasks && (reuseEvidence || hasTaskRepair || mountRepair || directedAtExisting);
+    const anchored = hasExistingTasks && (Boolean(state.request.research) || reuseEvidence || hasTaskRepair || mountRepair || directedAtExisting);
     // Directed research derives within the declared selection; other modes
     // follow the active work items. Seeding from every work item's targets
     // would let an aggregate finding (e.g. process gaps listing all tasks)
@@ -376,6 +624,7 @@ export function createSnapshotIterationSkill(input: {
       incomingSourceCount: incoming.length,
       reusedExistingEvidence: reuseEvidence,
       execution: anchored ? "enrichment" : "full",
+      researchPerformed: true,
       workItemIds: activeItems.map(item => item.id),
     });
     const currentReport = currentIterationResearchReport(state.activeResearchPlan, state.researchReports);
@@ -389,6 +638,7 @@ export function createSnapshotIterationSkill(input: {
       qualityRepairRounds: 0,
       learningDefinitionTargetIds: state.contract?.learningMountFeedback?.map(item => item.roleNodeId),
       execution: anchored ? "enrichment" : "full",
+      researchPerformed: true,
       knowledgeTargetIds: anchored ? [...taskTargets].filter(id => state.candidate.semantic.nodes.some(node => node.id === id && node.type === "task")) : undefined,
       iterationObjective: iterationRepairFocus(state),
     });
@@ -408,7 +658,13 @@ export function createSnapshotIterationSkill(input: {
     return { candidate };
   };
 
-  const consolidate = async (state: IterationStateType) => {
+  const consolidate = async (state: IterationStateType, config: { signal?: AbortSignal }) => {
+    const run = input.researchAgent?.record?.();
+    if (state.request.research && run?.changeSets.some(change => change.status === "candidate" && !change.checks.length)) {
+      const applied = await compileResearchChanges({ base: state.base, candidate: state.candidate, request: coldStartRequest({ state, sources: reconstructSourceInputs(state.candidate) }), run, reviewModel: input.researchAgent?.reviewModel, signal: config.signal });
+      state = { ...state, candidate: applied.candidate, migrations: { ...state.migrations, ...applied.migrations } };
+      await input.researchAgent?.updateRecord?.(run);
+    }
     emit(state, "iteration.consolidation.started", "consolidate", {
       round: state.round,
       nodeCount: state.candidate.semantic.nodes.length,
@@ -420,7 +676,7 @@ export function createSnapshotIterationSkill(input: {
     if (!proposed.operations.length) {
       const patches = [...state.patches, proposed];
       await checkpoint("consolidate", state, { inspectionWorking: inspection, patches });
-      return { inspectionWorking: inspection, patches };
+      return { candidate: state.candidate, migrations: state.migrations, inspectionWorking: inspection, patches };
     }
     const applied = applyGraphPatch(state.candidate, proposed);
     emit(state, "iteration.patch.applied", "consolidate", { patch: applied.patch, referenceMigration: applied.referenceMigration });
@@ -438,6 +694,8 @@ export function createSnapshotIterationSkill(input: {
     });
     const inspectionAfter = inspectSnapshot(snapshotAtTargetDate(state.candidate, state.contract!.targetAsOf), { targetIds: state.contract!.initiativeProfile === "autonomous" ? [] : state.contract!.targetIds });
     const candidate = applyInspectionToSnapshot(state.candidate, inspectionAfter);
+    const record = input.researchAgent?.record?.();
+    if (state.request.research && record) linkResearchFindings(candidate, record);
     const evaluation = evaluateIteration({
       base: state.base,
       candidate,
@@ -461,16 +719,24 @@ export function createSnapshotIterationSkill(input: {
     const accepted = evaluation.meaningful ? { candidate, inspection: inspectionAfter, evaluation, migrations: state.migrations, patches: state.patches } : state.accepted;
     const roundBefore = state.roundBefore || state.inspectionBefore!;
     const remaining = new Set(inspectionAfter.findings.map(findingIdentity));
-    const actualProgress = !evaluation.coreRegression && (roundBefore.findings.some(finding => !remaining.has(findingIdentity(finding)))
+    const productQuality = compareResearchQuality(state.accepted?.candidate || state.base, candidate);
+    const currentFindingKeys = reviewedFindingKeys(record);
+    const researchProgress = Boolean(state.request.research && (productQuality.conversionImproved || productQuality.expressionImproved || currentFindingKeys.some(key => !state.reviewedFindingKeys.includes(key))));
+    const actualProgress = !evaluation.coreRegression && (researchProgress || roundBefore.findings.some(finding => !remaining.has(findingIdentity(finding)))
       || inspectionAfter.coverage.tasksWithoutSkills < roundBefore.coverage.tasksWithoutSkills
       || inspectionAfter.coverage.tasksWithoutProcess < roundBefore.coverage.tasksWithoutProcess);
     const stagnantRounds = actualProgress ? 0 : (state.stagnantRounds || 0) + 1;
-    const update = { candidate, inspectionAfter, inspectionWorking: inspectionAfter, evaluation, workItems, accepted, stagnantRounds };
+    const update = { candidate, inspectionAfter, inspectionWorking: inspectionAfter, evaluation, workItems, accepted, stagnantRounds, reviewedFindingKeys: currentFindingKeys };
     await checkpoint("evaluate", state, update);
     return update;
   };
 
   const routeAfterEvaluation = (state: IterationStateType) => {
+    if (state.request.research) {
+      const record = input.researchAgent?.record?.(), remaining = input.researchAgent?.budgetLedger?.snapshot().remainingResearch;
+      if (record?.stopReason || state.round >= state.request.research.budget.revisions || !remaining || remaining.tokens < 1000 || remaining.turns < 1 || (state.stagnantRounds || 0) >= state.request.research.budget.stagnantRounds) return "finish";
+      return "retry";
+    }
     if (state.round >= state.request.maxRounds) return "finish";
     const baseline = state.evaluation?.coreRegression ? state.accepted?.inspection || state.inspectionBefore! : state.inspectionAfter!;
     const opportunities = discoverIterationOpportunities({ request: state.request, contract: state.contract!, inspection: baseline });
@@ -478,11 +744,14 @@ export function createSnapshotIterationSkill(input: {
       || state.workItems.some(item => item.requiresResearch && item.status === "known_gap");
     const canUseEvidence = state.candidate.sources.assets.some(asset => asset.kind !== "user_brief" && asset.qualification?.status !== "quarantined")
       || state.request.supplementalSources.length > 0 || state.collectedSources?.length > 0;
+    // Rounds 1..n share one query budget; a quarter of it is the point at which
+    // continuing to search stops being worthwhile (48 of the default 192).
+    const searchBudgetFloor = Math.ceil((state.request.queryBudget ?? DEFAULT_ITERATION_BUDGET.queryBudget) / 4);
     const hasSearchBudget = state.request.webResearch && Boolean(input.searchConfig)
-      && state.researchPlans.reduce((sum, plan) => sum + plan.queries.length, 0) < 48;
+      && state.researchPlans.reduce((sum, plan) => sum + plan.queries.length, 0) < searchBudgetFloor;
     const attempted = new Set(state.researchPlans.flatMap(plan => plan.workItemIds));
     const unattempted = state.workItems.some(item => item.requiresResearch && item.status !== "completed" && !attempted.has(item.id));
-    return researchable && (hasSearchBudget || canUseEvidence) && ((state.stagnantRounds || 0) < 2 || unattempted) ? "retry" : "finish";
+    return researchable && (hasSearchBudget || canUseEvidence) && ((state.stagnantRounds || 0) < (state.request.stagnantRoundLimit ?? DEFAULT_ITERATION_BUDGET.stagnantRoundLimit) || unattempted) ? "retry" : "finish";
   };
 
   const nextRound = async (state: IterationStateType) => {
@@ -501,6 +770,9 @@ export function createSnapshotIterationSkill(input: {
     })].map(item => [item.id, item])).values()];
     const findingHistory = [...new Map([...state.findingHistory, ...inspection.findings].map(finding => [finding.id, finding])).values()];
     const update = { round, candidate, inspectionWorking: inspection, opportunities, workItems, findingHistory, researchedSources: [],
+      // Claims belong to the round that produced them; carrying them forward
+      // would let an earlier round's reviewed claim be read as current evidence.
+      researchClaims: [],
       migrations: state.evaluation?.meaningful ? state.migrations : state.accepted?.migrations || {},
       patches: state.evaluation?.meaningful ? state.patches : state.accepted?.patches || [] };
     await checkpoint("next-round", state, update);
@@ -538,19 +810,35 @@ export function createSnapshotIterationSkill(input: {
       `证据准备度 ${state.inspectionBefore!.axes.evidenceReadiness.toFixed(0)} → ${state.inspectionAfter!.axes.evidenceReadiness.toFixed(0)}`,
       `任务无技能覆盖 ${state.inspectionBefore!.coverage.tasksWithoutSkills} → ${state.inspectionAfter!.coverage.tasksWithoutSkills}`,
     ];
+    const products = state.request.research ? undefined : await assembleProducts(state);
+    let researchRun = input.researchAgent?.record?.();
+    if (state.request.research && researchRun) {
+      const remaining = input.researchAgent?.budgetLedger?.snapshot().remainingResearch;
+      const reason = researchRun.stopReason || stopResearch({ goalReached: createdSnapshot && !state.inspectionAfter?.findings.some(finding => finding.severity === "error"), budgetExhausted: !remaining || remaining.tokens < 1000 || remaining.turns < 1, stagnantRounds: state.stagnantRounds || 0, limit: state.request.research.budget.stagnantRounds }) || "insufficient_material";
+      await input.researchAgent?.finish?.(reason);
+      researchRun = input.researchAgent?.record?.() || researchRun;
+      researchRun.changeSets.push(await describeChangeSet({ base: state.base, candidate: state.candidate, run: researchRun, passed: createdSnapshot, reasons: state.evaluation!.reasons, migrations: state.migrations }));
+      await input.researchAgent?.updateRecord?.(researchRun);
+      if (createdSnapshot) candidate.researchRun = researchRun;
+    }
     const result: SnapshotIterationResult = {
       runId: state.request.runId,
       snapshotRef: state.request.snapshotRef,
       projectId: state.request.projectId || state.request.snapshotRef.projectId,
       baseSnapshotId: state.base.snapshot.id,
-      status: createdSnapshot ? "completed" : "no_change",
+      status: createdSnapshot ? researchRun?.changeSets.some(change => change.status === "needs_review") ? "waiting_user" : "completed" : "no_change",
       contract: state.contract!,
+      ...(researchRun ? { researchRun } : {}),
       inspectionBefore: state.inspectionBefore!,
       inspectionAfter: state.inspectionAfter!,
       opportunities: state.opportunities,
       workItems: state.workItems,
       researchPlans: state.researchPlans,
       researchReports: state.researchReports,
+      // Only present when a research agent ran, so existing stored results and
+      // consumers keep their exact shape.
+      ...(input.researchAgent ? { researchClaims: state.researchClaims } : {}),
+      ...(products ? { products } : {}),
       patches: state.patches,
       diff,
       evaluation: state.evaluation!,

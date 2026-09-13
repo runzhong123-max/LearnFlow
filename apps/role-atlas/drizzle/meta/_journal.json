@@ -50,6 +50,13 @@
       "when": 1787485656735,
       "tag": "0006_tearful_kulan_gath",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1789183363597,
+      "tag": "0007_nebulous_harpoon",
+      "breakpoints": true
     }
   ]
 }

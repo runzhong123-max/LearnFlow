@@ -80,7 +80,7 @@ test('development migration fallback remains explicit and account errors are sta
 
 test('Tutor legacy credential selection never falls back to the task preflight key', () => {
   const viteConfig = readFileSync(resolve(process.cwd(), 'vite.config.ts'), 'utf8')
-  const loadTutorKeyBody = viteConfig.match(/function loadTutorKey[\s\S]*?\n}\n\nfunction loadLearningTaskPreflightConfiguration/)?.[0] || ''
+  const loadTutorKeyBody = viteConfig.match(/function loadTutorKey[\s\S]*?^}\r?$/m)?.[0] || ''
 
   assert.match(loadTutorKeyBody, /LEARNFLOW_API_KEY/)
   assert.doesNotMatch(loadTutorKeyBody, /LEARNING_TASK_PREFLIGHT_API_KEY/)

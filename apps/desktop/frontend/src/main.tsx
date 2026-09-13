@@ -1,4 +1,5 @@
 import { conversionMessagePresentation } from '../../../../packages/learning-client/src/work-task-conversion/presentation.ts'
+import { UserAvatar, UserIdentity } from '../../../../packages/learning-client/src/identity/UserIdentity'
 import { taskLearningFiles, fileKindForStage, fileProgressMessage } from './learning-file-flow'
 import { directVisualWorkflowCall } from '../../../../packages/learning-client/src/visuals/workflow.ts'
 import { resolveExplicitVisualIntent } from '../server/visual-tool-execution.ts'
@@ -299,6 +300,13 @@ const SETTINGS_TAB: WorkspaceTab = { id: 'settings', kind: 'settings', title: '�
 const PROJECTS_TAB: WorkspaceTab = { id: 'projects', kind: 'projects', title: '学习项目' }
 const LEARNING_PATH_TAB: WorkspaceTab = { id: 'learning-path', kind: 'learning-path', title: '学习路径' }
 const PROFILE_TAB: WorkspaceTab = { id: 'profile', kind: 'profile', title: '我的画像' }
+const SIDEBAR_WIDTH_STORAGE_KEY = 'learnflow:sidebar-width'
+const SIDEBAR_MIN_WIDTH = 220
+const SIDEBAR_MAX_WIDTH = 380
+
+function boundedSidebarWidth(value: number) {
+  return Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, Number.isFinite(value) ? value : 252))
+}
 
 /** One list drives both the key handler and the reference sheet, so a shortcut
  *  can never be documented differently from the way it actually behaves. */
@@ -784,12 +792,17 @@ function App({ auth }: { auth: AuthGateSession }) {
   const [toolChoices, setToolChoices] = useState<Record<string, TutorToolChoice>>({})
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarWidth, setSidebarWidth] = useState(() => boundedSidebarWidth(Number(localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY))))
   const [renamingConversationId, setRenamingConversationId] = useState('')
   const [renameDraft, setRenameDraft] = useState('')
   const [draggingTabId, setDraggingTabId] = useState('')
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [avatarBusy, setAvatarBusy] = useState(false)
   const [avatarError, setAvatarError] = useState('')
+
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(Math.round(sidebarWidth)))
+  }, [sidebarWidth])
 
   const changeAvatar = async (file: File) => {
     setAvatarError('')
@@ -1149,7 +1162,7 @@ function App({ auth }: { auth: AuthGateSession }) {
 
   useEffect(() => {
     if (!activeTab) return
-    window.history.replaceState({ tabId: activeTab.id }, '', pathForTab(activeTab))
+    window.history.replaceState({ tabId: activeTab.id }, '', pathForTab(activeTab) + (activeTab.kind === 'visual-hub' ? window.location.hash : ''))
     document.title = `${activeTab.title} · LearnFlow`
   }, [activeTab])
 
@@ -3370,6 +3383,7 @@ function App({ auth }: { auth: AuthGateSession }) {
             onClaimAction={(claimId, action, correction) => { void updateFormalClaim(claimId, action, correction) }}
             onRecordSelfReport={recordConceptSelfReport}
             onUpdateProfile={updateExplicitLearnerProfile}
+            accountIdentity={{ displayName: auth.account.display_name, username: auth.account.username, avatar: auth.account.avatar }}
           />
         </Suspense>
       )
@@ -3386,6 +3400,7 @@ function App({ auth }: { auth: AuthGateSession }) {
             onAction={(task, action) => { void updateFormalTask(task, action) }}
             onGenerateFiles={task => { void generateTaskFiles(task) }}
             onOpenFiles={() => openTab(LEARNING_FILES_TAB)}
+            onStartLearning={newConversation}
             onReturnToScene={returnToLearningScene}
           />
         </Suspense>
@@ -3394,12 +3409,12 @@ function App({ auth }: { auth: AuthGateSession }) {
     if (tab.kind === 'review') {
       return (
         <Suspense fallback={<div className="page-loading">正在载入复习队列…</div>}>
-          <ReviewWorkbenchPage connection={formalConnection} />
+          <ReviewWorkbenchPage connection={formalConnection} onOpenTasks={() => openTab(TASKS_TAB)} />
         </Suspense>
       )
     }
     if (tab.kind === 'learning-files') {
-      return <Suspense fallback={<div className="page-loading">正在载入学习文件…</div>}><LearningFilesPage onOpen={file => openTab(learningFileTab(file))} /></Suspense>
+      return <Suspense fallback={<div className="page-loading">正在载入学习文件…</div>}><LearningFilesPage onOpen={file => openTab(learningFileTab(file))} onOpenTasks={() => openTab(TASKS_TAB)} /></Suspense>
     }
     if (tab.kind === 'lecture-file' && tab.fileRef) {
       return <Suspense fallback={<div className="page-loading">正在打开讲义…</div>}><LectureFilePage lectureId={Number(tab.fileRef)} conversationId={tab.originConversationId} {...learningScopeForFile(tab.originConversationId, 'lecture', String(tab.fileRef))} onProgress={() => syncLearningFileProgress(tab.originConversationId)} onContinue={tab.originConversationId && learningScopeForFile(tab.originConversationId, 'lecture', String(tab.fileRef)).learningTaskId ? () => { void openTaskLearningFile(tab.originConversationId!, 'practice') } : undefined} onAttach={file => attachLearningFileToConversation(file, tab.originConversationId, { parentSheetId: tab.originSheetId })} /></Suspense>
@@ -3410,33 +3425,42 @@ function App({ auth }: { auth: AuthGateSession }) {
     if (tab.kind === 'settings') {
       return (
         <section className="settings-page">
-          <div className="settings-intro">
-            <span className="eyebrow">SETTINGS</span>
+          <div className="settings-intro page-hero">
             <h1>设置</h1>
-            <p>账号、模型凭据和浏览器缓存都以当前 learner 为边界；五核、学习路径与任务队列继续使用正式后端事件链。</p>
+            <p>管理账号、模型连接和学习记录。</p>
           </div>
-          {isCloudDesktopRuntime() ? <section className="settings-card">
-            <h2>云端账号：{auth.account.display_name || auth.account.username}</h2>
-            <p>与网页共用账号和学习记录。模型与检索服务由 LearnFlow 服务器统一配置，无需在本机填写供应商密钥。</p>
-            <button type="button" onClick={() => void auth.signOut()}>退出登录</button>
-          </section> : <AccountModelSettings
+          {isCloudDesktopRuntime() ? <>
+            <section className="settings-card">
+              <h2>云端账号：{auth.account.display_name || auth.account.username}</h2>
+              <p>与网页共用账号和学习记录。模型服务由 LearnFlow 统一配置。</p>
+              <button type="button" className="settings-signout-button" onClick={() => void auth.signOut()}>退出登录</button>
+            </section>
+            <section className="settings-card profile-settings-card" aria-labelledby="formal-profile-title">
+              <div className="settings-card-heading">
+                <div>
+                  <h2 id="formal-profile-title">学习记录</h2>
+                  <p>{formalConnection.status === 'connected' ? `已同步 ${formalConnection.learner?.display_name || '当前学习者'} 的学习记录。` : formalConnection.detail}</p>
+                </div>
+                <i>{formalConnection.status === 'connected' ? '已同步' : '未连接'}</i>
+              </div>
+              <div className="settings-actions"><button type="button" onClick={() => { void refreshFormalSnapshot(true) }}>刷新</button><button type="button" className="button-secondary" onClick={() => openTab(PROFILE_TAB)}>个人画像</button><button type="button" className="button-secondary" onClick={() => openTab(TASKS_TAB)}>任务队列</button></div>
+            </section>
+          </> : <AccountModelSettings
             account={auth.account}
             baseUrl={workspace.settings.baseUrl}
             model={workspace.settings.model}
             onConnectionChange={updateSettings}
             onSignOut={auth.signOut}
+            learningSync={{
+              connected: formalConnection.status === 'connected',
+              detail: formalConnection.status === 'connected'
+                ? `已同步 ${formalConnection.learner?.display_name || '当前学习者'} 的学习记录。`
+                : formalConnection.detail,
+              onRefresh: () => { void refreshFormalSnapshot(true) },
+              onOpenProfile: () => openTab(PROFILE_TAB),
+              onOpenTasks: () => openTab(TASKS_TAB),
+            }}
           />}
-          <section className="settings-card profile-settings-card" aria-labelledby="formal-profile-title">
-            <div className="settings-card-heading">
-              <span>{auth.account.role === 'admin' ? '04' : '03'}</span>
-              <div>
-                <h2 id="formal-profile-title">学习记录同步</h2>
-                <p>{formalConnection.status === 'connected' ? `已连接 ${formalConnection.learner?.display_name || '当前学习者'}；所有写入经过 EvidenceEvent 与 reducer。` : formalConnection.detail}</p>
-              </div>
-              <i>{formalConnection.status === 'connected' ? '已连接' : '未连接'}</i>
-            </div>
-            <div className="settings-actions"><button type="button" onClick={() => { void refreshFormalSnapshot(true) }}>重新连接</button><button type="button" className="button-secondary" onClick={() => openTab(PROFILE_TAB)}>打开五核画像</button><button type="button" className="button-secondary" onClick={() => openTab(TASKS_TAB)}>打开任务队列</button></div>
-          </section>
         </section>
       )
     }
@@ -3534,7 +3558,7 @@ function App({ auth }: { auth: AuthGateSession }) {
     }
     return (
       <section className={`chat-page${conversation.projectId ? ' project-chat-page' : ''}${embedded ? ' project-embedded-tutor' : ''}`}>
-        <header className="chat-heading">
+        <header className="chat-heading page-hero">
           <h1>{conversation.title}</h1>
           <div className="chat-state-stack">
             {conversation.projectId && !embedded && <button type="button" className="project-panel-toggle" onClick={() => openTab({ id: `project:${conversation.projectId}`, kind: 'project', title: '项目工作台', projectId: conversation.projectId })}>项目工作台</button>}
@@ -3749,6 +3773,8 @@ function App({ auth }: { auth: AuthGateSession }) {
                   )}
                   <MessageList
                     messages={messages}
+                    learnerAvatar={auth.account.avatar}
+                    learnerName={auth.account.display_name}
                     onPluginPrompt={prompt => { void runTutorTurn(conversation.id, prompt, { hideUserMessage: true }) }}
                     onPluginReference={(object, prompt) => {
                       addPluginDraftReference(draftKey, object)
@@ -4141,27 +4167,29 @@ function App({ auth }: { auth: AuthGateSession }) {
                 </details>
                 </div>
               </div>
-              <details className="composer-model-menu" onToggle={event => { if ((event.currentTarget as HTMLDetailsElement).open) void loadProviderModels() }}>
-                <summary className="composer-model-chip" role="button" title="切换模型" aria-label="切换模型">
-                  <strong>{workspace.settings.model || '待配置模型'}</strong>
-                </summary>
-                <div className="composer-model-popover">
-                  <header>{providerModelsError || (providerModels.length ? '服务商可用模型' : '正在读取模型…')}</header>
-                  {(providerModels.length ? providerModels : [workspace.settings.model].filter(Boolean)).map(name => (
-                    <button
-                      key={name}
-                      type="button"
-                      aria-pressed={workspace.settings.model === name}
-                      onClick={event => {
-                        event.currentTarget.closest('details')?.removeAttribute('open')
-                        updateSettings({ ...workspace.settings, model: name })
-                      }}
-                    >
-                      <i>{workspace.settings.model === name ? '✓' : ''}</i>{name}
-                    </button>
-                  ))}
-                </div>
-              </details>
+              {isCloudDesktopRuntime()
+                ? <span className="composer-model-chip composer-model-managed" title="模型由 LearnFlow 云端统一配置" aria-label="云端托管模型"><strong>云端托管</strong></span>
+                : <details className="composer-model-menu" onToggle={event => { if ((event.currentTarget as HTMLDetailsElement).open) void loadProviderModels() }}>
+                    <summary className="composer-model-chip" role="button" title="切换模型" aria-label="切换模型">
+                      <strong>{workspace.settings.model || '待配置模型'}</strong>
+                    </summary>
+                    <div className="composer-model-popover">
+                      <header>{providerModelsError || (providerModels.length ? '服务商可用模型' : '正在读取模型…')}</header>
+                      {(providerModels.length ? providerModels : [workspace.settings.model].filter(Boolean)).map(name => (
+                        <button
+                          key={name}
+                          type="button"
+                          aria-pressed={workspace.settings.model === name}
+                          onClick={event => {
+                            event.currentTarget.closest('details')?.removeAttribute('open')
+                            updateSettings({ ...workspace.settings, model: name })
+                          }}
+                        >
+                          <i>{workspace.settings.model === name ? '✓' : ''}</i>{name}
+                        </button>
+                      ))}
+                    </div>
+                  </details>}
               <button type="submit" disabled={Boolean(pendingMode) || (!(drafts[draftKey] || '').trim() && draftPluginObjects.length === 0)} aria-label={pendingMode ? 'Tutor 回复中' : '发送消息'}>{pendingMode ? '…' : '↑'}</button>
             </div>
           </form>
@@ -4189,7 +4217,7 @@ function App({ auth }: { auth: AuthGateSession }) {
         refreshFormalProjects()
         openTab({ id: `project:${projectId}`, kind: 'project', title, projectId })
       }} />
-      <div className="workspace">
+      <div className="workspace" style={{ '--sidebar-width': `${sidebarWidth}px` } as CSSProperties}>
         <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
           <button className="sidebar-brand" type="button" onClick={newConversation} aria-label="新建 LearnFlow 对话">
             <img className="brand-mark" src="/brand-mark.png" alt="" width={36} height={36} /><span><strong>LearnFlow</strong><small>学习空间</small></span>
@@ -4298,12 +4326,12 @@ function App({ auth }: { auth: AuthGateSession }) {
           <div className="sidebar-footer">
             <details className="sidebar-account-menu">
               <summary className="sidebar-user-button" role="button" aria-label="账号菜单">
-                <span className="sidebar-profile-avatar">
-                  {auth.account.avatar
-                    ? <img src={auth.account.avatar} alt="" />
-                    : auth.account.display_name.slice(0, 1)}
-                </span>
-                <span><strong>{auth.account.display_name}</strong><small>{formalConnection.status === 'connected' ? `@${auth.account.username} · 画像已连接` : `@${auth.account.username} · 画像离线`}</small></span>
+                <UserIdentity
+                  displayName={auth.account.display_name}
+                  username={auth.account.username}
+                  avatar={auth.account.avatar}
+                  detail={formalConnection.status === 'connected' ? '画像已连接' : '画像离线'}
+                />
               </summary>
               <div className="sidebar-account-popover">
                 <button type="button" onClick={event => { event.currentTarget.closest('details')?.removeAttribute('open'); openTab(PROFILE_TAB) }}>
@@ -4339,6 +4367,35 @@ function App({ auth }: { auth: AuthGateSession }) {
             </details>
           </div>
         </aside>
+
+        {!sidebarCollapsed && (
+          <div
+            className="sidebar-resize-handle desktop-only"
+            role="separator"
+            aria-label="调整侧栏宽度"
+            aria-orientation="vertical"
+            aria-valuemin={SIDEBAR_MIN_WIDTH}
+            aria-valuemax={SIDEBAR_MAX_WIDTH}
+            aria-valuenow={Math.round(sidebarWidth)}
+            tabIndex={0}
+            onPointerDown={event => {
+              event.currentTarget.setPointerCapture(event.pointerId)
+              event.currentTarget.classList.add('sidebar-resize-active')
+            }}
+            onPointerMove={event => {
+              if (event.currentTarget.hasPointerCapture(event.pointerId)) setSidebarWidth(boundedSidebarWidth(event.clientX))
+            }}
+            onPointerUp={event => {
+              event.currentTarget.classList.remove('sidebar-resize-active')
+              if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
+            }}
+            onKeyDown={event => {
+              if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+              event.preventDefault()
+              setSidebarWidth(value => boundedSidebarWidth(value + (event.key === 'ArrowLeft' ? -12 : 12)))
+            }}
+          />
+        )}
 
         {sidebarOpen && <button className="sidebar-scrim" type="button" onClick={() => setSidebarOpen(false)} aria-label="关闭对话列表" />}
 
@@ -4602,7 +4659,7 @@ function AgentTraceSummary({ trace }: { trace: AgentTurnTrace }) {
   return (
     <details className="agent-trace-summary">
       <summary>
-        <span>Agent 轨迹</span>
+        <span>运行详情</span>
         <small>{trace.modelRounds} 轮判断 · {trace.toolCalls} 次工具 · {stopLabels[trace.stopReason]}{timing}</small>
       </summary>
       <ol>
@@ -4646,8 +4703,10 @@ function ToolDecisionBridge({
   )
 }
 
-function MessageList({ messages, conversationId, onPluginPrompt, onPluginReference, onOpenLearningTask, onOpenProject, onConfirmProject, onOpenPluginResult, onQuoteFollowUp, onOpenLearningFile, onAttachLearningFile, onAcceptPathProposal, onAcceptPathPlan, onAcceptProjectRoadmap, onAcceptProjectLearningFile, activePathPlanId, pathPlanBusyId, pathPlanWriteErrors, projectBusyKey, projectError, learningFileProposalErrors }: {
+function MessageList({ messages, learnerAvatar, learnerName, conversationId, onPluginPrompt, onPluginReference, onOpenLearningTask, onOpenProject, onConfirmProject, onOpenPluginResult, onQuoteFollowUp, onOpenLearningFile, onAttachLearningFile, onAcceptPathProposal, onAcceptPathPlan, onAcceptProjectRoadmap, onAcceptProjectLearningFile, activePathPlanId, pathPlanBusyId, pathPlanWriteErrors, projectBusyKey, projectError, learningFileProposalErrors }: {
   messages: Message[]
+  learnerAvatar?: string | null
+  learnerName: string
   conversationId: string
   onPluginPrompt: (prompt: string) => void
   onPluginReference: (object: LearnFlowPluginObject, prompt?: string) => void
@@ -4720,12 +4779,14 @@ function MessageList({ messages, conversationId, onPluginPrompt, onPluginReferen
       <div className="message-column">
         {visibleMessages.map(message => (
           <article key={message.id} data-message-id={message.id} data-message-role={message.role} className={`message message-${message.role}${message.learningActionLabel ? ' message-learning-action' : ''}`}>
-            {message.role !== 'user' && (message.role === 'assistant'
-              ? <img className="message-avatar" src="/brand-mark.png" alt="" width={26} height={26} />
-              : <span className="message-avatar">i</span>)}
+            {message.role === 'user'
+              ? <UserAvatar className="message-avatar" displayName={learnerName} avatar={learnerAvatar} size="sm" />
+              : message.role === 'assistant'
+                ? <img className="message-avatar" src="/brand-mark.png" alt="" width={26} height={26} />
+                : <span className="message-avatar">i</span>}
             <div className="message-content" onMouseUp={message.role === 'assistant' ? event => captureSelection(message.id, event.currentTarget) : undefined}>
               <div className="message-meta">
-                {message.role === 'user' ? '你' : message.role === 'assistant' ? 'Tutor' : '系统'}
+                <strong className="message-author">{message.role === 'user' ? '你' : message.role === 'assistant' ? 'Tutor' : '系统'}</strong>
                 {message.tutorMode && (
                   <em>
                     {TUTOR_MODE_LABELS[message.tutorMode]}
@@ -4793,7 +4854,6 @@ function MessageList({ messages, conversationId, onPluginPrompt, onPluginReferen
                   </Fragment>
                 )
               })}
-              {!message.pluginResultProjection && message.agentTrace && <AgentTraceSummary trace={message.agentTrace} />}
               {message.streaming && <div className="streaming-phase"><i />{message.streamingPhase || '正在形成回答'}</div>}
               {message.pluginResultProjection ? null : message.learningActionLabel ? (
                 <div className="learning-action-chip"><span>学习任务</span>{message.learningActionLabel}</div>
@@ -4808,6 +4868,7 @@ function MessageList({ messages, conversationId, onPluginPrompt, onPluginReferen
                   )} />
                 </Suspense>
               )}
+              {!message.pluginResultProjection && message.agentTrace && <AgentTraceSummary trace={message.agentTrace} />}
             </div>
           </article>
         ))}

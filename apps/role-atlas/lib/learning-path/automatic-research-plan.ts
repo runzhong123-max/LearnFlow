@@ -37,7 +37,7 @@ export function automaticRepairPlan(input: {
     const content = input.result.sources.segments.filter(segment => segment.sourceId === asset.id).sort((a, b) => a.ordinal - b.ordinal).map(segment => segment.text).join('\n').slice(0, 60_000);
     const checked = sourceInputSchema.safeParse({ ...asset, content });
     return checked.success ? [checked.data] : [];
-  }).slice(0, 20);
+  }).slice(0, 64);
   const iteration = snapshotIterationRequestSchema.parse({
     runId: input.jobId, projectId: input.projectId, conversationId: input.conversationId,
     snapshotRef: { snapshotId: input.result.snapshot.id, packageVersion: input.result.packages.rolePackage.packageVersion, projectId: input.projectId, versionId: input.versionId },
@@ -45,7 +45,7 @@ export function automaticRepairPlan(input: {
     targetAsOf: input.result.snapshot.asOf, webResearch, supplementalSources,
     learningPathGraph: original.learningPathGraph,
     learningMountFeedback: feedback.slice(0,40),
-    maxRounds: 2, sourceLimit: 12, maxWorkItems: 8,
+    maxRounds: 12, sourceLimit: 64, maxWorkItems: 32,
   });
   return { iteration };
 }

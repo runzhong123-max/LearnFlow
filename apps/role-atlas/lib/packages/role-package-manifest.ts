@@ -42,7 +42,7 @@ export function createRolePackageManifest(input: {
     fingerprint: stableFingerprint(ids(objects)),
   });
   return {
-    protocolVersion: "3.0.0",
+    protocolVersion: input.result.semantic.nodes.some(node => node.taskDefinition) ? "3.1.0" : "3.0.0",
     packageId: input.packageId,
     packageVersion: input.packageVersion,
     snapshotId: input.result.snapshot.id,
@@ -65,7 +65,7 @@ export function normalizeRolePackage(result: ColdStartBuildResult): ColdStartBui
     };
   };
   const current = legacy.packages?.rolePackage;
-  if (current?.protocolVersion === "3.0.0" && current.namespaces) return result;
+  if (current && ["3.0.0", "3.1.0"].includes(current.protocolVersion || "") && current.namespaces) return result;
   const packageId = current?.packageId || `role-package:${stableFingerprint(result.brief.roleTitle)}`;
   const packageVersion = legacy.packages?.compositeSnapshot?.version || current?.packageVersion || "0.1.0-candidate.legacy";
   return {

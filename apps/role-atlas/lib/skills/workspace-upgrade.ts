@@ -10,9 +10,9 @@ export const workspaceUpgradeIterationSchema = z.object({
   targetAsOf: z.string().max(40).optional(),
   webResearch: z.boolean().default(true),
   learningPathGraph: learningPathGraphInputSchema,
-  maxRounds: z.number().int().min(1).max(6).default(4),
-  sourceLimit: z.number().int().min(4).max(20).default(20),
-  maxWorkItems: z.number().int().min(3).max(16).default(16),
+  maxRounds: z.number().int().min(1).max(12).default(12),
+  sourceLimit: z.number().int().min(4).max(64).default(64),
+  maxWorkItems: z.number().int().min(3).max(32).default(32),
 });
 
 function hasContent(value?: string) {

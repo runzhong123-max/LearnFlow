@@ -1,8 +1,30 @@
+import { researchOptionsSchema, type ResearchOptions } from "@/lib/research/protocol";
 import { z } from "zod/v4";
 import { learningPathGraphInputSchema, sourceInputSchema, type ColdStartBuildResult, type SourceInput, type WebResearchReport } from "@/lib/build/types";
 import type { PlannedQuery } from "@/lib/search/web-research";
 import { snapshotReferenceSchema, type SnapshotReference } from "@/lib/snapshots/types";
 import type { GraphPatch, RiskAuditReport, RiskIssue, SemanticDiff } from "@/lib/risk/types";
+import type { ReviewedClaim } from "./worker";
+import type { RadarItem, RankedRadarItem, RiskPackage } from "./products";
+import type { AugmentationProposal } from "./augmentation";
+
+/**
+ * What a planner may propose. Ranking, splicing and acceptance are applied by
+ * code afterwards, which is why this type is unranked and unvalidated.
+ */
+export type IterationProductProposal = {
+  riskPackage?: RiskPackage;
+  /** Unranked; ordered by code through rankRadarItems. */
+  radarItems?: RadarItem[];
+  augmentations?: AugmentationProposal[];
+};
+
+/** What the result may carry, after code ranked, gated and spliced. */
+export type IterationProducts = {
+  riskPackage?: RiskPackage;
+  radarItems?: RankedRadarItem[];
+  augmentations?: AugmentationProposal[];
+};
 
 export const initiativeProfileSchema = z.enum(["autonomous", "co_guided", "user_directed"]);
 export const iterationModeSchema = z.enum(["auto", "freshness", "deep_research", "risk_repair"]);
@@ -18,23 +40,54 @@ export const iterationFindingLayerSchema = z.enum([
 ]);
 
 export const snapshotIterationRequestSchema = z.object({
+  research: researchOptionsSchema.optional(),
   runId: z.string().min(4).max(100),
   snapshotRef: snapshotReferenceSchema,
   projectId: z.string().min(4).max(100).optional(),
   conversationId: z.string().min(4).max(100).optional(),
   initiativeProfile: initiativeProfileSchema.default("co_guided"),
   mode: iterationModeSchema.default("auto"),
-  prompt: z.string().max(4_000).default(""),
-  targetIds: z.array(z.string().max(220)).max(60).default([]),
+  prompt: z.string().max(8_000).default(""),
+  targetIds: z.array(z.string().max(240)).max(128).default([]),
   targetAsOf: z.string().max(40).optional(),
-  supplementalSources: z.array(sourceInputSchema).max(20).default([]),
+  supplementalSources: z.array(sourceInputSchema).max(64).default([]),
   learningPathGraph: learningPathGraphInputSchema,
   learningMountFeedback: z.array(z.object({ roleNodeId: z.string().min(1).max(220), reason: z.string().max(1_000), researchGoal: z.string().max(1_500) })).max(40).default([]),
   webResearch: z.boolean().default(true),
-  maxRounds: z.number().int().min(1).max(6).default(4),
-  sourceLimit: z.number().int().min(4).max(20).default(12),
-  maxWorkItems: z.number().int().min(3).max(16).default(10),
+  /**
+   * Budget ceilings. Defaults are exactly the values that used to be literals,
+   * so an existing request keeps its behaviour; only the maxima moved, which is
+   * what makes "more budget" reachable without changing any current caller.
+   *
+   * The ceilings are deliberately far above any default: a deep study of one
+   * role is allowed to spend real money, and the operator asking for it should
+   * not be argued with by a schema. The ledger still makes spending accountable
+   * (see budget-ledger.ts) and the loop still stops on its own conditions, so a
+   * large ceiling raises what is *possible* without raising what is *automatic*.
+   */
+  maxRounds: z.number().int().min(1).max(400).default(12),
+  sourceLimit: z.number().int().min(1).max(20_000).default(64),
+  maxWorkItems: z.number().int().min(1).max(1_000).default(32),
+  /**
+   * Optional so existing callers that build a request literal keep compiling.
+   * Read through DEFAULT_ITERATION_BUDGET, never as a bare number.
+   */
+  queryBudget: z.number().int().min(1).max(20_000).optional(),
+  stagnantRoundLimit: z.number().int().min(1).max(64).optional(),
 });
+
+/**
+ * The values these limits used to be hard-coded to. Named once so "unchanged by
+ * default" is a single readable fact rather than a number repeated in the graph,
+ * the planner, the brief and two follow-up paths.
+ */
+export const DEFAULT_ITERATION_BUDGET = {
+  maxRounds: 12,
+  sourceLimit: 64,
+  maxWorkItems: 32,
+  queryBudget: 192,
+  stagnantRoundLimit: 2,
+} as const;
 
 export type InitiativeProfile = z.infer<typeof initiativeProfileSchema>;
 export type IterationMode = z.infer<typeof iterationModeSchema>;
@@ -47,6 +100,7 @@ export type SnapshotIterationRequest = Omit<z.infer<typeof snapshotIterationRequ
 };
 
 export type IterationContract = {
+  research?: ResearchOptions;
   id: string;
   initiativeProfile: InitiativeProfile;
   mode: IterationMode;
@@ -63,7 +117,9 @@ export type IterationContract = {
     graphRadius: number | "global";
   };
   acceptancePolicy: string[];
-  stopConditions: string[];
+  /** Legacy descriptions are read-only; stopPolicy owns execution. */
+  stopConditions?: string[];
+  stopPolicy?: { maxRounds: number; stagnantRounds: number };
   inferredFrom: string[];
 };
 
@@ -150,7 +206,6 @@ export type IterationWorkItem = {
   findingIds: string[];
   priority: number;
   requiresResearch: boolean;
-  dependencies: string[];
   status: "planned" | "running" | "completed" | "known_gap" | "skipped";
 };
 
@@ -160,7 +215,9 @@ export type IterationResearchPlan = {
   workItemIds: string[];
   queries: PlannedQuery[];
   rationale: string[];
-  stopConditions: string[];
+  /** Legacy descriptions are read-only; stopPolicy owns execution. */
+  stopConditions?: string[];
+  stopPolicy?: { maxRounds: number; stagnantRounds: number };
 };
 
 export type IterationEvaluation = {
@@ -181,6 +238,7 @@ export type IterationEvaluation = {
 };
 
 export type SnapshotIterationResult = {
+  researchRun?: import("@/lib/research/protocol").ResearchRun;
   runId: string;
   snapshotRef: SnapshotReference;
   projectId?: string;
@@ -193,6 +251,18 @@ export type SnapshotIterationResult = {
   workItems: IterationWorkItem[];
   researchPlans: IterationResearchPlan[];
   researchReports: WebResearchReport[];
+  /**
+   * Additive: agent-researched claims with their evidence-review verdict.
+   * Absent when no research agent is configured, so existing consumers and
+   * stored results stay valid.
+   */
+  researchClaims?: ReviewedClaim[];
+  /**
+   * Additive: research products assembled at finalization. Present only when a
+   * product planner is configured, so stored results and existing consumers keep
+   * their exact shape.
+   */
+  products?: IterationProducts;
   patches: GraphPatch[];
   diff: SemanticDiff;
   evaluation: IterationEvaluation;
@@ -233,7 +303,13 @@ export type IterationEventKind =
   | "iteration.snapshot.write.started"
   | "iteration.snapshot.created"
   | "iteration.run.completed"
-  | "iteration.run.failed";
+  | "iteration.run.failed"
+  /**
+   * Additive: agent research produced claims that carry an evidence-review
+   * verdict. Zero kernel target, like every other iteration event. Consumers
+   * that do not know this kind simply ignore it.
+   */
+  | "iteration.claims.reviewed";
 
 export type IterationEvent = {
   version: "1.0";

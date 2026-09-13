@@ -70,3 +70,14 @@ flowchart TD
 仅维护少量黄金链路：CNN 维护案例复用、从零矩阵计算、从零 SVG 分镜，以及暂停/恢复/取消/私人改编链路；同时验证跨 learner 隔离、幂等、旧版本保留、两端共享实现和插件禁用时无普通解释误触发。维护案例库继续沿官方计算机学习路径检索。
 
 Contract impact：新增 host artifact grant、私有持久化表、manage_visual_workspace capability 与零 target operational event。保持四个插件扩展点和三类主 Agent；VisualSpec 与旧聊天对象可读，数据库为新增表，不迁移或重写既有学习数据。共享 core 版本 0.2.1，注册表 2026-09-07.3。
+
+
+## 对话推荐与我的创作（2026-09-13）
+
+聊天 create 先查询当前学习者作品与维护目录。维护目录至少达到精确主题别名匹配分数（10），私有作品要求请求包含完整标题；低分零散词命中不自动采用。复用限定精确版本，无法读取或发布时返回创作入口，禁止退回模型构建。从零与改编请求直接交给工作台。
+
+未匹配结果沿既有 visual_work 的 search_results 返回可选 studio_draft（request、kind），包含请求及有界近期对话，不创建失败任务。卡片跳至 `/visualize` 的“我的创作”，经 URL fragment 携带预填内容（不作为服务端查询参数）；用户可编辑并配置自己的模型后点击生成。表单不自动运行，密钥仍仅存页面内存。页面提供有界纵向滚动，长作品列表与展开的模型配置不会被宿主裁切。Web 与桌面共用同一实现。
+
+Contract impact：兼容新增可选展示字段，保留 visual_work 1.0.0、旧版本/任务读取与生成器接口。两端 registry 2026-09-13.1 更新既有工具流程说明；无新能力、EvidenceEvent 或五核语义变更，无数据迁移。
+
+本轮验证：共享 visual 测试 16 项通过；Web Tutor/plugin 回归 71 项、桌面 72 项通过；两个前端 build 与 shared contracts 检查通过。后端首次全量 Web 为 1068 passed / 1 skipped / 1 failed，桌面为 1088 passed / 1 failed，失败均为本轮更新注册表后的旧版本断言；同步断言后分别重跑 registry 27/26 项全部通过，未重复全量。浏览器使用隔离合成数据验证预填、模型配置展开及 40 个作品滚动到底（scrollTop 3374 / scrollHeight 4109 / clientHeight 735）。未调用真实用户模型，未迁移数据或部署。
