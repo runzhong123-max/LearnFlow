@@ -34,7 +34,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from education_verifier import verify_formation, verify_trial
-from components import EDUCATION_VARIANTS, activation_metrics, packet_tokens, policy_for
+from components import EDUCATION_VARIANTS, UPGRADE_VARIANTS, activation_metrics, packet_tokens, policy_for
 
 VERSION = 'education-memory-upgrade.v2'
 VARIANTS = EDUCATION_VARIANTS
@@ -337,14 +337,14 @@ class Driver:
                 fact_ids = [n.id] if n.id in by_fact else (n.payload or {}).get('evidence_fact_ids', [])
                 source_nodes[n.id] = {'text':n.text,'learner_id':n.learner_id,'project_id':n.project_id,
                     'checkpoint_id':n.checkpoint_id,'session_id':n.session_id,'status':n.status,'kernel':n.kernel_name, 'node_type':n.node_type,
-                    'valid_to':n.valid_to, 'source_event_id':by_fact[n.id].source_event_id if n.id in by_fact else None,
+                    'valid_to':n.valid_to, 'payload':n.payload, 'memory_kind':n.memory_kind, 'source_event_id':by_fact[n.id].source_event_id if n.id in by_fact else None,
                     'evidence_fact_ids':fact_ids,
                     'evidence_event_ids':sorted({by_fact[f].source_event_id for f in fact_ids if f in by_fact})}
             return {'events':[{'id':e.id,'event_type':e.event_type,'payload':e.payload,'occurred_at':e.occurred_at,
                               'learner_id':e.learner_id,'project_id':e.project_id,'checkpoint_id':e.checkpoint_id,'session_id':e.session_id,
                               'source':e.source,'client_event_id':e.client_event_id} for e in events],
                 'mutations':[{'id':x.id,'event_id':x.event_id,'kernel':x.kernel_name,
-                              'learner_id':x.learner_id,'status':x.status} for x in mutations],
+                              'learner_id':x.learner_id,'status':x.status,'patch':x.patch} for x in mutations],
                 'states':{x.kernel_name:{'short_term':x.short_term,'long_term':x.long_term} for x in states},
                 'attempts':[{'id':x.id,'item_id':x.item_id,'assistance_level':x.assistance_level,'result':x.result,
                              'status':x.status,'attempt_role':x.attempt_role,'item_type':x.item_type,
@@ -352,6 +352,7 @@ class Driver:
                              'submitted_at':x.submitted_at,'evaluated_at':x.evaluated_at} for x in attempts],
                 'facts':[{'id':x.node_id,'text':by_node[x.node_id].text,'event_id':x.source_event_id,
                           'mutation_id':x.source_mutation_id,'kernel':by_node[x.node_id].kernel_name,'grade':x.evidence_grade,
+                          'object_value':x.object_value,'predicate':x.predicate,'fact_ordinal':x.fact_ordinal,
                           'project_id':x.project_id,'checkpoint_id':x.checkpoint_id,'session_id':x.session_id} for x in facts],
                 'worker_runs':[{'id':x.id,'status':x.status,'model_name':x.model_name} for x in runs],
                 'source_nodes':source_nodes,
@@ -639,7 +640,7 @@ def main():
     parser.add_argument('--case-id',action='append',default=[])
     parser.add_argument('--split',choices=('development','validation','holdout'))
     parser.add_argument('--limit',type=int)
-    parser.add_argument('--variants',nargs='+',choices=VARIANTS,default=list(VARIANTS))
+    parser.add_argument('--variants',nargs='+',choices=(*VARIANTS, *UPGRADE_VARIANTS),default=list(VARIANTS))
     parser.add_argument('--budgets',nargs='+',type=int,default=[1800,3200])
     parser.add_argument('--repetitions',type=int,default=1)
     parser.add_argument('--save-packets',action='store_true')

@@ -1,0 +1,11 @@
+{
+  "kind": "2000_document_execution_smoke_not_quality_benchmark",
+  "cold_seconds": 6.591723,
+  "warm_seconds": 0.249538,
+  "first_encoded_windows": 2001,
+  "second_encoded_windows": 0,
+  "documents": 2000,
+  "returned": 80,
+  "cache_bytes": 3073536,
+  "semantic_threads": 1
+}

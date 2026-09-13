@@ -1,0 +1,3384 @@
+{
+  "status": "post_hoc_diagnostic_not_new_experiment",
+  "source_run": "/tmp/learnflow-memory-upgrade-formal-03",
+  "selection_rule": "Lexicographically first source/3200 raw-statement-failure case, followed by first two cases with distinct patterns; inspect both source and legacy at both frozen budgets",
+  "source_extract": "/tmp/learnflow-memory-v4-raw-probe-case-extract.json",
+  "source_extract_sha256": "725d63aec4aac83536c23b2af424199fc5670ab0be52546700ecb48cad373796",
+  "cases": [
+    {
+      "case_id": "clp-000a55bcd66febf59cf1",
+      "pattern": "long_history_return",
+      "shard": "education-02",
+      "probes": [
+        {
+          "probe_index": 1,
+          "source_event_id": 4,
+          "event_type": "vnext_teaching_input_received",
+          "expected_full_text": "我先去补HTML 表单，之后请带我回到：frontend/export.html 的 form controls",
+          "term_chars": 56,
+          "event_text_exact": true,
+          "event_text_sha256": "8a7275d447655957cdae26738d79ec409561e6bfcc804e17386d6ba94ec13282",
+          "expected_term_offset_in_event": [
+            0,
+            56
+          ],
+          "target_fact_count": 0,
+          "target_fact_object_values": [],
+          "target_source_node_count": 0,
+          "mutation_ids": [
+            6
+          ],
+          "directives": [
+            {
+              "kernel": "structure",
+              "slot": "return_anchor",
+              "source_span": [
+                12,
+                56
+              ],
+              "source_span_text": "之后请带我回到：frontend/export.html 的 form controls",
+              "scope": {
+                "checkpoint_id": 1,
+                "project_id": 1,
+                "session_id": 13
+              },
+              "expires_at": "2026-03-06T17:00:00+00:00",
+              "status": "active"
+            }
+          ],
+          "mechanism": "control_only_excluded_from_fact_projection",
+          "resolver_source_kind": null,
+          "resolver_fallback_reason": null,
+          "resolver_not_applicable_reason": "No target MemoryNode or MemoryFact exists; resolver receives nodes and cannot route arbitrary Event.payload.text"
+        },
+        {
+          "probe_index": 2,
+          "source_event_id": 69,
+          "event_type": "vnext_teaching_input_received",
+          "expected_full_text": "补充学习告一段落，我想回到之前暂停的项目位置。补过HTML 表单，是否足够还需要检查。",
+          "term_chars": 43,
+          "event_text_exact": true,
+          "event_text_sha256": "c408795b5b9687611a8cfa769a39b48388f07941b6a91f1616837d3b8baacafe",
+          "expected_term_offset_in_event": [
+            0,
+            43
+          ],
+          "target_fact_count": 0,
+          "target_fact_object_values": [],
+          "target_source_node_count": 0,
+          "mutation_ids": [],
+          "directives": [],
+          "mechanism": "no_mutation_from_control_only_input_route",
+          "resolver_source_kind": null,
+          "resolver_fallback_reason": null,
+          "resolver_not_applicable_reason": "No target MemoryNode or MemoryFact exists; resolver receives nodes and cannot route arbitrary Event.payload.text"
+        }
+      ],
+      "conditions": [
+        {
+          "variant": "source",
+          "budget": 1800,
+          "packet_token_estimate": 1767,
+          "packet_scope": {
+            "checkpoint_id": 1,
+            "learner_id": 1,
+            "mode": "checkpoint",
+            "project_id": 1,
+            "session_id": 19
+          },
+          "source_text_component": {
+            "enabled": true,
+            "expanded": 3
+          },
+          "teaching_controls": {
+            "budget_omitted": 0,
+            "counts": {
+              "expired": 1,
+              "scope_mismatch": 2,
+              "uncertain": 1
+            },
+            "delivered": 0,
+            "diagnostics": [
+              {
+                "parser_version": "teaching-control-parser.v2",
+                "policy_version": "teaching-guidance.v2",
+                "reason": "interrogative_input",
+                "source_event_id": 70,
+                "source_span": [
+                  48,
+                  61
+                ],
+                "status": "uncertain"
+              }
+            ],
+            "omitted": 0,
+            "status": "uncertain"
+          },
+          "independent_excerpt_and_association_errors": [],
+          "saved_checks": {
+            "budget": {
+              "passed": true,
+              "denominator": null
+            },
+            "source_excerpts": {
+              "passed": true,
+              "denominator": 2
+            },
+            "visible_memory_scope": {
+              "passed": true,
+              "denominator": 2
+            },
+            "visible_event_sources": {
+              "passed": true,
+              "denominator": 2
+            }
+          },
+          "probes": [
+            {
+              "probe_index": 1,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            },
+            {
+              "probe_index": 2,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            }
+          ],
+          "visible_excerpts": [
+            {
+              "path": "items[0]",
+              "id": 4,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "dict",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evid",
+              "visible_chars": 243,
+              "source_kind": "node_text",
+              "source_path": "/text",
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "source_chars": 243,
+              "source_sha256": "85ef49693ddd9d2aaeb4d292c3c6657c131f51ca752965ca611718160e7a53a7",
+              "fallback_reason": "unsupported_source_shape",
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "items[1]",
+              "id": 5,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "list",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_errors: []",
+              "visible_chars": 17,
+              "source_kind": "node_text",
+              "source_path": "/text",
+              "ranges": [
+                [
+                  0,
+                  17
+                ]
+              ],
+              "source_chars": 17,
+              "source_sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae",
+              "fallback_reason": "unsupported_source_shape",
+              "excerpt_valid": true,
+              "source_association_valid": true
+            }
+          ]
+        },
+        {
+          "variant": "legacy",
+          "budget": 3200,
+          "packet_token_estimate": 3059,
+          "packet_scope": {
+            "checkpoint_id": 1,
+            "learner_id": 1,
+            "mode": "checkpoint",
+            "project_id": 1,
+            "session_id": 19
+          },
+          "source_text_component": null,
+          "teaching_controls": {
+            "budget_omitted": 0,
+            "counts": {
+              "expired": 1,
+              "scope_mismatch": 2,
+              "uncertain": 1
+            },
+            "delivered": 0,
+            "diagnostics": [
+              {
+                "parser_version": "teaching-control-parser.v2",
+                "policy_version": "teaching-guidance.v2",
+                "reason": "interrogative_input",
+                "source_event_id": 70,
+                "source_span": [
+                  48,
+                  61
+                ],
+                "status": "uncertain"
+              }
+            ],
+            "omitted": 0,
+            "status": "uncertain"
+          },
+          "independent_excerpt_and_association_errors": [],
+          "saved_checks": {
+            "budget": {
+              "passed": true,
+              "denominator": null
+            },
+            "source_excerpts": {
+              "passed": true,
+              "denominator": 10
+            },
+            "visible_memory_scope": {
+              "passed": true,
+              "denominator": 10
+            },
+            "visible_event_sources": {
+              "passed": true,
+              "denominator": 10
+            }
+          },
+          "probes": [
+            {
+              "probe_index": 1,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            },
+            {
+              "probe_index": 2,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            }
+          ],
+          "visible_excerpts": [
+            {
+              "path": "items[0]",
+              "id": 4,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "dict",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evid",
+              "visible_chars": 243,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "source_chars": 243,
+              "source_sha256": "85ef49693ddd9d2aaeb4d292c3c6657c131f51ca752965ca611718160e7a53a7",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "items[1]",
+              "id": 5,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "list",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_errors: []",
+              "visible_chars": 17,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  17
+                ]
+              ],
+              "source_chars": 17,
+              "source_sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "items[2]",
+              "id": 201,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 68,
+              "fact_object_value_type": "bool",
+              "fact_object_value": true,
+              "allowed_event_ids": [
+                "68"
+              ],
+              "is_fact": true,
+              "text_head": "exposure_only: true",
+              "visible_chars": 19,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  19
+                ]
+              ],
+              "source_chars": 19,
+              "source_sha256": "af3d8185f6ec8a0a60d59ce3f2d2844a8b9131572e1e1d28a37243b379b54c55",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "items[3]",
+              "id": 200,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 68,
+              "fact_object_value_type": "str",
+              "fact_object_value": "讲义已阅读",
+              "allowed_event_ids": [
+                "68"
+              ],
+              "is_fact": true,
+              "text_head": "last_explanation: 讲义已阅读",
+              "visible_chars": 23,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  23
+                ]
+              ],
+              "source_chars": 23,
+              "source_sha256": "2beb0e1a394fadba308473c73d1095e65c242363dcf78ab9e8b34d93e4c7195d",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[0]",
+              "id": 4,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "dict",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evid",
+              "visible_chars": 243,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "source_chars": 243,
+              "source_sha256": "85ef49693ddd9d2aaeb4d292c3c6657c131f51ca752965ca611718160e7a53a7",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[1]",
+              "id": 5,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "list",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_errors: []",
+              "visible_chars": 17,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  17
+                ]
+              ],
+              "source_chars": 17,
+              "source_sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[2]",
+              "id": 6,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "int",
+              "fact_object_value": 1,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "current_attempt: 1",
+              "visible_chars": 18,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  18
+                ]
+              ],
+              "source_chars": 18,
+              "source_sha256": "772c77434860575372fb4c8306a6a32072c0f3680d2ee3bc267d91835c70936d",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[3]",
+              "id": 7,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "none",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "assistance_level: none",
+              "visible_chars": 22,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  22
+                ]
+              ],
+              "source_chars": 22,
+              "source_sha256": "755238e70bf3428bbf41783cdd07e88b4d4fb3b06dbff54c29fd9ea9c6158480",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[4]",
+              "id": 8,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "passed",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "artifact_state: passed",
+              "visible_chars": 22,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  22
+                ]
+              ],
+              "source_chars": 22,
+              "source_sha256": "5bfa437e368d1c76f9b4579dd57fe172b60e326938c62d51ebbd06998b056a07",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[5]",
+              "id": 9,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "concept_correct",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_feedback: concept_correct",
+              "visible_chars": 32,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  32
+                ]
+              ],
+              "source_chars": 32,
+              "source_sha256": "b454f2bb817be724e146b4e973147def093a8869d5abbf8b48370cf015d5c34d",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            }
+          ]
+        },
+        {
+          "variant": "legacy",
+          "budget": 1800,
+          "packet_token_estimate": 1006,
+          "packet_scope": {
+            "checkpoint_id": 1,
+            "learner_id": 1,
+            "mode": "checkpoint",
+            "project_id": 1,
+            "session_id": 19
+          },
+          "source_text_component": null,
+          "teaching_controls": {
+            "budget_omitted": 0,
+            "counts": {
+              "expired": 1,
+              "scope_mismatch": 2,
+              "uncertain": 1
+            },
+            "delivered": 0,
+            "diagnostics": [
+              {
+                "parser_version": "teaching-control-parser.v2",
+                "policy_version": "teaching-guidance.v2",
+                "reason": "interrogative_input",
+                "source_event_id": 70,
+                "source_span": [
+                  48,
+                  61
+                ],
+                "status": "uncertain"
+              }
+            ],
+            "omitted": 0,
+            "status": "uncertain"
+          },
+          "independent_excerpt_and_association_errors": [],
+          "saved_checks": {
+            "budget": {
+              "passed": true,
+              "denominator": null
+            },
+            "source_excerpts": {
+              "passed": null,
+              "denominator": 0
+            },
+            "visible_memory_scope": {
+              "passed": null,
+              "denominator": 0
+            },
+            "visible_event_sources": {
+              "passed": null,
+              "denominator": 0
+            }
+          },
+          "probes": [
+            {
+              "probe_index": 1,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            },
+            {
+              "probe_index": 2,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            }
+          ],
+          "visible_excerpts": []
+        },
+        {
+          "variant": "source",
+          "budget": 3200,
+          "packet_token_estimate": 3119,
+          "packet_scope": {
+            "checkpoint_id": 1,
+            "learner_id": 1,
+            "mode": "checkpoint",
+            "project_id": 1,
+            "session_id": 19
+          },
+          "source_text_component": {
+            "enabled": true,
+            "expanded": 3
+          },
+          "teaching_controls": {
+            "budget_omitted": 0,
+            "counts": {
+              "expired": 1,
+              "scope_mismatch": 2,
+              "uncertain": 1
+            },
+            "delivered": 0,
+            "diagnostics": [
+              {
+                "parser_version": "teaching-control-parser.v2",
+                "policy_version": "teaching-guidance.v2",
+                "reason": "interrogative_input",
+                "source_event_id": 70,
+                "source_span": [
+                  48,
+                  61
+                ],
+                "status": "uncertain"
+              }
+            ],
+            "omitted": 0,
+            "status": "uncertain"
+          },
+          "independent_excerpt_and_association_errors": [],
+          "saved_checks": {
+            "budget": {
+              "passed": true,
+              "denominator": null
+            },
+            "source_excerpts": {
+              "passed": true,
+              "denominator": 11
+            },
+            "visible_memory_scope": {
+              "passed": true,
+              "denominator": 11
+            },
+            "visible_event_sources": {
+              "passed": true,
+              "denominator": 11
+            }
+          },
+          "probes": [
+            {
+              "probe_index": 1,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            },
+            {
+              "probe_index": 2,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            }
+          ],
+          "visible_excerpts": [
+            {
+              "path": "items[0]",
+              "id": 4,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "dict",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evid",
+              "visible_chars": 243,
+              "source_kind": "node_text",
+              "source_path": "/text",
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "source_chars": 243,
+              "source_sha256": "85ef49693ddd9d2aaeb4d292c3c6657c131f51ca752965ca611718160e7a53a7",
+              "fallback_reason": "unsupported_source_shape",
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "items[1]",
+              "id": 5,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "list",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_errors: []",
+              "visible_chars": 17,
+              "source_kind": "node_text",
+              "source_path": "/text",
+              "ranges": [
+                [
+                  0,
+                  17
+                ]
+              ],
+              "source_chars": 17,
+              "source_sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae",
+              "fallback_reason": "unsupported_source_shape",
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "items[2]",
+              "id": 201,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 68,
+              "fact_object_value_type": "bool",
+              "fact_object_value": true,
+              "allowed_event_ids": [
+                "68"
+              ],
+              "is_fact": true,
+              "text_head": "exposure_only: true",
+              "visible_chars": 19,
+              "source_kind": "node_text",
+              "source_path": "/text",
+              "ranges": [
+                [
+                  0,
+                  19
+                ]
+              ],
+              "source_chars": 19,
+              "source_sha256": "af3d8185f6ec8a0a60d59ce3f2d2844a8b9131572e1e1d28a37243b379b54c55",
+              "fallback_reason": "unsupported_source_shape",
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "relation_paths[0].source",
+              "id": 5,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "list",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_errors: []",
+              "visible_chars": 17,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  17
+                ]
+              ],
+              "source_chars": 17,
+              "source_sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "relation_paths[0].target",
+              "id": 10,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 5,
+              "fact_object_value_type": "list",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "5"
+              ],
+              "is_fact": true,
+              "text_head": "active_concepts: []",
+              "visible_chars": 19,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  19
+                ]
+              ],
+              "source_chars": 19,
+              "source_sha256": "f1b1e2056160f1ac36f71a3a42ada2e8c67cce64a456ec619ed39e233a42b085",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[0]",
+              "id": 4,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "dict",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evid",
+              "visible_chars": 243,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "source_chars": 243,
+              "source_sha256": "85ef49693ddd9d2aaeb4d292c3c6657c131f51ca752965ca611718160e7a53a7",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[1]",
+              "id": 5,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "list",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_errors: []",
+              "visible_chars": 17,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  17
+                ]
+              ],
+              "source_chars": 17,
+              "source_sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[2]",
+              "id": 6,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "int",
+              "fact_object_value": 1,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "current_attempt: 1",
+              "visible_chars": 18,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  18
+                ]
+              ],
+              "source_chars": 18,
+              "source_sha256": "772c77434860575372fb4c8306a6a32072c0f3680d2ee3bc267d91835c70936d",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[3]",
+              "id": 7,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "none",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "assistance_level: none",
+              "visible_chars": 22,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  22
+                ]
+              ],
+              "source_chars": 22,
+              "source_sha256": "755238e70bf3428bbf41783cdd07e88b4d4fb3b06dbff54c29fd9ea9c6158480",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[4]",
+              "id": 8,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "passed",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "artifact_state: passed",
+              "visible_chars": 22,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  22
+                ]
+              ],
+              "source_chars": 22,
+              "source_sha256": "5bfa437e368d1c76f9b4579dd57fe172b60e326938c62d51ebbd06998b056a07",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[5]",
+              "id": 9,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "concept_correct",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_feedback: concept_correct",
+              "visible_chars": 32,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  32
+                ]
+              ],
+              "source_chars": 32,
+              "source_sha256": "b454f2bb817be724e146b4e973147def093a8869d5abbf8b48370cf015d5c34d",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "clp-008550112f95230b41f3",
+      "pattern": "gap_unresolved",
+      "shard": "education-01",
+      "probes": [
+        {
+          "probe_index": 2,
+          "source_event_id": 6,
+          "event_type": "vnext_teaching_input_received",
+          "expected_full_text": "我当时按这个规则判断：二分命中任意相等元素就能作为最早位置，未找到时固定返回-1。",
+          "term_chars": 41,
+          "event_text_exact": true,
+          "event_text_sha256": "c53bb5ca7ba01228c8fdad86d578e691ac265b2575903253ab7f848f53cc951e",
+          "expected_term_offset_in_event": [
+            0,
+            41
+          ],
+          "target_fact_count": 0,
+          "target_fact_object_values": [],
+          "target_source_node_count": 0,
+          "mutation_ids": [],
+          "directives": [],
+          "mechanism": "no_mutation_from_control_only_input_route",
+          "resolver_source_kind": null,
+          "resolver_fallback_reason": null,
+          "resolver_not_applicable_reason": "No target MemoryNode or MemoryFact exists; resolver receives nodes and cannot route arbitrary Event.payload.text"
+        }
+      ],
+      "conditions": [
+        {
+          "variant": "legacy",
+          "budget": 1800,
+          "packet_token_estimate": 1728,
+          "packet_scope": {
+            "checkpoint_id": 1,
+            "learner_id": 1,
+            "mode": "checkpoint",
+            "project_id": 1,
+            "session_id": 5
+          },
+          "source_text_component": null,
+          "teaching_controls": {
+            "budget_omitted": 0,
+            "counts": {
+              "expired": 2,
+              "scope_mismatch": 1,
+              "uncertain": 1
+            },
+            "delivered": 0,
+            "diagnostics": [
+              {
+                "parser_version": "teaching-control-parser.v2",
+                "policy_version": "teaching-guidance.v2",
+                "reason": "uncertain_expression",
+                "source_event_id": 7,
+                "source_span": [
+                  54,
+                  63
+                ],
+                "status": "uncertain"
+              }
+            ],
+            "omitted": 0,
+            "status": "uncertain"
+          },
+          "independent_excerpt_and_association_errors": [],
+          "saved_checks": {
+            "budget": {
+              "passed": true,
+              "denominator": null
+            },
+            "source_excerpts": {
+              "passed": true,
+              "denominator": 2
+            },
+            "visible_memory_scope": {
+              "passed": true,
+              "denominator": 2
+            },
+            "visible_event_sources": {
+              "passed": true,
+              "denominator": 2
+            }
+          },
+          "probes": [
+            {
+              "probe_index": 2,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            }
+          ],
+          "visible_excerpts": [
+            {
+              "path": "items[0]",
+              "id": 4,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "dict",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evid",
+              "visible_chars": 243,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "source_chars": 243,
+              "source_sha256": "97f534b6a791979421ae5e0c58222ea3b0fd779979e5f122295dabc93f8aa8bb",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "items[1]",
+              "id": 12,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 4,
+              "fact_object_value_type": "str",
+              "fact_object_value": "定位有序事件表的最早匹配位置\n目标没有出现，返回什么？\nl,r=0,len(data[\"values\"])\n# 循环：a[m]<target时l=m+1，否则r=m；返回l。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"kind\": \"lower_bound\",\n  \"target\": 5,\n  \"values\": [\n    1,\n    3,\n    3,\n    8\n  ]\n}",
+              "allowed_event_ids": [
+                "4"
+              ],
+              "is_fact": true,
+              "text_head": "pending_question: 定位有序事件表的最早匹配位置 目标没有出现，返回什么？ l,r=0,len(data",
+              "visible_chars": 195,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  195
+                ]
+              ],
+              "source_chars": 195,
+              "source_sha256": "3fe399743c353c19056d684b144b5002d1763a23f12c9fa426c59f31cb46f171",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            }
+          ]
+        },
+        {
+          "variant": "source",
+          "budget": 3200,
+          "packet_token_estimate": 3125,
+          "packet_scope": {
+            "checkpoint_id": 1,
+            "learner_id": 1,
+            "mode": "checkpoint",
+            "project_id": 1,
+            "session_id": 5
+          },
+          "source_text_component": {
+            "enabled": true,
+            "expanded": 9
+          },
+          "teaching_controls": {
+            "budget_omitted": 0,
+            "counts": {
+              "expired": 2,
+              "scope_mismatch": 1,
+              "uncertain": 1
+            },
+            "delivered": 0,
+            "diagnostics": [
+              {
+                "parser_version": "teaching-control-parser.v2",
+                "policy_version": "teaching-guidance.v2",
+                "reason": "uncertain_expression",
+                "source_event_id": 7,
+                "source_span": [
+                  54,
+                  63
+                ],
+                "status": "uncertain"
+              }
+            ],
+            "omitted": 0,
+            "status": "uncertain"
+          },
+          "independent_excerpt_and_association_errors": [],
+          "saved_checks": {
+            "budget": {
+              "passed": true,
+              "denominator": null
+            },
+            "source_excerpts": {
+              "passed": true,
+              "denominator": 13
+            },
+            "visible_memory_scope": {
+              "passed": true,
+              "denominator": 13
+            },
+            "visible_event_sources": {
+              "passed": true,
+              "denominator": 13
+            }
+          },
+          "probes": [
+            {
+              "probe_index": 2,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            }
+          ],
+          "visible_excerpts": [
+            {
+              "path": "items[0]",
+              "id": 4,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "dict",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evid",
+              "visible_chars": 243,
+              "source_kind": "node_text",
+              "source_path": "/text",
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "source_chars": 243,
+              "source_sha256": "97f534b6a791979421ae5e0c58222ea3b0fd779979e5f122295dabc93f8aa8bb",
+              "fallback_reason": "unsupported_source_shape",
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[0]",
+              "id": 12,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 4,
+              "fact_object_value_type": "str",
+              "fact_object_value": "定位有序事件表的最早匹配位置\n目标没有出现，返回什么？\nl,r=0,len(data[\"values\"])\n# 循环：a[m]<target时l=m+1，否则r=m；返回l。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"kind\": \"lower_bound\",\n  \"target\": 5,\n  \"values\": [\n    1,\n    3,\n    3,\n    8\n  ]\n}",
+              "allowed_event_ids": [
+                "4"
+              ],
+              "is_fact": true,
+              "text_head": "pending_question: 定位有序事件表的最早匹配位置 目标没有出现，返回什么？ l,r=0,len(data",
+              "visible_chars": 195,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  195
+                ]
+              ],
+              "source_chars": 195,
+              "source_sha256": "3fe399743c353c19056d684b144b5002d1763a23f12c9fa426c59f31cb46f171",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[1]",
+              "id": 10,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 4,
+              "fact_object_value_type": "dict",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "4"
+              ],
+              "is_fact": true,
+              "text_head": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evid",
+              "visible_chars": 243,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "source_chars": 243,
+              "source_sha256": "97f534b6a791979421ae5e0c58222ea3b0fd779979e5f122295dabc93f8aa8bb",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[2]",
+              "id": 11,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 4,
+              "fact_object_value_type": "list",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "4"
+              ],
+              "is_fact": true,
+              "text_head": "recent_errors: [2]",
+              "visible_chars": 18,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  18
+                ]
+              ],
+              "source_chars": 18,
+              "source_sha256": "c3043914ccb566ad3d5c21f65dfd5481e0ce184303e500f20a8acd269ba2c38a",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[3]",
+              "id": 13,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 4,
+              "fact_object_value_type": "int",
+              "fact_object_value": 2,
+              "allowed_event_ids": [
+                "4"
+              ],
+              "is_fact": true,
+              "text_head": "current_attempt: 2",
+              "visible_chars": 18,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  18
+                ]
+              ],
+              "source_chars": 18,
+              "source_sha256": "7b0af3d96015b3ecd7a7f7099f65383a7882882861fa4b07eaad2621d1460d47",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[4]",
+              "id": 14,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 4,
+              "fact_object_value_type": "str",
+              "fact_object_value": "none",
+              "allowed_event_ids": [
+                "4"
+              ],
+              "is_fact": true,
+              "text_head": "assistance_level: none",
+              "visible_chars": 22,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  22
+                ]
+              ],
+              "source_chars": 22,
+              "source_sha256": "755238e70bf3428bbf41783cdd07e88b4d4fb3b06dbff54c29fd9ea9c6158480",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[5]",
+              "id": 15,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 4,
+              "fact_object_value_type": "str",
+              "fact_object_value": "failed",
+              "allowed_event_ids": [
+                "4"
+              ],
+              "is_fact": true,
+              "text_head": "artifact_state: failed",
+              "visible_chars": 22,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  22
+                ]
+              ],
+              "source_chars": 22,
+              "source_sha256": "c4dac05a857facbf47e4dc7447806f38191c710506541c55d24d048af5d0c2f3",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[1].observations[0]",
+              "id": 4,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "dict",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evid",
+              "visible_chars": 243,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "source_chars": 243,
+              "source_sha256": "97f534b6a791979421ae5e0c58222ea3b0fd779979e5f122295dabc93f8aa8bb",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[1].observations[1]",
+              "id": 5,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "list",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_errors: []",
+              "visible_chars": 17,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  17
+                ]
+              ],
+              "source_chars": 17,
+              "source_sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[1].observations[2]",
+              "id": 6,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "int",
+              "fact_object_value": 1,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "current_attempt: 1",
+              "visible_chars": 18,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  18
+                ]
+              ],
+              "source_chars": 18,
+              "source_sha256": "772c77434860575372fb4c8306a6a32072c0f3680d2ee3bc267d91835c70936d",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[1].observations[3]",
+              "id": 7,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "none",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "assistance_level: none",
+              "visible_chars": 22,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  22
+                ]
+              ],
+              "source_chars": 22,
+              "source_sha256": "755238e70bf3428bbf41783cdd07e88b4d4fb3b06dbff54c29fd9ea9c6158480",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[1].observations[4]",
+              "id": 8,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "passed",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "artifact_state: passed",
+              "visible_chars": 22,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  22
+                ]
+              ],
+              "source_chars": 22,
+              "source_sha256": "5bfa437e368d1c76f9b4579dd57fe172b60e326938c62d51ebbd06998b056a07",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[1].observations[5]",
+              "id": 9,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "concept_correct",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_feedback: concept_correct",
+              "visible_chars": 32,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  32
+                ]
+              ],
+              "source_chars": 32,
+              "source_sha256": "b454f2bb817be724e146b4e973147def093a8869d5abbf8b48370cf015d5c34d",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            }
+          ]
+        },
+        {
+          "variant": "source",
+          "budget": 1800,
+          "packet_token_estimate": 1745,
+          "packet_scope": {
+            "checkpoint_id": 1,
+            "learner_id": 1,
+            "mode": "checkpoint",
+            "project_id": 1,
+            "session_id": 5
+          },
+          "source_text_component": {
+            "enabled": true,
+            "expanded": 9
+          },
+          "teaching_controls": {
+            "budget_omitted": 0,
+            "counts": {
+              "expired": 2,
+              "scope_mismatch": 1,
+              "uncertain": 1
+            },
+            "delivered": 0,
+            "diagnostics": [
+              {
+                "parser_version": "teaching-control-parser.v2",
+                "policy_version": "teaching-guidance.v2",
+                "reason": "uncertain_expression",
+                "source_event_id": 7,
+                "source_span": [
+                  54,
+                  63
+                ],
+                "status": "uncertain"
+              }
+            ],
+            "omitted": 0,
+            "status": "uncertain"
+          },
+          "independent_excerpt_and_association_errors": [],
+          "saved_checks": {
+            "budget": {
+              "passed": true,
+              "denominator": null
+            },
+            "source_excerpts": {
+              "passed": true,
+              "denominator": 2
+            },
+            "visible_memory_scope": {
+              "passed": true,
+              "denominator": 2
+            },
+            "visible_event_sources": {
+              "passed": true,
+              "denominator": 2
+            }
+          },
+          "probes": [
+            {
+              "probe_index": 2,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            }
+          ],
+          "visible_excerpts": [
+            {
+              "path": "items[0]",
+              "id": 4,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "dict",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evid",
+              "visible_chars": 243,
+              "source_kind": "node_text",
+              "source_path": "/text",
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "source_chars": 243,
+              "source_sha256": "97f534b6a791979421ae5e0c58222ea3b0fd779979e5f122295dabc93f8aa8bb",
+              "fallback_reason": "unsupported_source_shape",
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "items[1]",
+              "id": 5,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "list",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_errors: []",
+              "visible_chars": 17,
+              "source_kind": "node_text",
+              "source_path": "/text",
+              "ranges": [
+                [
+                  0,
+                  17
+                ]
+              ],
+              "source_chars": 17,
+              "source_sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae",
+              "fallback_reason": "unsupported_source_shape",
+              "excerpt_valid": true,
+              "source_association_valid": true
+            }
+          ]
+        },
+        {
+          "variant": "legacy",
+          "budget": 3200,
+          "packet_token_estimate": 3064,
+          "packet_scope": {
+            "checkpoint_id": 1,
+            "learner_id": 1,
+            "mode": "checkpoint",
+            "project_id": 1,
+            "session_id": 5
+          },
+          "source_text_component": null,
+          "teaching_controls": {
+            "budget_omitted": 0,
+            "counts": {
+              "expired": 2,
+              "scope_mismatch": 1,
+              "uncertain": 1
+            },
+            "delivered": 0,
+            "diagnostics": [
+              {
+                "parser_version": "teaching-control-parser.v2",
+                "policy_version": "teaching-guidance.v2",
+                "reason": "uncertain_expression",
+                "source_event_id": 7,
+                "source_span": [
+                  54,
+                  63
+                ],
+                "status": "uncertain"
+              }
+            ],
+            "omitted": 0,
+            "status": "uncertain"
+          },
+          "independent_excerpt_and_association_errors": [],
+          "saved_checks": {
+            "budget": {
+              "passed": true,
+              "denominator": null
+            },
+            "source_excerpts": {
+              "passed": true,
+              "denominator": 13
+            },
+            "visible_memory_scope": {
+              "passed": true,
+              "denominator": 13
+            },
+            "visible_event_sources": {
+              "passed": true,
+              "denominator": 13
+            }
+          },
+          "probes": [
+            {
+              "probe_index": 2,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            }
+          ],
+          "visible_excerpts": [
+            {
+              "path": "items[0]",
+              "id": 4,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "dict",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evid",
+              "visible_chars": 243,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "source_chars": 243,
+              "source_sha256": "97f534b6a791979421ae5e0c58222ea3b0fd779979e5f122295dabc93f8aa8bb",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[0]",
+              "id": 12,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 4,
+              "fact_object_value_type": "str",
+              "fact_object_value": "定位有序事件表的最早匹配位置\n目标没有出现，返回什么？\nl,r=0,len(data[\"values\"])\n# 循环：a[m]<target时l=m+1，否则r=m；返回l。\n\n完整结构化输入（与上述代码/查询共同构成题面）：\n{\n  \"kind\": \"lower_bound\",\n  \"target\": 5,\n  \"values\": [\n    1,\n    3,\n    3,\n    8\n  ]\n}",
+              "allowed_event_ids": [
+                "4"
+              ],
+              "is_fact": true,
+              "text_head": "pending_question: 定位有序事件表的最早匹配位置 目标没有出现，返回什么？ l,r=0,len(data",
+              "visible_chars": 195,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  195
+                ]
+              ],
+              "source_chars": 195,
+              "source_sha256": "3fe399743c353c19056d684b144b5002d1763a23f12c9fa426c59f31cb46f171",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[1]",
+              "id": 10,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 4,
+              "fact_object_value_type": "dict",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "4"
+              ],
+              "is_fact": true,
+              "text_head": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evid",
+              "visible_chars": 243,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "source_chars": 243,
+              "source_sha256": "97f534b6a791979421ae5e0c58222ea3b0fd779979e5f122295dabc93f8aa8bb",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[2]",
+              "id": 11,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 4,
+              "fact_object_value_type": "list",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "4"
+              ],
+              "is_fact": true,
+              "text_head": "recent_errors: [2]",
+              "visible_chars": 18,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  18
+                ]
+              ],
+              "source_chars": 18,
+              "source_sha256": "c3043914ccb566ad3d5c21f65dfd5481e0ce184303e500f20a8acd269ba2c38a",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[3]",
+              "id": 13,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 4,
+              "fact_object_value_type": "int",
+              "fact_object_value": 2,
+              "allowed_event_ids": [
+                "4"
+              ],
+              "is_fact": true,
+              "text_head": "current_attempt: 2",
+              "visible_chars": 18,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  18
+                ]
+              ],
+              "source_chars": 18,
+              "source_sha256": "7b0af3d96015b3ecd7a7f7099f65383a7882882861fa4b07eaad2621d1460d47",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[4]",
+              "id": 14,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 4,
+              "fact_object_value_type": "str",
+              "fact_object_value": "none",
+              "allowed_event_ids": [
+                "4"
+              ],
+              "is_fact": true,
+              "text_head": "assistance_level: none",
+              "visible_chars": 22,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  22
+                ]
+              ],
+              "source_chars": 22,
+              "source_sha256": "755238e70bf3428bbf41783cdd07e88b4d4fb3b06dbff54c29fd9ea9c6158480",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[5]",
+              "id": 15,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 4,
+              "fact_object_value_type": "str",
+              "fact_object_value": "failed",
+              "allowed_event_ids": [
+                "4"
+              ],
+              "is_fact": true,
+              "text_head": "artifact_state: failed",
+              "visible_chars": 22,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  22
+                ]
+              ],
+              "source_chars": 22,
+              "source_sha256": "c4dac05a857facbf47e4dc7447806f38191c710506541c55d24d048af5d0c2f3",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[1].observations[0]",
+              "id": 4,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "dict",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evid",
+              "visible_chars": 243,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "source_chars": 243,
+              "source_sha256": "97f534b6a791979421ae5e0c58222ea3b0fd779979e5f122295dabc93f8aa8bb",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[1].observations[1]",
+              "id": 5,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "list",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_errors: []",
+              "visible_chars": 17,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  17
+                ]
+              ],
+              "source_chars": 17,
+              "source_sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[1].observations[2]",
+              "id": 6,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "int",
+              "fact_object_value": 1,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "current_attempt: 1",
+              "visible_chars": 18,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  18
+                ]
+              ],
+              "source_chars": 18,
+              "source_sha256": "772c77434860575372fb4c8306a6a32072c0f3680d2ee3bc267d91835c70936d",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[1].observations[3]",
+              "id": 7,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "none",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "assistance_level: none",
+              "visible_chars": 22,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  22
+                ]
+              ],
+              "source_chars": 22,
+              "source_sha256": "755238e70bf3428bbf41783cdd07e88b4d4fb3b06dbff54c29fd9ea9c6158480",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[1].observations[4]",
+              "id": 8,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "passed",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "artifact_state: passed",
+              "visible_chars": 22,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  22
+                ]
+              ],
+              "source_chars": 22,
+              "source_sha256": "5bfa437e368d1c76f9b4579dd57fe172b60e326938c62d51ebbd06998b056a07",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[1].observations[5]",
+              "id": 9,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "concept_correct",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_feedback: concept_correct",
+              "visible_chars": 32,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  32
+                ]
+              ],
+              "source_chars": 32,
+              "source_sha256": "b454f2bb817be724e146b4e973147def093a8869d5abbf8b48370cf015d5c34d",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "clp-00eb7c59481d7a20f18e",
+      "pattern": "goal_superseded",
+      "shard": "education-00",
+      "probes": [
+        {
+          "probe_index": 0,
+          "source_event_id": 1,
+          "event_type": "vnext_teaching_input_received",
+          "expected_full_text": "我这个阶段的目标是：先解释高miss率",
+          "term_chars": 19,
+          "event_text_exact": true,
+          "event_text_sha256": "9d91837718e80329064bbcc19f51e9b46dc38d336e896dc33ac837643133f441",
+          "expected_term_offset_in_event": [
+            0,
+            19
+          ],
+          "target_fact_count": 0,
+          "target_fact_object_values": [],
+          "target_source_node_count": 0,
+          "mutation_ids": [
+            1
+          ],
+          "directives": [
+            {
+              "kernel": "value",
+              "slot": "current_priority",
+              "source_span": [
+                0,
+                19
+              ],
+              "source_span_text": "我这个阶段的目标是：先解释高miss率",
+              "scope": {
+                "checkpoint_id": 1,
+                "project_id": 1,
+                "session_id": 1
+              },
+              "expires_at": "2026-03-02T17:00:00+00:00",
+              "status": "active"
+            }
+          ],
+          "mechanism": "control_only_excluded_from_fact_projection",
+          "resolver_source_kind": null,
+          "resolver_fallback_reason": null,
+          "resolver_not_applicable_reason": "No target MemoryNode or MemoryFact exists; resolver receives nodes and cannot route arbitrary Event.payload.text"
+        },
+        {
+          "probe_index": 2,
+          "source_event_id": 4,
+          "event_type": "vnext_teaching_input_received",
+          "expected_full_text": "原先的优先目标先暂停，现在优先：先评估缓存刷新代价",
+          "term_chars": 25,
+          "event_text_exact": true,
+          "event_text_sha256": "7683edad37f36652060840439f6aa59a019d364bd65f95fed283c4436fff78b6",
+          "expected_term_offset_in_event": [
+            0,
+            25
+          ],
+          "target_fact_count": 0,
+          "target_fact_object_values": [],
+          "target_source_node_count": 0,
+          "mutation_ids": [
+            6
+          ],
+          "directives": [
+            {
+              "kernel": "value",
+              "slot": "current_priority",
+              "source_span": [
+                0,
+                10
+              ],
+              "source_span_text": "原先的优先目标先暂停",
+              "scope": {
+                "checkpoint_id": 1,
+                "project_id": 1,
+                "session_id": 3
+              },
+              "expires_at": "2026-03-21T17:00:00+00:00",
+              "status": "superseded"
+            },
+            {
+              "kernel": "value",
+              "slot": "current_priority",
+              "source_span": [
+                11,
+                25
+              ],
+              "source_span_text": "现在优先：先评估缓存刷新代价",
+              "scope": {
+                "checkpoint_id": 1,
+                "project_id": 1,
+                "session_id": 3
+              },
+              "expires_at": "2026-03-21T17:00:00+00:00",
+              "status": "active"
+            }
+          ],
+          "mechanism": "control_only_excluded_from_fact_projection",
+          "resolver_source_kind": null,
+          "resolver_fallback_reason": null,
+          "resolver_not_applicable_reason": "No target MemoryNode or MemoryFact exists; resolver receives nodes and cannot route arbitrary Event.payload.text"
+        }
+      ],
+      "conditions": [
+        {
+          "variant": "legacy",
+          "budget": 1800,
+          "packet_token_estimate": 1777,
+          "packet_scope": {
+            "checkpoint_id": 1,
+            "learner_id": 1,
+            "mode": "checkpoint",
+            "project_id": 1,
+            "session_id": 5
+          },
+          "source_text_component": null,
+          "teaching_controls": {
+            "budget_omitted": 0,
+            "counts": {
+              "expired": 1,
+              "scope_mismatch": 3,
+              "uncertain": 1
+            },
+            "delivered": 0,
+            "diagnostics": [
+              {
+                "parser_version": "teaching-control-parser.v2",
+                "policy_version": "teaching-guidance.v2",
+                "reason": "uncertain_expression",
+                "source_event_id": 5,
+                "source_span": [
+                  49,
+                  58
+                ],
+                "status": "uncertain"
+              }
+            ],
+            "omitted": 0,
+            "status": "uncertain"
+          },
+          "independent_excerpt_and_association_errors": [],
+          "saved_checks": {
+            "budget": {
+              "passed": true,
+              "denominator": null
+            },
+            "source_excerpts": {
+              "passed": true,
+              "denominator": 6
+            },
+            "visible_memory_scope": {
+              "passed": true,
+              "denominator": 6
+            },
+            "visible_event_sources": {
+              "passed": true,
+              "denominator": 6
+            }
+          },
+          "probes": [
+            {
+              "probe_index": 0,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            },
+            {
+              "probe_index": 2,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            }
+          ],
+          "visible_excerpts": [
+            {
+              "path": "learning_episodes[0].observations[0]",
+              "id": 4,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "dict",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evid",
+              "visible_chars": 243,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "source_chars": 243,
+              "source_sha256": "5bcfc9027daf09fc19461134e54d2fd3a0de2cbce925a8db5639cf7e1af079a5",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[1]",
+              "id": 5,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "list",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_errors: []",
+              "visible_chars": 17,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  17
+                ]
+              ],
+              "source_chars": 17,
+              "source_sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[2]",
+              "id": 6,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "int",
+              "fact_object_value": 1,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "current_attempt: 1",
+              "visible_chars": 18,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  18
+                ]
+              ],
+              "source_chars": 18,
+              "source_sha256": "772c77434860575372fb4c8306a6a32072c0f3680d2ee3bc267d91835c70936d",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[3]",
+              "id": 7,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "none",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "assistance_level: none",
+              "visible_chars": 22,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  22
+                ]
+              ],
+              "source_chars": 22,
+              "source_sha256": "755238e70bf3428bbf41783cdd07e88b4d4fb3b06dbff54c29fd9ea9c6158480",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[4]",
+              "id": 8,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "passed",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "artifact_state: passed",
+              "visible_chars": 22,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  22
+                ]
+              ],
+              "source_chars": 22,
+              "source_sha256": "5bfa437e368d1c76f9b4579dd57fe172b60e326938c62d51ebbd06998b056a07",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[5]",
+              "id": 9,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "concept_correct",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_feedback: concept_correct",
+              "visible_chars": 32,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  32
+                ]
+              ],
+              "source_chars": 32,
+              "source_sha256": "b454f2bb817be724e146b4e973147def093a8869d5abbf8b48370cf015d5c34d",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            }
+          ]
+        },
+        {
+          "variant": "source",
+          "budget": 3200,
+          "packet_token_estimate": 3189,
+          "packet_scope": {
+            "checkpoint_id": 1,
+            "learner_id": 1,
+            "mode": "checkpoint",
+            "project_id": 1,
+            "session_id": 5
+          },
+          "source_text_component": {
+            "enabled": true,
+            "expanded": 3
+          },
+          "teaching_controls": {
+            "budget_omitted": 0,
+            "counts": {
+              "expired": 1,
+              "scope_mismatch": 3,
+              "uncertain": 1
+            },
+            "delivered": 0,
+            "diagnostics": [
+              {
+                "parser_version": "teaching-control-parser.v2",
+                "policy_version": "teaching-guidance.v2",
+                "reason": "uncertain_expression",
+                "source_event_id": 5,
+                "source_span": [
+                  49,
+                  58
+                ],
+                "status": "uncertain"
+              }
+            ],
+            "omitted": 0,
+            "status": "uncertain"
+          },
+          "independent_excerpt_and_association_errors": [],
+          "saved_checks": {
+            "budget": {
+              "passed": true,
+              "denominator": null
+            },
+            "source_excerpts": {
+              "passed": true,
+              "denominator": 10
+            },
+            "visible_memory_scope": {
+              "passed": true,
+              "denominator": 10
+            },
+            "visible_event_sources": {
+              "passed": true,
+              "denominator": 10
+            }
+          },
+          "probes": [
+            {
+              "probe_index": 0,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            },
+            {
+              "probe_index": 2,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            }
+          ],
+          "visible_excerpts": [
+            {
+              "path": "items[0]",
+              "id": 4,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "dict",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evid",
+              "visible_chars": 243,
+              "source_kind": "node_text",
+              "source_path": "/text",
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "source_chars": 243,
+              "source_sha256": "5bcfc9027daf09fc19461134e54d2fd3a0de2cbce925a8db5639cf7e1af079a5",
+              "fallback_reason": "unsupported_source_shape",
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "items[1]",
+              "id": 5,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "list",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_errors: []",
+              "visible_chars": 17,
+              "source_kind": "node_text",
+              "source_path": "/text",
+              "ranges": [
+                [
+                  0,
+                  17
+                ]
+              ],
+              "source_chars": 17,
+              "source_sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae",
+              "fallback_reason": "unsupported_source_shape",
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "items[2]",
+              "id": 3,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 2,
+              "fact_object_value_type": "bool",
+              "fact_object_value": true,
+              "allowed_event_ids": [
+                "2"
+              ],
+              "is_fact": true,
+              "text_head": "exposure_only: true",
+              "visible_chars": 19,
+              "source_kind": "node_text",
+              "source_path": "/text",
+              "ranges": [
+                [
+                  0,
+                  19
+                ]
+              ],
+              "source_chars": 19,
+              "source_sha256": "af3d8185f6ec8a0a60d59ce3f2d2844a8b9131572e1e1d28a37243b379b54c55",
+              "fallback_reason": "unsupported_source_shape",
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "items[3]",
+              "id": 2,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 2,
+              "fact_object_value_type": "str",
+              "fact_object_value": "讲义已阅读",
+              "allowed_event_ids": [
+                "2"
+              ],
+              "is_fact": true,
+              "text_head": "last_explanation: 讲义已阅读",
+              "visible_chars": 23,
+              "source_kind": "node_text",
+              "source_path": "/text",
+              "ranges": [
+                [
+                  0,
+                  23
+                ]
+              ],
+              "source_chars": 23,
+              "source_sha256": "2beb0e1a394fadba308473c73d1095e65c242363dcf78ab9e8b34d93e4c7195d",
+              "fallback_reason": "unsupported_source_shape",
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[0]",
+              "id": 4,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "dict",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evid",
+              "visible_chars": 243,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "source_chars": 243,
+              "source_sha256": "5bcfc9027daf09fc19461134e54d2fd3a0de2cbce925a8db5639cf7e1af079a5",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[1]",
+              "id": 5,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "list",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_errors: []",
+              "visible_chars": 17,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  17
+                ]
+              ],
+              "source_chars": 17,
+              "source_sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[2]",
+              "id": 6,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "int",
+              "fact_object_value": 1,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "current_attempt: 1",
+              "visible_chars": 18,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  18
+                ]
+              ],
+              "source_chars": 18,
+              "source_sha256": "772c77434860575372fb4c8306a6a32072c0f3680d2ee3bc267d91835c70936d",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[3]",
+              "id": 7,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "none",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "assistance_level: none",
+              "visible_chars": 22,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  22
+                ]
+              ],
+              "source_chars": 22,
+              "source_sha256": "755238e70bf3428bbf41783cdd07e88b4d4fb3b06dbff54c29fd9ea9c6158480",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[4]",
+              "id": 8,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "passed",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "artifact_state: passed",
+              "visible_chars": 22,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  22
+                ]
+              ],
+              "source_chars": 22,
+              "source_sha256": "5bfa437e368d1c76f9b4579dd57fe172b60e326938c62d51ebbd06998b056a07",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[5]",
+              "id": 9,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "concept_correct",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_feedback: concept_correct",
+              "visible_chars": 32,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  32
+                ]
+              ],
+              "source_chars": 32,
+              "source_sha256": "b454f2bb817be724e146b4e973147def093a8869d5abbf8b48370cf015d5c34d",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            }
+          ]
+        },
+        {
+          "variant": "source",
+          "budget": 1800,
+          "packet_token_estimate": 1746,
+          "packet_scope": {
+            "checkpoint_id": 1,
+            "learner_id": 1,
+            "mode": "checkpoint",
+            "project_id": 1,
+            "session_id": 5
+          },
+          "source_text_component": {
+            "enabled": true,
+            "expanded": 3
+          },
+          "teaching_controls": {
+            "budget_omitted": 0,
+            "counts": {
+              "expired": 1,
+              "scope_mismatch": 3,
+              "uncertain": 1
+            },
+            "delivered": 0,
+            "diagnostics": [
+              {
+                "parser_version": "teaching-control-parser.v2",
+                "policy_version": "teaching-guidance.v2",
+                "reason": "uncertain_expression",
+                "source_event_id": 5,
+                "source_span": [
+                  49,
+                  58
+                ],
+                "status": "uncertain"
+              }
+            ],
+            "omitted": 0,
+            "status": "uncertain"
+          },
+          "independent_excerpt_and_association_errors": [],
+          "saved_checks": {
+            "budget": {
+              "passed": true,
+              "denominator": null
+            },
+            "source_excerpts": {
+              "passed": true,
+              "denominator": 2
+            },
+            "visible_memory_scope": {
+              "passed": true,
+              "denominator": 2
+            },
+            "visible_event_sources": {
+              "passed": true,
+              "denominator": 2
+            }
+          },
+          "probes": [
+            {
+              "probe_index": 0,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            },
+            {
+              "probe_index": 2,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            }
+          ],
+          "visible_excerpts": [
+            {
+              "path": "items[0]",
+              "id": 4,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "dict",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evid",
+              "visible_chars": 243,
+              "source_kind": "node_text",
+              "source_path": "/text",
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "source_chars": 243,
+              "source_sha256": "5bcfc9027daf09fc19461134e54d2fd3a0de2cbce925a8db5639cf7e1af079a5",
+              "fallback_reason": "unsupported_source_shape",
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "items[1]",
+              "id": 5,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "list",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_errors: []",
+              "visible_chars": 17,
+              "source_kind": "node_text",
+              "source_path": "/text",
+              "ranges": [
+                [
+                  0,
+                  17
+                ]
+              ],
+              "source_chars": 17,
+              "source_sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae",
+              "fallback_reason": "unsupported_source_shape",
+              "excerpt_valid": true,
+              "source_association_valid": true
+            }
+          ]
+        },
+        {
+          "variant": "legacy",
+          "budget": 3200,
+          "packet_token_estimate": 3035,
+          "packet_scope": {
+            "checkpoint_id": 1,
+            "learner_id": 1,
+            "mode": "checkpoint",
+            "project_id": 1,
+            "session_id": 5
+          },
+          "source_text_component": null,
+          "teaching_controls": {
+            "budget_omitted": 0,
+            "counts": {
+              "expired": 1,
+              "scope_mismatch": 3,
+              "uncertain": 1
+            },
+            "delivered": 0,
+            "diagnostics": [
+              {
+                "parser_version": "teaching-control-parser.v2",
+                "policy_version": "teaching-guidance.v2",
+                "reason": "uncertain_expression",
+                "source_event_id": 5,
+                "source_span": [
+                  49,
+                  58
+                ],
+                "status": "uncertain"
+              }
+            ],
+            "omitted": 0,
+            "status": "uncertain"
+          },
+          "independent_excerpt_and_association_errors": [],
+          "saved_checks": {
+            "budget": {
+              "passed": true,
+              "denominator": null
+            },
+            "source_excerpts": {
+              "passed": true,
+              "denominator": 10
+            },
+            "visible_memory_scope": {
+              "passed": true,
+              "denominator": 10
+            },
+            "visible_event_sources": {
+              "passed": true,
+              "denominator": 10
+            }
+          },
+          "probes": [
+            {
+              "probe_index": 0,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            },
+            {
+              "probe_index": 2,
+              "target_fact_paths": [],
+              "saved_delivered": false,
+              "saved_valid_expectation": true,
+              "saved_visible_paths": [],
+              "independent_failure_stage": "no_fact_with_target_event_binding_before_literal_term_test"
+            }
+          ],
+          "visible_excerpts": [
+            {
+              "path": "items[0]",
+              "id": 4,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "dict",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evid",
+              "visible_chars": 243,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "source_chars": 243,
+              "source_sha256": "5bcfc9027daf09fc19461134e54d2fd3a0de2cbce925a8db5639cf7e1af079a5",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "items[1]",
+              "id": 5,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "list",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_errors: []",
+              "visible_chars": 17,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  17
+                ]
+              ],
+              "source_chars": 17,
+              "source_sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "items[2]",
+              "id": 3,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 2,
+              "fact_object_value_type": "bool",
+              "fact_object_value": true,
+              "allowed_event_ids": [
+                "2"
+              ],
+              "is_fact": true,
+              "text_head": "exposure_only: true",
+              "visible_chars": 19,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  19
+                ]
+              ],
+              "source_chars": 19,
+              "source_sha256": "af3d8185f6ec8a0a60d59ce3f2d2844a8b9131572e1e1d28a37243b379b54c55",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "items[3]",
+              "id": 2,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 2,
+              "fact_object_value_type": "str",
+              "fact_object_value": "讲义已阅读",
+              "allowed_event_ids": [
+                "2"
+              ],
+              "is_fact": true,
+              "text_head": "last_explanation: 讲义已阅读",
+              "visible_chars": 23,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  23
+                ]
+              ],
+              "source_chars": 23,
+              "source_sha256": "2beb0e1a394fadba308473c73d1095e65c242363dcf78ab9e8b34d93e4c7195d",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[0]",
+              "id": 4,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "dict",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evid",
+              "visible_chars": 243,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "source_chars": 243,
+              "source_sha256": "5bcfc9027daf09fc19461134e54d2fd3a0de2cbce925a8db5639cf7e1af079a5",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[1]",
+              "id": 5,
+              "kernel": "knowledge",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "list",
+              "fact_object_value": null,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_errors: []",
+              "visible_chars": 17,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  17
+                ]
+              ],
+              "source_chars": 17,
+              "source_sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[2]",
+              "id": 6,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "int",
+              "fact_object_value": 1,
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "current_attempt: 1",
+              "visible_chars": 18,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  18
+                ]
+              ],
+              "source_chars": 18,
+              "source_sha256": "772c77434860575372fb4c8306a6a32072c0f3680d2ee3bc267d91835c70936d",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[3]",
+              "id": 7,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "none",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "assistance_level: none",
+              "visible_chars": 22,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  22
+                ]
+              ],
+              "source_chars": 22,
+              "source_sha256": "755238e70bf3428bbf41783cdd07e88b4d4fb3b06dbff54c29fd9ea9c6158480",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[4]",
+              "id": 8,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "passed",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "artifact_state: passed",
+              "visible_chars": 22,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  22
+                ]
+              ],
+              "source_chars": 22,
+              "source_sha256": "5bfa437e368d1c76f9b4579dd57fe172b60e326938c62d51ebbd06998b056a07",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            },
+            {
+              "path": "learning_episodes[0].observations[5]",
+              "id": 9,
+              "kernel": "practice",
+              "node_type": "fact",
+              "fact_event_id": 3,
+              "fact_object_value_type": "str",
+              "fact_object_value": "concept_correct",
+              "allowed_event_ids": [
+                "3"
+              ],
+              "is_fact": true,
+              "text_head": "recent_feedback: concept_correct",
+              "visible_chars": 32,
+              "source_kind": null,
+              "source_path": null,
+              "ranges": [
+                [
+                  0,
+                  32
+                ]
+              ],
+              "source_chars": 32,
+              "source_sha256": "b454f2bb817be724e146b4e973147def093a8869d5abbf8b48370cf015d5c34d",
+              "fallback_reason": null,
+              "excerpt_valid": true,
+              "source_association_valid": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

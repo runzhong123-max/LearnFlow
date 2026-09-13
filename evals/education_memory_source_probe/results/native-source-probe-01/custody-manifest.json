@@ -1,0 +1,18 @@
+{
+  "schema": "learnflow.native-source-probe.custody.v1",
+  "files": {
+    "PROTOCOL.md": "dfc2f817b25ff2849b1df8f0eb32730d5dbed13ac09f0fce384ffa7cf30b4d48",
+    "REPORT.md": "0996a4053f56c6766d8ae1cae2123af75fec0cd9528da887fee578dc7569ae02",
+    "aggregate.json": "e1e0a55a6ba40b1b46182936cc5c4e8d4f2de9449b89258d9c71880b9f2757b0",
+    "artifact-manifest.json": "e36858867fafd999d5a631c90033ddf7f56b2bfeec4674322d17c11a185ac498",
+    "cases.jsonl": "63b3b691ffd3f1855e8e2dc192547f648818530a868c56deb4dd1b13201f4902",
+    "errors.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "execution.log": "8d817a8ea7f7aaf748b41ae43ff86e1bc03820612172e32437a46e37f4dcf4fc",
+    "formation.jsonl.gz": "a9380daa5afda93ceeaa7eebca6b1c898ce699764ea19319e6acd457a94b8beb",
+    "handoff.json": "155dbdeaa41ac47afb41f6e898c2e2ecd410a4318fa9535415108278ab937954",
+    "manifest.json": "1536c41e49d812bba2f00d2fdbd303ce414ce51de477f2c9653874908ff61062",
+    "packets.jsonl.gz": "6cc833a220c4ebceac458d28cad040e8748057dba454c8ee8080f7c33c85d864",
+    "saved-recheck.json": "92246d9f3afdd6a483eebb29fe54d4caa6da10f7e72901a45e5224a42527d9d8",
+    "trials.jsonl": "1071ff2c9d376f9b1e72374c2d4fb03e7e3406032f8ffc7786d65c109d2de999"
+  }
+}

@@ -42,7 +42,7 @@ print(json.dumps({
     'educationPolicies': (CONCEPT_EVIDENCE_POLICY_VERSION, PLANNING_GUIDANCE_POLICY_VERSION),
     'educationContract': registry.EDUCATION_MEMORY_POLICIES,
     'memoryTools': {k: dataclasses.asdict(registry.TOOLS[k]) for k in ('five_kernel_retriever', 'context_packet_assembler', 'learning_task_planner')},
-    'memoryHelpers': {k: importlib.import_module('learnflow_core.' + k).__file__ for k in ('memory_query', 'memory_excerpt', 'memory_paths', 'memory_episode', 'teaching_control_parser', 'planning_guidance')},
+    'memoryHelpers': {k: importlib.import_module('learnflow_core.' + k).__file__ for k in ('memory_query', 'memory_excerpt', 'memory_paths', 'memory_episode', 'teaching_control_parser', 'planning_guidance', 'memory_source', 'memory_candidates')},
 }, ensure_ascii=False))
 '''
 
@@ -66,7 +66,7 @@ def check(web_python: str, desktop_python: str) -> None:
             raise RuntimeError(f'common event contract diverged: {event}')
     if web['apiPaths'] != desktop['apiPaths']:
         raise RuntimeError('API implementations diverged between hosts')
-    for name in ('memory_query', 'memory_excerpt', 'memory_paths', 'memory_episode', 'teaching_control_parser', 'planning_guidance'):
+    for name in ('memory_query', 'memory_excerpt', 'memory_paths', 'memory_episode', 'teaching_control_parser', 'planning_guidance', 'memory_source', 'memory_candidates'):
         expected = (ROOT / 'packages/learning-core/src/learnflow_core' / f'{name}.py').resolve()
         if Path(web['memoryHelpers'][name]).resolve() != expected:
             raise RuntimeError(f'{name} does not resolve to shared source')
@@ -96,7 +96,7 @@ def check(web_python: str, desktop_python: str) -> None:
                 raise RuntimeError(f'duplicated visual implementation: {path}')
     if (ROOT/'apps/desktop/.git').exists():
         raise RuntimeError('nested desktop Git repository is not allowed')
-    print(f'Shared core {web["version"]}: both hosts use the same 6 Python modules, {len(web["apiPaths"])} API modules, 4 TS sources, three agents, five kernels and {len(common_events)} common event contracts.')
+    print(f'Shared core {web["version"]}: both hosts use the same 6 Python modules, {len(web["memoryHelpers"])} memory helpers, {len(web["apiPaths"])} API modules, 4 TS sources, three agents, five kernels and {len(common_events)} common event contracts.')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)

@@ -1,0 +1,245 @@
+{
+  "schema": "learnflow.memory-v4.final-independent-audit.v1",
+  "status": "completed",
+  "created_at_utc": "2026-09-13T03:14:06.977449+00:00",
+  "audit_mode": "read_only_existing_artifacts_no_experiment_rerun",
+  "run_directory": "/tmp/learnflow-memory-upgrade-formal-03",
+  "source_checkout": "/tmp/learnflow-memory-upgrade-20260913",
+  "working_analysis": "/tmp/learnflow-memory-v4-education-working-analysis.json",
+  "suite": {
+    "status_observed": "completed",
+    "jobs": 14,
+    "jobs_exit_zero": 14,
+    "source_drift": [],
+    "model_source_unchanged": true,
+    "aggregate_integrity_verified": true
+  },
+  "matrix_recount": {
+    "method": "Read final education-trials.jsonl.gz and locomo-trials.jsonl.gz; compare unique (case_id,variant,budget) identities to suite-declared Cartesian products; independently count budget failures.",
+    "education": {
+      "conditions": 28512,
+      "cases": 1584,
+      "variant_budget_groups": 18,
+      "missing": 0,
+      "extra": 0,
+      "duplicates": 0,
+      "budget_failures": 0
+    },
+    "locomo": {
+      "conditions": 35748,
+      "cases": 1986,
+      "variant_budget_groups": 18,
+      "missing": 0,
+      "extra": 0,
+      "duplicates": 0,
+      "budget_failures": 0
+    },
+    "total_conditions": 64260
+  },
+  "artifact_hash_verification": {
+    "manifest": "artifact-manifest.json",
+    "algorithm": "sha256",
+    "declared_files_checked": 109,
+    "missing_files": [],
+    "hash_mismatches": []
+  },
+  "source_hash_verification": {
+    "manifest": "suite.json.source_hashes",
+    "algorithm": "sha256",
+    "current_checkout_files_checked": 211,
+    "missing_or_mismatched_files": []
+  },
+  "education_final_vs_working": {
+    "rank_rows_compared": 18,
+    "comparison": "Every field in each final education_priority row, keyed by (variant,budget), compared exactly with the working analysis.",
+    "field_differences": [],
+    "all_groups_admitted": true,
+    "gate_failure_count_sum": 0,
+    "raw_statement_probe_each_group": {
+      "numerator": 0,
+      "denominator": 1152
+    },
+    "related_completed_prior_check": {
+      "formal02_vs_formal03_conditions_compared": 28512,
+      "equal_conditions": 28512,
+      "different_conditions": 0,
+      "excluded_runtime_keys": [
+        "elapsed_ms",
+        "elapsed_seconds",
+        "latency_ms",
+        "wall_clock_ms",
+        "wall_time_seconds"
+      ],
+      "retained": "All other trial fields, audited derived metrics, token/character budgets, planned-duration checks, hashes, component diagnostics and provenance IDs."
+    }
+  },
+  "semantic_execution": {
+    "expected_runtime_identity": "88d0602e36126d904c5d4e15dbca817aee0e282abff8dc22a8d7b994473abe55",
+    "model_id": "thenlper/gte-small",
+    "model_revision": "17e1f347d17fe144873b1201da91788898c639cd",
+    "education": {
+      "all_groups": 18,
+      "hybrid_groups": 10,
+      "hybrid_conditions": 15840,
+      "semantic_used_conditions": 15840,
+      "model_identity_conditions": 15840,
+      "different_identities": [],
+      "zero_execution_groups": 0
+    },
+    "locomo": {
+      "all_groups": 18,
+      "hybrid_groups": 10,
+      "hybrid_conditions": 19860,
+      "semantic_used_conditions": 19860,
+      "model_identity_conditions": 19860,
+      "different_identities": [],
+      "zero_execution_groups": 0
+    },
+    "scope": "Checked final semantic_execution_audit group counts and identities; full education and one completed LoCoMo shard were also independently audited earlier in this task. No additional model inference was performed for this receipt."
+  },
+  "locomo_direct_trial_recomputation": {
+    "included_categories": [
+      1,
+      2,
+      4
+    ],
+    "included_scoring_status": "valid",
+    "questions_per_group": 1438,
+    "groups": 18,
+    "metrics_recomputed": [
+      "full_text_recall",
+      "full_evidence_complete",
+      "source_recall",
+      "evidence_precision",
+      "tokens_estimate"
+    ],
+    "method": "Compute means directly from final compressed trial rows selected by category/status and variant/budget; require exact mean and denominator equality with aggregate.locomo_primary.",
+    "aggregate_mismatches": [],
+    "all_category_status_counts_retained": [
+      {
+        "category": 1,
+        "scoring_status": "valid",
+        "conditions": 5004
+      },
+      {
+        "category": 1,
+        "scoring_status": "invalid_annotation",
+        "conditions": 72
+      },
+      {
+        "category": 2,
+        "scoring_status": "valid",
+        "conditions": 5760
+      },
+      {
+        "category": 2,
+        "scoring_status": "invalid_annotation",
+        "conditions": 18
+      },
+      {
+        "category": 3,
+        "scoring_status": "valid",
+        "conditions": 1602
+      },
+      {
+        "category": 3,
+        "scoring_status": "invalid_annotation",
+        "conditions": 126
+      },
+      {
+        "category": 4,
+        "scoring_status": "valid",
+        "conditions": 15120
+      },
+      {
+        "category": 4,
+        "scoring_status": "invalid_annotation",
+        "conditions": 18
+      },
+      {
+        "category": 5,
+        "scoring_status": "adversarial_no_qa_score",
+        "conditions": 8028
+      }
+    ]
+  },
+  "locomo_budget_reversal": {
+    "rates_are_proportions": true,
+    "observed": [
+      {
+        "budget": 1800,
+        "variant": "legacy",
+        "full_text_recall": 0.4874382610126699,
+        "full_evidence_complete": 0.4513212795549374
+      },
+      {
+        "budget": 1800,
+        "variant": "hybrid",
+        "full_text_recall": 0.461878494546308,
+        "full_evidence_complete": 0.42141863699582754
+      },
+      {
+        "budget": 1800,
+        "variant": "education_full",
+        "full_text_recall": 0.4367882316952663,
+        "full_evidence_complete": 0.40055632823365783
+      },
+      {
+        "budget": 3200,
+        "variant": "legacy",
+        "full_text_recall": 0.5793043927093411,
+        "full_evidence_complete": 0.5312934631432545
+      },
+      {
+        "budget": 3200,
+        "variant": "hybrid",
+        "full_text_recall": 0.5941027839333234,
+        "full_evidence_complete": 0.5424200278164116
+      },
+      {
+        "budget": 3200,
+        "variant": "education_full",
+        "full_text_recall": 0.5793134240118355,
+        "full_evidence_complete": 0.5271210013908206
+      }
+    ],
+    "conclusion": "Hybrid underperforms legacy at budget 1800 and improves modestly at 3200. The combined education_full configuration does not consistently improve LoCoMo: its 3200 recall is effectively unchanged from legacy while complete-evidence rate is lower. Do not claim universal improvement.",
+    "intervals_read_not_recomputed": {
+      "comparison": "legacy-minus-hybrid",
+      "metric": "full_text_recall",
+      "unit": "percentage_points",
+      "clusters": 10,
+      "paired_cases": 1438,
+      "1800_cluster_bootstrap_95_interval": [
+        0.8214903236386932,
+        4.137832944522697
+      ],
+      "3200_cluster_bootstrap_95_interval": [
+        -3.04782532731749,
+        -0.5178353666922539
+      ]
+    }
+  },
+  "budget_definition_verified": {
+    "term": "Context token budget estimated from serialized Unicode character length",
+    "formula": "max(1, ceil(len(json.dumps(budget_body, ensure_ascii=False, sort_keys=True, default=str)) / 3.2))",
+    "implementation": "packages/learning-core/src/learnflow_core/five_kernel_context.py:255-257",
+    "independent_verifier": "evals/education_memory_v2/education_verifier.py:175-192",
+    "not": "Raw-character budget, tokenizer-measured model tokens, or billed tokens"
+  },
+  "report_review": {
+    "path": "docs/research/education-memory-v4-upgrade/build_report.py",
+    "observed_findings": "No numeric mapping or ranking interpretation error found in the reviewed version. Suggested explicit LoCoMo budget-reversal wording and an exact estimated-token formula.",
+    "subsequent_edits": "Parent reports both wording changes are now present; this receipt does not claim a second independent review of those edits or visual QA."
+  },
+  "limitations": [
+    "This receipt records completed checks only; it did not rerun the full experiment, the final report writer, model inference, or broad regression tests.",
+    "LoCoMo scores measure evidence retrieval and completeness on 1438 valid main-category questions, not official answer-generation accuracy or LLM-judge scores. All 1986 questions remain in the trial corpus.",
+    "Education ranking is descriptive within the fixed authored synthetic corpus and its two budgets; it does not establish learning gains, teacher evaluation, unseen-family generalization, or external-system superiority.",
+    "The 24-case native-source mechanism probe is post hoc and remains outside the main ranking.",
+    "Equal candidate sets do not isolate all source-reader effects: text ranking, source metadata, diagnostic overhead and packing can remain coupled.",
+    "Education pooled-probe ratios and family-equal-weight paired intervals are different estimators; LoCoMo intervals are conversation-cluster descriptive intervals, not population claims.",
+    "Concurrent jobs shared hardware; recorded latency was not used for performance or quality ranking.",
+    "No independent visual verification or deployment verification was performed as part of this final artifact audit."
+  ]
+}

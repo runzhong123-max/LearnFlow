@@ -1,0 +1,111 @@
+{
+  "schema": "learnflow-validation-log-index.v1",
+  "files": {
+    "/tmp/learnflow-memory-semantic-clean-desktop-full.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-semantic-clean-desktop-full.log",
+      "sha256": "5dab8a6d5b159817e5504a240cc5b4af5e24433d86c6a785e59c1478416eeb29",
+      "bytes": 1491
+    },
+    "/tmp/learnflow-memory-semantic-clean-web-full.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-semantic-clean-web-full.log",
+      "sha256": "1eb670968afa71dad291ae53f3da069581b76d08ac9f89dbcca5b5313d26e568",
+      "bytes": 1422
+    },
+    "/tmp/learnflow-memory-v4-desktop-build.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-v4-desktop-build.log",
+      "sha256": "5bbda77830f7bdfad262805da02175b34795b36105b1fa695986589c1da8b85d",
+      "bytes": 8243
+    },
+    "/tmp/learnflow-memory-v4-desktop-frontend-tests-final.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-v4-desktop-frontend-tests-final.log",
+      "sha256": "a98e143c9df5543a46dae7a8c87763b0a48069b1a72886a61797f2bc4cf08486",
+      "bytes": 28183
+    },
+    "/tmp/learnflow-memory-v4-desktop-isolated-full.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-v4-desktop-isolated-full.log",
+      "sha256": "db4d68989a40f6b36cb409e7ba8eaf60f60470045319f50e60adfa2c97dd2747",
+      "bytes": 1491
+    },
+    "/tmp/learnflow-memory-v4-desktop-tests-final.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-v4-desktop-tests-final.log",
+      "sha256": "7d516d652087a69f7ede2235f9d9cd37e338d4c5a76cc88de0d17fc7c21c09b3",
+      "bytes": 9042
+    },
+    "/tmp/learnflow-memory-v4-frontend-desktop-auth.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-v4-frontend-desktop-auth.log",
+      "sha256": "c501f963e5a68710655907fcd1cac121567d81c6cf45e0f36be4d67ae7583c99",
+      "bytes": 3174
+    },
+    "/tmp/learnflow-memory-v4-frontend-desktop-conversion.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-v4-frontend-desktop-conversion.log",
+      "sha256": "51fb0b9e125aec87c39318fee5a9fe90fb139162b6fcddb2260723b065c14a5c",
+      "bytes": 957
+    },
+    "/tmp/learnflow-memory-v4-frontend-desktop-formal.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-v4-frontend-desktop-formal.log",
+      "sha256": "63e62642a8805ba78e026fce3e24d66f9cee4c0a42472e5038b08e21c66e1f67",
+      "bytes": 3721
+    },
+    "/tmp/learnflow-memory-v4-frontend-desktop-path.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-v4-frontend-desktop-path.log",
+      "sha256": "1a910b8a31ac3b0dec36c292ef5a1e27291bd19ab4a51ef68309afef4ead6966",
+      "bytes": 2472
+    },
+    "/tmp/learnflow-memory-v4-frontend-desktop-plugins.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-v4-frontend-desktop-plugins.log",
+      "sha256": "0b06f6b0de61364084917d9d2c42a799a5415b70a388fb2b105ff9e48433a692",
+      "bytes": 10271
+    },
+    "/tmp/learnflow-memory-v4-frontend-web-auth-unsandboxed.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-v4-frontend-web-auth-unsandboxed.log",
+      "sha256": "e8357c5ef6da3f5e52e482fe3adc5e6977afa7004ada2cc527763fb0371eda35",
+      "bytes": 3973
+    },
+    "/tmp/learnflow-memory-v4-frontend-web-conversion.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-v4-frontend-web-conversion.log",
+      "sha256": "365c59c35c909da8a80893d52100c41edb89f639d9ac29f839b3857d1c50f4b8",
+      "bytes": 950
+    },
+    "/tmp/learnflow-memory-v4-frontend-web-formal.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-v4-frontend-web-formal.log",
+      "sha256": "15423cb66b7a1e251b198c871dfbd403b53e013312564ec218261481c1e46d56",
+      "bytes": 3495
+    },
+    "/tmp/learnflow-memory-v4-frontend-web-path.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-v4-frontend-web-path.log",
+      "sha256": "accd58baf9641d8db58a688600475a16a5dc9096d59fd3ef7f4e8de8c99cc0ce",
+      "bytes": 4315
+    },
+    "/tmp/learnflow-memory-v4-frontend-web-plugins.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-v4-frontend-web-plugins.log",
+      "sha256": "7e896b44def7be37912fc7f8898df0afc9fda44f29c9458c18d9f0731fdce7d5",
+      "bytes": 12507
+    },
+    "/tmp/learnflow-memory-v4-source-verifier-main.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-v4-source-verifier-main.log",
+      "sha256": "ea166e6d278e5e7d8e412cde07b87817a3db7ca8128a860fea27c73e5be72cb4",
+      "bytes": 1153
+    },
+    "/tmp/learnflow-memory-v4-verifiers-final.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-v4-verifiers-final.log",
+      "sha256": "877bc58e59f66ad91c25a5bfd20a65fec3c47e2a1d0b1227dd683653aa34f5d9",
+      "bytes": 839
+    },
+    "/tmp/learnflow-memory-v4-web-build.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-v4-web-build.log",
+      "sha256": "e411dc3a69670cd18d454d235bc03cf56c10a6abcc00905f8b891846a1f23250",
+      "bytes": 7781
+    },
+    "/tmp/learnflow-memory-v4-web-frontend-tests-final.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-v4-web-frontend-tests-final.log",
+      "sha256": "e7b9803988d41bf4b3985e9001e4a671a5795c5072957e1a2ab239aac2961300",
+      "bytes": 33554
+    },
+    "/tmp/learnflow-memory-v4-web-tests-final.log": {
+      "local_archive": "evals/education_memory_upgrade/runs/validation-20260913/learnflow-memory-v4-web-tests-final.log",
+      "sha256": "49f1de630ff8c2910cb41c37ff05f68c5fba362846b6315f093cc5bc042baa7b",
+      "bytes": 1341
+    }
+  },
+  "publication": "Hashes only; local logs kept in ignored runs/validation-20260913 and not committed."
+}

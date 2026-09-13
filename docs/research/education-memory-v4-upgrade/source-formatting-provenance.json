@@ -1,0 +1,21 @@
+{
+  "schema": "learnflow-publication-source-formatting.v1",
+  "reason": "Final staged git diff --check found one trailing space in the experiment CLI. Removed only that whitespace for publication after the experiment completed. Runtime/scoring/product sources otherwise unchanged.",
+  "file": "evals/education_memory_upgrade/run_suite.py",
+  "changes": [
+    {
+      "line": 169,
+      "before": "            plan['model_audit_error']=f'{type(exc).__name__}: {exc}' ",
+      "after": "            plan['model_audit_error']=f'{type(exc).__name__}: {exc}'"
+    }
+  ],
+  "frozen_sha256": "671ced02d5311987613f8f09b76fe2c1b92a08495caf7f27ff3633e2b8108ffa",
+  "published_sha256": "f67544f524485d3a8fea9b09cb236deff28ce0b1c5f459e9d7ed58053fdc57ce",
+  "python_ast_equal_ignoring_locations": true,
+  "exact_frozen_snapshot": "frozen-source/run_suite.py.gz",
+  "snapshot_gzip_sha256": "c6b61e35ecd3bb8d8d79f28f0869d2e9662083d8012871fc387af1bac0421049",
+  "frozen_source_files": 211,
+  "byte_identical_other_files": 210,
+  "original_experiment_checkout_preserved": "/tmp/learnflow-memory-upgrade-20260913",
+  "replay_note": "For exact byte identity with suite.json, decompress the snapshot into this file in a fresh reproduction checkout. Do not overwrite working changes. Fresh runs of the published CLI use its own newly frozen hash."
+}

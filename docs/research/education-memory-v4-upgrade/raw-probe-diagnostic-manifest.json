@@ -1,0 +1,37 @@
+{
+  "status": "post_hoc_diagnostic_not_new_experiment",
+  "raw_sources": {
+    "/tmp/learnflow-memory-upgrade-formal-03/education-00/raw.jsonl.gz": {
+      "bytes": 7646635,
+      "sha256": "2d615d9c0afb444bc15790091eb05f6502bfbc97261054e39a5514c012564f7b"
+    },
+    "/tmp/learnflow-memory-upgrade-formal-03/education-01/raw.jsonl.gz": {
+      "bytes": 7605024,
+      "sha256": "b736c60effc123eac27855cb8ec7fbce2ad848317a4985ae398c160a8f8f83ba"
+    },
+    "/tmp/learnflow-memory-upgrade-formal-03/education-02/raw.jsonl.gz": {
+      "bytes": 7337178,
+      "sha256": "78c4b84e7dd3c23c7b896c6be188af1f4707590916a61d01de1ccef1f67a9ace"
+    },
+    "/tmp/learnflow-memory-upgrade-formal-03/education-03/raw.jsonl.gz": {
+      "bytes": 7035049,
+      "sha256": "ded165724c09f31d4fbf904e4c1edd317985e460d99aaabd43cf856b75acf271"
+    }
+  },
+  "diagnostic_files": {
+    "/tmp/learnflow-memory-v4-raw-probe-case-diagnostic.json": "66b8d09880a464415bcae5fe7947b0c463660db5e9b8501b25f03a404105adca",
+    "/tmp/learnflow-memory-v4-raw-probe-population-diagnostic.json": "ec64073a1e5572f9db5cf142e0d8e8aefc968308a19f13a6a381e71ed6fa6c46",
+    "/tmp/learnflow-memory-v4-raw-probe-case-extract.json": "725d63aec4aac83536c23b2af424199fc5670ab0be52546700ecb48cad373796"
+  },
+  "source_hashes": {
+    "evals/education_memory_v2/education.py": "03ea3437fca7724b2ea47073a5d92fb57604e1ffe22681d90f391cbd3c2f7b8a",
+    "evals/education_memory_v2/education_verifier.py": "8d1cee5e4f6a176f4548d402e309442d0cedfb73f371797f98f27583f7b13c2a",
+    "packages/learning-core/src/learnflow_core/learning_runtime.py": "b88bb8926af5ab1a0cfbc844d64c6bd4fe33377bf106a8d63d73e1fbbb1f7f3a",
+    "packages/learning-core/src/learnflow_core/memory_graph.py": "b47a405972a6af768a080c6d7eb2759a1efa5ccef6591cc24ec24821324c029b",
+    "packages/learning-core/src/learnflow_core/memory_source.py": "2b5869f665653583bfed8b2961f84d077405b3d861a1962034cdda86dda07c3b"
+  },
+  "selected_conditions_saved_gate_counts": {
+    "passed": 45,
+    "not_applicable_zero_objects": 3
+  }
+}

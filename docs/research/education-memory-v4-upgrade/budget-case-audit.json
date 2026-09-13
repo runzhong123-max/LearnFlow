@@ -1,0 +1,4523 @@
+{
+  "schema": "learnflow.memory-v4-single-budget-case-audit.v1",
+  "recorded_at_utc": "2026-09-13T02:16:05.883350+00:00",
+  "scope": "One selected education case only; frozen packets/plans/checks and source read without rerunning retrieval, changing scoring, or modifying frozen sources.",
+  "status": "single_case_mechanism_audit_full_suite_pending",
+  "formal_suite_status_at_audit": "running",
+  "case_id": "clp-00bd7726be4240adaad9",
+  "family_id": "algorithms_stable_insertion_shifts",
+  "pattern": "scope_invariance",
+  "selection": {
+    "rule": "Lexicographically first case_id across completed Formal03 education shards at budget 1800 where legacy has a practice assessment action, hybrid has none, and compact has one.",
+    "practice_action_allowlist": [
+      "clarify_assistance",
+      "clarify_nonresponse",
+      "diagnose_first_error",
+      "fade_support_then_independent_probe",
+      "independent_variant_or_reasoning_check"
+    ],
+    "matching_cases_found_while_selecting": 846,
+    "selection_count_is_not_a_claim_that_all_matches_share_this_cause": true
+  },
+  "source": {
+    "run_path": "/tmp/learnflow-memory-upgrade-formal-03",
+    "job": "education-02",
+    "raw_path": "/tmp/learnflow-memory-upgrade-formal-03/education-02/raw.jsonl.gz",
+    "raw_sha256": "78c4b84e7dd3c23c7b896c6be188af1f4707590916a61d01de1ccef1f67a9ace",
+    "formation_line": 1296,
+    "source_commit_base": "0d0802f34e1099dfc468a1ca77316c583870440f",
+    "code": [
+      {
+        "path": "/tmp/learnflow-memory-upgrade-20260913/packages/learning-core/src/learnflow_core/five_kernel_context.py",
+        "sha256": "3ba9676e02bc170222f313b5a74b9742add4fac5c261137970b4a464652b5f6e",
+        "matches_frozen_suite": true
+      },
+      {
+        "path": "/tmp/learnflow-memory-upgrade-20260913/packages/learning-core/src/learnflow_core/memory_episode.py",
+        "sha256": "290abfb5687cb0b59bfb798d88cd6f8d610d224d5b433aef7fce913b80dc6554",
+        "matches_frozen_suite": true
+      },
+      {
+        "path": "/tmp/learnflow-memory-upgrade-20260913/packages/learning-core/src/learnflow_core/planning_guidance.py",
+        "sha256": "4c987f0c7e80c55dffac359a286cdd7488fbec42b887a565e6917177e4795601",
+        "matches_frozen_suite": true
+      }
+    ],
+    "working_education_analysis_path": "/tmp/learnflow-memory-v4-education-working-analysis.json",
+    "working_education_analysis_sha256": "c4c8db97fef3c24c71e236b13b48461751e3902f1c8ce0833fe85e7329f6a700"
+  },
+  "assessment_receipt": {
+    "event_id": 3,
+    "event_type": "concept_attempt_evaluated",
+    "source": "assessment",
+    "occurred_at": "2026-03-05 09:00:00",
+    "scope": {
+      "learner_id": 1,
+      "project_id": 1,
+      "checkpoint_id": 1,
+      "session_id": null
+    },
+    "payload_selected": {
+      "attempt_id": 1,
+      "item_id": 1,
+      "correct": true,
+      "passed": null,
+      "assistance_level": "none",
+      "independent": true
+    },
+    "attempt_selected": {
+      "id": 1,
+      "status": "evaluated",
+      "item_type": "concept",
+      "item_id": 1,
+      "attempt_role": "original",
+      "assistance_level": "none",
+      "submitted_at": "2026-03-05 09:00:00",
+      "evaluated_at": "2026-03-05 09:00:00"
+    },
+    "current_input_receipts": [
+      {
+        "id": 4,
+        "occurred_at": "2026-03-23 09:00:00",
+        "client_event_id": "1:current-clp-00bd7726be4240adaad9",
+        "learner_id": 1,
+        "project_id": 1,
+        "checkpoint_id": 1,
+        "session_id": 6
+      }
+    ]
+  },
+  "conditions": [
+    {
+      "variant": "legacy",
+      "budget": 1800,
+      "raw_packet_line": 1302,
+      "raw_checks_line": 1301,
+      "packet_sha256_canonical_json": "abb77ab5385eb32b4169c2a9279fbfd7ef2d580c796bbb797305fdfee709bbf2",
+      "manifest_token_estimate": 1797,
+      "recomputed_token_estimate": 1797,
+      "scope": {
+        "checkpoint_id": 1,
+        "learner_id": 1,
+        "mode": "checkpoint",
+        "project_id": 1,
+        "session_id": 6
+      },
+      "snapshot_id": "b11ce149f9a8a87901bf",
+      "items": [],
+      "learning_episodes": [
+        {
+          "anchor_fact_ids": [
+            4,
+            5
+          ],
+          "attempt_id": 1,
+          "limitations": [
+            "read_only_assessment_episode_not_mastery",
+            "canonical_item_relation_unavailable",
+            "source_session_unavailable"
+          ],
+          "observations": [
+            {
+              "evidence_grade": "verified",
+              "fact_id": 4,
+              "kernel": "knowledge",
+              "source_event_id": 3,
+              "source_mutation_id": 4,
+              "source_text": {
+                "chars": 243,
+                "ranges": [
+                  [
+                    0,
+                    243
+                  ]
+                ],
+                "sha256": "505d91c082dd1364dd2d7f97b4cfd6f2e8405d684abfd82e821cc6f459f8f401"
+              },
+              "text": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evidence_id\": 3, \"mastery_inference\": false, \"policy_version\": \"concept-evidence.v2\", \"question\": \"审核稳定排序的顺序与移动成本\\n稳定插入排序后结果是什么？\\nshifts = 0\\nfor i in range(1,len(items)):\\n current=item…"
+            },
+            {
+              "evidence_grade": "verified",
+              "fact_id": 5,
+              "kernel": "knowledge",
+              "source_event_id": 3,
+              "source_mutation_id": 4,
+              "source_text": {
+                "chars": 17,
+                "ranges": [
+                  [
+                    0,
+                    17
+                  ]
+                ],
+                "sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae"
+              },
+              "text": "recent_errors: []"
+            },
+            {
+              "evidence_grade": "verified",
+              "fact_id": 6,
+              "kernel": "practice",
+              "source_event_id": 3,
+              "source_mutation_id": 5,
+              "source_text": {
+                "chars": 18,
+                "ranges": [
+                  [
+                    0,
+                    18
+                  ]
+                ],
+                "sha256": "772c77434860575372fb4c8306a6a32072c0f3680d2ee3bc267d91835c70936d"
+              },
+              "text": "current_attempt: 1"
+            },
+            {
+              "evidence_grade": "verified",
+              "fact_id": 7,
+              "kernel": "practice",
+              "source_event_id": 3,
+              "source_mutation_id": 5,
+              "source_text": {
+                "chars": 22,
+                "ranges": [
+                  [
+                    0,
+                    22
+                  ]
+                ],
+                "sha256": "755238e70bf3428bbf41783cdd07e88b4d4fb3b06dbff54c29fd9ea9c6158480"
+              },
+              "text": "assistance_level: none"
+            },
+            {
+              "evidence_grade": "verified",
+              "fact_id": 8,
+              "kernel": "practice",
+              "source_event_id": 3,
+              "source_mutation_id": 5,
+              "source_text": {
+                "chars": 22,
+                "ranges": [
+                  [
+                    0,
+                    22
+                  ]
+                ],
+                "sha256": "5bfa437e368d1c76f9b4579dd57fe172b60e326938c62d51ebbd06998b056a07"
+              },
+              "text": "artifact_state: passed"
+            },
+            {
+              "evidence_grade": "verified",
+              "fact_id": 9,
+              "kernel": "practice",
+              "source_event_id": 3,
+              "source_mutation_id": 5,
+              "source_text": {
+                "chars": 32,
+                "ranges": [
+                  [
+                    0,
+                    32
+                  ]
+                ],
+                "sha256": "b454f2bb817be724e146b4e973147def093a8869d5abbf8b48370cf015d5c34d"
+              },
+              "text": "recent_feedback: concept_correct"
+            }
+          ],
+          "occurred_at": "2026-03-05T09:00:00",
+          "outcome": {
+            "assistance_level": "none",
+            "correct": true,
+            "independent": true
+          },
+          "schema_version": "learnflow.learning-episode.v1",
+          "scope": {
+            "checkpoint_id": 1,
+            "learner_id": 1,
+            "project_id": 1,
+            "session_id": null
+          },
+          "source_event_ids": [
+            3
+          ],
+          "source_fact_ids": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "source_mutation_ids": [
+            4,
+            5
+          ],
+          "task": {
+            "attempt_kind": "original",
+            "canonical_item_id": null,
+            "item_id": 1,
+            "item_type": "concept"
+          }
+        }
+      ],
+      "teaching_guidance": [],
+      "adaptation_directives": [],
+      "relation_path_count": 0,
+      "omitted": {
+        "budget_or_rank_filtered": 5,
+        "candidate_channels": 5,
+        "candidate_count": 11,
+        "candidate_limit_per_channel": 240,
+        "candidate_window_may_be_truncated": true,
+        "duplicate_summary_filtered": 0,
+        "graph": {
+          "candidate_edges": 4,
+          "cycles_skipped": 0,
+          "edge_candidate_limit": 768,
+          "filtered_edges": 0,
+          "max_depth_found": 1,
+          "max_frontier": 32,
+          "max_hops": 2,
+          "max_roots": 24,
+          "old_edges_per_anchor_kind": 2,
+          "recent_edges_per_anchor_kind": 6,
+          "second_hop_branches_omitted": 0,
+          "second_hop_branches_per_root": 4,
+          "window_truncated": false
+        },
+        "irrelevant_filtered": 6,
+        "scope_filtered": 0,
+        "selected_count": 0,
+        "sensitive_filtered": 0,
+        "teaching_guidance_budget_filtered": 0,
+        "temporal_candidates": 0,
+        "update_ranking_candidates": 0,
+        "update_ranking_truncated": false
+      },
+      "retrieval_diagnostics": {
+        "channels": {
+          "bm25": {
+            "candidates": 1,
+            "truncated": true
+          },
+          "fuzzy": {
+            "candidates": 2,
+            "truncated": false
+          },
+          "head": {
+            "candidates": 5,
+            "truncated": false
+          },
+          "literal": {
+            "candidates": 1,
+            "truncated": false
+          },
+          "recent": {
+            "candidates": 11,
+            "truncated": false
+          },
+          "scope": {
+            "candidates": 5,
+            "truncated": false
+          }
+        },
+        "components": {
+          "aliases": {
+            "activated": 0,
+            "enabled": true
+          },
+          "bm25": {
+            "documents": 11,
+            "enabled": true,
+            "matched": 1,
+            "selected": 0,
+            "text_limit": 65536,
+            "truncated_documents": 0
+          },
+          "fuzzy": {
+            "activated": 1,
+            "enabled": true
+          },
+          "paths": {
+            "candidate_edges": 4,
+            "eligible_bundles": 4,
+            "enabled": true,
+            "root_limit_omitted": 0,
+            "selected": 0
+          },
+          "summary_boost": {
+            "activated": 0,
+            "enabled": true
+          },
+          "temporal": {
+            "activated": 0,
+            "enabled": true
+          }
+        },
+        "episodes": {
+          "anchors": 5,
+          "anchors_omitted": 0,
+          "budget_omitted": 0,
+          "eligible": 1,
+          "enabled": true,
+          "event_window_truncated": false,
+          "events_scanned": 1,
+          "fact_limit_omitted": 0,
+          "fact_window_truncated": false,
+          "facts_scanned": 6,
+          "limit_omitted": 0,
+          "rejected": {},
+          "selected": 1
+        },
+        "teaching_controls": {
+          "budget_omitted": 0,
+          "counts": {
+            "expired": 1,
+            "scope_mismatch": 1,
+            "uncertain": 1
+          },
+          "delivered": 0,
+          "diagnostics": [
+            {
+              "parser_version": "teaching-control-parser.v2",
+              "policy_version": "teaching-guidance.v2",
+              "reason": "uncertain_expression",
+              "source_event_id": 4,
+              "source_span": [
+                62,
+                71
+              ],
+              "status": "uncertain"
+            }
+          ],
+          "omitted": 0,
+          "status": "uncertain"
+        }
+      },
+      "plan_teaching_decisions": [
+        {
+          "action": "independent_variant_or_reasoning_check",
+          "mastery_inference": false,
+          "policy_version": "learning-plan-guidance.v2",
+          "source_event_ids": [
+            3
+          ],
+          "uncertainties": [
+            "stable_mastery_not_established"
+          ]
+        }
+      ],
+      "relevant_independent_checks": [
+        {
+          "actual": {
+            "recomputed_token_estimate": 1797,
+            "reported_token_estimate": 1797
+          },
+          "expected": {
+            "manifest_matches_recomputation": true,
+            "maximum": 1800
+          },
+          "name": "budget",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Actual Attempt/Event/Mutation/Fact identities, scopes and outcome agree; missing independence remains unknown",
+          "name": "episode_source_chain",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Every decision cites validated delivered guidance or an episode; no mastery inference",
+          "name": "teaching_decision_source_trace",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Declared single-component intervention agrees with actual activation and selected outputs",
+          "name": "component_intervention",
+          "passed": true
+        },
+        {
+          "actual": "6659babb2cb1107f2bf957cb8a8ebbc2105b82bc88a76203f7f2786c58a5d381",
+          "expected": "6659babb2cb1107f2bf957cb8a8ebbc2105b82bc88a76203f7f2786c58a5d381",
+          "name": "current_controls_identical",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "variant": "legacy",
+      "budget": 3200,
+      "raw_packet_line": 1312,
+      "raw_checks_line": 1311,
+      "packet_sha256_canonical_json": "55d3b7512ba4f86878841e701f3f22ef58e624384086643ab97bc8f1c0e85152",
+      "manifest_token_estimate": 3057,
+      "recomputed_token_estimate": 3057,
+      "scope": {
+        "checkpoint_id": 1,
+        "learner_id": 1,
+        "mode": "checkpoint",
+        "project_id": 1,
+        "session_id": 6
+      },
+      "snapshot_id": "fbb2864f16a55c471dd4",
+      "items": [
+        {
+          "id": 4,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evidence_id\": 3, \"mastery_inference\": false, \"policy_version\": \"concept-evidence.v2\", \"question\": \"审核稳定排序的顺序与移动成本\\n稳定插入排序后结果是什么？\\nshifts = 0\\nfor i in range(1,len(items)):\\n current=item…",
+          "evidence_refs": [
+            3
+          ],
+          "detail": {
+            "evidence_grade": "verified",
+            "predicate": "short_term.concept_understanding",
+            "source_event_id": 3,
+            "source_text": {
+              "chars": 243,
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "sha256": "505d91c082dd1364dd2d7f97b4cfd6f2e8405d684abfd82e821cc6f459f8f401"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "exact_subject",
+              "lexical_match",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail",
+              "candidate_pool_bm25",
+              "audited_query_expansion"
+            ],
+            "score": 23.5639
+          }
+        },
+        {
+          "id": 5,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "recent_errors: []",
+          "evidence_refs": [
+            3
+          ],
+          "detail": {
+            "evidence_grade": "verified",
+            "predicate": "short_term.recent_errors",
+            "source_event_id": 3,
+            "source_text": {
+              "chars": 17,
+              "ranges": [
+                [
+                  0,
+                  17
+                ]
+              ],
+              "sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "exact_subject",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail"
+            ],
+            "score": 22.3563
+          }
+        },
+        {
+          "id": 3,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "exposure_only: true",
+          "evidence_refs": [
+            2
+          ],
+          "detail": {
+            "evidence_grade": "exposure_only",
+            "predicate": "short_term.exposure_only",
+            "source_event_id": 2,
+            "source_text": {
+              "chars": 19,
+              "ranges": [
+                [
+                  0,
+                  19
+                ]
+              ],
+              "sha256": "af3d8185f6ec8a0a60d59ce3f2d2844a8b9131572e1e1d28a37243b379b54c55"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "exact_subject",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail"
+            ],
+            "score": 21.8658
+          }
+        },
+        {
+          "id": 2,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "last_explanation: 讲义已阅读",
+          "evidence_refs": [
+            2
+          ],
+          "detail": {
+            "evidence_grade": "exposure_only",
+            "predicate": "short_term.last_explanation",
+            "source_event_id": 2,
+            "source_text": {
+              "chars": 23,
+              "ranges": [
+                [
+                  0,
+                  23
+                ]
+              ],
+              "sha256": "2beb0e1a394fadba308473c73d1095e65c242363dcf78ab9e8b34d93e4c7195d"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "exact_subject",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail"
+            ],
+            "score": 21.8658
+          }
+        }
+      ],
+      "learning_episodes": [
+        {
+          "anchor_fact_ids": [
+            4,
+            5
+          ],
+          "attempt_id": 1,
+          "limitations": [
+            "read_only_assessment_episode_not_mastery",
+            "canonical_item_relation_unavailable",
+            "source_session_unavailable"
+          ],
+          "observations": [
+            {
+              "evidence_grade": "verified",
+              "fact_id": 4,
+              "kernel": "knowledge",
+              "source_event_id": 3,
+              "source_mutation_id": 4,
+              "source_text": {
+                "chars": 243,
+                "ranges": [
+                  [
+                    0,
+                    243
+                  ]
+                ],
+                "sha256": "505d91c082dd1364dd2d7f97b4cfd6f2e8405d684abfd82e821cc6f459f8f401"
+              },
+              "text": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evidence_id\": 3, \"mastery_inference\": false, \"policy_version\": \"concept-evidence.v2\", \"question\": \"审核稳定排序的顺序与移动成本\\n稳定插入排序后结果是什么？\\nshifts = 0\\nfor i in range(1,len(items)):\\n current=item…"
+            },
+            {
+              "evidence_grade": "verified",
+              "fact_id": 5,
+              "kernel": "knowledge",
+              "source_event_id": 3,
+              "source_mutation_id": 4,
+              "source_text": {
+                "chars": 17,
+                "ranges": [
+                  [
+                    0,
+                    17
+                  ]
+                ],
+                "sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae"
+              },
+              "text": "recent_errors: []"
+            },
+            {
+              "evidence_grade": "verified",
+              "fact_id": 6,
+              "kernel": "practice",
+              "source_event_id": 3,
+              "source_mutation_id": 5,
+              "source_text": {
+                "chars": 18,
+                "ranges": [
+                  [
+                    0,
+                    18
+                  ]
+                ],
+                "sha256": "772c77434860575372fb4c8306a6a32072c0f3680d2ee3bc267d91835c70936d"
+              },
+              "text": "current_attempt: 1"
+            },
+            {
+              "evidence_grade": "verified",
+              "fact_id": 7,
+              "kernel": "practice",
+              "source_event_id": 3,
+              "source_mutation_id": 5,
+              "source_text": {
+                "chars": 22,
+                "ranges": [
+                  [
+                    0,
+                    22
+                  ]
+                ],
+                "sha256": "755238e70bf3428bbf41783cdd07e88b4d4fb3b06dbff54c29fd9ea9c6158480"
+              },
+              "text": "assistance_level: none"
+            },
+            {
+              "evidence_grade": "verified",
+              "fact_id": 8,
+              "kernel": "practice",
+              "source_event_id": 3,
+              "source_mutation_id": 5,
+              "source_text": {
+                "chars": 22,
+                "ranges": [
+                  [
+                    0,
+                    22
+                  ]
+                ],
+                "sha256": "5bfa437e368d1c76f9b4579dd57fe172b60e326938c62d51ebbd06998b056a07"
+              },
+              "text": "artifact_state: passed"
+            },
+            {
+              "evidence_grade": "verified",
+              "fact_id": 9,
+              "kernel": "practice",
+              "source_event_id": 3,
+              "source_mutation_id": 5,
+              "source_text": {
+                "chars": 32,
+                "ranges": [
+                  [
+                    0,
+                    32
+                  ]
+                ],
+                "sha256": "b454f2bb817be724e146b4e973147def093a8869d5abbf8b48370cf015d5c34d"
+              },
+              "text": "recent_feedback: concept_correct"
+            }
+          ],
+          "occurred_at": "2026-03-05T09:00:00",
+          "outcome": {
+            "assistance_level": "none",
+            "correct": true,
+            "independent": true
+          },
+          "schema_version": "learnflow.learning-episode.v1",
+          "scope": {
+            "checkpoint_id": 1,
+            "learner_id": 1,
+            "project_id": 1,
+            "session_id": null
+          },
+          "source_event_ids": [
+            3
+          ],
+          "source_fact_ids": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "source_mutation_ids": [
+            4,
+            5
+          ],
+          "task": {
+            "attempt_kind": "original",
+            "canonical_item_id": null,
+            "item_id": 1,
+            "item_type": "concept"
+          }
+        }
+      ],
+      "teaching_guidance": [],
+      "adaptation_directives": [],
+      "relation_path_count": 0,
+      "omitted": {
+        "budget_or_rank_filtered": 1,
+        "candidate_channels": 5,
+        "candidate_count": 11,
+        "candidate_limit_per_channel": 240,
+        "candidate_window_may_be_truncated": true,
+        "duplicate_summary_filtered": 0,
+        "graph": {
+          "candidate_edges": 4,
+          "cycles_skipped": 0,
+          "edge_candidate_limit": 768,
+          "filtered_edges": 0,
+          "max_depth_found": 1,
+          "max_frontier": 32,
+          "max_hops": 2,
+          "max_roots": 24,
+          "old_edges_per_anchor_kind": 2,
+          "recent_edges_per_anchor_kind": 6,
+          "second_hop_branches_omitted": 0,
+          "second_hop_branches_per_root": 4,
+          "window_truncated": false
+        },
+        "irrelevant_filtered": 6,
+        "scope_filtered": 0,
+        "selected_count": 4,
+        "sensitive_filtered": 0,
+        "teaching_guidance_budget_filtered": 0,
+        "temporal_candidates": 0,
+        "update_ranking_candidates": 0,
+        "update_ranking_truncated": false
+      },
+      "retrieval_diagnostics": {
+        "channels": {
+          "bm25": {
+            "candidates": 1,
+            "truncated": true
+          },
+          "fuzzy": {
+            "candidates": 2,
+            "truncated": false
+          },
+          "head": {
+            "candidates": 5,
+            "truncated": false
+          },
+          "literal": {
+            "candidates": 1,
+            "truncated": false
+          },
+          "recent": {
+            "candidates": 11,
+            "truncated": false
+          },
+          "scope": {
+            "candidates": 5,
+            "truncated": false
+          }
+        },
+        "components": {
+          "aliases": {
+            "activated": 0,
+            "enabled": true
+          },
+          "bm25": {
+            "documents": 11,
+            "enabled": true,
+            "matched": 1,
+            "selected": 1,
+            "text_limit": 65536,
+            "truncated_documents": 0
+          },
+          "fuzzy": {
+            "activated": 1,
+            "enabled": true
+          },
+          "paths": {
+            "candidate_edges": 4,
+            "eligible_bundles": 4,
+            "enabled": true,
+            "root_limit_omitted": 0,
+            "selected": 0
+          },
+          "summary_boost": {
+            "activated": 0,
+            "enabled": true
+          },
+          "temporal": {
+            "activated": 0,
+            "enabled": true
+          }
+        },
+        "episodes": {
+          "anchors": 5,
+          "anchors_omitted": 0,
+          "budget_omitted": 0,
+          "eligible": 1,
+          "enabled": true,
+          "event_window_truncated": false,
+          "events_scanned": 1,
+          "fact_limit_omitted": 0,
+          "fact_window_truncated": false,
+          "facts_scanned": 6,
+          "limit_omitted": 0,
+          "rejected": {},
+          "selected": 1
+        },
+        "teaching_controls": {
+          "budget_omitted": 0,
+          "counts": {
+            "expired": 1,
+            "scope_mismatch": 1,
+            "uncertain": 1
+          },
+          "delivered": 0,
+          "diagnostics": [
+            {
+              "parser_version": "teaching-control-parser.v2",
+              "policy_version": "teaching-guidance.v2",
+              "reason": "uncertain_expression",
+              "source_event_id": 4,
+              "source_span": [
+                62,
+                71
+              ],
+              "status": "uncertain"
+            }
+          ],
+          "omitted": 0,
+          "status": "uncertain"
+        }
+      },
+      "plan_teaching_decisions": [
+        {
+          "action": "independent_variant_or_reasoning_check",
+          "mastery_inference": false,
+          "policy_version": "learning-plan-guidance.v2",
+          "source_event_ids": [
+            3
+          ],
+          "uncertainties": [
+            "stable_mastery_not_established"
+          ]
+        }
+      ],
+      "relevant_independent_checks": [
+        {
+          "actual": {
+            "recomputed_token_estimate": 3057,
+            "reported_token_estimate": 3057
+          },
+          "expected": {
+            "manifest_matches_recomputation": true,
+            "maximum": 3200
+          },
+          "name": "budget",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Actual Attempt/Event/Mutation/Fact identities, scopes and outcome agree; missing independence remains unknown",
+          "name": "episode_source_chain",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Every decision cites validated delivered guidance or an episode; no mastery inference",
+          "name": "teaching_decision_source_trace",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Declared single-component intervention agrees with actual activation and selected outputs",
+          "name": "component_intervention",
+          "passed": true
+        },
+        {
+          "actual": "6659babb2cb1107f2bf957cb8a8ebbc2105b82bc88a76203f7f2786c58a5d381",
+          "expected": "6659babb2cb1107f2bf957cb8a8ebbc2105b82bc88a76203f7f2786c58a5d381",
+          "name": "current_controls_identical",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "variant": "hybrid",
+      "budget": 1800,
+      "raw_packet_line": 1316,
+      "raw_checks_line": 1315,
+      "packet_sha256_canonical_json": "80b0d7660189f7a03e91a0639e323b7d3c834b87668126f2e72186a14546cc81",
+      "manifest_token_estimate": 1790,
+      "recomputed_token_estimate": 1790,
+      "scope": {
+        "checkpoint_id": 1,
+        "learner_id": 1,
+        "mode": "checkpoint",
+        "project_id": 1,
+        "session_id": 6
+      },
+      "snapshot_id": "74fe761a4a60b8259d7f",
+      "items": [
+        {
+          "id": 4,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evidence_id\": 3, \"mastery_inference\": false, \"policy_version\": \"concept-evidence.v2\", \"question\": \"审核稳定排序的顺序与移动成本\\n稳定插入排序后结果是什么？\\nshifts = 0\\nfor i in range(1,len(items)):\\n current=item…",
+          "evidence_refs": [
+            3
+          ],
+          "detail": {
+            "evidence_grade": "verified",
+            "predicate": "short_term.concept_understanding",
+            "source_event_id": 3,
+            "source_text": {
+              "chars": 243,
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "sha256": "505d91c082dd1364dd2d7f97b4cfd6f2e8405d684abfd82e821cc6f459f8f401"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "hybrid",
+              "exact_subject",
+              "lexical_match",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail",
+              "audited_query_expansion"
+            ],
+            "score": 27.2363
+          }
+        },
+        {
+          "id": 2,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "last_explanation: 讲义已阅读",
+          "evidence_refs": [
+            2
+          ],
+          "detail": {
+            "evidence_grade": "exposure_only",
+            "predicate": "short_term.last_explanation",
+            "source_event_id": 2,
+            "source_text": {
+              "chars": 23,
+              "ranges": [
+                [
+                  0,
+                  23
+                ]
+              ],
+              "sha256": "2beb0e1a394fadba308473c73d1095e65c242363dcf78ab9e8b34d93e4c7195d"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "hybrid",
+              "exact_subject",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail"
+            ],
+            "score": 26.4113
+          }
+        }
+      ],
+      "learning_episodes": [],
+      "teaching_guidance": [],
+      "adaptation_directives": [],
+      "relation_path_count": 0,
+      "omitted": {
+        "budget_or_rank_filtered": 9,
+        "candidate_channels": 5,
+        "candidate_count": 11,
+        "candidate_limit_per_channel": 240,
+        "candidate_window_may_be_truncated": true,
+        "duplicate_summary_filtered": 0,
+        "graph": {
+          "candidate_edges": 20,
+          "cycles_skipped": 0,
+          "edge_candidate_limit": 768,
+          "filtered_edges": 0,
+          "max_depth_found": 1,
+          "max_frontier": 32,
+          "max_hops": 2,
+          "max_roots": 24,
+          "old_edges_per_anchor_kind": 2,
+          "recent_edges_per_anchor_kind": 6,
+          "second_hop_branches_omitted": 0,
+          "second_hop_branches_per_root": 4,
+          "window_truncated": false
+        },
+        "irrelevant_filtered": 0,
+        "scope_filtered": 0,
+        "selected_count": 2,
+        "sensitive_filtered": 0,
+        "teaching_guidance_budget_filtered": 0,
+        "temporal_candidates": 0,
+        "update_ranking_candidates": 0,
+        "update_ranking_truncated": false
+      },
+      "retrieval_diagnostics": {
+        "channels": {
+          "bm25": {
+            "candidates": 1,
+            "truncated": true
+          },
+          "corpus": {
+            "candidates": 11,
+            "truncated": false
+          },
+          "fuzzy": {
+            "candidates": 2,
+            "truncated": false
+          },
+          "head": {
+            "candidates": 5,
+            "truncated": false
+          },
+          "literal": {
+            "candidates": 1,
+            "truncated": false
+          },
+          "recent": {
+            "candidates": 11,
+            "truncated": false
+          },
+          "scope": {
+            "candidates": 5,
+            "truncated": false
+          }
+        },
+        "components": {
+          "aliases": {
+            "activated": 0,
+            "enabled": true
+          },
+          "bm25": {
+            "documents": 11,
+            "enabled": true,
+            "matched": 1,
+            "selected": 0,
+            "text_limit": 65536,
+            "truncated_documents": 0
+          },
+          "corpus": {
+            "documents": 11,
+            "enabled": true,
+            "matched": 11,
+            "semantic_document_unknown_tokens": 60,
+            "semantic_model": "thenlper/gte-small",
+            "semantic_model_sha256": "88d0602e36126d904c5d4e15dbca817aee0e282abff8dc22a8d7b994473abe55",
+            "semantic_query_unknown_tokens": 32,
+            "semantic_used": true
+          },
+          "fuzzy": {
+            "activated": 1,
+            "enabled": true
+          },
+          "paths": {
+            "candidate_edges": 20,
+            "eligible_bundles": 20,
+            "enabled": true,
+            "root_limit_omitted": 0,
+            "selected": 0
+          },
+          "summary_boost": {
+            "activated": 0,
+            "enabled": true
+          },
+          "temporal": {
+            "activated": 0,
+            "enabled": true
+          }
+        },
+        "episodes": {
+          "anchors": 9,
+          "anchors_omitted": 0,
+          "budget_omitted": 1,
+          "eligible": 1,
+          "enabled": true,
+          "event_window_truncated": false,
+          "events_scanned": 1,
+          "fact_limit_omitted": 0,
+          "fact_window_truncated": false,
+          "facts_scanned": 6,
+          "limit_omitted": 0,
+          "rejected": {},
+          "selected": 0
+        },
+        "teaching_controls": {
+          "budget_omitted": 0,
+          "counts": {
+            "expired": 1,
+            "scope_mismatch": 1,
+            "uncertain": 1
+          },
+          "delivered": 0,
+          "diagnostics": [
+            {
+              "parser_version": "teaching-control-parser.v2",
+              "policy_version": "teaching-guidance.v2",
+              "reason": "uncertain_expression",
+              "source_event_id": 4,
+              "source_span": [
+                62,
+                71
+              ],
+              "status": "uncertain"
+            }
+          ],
+          "omitted": 0,
+          "status": "uncertain"
+        }
+      },
+      "plan_teaching_decisions": [],
+      "relevant_independent_checks": [
+        {
+          "actual": {
+            "recomputed_token_estimate": 1790,
+            "reported_token_estimate": 1790
+          },
+          "expected": {
+            "manifest_matches_recomputation": true,
+            "maximum": 1800
+          },
+          "name": "budget",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 0,
+            "errors": []
+          },
+          "denominator": 0,
+          "expected": "Actual Attempt/Event/Mutation/Fact identities, scopes and outcome agree; missing independence remains unknown",
+          "name": "episode_source_chain",
+          "not_applicable_reason": "No corresponding selected projection",
+          "passed": null
+        },
+        {
+          "actual": {
+            "checked": 0,
+            "errors": []
+          },
+          "denominator": 0,
+          "expected": "Every decision cites validated delivered guidance or an episode; no mastery inference",
+          "name": "teaching_decision_source_trace",
+          "not_applicable_reason": "No corresponding selected projection",
+          "passed": null
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Declared single-component intervention agrees with actual activation and selected outputs",
+          "name": "component_intervention",
+          "passed": true
+        },
+        {
+          "actual": "6659babb2cb1107f2bf957cb8a8ebbc2105b82bc88a76203f7f2786c58a5d381",
+          "expected": "6659babb2cb1107f2bf957cb8a8ebbc2105b82bc88a76203f7f2786c58a5d381",
+          "name": "current_controls_identical",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "variant": "hybrid",
+      "budget": 3200,
+      "raw_packet_line": 1308,
+      "raw_checks_line": 1307,
+      "packet_sha256_canonical_json": "b50b592c38d12b6aecbe2309e64e2accbf7a71f6cbc4301faf609c2ad93c998f",
+      "manifest_token_estimate": 3176,
+      "recomputed_token_estimate": 3176,
+      "scope": {
+        "checkpoint_id": 1,
+        "learner_id": 1,
+        "mode": "checkpoint",
+        "project_id": 1,
+        "session_id": 6
+      },
+      "snapshot_id": "a63a26a6f0ccd222dc5f",
+      "items": [
+        {
+          "id": 4,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evidence_id\": 3, \"mastery_inference\": false, \"policy_version\": \"concept-evidence.v2\", \"question\": \"审核稳定排序的顺序与移动成本\\n稳定插入排序后结果是什么？\\nshifts = 0\\nfor i in range(1,len(items)):\\n current=item…",
+          "evidence_refs": [
+            3
+          ],
+          "detail": {
+            "evidence_grade": "verified",
+            "predicate": "short_term.concept_understanding",
+            "source_event_id": 3,
+            "source_text": {
+              "chars": 243,
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "sha256": "505d91c082dd1364dd2d7f97b4cfd6f2e8405d684abfd82e821cc6f459f8f401"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "hybrid",
+              "exact_subject",
+              "lexical_match",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail",
+              "audited_query_expansion"
+            ],
+            "score": 27.2363
+          }
+        },
+        {
+          "id": 2,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "last_explanation: 讲义已阅读",
+          "evidence_refs": [
+            2
+          ],
+          "detail": {
+            "evidence_grade": "exposure_only",
+            "predicate": "short_term.last_explanation",
+            "source_event_id": 2,
+            "source_text": {
+              "chars": 23,
+              "ranges": [
+                [
+                  0,
+                  23
+                ]
+              ],
+              "sha256": "2beb0e1a394fadba308473c73d1095e65c242363dcf78ab9e8b34d93e4c7195d"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "hybrid",
+              "exact_subject",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail"
+            ],
+            "score": 26.4113
+          }
+        },
+        {
+          "id": 5,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "recent_errors: []",
+          "evidence_refs": [
+            3
+          ],
+          "detail": {
+            "evidence_grade": "verified",
+            "predicate": "short_term.recent_errors",
+            "source_event_id": 3,
+            "source_text": {
+              "chars": 17,
+              "ranges": [
+                [
+                  0,
+                  17
+                ]
+              ],
+              "sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "hybrid",
+              "exact_subject",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail"
+            ],
+            "score": 25.9277
+          }
+        },
+        {
+          "id": 1,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "active_concepts: []",
+          "evidence_refs": [
+            2
+          ],
+          "detail": {
+            "evidence_grade": "exposure_only",
+            "predicate": "short_term.active_concepts",
+            "source_event_id": 2,
+            "source_text": {
+              "chars": 19,
+              "ranges": [
+                [
+                  0,
+                  19
+                ]
+              ],
+              "sha256": "f1b1e2056160f1ac36f71a3a42ada2e8c67cce64a456ec619ed39e233a42b085"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "hybrid",
+              "exact_subject",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail"
+            ],
+            "score": 24.807
+          }
+        }
+      ],
+      "learning_episodes": [
+        {
+          "anchor_fact_ids": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "attempt_id": 1,
+          "limitations": [
+            "read_only_assessment_episode_not_mastery",
+            "canonical_item_relation_unavailable",
+            "source_session_unavailable"
+          ],
+          "observations": [
+            {
+              "evidence_grade": "verified",
+              "fact_id": 4,
+              "kernel": "knowledge",
+              "source_event_id": 3,
+              "source_mutation_id": 4,
+              "source_text": {
+                "chars": 243,
+                "ranges": [
+                  [
+                    0,
+                    243
+                  ]
+                ],
+                "sha256": "505d91c082dd1364dd2d7f97b4cfd6f2e8405d684abfd82e821cc6f459f8f401"
+              },
+              "text": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evidence_id\": 3, \"mastery_inference\": false, \"policy_version\": \"concept-evidence.v2\", \"question\": \"审核稳定排序的顺序与移动成本\\n稳定插入排序后结果是什么？\\nshifts = 0\\nfor i in range(1,len(items)):\\n current=item…"
+            },
+            {
+              "evidence_grade": "verified",
+              "fact_id": 5,
+              "kernel": "knowledge",
+              "source_event_id": 3,
+              "source_mutation_id": 4,
+              "source_text": {
+                "chars": 17,
+                "ranges": [
+                  [
+                    0,
+                    17
+                  ]
+                ],
+                "sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae"
+              },
+              "text": "recent_errors: []"
+            },
+            {
+              "evidence_grade": "verified",
+              "fact_id": 6,
+              "kernel": "practice",
+              "source_event_id": 3,
+              "source_mutation_id": 5,
+              "source_text": {
+                "chars": 18,
+                "ranges": [
+                  [
+                    0,
+                    18
+                  ]
+                ],
+                "sha256": "772c77434860575372fb4c8306a6a32072c0f3680d2ee3bc267d91835c70936d"
+              },
+              "text": "current_attempt: 1"
+            },
+            {
+              "evidence_grade": "verified",
+              "fact_id": 9,
+              "kernel": "practice",
+              "source_event_id": 3,
+              "source_mutation_id": 5,
+              "source_text": {
+                "chars": 32,
+                "ranges": [
+                  [
+                    0,
+                    32
+                  ]
+                ],
+                "sha256": "b454f2bb817be724e146b4e973147def093a8869d5abbf8b48370cf015d5c34d"
+              },
+              "text": "recent_feedback: concept_correct"
+            },
+            {
+              "evidence_grade": "verified",
+              "fact_id": 7,
+              "kernel": "practice",
+              "source_event_id": 3,
+              "source_mutation_id": 5,
+              "source_text": {
+                "chars": 22,
+                "ranges": [
+                  [
+                    0,
+                    22
+                  ]
+                ],
+                "sha256": "755238e70bf3428bbf41783cdd07e88b4d4fb3b06dbff54c29fd9ea9c6158480"
+              },
+              "text": "assistance_level: none"
+            },
+            {
+              "evidence_grade": "verified",
+              "fact_id": 8,
+              "kernel": "practice",
+              "source_event_id": 3,
+              "source_mutation_id": 5,
+              "source_text": {
+                "chars": 22,
+                "ranges": [
+                  [
+                    0,
+                    22
+                  ]
+                ],
+                "sha256": "5bfa437e368d1c76f9b4579dd57fe172b60e326938c62d51ebbd06998b056a07"
+              },
+              "text": "artifact_state: passed"
+            }
+          ],
+          "occurred_at": "2026-03-05T09:00:00",
+          "outcome": {
+            "assistance_level": "none",
+            "correct": true,
+            "independent": true
+          },
+          "schema_version": "learnflow.learning-episode.v1",
+          "scope": {
+            "checkpoint_id": 1,
+            "learner_id": 1,
+            "project_id": 1,
+            "session_id": null
+          },
+          "source_event_ids": [
+            3
+          ],
+          "source_fact_ids": [
+            4,
+            5,
+            6,
+            9,
+            7,
+            8
+          ],
+          "source_mutation_ids": [
+            4,
+            5
+          ],
+          "task": {
+            "attempt_kind": "original",
+            "canonical_item_id": null,
+            "item_id": 1,
+            "item_type": "concept"
+          }
+        }
+      ],
+      "teaching_guidance": [],
+      "adaptation_directives": [],
+      "relation_path_count": 0,
+      "omitted": {
+        "budget_or_rank_filtered": 7,
+        "candidate_channels": 5,
+        "candidate_count": 11,
+        "candidate_limit_per_channel": 240,
+        "candidate_window_may_be_truncated": true,
+        "duplicate_summary_filtered": 0,
+        "graph": {
+          "candidate_edges": 20,
+          "cycles_skipped": 0,
+          "edge_candidate_limit": 768,
+          "filtered_edges": 0,
+          "max_depth_found": 1,
+          "max_frontier": 32,
+          "max_hops": 2,
+          "max_roots": 24,
+          "old_edges_per_anchor_kind": 2,
+          "recent_edges_per_anchor_kind": 6,
+          "second_hop_branches_omitted": 0,
+          "second_hop_branches_per_root": 4,
+          "window_truncated": false
+        },
+        "irrelevant_filtered": 0,
+        "scope_filtered": 0,
+        "selected_count": 4,
+        "sensitive_filtered": 0,
+        "teaching_guidance_budget_filtered": 0,
+        "temporal_candidates": 0,
+        "update_ranking_candidates": 0,
+        "update_ranking_truncated": false
+      },
+      "retrieval_diagnostics": {
+        "channels": {
+          "bm25": {
+            "candidates": 1,
+            "truncated": true
+          },
+          "corpus": {
+            "candidates": 11,
+            "truncated": false
+          },
+          "fuzzy": {
+            "candidates": 2,
+            "truncated": false
+          },
+          "head": {
+            "candidates": 5,
+            "truncated": false
+          },
+          "literal": {
+            "candidates": 1,
+            "truncated": false
+          },
+          "recent": {
+            "candidates": 11,
+            "truncated": false
+          },
+          "scope": {
+            "candidates": 5,
+            "truncated": false
+          }
+        },
+        "components": {
+          "aliases": {
+            "activated": 0,
+            "enabled": true
+          },
+          "bm25": {
+            "documents": 11,
+            "enabled": true,
+            "matched": 1,
+            "selected": 0,
+            "text_limit": 65536,
+            "truncated_documents": 0
+          },
+          "corpus": {
+            "documents": 11,
+            "enabled": true,
+            "matched": 11,
+            "semantic_document_unknown_tokens": 60,
+            "semantic_model": "thenlper/gte-small",
+            "semantic_model_sha256": "88d0602e36126d904c5d4e15dbca817aee0e282abff8dc22a8d7b994473abe55",
+            "semantic_query_unknown_tokens": 32,
+            "semantic_used": true
+          },
+          "fuzzy": {
+            "activated": 1,
+            "enabled": true
+          },
+          "paths": {
+            "candidate_edges": 20,
+            "eligible_bundles": 20,
+            "enabled": true,
+            "root_limit_omitted": 0,
+            "selected": 0
+          },
+          "summary_boost": {
+            "activated": 0,
+            "enabled": true
+          },
+          "temporal": {
+            "activated": 0,
+            "enabled": true
+          }
+        },
+        "episodes": {
+          "anchors": 9,
+          "anchors_omitted": 0,
+          "budget_omitted": 0,
+          "eligible": 1,
+          "enabled": true,
+          "event_window_truncated": false,
+          "events_scanned": 1,
+          "fact_limit_omitted": 0,
+          "fact_window_truncated": false,
+          "facts_scanned": 6,
+          "limit_omitted": 0,
+          "rejected": {},
+          "selected": 1
+        },
+        "teaching_controls": {
+          "budget_omitted": 0,
+          "counts": {
+            "expired": 1,
+            "scope_mismatch": 1,
+            "uncertain": 1
+          },
+          "delivered": 0,
+          "diagnostics": [
+            {
+              "parser_version": "teaching-control-parser.v2",
+              "policy_version": "teaching-guidance.v2",
+              "reason": "uncertain_expression",
+              "source_event_id": 4,
+              "source_span": [
+                62,
+                71
+              ],
+              "status": "uncertain"
+            }
+          ],
+          "omitted": 0,
+          "status": "uncertain"
+        }
+      },
+      "plan_teaching_decisions": [
+        {
+          "action": "independent_variant_or_reasoning_check",
+          "mastery_inference": false,
+          "policy_version": "learning-plan-guidance.v2",
+          "source_event_ids": [
+            3
+          ],
+          "uncertainties": [
+            "stable_mastery_not_established"
+          ]
+        }
+      ],
+      "relevant_independent_checks": [
+        {
+          "actual": {
+            "recomputed_token_estimate": 3176,
+            "reported_token_estimate": 3176
+          },
+          "expected": {
+            "manifest_matches_recomputation": true,
+            "maximum": 3200
+          },
+          "name": "budget",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Actual Attempt/Event/Mutation/Fact identities, scopes and outcome agree; missing independence remains unknown",
+          "name": "episode_source_chain",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Every decision cites validated delivered guidance or an episode; no mastery inference",
+          "name": "teaching_decision_source_trace",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Declared single-component intervention agrees with actual activation and selected outputs",
+          "name": "component_intervention",
+          "passed": true
+        },
+        {
+          "actual": "6659babb2cb1107f2bf957cb8a8ebbc2105b82bc88a76203f7f2786c58a5d381",
+          "expected": "6659babb2cb1107f2bf957cb8a8ebbc2105b82bc88a76203f7f2786c58a5d381",
+          "name": "current_controls_identical",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "variant": "compact",
+      "budget": 1800,
+      "raw_packet_line": 1318,
+      "raw_checks_line": 1317,
+      "packet_sha256_canonical_json": "11444df3c56c4e81fd45d44cb0a1617f77cb31b581df773854f5be729370c3b2",
+      "manifest_token_estimate": 1768,
+      "recomputed_token_estimate": 1768,
+      "scope": {
+        "checkpoint_id": 1,
+        "learner_id": 1,
+        "mode": "checkpoint",
+        "project_id": 1,
+        "session_id": 6
+      },
+      "snapshot_id": "e353c269909baf70a612",
+      "items": [
+        {
+          "id": 4,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evidence_id\": 3, \"mastery_inference\": false, \"policy_version\": \"concept-evidence.v2\", \"question\": \"审核稳定排序的顺序与移动成本\\n稳定插入排序后结果是什么？\\nshifts = 0\\nfor i in range(1,len(items)):\\n current=item…",
+          "evidence_refs": [
+            3
+          ],
+          "detail": {
+            "evidence_grade": "verified",
+            "predicate": "short_term.concept_understanding",
+            "source_event_id": 3,
+            "source_text": {
+              "chars": 243,
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "sha256": "505d91c082dd1364dd2d7f97b4cfd6f2e8405d684abfd82e821cc6f459f8f401"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "exact_subject",
+              "lexical_match",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail",
+              "candidate_pool_bm25",
+              "audited_query_expansion"
+            ],
+            "score": 23.5639
+          }
+        }
+      ],
+      "learning_episodes": [
+        {
+          "anchor_fact_ids": [
+            4,
+            5
+          ],
+          "attempt_id": 1,
+          "limitations": [
+            "read_only_assessment_episode_not_mastery",
+            "canonical_item_relation_unavailable",
+            "source_session_unavailable",
+            "observation_limit_applied",
+            "source_candidate_window_truncated"
+          ],
+          "observations": [
+            {
+              "evidence_grade": "verified",
+              "fact_id": 4,
+              "kernel": "knowledge",
+              "source_event_id": 3,
+              "source_mutation_id": 4,
+              "source_text": {
+                "chars": 243,
+                "ranges": [
+                  [
+                    0,
+                    243
+                  ]
+                ],
+                "sha256": "505d91c082dd1364dd2d7f97b4cfd6f2e8405d684abfd82e821cc6f459f8f401"
+              },
+              "text": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evidence_id\": 3, \"mastery_inference\": false, \"policy_version\": \"concept-evidence.v2\", \"question\": \"审核稳定排序的顺序与移动成本\\n稳定插入排序后结果是什么？\\nshifts = 0\\nfor i in range(1,len(items)):\\n current=item…"
+            }
+          ],
+          "occurred_at": "2026-03-05T09:00:00",
+          "outcome": {
+            "assistance_level": "none",
+            "correct": true,
+            "independent": true
+          },
+          "schema_version": "learnflow.learning-episode.v1",
+          "scope": {
+            "checkpoint_id": 1,
+            "learner_id": 1,
+            "project_id": 1,
+            "session_id": null
+          },
+          "source_event_ids": [
+            3
+          ],
+          "source_fact_ids": [
+            4
+          ],
+          "source_mutation_ids": [
+            4
+          ],
+          "task": {
+            "attempt_kind": "original",
+            "canonical_item_id": null,
+            "item_id": 1,
+            "item_type": "concept"
+          }
+        }
+      ],
+      "teaching_guidance": [],
+      "adaptation_directives": [],
+      "relation_path_count": 0,
+      "omitted": {
+        "budget_or_rank_filtered": 4,
+        "candidate_channels": 5,
+        "candidate_count": 11,
+        "candidate_limit_per_channel": 240,
+        "candidate_window_may_be_truncated": true,
+        "duplicate_summary_filtered": 0,
+        "graph": {
+          "candidate_edges": 4,
+          "cycles_skipped": 0,
+          "edge_candidate_limit": 768,
+          "filtered_edges": 0,
+          "max_depth_found": 1,
+          "max_frontier": 32,
+          "max_hops": 2,
+          "max_roots": 24,
+          "old_edges_per_anchor_kind": 2,
+          "recent_edges_per_anchor_kind": 6,
+          "second_hop_branches_omitted": 0,
+          "second_hop_branches_per_root": 4,
+          "window_truncated": false
+        },
+        "irrelevant_filtered": 6,
+        "scope_filtered": 0,
+        "selected_count": 1,
+        "sensitive_filtered": 0,
+        "teaching_guidance_budget_filtered": 0,
+        "temporal_candidates": 0,
+        "update_ranking_candidates": 0,
+        "update_ranking_truncated": false
+      },
+      "retrieval_diagnostics": {
+        "channels": {
+          "bm25": {
+            "candidates": 1,
+            "truncated": true
+          },
+          "fuzzy": {
+            "candidates": 2,
+            "truncated": false
+          },
+          "head": {
+            "candidates": 5,
+            "truncated": false
+          },
+          "literal": {
+            "candidates": 1,
+            "truncated": false
+          },
+          "recent": {
+            "candidates": 11,
+            "truncated": false
+          },
+          "scope": {
+            "candidates": 5,
+            "truncated": false
+          }
+        },
+        "components": {
+          "aliases": {
+            "activated": 0,
+            "enabled": true
+          },
+          "bm25": {
+            "documents": 11,
+            "enabled": true,
+            "matched": 1,
+            "selected": 1,
+            "text_limit": 65536,
+            "truncated_documents": 0
+          },
+          "fuzzy": {
+            "activated": 1,
+            "enabled": true
+          },
+          "paths": {
+            "candidate_edges": 4,
+            "eligible_bundles": 4,
+            "enabled": true,
+            "root_limit_omitted": 0,
+            "selected": 0
+          },
+          "summary_boost": {
+            "activated": 0,
+            "enabled": true
+          },
+          "temporal": {
+            "activated": 0,
+            "enabled": true
+          }
+        },
+        "episodes": {
+          "anchors": 5,
+          "anchors_omitted": 0,
+          "budget_omitted": 0,
+          "eligible": 1,
+          "enabled": true,
+          "event_window_truncated": false,
+          "events_scanned": 1,
+          "fact_limit_omitted": 1,
+          "fact_window_truncated": true,
+          "facts_scanned": 2,
+          "limit_omitted": 0,
+          "rejected": {},
+          "selected": 1
+        },
+        "teaching_controls": {
+          "budget_omitted": 0,
+          "counts": {
+            "expired": 1,
+            "scope_mismatch": 1,
+            "uncertain": 1
+          },
+          "delivered": 0,
+          "diagnostics": [
+            {
+              "parser_version": "teaching-control-parser.v2",
+              "policy_version": "teaching-guidance.v2",
+              "reason": "uncertain_expression",
+              "source_event_id": 4,
+              "source_span": [
+                62,
+                71
+              ],
+              "status": "uncertain"
+            }
+          ],
+          "omitted": 0,
+          "status": "uncertain"
+        }
+      },
+      "plan_teaching_decisions": [
+        {
+          "action": "independent_variant_or_reasoning_check",
+          "mastery_inference": false,
+          "policy_version": "learning-plan-guidance.v2",
+          "source_event_ids": [
+            3
+          ],
+          "uncertainties": [
+            "stable_mastery_not_established"
+          ]
+        }
+      ],
+      "relevant_independent_checks": [
+        {
+          "actual": {
+            "recomputed_token_estimate": 1768,
+            "reported_token_estimate": 1768
+          },
+          "expected": {
+            "manifest_matches_recomputation": true,
+            "maximum": 1800
+          },
+          "name": "budget",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Actual Attempt/Event/Mutation/Fact identities, scopes and outcome agree; missing independence remains unknown",
+          "name": "episode_source_chain",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Every decision cites validated delivered guidance or an episode; no mastery inference",
+          "name": "teaching_decision_source_trace",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Declared single-component intervention agrees with actual activation and selected outputs",
+          "name": "component_intervention",
+          "passed": true
+        },
+        {
+          "actual": "6659babb2cb1107f2bf957cb8a8ebbc2105b82bc88a76203f7f2786c58a5d381",
+          "expected": "6659babb2cb1107f2bf957cb8a8ebbc2105b82bc88a76203f7f2786c58a5d381",
+          "name": "current_controls_identical",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "variant": "compact",
+      "budget": 3200,
+      "raw_packet_line": 1298,
+      "raw_checks_line": 1297,
+      "packet_sha256_canonical_json": "19a0d547cfd52195d99032e50e65bf278a0270cae51ec4cc0dd574dd8fc91f7c",
+      "manifest_token_estimate": 2929,
+      "recomputed_token_estimate": 2929,
+      "scope": {
+        "checkpoint_id": 1,
+        "learner_id": 1,
+        "mode": "checkpoint",
+        "project_id": 1,
+        "session_id": 6
+      },
+      "snapshot_id": "783e4d6abe5b425db45e",
+      "items": [
+        {
+          "id": 4,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evidence_id\": 3, \"mastery_inference\": false, \"policy_version\": \"concept-evidence.v2\", \"question\": \"审核稳定排序的顺序与移动成本\\n稳定插入排序后结果是什么？\\nshifts = 0\\nfor i in range(1,len(items)):\\n current=item…",
+          "evidence_refs": [
+            3
+          ],
+          "detail": {
+            "evidence_grade": "verified",
+            "predicate": "short_term.concept_understanding",
+            "source_event_id": 3,
+            "source_text": {
+              "chars": 243,
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "sha256": "505d91c082dd1364dd2d7f97b4cfd6f2e8405d684abfd82e821cc6f459f8f401"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "exact_subject",
+              "lexical_match",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail",
+              "candidate_pool_bm25",
+              "audited_query_expansion"
+            ],
+            "score": 23.5639
+          }
+        },
+        {
+          "id": 5,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "recent_errors: []",
+          "evidence_refs": [
+            3
+          ],
+          "detail": {
+            "evidence_grade": "verified",
+            "predicate": "short_term.recent_errors",
+            "source_event_id": 3,
+            "source_text": {
+              "chars": 17,
+              "ranges": [
+                [
+                  0,
+                  17
+                ]
+              ],
+              "sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "exact_subject",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail"
+            ],
+            "score": 22.3563
+          }
+        },
+        {
+          "id": 3,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "exposure_only: true",
+          "evidence_refs": [
+            2
+          ],
+          "detail": {
+            "evidence_grade": "exposure_only",
+            "predicate": "short_term.exposure_only",
+            "source_event_id": 2,
+            "source_text": {
+              "chars": 19,
+              "ranges": [
+                [
+                  0,
+                  19
+                ]
+              ],
+              "sha256": "af3d8185f6ec8a0a60d59ce3f2d2844a8b9131572e1e1d28a37243b379b54c55"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "exact_subject",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail"
+            ],
+            "score": 21.8658
+          }
+        },
+        {
+          "id": 2,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "last_explanation: 讲义已阅读",
+          "evidence_refs": [
+            2
+          ],
+          "detail": {
+            "evidence_grade": "exposure_only",
+            "predicate": "short_term.last_explanation",
+            "source_event_id": 2,
+            "source_text": {
+              "chars": 23,
+              "ranges": [
+                [
+                  0,
+                  23
+                ]
+              ],
+              "sha256": "2beb0e1a394fadba308473c73d1095e65c242363dcf78ab9e8b34d93e4c7195d"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "exact_subject",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail"
+            ],
+            "score": 21.8658
+          }
+        },
+        {
+          "id": 1,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "active_concepts: []",
+          "evidence_refs": [
+            2
+          ],
+          "detail": {
+            "evidence_grade": "exposure_only",
+            "predicate": "short_term.active_concepts",
+            "source_event_id": 2,
+            "source_text": {
+              "chars": 19,
+              "ranges": [
+                [
+                  0,
+                  19
+                ]
+              ],
+              "sha256": "f1b1e2056160f1ac36f71a3a42ada2e8c67cce64a456ec619ed39e233a42b085"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "exact_subject",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail"
+            ],
+            "score": 21.8658
+          }
+        }
+      ],
+      "learning_episodes": [
+        {
+          "anchor_fact_ids": [
+            4,
+            5
+          ],
+          "attempt_id": 1,
+          "limitations": [
+            "read_only_assessment_episode_not_mastery",
+            "canonical_item_relation_unavailable",
+            "source_session_unavailable",
+            "observation_limit_applied",
+            "source_candidate_window_truncated"
+          ],
+          "observations": [
+            {
+              "evidence_grade": "verified",
+              "fact_id": 4,
+              "kernel": "knowledge",
+              "source_event_id": 3,
+              "source_mutation_id": 4,
+              "source_text": {
+                "chars": 243,
+                "ranges": [
+                  [
+                    0,
+                    243
+                  ]
+                ],
+                "sha256": "505d91c082dd1364dd2d7f97b4cfd6f2e8405d684abfd82e821cc6f459f8f401"
+              },
+              "text": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evidence_id\": 3, \"mastery_inference\": false, \"policy_version\": \"concept-evidence.v2\", \"question\": \"审核稳定排序的顺序与移动成本\\n稳定插入排序后结果是什么？\\nshifts = 0\\nfor i in range(1,len(items)):\\n current=item…"
+            }
+          ],
+          "occurred_at": "2026-03-05T09:00:00",
+          "outcome": {
+            "assistance_level": "none",
+            "correct": true,
+            "independent": true
+          },
+          "schema_version": "learnflow.learning-episode.v1",
+          "scope": {
+            "checkpoint_id": 1,
+            "learner_id": 1,
+            "project_id": 1,
+            "session_id": null
+          },
+          "source_event_ids": [
+            3
+          ],
+          "source_fact_ids": [
+            4
+          ],
+          "source_mutation_ids": [
+            4
+          ],
+          "task": {
+            "attempt_kind": "original",
+            "canonical_item_id": null,
+            "item_id": 1,
+            "item_type": "concept"
+          }
+        }
+      ],
+      "teaching_guidance": [],
+      "adaptation_directives": [],
+      "relation_path_count": 0,
+      "omitted": {
+        "budget_or_rank_filtered": 0,
+        "candidate_channels": 5,
+        "candidate_count": 11,
+        "candidate_limit_per_channel": 240,
+        "candidate_window_may_be_truncated": true,
+        "duplicate_summary_filtered": 0,
+        "graph": {
+          "candidate_edges": 4,
+          "cycles_skipped": 0,
+          "edge_candidate_limit": 768,
+          "filtered_edges": 0,
+          "max_depth_found": 1,
+          "max_frontier": 32,
+          "max_hops": 2,
+          "max_roots": 24,
+          "old_edges_per_anchor_kind": 2,
+          "recent_edges_per_anchor_kind": 6,
+          "second_hop_branches_omitted": 0,
+          "second_hop_branches_per_root": 4,
+          "window_truncated": false
+        },
+        "irrelevant_filtered": 6,
+        "scope_filtered": 0,
+        "selected_count": 5,
+        "sensitive_filtered": 0,
+        "teaching_guidance_budget_filtered": 0,
+        "temporal_candidates": 0,
+        "update_ranking_candidates": 0,
+        "update_ranking_truncated": false
+      },
+      "retrieval_diagnostics": {
+        "channels": {
+          "bm25": {
+            "candidates": 1,
+            "truncated": true
+          },
+          "fuzzy": {
+            "candidates": 2,
+            "truncated": false
+          },
+          "head": {
+            "candidates": 5,
+            "truncated": false
+          },
+          "literal": {
+            "candidates": 1,
+            "truncated": false
+          },
+          "recent": {
+            "candidates": 11,
+            "truncated": false
+          },
+          "scope": {
+            "candidates": 5,
+            "truncated": false
+          }
+        },
+        "components": {
+          "aliases": {
+            "activated": 0,
+            "enabled": true
+          },
+          "bm25": {
+            "documents": 11,
+            "enabled": true,
+            "matched": 1,
+            "selected": 1,
+            "text_limit": 65536,
+            "truncated_documents": 0
+          },
+          "fuzzy": {
+            "activated": 1,
+            "enabled": true
+          },
+          "paths": {
+            "candidate_edges": 4,
+            "eligible_bundles": 4,
+            "enabled": true,
+            "root_limit_omitted": 0,
+            "selected": 0
+          },
+          "summary_boost": {
+            "activated": 0,
+            "enabled": true
+          },
+          "temporal": {
+            "activated": 0,
+            "enabled": true
+          }
+        },
+        "episodes": {
+          "anchors": 5,
+          "anchors_omitted": 0,
+          "budget_omitted": 0,
+          "eligible": 1,
+          "enabled": true,
+          "event_window_truncated": false,
+          "events_scanned": 1,
+          "fact_limit_omitted": 1,
+          "fact_window_truncated": true,
+          "facts_scanned": 2,
+          "limit_omitted": 0,
+          "rejected": {},
+          "selected": 1
+        },
+        "teaching_controls": {
+          "budget_omitted": 0,
+          "counts": {
+            "expired": 1,
+            "scope_mismatch": 1,
+            "uncertain": 1
+          },
+          "delivered": 0,
+          "diagnostics": [
+            {
+              "parser_version": "teaching-control-parser.v2",
+              "policy_version": "teaching-guidance.v2",
+              "reason": "uncertain_expression",
+              "source_event_id": 4,
+              "source_span": [
+                62,
+                71
+              ],
+              "status": "uncertain"
+            }
+          ],
+          "omitted": 0,
+          "status": "uncertain"
+        }
+      },
+      "plan_teaching_decisions": [
+        {
+          "action": "independent_variant_or_reasoning_check",
+          "mastery_inference": false,
+          "policy_version": "learning-plan-guidance.v2",
+          "source_event_ids": [
+            3
+          ],
+          "uncertainties": [
+            "stable_mastery_not_established"
+          ]
+        }
+      ],
+      "relevant_independent_checks": [
+        {
+          "actual": {
+            "recomputed_token_estimate": 2929,
+            "reported_token_estimate": 2929
+          },
+          "expected": {
+            "manifest_matches_recomputation": true,
+            "maximum": 3200
+          },
+          "name": "budget",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Actual Attempt/Event/Mutation/Fact identities, scopes and outcome agree; missing independence remains unknown",
+          "name": "episode_source_chain",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Every decision cites validated delivered guidance or an episode; no mastery inference",
+          "name": "teaching_decision_source_trace",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Declared single-component intervention agrees with actual activation and selected outputs",
+          "name": "component_intervention",
+          "passed": true
+        },
+        {
+          "actual": "6659babb2cb1107f2bf957cb8a8ebbc2105b82bc88a76203f7f2786c58a5d381",
+          "expected": "6659babb2cb1107f2bf957cb8a8ebbc2105b82bc88a76203f7f2786c58a5d381",
+          "name": "current_controls_identical",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "variant": "education_full",
+      "budget": 1800,
+      "raw_packet_line": 1304,
+      "raw_checks_line": 1303,
+      "packet_sha256_canonical_json": "5e07352d54db5d11c0a635e251cee2cf25e2d02284d2865f93adcc97acf22df4",
+      "manifest_token_estimate": 1499,
+      "recomputed_token_estimate": 1499,
+      "scope": {
+        "checkpoint_id": 1,
+        "learner_id": 1,
+        "mode": "checkpoint",
+        "project_id": 1,
+        "session_id": 6
+      },
+      "snapshot_id": "02555925e8a0116e36cb",
+      "items": [],
+      "learning_episodes": [
+        {
+          "anchor_fact_ids": [
+            4,
+            5
+          ],
+          "attempt_id": 1,
+          "limitations": [
+            "read_only_assessment_episode_not_mastery",
+            "canonical_item_relation_unavailable",
+            "source_session_unavailable",
+            "observation_limit_applied",
+            "source_candidate_window_truncated"
+          ],
+          "observations": [
+            {
+              "evidence_grade": "verified",
+              "fact_id": 4,
+              "kernel": "knowledge",
+              "source_event_id": 3,
+              "source_mutation_id": 4,
+              "source_text": {
+                "chars": 243,
+                "ranges": [
+                  [
+                    0,
+                    243
+                  ]
+                ],
+                "sha256": "505d91c082dd1364dd2d7f97b4cfd6f2e8405d684abfd82e821cc6f459f8f401"
+              },
+              "text": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evidence_id\": 3, \"mastery_inference\": false, \"policy_version\": \"concept-evidence.v2\", \"question\": \"审核稳定排序的顺序与移动成本\\n稳定插入排序后结果是什么？\\nshifts = 0\\nfor i in range(1,len(items)):\\n current=item…"
+            }
+          ],
+          "occurred_at": "2026-03-05T09:00:00",
+          "outcome": {
+            "assistance_level": "none",
+            "correct": true,
+            "independent": true
+          },
+          "schema_version": "learnflow.learning-episode.v1",
+          "scope": {
+            "checkpoint_id": 1,
+            "learner_id": 1,
+            "project_id": 1,
+            "session_id": null
+          },
+          "source_event_ids": [
+            3
+          ],
+          "source_fact_ids": [
+            4
+          ],
+          "source_mutation_ids": [
+            4
+          ],
+          "task": {
+            "attempt_kind": "original",
+            "canonical_item_id": null,
+            "item_id": 1,
+            "item_type": "concept"
+          }
+        }
+      ],
+      "teaching_guidance": [],
+      "adaptation_directives": [],
+      "relation_path_count": 0,
+      "omitted": {
+        "budget_or_rank_filtered": 11,
+        "candidate_channels": 5,
+        "candidate_count": 11,
+        "candidate_limit_per_channel": 240,
+        "candidate_window_may_be_truncated": true,
+        "duplicate_summary_filtered": 0,
+        "graph": {
+          "candidate_edges": 20,
+          "cycles_skipped": 0,
+          "edge_candidate_limit": 768,
+          "filtered_edges": 0,
+          "max_depth_found": 1,
+          "max_frontier": 32,
+          "max_hops": 2,
+          "max_roots": 24,
+          "old_edges_per_anchor_kind": 2,
+          "recent_edges_per_anchor_kind": 6,
+          "second_hop_branches_omitted": 0,
+          "second_hop_branches_per_root": 4,
+          "window_truncated": false
+        },
+        "irrelevant_filtered": 0,
+        "scope_filtered": 0,
+        "selected_count": 0,
+        "sensitive_filtered": 0,
+        "teaching_guidance_budget_filtered": 0,
+        "temporal_candidates": 0,
+        "update_ranking_candidates": 0,
+        "update_ranking_truncated": false
+      },
+      "retrieval_diagnostics": {
+        "channels": {
+          "bm25": {
+            "candidates": 1,
+            "truncated": true
+          },
+          "corpus": {
+            "candidates": 11,
+            "truncated": false
+          },
+          "fuzzy": {
+            "candidates": 2,
+            "truncated": false
+          },
+          "head": {
+            "candidates": 5,
+            "truncated": false
+          },
+          "literal": {
+            "candidates": 1,
+            "truncated": false
+          },
+          "recent": {
+            "candidates": 11,
+            "truncated": false
+          },
+          "scope": {
+            "candidates": 5,
+            "truncated": false
+          }
+        },
+        "components": {
+          "aliases": {
+            "activated": 0,
+            "enabled": true
+          },
+          "bm25": {
+            "documents": 11,
+            "enabled": true,
+            "matched": 1,
+            "selected": 0,
+            "text_limit": 65536,
+            "truncated_documents": 0
+          },
+          "corpus": {
+            "documents": 11,
+            "enabled": true,
+            "matched": 11,
+            "semantic_document_unknown_tokens": 60,
+            "semantic_model": "thenlper/gte-small",
+            "semantic_model_sha256": "88d0602e36126d904c5d4e15dbca817aee0e282abff8dc22a8d7b994473abe55",
+            "semantic_query_unknown_tokens": 32,
+            "semantic_used": true
+          },
+          "fuzzy": {
+            "activated": 1,
+            "enabled": true
+          },
+          "paths": {
+            "candidate_edges": 20,
+            "eligible_bundles": 20,
+            "enabled": true,
+            "root_limit_omitted": 0,
+            "selected": 0
+          },
+          "source_text": {
+            "enabled": true,
+            "expanded": 3
+          },
+          "summary_boost": {
+            "activated": 0,
+            "enabled": true
+          },
+          "temporal": {
+            "activated": 0,
+            "enabled": true
+          }
+        },
+        "episodes": {
+          "anchors": 9,
+          "anchors_omitted": 0,
+          "budget_omitted": 0,
+          "eligible": 1,
+          "enabled": true,
+          "event_window_truncated": false,
+          "events_scanned": 1,
+          "fact_limit_omitted": 1,
+          "fact_window_truncated": true,
+          "facts_scanned": 2,
+          "limit_omitted": 0,
+          "rejected": {},
+          "selected": 1
+        },
+        "teaching_controls": {
+          "budget_omitted": 0,
+          "counts": {
+            "expired": 1,
+            "scope_mismatch": 1,
+            "uncertain": 1
+          },
+          "delivered": 0,
+          "diagnostics": [
+            {
+              "parser_version": "teaching-control-parser.v2",
+              "policy_version": "teaching-guidance.v2",
+              "reason": "uncertain_expression",
+              "source_event_id": 4,
+              "source_span": [
+                62,
+                71
+              ],
+              "status": "uncertain"
+            }
+          ],
+          "omitted": 0,
+          "status": "uncertain"
+        }
+      },
+      "plan_teaching_decisions": [
+        {
+          "action": "independent_variant_or_reasoning_check",
+          "mastery_inference": false,
+          "policy_version": "learning-plan-guidance.v2",
+          "source_event_ids": [
+            3
+          ],
+          "uncertainties": [
+            "stable_mastery_not_established"
+          ]
+        }
+      ],
+      "relevant_independent_checks": [
+        {
+          "actual": {
+            "recomputed_token_estimate": 1499,
+            "reported_token_estimate": 1499
+          },
+          "expected": {
+            "manifest_matches_recomputation": true,
+            "maximum": 1800
+          },
+          "name": "budget",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Actual Attempt/Event/Mutation/Fact identities, scopes and outcome agree; missing independence remains unknown",
+          "name": "episode_source_chain",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Every decision cites validated delivered guidance or an episode; no mastery inference",
+          "name": "teaching_decision_source_trace",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Declared single-component intervention agrees with actual activation and selected outputs",
+          "name": "component_intervention",
+          "passed": true
+        },
+        {
+          "actual": "6659babb2cb1107f2bf957cb8a8ebbc2105b82bc88a76203f7f2786c58a5d381",
+          "expected": "6659babb2cb1107f2bf957cb8a8ebbc2105b82bc88a76203f7f2786c58a5d381",
+          "name": "current_controls_identical",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "variant": "education_full",
+      "budget": 3200,
+      "raw_packet_line": 1322,
+      "raw_checks_line": 1321,
+      "packet_sha256_canonical_json": "a4c9478ca414755d4b1161c834b1fbd025f22c85920fba67c27861cf188c6e2f",
+      "manifest_token_estimate": 3121,
+      "recomputed_token_estimate": 3121,
+      "scope": {
+        "checkpoint_id": 1,
+        "learner_id": 1,
+        "mode": "checkpoint",
+        "project_id": 1,
+        "session_id": 6
+      },
+      "snapshot_id": "b66ca58f4b1d487cf453",
+      "items": [
+        {
+          "id": 4,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evidence_id\": 3, \"mastery_inference\": false, \"policy_version\": \"concept-evidence.v2\", \"question\": \"审核稳定排序的顺序与移动成本\\n稳定插入排序后结果是什么？\\nshifts = 0\\nfor i in range(1,len(items)):\\n current=item…",
+          "evidence_refs": [
+            3
+          ],
+          "detail": {
+            "evidence_grade": "verified",
+            "predicate": "short_term.concept_understanding",
+            "source_event_id": 3,
+            "source_text": {
+              "chars": 243,
+              "fallback_reason": "unsupported_source_shape",
+              "ranges": [
+                [
+                  0,
+                  243
+                ]
+              ],
+              "sha256": "505d91c082dd1364dd2d7f97b4cfd6f2e8405d684abfd82e821cc6f459f8f401",
+              "source_kind": "node_text",
+              "source_path": "/text"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "hybrid",
+              "exact_subject",
+              "lexical_match",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail",
+              "audited_query_expansion"
+            ],
+            "score": 27.2363
+          }
+        },
+        {
+          "id": 2,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "last_explanation: 讲义已阅读",
+          "evidence_refs": [
+            2
+          ],
+          "detail": {
+            "evidence_grade": "exposure_only",
+            "predicate": "short_term.last_explanation",
+            "source_event_id": 2,
+            "source_text": {
+              "chars": 23,
+              "fallback_reason": "unsupported_source_shape",
+              "ranges": [
+                [
+                  0,
+                  23
+                ]
+              ],
+              "sha256": "2beb0e1a394fadba308473c73d1095e65c242363dcf78ab9e8b34d93e4c7195d",
+              "source_kind": "node_text",
+              "source_path": "/text"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "hybrid",
+              "exact_subject",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail"
+            ],
+            "score": 26.4113
+          }
+        },
+        {
+          "id": 5,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "recent_errors: []",
+          "evidence_refs": [
+            3
+          ],
+          "detail": {
+            "evidence_grade": "verified",
+            "predicate": "short_term.recent_errors",
+            "source_event_id": 3,
+            "source_text": {
+              "chars": 17,
+              "fallback_reason": "unsupported_source_shape",
+              "ranges": [
+                [
+                  0,
+                  17
+                ]
+              ],
+              "sha256": "1b5d895cacb87eaeb7a988422f06319669d04e69c6bd4bbf96727c23a8e773ae",
+              "source_kind": "node_text",
+              "source_path": "/text"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "hybrid",
+              "exact_subject",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail"
+            ],
+            "score": 25.6896
+          }
+        },
+        {
+          "id": 1,
+          "node_type": "fact",
+          "kernel": "knowledge",
+          "text": "active_concepts: []",
+          "evidence_refs": [
+            2
+          ],
+          "detail": {
+            "evidence_grade": "exposure_only",
+            "predicate": "short_term.active_concepts",
+            "source_event_id": 2,
+            "source_text": {
+              "chars": 19,
+              "fallback_reason": "unsupported_source_shape",
+              "ranges": [
+                [
+                  0,
+                  19
+                ]
+              ],
+              "sha256": "f1b1e2056160f1ac36f71a3a42ada2e8c67cce64a456ec619ed39e233a42b085",
+              "source_kind": "node_text",
+              "source_path": "/text"
+            }
+          },
+          "retrieval": {
+            "reasons": [
+              "salience",
+              "hybrid",
+              "exact_subject",
+              "kernel_head_ref",
+              "project_scope",
+              "checkpoint_scope",
+              "original_fact_for_detail"
+            ],
+            "score": 24.4974
+          }
+        }
+      ],
+      "learning_episodes": [
+        {
+          "anchor_fact_ids": [
+            4,
+            5
+          ],
+          "attempt_id": 1,
+          "limitations": [
+            "read_only_assessment_episode_not_mastery",
+            "canonical_item_relation_unavailable",
+            "source_session_unavailable",
+            "observation_limit_applied",
+            "source_candidate_window_truncated"
+          ],
+          "observations": [
+            {
+              "evidence_grade": "verified",
+              "fact_id": 4,
+              "kernel": "knowledge",
+              "source_event_id": 3,
+              "source_mutation_id": 4,
+              "source_text": {
+                "chars": 243,
+                "ranges": [
+                  [
+                    0,
+                    243
+                  ]
+                ],
+                "sha256": "505d91c082dd1364dd2d7f97b4cfd6f2e8405d684abfd82e821cc6f459f8f401"
+              },
+              "text": "concept_understanding: {\"item:1\": {\"checkpoint_id\": 1, \"evidence_id\": 3, \"mastery_inference\": false, \"policy_version\": \"concept-evidence.v2\", \"question\": \"审核稳定排序的顺序与移动成本\\n稳定插入排序后结果是什么？\\nshifts = 0\\nfor i in range(1,len(items)):\\n current=item…"
+            }
+          ],
+          "occurred_at": "2026-03-05T09:00:00",
+          "outcome": {
+            "assistance_level": "none",
+            "correct": true,
+            "independent": true
+          },
+          "schema_version": "learnflow.learning-episode.v1",
+          "scope": {
+            "checkpoint_id": 1,
+            "learner_id": 1,
+            "project_id": 1,
+            "session_id": null
+          },
+          "source_event_ids": [
+            3
+          ],
+          "source_fact_ids": [
+            4
+          ],
+          "source_mutation_ids": [
+            4
+          ],
+          "task": {
+            "attempt_kind": "original",
+            "canonical_item_id": null,
+            "item_id": 1,
+            "item_type": "concept"
+          }
+        }
+      ],
+      "teaching_guidance": [],
+      "adaptation_directives": [],
+      "relation_path_count": 1,
+      "omitted": {
+        "budget_or_rank_filtered": 7,
+        "candidate_channels": 5,
+        "candidate_count": 11,
+        "candidate_limit_per_channel": 240,
+        "candidate_window_may_be_truncated": true,
+        "duplicate_summary_filtered": 0,
+        "graph": {
+          "candidate_edges": 20,
+          "cycles_skipped": 0,
+          "edge_candidate_limit": 768,
+          "filtered_edges": 0,
+          "max_depth_found": 1,
+          "max_frontier": 32,
+          "max_hops": 2,
+          "max_roots": 24,
+          "old_edges_per_anchor_kind": 2,
+          "recent_edges_per_anchor_kind": 6,
+          "second_hop_branches_omitted": 0,
+          "second_hop_branches_per_root": 4,
+          "window_truncated": false
+        },
+        "irrelevant_filtered": 0,
+        "scope_filtered": 0,
+        "selected_count": 4,
+        "sensitive_filtered": 0,
+        "teaching_guidance_budget_filtered": 0,
+        "temporal_candidates": 0,
+        "update_ranking_candidates": 0,
+        "update_ranking_truncated": false
+      },
+      "retrieval_diagnostics": {
+        "channels": {
+          "bm25": {
+            "candidates": 1,
+            "truncated": true
+          },
+          "corpus": {
+            "candidates": 11,
+            "truncated": false
+          },
+          "fuzzy": {
+            "candidates": 2,
+            "truncated": false
+          },
+          "head": {
+            "candidates": 5,
+            "truncated": false
+          },
+          "literal": {
+            "candidates": 1,
+            "truncated": false
+          },
+          "recent": {
+            "candidates": 11,
+            "truncated": false
+          },
+          "scope": {
+            "candidates": 5,
+            "truncated": false
+          }
+        },
+        "components": {
+          "aliases": {
+            "activated": 0,
+            "enabled": true
+          },
+          "bm25": {
+            "documents": 11,
+            "enabled": true,
+            "matched": 1,
+            "selected": 0,
+            "text_limit": 65536,
+            "truncated_documents": 0
+          },
+          "corpus": {
+            "documents": 11,
+            "enabled": true,
+            "matched": 11,
+            "semantic_document_unknown_tokens": 60,
+            "semantic_model": "thenlper/gte-small",
+            "semantic_model_sha256": "88d0602e36126d904c5d4e15dbca817aee0e282abff8dc22a8d7b994473abe55",
+            "semantic_query_unknown_tokens": 32,
+            "semantic_used": true
+          },
+          "fuzzy": {
+            "activated": 1,
+            "enabled": true
+          },
+          "paths": {
+            "candidate_edges": 20,
+            "eligible_bundles": 20,
+            "enabled": true,
+            "root_limit_omitted": 0,
+            "selected": 1
+          },
+          "source_text": {
+            "enabled": true,
+            "expanded": 3
+          },
+          "summary_boost": {
+            "activated": 0,
+            "enabled": true
+          },
+          "temporal": {
+            "activated": 0,
+            "enabled": true
+          }
+        },
+        "episodes": {
+          "anchors": 9,
+          "anchors_omitted": 0,
+          "budget_omitted": 0,
+          "eligible": 1,
+          "enabled": true,
+          "event_window_truncated": false,
+          "events_scanned": 1,
+          "fact_limit_omitted": 1,
+          "fact_window_truncated": true,
+          "facts_scanned": 2,
+          "limit_omitted": 0,
+          "rejected": {},
+          "selected": 1
+        },
+        "teaching_controls": {
+          "budget_omitted": 0,
+          "counts": {
+            "expired": 1,
+            "scope_mismatch": 1,
+            "uncertain": 1
+          },
+          "delivered": 0,
+          "diagnostics": [
+            {
+              "parser_version": "teaching-control-parser.v2",
+              "policy_version": "teaching-guidance.v2",
+              "reason": "uncertain_expression",
+              "source_event_id": 4,
+              "source_span": [
+                62,
+                71
+              ],
+              "status": "uncertain"
+            }
+          ],
+          "omitted": 0,
+          "status": "uncertain"
+        }
+      },
+      "plan_teaching_decisions": [
+        {
+          "action": "independent_variant_or_reasoning_check",
+          "mastery_inference": false,
+          "policy_version": "learning-plan-guidance.v2",
+          "source_event_ids": [
+            3
+          ],
+          "uncertainties": [
+            "stable_mastery_not_established"
+          ]
+        }
+      ],
+      "relevant_independent_checks": [
+        {
+          "actual": {
+            "recomputed_token_estimate": 3121,
+            "reported_token_estimate": 3121
+          },
+          "expected": {
+            "manifest_matches_recomputation": true,
+            "maximum": 3200
+          },
+          "name": "budget",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Actual Attempt/Event/Mutation/Fact identities, scopes and outcome agree; missing independence remains unknown",
+          "name": "episode_source_chain",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Every decision cites validated delivered guidance or an episode; no mastery inference",
+          "name": "teaching_decision_source_trace",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checked": 1,
+            "errors": []
+          },
+          "denominator": 1,
+          "expected": "Declared single-component intervention agrees with actual activation and selected outputs",
+          "name": "component_intervention",
+          "passed": true
+        },
+        {
+          "actual": "6659babb2cb1107f2bf957cb8a8ebbc2105b82bc88a76203f7f2786c58a5d381",
+          "expected": "6659babb2cb1107f2bf957cb8a8ebbc2105b82bc88a76203f7f2786c58a5d381",
+          "name": "current_controls_identical",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "packing_reconstruction_method": {
+    "estimator": "max(1, ceil(len(json.dumps(public_body, ensure_ascii=False, sort_keys=True, default=str)) / 3.2)); character estimate, not tokenizer usage.",
+    "public_body_keys": [
+      "heads",
+      "items",
+      "paths",
+      "personal_concept_graph",
+      "adaptation_directives",
+      "teaching_guidance",
+      "learning_episodes",
+      "retrieval_diagnostics",
+      "component_policy"
+    ],
+    "stage": "five_kernel_context.py:1283 immediately after tentatively appending the first episode, before items/paths and before final episode counters.",
+    "reconstruction": "Remove selected items/paths/episodes from retained packet; reset bm25.selected/paths.selected/episodes.selected and episodes.budget_omitted to their prepacking zero values; remove episodes.limit_omitted added after the loop. Cross-budget retained fixed bodies must be byte-identical after this reconstruction. Use the same variant 3200 retained sole episode as the candidate; collectors do not receive token_budget and report identical applicable candidate counts.",
+    "not_an_observed_intermediate_trace": true,
+    "limitations": "Intermediate stage is reconstructed from saved outputs and code, not directly logged. Exact agreement of reconstructed 1800/3200 bases and actual manifest estimates is verified; no revised performance score is produced."
+  },
+  "reconstructions": [
+    {
+      "variant": "legacy",
+      "kind": "offline_packing_arithmetic_not_new_experiment",
+      "base_reconstructed_identically_from_1800_and_3200": true,
+      "base_chars": 3172,
+      "base_estimate": 992,
+      "component_chars": {
+        "heads": 818,
+        "items": 2,
+        "paths": 2,
+        "personal_concept_graph": 501,
+        "adaptation_directives": 2,
+        "teaching_guidance": 2,
+        "learning_episodes": 2,
+        "retrieval_diagnostics": 1379,
+        "component_policy": 281
+      },
+      "diagnostic_part_chars": {
+        "channels": 289,
+        "components": 422,
+        "episodes": 251,
+        "teaching_controls": 350
+      },
+      "episode_from_retained_3200_packet_line": 1312,
+      "episode_source_event_ids": [
+        3
+      ],
+      "episode_source_fact_ids": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "episode_anchor_fact_ids": [
+        4,
+        5
+      ],
+      "episode_observation_count": 6,
+      "episode_chars": 2556,
+      "candidate_chars_before_final_counters": 5728,
+      "candidate_estimate_before_final_counters": 1790,
+      "admission_fits_1800": true,
+      "candidate_estimate_with_final_episode_counters_and_no_items": 1797,
+      "admission_body": {
+        "heads": {
+          "human": {
+            "alert_refs": [],
+            "facets": {},
+            "focus_refs": [],
+            "stable_refs": [],
+            "summary": "",
+            "version": 1,
+            "working_refs": []
+          },
+          "knowledge": {
+            "alert_refs": [
+              5
+            ],
+            "facets": {
+              "confidence": 1.0,
+              "states": {
+                "active_memory_kinds": [
+                  "gap",
+                  "understanding",
+                  "observation"
+                ],
+                "alert_count": 1
+              },
+              "subjects": [
+                "checkpoint:1"
+              ]
+            },
+            "focus_refs": [
+              5,
+              4,
+              3
+            ],
+            "stable_refs": [],
+            "summary": "",
+            "version": 2,
+            "working_refs": [
+              5,
+              4,
+              3,
+              2,
+              1
+            ]
+          },
+          "practice": {
+            "alert_refs": [],
+            "facets": {},
+            "focus_refs": [],
+            "stable_refs": [],
+            "summary": "",
+            "version": 3,
+            "working_refs": []
+          },
+          "structure": {
+            "alert_refs": [],
+            "facets": {},
+            "focus_refs": [],
+            "stable_refs": [],
+            "summary": "",
+            "version": 1,
+            "working_refs": []
+          },
+          "value": {
+            "alert_refs": [],
+            "facets": {},
+            "focus_refs": [],
+            "stable_refs": [],
+            "summary": "",
+            "version": 1,
+            "working_refs": []
+          }
+        },
+        "items": [],
+        "paths": [],
+        "personal_concept_graph": {
+          "edges": [],
+          "manifest": {
+            "edge_count": 0,
+            "knowledge_owns_node_history": true,
+            "node_count": 0,
+            "official_course_graph_is_separate": true,
+            "scope": {
+              "checkpoint_id": 1,
+              "learner_id": 1,
+              "project_id": 1,
+              "session_id": 6
+            },
+            "self_report_never_implies_mastery": true,
+            "shared_identity_only": true,
+            "structure_owns_relations": true,
+            "truncated_at_fact_count": 5000
+          },
+          "nodes": [],
+          "query": "这是接下来要做的练习：输出items与shifts；items中第二项标签只用于追踪原顺序。 根据之前的尝试，帮我选下一步，不确定的地方先问我。",
+          "version": "personal-concept-graph.v1"
+        },
+        "adaptation_directives": [],
+        "teaching_guidance": [],
+        "learning_episodes": [],
+        "retrieval_diagnostics": {
+          "channels": {
+            "bm25": {
+              "candidates": 1,
+              "truncated": true
+            },
+            "fuzzy": {
+              "candidates": 2,
+              "truncated": false
+            },
+            "head": {
+              "candidates": 5,
+              "truncated": false
+            },
+            "literal": {
+              "candidates": 1,
+              "truncated": false
+            },
+            "recent": {
+              "candidates": 11,
+              "truncated": false
+            },
+            "scope": {
+              "candidates": 5,
+              "truncated": false
+            }
+          },
+          "components": {
+            "aliases": {
+              "activated": 0,
+              "enabled": true
+            },
+            "bm25": {
+              "documents": 11,
+              "enabled": true,
+              "matched": 1,
+              "selected": 0,
+              "text_limit": 65536,
+              "truncated_documents": 0
+            },
+            "fuzzy": {
+              "activated": 1,
+              "enabled": true
+            },
+            "paths": {
+              "candidate_edges": 4,
+              "eligible_bundles": 4,
+              "enabled": true,
+              "root_limit_omitted": 0,
+              "selected": 0
+            },
+            "summary_boost": {
+              "activated": 0,
+              "enabled": true
+            },
+            "temporal": {
+              "activated": 0,
+              "enabled": true
+            }
+          },
+          "episodes": {
+            "anchors": 5,
+            "anchors_omitted": 0,
+            "budget_omitted": 0,
+            "eligible": 1,
+            "enabled": true,
+            "event_window_truncated": false,
+            "events_scanned": 1,
+            "fact_limit_omitted": 0,
+            "fact_window_truncated": false,
+            "facts_scanned": 6,
+            "rejected": {},
+            "selected": 0
+          },
+          "teaching_controls": {
+            "budget_omitted": 0,
+            "counts": {
+              "expired": 1,
+              "scope_mismatch": 1,
+              "uncertain": 1
+            },
+            "delivered": 0,
+            "diagnostics": [
+              {
+                "parser_version": "teaching-control-parser.v2",
+                "policy_version": "teaching-guidance.v2",
+                "reason": "uncertain_expression",
+                "source_event_id": 4,
+                "source_span": [
+                  62,
+                  71
+                ],
+                "status": "uncertain"
+              }
+            ],
+            "omitted": 0,
+            "status": "uncertain"
+          }
+        },
+        "component_policy": {
+          "enable_episodes": true,
+          "max_episodes": 3,
+          "max_episode_facts": 6,
+          "enable_bm25": true,
+          "enable_aliases": true,
+          "enable_fuzzy": true,
+          "enable_temporal": true,
+          "enable_summary_boost": true,
+          "enable_source_text": false,
+          "enable_compact_episodes": false,
+          "candidate_mode": "legacy"
+        }
+      }
+    },
+    {
+      "variant": "hybrid",
+      "kind": "offline_packing_arithmetic_not_new_experiment",
+      "base_reconstructed_identically_from_1800_and_3200": true,
+      "base_chars": 3518,
+      "base_estimate": 1100,
+      "component_chars": {
+        "heads": 818,
+        "items": 2,
+        "paths": 2,
+        "personal_concept_graph": 501,
+        "adaptation_directives": 2,
+        "teaching_guidance": 2,
+        "learning_episodes": 2,
+        "retrieval_diagnostics": 1725,
+        "component_policy": 281
+      },
+      "diagnostic_part_chars": {
+        "channels": 339,
+        "components": 718,
+        "episodes": 251,
+        "teaching_controls": 350
+      },
+      "episode_from_retained_3200_packet_line": 1308,
+      "episode_source_event_ids": [
+        3
+      ],
+      "episode_source_fact_ids": [
+        4,
+        5,
+        6,
+        9,
+        7,
+        8
+      ],
+      "episode_anchor_fact_ids": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "episode_observation_count": 6,
+      "episode_chars": 2568,
+      "candidate_chars_before_final_counters": 6086,
+      "candidate_estimate_before_final_counters": 1902,
+      "admission_fits_1800": false,
+      "candidate_estimate_with_final_episode_counters_and_no_items": 1909,
+      "admission_body": {
+        "heads": {
+          "human": {
+            "alert_refs": [],
+            "facets": {},
+            "focus_refs": [],
+            "stable_refs": [],
+            "summary": "",
+            "version": 1,
+            "working_refs": []
+          },
+          "knowledge": {
+            "alert_refs": [
+              5
+            ],
+            "facets": {
+              "confidence": 1.0,
+              "states": {
+                "active_memory_kinds": [
+                  "gap",
+                  "understanding",
+                  "observation"
+                ],
+                "alert_count": 1
+              },
+              "subjects": [
+                "checkpoint:1"
+              ]
+            },
+            "focus_refs": [
+              5,
+              4,
+              3
+            ],
+            "stable_refs": [],
+            "summary": "",
+            "version": 2,
+            "working_refs": [
+              5,
+              4,
+              3,
+              2,
+              1
+            ]
+          },
+          "practice": {
+            "alert_refs": [],
+            "facets": {},
+            "focus_refs": [],
+            "stable_refs": [],
+            "summary": "",
+            "version": 3,
+            "working_refs": []
+          },
+          "structure": {
+            "alert_refs": [],
+            "facets": {},
+            "focus_refs": [],
+            "stable_refs": [],
+            "summary": "",
+            "version": 1,
+            "working_refs": []
+          },
+          "value": {
+            "alert_refs": [],
+            "facets": {},
+            "focus_refs": [],
+            "stable_refs": [],
+            "summary": "",
+            "version": 1,
+            "working_refs": []
+          }
+        },
+        "items": [],
+        "paths": [],
+        "personal_concept_graph": {
+          "edges": [],
+          "manifest": {
+            "edge_count": 0,
+            "knowledge_owns_node_history": true,
+            "node_count": 0,
+            "official_course_graph_is_separate": true,
+            "scope": {
+              "checkpoint_id": 1,
+              "learner_id": 1,
+              "project_id": 1,
+              "session_id": 6
+            },
+            "self_report_never_implies_mastery": true,
+            "shared_identity_only": true,
+            "structure_owns_relations": true,
+            "truncated_at_fact_count": 5000
+          },
+          "nodes": [],
+          "query": "这是接下来要做的练习：输出items与shifts；items中第二项标签只用于追踪原顺序。 根据之前的尝试，帮我选下一步，不确定的地方先问我。",
+          "version": "personal-concept-graph.v1"
+        },
+        "adaptation_directives": [],
+        "teaching_guidance": [],
+        "learning_episodes": [],
+        "retrieval_diagnostics": {
+          "channels": {
+            "bm25": {
+              "candidates": 1,
+              "truncated": true
+            },
+            "corpus": {
+              "candidates": 11,
+              "truncated": false
+            },
+            "fuzzy": {
+              "candidates": 2,
+              "truncated": false
+            },
+            "head": {
+              "candidates": 5,
+              "truncated": false
+            },
+            "literal": {
+              "candidates": 1,
+              "truncated": false
+            },
+            "recent": {
+              "candidates": 11,
+              "truncated": false
+            },
+            "scope": {
+              "candidates": 5,
+              "truncated": false
+            }
+          },
+          "components": {
+            "aliases": {
+              "activated": 0,
+              "enabled": true
+            },
+            "bm25": {
+              "documents": 11,
+              "enabled": true,
+              "matched": 1,
+              "selected": 0,
+              "text_limit": 65536,
+              "truncated_documents": 0
+            },
+            "corpus": {
+              "documents": 11,
+              "enabled": true,
+              "matched": 11,
+              "semantic_document_unknown_tokens": 60,
+              "semantic_model": "thenlper/gte-small",
+              "semantic_model_sha256": "88d0602e36126d904c5d4e15dbca817aee0e282abff8dc22a8d7b994473abe55",
+              "semantic_query_unknown_tokens": 32,
+              "semantic_used": true
+            },
+            "fuzzy": {
+              "activated": 1,
+              "enabled": true
+            },
+            "paths": {
+              "candidate_edges": 20,
+              "eligible_bundles": 20,
+              "enabled": true,
+              "root_limit_omitted": 0,
+              "selected": 0
+            },
+            "summary_boost": {
+              "activated": 0,
+              "enabled": true
+            },
+            "temporal": {
+              "activated": 0,
+              "enabled": true
+            }
+          },
+          "episodes": {
+            "anchors": 9,
+            "anchors_omitted": 0,
+            "budget_omitted": 0,
+            "eligible": 1,
+            "enabled": true,
+            "event_window_truncated": false,
+            "events_scanned": 1,
+            "fact_limit_omitted": 0,
+            "fact_window_truncated": false,
+            "facts_scanned": 6,
+            "rejected": {},
+            "selected": 0
+          },
+          "teaching_controls": {
+            "budget_omitted": 0,
+            "counts": {
+              "expired": 1,
+              "scope_mismatch": 1,
+              "uncertain": 1
+            },
+            "delivered": 0,
+            "diagnostics": [
+              {
+                "parser_version": "teaching-control-parser.v2",
+                "policy_version": "teaching-guidance.v2",
+                "reason": "uncertain_expression",
+                "source_event_id": 4,
+                "source_span": [
+                  62,
+                  71
+                ],
+                "status": "uncertain"
+              }
+            ],
+            "omitted": 0,
+            "status": "uncertain"
+          }
+        },
+        "component_policy": {
+          "enable_episodes": true,
+          "max_episodes": 3,
+          "max_episode_facts": 6,
+          "enable_bm25": true,
+          "enable_aliases": true,
+          "enable_fuzzy": true,
+          "enable_temporal": true,
+          "enable_summary_boost": true,
+          "enable_source_text": false,
+          "enable_compact_episodes": false,
+          "candidate_mode": "hybrid"
+        }
+      }
+    },
+    {
+      "variant": "compact",
+      "kind": "offline_packing_arithmetic_not_new_experiment",
+      "base_reconstructed_identically_from_1800_and_3200": true,
+      "base_chars": 3170,
+      "base_estimate": 991,
+      "component_chars": {
+        "heads": 818,
+        "items": 2,
+        "paths": 2,
+        "personal_concept_graph": 501,
+        "adaptation_directives": 2,
+        "teaching_guidance": 2,
+        "learning_episodes": 2,
+        "retrieval_diagnostics": 1378,
+        "component_policy": 280
+      },
+      "diagnostic_part_chars": {
+        "channels": 289,
+        "components": 422,
+        "episodes": 250,
+        "teaching_controls": 350
+      },
+      "episode_from_retained_3200_packet_line": 1298,
+      "episode_source_event_ids": [
+        3
+      ],
+      "episode_source_fact_ids": [
+        4
+      ],
+      "episode_anchor_fact_ids": [
+        4,
+        5
+      ],
+      "episode_observation_count": 1,
+      "episode_chars": 1212,
+      "candidate_chars_before_final_counters": 4382,
+      "candidate_estimate_before_final_counters": 1370,
+      "admission_fits_1800": true,
+      "candidate_estimate_with_final_episode_counters_and_no_items": 1376,
+      "admission_body": {
+        "heads": {
+          "human": {
+            "alert_refs": [],
+            "facets": {},
+            "focus_refs": [],
+            "stable_refs": [],
+            "summary": "",
+            "version": 1,
+            "working_refs": []
+          },
+          "knowledge": {
+            "alert_refs": [
+              5
+            ],
+            "facets": {
+              "confidence": 1.0,
+              "states": {
+                "active_memory_kinds": [
+                  "gap",
+                  "understanding",
+                  "observation"
+                ],
+                "alert_count": 1
+              },
+              "subjects": [
+                "checkpoint:1"
+              ]
+            },
+            "focus_refs": [
+              5,
+              4,
+              3
+            ],
+            "stable_refs": [],
+            "summary": "",
+            "version": 2,
+            "working_refs": [
+              5,
+              4,
+              3,
+              2,
+              1
+            ]
+          },
+          "practice": {
+            "alert_refs": [],
+            "facets": {},
+            "focus_refs": [],
+            "stable_refs": [],
+            "summary": "",
+            "version": 3,
+            "working_refs": []
+          },
+          "structure": {
+            "alert_refs": [],
+            "facets": {},
+            "focus_refs": [],
+            "stable_refs": [],
+            "summary": "",
+            "version": 1,
+            "working_refs": []
+          },
+          "value": {
+            "alert_refs": [],
+            "facets": {},
+            "focus_refs": [],
+            "stable_refs": [],
+            "summary": "",
+            "version": 1,
+            "working_refs": []
+          }
+        },
+        "items": [],
+        "paths": [],
+        "personal_concept_graph": {
+          "edges": [],
+          "manifest": {
+            "edge_count": 0,
+            "knowledge_owns_node_history": true,
+            "node_count": 0,
+            "official_course_graph_is_separate": true,
+            "scope": {
+              "checkpoint_id": 1,
+              "learner_id": 1,
+              "project_id": 1,
+              "session_id": 6
+            },
+            "self_report_never_implies_mastery": true,
+            "shared_identity_only": true,
+            "structure_owns_relations": true,
+            "truncated_at_fact_count": 5000
+          },
+          "nodes": [],
+          "query": "这是接下来要做的练习：输出items与shifts；items中第二项标签只用于追踪原顺序。 根据之前的尝试，帮我选下一步，不确定的地方先问我。",
+          "version": "personal-concept-graph.v1"
+        },
+        "adaptation_directives": [],
+        "teaching_guidance": [],
+        "learning_episodes": [],
+        "retrieval_diagnostics": {
+          "channels": {
+            "bm25": {
+              "candidates": 1,
+              "truncated": true
+            },
+            "fuzzy": {
+              "candidates": 2,
+              "truncated": false
+            },
+            "head": {
+              "candidates": 5,
+              "truncated": false
+            },
+            "literal": {
+              "candidates": 1,
+              "truncated": false
+            },
+            "recent": {
+              "candidates": 11,
+              "truncated": false
+            },
+            "scope": {
+              "candidates": 5,
+              "truncated": false
+            }
+          },
+          "components": {
+            "aliases": {
+              "activated": 0,
+              "enabled": true
+            },
+            "bm25": {
+              "documents": 11,
+              "enabled": true,
+              "matched": 1,
+              "selected": 0,
+              "text_limit": 65536,
+              "truncated_documents": 0
+            },
+            "fuzzy": {
+              "activated": 1,
+              "enabled": true
+            },
+            "paths": {
+              "candidate_edges": 4,
+              "eligible_bundles": 4,
+              "enabled": true,
+              "root_limit_omitted": 0,
+              "selected": 0
+            },
+            "summary_boost": {
+              "activated": 0,
+              "enabled": true
+            },
+            "temporal": {
+              "activated": 0,
+              "enabled": true
+            }
+          },
+          "episodes": {
+            "anchors": 5,
+            "anchors_omitted": 0,
+            "budget_omitted": 0,
+            "eligible": 1,
+            "enabled": true,
+            "event_window_truncated": false,
+            "events_scanned": 1,
+            "fact_limit_omitted": 1,
+            "fact_window_truncated": true,
+            "facts_scanned": 2,
+            "rejected": {},
+            "selected": 0
+          },
+          "teaching_controls": {
+            "budget_omitted": 0,
+            "counts": {
+              "expired": 1,
+              "scope_mismatch": 1,
+              "uncertain": 1
+            },
+            "delivered": 0,
+            "diagnostics": [
+              {
+                "parser_version": "teaching-control-parser.v2",
+                "policy_version": "teaching-guidance.v2",
+                "reason": "uncertain_expression",
+                "source_event_id": 4,
+                "source_span": [
+                  62,
+                  71
+                ],
+                "status": "uncertain"
+              }
+            ],
+            "omitted": 0,
+            "status": "uncertain"
+          }
+        },
+        "component_policy": {
+          "enable_episodes": true,
+          "max_episodes": 3,
+          "max_episode_facts": 6,
+          "enable_bm25": true,
+          "enable_aliases": true,
+          "enable_fuzzy": true,
+          "enable_temporal": true,
+          "enable_summary_boost": true,
+          "enable_source_text": false,
+          "enable_compact_episodes": true,
+          "candidate_mode": "legacy"
+        }
+      }
+    },
+    {
+      "variant": "education_full",
+      "kind": "offline_packing_arithmetic_not_new_experiment",
+      "base_reconstructed_identically_from_1800_and_3200": true,
+      "base_chars": 3564,
+      "base_estimate": 1114,
+      "component_chars": {
+        "heads": 818,
+        "items": 2,
+        "paths": 2,
+        "personal_concept_graph": 501,
+        "adaptation_directives": 2,
+        "teaching_guidance": 2,
+        "learning_episodes": 2,
+        "retrieval_diagnostics": 1773,
+        "component_policy": 279
+      },
+      "diagnostic_part_chars": {
+        "channels": 339,
+        "components": 767,
+        "episodes": 250,
+        "teaching_controls": 350
+      },
+      "episode_from_retained_3200_packet_line": 1322,
+      "episode_source_event_ids": [
+        3
+      ],
+      "episode_source_fact_ids": [
+        4
+      ],
+      "episode_anchor_fact_ids": [
+        4,
+        5
+      ],
+      "episode_observation_count": 1,
+      "episode_chars": 1212,
+      "candidate_chars_before_final_counters": 4776,
+      "candidate_estimate_before_final_counters": 1493,
+      "admission_fits_1800": true,
+      "candidate_estimate_with_final_episode_counters_and_no_items": 1499,
+      "admission_body": {
+        "heads": {
+          "human": {
+            "alert_refs": [],
+            "facets": {},
+            "focus_refs": [],
+            "stable_refs": [],
+            "summary": "",
+            "version": 1,
+            "working_refs": []
+          },
+          "knowledge": {
+            "alert_refs": [
+              5
+            ],
+            "facets": {
+              "confidence": 1.0,
+              "states": {
+                "active_memory_kinds": [
+                  "gap",
+                  "understanding",
+                  "observation"
+                ],
+                "alert_count": 1
+              },
+              "subjects": [
+                "checkpoint:1"
+              ]
+            },
+            "focus_refs": [
+              5,
+              4,
+              3
+            ],
+            "stable_refs": [],
+            "summary": "",
+            "version": 2,
+            "working_refs": [
+              5,
+              4,
+              3,
+              2,
+              1
+            ]
+          },
+          "practice": {
+            "alert_refs": [],
+            "facets": {},
+            "focus_refs": [],
+            "stable_refs": [],
+            "summary": "",
+            "version": 3,
+            "working_refs": []
+          },
+          "structure": {
+            "alert_refs": [],
+            "facets": {},
+            "focus_refs": [],
+            "stable_refs": [],
+            "summary": "",
+            "version": 1,
+            "working_refs": []
+          },
+          "value": {
+            "alert_refs": [],
+            "facets": {},
+            "focus_refs": [],
+            "stable_refs": [],
+            "summary": "",
+            "version": 1,
+            "working_refs": []
+          }
+        },
+        "items": [],
+        "paths": [],
+        "personal_concept_graph": {
+          "edges": [],
+          "manifest": {
+            "edge_count": 0,
+            "knowledge_owns_node_history": true,
+            "node_count": 0,
+            "official_course_graph_is_separate": true,
+            "scope": {
+              "checkpoint_id": 1,
+              "learner_id": 1,
+              "project_id": 1,
+              "session_id": 6
+            },
+            "self_report_never_implies_mastery": true,
+            "shared_identity_only": true,
+            "structure_owns_relations": true,
+            "truncated_at_fact_count": 5000
+          },
+          "nodes": [],
+          "query": "这是接下来要做的练习：输出items与shifts；items中第二项标签只用于追踪原顺序。 根据之前的尝试，帮我选下一步，不确定的地方先问我。",
+          "version": "personal-concept-graph.v1"
+        },
+        "adaptation_directives": [],
+        "teaching_guidance": [],
+        "learning_episodes": [],
+        "retrieval_diagnostics": {
+          "channels": {
+            "bm25": {
+              "candidates": 1,
+              "truncated": true
+            },
+            "corpus": {
+              "candidates": 11,
+              "truncated": false
+            },
+            "fuzzy": {
+              "candidates": 2,
+              "truncated": false
+            },
+            "head": {
+              "candidates": 5,
+              "truncated": false
+            },
+            "literal": {
+              "candidates": 1,
+              "truncated": false
+            },
+            "recent": {
+              "candidates": 11,
+              "truncated": false
+            },
+            "scope": {
+              "candidates": 5,
+              "truncated": false
+            }
+          },
+          "components": {
+            "aliases": {
+              "activated": 0,
+              "enabled": true
+            },
+            "bm25": {
+              "documents": 11,
+              "enabled": true,
+              "matched": 1,
+              "selected": 0,
+              "text_limit": 65536,
+              "truncated_documents": 0
+            },
+            "corpus": {
+              "documents": 11,
+              "enabled": true,
+              "matched": 11,
+              "semantic_document_unknown_tokens": 60,
+              "semantic_model": "thenlper/gte-small",
+              "semantic_model_sha256": "88d0602e36126d904c5d4e15dbca817aee0e282abff8dc22a8d7b994473abe55",
+              "semantic_query_unknown_tokens": 32,
+              "semantic_used": true
+            },
+            "fuzzy": {
+              "activated": 1,
+              "enabled": true
+            },
+            "paths": {
+              "candidate_edges": 20,
+              "eligible_bundles": 20,
+              "enabled": true,
+              "root_limit_omitted": 0,
+              "selected": 0
+            },
+            "source_text": {
+              "enabled": true,
+              "expanded": 3
+            },
+            "summary_boost": {
+              "activated": 0,
+              "enabled": true
+            },
+            "temporal": {
+              "activated": 0,
+              "enabled": true
+            }
+          },
+          "episodes": {
+            "anchors": 9,
+            "anchors_omitted": 0,
+            "budget_omitted": 0,
+            "eligible": 1,
+            "enabled": true,
+            "event_window_truncated": false,
+            "events_scanned": 1,
+            "fact_limit_omitted": 1,
+            "fact_window_truncated": true,
+            "facts_scanned": 2,
+            "rejected": {},
+            "selected": 0
+          },
+          "teaching_controls": {
+            "budget_omitted": 0,
+            "counts": {
+              "expired": 1,
+              "scope_mismatch": 1,
+              "uncertain": 1
+            },
+            "delivered": 0,
+            "diagnostics": [
+              {
+                "parser_version": "teaching-control-parser.v2",
+                "policy_version": "teaching-guidance.v2",
+                "reason": "uncertain_expression",
+                "source_event_id": 4,
+                "source_span": [
+                  62,
+                  71
+                ],
+                "status": "uncertain"
+              }
+            ],
+            "omitted": 0,
+            "status": "uncertain"
+          }
+        },
+        "component_policy": {
+          "enable_episodes": true,
+          "max_episodes": 3,
+          "max_episode_facts": 6,
+          "enable_bm25": true,
+          "enable_aliases": true,
+          "enable_fuzzy": true,
+          "enable_temporal": true,
+          "enable_summary_boost": true,
+          "enable_source_text": true,
+          "enable_compact_episodes": true,
+          "candidate_mode": "hybrid"
+        }
+      }
+    }
+  ],
+  "sensitivity_arithmetic": [
+    {
+      "label": "remove_corpus_component_only",
+      "new_run": false,
+      "changes_formal_scores": false,
+      "admission_estimate": 1810,
+      "final_counter_estimate_no_items": 1817,
+      "note": "Arithmetic sensitivity only. The final-counter estimate must also fit; passing the initial admission boundary alone is not a sufficient fix."
+    },
+    {
+      "label": "remove_corpus_component_and_channel",
+      "new_run": false,
+      "changes_formal_scores": false,
+      "admission_estimate": 1795,
+      "final_counter_estimate_no_items": 1801,
+      "note": "Arithmetic sensitivity only. The final-counter estimate must also fit; passing the initial admission boundary alone is not a sufficient fix."
+    }
+  ],
+  "causal_account": {
+    "not_missing_assessment": "hybrid reports eligible=1, events_scanned=1, facts_scanned=6, rejected={}, budget_omitted=1. Its 3200 packet carries Event 3 and produces the same assessment action.",
+    "packing_order": "The episode is attempted before items/paths. New ordinary Fact bodies therefore did not consume budget first; hybrid items 4 and 2 are filled only after episode rejection.",
+    "dominant_change_for_this_case": "Hybrid fixed admission body is 346 characters larger than legacy, entirely in charged diagnostics: channels +50 and components +296. Heads, personal concept graph and guidance are unchanged. The six-observation episode is another 12 characters larger because anchor_fact_ids expands from [4,5] to [4,5,6,7,8,9].",
+    "threshold": "Legacy tentative base+episode is 1790 estimated units (actual finalized packet 1797). Hybrid tentative base+episode is 1902, exceeding 1800 by 102, so the atomic episode is removed and candidate loop stops.",
+    "compact": "The retained compact episode has one observation (Fact 4) rather than six, shrinking this episode from 2556 to 1212 characters while preserving Event 3 outcome/task/scope/time/source/limitations. Its tentative total is 1370 and actual finalized packet is 1768, so the action is retained.",
+    "action_dependency": "All compared packets have teaching_guidance=[]. Planning consumes the validated episode as practice_feedback and maps independent_success to independent_variant_or_reasoning_check. With hybrid episode absent, no such assessment action is emitted despite Fact 4 text being present.",
+    "not_generalized": "This proves a budget/atomic-packing mechanism for this selected case only. It does not establish that all source/BM25/hybrid regressions have the same cause, nor that removing diagnostics is a safe or sufficient production fix."
+  },
+  "code_evidence": [
+    {
+      "path": "packages/learning-core/src/learnflow_core/five_kernel_context.py",
+      "lines": [
+        1209,
+        1216
+      ],
+      "claim": "Episode collection receives max_facts=1 for compact, otherwise policy.max_episode_facts."
+    },
+    {
+      "path": "packages/learning-core/src/learnflow_core/five_kernel_context.py",
+      "lines": [
+        1223,
+        1253
+      ],
+      "claim": "Candidate channels and model/corpus/source diagnostics are assembled before budget admission and charged to the packet."
+    },
+    {
+      "path": "packages/learning-core/src/learnflow_core/five_kernel_context.py",
+      "lines": [
+        1265,
+        1289
+      ],
+      "claim": "Fixed projection is trimmed only when it alone exceeds budget; episodes are atomic and failure breaks the newest-first loop."
+    },
+    {
+      "path": "packages/learning-core/src/learnflow_core/five_kernel_context.py",
+      "lines": [
+        1311,
+        1321
+      ],
+      "claim": "Ordinary items are packed after the episode loop."
+    },
+    {
+      "path": "packages/learning-core/src/learnflow_core/five_kernel_context.py",
+      "lines": [
+        1344,
+        1358
+      ],
+      "claim": "Final diagnostic counters are charged; any additional overflow can remove complete items or episodes."
+    },
+    {
+      "path": "packages/learning-core/src/learnflow_core/memory_episode.py",
+      "lines": [
+        190,
+        233
+      ],
+      "claim": "Compact limits observation count but retains explicit episode conditions and source closure."
+    },
+    {
+      "path": "packages/learning-core/src/learnflow_core/planning_guidance.py",
+      "lines": [
+        26,
+        72
+      ],
+      "claim": "Only a delivered valid episode supplies episode-based practice feedback."
+    },
+    {
+      "path": "packages/learning-core/src/learnflow_core/planning_guidance.py",
+      "lines": [
+        161,
+        184
+      ],
+      "claim": "The practice feedback source yields the deterministic assessment action."
+    }
+  ],
+  "files_modified": [
+    "/tmp/learnflow-memory-v4-budget-case-audit.json"
+  ],
+  "formal_packets_or_scores_modified": false
+}

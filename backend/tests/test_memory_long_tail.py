@@ -50,7 +50,7 @@ async def exercise(build, *, query, subjects=(), budget=2800, max_items=12,
                         adaptation_directives=first['adaptation_directives'], teaching_guidance=first['teaching_guidance'],
                         learning_episodes=first['learning_episodes'], retrieval_diagnostics=first['retrieval_diagnostics'],
                         component_policy={k:v for k,v in first['manifest']['policy'].items()
-                            if k.startswith('enable_') or k in ('max_episodes','max_episode_facts')})
+                            if k.startswith('enable_') or k in ('max_episodes','max_episode_facts','candidate_mode')})
             assert _token_estimate(body) == first['manifest']['token_estimate'] <= budget
             return first, expected
     finally:

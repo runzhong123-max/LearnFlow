@@ -2,10 +2,10 @@
 from __future__ import annotations
 from dataclasses import dataclass
 
-SHARED_CORE_VERSION = "0.2.5"
+SHARED_CORE_VERSION = "0.2.6"
 CONCEPT_EVIDENCE_POLICY_VERSION = "concept-evidence.v2"
 PLANNING_GUIDANCE_POLICY_VERSION = "learning-plan-guidance.v2"
-MEMORY_RETRIEVAL_VERSION = "relevance-budget.v3"
+MEMORY_RETRIEVAL_VERSION = "relevance-budget.v4"
 
 EVENT_SCHEMA_VERSION = "learnflow.evidence.v1"
 
@@ -54,8 +54,12 @@ EDUCATION_MEMORY_POLICIES = {
         "version": MEMORY_RETRIEVAL_VERSION, "owner": "tutor_agent",
         "tool": "context_packet_assembler", "kernel_reads": KERNEL_NAMES, "kernel_write_path": "none",
         "switches": ("enable_episodes", "enable_bm25", "enable_aliases", "enable_fuzzy",
-                     "enable_temporal", "enable_summary_boost"),
-        "semantic_embeddings": False, "diagnostics_are_evidence": False,
+                     "enable_temporal", "enable_summary_boost", "enable_source_text", "enable_compact_episodes"),
+        "candidate_modes": ("legacy", "corpus_bm25", "hybrid"),
+        "default_candidate_mode": "legacy", "max_corpus_scan_rows": 4096,
+        "semantic_model": "thenlper/gte-small", "semantic_model_is_multilingual": False,
+        "compact_episode_max_observations": 1, "source_text_write_path": "none",
+        "semantic_embeddings": "optional_local_only", "diagnostics_are_evidence": False,
         "budget_includes_episode_and_diagnostics": True,
     },
 }

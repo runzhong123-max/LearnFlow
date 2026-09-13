@@ -1,0 +1,18 @@
+{
+  "model_id": "thenlper/gte-small",
+  "revision": "17e1f347d17fe144873b1201da91788898c639cd",
+  "official_url": "https://huggingface.co/thenlper/gte-small/tree/17e1f347d17fe144873b1201da91788898c639cd",
+  "download_mirror": "https://hf-mirror.com",
+  "files": {
+    "model.safetensors": "9a1eb90bbac323ea08aa5629b624fe6ae75db121b904799c2266a1e2c2de22d2",
+    "tokenizer_config.json": "e1790949631401af1bfb6c9c7aeec7fcf612e274d73579d99f704faea40c8ba7",
+    "special_tokens_map.json": "b6d346be366a7d1d48332dbc9fdf3bf8960b5d879522b7799ddba59e76237ee3",
+    "config.json": "00273cdfb3e05c7304d180270bdef8adae45023e7bdfc396338bdd815943dc59",
+    "tokenizer.json": "da0e79933b9ed51798a3ae27893d3c5fa4a201126cef75586296df9b4d2c62a0",
+    "README.md": "f3396a9e72f5cde0c3b45a62e57efd8643a7fa6d68966a97aa7e9ace1f70dd69",
+    "sentence_bert_config.json": "948201d8329907aae938fa62f9ceeed53f5694dacc2b87b9f3b78b37ee986529",
+    "vocab.txt": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3",
+    "modules.json": "73348a3d8f8ae4cc5f851dc6b98be3ea819390b814e83656d5eebbadf75fe43e",
+    "1_Pooling/config.json": "4be450dde3b0273bb9787637cfbd28fe04a7ba6ab9d36ac48e92b11e350ffc23"
+  }
+}

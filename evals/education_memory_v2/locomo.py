@@ -28,7 +28,7 @@ import tempfile
 import time
 from unittest.mock import patch
 
-from components import LOCOMO_VARIANTS, activation_metrics, budget_body, packet_tokens, policy_for
+from components import LOCOMO_VARIANTS, UPGRADE_VARIANTS, activation_metrics, budget_body, packet_tokens, policy_for
 
 VERSION = "learnflow-locomo-retrieval.v2"
 SOURCE_COMMIT = "3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376"
@@ -471,7 +471,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", type=Path, required=True)
     parser.add_argument("--dataset-sha256", default=SOURCE_SHA256)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--variants", nargs="+", choices=VARIANTS, default=list(LOCOMO_VARIANTS))
+    parser.add_argument("--variants", nargs="+", choices=(*VARIANTS, *UPGRADE_VARIANTS), default=list(LOCOMO_VARIANTS))
     parser.add_argument("--budgets", type=int, nargs="+", default=[1800, 3200])
     parser.add_argument("--recent-turns", type=int, default=24)
     parser.add_argument("--repetitions", type=int, default=1)

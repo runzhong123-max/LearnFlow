@@ -4,9 +4,26 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "learnflow-core"
-version = "0.2.5"
+version = "0.2.6"
 description = "Shared LearnFlow evidence, memory and deterministic teaching implementation"
 requires-python = ">=3.10"
+
+# Optional only; the default core/BM25 installation does not load an ML model.
+# See SEMANTIC_DEPENDENCIES.md for the tested Python/platform scope and the
+# separate formal-experiment environment. These pins coexist with host NumPy<2.
+[project.optional-dependencies]
+memory-semantic = [
+    "numpy==1.26.4",
+    "torch==2.13.0",
+    "sentence-transformers==5.6.1",
+    "transformers==5.14.1",
+    "tokenizers==0.22.2",
+    "safetensors==0.8.0",
+    "huggingface-hub==1.26.0",
+    "scikit-learn==1.9.0",
+    "scipy==1.17.1",
+    "httpx==0.27.2",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

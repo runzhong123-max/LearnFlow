@@ -127,7 +127,14 @@ def compile_planning_guidance(context: dict | None, *, now=None) -> dict:
                                 continue
                             prefix = predicate.rsplit(".", 1)[-1] + ":"
                             text = str(row.get("text") or "")
-                            if text.startswith(prefix) and (body := text[len(prefix):].strip()):
+                            # v4 verified raw strings omit the legacy display
+                            # prefix. The typed predicate and source kind carry
+                            # that meaning; do not require synthetic prefix text
+                            # in a byte-exact source excerpt.
+                            source_kind = (detail.get("source_text") or {}).get("source_kind")
+                            body = (text[len(prefix):].strip() if text.startswith(prefix) else
+                                    text.strip() if source_kind == "fact_object_value" else "")
+                            if body:
                                 controls["blocker_detail"] = body[:400]
                                 controls["blocker_evidence"] = {key: deepcopy(row.get(key)) for key in
                                     ("id", "detail", "scope", "evidence_refs")}

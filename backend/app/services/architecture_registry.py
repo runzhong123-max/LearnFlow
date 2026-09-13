@@ -44,7 +44,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-13.1"
+REGISTRY_VERSION = "2026-09-13.2"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Source-data contracts, not Agent-callable tools or learner-state writers.
@@ -426,7 +426,7 @@ TOOLS = {
         ToolContract("kernel_head_projector", "Bounded Kernel Head Projector", "tutor_agent", "learnflow", "projection",
                      KERNEL_NAMES, (), "KernelState/Memory Graph -> rebuildable KernelHead"),
         ToolContract("five_kernel_retriever", "Scoped Five-kernel Retriever", "tutor_agent", "learnflow", "read",
-                     KERNEL_NAMES, (), "exact scope -> auditable BM25/alias/temporal candidates -> bounded causal paths and owned learning episodes -> relevance-budget.v3"),
+                     KERNEL_NAMES, (), "exact scope -> auditable BM25/alias/temporal candidates -> bounded causal paths and owned learning episodes -> relevance-budget.v4 (optional scoped corpus BM25/local hybrid, verified source text, compact episodes)"),
         ToolContract("context_packet_assembler", "Capability ContextPacket Assembler", "tutor_agent", "learnflow", "read",
                      KERNEL_NAMES, (), "ContextPolicy -> conditional summaries and attributed qualifier excerpts -> deduplicated joint item/path/episode/diagnostics budget -> answer-free ContextPacket v2"),
         ToolContract("workflow_gateway", "Mock / Xingchen Workflow Gateway", "learning_design_agent", "companion", "optional_adapter",

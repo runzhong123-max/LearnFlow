@@ -1,0 +1,520 @@
+{
+  "schema_version": "learnflow.memory-v4.runtime-audit.v1",
+  "observed_at_utc": "2026-09-13 01:14:28 UTC",
+  "scope": "保持仓库、现有venv、冻结模型及安装应用不变；在/tmp建立可删除的Python3.12隔离语义环境并保存依赖说明、pins、日志和验证证据。",
+  "observed_environments": {
+    "web": {
+      "executable": "/Users/a1-6/LearnFlow/backend/venv/bin/python",
+      "python": "3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]",
+      "prefix": "/Users/a1-6/LearnFlow/backend/venv",
+      "packages": {
+        "numpy": "2.5.1",
+        "torch": "2.13.0",
+        "sentence-transformers": "5.6.1",
+        "transformers": "5.14.1",
+        "tokenizers": "0.22.2",
+        "scikit-learn": "1.9.0",
+        "safetensors": "0.8.0",
+        "huggingface-hub": "1.26.0",
+        "pytest": "8.3.5"
+      }
+    },
+    "desktop_native": {
+      "executable": "/Users/a1-6/LearnFlow/apps/desktop/backend/venv/bin/python",
+      "python": "3.12.13 (main, Apr 14 2026, 14:33:40) [Clang 22.1.3 ]",
+      "prefix": "/Users/a1-6/LearnFlow/apps/desktop/backend/venv",
+      "packages": {
+        "numpy": "1.26.4",
+        "torch": null,
+        "sentence-transformers": null,
+        "transformers": null,
+        "tokenizers": null,
+        "scikit-learn": null,
+        "safetensors": null,
+        "huggingface-hub": null,
+        "pytest": "8.3.5"
+      }
+    }
+  },
+  "correction": {
+    "prior_statement": "两宿主各26 passed",
+    "qualified_statement": "两个宿主源码导入路径下各26 passed，均使用Web虚拟环境的Python 3.14.6；未验证Desktop原生Python 3.12虚拟环境具备语义依赖。",
+    "python_was_explicitly_specified_in_subtask": "/Users/a1-6/LearnFlow/backend/venv/bin/python",
+    "not_claimed": "不能据此前26+26测试声称Desktop自身venv可运行语义检索、桌面打包已包含模型依赖、或安装应用已验收。"
+  },
+  "actually_executed_candidate_tests": [
+    {
+      "host_sources": "web",
+      "cwd": "/tmp/learnflow-memory-retrieval/backend",
+      "argv": [
+        "/Users/a1-6/LearnFlow/backend/venv/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_memory_candidate_index.py",
+        "-q"
+      ],
+      "explicit_environment": {
+        "HF_HUB_OFFLINE": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "LEARNFLOW_TEST_LOCAL_SEMANTIC": "1",
+        "LEARNFLOW_MEMORY_EMBEDDING_MODEL_PATH": "/tmp/learnflow-gte-small-complete",
+        "PYTHONPATH": "/tmp/learnflow-memory-retrieval/packages/learning-core/src:/tmp/learnflow-memory-retrieval/backend"
+      },
+      "result": {
+        "passed": 26,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 3.38
+      }
+    },
+    {
+      "host_sources": "desktop",
+      "cwd": "/tmp/learnflow-memory-retrieval/apps/desktop/backend",
+      "argv": [
+        "/Users/a1-6/LearnFlow/backend/venv/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_memory_candidate_index.py",
+        "-q"
+      ],
+      "explicit_environment": {
+        "HF_HUB_OFFLINE": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "LEARNFLOW_TEST_LOCAL_SEMANTIC": "1",
+        "LEARNFLOW_MEMORY_EMBEDDING_MODEL_PATH": "/tmp/learnflow-gte-small-complete",
+        "PYTHONPATH": "/tmp/learnflow-memory-retrieval/packages/learning-core/src:/tmp/learnflow-memory-retrieval/apps/desktop/backend"
+      },
+      "result": {
+        "passed": 26,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 3.45
+      }
+    }
+  ],
+  "parent_reported_full_suite_results": {
+    "independently_rerun_by_this_agent": false,
+    "web": {
+      "passed": 1138,
+      "skipped": 1
+    },
+    "desktop_native": {
+      "passed": 1153,
+      "skipped": 4,
+      "failed": 1,
+      "failure": "显式LEARNFLOW_TEST_LOCAL_SEMANTIC=1的真实模型测试，因缺torch等依赖抛SemanticModelUnavailable/ModuleNotFoundError。"
+    },
+    "source": "主任务通知；本子任务没有重新运行完整suite，未修改运行中的正式矩阵。"
+  },
+  "actual_semantic_validation_runtime": {
+    "executable": "/Users/a1-6/LearnFlow/backend/venv/bin/python",
+    "python_version": "3.14.6",
+    "device": "cpu",
+    "intraop_threads": 1,
+    "packages": {
+      "numpy": "2.5.1",
+      "torch": "2.13.0",
+      "sentence-transformers": "5.6.1",
+      "transformers": "5.14.1",
+      "tokenizers": "0.22.2",
+      "scikit-learn": "1.9.0",
+      "safetensors": "0.8.0",
+      "huggingface-hub": "1.26.0",
+      "pytest": "8.3.5"
+    },
+    "model_id": "thenlper/gte-small",
+    "model_revision": "17e1f347d17fe144873b1201da91788898c639cd",
+    "model_path_environment_key": "LEARNFLOW_MEMORY_EMBEDDING_MODEL_PATH",
+    "model_path": "/tmp/learnflow-gte-small-complete",
+    "snapshot_manifest": "/tmp/learnflow-gte-small-complete/learnflow_snapshot_manifest.json",
+    "model_safetensors_sha256": "9a1eb90bbac323ea08aa5629b624fe6ae75db121b904799c2266a1e2c2de22d2",
+    "combined_identity_field": "CandidateRanking.diagnostics.semantic_model_sha256",
+    "combined_model_identity": "88d0602e36126d904c5d4e15dbca817aee0e282abff8dc22a8d7b994473abe55",
+    "combined_identity_definition": "实际配置、词表/分词器、加载后float32权重、pooling及分段版本的组合hash；不是模型文件hash或manifest文件hash。",
+    "proof_files": [
+      "/tmp/learnflow-gte-small-smoke.json",
+      "/tmp/learnflow-gte-small-corpus-smoke.json"
+    ],
+    "proof_scope": "英文同义检索与2000文档执行/缓存检查，不是教育质量成绩或中文语义能力证明。",
+    "failure_preceding_success": "TaylorAI/gte-small上游缺词表，库可静默构造5词元词表；随后换完整官方thenlper/gte-small。Transformers5移除prepare_for_model也曾导致显式失败，修复后才记录上述成功。"
+  },
+  "dependency_declaration_observation": {
+    "scanned_files": [
+      "/Users/a1-6/LearnFlow/packages/learning-core/pyproject.toml",
+      "/Users/a1-6/LearnFlow/backend/requirements.txt",
+      "/Users/a1-6/LearnFlow/apps/desktop/backend/requirements.txt",
+      "/Users/a1-6/LearnFlow/apps/desktop/desktop/requirements-build.txt"
+    ],
+    "semantic_extra_declared": false,
+    "required_semantic_packages_declared_in_these_files": false,
+    "note": "当前共享pyproject只有requires-python>=3.10，未声明可选语义extra；宿主requirements没有torch/sentence-transformers/transformers/numpy语义依赖清单。Web已安装不等于仓库可复现依赖已登记。",
+    "desktop_current_behavior": "原生Desktop venv缺torch、sentence-transformers、transformers等；显式hybrid应清晰失败，不能降级后报为semantic成功。"
+  },
+  "proposed_optional_dependency_work": {
+    "status": "独立工作树已准备兼容extra和42包语义依赖闭包；新的干净Python3.12环境联合解析/安装/pip check通过，候选26、Web1138+1skip、Desktop1158均完成。正式实验原运行库和成绩未替换。",
+    "default_install": "保留默认BM25路径不引入模型依赖、不下载权重。",
+    "optional_extra_name_proposal": "memory-semantic（尚不存在，不能直接宣称可pip install此extra）",
+    "direct_dependencies": [
+      "numpy",
+      "torch",
+      "sentence-transformers"
+    ],
+    "reproduction_lock": "实验专用锁文件还应记录transformers、tokenizers、safetensors、huggingface-hub、scikit-learn和全部传递依赖；上面的精确版本是本次已安装且实际运行版本。",
+    "platform_scope": "本次固定语义pins要求Python>=3.12；Web3.14和独立Desktop3.12已执行指定验证。现有Desktop原venv未安装语义依赖，不等同于已安装桌面应用验收。",
+    "acceptance": [
+      "默认无extra环境：BM25导入与运行不加载torch/transformers，明确hybrid失败。",
+      "显式semantic测试环境：完整官方固定模型文件、local_files_only、HF_HUB_OFFLINE，测试不可静默skip。",
+      "分别用Web和Desktop自己的解释器验证依赖、tokenizer vocabulary、真实英文paraphrase、手工窗口与模型公共encoder一致性、缓存与scope隔离。",
+      "若需要桌面分发，再独立评估CPU架构、安装大小和sidecar打包；本轮没有这项验收。"
+    ],
+    "no_actions_performed": [
+      "未更改现有用户venv",
+      "未更改用户全局模型缓存",
+      "未替换或打包桌面应用",
+      "未修改产品或实验算法代码"
+    ]
+  },
+  "isolated_python312_verification": {
+    "updated_at_utc": "2026-09-13T01:30:33.757820+00:00",
+    "status": "complete: selected tests and full Desktop suite passed in isolated Python3.12",
+    "environment_path": "/tmp/learnflow-memory-desktop-semantic-venv",
+    "python": "3.12.13",
+    "existing_desktop_venv_modified": false,
+    "existing_web_venv_modified": false,
+    "snapshot_modified": false,
+    "base_dependency_reuse": {
+      "mechanism": "plain absolute path in a .pth file; no executable statement",
+      "pth_file": "/tmp/learnflow-memory-desktop-semantic-venv/lib/python3.12/site-packages/learnflow_desktop_existing_dependencies.pth",
+      "read_from": "/Users/a1-6/LearnFlow/apps/desktop/backend/venv/lib/python3.12/site-packages",
+      "limitation": "This temporary environment intentionally depends on the existing Desktop base dependencies. It is not a standalone distributable or installed-application acceptance test."
+    },
+    "install": {
+      "tool": "uv pip install",
+      "source": "https://pypi.org/simple",
+      "target": "/tmp/learnflow-memory-desktop-semantic-venv/lib/python3.12/site-packages",
+      "cache_dir": "/tmp/learnflow-memory-semantic-uv-cache",
+      "only_binary": true,
+      "successful_online_attempts": 1,
+      "resolved_packages": 41,
+      "version_pins_relaxed": false,
+      "primary_pins": {
+        "torch": "2.13.0",
+        "sentence-transformers": "5.6.1",
+        "transformers": "5.14.1",
+        "numpy": "2.5.1",
+        "tokenizers": "0.22.2",
+        "safetensors": "0.8.0",
+        "huggingface-hub": "1.26.0",
+        "scikit-learn": "1.9.0"
+      },
+      "all_target_pins_file": "/tmp/learnflow-memory-desktop-semantic-py312-installed-pins.txt",
+      "all_target_packages": {
+        "shellingham": "1.5.4",
+        "threadpoolctl": "3.6.0",
+        "cloudpickle": "3.1.2",
+        "filelock": "3.32.6",
+        "click": "8.5.0",
+        "packaging": "26.3",
+        "joblib": "1.6.0",
+        "pygments": "2.21.0",
+        "hf-xet": "1.6.0",
+        "rich": "15.0.0",
+        "networkx": "3.6.1",
+        "scikit-learn": "1.9.0",
+        "transformers": "5.14.1",
+        "httpcore": "1.0.9",
+        "sympy": "1.14.0",
+        "fsspec": "2026.7.0",
+        "safetensors": "0.8.0",
+        "tqdm": "4.70.1",
+        "setuptools": "84.0.0",
+        "numpy": "2.5.1",
+        "h11": "0.16.0",
+        "mdurl": "0.1.2",
+        "mpmath": "1.3.0",
+        "pyyaml": "6.0.3",
+        "sentence-transformers": "5.6.1",
+        "idna": "3.19",
+        "certifi": "2026.7.22",
+        "torch": "2.13.0",
+        "jinja2": "3.1.6",
+        "markdown-it-py": "4.2.0",
+        "annotated-doc": "0.0.5",
+        "markupsafe": "3.0.3",
+        "httpx": "0.28.1",
+        "typing-extensions": "4.16.0",
+        "tokenizers": "0.22.2",
+        "huggingface-hub": "1.26.0",
+        "regex": "2026.9.10",
+        "typer": "0.27.2",
+        "anyio": "4.15.1",
+        "scipy": "1.18.1",
+        "narwhals": "2.26.0"
+      },
+      "note": "Existing uv cache only had another numpy version; fixed exact versions were installed into /tmp. No packages were installed into the existing Desktop or Web venv.",
+      "requires_python_metadata": {
+        "numpy": ">=3.12",
+        "torch": ">=3.10",
+        "sentence-transformers": ">=3.10",
+        "transformers": ">=3.10.0",
+        "tokenizers": ">=3.9",
+        "safetensors": ">=3.10",
+        "huggingface-hub": ">=3.10.0",
+        "scikit-learn": ">=3.11",
+        "scipy": ">=3.12"
+      },
+      "argv": [
+        "/opt/homebrew/bin/uv",
+        "pip",
+        "install",
+        "--python",
+        "/tmp/learnflow-memory-desktop-semantic-venv/bin/python",
+        "--target",
+        "/tmp/learnflow-memory-desktop-semantic-venv/lib/python3.12/site-packages",
+        "--cache-dir",
+        "/tmp/learnflow-memory-semantic-uv-cache",
+        "--only-binary",
+        ":all:",
+        "--index-url",
+        "https://pypi.org/simple",
+        "torch==2.13.0",
+        "sentence-transformers==5.6.1",
+        "transformers==5.14.1",
+        "numpy==2.5.1",
+        "tokenizers==0.22.2",
+        "safetensors==0.8.0",
+        "huggingface-hub==1.26.0",
+        "scikit-learn==1.9.0"
+      ]
+    },
+    "actual_runtime_proof": "/tmp/learnflow-memory-desktop-semantic-py312-runtime.json",
+    "actual_model_identity": "88d0602e36126d904c5d4e15dbca817aee0e282abff8dc22a8d7b994473abe55",
+    "matches_web_observed_model_identity": true,
+    "selected_tests": {
+      "cwd": "/tmp/learnflow-memory-upgrade-20260913/apps/desktop/backend",
+      "argv": [
+        "/tmp/learnflow-memory-desktop-semantic-venv/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_memory_candidate_index.py",
+        "tests/test_memory_v4_integration.py",
+        "tests/test_memory_source_projection.py",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp=/tmp/learnflow-memory-desktop-semantic-py312-pytest",
+        "--junitxml=/tmp/learnflow-memory-desktop-semantic-py312-tests.xml"
+      ],
+      "explicit_environment": {
+        "HF_HUB_OFFLINE": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "LEARNFLOW_TEST_LOCAL_SEMANTIC": "1",
+        "LEARNFLOW_MEMORY_EMBEDDING_MODEL_PATH": "/tmp/learnflow-gte-small-complete",
+        "PYTHONPATH": "/tmp/learnflow-memory-upgrade-20260913/packages/learning-core/src:/tmp/learnflow-memory-upgrade-20260913/apps/desktop/backend"
+      },
+      "passed": 69,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 58.56,
+      "log": "/tmp/learnflow-memory-desktop-semantic-py312-tests.log",
+      "junit_xml": "/tmp/learnflow-memory-desktop-semantic-py312-tests.xml"
+    },
+    "full_suite": {
+      "status": "passed",
+      "cwd": "/tmp/learnflow-memory-upgrade-20260913/apps/desktop/backend",
+      "argv": [
+        "/tmp/learnflow-memory-desktop-semantic-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "--disable-warnings",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp=/tmp/learnflow-memory-desktop-semantic-py312-full-pytest",
+        "--junitxml=/tmp/learnflow-memory-v4-desktop-isolated-full.xml"
+      ],
+      "explicit_environment": {
+        "HF_HUB_OFFLINE": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "LEARNFLOW_TEST_LOCAL_SEMANTIC": "1",
+        "LEARNFLOW_MEMORY_EMBEDDING_MODEL_PATH": "/tmp/learnflow-gte-small-complete",
+        "PYTHONPATH": "/tmp/learnflow-memory-upgrade-20260913/packages/learning-core/src:/tmp/learnflow-memory-upgrade-20260913/apps/desktop/backend"
+      },
+      "log": "/tmp/learnflow-memory-v4-desktop-isolated-full.log",
+      "junit_xml": "/tmp/learnflow-memory-v4-desktop-isolated-full.xml",
+      "passed": 1158,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 290.83,
+      "warnings_reported": 151782,
+      "exit_code": 0,
+      "junit_counts": {
+        "tests": 1158,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "timing_limit": "Formal matrix and regression shared the host; elapsed times are not comparable performance or ranking measurements.",
+    "native_desktop_dependencies_rechecked_after_install": {
+      "at_utc": "2026-09-13T01:28:19.944078+00:00",
+      "versions": {
+        "numpy": "1.26.4",
+        "torch": null,
+        "sentence-transformers": null,
+        "transformers": null
+      },
+      "unchanged": true
+    },
+    "snapshot_file_hashes_rechecked_after_tests": {
+      "all_match_frozen_manifest": true,
+      "verified_files": 10,
+      "mismatches": []
+    },
+    "diagnostic_script_retry": {
+      "first_status": "path assertion failed before model load",
+      "cause": "/tmp and /private/tmp are aliases; raw Path.is_relative_to without resolve rejected the correct shared source path",
+      "resolution": "Changed only the temporary diagnostic command to compare Path.resolve(); runtime source and model identity then verified. No product or model change."
+    },
+    "creation": {
+      "argv": [
+        "/Users/a1-6/LearnFlow/apps/desktop/backend/venv/bin/python",
+        "-m",
+        "venv",
+        "/tmp/learnflow-memory-desktop-semantic-venv"
+      ],
+      "pth_content": "/Users/a1-6/LearnFlow/apps/desktop/backend/venv/lib/python3.12/site-packages\n",
+      "existing_venv_replaced": false
+    },
+    "declared_dependency_constraints": "The successful 1158-test environment used a .pth overlay, not a clean joint resolution of host and semantic requirements.",
+    "later_detected_metadata_conflicts": [
+      {
+        "dependency": "numpy",
+        "overlay_version": "2.5.1",
+        "host_packages": [
+          "langchain==0.3.0",
+          "langchain-community==0.3.0"
+        ],
+        "host_requires": "numpy>=1.26.0,<2.0.0 on Python>=3.12"
+      },
+      {
+        "dependency": "httpx",
+        "overlay_version": "0.28.1",
+        "host_requirements_pin": "0.27.2"
+      }
+    ]
+  },
+  "clean_compatible_environment_proposal": {
+    "status": "complete: clean joint install and pip check; candidate plus both host full suites passed",
+    "environment_path": "/tmp/learnflow-memory-desktop-semantic-clean-venv",
+    "proposed_numpy": "1.26.4",
+    "proposed_httpx": "0.27.2",
+    "scipy_constraint": "<1.18; resolver selects a version whose metadata permits numpy1.26.4",
+    "pip_dry_run_log": "/tmp/learnflow-memory-semantic-clean-resolve.log",
+    "pip_dry_run_report": "/tmp/learnflow-memory-semantic-clean-resolve.json",
+    "formal_experiment_runtime_unchanged": true,
+    "updated_at_utc": "2026-09-13T02:07:05.822101+00:00",
+    "resolved_package_count": 125,
+    "numpy": "1.26.4",
+    "scipy": "1.17.1",
+    "httpx": "0.27.2",
+    "pip_check": "No broken requirements found.",
+    "pip_install_report": "/tmp/learnflow-memory-semantic-clean-install.json",
+    "pip_install_log": "/tmp/learnflow-memory-semantic-clean-install.log",
+    "pip_hash_lock": "/tmp/learnflow-memory-semantic-clean-combined-lock.txt",
+    "runtime_proof": "/tmp/learnflow-memory-semantic-clean-runtime.json",
+    "model_identity": "88d0602e36126d904c5d4e15dbca817aee0e282abff8dc22a8d7b994473abe55",
+    "extra_name": "memory-semantic",
+    "extra_pins": [
+      "numpy==1.26.4",
+      "torch==2.13.0",
+      "sentence-transformers==5.6.1",
+      "transformers==5.14.1",
+      "tokenizers==0.22.2",
+      "safetensors==0.8.0",
+      "huggingface-hub==1.26.0",
+      "scikit-learn==1.9.0",
+      "scipy==1.17.1",
+      "httpx==0.27.2"
+    ],
+    "semantic_closure_count": 42,
+    "semantic_closure_source": "/tmp/learnflow-memory-semantic-clean-closure.json",
+    "candidate_tests": {
+      "passed": 26,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 51.07,
+      "log": "/tmp/learnflow-memory-semantic-clean-candidate.log",
+      "junit_xml": "/tmp/learnflow-memory-semantic-clean-candidate.xml"
+    },
+    "shared_test_environment": {
+      "HF_HUB_OFFLINE": "1",
+      "TOKENIZERS_PARALLELISM": "false",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "LEARNFLOW_TEST_LOCAL_SEMANTIC": "1",
+      "LEARNFLOW_MEMORY_EMBEDDING_MODEL_PATH": "/tmp/learnflow-gte-small-complete"
+    },
+    "full_web": {
+      "status": "passed",
+      "log": "/tmp/learnflow-memory-semantic-clean-web-full.log",
+      "junit_xml": "/tmp/learnflow-memory-semantic-clean-web-full.xml",
+      "passed": 1138,
+      "failed": 0,
+      "skipped": 1,
+      "seconds": 383.35,
+      "warnings_reported": 150909,
+      "junit_counts": {
+        "tests": 1139,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      "skip_details": [
+        {
+          "class": "tests.test_auth_production",
+          "name": "test_account_model_credential_encrypted_crud_empty_preserve_and_test",
+          "reason": "旧的账户私有密钥 CRUD 已由平台后台统一凭据取代"
+        }
+      ]
+    },
+    "full_desktop": {
+      "status": "passed",
+      "log": "/tmp/learnflow-memory-semantic-clean-desktop-full.log",
+      "junit_xml": "/tmp/learnflow-memory-semantic-clean-desktop-full.xml",
+      "passed": 1158,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 360.99,
+      "warnings_reported": 151783,
+      "junit_counts": {
+        "tests": 1158,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "formal_runtime_distinction": "This NumPy1.26.4/SciPy1.17.1 clean compatible environment is not the frozen formal experiment runtime and does not replace its measurements.",
+    "no_host_venv_pth_or_reuse": true,
+    "frozen_model_files_rechecked": {
+      "count": 10,
+      "all_hashes_match": true
+    }
+  }
+}

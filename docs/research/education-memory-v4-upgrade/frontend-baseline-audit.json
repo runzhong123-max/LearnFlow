@@ -1,0 +1,228 @@
+{
+  "schema": "learnflow.memory-v4-frontend-baseline-audit.v1",
+  "recorded_at_utc": "2026-09-13T01:57:54.711286+00:00",
+  "scope": "One existing frontend assertion only; no repository edits and no tests rerun while writing this artifact.",
+  "main_checkout": "/Users/a1-6/LearnFlow",
+  "integration_checkout": "/tmp/learnflow-memory-upgrade-20260913",
+  "main_commit_observed": "0d0802f34e1099dfc468a1ca77316c583870440f",
+  "baseline_commit": "0d0802f34e1099dfc468a1ca77316c583870440f",
+  "conclusion": "The same assertion fails on the unchanged baseline commit in both Web and Desktop. The test still expects automatic visual generation/repair, while the existing chat create flow returns a studio draft for fresh requests. This failure is unrelated to the Python memory v4 changes and is not caused by fixture time expiry.",
+  "standalone_test_runs": [
+    {
+      "host": "web",
+      "checkout": "integration",
+      "cwd": "/tmp/learnflow-memory-upgrade-20260913/frontend",
+      "command": "LEARNFLOW_PYTHON=/Users/a1-6/LearnFlow/backend/venv/bin/python node --experimental-strip-types --test --test-name-pattern='^visual repair keeps artifact scope;' server/teaching-guidance.test.ts",
+      "exit_code": 1,
+      "tool_session_id": 52487,
+      "completion_chunk_id": "d82e46",
+      "duration_ms": 1120.329584,
+      "tests": 1,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "assertion": {
+        "file": "frontend/server/teaching-guidance.test.ts",
+        "line": 125,
+        "actual": 0,
+        "expected": 2,
+        "operator": "strictEqual"
+      },
+      "log_path": null,
+      "output_capture": "Tool terminal output retained in the conversation; this standalone command was not separately redirected to a filesystem log. The assertion and exit code above were observed, not inferred."
+    },
+    {
+      "host": "web",
+      "checkout": "main_baseline",
+      "cwd": "/Users/a1-6/LearnFlow/frontend",
+      "command": "LEARNFLOW_PYTHON=/Users/a1-6/LearnFlow/backend/venv/bin/python node --experimental-strip-types --test --test-name-pattern='^visual repair keeps artifact scope;' server/teaching-guidance.test.ts",
+      "exit_code": 1,
+      "tool_session_id": 63276,
+      "completion_chunk_id": "7cc446",
+      "duration_ms": 979.928583,
+      "tests": 1,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "assertion": {
+        "file": "frontend/server/teaching-guidance.test.ts",
+        "line": 125,
+        "actual": 0,
+        "expected": 2,
+        "operator": "strictEqual"
+      },
+      "log_path": null,
+      "output_capture": "Tool terminal output retained in the conversation; this standalone command was not separately redirected to a filesystem log. The assertion and exit code above were observed, not inferred."
+    },
+    {
+      "host": "desktop",
+      "checkout": "main_baseline",
+      "cwd": "/Users/a1-6/LearnFlow",
+      "command": "LEARNFLOW_PYTHON=/Users/a1-6/LearnFlow/backend/venv/bin/python node --experimental-strip-types --test --test-name-pattern='^visual repair keeps artifact scope;' apps/desktop/frontend/server/teaching-guidance.test.ts",
+      "exit_code": 1,
+      "tool_session_id": null,
+      "completion_chunk_id": "996f78",
+      "duration_ms": 420.513333,
+      "tests": 1,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0,
+      "assertion": {
+        "file": "apps/desktop/frontend/server/teaching-guidance.test.ts",
+        "line": 125,
+        "actual": 0,
+        "expected": 2,
+        "operator": "strictEqual"
+      },
+      "log_path": null,
+      "output_capture": "Tool terminal output retained in the conversation; this standalone command was not separately redirected to a filesystem log. The assertion and exit code above were observed, not inferred."
+    }
+  ],
+  "related_parent_full_suite_logs": [
+    {
+      "host": "web",
+      "path": "/tmp/learnflow-memory-v4-web-frontend-tests-final.log",
+      "sha256": "e7b9803988d41bf4b3985e9001e4a671a5795c5072957e1a2ab239aac2961300",
+      "origin": "Parent-provided full frontend test log; inspected during this audit, not produced by the standalone baseline command.",
+      "observed_same_assertion": true,
+      "exit_code": null,
+      "exit_code_note": "This audit did not launch these full-suite commands or capture their process exit codes."
+    },
+    {
+      "host": "desktop",
+      "path": "/tmp/learnflow-memory-v4-desktop-frontend-tests-final.log",
+      "sha256": "a98e143c9df5543a46dae7a8c87763b0a48069b1a72886a61797f2bc4cf08486",
+      "origin": "Parent-provided full frontend test log; inspected during this audit, not produced by the standalone baseline command.",
+      "observed_same_assertion": true,
+      "exit_code": null,
+      "exit_code_note": "This audit did not launch these full-suite commands or capture their process exit codes."
+    }
+  ],
+  "file_sha256_comparison": [
+    {
+      "path": "frontend/server/teaching-guidance.test.ts",
+      "base_git_blob_sha256": "f54f67bb17372e8ba87a3aa4500c3a0edce242c9d32fde968e015ac43aa37c6d",
+      "main_file_sha256": "f54f67bb17372e8ba87a3aa4500c3a0edce242c9d32fde968e015ac43aa37c6d",
+      "integration_file_sha256": "f54f67bb17372e8ba87a3aa4500c3a0edce242c9d32fde968e015ac43aa37c6d",
+      "main_identical_to_base": true,
+      "integration_identical_to_base": true
+    },
+    {
+      "path": "frontend/server/agent-runtime.ts",
+      "base_git_blob_sha256": "e997679b2e7d3eb6d1c43755d4509932b669c6cdfa1238b8969dd481768ed863",
+      "main_file_sha256": "e997679b2e7d3eb6d1c43755d4509932b669c6cdfa1238b8969dd481768ed863",
+      "integration_file_sha256": "e997679b2e7d3eb6d1c43755d4509932b669c6cdfa1238b8969dd481768ed863",
+      "main_identical_to_base": true,
+      "integration_identical_to_base": true
+    },
+    {
+      "path": "apps/desktop/frontend/server/teaching-guidance.test.ts",
+      "base_git_blob_sha256": "f54f67bb17372e8ba87a3aa4500c3a0edce242c9d32fde968e015ac43aa37c6d",
+      "main_file_sha256": "f54f67bb17372e8ba87a3aa4500c3a0edce242c9d32fde968e015ac43aa37c6d",
+      "integration_file_sha256": "f54f67bb17372e8ba87a3aa4500c3a0edce242c9d32fde968e015ac43aa37c6d",
+      "main_identical_to_base": true,
+      "integration_identical_to_base": true
+    },
+    {
+      "path": "apps/desktop/frontend/server/agent-runtime.ts",
+      "base_git_blob_sha256": "59b0f4d277777d43edc2cbc169f420111a7b7b7f099a663d380b32ae4dda3bcf",
+      "main_file_sha256": "59b0f4d277777d43edc2cbc169f420111a7b7b7f099a663d380b32ae4dda3bcf",
+      "integration_file_sha256": "59b0f4d277777d43edc2cbc169f420111a7b7b7f099a663d380b32ae4dda3bcf",
+      "main_identical_to_base": true,
+      "integration_identical_to_base": true
+    },
+    {
+      "path": "packages/learning-client/src/visuals/plugin-package.ts",
+      "base_git_blob_sha256": "ea8a0101836e290f0ac0be77925b996a11ab058841fbdeb5b76a4a1f71f12c12",
+      "main_file_sha256": "ea8a0101836e290f0ac0be77925b996a11ab058841fbdeb5b76a4a1f71f12c12",
+      "integration_file_sha256": "ea8a0101836e290f0ac0be77925b996a11ab058841fbdeb5b76a4a1f71f12c12",
+      "main_identical_to_base": true,
+      "integration_identical_to_base": true
+    },
+    {
+      "path": "packages/learning-client/src/visuals/workflow.ts",
+      "base_git_blob_sha256": "f20f8926a1bb71906a6b831dc75b85ea18d76f21b067fbf5a569e731eb11971a",
+      "main_file_sha256": "f20f8926a1bb71906a6b831dc75b85ea18d76f21b067fbf5a569e731eb11971a",
+      "integration_file_sha256": "f20f8926a1bb71906a6b831dc75b85ea18d76f21b067fbf5a569e731eb11971a",
+      "main_identical_to_base": true,
+      "integration_identical_to_base": true
+    },
+    {
+      "path": "packages/learning-client/src/teaching-guidance-context.ts",
+      "base_git_blob_sha256": "9a948b7b644474ec6780fe8f6baae51e66654ea5f4aba6c4a56ca7ae66568370",
+      "main_file_sha256": "9a948b7b644474ec6780fe8f6baae51e66654ea5f4aba6c4a56ca7ae66568370",
+      "integration_file_sha256": "9a948b7b644474ec6780fe8f6baae51e66654ea5f4aba6c4a56ca7ae66568370",
+      "main_identical_to_base": true,
+      "integration_identical_to_base": true
+    }
+  ],
+  "baseline_comparison_commands": [
+    "git rev-parse HEAD",
+    "git diff --name-only 0d0802f34e1099dfc468a1ca77316c583870440f -- frontend apps/desktop/frontend packages/learning-client",
+    "For each listed path: compare bytes from git show 0d0802f34e1099dfc468a1ca77316c583870440f:<path> with main and integration files, then calculate SHA-256."
+  ],
+  "tracked_frontend_learning_client_diff_against_base_observed": "empty",
+  "root_cause_evidence": [
+    {
+      "path": "frontend/server/teaching-guidance.test.ts",
+      "lines": [
+        114,
+        125
+      ],
+      "observation": "Request explicitly asks for a fresh diagram without a template, then expects plannerBodies.length == 2."
+    },
+    {
+      "path": "packages/learning-client/src/visuals/plugin-package.ts",
+      "lines": [
+        65,
+        71
+      ],
+      "observation": "The existing chat create contract requires a studio draft for fresh creation; handler delegates to recommendVisualWork."
+    },
+    {
+      "path": "packages/learning-client/src/visuals/workflow.ts",
+      "lines": [
+        206,
+        216
+      ],
+      "observation": "fresh/adapt/requestsFreshVisual returns search_results with studio_draft immediately, before model generation or artifact persistence."
+    },
+    {
+      "path": "frontend/server/teaching-guidance.test.ts",
+      "lines": [
+        11,
+        15
+      ],
+      "observation": "The guidance fixture has occurred_at but no expires_at."
+    },
+    {
+      "path": "packages/learning-client/src/teaching-guidance-context.ts",
+      "lines": [
+        15,
+        18
+      ],
+      "observation": "Clock expiry filtering only runs when expires_at exists; occurred_at alone does not expire this fixture."
+    }
+  ],
+  "independent_read_only_probe": {
+    "cwd": "/Users/a1-6/LearnFlow",
+    "command": "node --experimental-strip-types --input-type=module - <<'JS'\nimport {recommendVisualWork} from './packages/learning-client/src/visuals/workflow.ts'\nlet modelCalls=0, hostCalls=0\nconst result=await recommendVisualWork({request:'从零画一张二分查找边界与中点关系的结构图，不要模板',kind:'diagram',source_mode:'fresh'}, {scope:{mode:'simple_explain'},signal:new AbortController().signal,artifactHost:{context:'',request:async()=>{hostCalls++;throw new Error('unexpected_host_call')},generate:async()=>{modelCalls++;return ''}}})\nconsole.log(JSON.stringify({status:result.status,studio_draft:result.studio_draft,modelCalls,hostCalls,message:result.message},null,2))\nJS",
+    "log_path": null,
+    "completion_chunk_id": "996f78",
+    "observed_output": {
+      "status": "search_results",
+      "studio_draft": {
+        "request": "从零画一张二分查找边界与中点关系的结构图，不要模板",
+        "kind": "diagram"
+      },
+      "modelCalls": 0,
+      "hostCalls": 0,
+      "message": "创作要求已准备好，请前往“我的创作”配置自己的模型后生成。"
+    },
+    "process_status_note": "Probe output was printed successfully, followed in the same shell cell by the Desktop test. The cell exit code 1 belongs to that final failing test; no separate probe process exit code was recorded.",
+    "initial_probe_error": "An earlier ad hoc probe omitted the required AbortSignal and failed with TypeError before reaching the branch; it was corrected in memory with new AbortController().signal. This probe construction error is not a product failure."
+  },
+  "validation_reporting_boundary": "npm test uses && between suites. A failure in test:profile prevents later test:path/formal/auth/plugins/conversion suites from running in that command; separately executed suites must be recorded separately.",
+  "repo_files_modified_by_audit": [],
+  "tests_rerun_while_serializing_this_artifact": false
+}

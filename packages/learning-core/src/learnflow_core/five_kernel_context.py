@@ -7,6 +7,7 @@ it never writes KernelState and never calls an LLM.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import asyncio
 from datetime import datetime
 import hashlib
 import json
@@ -34,6 +35,8 @@ from learnflow_core.memory_query import plan_query, tokenize, fuzzy_probes, reso
 from learnflow_core.memory_excerpt import excerpt
 from learnflow_core.memory_paths import collect_path_bundles
 from learnflow_core.memory_episode import collect_learning_episodes
+from learnflow_core.memory_source import resolve_source_documents
+from learnflow_core.memory_candidates import rank_candidates
 from app.services.personal_concept_graph import build_personal_concept_context
 from app.services.teaching_guidance import GUIDANCE_VERSION, select_teaching_guidance, diagnose_teaching_guidance
 
@@ -82,8 +85,13 @@ class ContextPolicy:
     enable_fuzzy: bool = True
     enable_temporal: bool = True
     enable_summary_boost: bool = True
+    enable_source_text: bool = False
+    enable_compact_episodes: bool = False
+    candidate_mode: str = "legacy"
 
     def __post_init__(self):
+        if self.candidate_mode not in ("legacy", "corpus_bm25", "hybrid"):
+            raise ValueError("candidate_mode must be legacy, corpus_bm25 or hybrid")
         for name in COMPONENT_POLICY_FIELDS:
             if name.startswith('enable_') and type(getattr(self, name)) is not bool:
                 raise ValueError(f'{name} must be a Boolean')
@@ -94,7 +102,8 @@ class ContextPolicy:
 
 
 COMPONENT_POLICY_FIELDS = ('enable_episodes', 'max_episodes', 'max_episode_facts', 'enable_bm25',
-                           'enable_aliases', 'enable_fuzzy', 'enable_temporal', 'enable_summary_boost')
+                           'enable_aliases', 'enable_fuzzy', 'enable_temporal', 'enable_summary_boost',
+                           'enable_source_text', 'enable_compact_episodes', 'candidate_mode')
 
 
 CONTEXT_POLICIES = {
@@ -699,7 +708,7 @@ def _sensitive_node(node: MemoryNode, fact: MemoryFact | None) -> bool:
 def _serialize_item(
     node: MemoryNode, *, score: float, reasons: list[str],
     fact: MemoryFact | None, claim: MemoryClaim | None, module: MemoryModule | None,
-    terms: Iterable[str] = (),
+    terms: Iterable[str] = (), source_document=None,
 ) -> dict[str, Any]:
     evidence_refs = [fact.source_event_id] if fact else []
     detail: dict[str, Any] = {}
@@ -723,7 +732,8 @@ def _serialize_item(
             "revision_kind": module.revision_kind,
             "policy_version": module.policy_version,
         }
-    rendered, source_text = excerpt(node.text, terms, limit=640)
+    rendered, source_text = (source_document.excerpt(terms, limit=640) if source_document is not None
+                             else excerpt(node.text, terms, limit=640))
     detail["source_text"] = source_text
     return {
         "id": node.id,
@@ -796,11 +806,15 @@ async def build_five_kernel_context(
     query_terms = set(query_plan.terms)
     focused = bool(explicit_subjects or str(query).strip())
     document_terms: dict[int, set[str]] = {}
+    source_documents = {}
+    corpus_ranks = {}
+    corpus_diagnostics = {}
     def node_relevance(node):
         if node.id not in document_terms:
-            document_terms[node.id] = _search_terms(f"{node.subject_id or node.subject_key.split(':', 1)[-1]} {node.text}")
+            document_terms[node.id] = _search_terms(f"{node.subject_id or node.subject_key.split(':', 1)[-1]} "
+                + (source_documents[node.id].text if node.id in source_documents else node.text))
         overlap = len(query_terms & document_terms[node.id])
-        return (2 if node.subject_key in explicit_subjects else 1 if overlap else 0,
+        return (2 if node.subject_key in explicit_subjects else 1 if overlap or node.id in corpus_ranks else 0,
                 overlap / max(1, len(query_terms)))
     archives = list((await db.execute(select(MemoryArchive).where(
         MemoryArchive.learner_id == learner_id, MemoryArchive.status == "archived",
@@ -1015,6 +1029,15 @@ async def build_five_kernel_context(
         channel_ids['fuzzy'] = {n.id for n in found[:240]}
         for node in found[:240]:
             nodes_by_id[node.id] = node
+    # Optional corpus reader. This is a scoped, rebuildable read projection;
+    # it never materializes new facts or replaces the authority ledger. The
+    # SQL scan is explicitly capped and reports truncation, including rows
+    # rejected by the metadata filter. It is not an unbounded vector database.
+    if policy.enable_source_text or policy.candidate_mode != "legacy":
+        found = list((await db.execute(base.order_by(*recent_order).limit(4097))).scalars())
+        channel_stats['corpus'] = {'candidates': min(4096, len(found)), 'truncated': len(found) > 4096}
+        for node in found[:4096]:
+            nodes_by_id[node.id] = node
     nodes = list(nodes_by_id.values())
     facts, claims, modules = await _node_metadata(db, [node.id for node in nodes])
     def permitted(node, fact, history=False):
@@ -1023,12 +1046,23 @@ async def build_five_kernel_context(
                 and not _sensitive_node(node, fact)
                 and _in_scope(node, policy, project_id=project_id, checkpoint_id=checkpoint_id,
                               session_id=session_id, allow_superseded=history))
+    if policy.enable_source_text:
+        source_documents = await resolve_source_documents(db, learner_id=learner_id, nodes=nodes,
+            node_allowed=permitted, sensitive_fields=SENSITIVE_FIELDS)
+        document_terms.clear()
+    search_documents = {n.id: source_documents[n.id].text if n.id in source_documents else n.text
+                        for n in nodes if permitted(n, facts.get(n.id))}
     if policy.enable_fuzzy:
-        query_plan = resolve_fuzzy(query_plan, [n.text for n in nodes if permitted(n, facts.get(n.id))])
+        query_plan = resolve_fuzzy(query_plan, list(search_documents.values()))
     query_terms = set(query_plan.terms)
-    bm25, bm25_stats = bm25_scores(query_plan, {
-        n.id: n.text for n in nodes if permitted(n, facts.get(n.id))
-    }) if policy.enable_bm25 else ({}, {'documents': 0, 'matched': 0, 'truncated_documents': 0})
+    if policy.candidate_mode != 'legacy' and str(query).strip():
+        candidate_result = await asyncio.to_thread(rank_candidates, query, search_documents,
+            mode='hybrid' if policy.candidate_mode == 'hybrid' else 'bm25', limit=80,
+            enable_aliases=policy.enable_aliases, enable_bm25=policy.enable_bm25,
+            lexical_plan=query_plan)
+        corpus_ranks = {identifier: index for index, identifier in enumerate(candidate_result.ordered_ids)}
+        corpus_diagnostics = candidate_result.diagnostics
+    bm25, bm25_stats = bm25_scores(query_plan, search_documents) if policy.enable_bm25 else ({}, {'documents': 0, 'matched': 0, 'truncated_documents': 0})
     concept_context = await build_personal_concept_context(
         db,
         learner_id,
@@ -1088,8 +1122,14 @@ async def build_five_kernel_context(
             excluded_irrelevant += 1
             continue
         # Lexicographic relevance tiers dominate bounded quality tie-breakers.
-        score = 10.0 * tier + 2.5 * lexical + float(node.salience or 0.25)
+        if policy.candidate_mode != "legacy" and focused and node.id not in corpus_ranks and tier != 2:
+            excluded_irrelevant += 1
+            continue
+        score = 10.0 * tier + (2.5 * lexical if policy.candidate_mode == "legacy" else
+            5.0 / (1.0 + corpus_ranks.get(node.id, 1000) / 10.0)) + float(node.salience or 0.25)
         reasons: list[str] = ["salience"]
+        if node.id in corpus_ranks:
+            reasons.append(policy.candidate_mode)
         if node.subject_key in explicit_subjects:
             reasons.append("exact_subject")
         if lexical:
@@ -1116,7 +1156,7 @@ async def build_five_kernel_context(
         if node.id in current_update_ids:
             score += 1.2
             reasons.append("current_correction_anchor")
-        if bm25.get(node.id):
+        if bm25.get(node.id) and policy.candidate_mode == "legacy":
             score += 1.5 * bm25[node.id] / (1 + bm25[node.id])
             reasons.append('candidate_pool_bm25')
         if node.id in temporal_slots:
@@ -1143,7 +1183,8 @@ async def build_five_kernel_context(
     serialized = {
         node.id: _serialize_item(node, score=score, reasons=reasons,
                                 fact=facts.get(node.id), claim=claims.get(node.id),
-                                module=modules.get(node.id), terms=query_terms)
+                                module=modules.get(node.id), terms=query_terms,
+                                source_document=source_documents.get(node.id))
         for score, _, node, reasons in ranked
     }
     def graph_scope(model):
@@ -1172,7 +1213,7 @@ async def build_five_kernel_context(
             scope_predicates=lambda model: [model.kernel_name.in_(policy.deep_kernels),
                 model.kernel_name != 'human', model.id.not_in(archived_ids or {-1}),
                 *_scope_filters(policy, project_id, checkpoint_id, session_id, model=model)],
-            terms=query_terms, max_facts=policy.max_episode_facts, now=now)
+            terms=query_terms, max_facts=1 if policy.enable_compact_episodes else policy.max_episode_facts, now=now)
         if not episode_stats['events_scanned']:
             episode_stats = {k: v for k, v in episode_stats.items()
                              if k in ('anchors', 'eligible', 'selected', 'budget_omitted', 'rejected')
@@ -1197,6 +1238,19 @@ async def build_five_kernel_context(
         },
         'episodes': {'enabled': bool(policy.enable_episodes and policy.max_episodes), **episode_stats},
     }
+
+    if policy.candidate_mode != 'legacy':
+        # These model-identity and truncation counters are charged to the
+        # same packet budget. Verbose cache diagnostics never enter prompts.
+        retrieval_diagnostics['components']['corpus'] = {
+            'enabled': True, 'documents': len(search_documents), 'matched': len(corpus_ranks),
+            **{key: value for key, value in corpus_diagnostics.items() if key in (
+                'semantic_used', 'semantic_model', 'semantic_model_sha256',
+                'semantic_query_unknown_tokens', 'semantic_document_unknown_tokens',
+                'semantic_query_truncated_chars', 'semantic_document_truncated_chars')}}
+    if policy.enable_source_text:
+        retrieval_diagnostics['components']['source_text'] = {
+            'enabled': True, 'expanded': sum(d.source_kind != 'node_text' for d in source_documents.values())}
 
     def budget_body() -> dict:
         return context_budget_payload({'kernel_heads': head_payload, 'items': items,
