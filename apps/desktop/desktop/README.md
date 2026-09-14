@@ -60,3 +60,11 @@ workflow artifact. It first runs the workspace/Tutor/registry contract tests,
 then the frontend build, PyInstaller sidecar build, and Tauri build. Run the
 workflow manually for release candidates; direct pushes to `main` or `codex/**`
 that touch desktop, backend, or frontend code also exercise the same matrix.
+
+## Windows startup console (0.3.2)
+
+Release builds declare the Windows GUI subsystem in `src-tauri/src/main.rs`,
+so launching the app does not create a console window. Debug builds retain the
+console. The Python sidecar remains unchanged: Tauri's shell plugin already
+launches it with `CREATE_NO_WINDOW` and pipes its output. The release workflow
+checks the built main executable's PE subsystem before publishing installers.

@@ -72,6 +72,21 @@ jobs:
       - name: Build Tauri package
         run: npm --prefix apps/desktop/desktop run build
 
+      - name: Verify Windows GUI subsystem
+        if: runner.os == 'Windows'
+        shell: python
+        run: |
+          import struct
+          from pathlib import Path
+          executable = Path("apps/desktop/desktop/src-tauri/target/release/learnflow-desktop.exe")
+          data = executable.read_bytes()
+          assert data[:2] == b"MZ", "Missing DOS header"
+          pe_offset = struct.unpack_from("<I", data, 0x3C)[0]
+          assert data[pe_offset:pe_offset + 4] == b"PE\0\0", "Missing PE header"
+          subsystem = struct.unpack_from("<H", data, pe_offset + 24 + 68)[0]
+          assert subsystem == 2, f"Expected Windows GUI subsystem (2), got {subsystem}"
+          print(f"{executable.name}: Windows GUI subsystem verified; no startup console")
+
       - name: Collect release assets
         shell: bash
         run: |
