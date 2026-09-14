@@ -107,7 +107,7 @@ function PlanningResourcePanel({ projectId, topic, runs, pending, onRequest, onP
           <a href={source.url} target="_blank" rel="noopener noreferrer">{source.title}</a>
           {saved && <strong className="resource-selected-badge">✓ 已选用 · {savedResourceStatus(saved.status)}</strong>}
           <small>{source.quality === 'repository' ? '仓库' : source.role === 'textbook' ? '教材' : source.role === 'course' ? '课程' : '网页资料'} · 许可需以来源为准</small>
-          <div className="resource-introduction"><strong>内容简介 · 来源摘要</strong><p>{intro.summary}</p><small>{intro.basis}</small></div>
+          <div className="resource-introduction"><strong>内容简介 · 来源摘要</strong><p>{intro.summary}</p>{intro.retrievalNote && <div className="resource-retrieval-note"><strong>检索来源说明</strong><p>{intro.retrievalNote}</p></div>}<small>{intro.basis}</small></div>
           <div className="resource-card-actions">
             <a className="resource-open-link" href={source.url} target="_blank" rel="noopener noreferrer" aria-label={`打开资料：${source.title}（新窗口）`}>打开资料 ↗</a>
             <button type="button" disabled={pending} onClick={() => ask([source])}>询问这份资料</button>

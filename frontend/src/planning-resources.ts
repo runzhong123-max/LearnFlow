@@ -49,6 +49,7 @@ export function resourceUrlKey(raw: string): string {
 export function resourceIntroduction(source: SearchSource) {
   return {
     summary: source.snippet?.trim() || '当前检索结果尚无内容简介，可先询问 Tutor 阅读原资料后介绍。',
+    retrievalNote: source.reason?.trim() || '',
     basis: source.readState === 'page_excerpt' ? '依据已读相关片段；不代表已读全文' : '依据检索摘要；课程内容、先修要求和学习负担仍需核验',
   }
 }

@@ -55,7 +55,8 @@ test('resource introductions distinguish excerpts from recommendation reasons an
   const { resourceIntroduction } = await import('../src/planning-resources.ts')
   const intro = resourceIntroduction({snippet:'介绍缓存与虚拟内存',reason:'对应学习目标',readState:'page_excerpt'} as SearchSource)
   assert.equal(intro.summary,'介绍缓存与虚拟内存')
-  assert.equal('reason' in intro, false, 'retrieval metadata is not a learner-facing recommendation')
+  assert.equal(intro.retrievalNote,'对应学习目标')
+  assert.equal('reason' in intro, false, 'retrieval metadata is separate from recommendation copy')
   assert.match(intro.basis,/不代表已读全文/)
   assert.match(resourceIntroduction({} as SearchSource).summary,/尚无内容简介/)
 })
@@ -76,6 +77,7 @@ test('provider boilerplate and empty reasons never become recommendation copy', 
     const intro = resourceIntroduction({snippet:'课程覆盖虚拟内存与缓存',reason} as SearchSource)
     assert.equal(intro.summary,'课程覆盖虚拟内存与缓存')
     assert.equal('reason' in intro,false)
-    assert.doesNotMatch(JSON.stringify(intro),/Tavily|可信来源目录|适配情况待核验/)
+    assert.equal(intro.retrievalNote,reason)
+    assert.doesNotMatch(JSON.stringify(intro),/适配情况待核验/)
   }
 })
