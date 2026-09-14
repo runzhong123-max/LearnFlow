@@ -13,6 +13,7 @@ export type UiIconName =
   | 'tasks'
   | 'path'
   | 'visual'
+  | 'atlas'
   | 'pet'
   | 'profile'
   | 'settings'
@@ -56,6 +57,11 @@ const PATHS: Record<UiIconName, JSX.Element> = {
     <>
       <rect x="4" y="4.6" width="16" height="14.8" rx="3.2" />
       <path d="M10.4 9.3v5.4l4.6-2.7Z" />
+    </>
+  ),
+  atlas: (
+    <>
+      <path d="M12 4.6 19.4 12 12 19.4 4.6 12Z" />
     </>
   ),
   pet: (
