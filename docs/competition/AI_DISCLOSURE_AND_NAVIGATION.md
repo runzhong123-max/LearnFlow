@@ -8,7 +8,7 @@ Web、桌面聊天回复结束后、讲义与练习页尾、模型生成的学�
 
 /demo 复用 /showcase.html 总导航，展示岗位研究、Graph Hub、任务转学习项目、学习与实践、纠错复习、交互教学。导航本身不请求登录；业务页仍执行原认证。localhost 的学习、转换、复习和视觉入口留在本机，外部服务使用原有站点地址。bash start.sh demo 打开总导航；/review 保留兼容且仅在隔离模式下自动登录。
 
-桌面下载区已预留。当前 LearnFlow 仓库没有发布的 Release，也未提供可确认的安装包地址，因此显示“下载地址待提供”，不链接空发布页或历史仓旧包。填写实际链接后应验证文件可下载、版本及适配系统；本次没有发布安装包或部署站点。
+后续发布（2026-09-14）：[v0.3.1](https://github.com/runzhong123-max/LearnFlow/releases/tag/v0.3.1) 已发布 Windows x64 EXE/MSI 和 macOS Apple Silicon DMG/App ZIP；总导航提供直接下载与版本说明入口。附 SHA256SUMS.txt，macOS 产物本地摘要与 GitHub 摘要一致，包内后端隔离启动及架构校验通过。安装包未发行签名/公证，未提供 Intel Mac 包；Windows 安装及完整桌面 GUI 未人工验收。发布构建记录为 34837347803，网页未在本次部署。
 
 ## 首次访问修复
 

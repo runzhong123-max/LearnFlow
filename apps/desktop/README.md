@@ -36,7 +36,7 @@ bash start.sh
 
 ## 桌面安装包
 
-桌面端安装包发布在 GitHub 的 [Releases](https://github.com/killoppen/edagent/releases) 页面。维护者推送 `v*` 标签后，GitHub Actions 会在 Windows 和 macOS runner 上构建并上传安装包；也可以在 `Desktop release` workflow 中手动选择已有的 `v*` 标签重新发布。
+桌面端安装包发布在本仓库的 [Releases](https://github.com/runzhong123-max/LearnFlow/releases) 页面。维护者先创建与桌面版本一致的 `v*` 标签，再手动触发 `Desktop release` workflow 并指定该标签；仅推送标签不会自动发布。工作流在 Windows 和 macOS runner 上构建并上传安装包。
 
 本地构建桌面安装包时，先完成 `desktop/README.md` 中的 Rust、Tauri、Python 和 Node.js 依赖安装，然后执行：
 
