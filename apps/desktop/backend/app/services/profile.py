@@ -8,7 +8,7 @@ from sqlalchemy import Integer, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.learning import (
-    EvidenceEvent, KernelState, LearnerBadge, LearnerProfile, LearningLifeEvent,
+    EvidenceEvent, KernelState, Learner, LearnerBadge, LearnerProfile, LearningLifeEvent, LearningTask,
     MemoryArchive, MemoryFact, MemoryNode, MicroLearningRun, ReviewSchedule,
 )
 from app.models.project import Checkpoint, Project, Roadmap
@@ -601,6 +601,59 @@ async def recent_growth_evidence(
     return results
 
 
+async def achievement_projection(db: AsyncSession, learner_id: int) -> list[dict]:
+    """Read-only, deterministic awards; completion is not a mastery claim."""
+    learner = await db.get(Learner, learner_id)
+    if not learner:
+        return []
+    completed_tasks = int(await db.scalar(select(func.count(LearningTask.id)).where(
+        LearningTask.learner_id == learner_id, LearningTask.status == "completed",
+    )) or 0)
+    achievements = [{
+        "id": "registration", "title": "初次启程", "description": "首次注册 LearnFlow",
+        "kind": "registration", "earned": bool(learner.user_id),
+        "current": int(bool(learner.user_id)), "target": 1,
+    }]
+    for target, title in ((1, "首个任务"), (10, "十次积累"), (50, "五十次坚持"), (100, "百次进阶")):
+        achievements.append({
+            "id": f"tasks:{target}", "title": title,
+            "description": f"完成 {target} 个学习任务", "kind": "tasks",
+            "earned": completed_tasks >= target, "current": min(completed_tasks, target),
+            "target": target,
+        })
+    # Existing awarded projects remain visible; historical completed projects are
+    # projected using the same all-non-archived-checkpoints rule without GET writes.
+    awarded = (await db.execute(select(LearnerBadge).where(
+        LearnerBadge.learner_id == learner_id, LearnerBadge.badge_type == "project_completed",
+    ).order_by(LearnerBadge.id))).scalars().all()
+    project_ids = set()
+    for badge in awarded:
+        if badge.project_id in project_ids:
+            continue
+        project_ids.add(badge.project_id)
+        achievements.append({"id": f"project:{badge.project_id}", "title": badge.title,
+                             "description": badge.description, "kind": "project",
+                             "earned": True, "current": 1, "target": 1})
+    rows = (await db.execute(select(
+        Project.id, Project.name, func.count(Checkpoint.id),
+        func.sum((Checkpoint.learning_status == "completed").cast(Integer)),
+    ).join(Roadmap, Roadmap.project_id == Project.id)
+      .join(Checkpoint, Checkpoint.roadmap_id == Roadmap.id)
+      .where(Project.learner_id == learner_id, Checkpoint.archived.is_(False))
+      .group_by(Project.id, Project.name).order_by(Project.id))).all()
+    for project_id, name, total, completed in rows:
+        if total and completed == total and project_id not in project_ids:
+            project_ids.add(project_id)
+            achievements.append({"id": f"project:{project_id}", "title": f"完成「{name}」",
+                                 "description": f"完成全部 {total} 个检查点", "kind": "project",
+                                 "earned": True, "current": 1, "target": 1})
+    if not project_ids:
+        achievements.append({"id": "project:first", "title": "首个项目", "kind": "project",
+                             "description": "完成一个学习项目，收获专属勋章",
+                             "earned": False, "current": 0, "target": 1})
+    return achievements
+
+
 async def growth_projection(db: AsyncSession, learner_id: int) -> dict:
     """Build a learner-facing read model from existing authoritative projections.
 
@@ -726,6 +779,7 @@ async def growth_projection(db: AsyncSession, learner_id: int) -> dict:
         "areas": areas,
         "evidence": evidence,
         "journey": journey,
+        "achievements": await achievement_projection(db, learner_id),
     }
 
 

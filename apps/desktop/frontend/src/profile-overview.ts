@@ -81,6 +81,6 @@ export function buildProfileOverview(snapshot: FormalLearnerSnapshot): ProfileOv
     { id: 'focus', title: '当前重点', kernel: 'value', empty: '还没有明确方向或进行中的任务。', items: focus },
     { id: 'background', title: '已有基础', kernel: 'knowledge', empty: '还没有填写学习背景。', items: background },
     { id: 'progress', title: '最近进展', kernel: 'knowledge', empty: '暂无可展示的学习记录；这不代表你没有练习或进步。', items: progress },
-    { id: 'support', title: '如何帮助我', kernel: 'human', empty: '还没有设置学习偏好。', items: support },
+    { id: 'support', title: '学习个性化', kernel: 'human', empty: '还没有设置学习偏好。', items: support },
   ]
 }

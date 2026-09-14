@@ -44,7 +44,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-13.5"
+REGISTRY_VERSION = "2026-09-14.1"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Data contracts: external sources and explicitly scoped read-only projections.
@@ -330,7 +330,7 @@ TOOLS = {
         ToolContract("learning_task_candidate_gateway", "Source-pinned Learning Task Candidate Gateway", "tutor_agent", "learnflow", "artifact",
                      (), (), "owned Project + immutable SourceVersion segments -> fixed Xingchen workflow -> versioned bundle -> deterministic validator -> unconfirmed candidate artifact; read, audit and handoff remain zero-kernel; only a root-hash-bound explicit learner confirmation may ask LearnFlow Learning Design and the formal task runtime to create a LearningTask, while the external workflow can never publish one"),
         ToolContract("vnext_five_kernel_profile_reader", "vNext Formal Five-kernel Context Reader", "tutor_agent", "vnext", "read",
-                     KERNEL_NAMES, (), "ContextPolicy -> KernelHead + scoped Memory Graph -> bounded read-only Tutor context; local simulation is offline fallback only"),
+                     KERNEL_NAMES, (), "ContextPolicy -> KernelHead + scoped Memory Graph -> bounded read-only Tutor context + learner-scoped achievement gallery v1 (registration, completed task milestones and per-project awards); zero writes; local simulation is offline fallback only"),
         ToolContract("vnext_learning_workspace_reader", "vNext Scoped Learning Workspace Reader", "tutor_agent", "vnext", "read",
                      KERNEL_NAMES, (), "learner/session/project/checkpoint-scoped LearningTask queue + answer-free LearningAttempt/RemediationCase/ReviewSchedule projection + project source knowledge domains -> bounded read-only observation"),
         ToolContract("domain_knowledge_reader", "Learner Domain Knowledge Library Reader", "tutor_agent", "vnext", "read",
@@ -1819,7 +1819,7 @@ _TOOL_BINDING_IDS = {
         "api:learning_task_candidates.handoff", "api:learning_task_candidates.confirm",
         "frontend:plugin.learning_task_conversion",
     ),
-    "vnext_five_kernel_profile_reader": ("py:memory.evidence", "api:memory.evidence_list", "api:memory.evidence", "frontend:memory.evidence", "py:five_kernel.context",),
+    "vnext_five_kernel_profile_reader": ("py:profile.growth", "api:profile.growth", "py:memory.evidence", "api:memory.evidence_list", "api:memory.evidence", "frontend:memory.evidence", "py:five_kernel.context",),
     "vnext_learning_workspace_reader": ("api:learner_state.workspace",),
     "domain_knowledge_reader": ("api:knowledge_library.context",),
     "graph_hub_reader": ("frontend:plugin.graph_hub", "frontend:plugin.hub_discovery"),

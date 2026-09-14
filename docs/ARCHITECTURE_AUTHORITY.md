@@ -734,3 +734,8 @@ Contract impact：共享核心 0.2.6 / relevance-budget.v4 新增有界语料候
 ### 2026-09-13 学习依据卡片与当前复习资格
 
 共享核心 0.2.7 实现 `learnflow.memory-evidence.v1`：画像与复习工作台消费同一有 scope 的只读来源卡片与已记录反向关联，不创建新的用户画像权威。`review-qualification.v2` 将历史成功与当前稳定资格分开：复习失败经原事件链撤销当前 long-term stable 并使依赖旧事实的投影失效，历史事件和正文保留；达到原间隔门后可以恢复。旧数据通过只读保护阻止失效 stable 进入当前上下文，不迁移数据库。字段兼容性、记录粒度、来源覆盖限制与验收见 [实现说明](implementation/MEMORY_EVIDENCE_WORKBENCH.md)。
+
+
+### 2026-09-14 画像成就展示
+
+Contract impact：registry 2026-09-14.1 / desktop 对应版本，既有 Tutor 画像读取能力增加只读 growth.achievements 可选字段。按当前本人完成任务、注册和每项目完成记录展示成就，不新增写权限、学习事件或五核语义，无数据库迁移。两端兼容性与规则见 [画像成就](implementation/PROFILE_ACHIEVEMENTS.md)。

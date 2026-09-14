@@ -12,7 +12,7 @@ function snapshot(): FormalLearnerSnapshot {
 
 test('empty or missing presentation data does not assert no practice or invent dates', () => {
   const sections = buildProfileOverview(snapshot())
-  assert.deepEqual(sections.map(section => section.title), ['当前重点', '已有基础', '最近进展', '如何帮助我'])
+  assert.deepEqual(sections.map(section => section.title), ['当前重点', '已有基础', '最近进展', '学习个性化'])
   assert.ok(sections.every(section => section.items.length === 0))
   assert.match(sections[2].empty, /不代表你没有练习或进步/)
   assert.equal(profileTimeLabel(undefined), '未提供时间')

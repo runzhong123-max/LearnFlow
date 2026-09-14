@@ -1,3 +1,4 @@
+import { AchievementGallery } from './AchievementGallery'
 import { MemoryEvidencePanel } from './MemoryEvidencePanel'
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import type {
@@ -359,6 +360,8 @@ export default function LearnerProfilePage({
       </header>
 
       {error && <div className="formal-inline-error" role="alert">{error}</div>}
+
+      <AchievementGallery achievements={snapshot.growth.achievements} />
 
       <div className="profile-learning-overview">
         {buildProfileOverview(snapshot).map(section => <section key={section.id} className="profile-learning-section">

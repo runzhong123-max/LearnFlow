@@ -360,6 +360,16 @@ export type FormalConceptGraph = {
   }
 }
 
+export type FormalAchievement = {
+  id: string
+  title: string
+  description: string
+  kind: 'registration' | 'tasks' | 'project'
+  earned: boolean
+  current: number
+  target: number
+}
+
 export type FormalLearnerSnapshot = {
   authority: string
   learner: FormalLearner
@@ -375,6 +385,7 @@ export type FormalLearnerSnapshot = {
   growth: {
     overview: Record<string, unknown>
     stats: Record<string, number>
+    achievements?: FormalAchievement[]
     areas: FormalGrowthArea[]
     evidence: Array<Record<string, unknown>>
   }
