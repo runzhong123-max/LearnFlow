@@ -29,3 +29,11 @@ Contract impact：Web registry 2026-09-14.4，competition_demo 稳定 ID 保留�
 - 全新 Playwright 会话：/demo → /showcase.html → /review，自动登录比赛演示学习者并显示复习内容；打开讲义、概念练习并提交错误答案，正常展示纠错与步骤入口。
 - 讲义尾注计算样式：12px、18px 高、static、透明背景。手机 390px 视口无横向溢出。
 - 未执行：线上部署、真实模型生成、桌面安装包构建及安装、外部场景完整业务验收；这些不由本次本地入口测试替代。
+
+## Windows 启动黑窗口修复（v0.3.2）
+
+2026-09-14 发布 v0.3.2。正式 Windows 主程序声明 windows_subsystem="windows"；调试版保留控制台，Python sidecar 的 CREATE_NO_WINDOW 与输出管道保持原样。版本、npm lock、Cargo lock 和 Tauri 配置一致。
+
+[发布构建 34840438436](https://github.com/runzhong123-max/LearnFlow/actions/runs/34840438436) 的 Windows/macOS 前端、sidecar、Tauri 打包均通过。Windows runner 直接检查构建出的 learnflow-desktop.exe 的 PE 头，Subsystem=2（GUI），检查通过才发布。四个安装产物的下载链接均 HTTP 200 且大小匹配，另附 GitHub 资产摘要生成的 SHA256SUMS.txt。总导航切换到 v0.3.2。
+
+本地 rustfmt、版本一致性、导航前端构建和 git diff --check 通过。未重跑业务后端回归：本次没有业务代码变化；未做实体 Windows 更新安装或完整 GUI 人工验收，仍需实际设备确认。无共享契约、学习证据或数据库迁移；网站未在本次部署。
