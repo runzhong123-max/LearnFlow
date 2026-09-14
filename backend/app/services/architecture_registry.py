@@ -44,7 +44,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-14.3"
+REGISTRY_VERSION = "2026-09-14.4"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Data contracts: external sources and explicitly scoped read-only projections.
@@ -1113,7 +1113,7 @@ WORKBENCHES = {
         WorkbenchContract("learner_growth", "Learner Growth", "/growth", "tutor_agent", ()),
         WorkbenchContract("profile", "Learner Profile Legacy Redirect", "/profile", "tutor_agent", ()),
         WorkbenchContract("memory", "Inspectable Memory Legacy Redirect", "/memory", "tutor_agent", ()),
-        WorkbenchContract("competition_demo", "Seeded Demo Entry", "/review", "tutor_agent",
+        WorkbenchContract("competition_demo", "Competition Demo Navigation", "/demo", "tutor_agent",
                           ("plan_review_queue", "evaluate_review_attempt", "manage_review_item",
                            "evaluate_attempt", "request_remediation_explanation", "retry_attempt",
                            "evaluate_transfer_variant"), "fused"),
@@ -1738,7 +1738,7 @@ _FRONTEND_COMPONENT_TARGETS = {
     "workbench:learning_tasks": ("frontend/src/LearningTasksPage.tsx", "LearningTasksPage", "/tasks"),
     "workbench:project_tutor": ("frontend/src/ProjectWorkspacePage.tsx", "ProjectWorkspacePage", "/projects/"),
     "workbench:review": ("frontend/src/ReviewWorkbenchPage.tsx", "ReviewWorkbenchPage", "/review"),
-    "workbench:competition_demo": ("frontend/src/ReviewWorkbenchPage.tsx", "ReviewWorkbenchPage", "/review"),
+    "workbench:competition_demo": ("frontend/src/CompetitionDemoEntry.tsx", "CompetitionDemoEntry", "/demo"),
     "workbench:desktop_workspace": ("frontend/src/main.tsx", "App", ""),
 }
 

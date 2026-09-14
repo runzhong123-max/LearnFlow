@@ -1,3 +1,4 @@
+import AiContentNotice from '../../../../packages/learning-client/src/AiContentNotice.tsx'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { ensureFormalIdentity, loadLectureFile, markFormalLectureRead, recordLearningFileAccess } from './formal-runtime'
 import { getRuntimeClientState } from './runtime-client.ts'
@@ -98,6 +99,7 @@ export default function LectureFilePage({ lectureId, embedded, conversationId, s
       </div>
       {onContinue && <div className="learning-file-next-action"><button type="button" className="learning-primary-action" disabled={busy} onClick={() => void markRead(true)}>{busy ? '正在保存…' : read ? '进入配套练习' : '读完，进入练习'}</button></div>}
       {!embedded && <footer>这台设备会保留当前账号的阅读位置。</footer>}
+      <AiContentNotice />
     </section>
   )
 }

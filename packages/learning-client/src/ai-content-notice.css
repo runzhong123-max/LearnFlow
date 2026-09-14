@@ -1,0 +1,9 @@
+.lf-ai-content-notice {
+  color: var(--text-muted, #66736b);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  margin: 10px 0 0;
+  letter-spacing: normal;
+}
+@media print { .lf-ai-content-notice { color: #555; break-inside: avoid; } }

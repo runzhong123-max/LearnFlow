@@ -13,6 +13,7 @@ from app.services.demo_code_grader import seeded_demo_assessment_metadata
 from app.services.learning_runtime import create_attempt, ensure_kernel_states, record_event
 from app.services.remediation import create_remediation_case
 from app.services.review import apply_assessment_result
+from app.services.five_kernel_context import ensure_kernel_heads
 
 
 DEMO_USERNAME = "competition-demo"
@@ -385,6 +386,8 @@ async def seed_competition_demo(db: AsyncSession) -> dict:
         provenance={"seed": "competition-remediation-v1", "offline": True},
         client_event_id="competition-demo-project-seeded",
     )
+    # Warm derived heads before parallel browser reads; no new learning evidence.
+    await ensure_kernel_heads(db, learner.id)
     await db.commit()
     return {
         "account_id": account.id,

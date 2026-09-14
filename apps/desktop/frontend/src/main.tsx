@@ -1,3 +1,4 @@
+import AiContentNotice from '../../../../packages/learning-client/src/AiContentNotice.tsx'
 import type { WorkspaceCodeDraft } from './WorkspaceCodePaper'
 import { readProjectFile } from './project-workbench-api'
 import { teachingAffordances } from './teaching-affordances.ts'
@@ -4970,6 +4971,7 @@ function MessageList({ teachingBusy, onTeachingQuestion, messages, learnerAvatar
                 </Suspense>
               )}
               {!message.pluginResultProjection && message.agentTrace && <AgentTraceSummary trace={message.agentTrace} />}
+              {message.role === 'assistant' && !message.streaming && Boolean(message.content?.trim()) && !message.learningActionLabel && !message.pluginResultProjection && <AiContentNotice />}
             </div>
           </article>
         ))}

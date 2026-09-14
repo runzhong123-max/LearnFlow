@@ -3,7 +3,7 @@
 ## 0. 场前准备
 
 1. 在干净终端执行 `bash start.sh demo`。
-2. 确认浏览器进入启动脚本打印的 `/review` 地址，并自动登录隔离演示学习者。
+2. 确认浏览器进入启动脚本打印的 `/demo`，显示作品总导航；点击“体验学习闭环”进入 `/review`，自动登录隔离演示学习者。
 3. 确认后端 `GET /api/demo/status` 返回 `enabled: true`。
 4. 确认 `GET /api/architecture/validate` 返回 `valid: true`。
 5. 如演示桌面内部包，另建一个无敏感信息的临时项目目录；浏览器 seeded demo 不要求本地目录权限。
@@ -66,7 +66,7 @@ if not values:
 
 - LLM 或网络不可用：继续使用 demo；所有闭环逻辑是本地确定性的。
 - 日常数据库状态异常：停止服务后重新运行 `bash start.sh demo`，演示库与日常库隔离且 seed 幂等。
-- 浏览器未跳转：手动打开启动脚本打印的前端地址并追加 `/review`。
+- 浏览器未跳转：手动打开启动脚本打印的前端地址并追加 `/demo`。
 - 端口占用：先执行 `bash start.sh stop`，确认旧进程结束后重启。
 - 需要证明版本：打开 `/api/architecture/registry`，记录 version、digest 和 validation_errors。
 - 桌面目录不可用：切回浏览器 `/review`；桌面文件能力与 seeded 学习闭环相互隔离。

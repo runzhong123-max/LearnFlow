@@ -1,3 +1,5 @@
+import { AI_CONTENT_NOTICE, svgWithAiNotice } from '../ai-content-export.ts'
+import AiContentNotice from '../AiContentNotice.tsx'
 import {useEffect, useMemo, useRef, useState, type ReactNode} from 'react'
 import type {VisualBundle, VisualTransport} from './types'
 import {VisualMore, VisualPlayback, VisualStages} from './VisualPlayerChrome'
@@ -45,7 +47,8 @@ function alignComparison(current: VisualBundle, index: number, other: VisualBund
   return {step: targets[Math.round(position * (targets.length - 1))].step, note: '按相同运算阶段对齐，阶段内按进度定位；实际窗口位置与数值见各自说明。'}
 }
 function saveFile(content: string, type: string, filename: string) {
-  const url = URL.createObjectURL(new Blob([content], {type}))
+  const labeled = type === 'image/svg+xml' ? svgWithAiNotice(content) : type === 'application/json' ? JSON.stringify({...JSON.parse(content), ai_content_notice: AI_CONTENT_NOTICE}, null, 2) : content
+  const url = URL.createObjectURL(new Blob([labeled], {type}))
   const anchor = document.createElement('a'); anchor.href = url; anchor.download = filename; anchor.click()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
@@ -280,5 +283,6 @@ export default function VisualizeArtifact({initial, transport, onAsk, storageSco
         {secondaryActions}
       </VisualMore>
     </> : !scopeInvalid && <p role="status">没有可显示的有效状态。{bundle.spec.fallback.text}</p>}
+    <AiContentNotice />
   </figure>
 }

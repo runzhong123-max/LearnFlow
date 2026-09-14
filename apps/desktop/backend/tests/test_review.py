@@ -684,6 +684,13 @@ def test_seeded_demo_opens_review_with_due_variant_and_remediation():
             first = await seed_competition_demo(db)
             second = await seed_competition_demo(db)
             learner_id = first["learner_id"]
+            from app.models.learning import KernelHead
+            from app.services.architecture_registry import KERNELS
+            heads = list((await db.execute(select(KernelHead).where(
+                KernelHead.learner_id == learner_id,
+            ))).scalars().all())
+            assert {head.kernel_name for head in heads} == set(KERNELS)
+            assert len(heads) == len(KERNELS)
             schedules = list((await db.execute(select(ReviewSchedule).where(
                 ReviewSchedule.learner_id == learner_id,
             ))).scalars().all())

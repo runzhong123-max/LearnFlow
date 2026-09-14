@@ -113,7 +113,7 @@ prepare_competition_demo() {
   FRONTEND_PORT="$(next_available_port 4174)"
   export LEARNFLOW_BACKEND_URL="http://127.0.0.1:$BACKEND_PORT"
   export CORS_ORIGINS="http://localhost:$FRONTEND_PORT,http://127.0.0.1:$FRONTEND_PORT"
-  OPEN_URL="http://localhost:$FRONTEND_PORT/review"
+  OPEN_URL="http://localhost:$FRONTEND_PORT/demo"
 
   echo -e "${BLUE}━━━ 初始化离线比赛演示 ━━━${NC}"
   cd "$BACKEND_DIR"

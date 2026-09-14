@@ -1,3 +1,4 @@
+import AiContentNotice from '../../packages/learning-client/src/AiContentNotice.tsx'
 import { useEffect, useRef, useState } from 'react'
 import {
   ensureFormalIdentity,
@@ -289,6 +290,7 @@ export default function PracticeFilePage({ practiceRef, embedded, inline, conver
         }} />}
       {codeResult && !codeResult.passed && !codeCaseId && <p>这次未返回可用的纠错记录，可返回对话继续处理。{reviewAction}</p>}
       </>}
+      <AiContentNotice />
     </section>
   )
 }

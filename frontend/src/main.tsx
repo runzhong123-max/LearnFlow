@@ -1,3 +1,5 @@
+import CompetitionDemoEntry from './CompetitionDemoEntry.tsx'
+import AiContentNotice from '../../packages/learning-client/src/AiContentNotice.tsx'
 import { teachingAffordances } from './teaching-affordances.ts'
 import { runtimeFetch } from './runtime-client.ts'
 import { existingQuoteSheet, type TeachingAffordances } from '../../packages/learning-client/src/teaching/affordances.ts'
@@ -4738,6 +4740,7 @@ function MessageList({ renderResourceTool, teachingBusy, onTeachingQuestion, mes
                   )} />
                 </Suspense>
               )}
+              {message.role === 'assistant' && !message.streaming && Boolean(message.content?.trim()) && !message.learningActionLabel && !message.pluginResultProjection && <AiContentNotice />}
             </div>
           </article>
         ))}
@@ -4766,7 +4769,8 @@ const root = rootScope.__learnflowRoot || createRoot(rootElement)
 rootScope.__learnflowRoot = root
 const ConversionPage = lazy(() => import('./WorkTaskConversionPage.tsx'))
 const isConversionPage = window.location.pathname === '/convert' || window.location.hostname === 'w2ltask.learnflow.club'
-void initializeRuntimeClient().then(() => root.render(
+if (window.location.pathname === '/demo') root.render(<CompetitionDemoEntry />)
+else void initializeRuntimeClient().then(() => root.render(
   <AuthGate>{auth => isIpAccountConsole(window.location)
     ? <main className="settings-page" style={{ maxWidth: 800, margin: '0 auto', padding: '36px 20px' }}>
       <div className="settings-intro page-hero">

@@ -1,3 +1,5 @@
+import { AI_CONTENT_NOTICE, svgWithAiNotice } from '../ai-content-export.ts'
+import AiContentNotice from '../AiContentNotice.tsx'
 import {useCallback, useEffect, useRef, useState, type ReactNode} from 'react'
 import VisualizeArtifact, {type VisualViewState} from './VisualizeArtifact'
 import {VisualMore, VisualPlayback, VisualStages} from './VisualPlayerChrome'
@@ -21,7 +23,8 @@ const sourceLabels: Record<string, string> = {adapt:'个人改编',maintained_li
 const statusLabels: Record<string, string> = {paused: '构建已暂停', needs_input: '需要补充内容', cancelled: '构建已取消', running: '正在构建', pending: '正在准备', failed: '构建尚未完成', blocked: '需要调整构建方案'}
 const jobRunning = (status: string) => ['running', 'pending', 'queued'].includes(status)
 function downloadable(content: string, type: string, filename: string) {
-  const url = URL.createObjectURL(new Blob([content], {type}))
+  const labeled = type === 'image/svg+xml' ? svgWithAiNotice(content) : type === 'application/json' ? JSON.stringify({...JSON.parse(content), ai_content_notice: AI_CONTENT_NOTICE}, null, 2) : content
+  const url = URL.createObjectURL(new Blob([labeled], {type}))
   const anchor = document.createElement('a'); anchor.href = url; anchor.download = filename; anchor.click()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
@@ -81,6 +84,7 @@ function StoryPlayer({work, onPrompt, onViewChange, secondaryActions, allowQuest
       <p className="visual-plugin-boundary">这是逐帧教学示意。结构与渲染检查不等同于算法或数值过程已经计算验证。</p>
       {secondaryActions}
     </VisualMore>
+    <AiContentNotice />
   </figure>
 }
 

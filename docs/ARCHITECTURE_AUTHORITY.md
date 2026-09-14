@@ -745,3 +745,5 @@ Contract impact：registry 2026-09-14.1 / desktop 对应版本，既有 Tutor �
 Contract impact：registry 2026-09-14.2 / desktop 对应版本，为既有 visual_content_library 增加按版本和摘要固定的公开维护 HTML 文档读取绑定。桌面独立 iframe 文档避免继承宿主内联脚本禁令，原有 sandbox、账号隔离和五核写入链保持不变；不放宽主窗口 CSP，不增加私人作品匿名读取。见 [空白预览修复](implementation/VISUAL_DOCUMENT_PREVIEW.md)。
 
 Contract impact（2026-09-14.3）：增量登记 `checkpoint_entry_v1`，在正式关卡 brief 中保存三类项目的讲义、习题与原子文件设计。复用路线确认、工作流、受管文件生成及桌宠同会话入口；未来关卡设计不进入本关 Tutor，已开始设计不可改写。仅为内容与界面契约，无五核/事件 schema 或数据库迁移。见 [关卡进入预设](implementation/CHECKPOINT_ENTRY_PRESETS.md)。
+
+Contract impact（2026-09-14.4）：沿用 competition_demo 稳定 ID，将 Web 入口从 /review 改为 /demo，复用 showcase.html 展示导航；/review 保留为隔离学习闭环及旧链接兼容入口。总导航只读且不登录，原有业务认证与 demo 模式门不变。内容尾注与导出标识属于表达层，不写入模型上下文、证据或五核；无 schema、Agent 或数据迁移。
