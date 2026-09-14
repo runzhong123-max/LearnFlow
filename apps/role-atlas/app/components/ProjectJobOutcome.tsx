@@ -1,24 +1,22 @@
+import { draftGapLabel, draftStopLabels } from "@/lib/jobs/draft-presentation";
 import { iterationOutcomePresentation, normalizeIterationOutcome } from "@/lib/jobs/iteration-outcome";
 
 type JobResult = { outcome?: unknown; outcomeUnavailable?: boolean; draft?: boolean; stopReason?: string; blockers?: unknown };
 export function projectJobResultPresentation(result?: JobResult) {
-  if (result?.draft === true) return { tone: "partial", label: "草稿 · 首版未完成", message: "研究记录已保存，首版仍有缺口，尚未交付完整岗位包。" };
+  if (result?.draft === true) return { tone: "partial", label: "草稿已保存 · 待完善", message: "已有岗位内容已保留，可继续完善。引用或转换任务时，将校验所选内容。" };
   const display = iterationOutcomePresentation(result?.outcome);
   if (display) return display;
   if (result?.outcome != null || result?.outcomeUnavailable === true) return { tone: "partial", label: "结果摘要不完整", message: "此记录缺少可用的结果摘要，请查看已保存的版本或执行记录。" };
   return undefined;
 }
-const stopLabels: Record<string, string> = {
-  insufficient_material: "现有资料不足，需要继续补充与研究。", budget_exhausted: "本次研究预算已用完。",
-  no_progress: "连续研究未形成有效进展。", cancelled: "研究已停止。", failed: "研究执行失败。",
-};
 export default function ProjectJobOutcome({ result }: { result?: JobResult }) {
   if (result?.draft === true) {
     const stopReason = typeof result.stopReason === "string" ? result.stopReason : (typeof result.outcome === "string" ? result.outcome : "");
-    const blockers = Array.isArray(result.blockers) ? result.blockers.filter((line): line is string => typeof line === "string" && Boolean(line)).slice(0, 20) : [];
-    return <details><summary>首版未完成 · 查看缺口</summary>
-      {Object.hasOwn(stopLabels, stopReason) ? <p>{stopLabels[stopReason]}</p> : null}
-      {blockers.length ? <ul>{blockers.map((line, index) => <li key={index}>{line.slice(0, 1000)}</li>)}</ul> : <p>此记录未提供详细缺口，请查看研究记录。</p>}
+    const blockers = Array.isArray(result.blockers) ? result.blockers.filter((line): line is string => typeof line === "string" && Boolean(line)) : [];
+    return <details><summary>待完善内容{blockers.length ? ` · ${blockers.length} 项` : ""}</summary>
+      {Object.hasOwn(draftStopLabels, stopReason) ? <p>{draftStopLabels[stopReason]}</p> : null}
+      {blockers.length ? <ul>{blockers.slice(0, 20).map((line, index) => <li key={index}>{draftGapLabel(line).slice(0, 1000)}</li>)}</ul> : <p>此记录没有提供具体待完善项，请查看研究记录。</p>}
+      {blockers.length > 20 && <p>仅展示前 20 项，其余请查看研究记录。</p>}
     </details>;
   }
   const outcome = normalizeIterationOutcome(result?.outcome);

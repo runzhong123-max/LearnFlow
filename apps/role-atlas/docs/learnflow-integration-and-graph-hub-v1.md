@@ -141,3 +141,5 @@ Contract impact：`RoleLearningResolution` 新增可选字段 `coursePlannerDegr
 研究工具入口在当前对话末尾展开工作台并滚动到末尾。已有后台任务时仍可打开查看，执行按钮由已有任务状态阻止重复提交。
 
 Contract impact：增加现有 Release 准备接口的私有操作；旧 prepare / publish 行为与 LearnFlow 交接 schema 不变，不增加 Agent 或五核事件语义。
+
+研究草稿的展示将“内容已保存”“本轮停止原因”和“待完善项”分开。任务接口字段和检查类别通过中文展示投影解释；旧记录没有具体流程问题时明确说明详情缺失，不虚构失败步骤。不再把存在局部缺口表述为全部内容无效，也不承诺所有草稿必定通过引用校验。此调整只改变展示，保留原始 readiness、发布门槛和存储记录。

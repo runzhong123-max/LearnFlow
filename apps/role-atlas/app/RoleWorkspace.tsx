@@ -1377,9 +1377,9 @@ function RoleWorkspaceSession({ projectId: routeProjectId, initialConversationId
             : `${nodeCount}/${courseData?.nodes.length || 0} 节点 · ${edgeCount} 关系`}</span>
         </div>
 
-        {projectId && (runStatus?.headline || enrichmentState.label) ? <div className={`enrichment-banner ${runStatus?.tone === "attention" || enrichmentState.error ? "error" : runStatus?.tone === "active" ? "running" : "done"}`}>
+        {projectId && (runStatus?.headline || enrichmentState.label) ? <div className={`enrichment-banner ${enrichmentState.error ? "error" : projectResult?.deliveryReadiness?.ready === false && !enrichmentState.running && !["failed", "cancelled", "interrupted"].includes(researchProgress[activeConversationId]?.status || "") ? "partial" : runStatus?.tone === "attention" ? "error" : runStatus?.tone === "active" ? "running" : "done"}`}>
           {runStatus?.tone === "attention" || enrichmentState.error ? <AlertTriangle size={14} /> : runStatus?.tone === "active" ? <Sparkles size={14} /> : <Check size={14} />}
-          <span><b>{runStatus?.headline || enrichmentState.label}</b><small>{enrichmentState.error || (enrichmentState.running ? "当前岗位结构可立即使用；新节点、依赖和事理场景会按不可变子版本自动并入。" : "节点引用仍固定到具体快照；新会话默认使用最新版本。")}</small></span>
+          <span><b>{runStatus?.headline || enrichmentState.label}</b><small>{enrichmentState.error || (enrichmentState.running ? "当前岗位结构可立即使用；新节点、依赖和事理场景会按不可变子版本自动并入。" : projectResult?.deliveryReadiness?.ready === false ? "已有内容已保留，可继续完善。引用或转换时会校验所选内容，无需先公开发布。" : "节点引用仍固定到具体快照；新会话默认使用最新版本。")}</small></span>
         </div> : null}
 
         {projectResult && !enrichmentState.running && snapshotQualitySummary(projectResult).needsResearch && <details className="snapshot-research-details" data-testid="snapshot-quality-status">

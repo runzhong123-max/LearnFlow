@@ -123,7 +123,7 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
   function applyEvent(event: RunEvent) {
     if (event.kind.includes("reasoning.delta")) return;
     const summary = String(event.payload.message || event.payload.title || event.payload.phase || "");
-    const label = event.payload.draft === true ? "草稿已保存，尚有首版缺口需要继续研究" : event.kind.includes("search") ? "正在检索与核对来源" : event.kind.includes("semantic") ? "岗位结构正在更新" : event.kind.includes("process") ? "正在补充典型工作过程" : event.kind.includes("completed") ? "阶段结果已保存" : "正在分析并构建岗位内容";
+    const label = event.payload.draft === true ? "岗位草稿已保存，可继续完善剩余内容" : event.kind.includes("search") ? "正在检索与核对来源" : event.kind.includes("semantic") ? "岗位结构正在更新" : event.kind.includes("process") ? "正在补充典型工作过程" : event.kind.includes("completed") ? "阶段结果已保存" : "正在分析并构建岗位内容";
     setProgress(summary || label);
     const stage = researchStage(event.kind, event.payload);
     if (stageProgress.current && stage !== undefined) {

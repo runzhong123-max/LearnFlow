@@ -1,3 +1,4 @@
+import { draftHeadline } from "./draft-presentation";
 import { researchStages, type ResearchProgress } from "./research-progress";
 import type { AutomaticMountRecord } from "@/lib/learning-path/automatic-contract";
 
@@ -31,7 +32,7 @@ function mountHeadline(mount: AutomaticMountRecord): { stage: number; active: bo
     default:
       // partial / needs_research / superseded: research itself is saved, the mount
       // needs more evidence or a newer version instead of looking stuck.
-      return { stage: researchStages.length - 1, active: false, blocked: true, headline: "学习节点连接仍有缺口，尚未完成首版", tone: "attention" };
+      return { stage: researchStages.length - 1, active: false, blocked: true, headline: "岗位内容已保留，学习节点仍待完善", tone: "attention" };
   }
 }
 
@@ -49,7 +50,7 @@ export function projectRunStatus(input: RunStatusInput): RunStatusView | null {
   let progress = input.progress;
   if (readiness && !progress?.active && !["failed", "cancelled", "interrupted"].includes(progress?.status || "")) progress = readiness.ready
     ? { active: false, stage: 5, status: "completed", message: "岗位内容已保存，等待自动连接学习节点" }
-    : { active: false, stage: 4, status: "draft", message: "首版仍有缺口，研究草稿已保存" };
+    : { active: false, stage: 4, status: "draft", message: draftHeadline };
   if (!progress) return null;
 
   let stage = Math.max(0, Math.min(progress.stage, researchStages.length));
