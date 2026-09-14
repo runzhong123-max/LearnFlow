@@ -1317,6 +1317,38 @@ test('a model-requested web search is blocked after fuzzy path resolution unless
   assert.match(result.reply, /正式图谱/)
 })
 
+test('planning may proactively search textbooks after resolving the learning path', async () => {
+  let round = 0
+  let searchExecutions = 0
+  const result = await runTutorAgentTurn({
+    baseUrl: 'https://example.com/v1/chat/completions', model: 'test-model', mode: 'learning_plan',
+    messages: [{ role: 'user', content: '我想规划操作系統原里的学习路线' }],
+    toolChoice: 'auto', learnerPathState: createInitialLearnerPathState(),
+    taskQueue: [], knowledgeDomains: [], generate: async () => 'unused',
+    executeTool: async (name, args, options, meta) => {
+      if (name === 'search_computer_knowledge') {
+        searchExecutions += 1
+        return { run: { id: 'resource-search', kind: 'search', toolName: name, status: 'completed', title: '推荐书籍与仓库', detail: '无候选', durationMs: 1 }, observation: { sources: [] } }
+      }
+      return executeTutorAgentTool(name, args, options, meta)
+    },
+    invokeProvider: async () => {
+      round += 1
+      if (round === 1) return { choices: [{ message: { tool_calls: [{
+        id: 'redundant-search', function: {
+          name: 'search_computer_knowledge',
+          arguments: '{"query":"操作系统 开放教材 配套仓库"}',
+        },
+      }] } }] }
+      return { choices: [{ message: { content: '目标已经定位为操作系统；我直接依据正式图谱说明前置与下一步。' } }] }
+    },
+  })
+  assert.equal(searchExecutions, 1)
+  assert.equal(result.toolRuns.some(run => run.kind === 'search'), true)
+  assert.equal(result.trace.events.some(event => event.status === 'blocked' && /冗余联网/.test(event.detail)), false)
+  assert.match(result.reply, /正式图谱/)
+})
+
 test('an ambiguous path query asks for clarification and cannot create a route', async () => {
   const result = await runTutorAgentTurn({
     baseUrl: 'https://example.com/v1/chat/completions', model: 'test-model', mode: 'learning_plan',
@@ -1387,10 +1419,22 @@ test('a path gap is searched and returned as an uncommitted personal-node propos
       }
       return executeTutorAgentTool(name, args, options, meta)
     },
-    invokeProvider: async () => {
+    invokeProvider: async request => {
+      const pending = new Set<string>()
+      for (const message of (request.body as any).messages) {
+        if (message.role === 'tool') {
+          assert.ok(pending.delete(message.tool_call_id), 'tool response must match a pending call')
+        } else {
+          assert.equal(pending.size, 0, 'all batch results must precede any follow-up message')
+          for (const call of message.tool_calls || []) pending.add(call.id)
+        }
+      }
+      assert.equal(pending.size, 0)
       round += 1
       if (round === 1) return { choices: [{ message: { tool_calls: [{
         id: 'search-qml', function: { name: 'search_computer_knowledge', arguments: '{"query":"量子机器学习 大学课程 前置"}' },
+      }, {
+        id: 'read-context-batch', function: { name: 'read_learner_context', arguments: '{}' },
       }] } }] }
       return { choices: [{ message: { content: '现有官方图没有可靠节点；我已形成个人节点提案，只有你确认后才会加入。' } }] }
     },

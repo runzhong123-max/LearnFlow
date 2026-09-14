@@ -1299,8 +1299,13 @@ function App({ auth }: { auth: AuthGateSession }) {
     setFormalBusyKey('')
   }
 
-  const newConversation = () => {
+  const newConversation = (mode: TutorMode = 'free') => {
     const conversation = createConversation()
+    if (mode === 'learning_plan') {
+      conversation.mode = mode
+      conversation.title = '学习规划'
+      conversation.messages[0] = { ...conversation.messages[0], tutorMode: mode, content: '我们一起规划接下来的学习。我会结合你的目标推荐合适的书籍、官方资料和配套仓库，再逐步安排学习阶段与实践。你想学习什么，或希望能做出什么？' }
+    }
     const tab = chatTab(conversation)
     setWorkspace(previous => {
       const tabs = [...previous.tabs, tab].slice(-12)
@@ -3204,7 +3209,7 @@ function App({ auth }: { auth: AuthGateSession }) {
     if (!tab) return null
     if (tab.kind === 'visual-hub') return <Suspense fallback={<p>正在载入图解库…</p>}><VisualHubPage/></Suspense>
     if (tab.kind === 'projects') {
-      return <Suspense fallback={<div className="page-loading">正在载入学习项目…</div>}><ProjectsPage onOpen={project => { refreshFormalProjects(); void openProjectTutor(project.id) }} onProjectsChanged={refreshFormalProjects} /></Suspense>
+      return <Suspense fallback={<div className="page-loading">正在载入学习项目…</div>}><ProjectsPage onPlan={() => newConversation('learning_plan')} onOpen={project => { refreshFormalProjects(); void openProjectTutor(project.id) }} onProjectsChanged={refreshFormalProjects} /></Suspense>
     }
     if (tab.kind === 'project' && tab.projectId) {
       return (
@@ -4079,7 +4084,7 @@ function App({ auth }: { auth: AuthGateSession }) {
     <div className="app-shell">
       <div className="workspace" style={{ '--sidebar-width': `${sidebarWidth}px` } as CSSProperties}>
         <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-          <button className="sidebar-brand" type="button" onClick={newConversation} aria-label="新建 LearnFlow 对话">
+          <button className="sidebar-brand" type="button" onClick={() => newConversation()} aria-label="新建 LearnFlow 对话">
             <img className="brand-mark" src="/brand-mark.png" alt="" width={36} height={36} /><span><strong>LearnFlow</strong><small>学习空间</small></span>
           </button>
           <nav className="sidebar-primary-nav" aria-label="学习工作台">
@@ -4126,7 +4131,7 @@ function App({ auth }: { auth: AuthGateSession }) {
               {!formalProjects.length && <button type="button" className="sidebar-empty-project" onClick={() => openTab(PROJECTS_TAB)}>＋ 新建学习项目</button>}
             </section>
             <section className="sidebar-section sidebar-conversations">
-              <header><strong>对话</strong><button type="button" onClick={newConversation} aria-label="新建对话">＋</button></header>
+              <header><strong>对话</strong><button type="button" onClick={() => newConversation()} aria-label="新建对话">＋</button></header>
               <nav className="conversation-list" aria-label="对话列表">
             {recentConversations(workspace.conversations.filter(conversation => !conversation.projectId))
               .slice()

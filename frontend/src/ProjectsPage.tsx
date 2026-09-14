@@ -2,9 +2,10 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { createFormalProject, deleteFormalProject, listFormalProjects } from './formal-runtime'
 import type { FormalProjectWorkspace } from './project'
 
-export default function ProjectsPage({ onOpen, onProjectsChanged }: {
+export default function ProjectsPage({ onOpen, onProjectsChanged, onPlan }: {
   onOpen: (project: FormalProjectWorkspace['project']) => void
   onProjectsChanged?: () => void
+  onPlan: () => void
 }) {
   const [projects, setProjects] = useState<FormalProjectWorkspace['project'][]>([])
   const [name, setName] = useState('')
@@ -49,7 +50,7 @@ export default function ProjectsPage({ onOpen, onProjectsChanged }: {
         <p>选一个主题。资料、讲义、练习与导师，会在同一个项目里陪你向前。</p></div>
       </header>
       <form className="project-create-card" onSubmit={submit}>
-        <div><span>LEARNING PROJECT</span><h2>给这段旅程一个目标</h2></div>
+        <div><span>LEARNING PROJECT</span><h2>给这段旅程一个目标</h2><p>还没想清楚？先和导师聊聊方向、资料与学习安排。</p><button className="project-plan-entry" type="button" onClick={onPlan}>对话规划学习</button></div>
         <label><span>项目主题</span><input value={name} onChange={event => setName(event.target.value)} placeholder="例如：理解《计算机系统》的内存章节" /></label>
         <label><span>学习目标</span><textarea value={objective} onChange={event => setObjective(event.target.value)} placeholder="希望真正理解和能独立完成什么？" /></label>
         <label><span>预期产物</span><input value={outcome} onChange={event => setOutcome(event.target.value)} placeholder="例如：一份章节笔记、一组练习通过记录" /></label>

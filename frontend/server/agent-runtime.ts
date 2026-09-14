@@ -1357,6 +1357,8 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
       return [] as string[]
     }
     if (toolCalls >= budget.maxToolCalls) {
+      if (recordRuntimeMessages && recordAssistantMessage) runtimeMessages.push({ role: 'assistant', content: '', toolCalls: [call] })
+      if (recordRuntimeMessages) runtimeMessages.push({ role: 'tool', toolCallId: call.id, toolName: call.name, content: safeJson({ error: 'tool_budget_exhausted', guidance: '请使用已有观察完成回答。' }) })
       record({ phase: 'act', detail: '达到工具调用预算', toolCallId: call.id, toolName: call.name, status: 'blocked' })
       return [] as string[]
     }
@@ -1927,6 +1929,7 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
             ...(reasoningContent ? { reasoningContent } : {}),
           })
         }
+        let searchedThisBatch = false
         for (const call of acceptedCalls) {
           if (!modelVisibleToolNames.has(call.name)) {
             const observation = {
@@ -1948,6 +1951,7 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
             && input.mode === 'learning_plan'
             && input.toolChoice === 'auto'
             && !explicitlyRequestsExternalResources
+            && !/(?:教材|书籍|文档|仓库|textbook|book|repository|github|documentation)/i.test(String(call.arguments.query || ''))
             && (pathResolution === 'resolved' || pathResolution === 'ambiguous')
           ) {
             const observation = {
@@ -1971,8 +1975,10 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
             const byUrl = new Map([...searchSources, ...sources].map(source => [source.url, source]))
             searchSources = [...byUrl.values()]
           }
-          if (call.name === 'search_computer_knowledge') await refreshPathAfterSearch(sources)
+          if (call.name === 'search_computer_knowledge') searchedThisBatch = true
         }
+        // Finish every response in the model's batch before appending follow-up calls.
+        if (searchedThisBatch) await refreshPathAfterSearch(searchSources)
         continue
       }
       const combinedText = `${continuationPrefix}${text}`
@@ -2045,7 +2051,7 @@ export async function runTutorAgentTurn(input: TutorAgentRuntimeInput): Promise<
             }]
           : (() => {
               runtimeMessages.push({ role: 'user', content: finalizationPrompt })
-              return runtimeMessages.slice(-24)
+              return runtimeMessages
             })()
         const request = buildAgentProviderRequest({
           baseUrl: input.baseUrl,
