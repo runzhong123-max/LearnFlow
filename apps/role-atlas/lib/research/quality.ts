@@ -13,7 +13,15 @@ export function compareResearchQuality(base: ColdStartBuildResult, candidate: Co
   const byId = new Map(after.tasks.map(task => [task.taskId, task]));
   const regressed = before.tasks.filter(task => task.ready && byId.has(task.taskId) && !byId.get(task.taskId)!.ready).map(task => task.taskId);
   if (before.tasks.length > 0 && !after.tasks.length) regressed.push("all_core_tasks_removed");
-  return { before, after, regressed, conversionImproved: after.taskGaps < before.taskGaps || after.readyTasks > before.readyTasks,
+  const gapKey = (gap: typeof before.learningSupportGaps[number]) => JSON.stringify([gap.nodeId, gap.reason]);
+  const remaining = new Set(after.learningSupportGaps.map(gapKey));
+  const previous = new Set(before.learningSupportGaps.map(gapKey));
+  const activeIds = new Set(candidate.semantic.nodes.filter(node => node.lifecycle !== "rejected").map(node => node.id));
+  // Closing a delivery blocker is useful even when task fields and audit scores
+  // are unchanged. Removing its subject is not a repair.
+  const resolvedSupport = before.learningSupportGaps.filter(gap => gap.nodeId && activeIds.has(gap.nodeId) && !remaining.has(gapKey(gap))).length;
+  const introducedSupport = after.learningSupportGaps.filter(gap => !previous.has(gapKey(gap))).length;
+  return { before, after, regressed, conversionImproved: after.taskGaps < before.taskGaps || after.readyTasks > before.readyTasks || resolvedSupport > introducedSupport,
     expressionImproved: after.expressionIssues.length < before.expressionIssues.length };
 }
 

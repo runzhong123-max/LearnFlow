@@ -1,4 +1,8 @@
 import { carryDeliveryProgress } from "../lib/research/delivery-progress";
+import { compareResearchQuality } from "../lib/research/quality";
+import { evaluateIteration, createIterationContract } from "../lib/iteration/planner";
+import { inspectSnapshot } from "../lib/iteration/inspector";
+import { conversationIterationRequest, defaultIterationDraft } from "../lib/iteration/brief";
 import LearningSupportDetail from "../app/components/LearningSupportDetail";
 import { resolveSourceSpan } from "../lib/research/source-reference";
 import test from "node:test";
@@ -29,6 +33,32 @@ function fixture() {
   result.process.bridges = [{ ...result.process.bridges[0], semanticNodeId: task.id, type: "realizes_task" }];
   return { result, task, cap, unit, point, edge, segment };
 }
+test("补齐学习支撑即使任务字段未变，也能由三种迭代保留", () => {
+  const { result: base, unit, point, edge } = fixture();
+  const candidate = structuredClone(base);
+  candidate.semantic.edges.push(edge(unit.id, point.id, "requires_knowledge"));
+  const quality = compareResearchQuality(base, candidate);
+  assert.equal(quality.before.taskGaps, quality.after.taskGaps);
+  assert.equal(quality.conversionImproved, true);
+  // Hold unrelated audit axes constant to isolate delivery gaps the older audit misses.
+  const before = inspectSnapshot(base);
+  assert.equal(before.protocolValid, true);
+  for (const mode of ["deep_research", "risk_repair", "freshness"] as const) {
+    const request = conversationIterationRequest({ runId: `support-${mode}`,
+      context: { projectId: "project", conversationId: "conversation", versionId: "version", snapshotId: base.snapshot.id, roleTitle: base.brief.roleTitle },
+      draft: { ...defaultIterationDraft(), mode, targetAsOf: base.snapshot.asOf }, prompt: "", materials: [], webResearch: false });
+    const contract = createIterationContract(request, base);
+    const evaluation = evaluateIteration({ base, candidate, before, after: before, contract });
+    assert.equal(evaluation.meaningful, true, `${mode}: ${evaluation.reasons.join(";")}`);
+  }
+  assert.equal(compareResearchQuality(candidate, structuredClone(candidate)).conversionImproved, false);
+});
+test("删除缺口对象不能冒充学习支撑改善", () => {
+  const { result: base, point } = fixture();
+  const candidate = structuredClone(base);
+  candidate.semantic.nodes = candidate.semantic.nodes.filter(node => node.id !== point.id);
+  assert.equal(compareResearchQuality(base, candidate).conversionImproved, false);
+});
 test("任务详情补齐固定协议字段并按复核意见修正，不能静默丢弃全部内容", async () => {
   const { result, task } = fixture();
   const definition = structuredClone(task.taskDefinition!);

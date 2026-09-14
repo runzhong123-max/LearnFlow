@@ -17,6 +17,8 @@
 | 文本性质、证据关系、复核和采用是不同状态；不强迫填写证伪句 | iteration/evidence-review、research/task-definition | evidence-review、research-v2 |
 | 内核可预览；核心任务接口或能力/单元知识技能支撑不足只能保存草稿 | build/graph、research/task-definition、api/build-runs | research-v2、cold-start-research-recovery |
 | 无关增量不是修复；排序不按节点数量累计 | iteration/planner、research/quality、research/views | iteration-capabilities、research-v2 |
+| 补齐现存对象的学习支撑缺口计入迭代进展，即使任务字段和旧审计分数未变；删除对象、重复候选或引入同量新缺口不算补齐 | research/quality、iteration/planner | learning-support |
+| 已保存草稿可浏览、提问、个人引用并继续迭代；草稿不是运行失败，完整性与公开发布检查仍独立保留；后台运行只限制再次提交，不锁定下一轮目标配置 | jobs/run-status、app/components/ProjectToolPane | run-status、iteration-brief |
 | 支撑关系须查原文并独立复核；部分支持的学习推断只能保存为带限制的候选建议，不得标为已证实；不支持或冲突不连接；路径连接纳入生产，回执未完整不得显示全部完成 | research/learning-support、jobs/run-status | learning-support、run-status、course-presentation |
 | 提交改动必须固定基线、原子编译和保存迁移理由 | research/semantic-changes、research/change-set | research-v2、version-commit-transaction |
 | 默认自动采用，可选先审阅；head 变化、取消或重复运行不能覆盖版本 | versioning/commit-transaction | version-commit-transaction |

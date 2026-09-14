@@ -55,6 +55,7 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
   const definition = roleSkillDefinitions.find((skill) => skill.id === activeTool);
   const pending = jobs.some((job) => activeStatuses.has(job.status));
   const blocked = running || pending;
+  const baselineMissing = !context.snapshotId || !context.versionId;
   const isIteration = activeTool === "snapshot-iteration" || activeTool === "node-deepening";
   const iterationDraft = (activeTool && iterationDrafts[activeTool]) || defaultIterationDraft(activeTool === "node-deepening", context.selectedNodeIds);
   const briefError = isIteration ? iterationBriefError({ ...iterationDraft, prompt, targetIds: parseIterationTargets(iterationDraft.targetIds) }) : "";
@@ -143,7 +144,7 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
   }
 
   async function start() {
-    if (!activeTool || activeTool === "cold-start-role-package" || !context.projectId || !context.conversationId || blocked || materialsBusy) return;
+    if (!activeTool || activeTool === "cold-start-role-package" || !context.projectId || !context.conversationId || blocked || materialsBusy || baselineMissing) return;
     setError("");
     if (briefError) { setError(briefError); return; }
     let parsedWorkspace: unknown;
@@ -234,8 +235,8 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
     {definition && activeTool !== "cold-start-role-package" && <section className="chat-tool-form" aria-label={`${definition.label}工具`}>
       <header><Wrench size={14} /><b>{definition.label}</b><button type="button" onClick={onClose} aria-label="收起工具"><X size={14} /></button></header>
       <p>{activeTool === "node-deepening" ? "围绕指定节点和目标补充证据与结构，可在下方调整研究范围。" : definition.description}</p>
-      {isIteration && <IterationOptions value={iterationDraft} onChange={(draft) => setIterationDrafts((current) => ({ ...current, [activeTool!]: draft }))} disabled={blocked} nodes={context.availableNodes} selectedNodeIds={currentSelectedNodeIds || context.selectedNodeIds} />}
-      <label>本次工作目标<textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} disabled={blocked} maxLength={4000} placeholder={isIteration && iterationDraft.initiativeProfile === "autonomous" ? "可以留空，由 Agent 检查全岗位并发现研究机会" : "描述你希望补充、核实或修正的内容…"} /></label>
+      {isIteration && <IterationOptions value={iterationDraft} onChange={(draft) => setIterationDrafts((current) => ({ ...current, [activeTool!]: draft }))} disabled={running} nodes={context.availableNodes} selectedNodeIds={currentSelectedNodeIds || context.selectedNodeIds} />}
+      <label>本次工作目标<textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} disabled={running} maxLength={4000} placeholder={isIteration ? "可以留空，按所选改进目标自动研究；也可描述具体问题…" : "描述你希望补充、核实或修正的内容…"} /></label>
       {activeTool === "workspace-instantiation" ? <>
         <label>工作资料类型<select value={adapterId} disabled={blocked} onChange={(e) => setAdapterId(e.target.value)}>{[["event_log", "工单与过程日志"], ["github_trace", "GitHub 工作链"], ["telemetry_case", "可观测性案例"], ["soc_case", "安全运营案例"], ["generic_package", "标准工作区包"], ["devgpt", "AI 开发会话"], ["swebench", "SWE-bench 案例"], ["bug_benchmark", "缺陷基准案例"]].map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
         <label>导入脱敏的 JSON 文件<input type="file" accept=".json,application/json" disabled={blocked} onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; if (file.size > 5_000_000) { setError("文件不能超过 5 MB。"); return; } setWorkspaceJson(await file.text()); }} /></label>
@@ -247,7 +248,8 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
       {isIteration && <small>重建时会带入 LearnFlow 学习路径进行对齐。开启联网会继续检索独立来源；关闭联网时结合已有资料研究与修复。知识技能会同步到学习路径。</small>}
       <small>基于本对话固定版本。结果保存在本对话；与其他对话并行时会保留独立候选版本。</small>
       {briefError && <small role="status">{briefError}</small>}
-      {!blocked && <button className="tool-submit" disabled={materialsBusy || Boolean(briefError)} onClick={() => void start()}><Play size={13} />开始执行</button>}
+      {blocked ? <small role="status">当前对话有任务正在执行。可先选择下一轮目标，待任务结束或停止后再执行；不会改动已提交的任务。</small> : baselineMissing ? <small role="status">正在读取已保存的岗位版本，读取完成后即可执行；草稿无需先发布。</small> : null}
+      <button className="tool-submit" disabled={blocked || baselineMissing || materialsBusy || Boolean(briefError)} onClick={() => void start()}><Play size={13} />{blocked ? "等待当前任务结束" : "开始执行"}</button>
     </section>}
   </div>;
 }

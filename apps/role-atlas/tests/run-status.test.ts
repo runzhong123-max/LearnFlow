@@ -52,7 +52,15 @@ test("without progress there is nothing to project", () => {
 
 test("草稿优先于旧的已完成回执，不能标成后台仍运行或完整首版", () => {
   const view = projectRunStatus({ progress: progress({ active: false, status: "completed", stage: 4 }), mount: mount("completed"), readiness: { ready: false, blockers: ["缺少能力单元知识技能支撑"] } })!;
-  assert.equal(view.tone, "attention"); assert.equal(view.stages[4].state, "blocked"); assert.match(view.headline, /草稿/);
+  assert.equal(view.tone, "idle"); assert.equal(view.stages[4].state, "pending"); assert.match(view.headline, /草稿/);
+});
+
+test("历史草稿事件不再显示首版缺口报错，也不伪装全部完成", () => {
+  const view = projectRunStatus({ progress: progress({ active: false, status: "draft", stage: 4, message: "首版仍有缺口，研究草稿已保存" }), mount: mount("completed") })!;
+  assert.equal(view.tone, "idle");
+  assert.equal(view.headline, "岗位草稿已保存 · 可继续完善");
+  assert.equal(view.stages[4].state, "pending");
+  assert.equal(view.stages[5].state, "pending");
 });
 test("没有真实连接回执时不能完成全部冷启动阶段", () => {
   const view = projectRunStatus({ readiness: { ready: true, blockers: [] } })!;

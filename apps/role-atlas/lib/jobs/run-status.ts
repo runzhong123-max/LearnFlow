@@ -14,7 +14,7 @@ export type RunStatusView = {
   activeIndex: number;
 };
 
-const terminalAttention = new Set(["failed", "cancelled", "interrupted", "draft"]);
+const terminalAttention = new Set(["failed", "cancelled", "interrupted"]);
 
 function mountHeadline(mount: AutomaticMountRecord): { stage: number; active: boolean; blocked: boolean; headline: string; tone: RunStatusTone } {
   switch (mount.status) {
@@ -63,6 +63,16 @@ export function projectRunStatus(input: RunStatusInput): RunStatusView | null {
     active = false;
     blocked = true;
     tone = "attention";
+  }
+
+  // A saved draft is an available work product, not an execution failure.
+  // Normalize historical event wording as well as newly generated readiness.
+  if (progress.status === "draft") {
+    stage = 4;
+    active = false;
+    headline = draftHeadline;
+    tone = "idle";
+    return { stages: researchStages.map((label, index) => ({ index, label, state: index < stage ? "done" : "pending" })), headline, tone, activeIndex: stage };
   }
 
   // After the research stages finish, the learning-course mount is the only
