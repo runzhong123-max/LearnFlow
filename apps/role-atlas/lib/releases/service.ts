@@ -36,7 +36,7 @@ export async function prepareRelease(input: {
   evidencePolicy?: EvidencePolicy;
   registry?: RegistryMetadata;
   /** Internal learning-source preparation remains private and cannot bypass publication checks. */
-  sourceUse?: "learning_path";
+  sourceUse?: "learning_path" | "personal_reference";
 }) {
   if (!SEMVER.test(input.packageVersion)) throw new Error("INVALID_SEMVER");
   const version = await getProjectVersionRecord(input.projectId, input.projectVersionId);
@@ -61,7 +61,7 @@ export async function prepareRelease(input: {
     const manifest = artifact?.bundle.manifest;
     if (duplicate.projectId !== input.projectId || duplicate.sourceProjectVersionId !== input.projectVersionId || duplicate.snapshotId !== version.snapshotId) throw new Error("RELEASE_VERSION_CONFLICT");
     // A terminated private source compiler may leave its claim without an artifact. Recompile only that exact source.
-    const resumableSource = input.sourceUse === "learning_path" && !manifest && ["compiling", "validating", "failed"].includes(duplicate.status);
+    const resumableSource = Boolean(input.sourceUse) && !manifest && ["compiling", "validating", "failed"].includes(duplicate.status);
     if (!resumableSource && (!manifest || manifest.rootHash !== duplicate.artifactRootHash
       || manifest.packageId !== line.packageId || manifest.packageVersion !== input.packageVersion
       || manifest.sourceProjectVersionId !== input.projectVersionId || manifest.sourceRootHash !== version.rootHash
@@ -104,7 +104,7 @@ export async function prepareRelease(input: {
     });
     await putPackageArtifact(compiled.bundle);
     const validationReportHash = await sha256Hex(canonicalStringify(compiled.validation));
-    if (!compiled.validation.valid || (!compiled.validation.publishable && input.sourceUse !== "learning_path")) {
+    if (!compiled.validation.valid || (!compiled.validation.publishable && !input.sourceUse)) {
       await db.update(packageReleases).set({
         status: "failed",
         artifactRootHash: compiled.bundle.manifest.rootHash,

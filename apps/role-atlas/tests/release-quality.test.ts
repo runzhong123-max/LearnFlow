@@ -177,12 +177,12 @@ test("rolling back a previously public artifact cannot silently undo its current
 });
 
 
-test("authorized learning source prepares a valid private artifact without weakening publication quality", async () => {
+for (const sourceUse of ["learning_path", "personal_reference"] as const) test(`${sourceUse} prepares a valid private artifact without weakening publication quality`, async () => {
   const h = await serviceHarness(rootOnlyResult());
   try {
     assert.equal(h.state.compiled.validation.valid, true);
     assert.equal(h.state.compiled.validation.publishable, false);
-    const input = { projectId: "project-1", projectVersionId: "version-1", packageVersion: "1.0.0", sourceUse: "learning_path" as const };
+    const input = { projectId: "project-1", projectVersionId: "version-1", packageVersion: "1.0.0", sourceUse };
     await assert.rejects(h.service.prepareRelease({ ...input, visibility: "public" }), /LEARNING_SOURCE_MUST_BE_PRIVATE/u);
     await assert.rejects(h.service.prepareRelease({ ...input, evidencePolicy: "full" }), /LEARNING_SOURCE_MUST_BE_PRIVATE/u);
     const release = await h.service.prepareRelease(input);

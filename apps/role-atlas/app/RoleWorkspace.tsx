@@ -514,9 +514,9 @@ function RoleWorkspaceSession({ projectId: routeProjectId, initialConversationId
     setLaunchingLearnFlow(true);
     try {
       let releaseId = launchReleaseId;
-      if (taskNodeId && projectId) {
-        if (!conversionVersionId || !packageStatus?.snapshotId) throw new Error("当前任务版本尚未载入，请等待岗位快照载入后重试。");
-        releaseId = await prepareTaskRelease({ projectId, projectVersionId: conversionVersionId, snapshotId: packageStatus.snapshotId, signal });
+      if (projectId) {
+        if (!packageStatus?.snapshotId) throw new Error("当前岗位尚未生成可引用内容。");
+        releaseId = await prepareTaskRelease({ projectId, snapshotId: packageStatus.snapshotId, signal });
       }
       if (!releaseId) throw new Error("当前岗位包还没有可引用的固定版本，请先在岗位包中心准备版本。");
       signal.throwIfAborted();
@@ -602,7 +602,7 @@ function RoleWorkspaceSession({ projectId: routeProjectId, initialConversationId
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
-  }, [messages]);
+  }, [messages, toolInstances]);
 
   const learningConnection = useAutomaticLearningConnection(projectId, conversations.find(conversation => conversation.id === activeConversationId)?.versionId || undefined, projectResult?.snapshot.id);
   const courseMount = learningConnection.mount;
@@ -1259,12 +1259,12 @@ function RoleWorkspaceSession({ projectId: routeProjectId, initialConversationId
   }
 
   async function launchTool(tool: RoleSkillId, prompt?: string) {
-    if (!projectId || !activeConversationId || conversationLoading || toolBusy[activeConversationId]) return false;
+    if (!projectId || !activeConversationId || conversationLoading) return false;
     if (tool === "cold-start-role-package") {
       if (prompt) setProjectBrief(current => ({ ...current, description: prompt }));
       setIntakeDismissed(false);
     }
-    if (tool !== "cold-start-role-package" && conversations.find((item) => item.id === activeConversationId)?.mode !== "iteration" && !await changeMode("iteration")) return false;
+    if (tool !== "cold-start-role-package" && !toolBusy[activeConversationId] && conversations.find((item) => item.id === activeConversationId)?.mode !== "iteration" && !await changeMode("iteration")) return false;
     setChatCollapsed(false);
     setToolInstances((current) => ({ ...current, [activeConversationId]: { tool, ...(tool === "node-deepening" ? { targetSeed: { ids: expandCourseNodes(references.length ? references : selectedNode ? [selectedNode] : []).map(node => node.id), nonce: Date.now() } } : {}), context: { ...skillContext, selectedNodeIds: expandCourseNodes(references.length ? references : selectedNode ? [selectedNode] : []).map(node => node.id) }, ...(prompt !== undefined ? { promptSeed: { text: prompt, nonce: Date.now() } } : {}) } }));
     return true;
@@ -1351,7 +1351,7 @@ function RoleWorkspaceSession({ projectId: routeProjectId, initialConversationId
           <div className="package-header-actions">
             {projectId && <><button type="button" title="历史版本与比较" onClick={() => setActiveOperation("versions")}><History size={14} />版本历史</button><button type="button" onClick={() => setActiveOperation("publish")}><Upload size={14} />发布</button><div className="project-menu-wrap"><button type="button" onClick={() => setProjectMenuOpen((value) => !value)} aria-label="项目操作" aria-expanded={projectMenuOpen}><MoreHorizontal size={18} /></button>{projectMenuOpen && <div className="project-header-menu"><ProjectManagement projectId={projectId} title={workspaceTitle} variant="delete" /></div>}</div></>}
 
-            {launchReleaseId ? <button type="button" className="learnflow-launch" onClick={() => void launchInLearnFlow()} disabled={launchingLearnFlow}><MessageCircle size={13} /> {launchingLearnFlow ? "正在进入…" : "在 LearnFlow 中引用"}</button> : null}
+            {(launchReleaseId || (projectId && packageStatus?.snapshotId)) ? <button type="button" className="learnflow-launch" onClick={() => void launchInLearnFlow()} disabled={launchingLearnFlow}><MessageCircle size={13} /> {launchingLearnFlow ? "正在进入…" : "在 LearnFlow 中引用"}</button> : null}
             <div className={`status-chip ${runStatus?.tone === "attention" || packageStatus?.publishable === false ? "warning" : ""}`}><span /> {runStatus ? runStatus.headline : projectStatus === "building" || enrichmentState.running ? "内核可用 · 后台增量中" : packageStatus ? `快照 ${packageStatus.snapshotAsOf}` : "尚未生成岗位包"}</div>
           </div>
         </header>
@@ -1513,17 +1513,6 @@ function RoleWorkspaceSession({ projectId: routeProjectId, initialConversationId
         {projectId && <ResearchStages progress={researchProgress[activeConversationId]} mount={activeMount} readiness={projectResult?.deliveryReadiness} connectionError={learningConnection.error} />}
         <div className="messages">
           {showIntake && <RoleIntakePane key={`${actorSubjectId}:${projectId || "new"}:${activeConversationId}`} actorSubjectId={actorSubjectId} projectId={projectId} conversationId={activeConversationId || undefined} initialTitle={newProjectBrief?.role || (projectId ? workspaceTitle : "")} initialDescription={newProjectBrief?.description || projectBrief.description} initialMarket={newProjectBrief?.market || projectBrief.market} onBusyChange={setIntakeBusy} onClose={initialNewProject ? undefined : () => setIntakeDismissed(true)} onStarted={(scope) => window.location.assign(`/projects/${encodeURIComponent(scope.projectId)}?conversation=${encodeURIComponent(scope.conversationId)}`)} />}
-          {projectId && conversations.filter((conversation) => conversation.id === activeConversationId || toolInstances[conversation.id] || toolBusy[conversation.id]).map((conversation) => {
-            const instance = toolInstances[conversation.id];
-            const context = instance?.context || { ...skillContext, conversationId: conversation.id, snapshotId: conversation.snapshotId || undefined, versionId: conversation.versionId || undefined };
-            return <div key={conversation.id} hidden={conversation.id !== activeConversationId}><ProjectToolPane context={context} currentSelectedNodeIds={conversation.id === activeConversationId ? skillContext.selectedNodeIds : undefined} activeTool={instance?.tool === "cold-start-role-package" ? null : instance?.tool || null} promptSeed={instance?.promptSeed} targetSeed={instance?.targetSeed} onProgress={(progress) => {
-              setResearchProgress(current => ({ ...current, [conversation.id]: progress }));
-              if (activeConversationRef.current === conversation.id) setEnrichmentState({ running: progress.active, label: progress.message });
-            }} onClose={() => setToolInstances((current) => current[conversation.id] ? { ...current, [conversation.id]: { ...current[conversation.id], tool: null } } : current)} onBusyChange={(busy) => setToolBusy((current) => current[conversation.id] === busy ? current : { ...current, [conversation.id]: busy })} onPreview={(result) => {
-              if (activeConversationRef.current !== conversation.id) return;
-              applyProjectWorkspace({ project: { title: result.brief.roleTitle, status: "building" }, conversations, result });
-            }} onComplete={(id) => void refreshConversationResult(id)} onViewVersion={(versionId) => { setLearningMountVersionId(versionId); setActiveOperation("versions"); }} /></div>;
-          })}
           {!showIntake && messages.map((message) => message.role === "user" ? (
             <div className="message user" key={message.id}>
               {message.references && message.references.length > 0 ? <div className="message-refs">{message.references.map((node) => <button key={node.id} onClick={() => selectAndFocus(node)}>{typeLabels[node.type] || node.type} · {node.label}</button>)}</div> : null}
@@ -1568,6 +1557,17 @@ function RoleWorkspaceSession({ projectId: routeProjectId, initialConversationId
               {message.status === "failed" ? <div className="answer-error"><AlertTriangle size={13} /> 可以检查模型配置后重试；岗位快照未被修改。</div> : null}
             </div>
           ))}
+          {projectId && conversations.filter((conversation) => conversation.id === activeConversationId || toolInstances[conversation.id] || toolBusy[conversation.id]).map((conversation) => {
+            const instance = toolInstances[conversation.id];
+            const context = instance?.context || { ...skillContext, conversationId: conversation.id, snapshotId: conversation.snapshotId || undefined, versionId: conversation.versionId || undefined };
+            return <div key={conversation.id} hidden={conversation.id !== activeConversationId}><ProjectToolPane context={context} currentSelectedNodeIds={conversation.id === activeConversationId ? skillContext.selectedNodeIds : undefined} activeTool={instance?.tool === "cold-start-role-package" ? null : instance?.tool || null} promptSeed={instance?.promptSeed} targetSeed={instance?.targetSeed} onProgress={(progress) => {
+              setResearchProgress(current => ({ ...current, [conversation.id]: progress }));
+              if (activeConversationRef.current === conversation.id) setEnrichmentState({ running: progress.active, label: progress.message });
+            }} onClose={() => setToolInstances((current) => current[conversation.id] ? { ...current, [conversation.id]: { ...current[conversation.id], tool: null } } : current)} onBusyChange={(busy) => setToolBusy((current) => current[conversation.id] === busy ? current : { ...current, [conversation.id]: busy })} onPreview={(result) => {
+              if (activeConversationRef.current !== conversation.id) return;
+              applyProjectWorkspace({ project: { title: result.brief.roleTitle, status: "building" }, conversations, result });
+            }} onComplete={(id) => void refreshConversationResult(id)} onViewVersion={(versionId) => { setLearningMountVersionId(versionId); setActiveOperation("versions"); }} /></div>;
+          })}
           <div ref={messagesEndRef} />
         </div>
         {draggingNode && <div className="drag-bridge"><Layers3 size={14} /> 正在引用「{draggingNode.label}」</div>}

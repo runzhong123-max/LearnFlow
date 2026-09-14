@@ -131,3 +131,13 @@ Contract impact：catalog.v1 与岗位包保持兼容；分类词表从全行业
 自动学习路径挂载的课程规划器（`lib/learning-path/course-planner.ts`）失败时不再让整个挂载失败：模型超时、限流或返回无效规划（幻觉课程引用、漏项、重复项、粒度过细）时降级为确定性主题归并，仍受 `MAX_NEW_COURSES_PER_RESOLUTION` 上限约束、只产生课程级节点，并在 resolution 上标记 `coursePlannerDegraded` 供审计。该降级不改变既有课程复用优先级，不产生逐动作原子知识点。
 
 Contract impact：`RoleLearningResolution` 新增可选字段 `coursePlannerDegraded`，向后兼容，旧消费方忽略即可；`searchHub` 新增可选第三参数与响应可选字段 `boundary`，协议号不变。HubEntry、catalog.v1、岗位包协议、LearnFlow 事件与五核契约均无变化。
+
+### 个人引用研究草稿
+
+`POST /api/releases` 新增 `prepare_personal`，输入拥有权限的 `projectId` 与当前可见 `snapshotId`，可附精确 `projectVersionId`。未提供版本时仅查找该项目的同一快照；若仅存在持久化研究预览，保存独立、未采用的版本，再编译 private / metadata 岗位包。重复操作复用确定性版本号。引用整个岗位与转换选中任务共用该流程，个人目录可见 ready 包，无需推荐或公开发布。
+
+私有引用允许尚未达到发布完整度的内容，但仍须通过结构与产物完整性校验。公开发布继续复算全部质量门槛。后台研究、项目 head、会话基线不因个人引用而改变；交接仍绑定不可变快照、产物哈希与用户身份，候选内容不构成掌握证据。
+
+研究工具入口在当前对话末尾展开工作台并滚动到末尾。已有后台任务时仍可打开查看，执行按钮由已有任务状态阻止重复提交。
+
+Contract impact：增加现有 Release 准备接口的私有操作；旧 prepare / publish 行为与 LearnFlow 交接 schema 不变，不增加 Agent 或五核事件语义。

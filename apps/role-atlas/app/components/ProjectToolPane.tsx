@@ -217,6 +217,20 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
   }
 
   return <div className="project-tool-pane">
+    {(error || historyError) && <div className="tool-error" role="alert"><AlertTriangle size={14} /><span>{error || historyError}</span></div>}
+    {running && <article className="chat-job-card running" role="status"><header><LoaderCircle className="spin" size={14} /><b>{progress}</b></header><p>可以切换或新建对话，任务继续运行。</p>{submittedBrief && <IterationBrief brief={submittedBrief} />}<button onClick={() => void cancel(submittedId.current)}><Square size={12} />停止任务</button>{events.length > 0 && <details><summary>查看执行过程</summary>{events.map((event, index) => <p key={index}>{event}</p>)}</details>}</article>}
+    {jobs.length > 0 && <section className="conversation-jobs" aria-label="当前对话的任务记录">{jobs.slice(0, 8).map((job) => {
+      const result = job.status === "completed" ? job.result : undefined;
+      const display = projectJobResultPresentation(result);
+      const needsAttention = ["failed", "interrupted"].includes(job.status) || (display && display.tone !== "completed");
+      return <article key={job.id} className={`chat-job-card ${display?.tone || job.status}`}>
+        <header>{activeStatuses.has(job.status) ? <LoaderCircle size={13} className="spin" /> : needsAttention ? <AlertTriangle size={13} /> : job.status === "cancelled" ? <Square size={13} /> : <Check size={13} />}<b>{job.kind.includes("workspace") ? "工作区接入" : job.kind.includes("build") || job.kind.includes("cold") ? "岗位研究" : "岗位完善"}</b><span>{display?.label || phaseLabels[job.status] || "已保存"}</span></header>
+        <p>{job.error || display?.message || (job.result?.appliedToHead === false ? "已形成独立候选版本，可在版本历史比较与采用。" : activeStatuses.has(job.status) ? "正在后台执行，结果将自动更新展示台。" : "结果与执行记录已保存在本对话。")}{display && job.result?.appliedToHead === false ? " 本轮为独立候选版本，可在版本历史比较与采用。" : ""}</p>
+        <ProjectJobOutcome result={result} />
+        {job.iterationBrief && <IterationBrief brief={job.iterationBrief} />}
+        {activeStatuses.has(job.status) ? <button onClick={() => void cancel(job.id)}><Square size={11} />停止</button> : ["failed", "interrupted"].includes(job.status) && job.resumable ? <button disabled={blocked || Boolean(resuming)} onClick={() => void resume(job.id)}><Play size={11} />{resuming === job.id ? "正在恢复…" : "从保存处继续"}</button> : job.result?.projectVersionId && <button onClick={() => onViewVersion(job.result!.projectVersionId!)}>查看本轮版本</button>}
+      </article>;
+    })}</section>}
     {definition && activeTool !== "cold-start-role-package" && <section className="chat-tool-form" aria-label={`${definition.label}工具`}>
       <header><Wrench size={14} /><b>{definition.label}</b><button type="button" onClick={onClose} aria-label="收起工具"><X size={14} /></button></header>
       <p>{activeTool === "node-deepening" ? "围绕指定节点和目标补充证据与结构，可在下方调整研究范围。" : definition.description}</p>
@@ -235,19 +249,5 @@ export default function ProjectToolPane({ context, currentSelectedNodeIds, activ
       {briefError && <small role="status">{briefError}</small>}
       {!blocked && <button className="tool-submit" disabled={materialsBusy || Boolean(briefError)} onClick={() => void start()}><Play size={13} />开始执行</button>}
     </section>}
-    {(error || historyError) && <div className="tool-error" role="alert"><AlertTriangle size={14} /><span>{error || historyError}</span></div>}
-    {running && <article className="chat-job-card running" role="status"><header><LoaderCircle className="spin" size={14} /><b>{progress}</b></header><p>可以切换或新建对话，任务继续运行。</p>{submittedBrief && <IterationBrief brief={submittedBrief} />}<button onClick={() => void cancel(submittedId.current)}><Square size={12} />停止任务</button>{events.length > 0 && <details><summary>查看执行过程</summary>{events.map((event, index) => <p key={index}>{event}</p>)}</details>}</article>}
-    {jobs.length > 0 && <section className="conversation-jobs" aria-label="当前对话的任务记录">{jobs.slice(0, 8).map((job) => {
-      const result = job.status === "completed" ? job.result : undefined;
-      const display = projectJobResultPresentation(result);
-      const needsAttention = ["failed", "interrupted"].includes(job.status) || (display && display.tone !== "completed");
-      return <article key={job.id} className={`chat-job-card ${display?.tone || job.status}`}>
-        <header>{activeStatuses.has(job.status) ? <LoaderCircle size={13} className="spin" /> : needsAttention ? <AlertTriangle size={13} /> : job.status === "cancelled" ? <Square size={13} /> : <Check size={13} />}<b>{job.kind.includes("workspace") ? "工作区接入" : job.kind.includes("build") || job.kind.includes("cold") ? "岗位研究" : "岗位完善"}</b><span>{display?.label || phaseLabels[job.status] || "已保存"}</span></header>
-        <p>{job.error || display?.message || (job.result?.appliedToHead === false ? "已形成独立候选版本，可在版本历史比较与采用。" : activeStatuses.has(job.status) ? "正在后台执行，结果将自动更新展示台。" : "结果与执行记录已保存在本对话。")}{display && job.result?.appliedToHead === false ? " 本轮为独立候选版本，可在版本历史比较与采用。" : ""}</p>
-        <ProjectJobOutcome result={result} />
-        {job.iterationBrief && <IterationBrief brief={job.iterationBrief} />}
-        {activeStatuses.has(job.status) ? <button onClick={() => void cancel(job.id)}><Square size={11} />停止</button> : ["failed", "interrupted"].includes(job.status) && job.resumable ? <button disabled={blocked || Boolean(resuming)} onClick={() => void resume(job.id)}><Play size={11} />{resuming === job.id ? "正在恢复…" : "从保存处继续"}</button> : job.result?.projectVersionId && <button onClick={() => onViewVersion(job.result!.projectVersionId!)}>查看本轮版本</button>}
-      </article>;
-    })}</section>}
   </div>;
 }

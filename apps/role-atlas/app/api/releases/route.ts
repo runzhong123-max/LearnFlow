@@ -1,3 +1,4 @@
+import { preparePersonalRelease } from "@/lib/releases/personal";
 import { ensureAppSchema, getD1 } from "@/db";
 import { changeHubPublication } from "@/lib/releases/hub-publication";
 import { authorizeApiRequest } from "@/lib/access";
@@ -44,7 +45,8 @@ const releaseInputSchema = z.object({
 
 const prepareSchema = releaseInputSchema.extend({ action: z.literal("prepare") });
 const publishToHubSchema = releaseInputSchema.omit({ visibility: true }).extend({ action: z.literal("publish_to_hub") });
-const createSchema = z.discriminatedUnion("action", [prepareSchema, publishToHubSchema]);
+const personalSchema = z.object({ action: z.literal("prepare_personal"), projectId: z.string().min(4).max(100), snapshotId: z.string().min(1).max(220), projectVersionId: z.string().min(4).max(220).optional() });
+const createSchema = z.discriminatedUnion("action", [prepareSchema, publishToHubSchema, personalSchema]);
 
 const actionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("withdraw_from_hub"), packageLineId: z.string().min(4).max(220), expectedReleaseId: z.string().min(4).max(220), expectedRegistryVersion: z.number().int().nonnegative() }),
@@ -69,7 +71,7 @@ export async function POST(request: Request) {
   if (denied) return denied;
   try {
     const input = createSchema.parse(await request.json());
-    const release = input.action === "publish_to_hub"
+    const release = input.action === "prepare_personal" ? await preparePersonalRelease(input) : input.action === "publish_to_hub"
       ? await publishProjectVersionToHub(input)
       : await prepareRelease(input);
     return Response.json({ release: await describeRelease(release) }, { status: release.status === "failed" ? 422 : 201 });
