@@ -548,7 +548,7 @@ async function searchTavily(plan: SearchPlan, apiKey: string, configuration: Sea
   }, 7000, configuration)
   return (Array.isArray(payload?.results) ? payload.results : []).map((item: any) => searchResult(
     item?.title, item?.url, item?.content,
-    { reason: 'Tavily 返回的与查询最相关的网页证据片段', provider: 'Tavily', publishedAt: item?.published_date },
+    { reason: '', provider: 'Tavily', publishedAt: item?.published_date },
   )).filter((item: SearchSource | null): item is SearchSource => Boolean(item))
 }
 

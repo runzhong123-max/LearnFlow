@@ -77,7 +77,17 @@ test('provider boilerplate and empty reasons never become recommendation copy', 
     const intro = resourceIntroduction({snippet:'课程覆盖虚拟内存与缓存',reason} as SearchSource)
     assert.equal(intro.summary,'课程覆盖虚拟内存与缓存')
     assert.equal('reason' in intro,false)
-    assert.equal(intro.retrievalNote,reason)
+    assert.equal(intro.retrievalNote,/tavily/i.test(reason) ? '' : reason)
     assert.doesNotMatch(JSON.stringify(intro),/适配情况待核验/)
   }
+})
+
+
+test('composer inquiry retains references selected across multiple recommendation cards', async () => {
+  const { resourceInquiryPrompt } = await import('../src/planning-resources.ts')
+  const sources = Array.from({ length: 25 }, (_, index) => ({ title: `课程${index}`, url: `https://example.com/course/${index}`, snippet: '课程简介' })) as SearchSource[]
+  const prompt = resourceInquiryPrompt('系统学习', sources, '比较这些课程')
+  for (const source of sources) assert.ok(prompt.includes(source.url))
+  assert.match(prompt, /比较这些课程/)
+  assert.match(prompt, /此轮只咨询，不自动入库或创建项目/)
 })

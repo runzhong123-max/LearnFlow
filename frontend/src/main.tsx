@@ -1,3 +1,4 @@
+import type { SearchSource } from './tooling'
 import CompetitionDemoEntry from './CompetitionDemoEntry.tsx'
 import AiContentNotice from '../../packages/learning-client/src/AiContentNotice.tsx'
 import { teachingAffordances } from './teaching-affordances.ts'
@@ -5,7 +6,7 @@ import { runtimeFetch } from './runtime-client.ts'
 import { existingQuoteSheet, type TeachingAffordances } from '../../packages/learning-client/src/teaching/affordances.ts'
 import '../../packages/learning-client/src/teaching/affordances.css'
 import PlanningResourceWorkbench from './PlanningResourceWorkbench'
-import { planningResourcePrompt, planningResourceRuns, resourceCandidates } from './planning-resources'
+import { planningResourcePrompt, planningResourceRuns, resourceCandidates, resourceInquiryPrompt, resourceUrlKey } from './planning-resources'
 import { UserAvatar, UserIdentity } from '../../packages/learning-client/src/identity/UserIdentity'
 import { conversationTitle, recentConversations } from './conversation-display.ts'
 import { readTabLayout, saveTabLayout, consumeLayoutReset, withoutTabLayout } from './workspace-layout.ts'
@@ -751,6 +752,7 @@ async function avatarDataUrlFromFile(file: File) {
 function App({ auth }: { auth: AuthGateSession }) {
   const [workspace, setWorkspace] = useState<PersistedState>(() => restoreState(auth.account.learner_id))
   const [drafts, setDrafts] = useState<Record<string, string>>(() => readTabLayout(sessionStorage, auth.account.learner_id)?.drafts || {})
+  const [resourceDraftReferences, setResourceDraftReferences] = useState<Record<string, SearchSource[]>>({})
   const [pluginDraftReferences, setPluginDraftReferences] = useState<Record<string, LearnFlowPluginObject[]>>({})
   const [toolChoices, setToolChoices] = useState<Record<string, TutorToolChoice>>({})
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -2567,12 +2569,16 @@ function App({ auth }: { auth: AuthGateSession }) {
     const conversation = workspace.conversations.find(item => item.id === conversationId)
     if (!conversation) return
     const draftKey = surfaceKey(conversationId, conversation.activeSheetId)
+    if (pendingTurns[conversationId]) return
+    const resources = resourceDraftReferences[draftKey] || []
     const references = pluginDraftReferences[draftKey] || []
-    const message = (drafts[draftKey] || '').trim() || (references.length ? '请解释我引用的插件对象。' : '')
+    const message = (drafts[draftKey] || '').trim() || (resources.length ? '请介绍并比较我引用的资料。' : references.length ? '请解释我引用的插件对象。' : '')
+    const question = resources.length ? resourceInquiryPrompt(conversation.title, resources, message) : message
     const content = references.length
-      ? `${message}\n\n引用插件对象（固定到产生它们的 ToolRun）：\n${references.map(pluginObjectReferenceText).join('\n')}`
-      : message
+      ? `${question}\n\n引用插件对象（固定到产生它们的 ToolRun）：\n${references.map(pluginObjectReferenceText).join('\n')}`
+      : question
     if (!content.trim()) return
+    setResourceDraftReferences(previous => ({ ...previous, [draftKey]: [] }))
     setPluginDraftReferences(previous => ({ ...previous, [draftKey]: [] }))
     await runTutorTurn(conversationId, content, { directUserText: message, referencedPluginObjects: references })
   }
@@ -3348,6 +3354,7 @@ function App({ auth }: { auth: AuthGateSession }) {
     const pluginProjectionSheet = Boolean(sheet?.messages.some(message => message.pluginResultProjection))
     const sheetId = conversation.activeSheetId
     const draftKey = surfaceKey(conversation.id, sheetId)
+    const draftResources = resourceDraftReferences[draftKey] || []
     const draftPluginObjects = pluginDraftReferences[draftKey] || []
     const lockedPluginIds = lockedConversationPluginIds(conversation)
     const activePluginIds = activeConversationPluginIds(conversation)
@@ -3655,6 +3662,11 @@ function App({ auth }: { auth: AuthGateSession }) {
                         projectId={conversation.projectId}
                         topic={formalProjectWorkspaces[conversation.projectId || 0]?.project.name || planProjection?.plan.objective || conversation.title}
                         runs={runs}
+                        referencedResources={draftResources}
+                        onReference={(source, selected) => setResourceDraftReferences(previous => {
+                          const remaining = (previous[draftKey] || []).filter(item => resourceUrlKey(item.url) !== resourceUrlKey(source.url))
+                          return { ...previous, [draftKey]: selected ? [...remaining, source] : remaining }
+                        })}
                         knownResources={messages.flatMap(item => resourceCandidates(item.toolRuns || []))}
                         pending={Boolean(pendingMode)}
                         onProjectChange={syncProjectWorkspace}
@@ -3918,6 +3930,12 @@ function App({ auth }: { auth: AuthGateSession }) {
                 ))}
               </div>
             )}
+            {draftResources.length > 0 && <div className="composer-plugin-references" aria-label="已引用的学习资料">
+              {draftResources.map(source => <span key={source.url}>
+                <i>↳</i><strong>{source.title}</strong><small>资料引用</small>
+                <button type="button" onClick={() => setResourceDraftReferences(previous => ({ ...previous, [draftKey]: (previous[draftKey] || []).filter(item => item.url !== source.url) }))} aria-label={`移除资料引用${source.title}`}>×</button>
+              </span>)}
+            </div>}
             {draftPluginObjects.length > 0 && <div className="composer-plugin-references" aria-label="已引用的插件对象">
               {draftPluginObjects.map(object => <span key={pluginObjectContentKey(object)}>
                 <i>↳</i>
@@ -4062,7 +4080,7 @@ function App({ auth }: { auth: AuthGateSession }) {
                   ))}
                 </div>
               </details>
-              <button type="submit" disabled={Boolean(pendingMode) || (!(drafts[draftKey] || '').trim() && draftPluginObjects.length === 0)} aria-label={pendingMode ? 'Tutor 回复中' : '发送消息'}>{pendingMode ? '…' : '↑'}</button>
+              <button type="submit" disabled={Boolean(pendingMode) || (!(drafts[draftKey] || '').trim() && draftPluginObjects.length === 0 && draftResources.length === 0)} aria-label={pendingMode ? 'Tutor 回复中' : '发送消息'}>{pendingMode ? '…' : '↑'}</button>
             </div>
           </form>
         </div>
