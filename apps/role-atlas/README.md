@@ -90,6 +90,8 @@ npm run build
 npm run dev
 ```
 
+本地联调的 `LEARNFLOW_BASE_URL` 默认是 `http://localhost:8010`，与根 `start.sh` 的后端端口一致；修改后端端口时同步修改此项。`ROLE_ATLAS_RESEARCH_AGENT=0` 关闭迭代研究 Agent，设为 `1` 或未设置时启用。`WORK_TASK_PUBLIC_URL` 可指定独立任务转换入口，留空时沿用 `LEARNFLOW_PUBLIC_URL`。这两项通过显式允许列表传入 Worker，修改 `.env.local` 后需重启开发服务或重新构建部署。
+
 首次运行使用已纳入版本管理的岗位包和 `public/data/`，不依赖外部 `role-snapshot` 目录。`npm run role:sync` 仅在另行准备前述原始岗位源时运行；`npm run learning-path:sync` 默认从同仓 LearnFlow 读取官方学习路径，可用 `LEARNFLOW_ROOT` 覆盖根目录。
 
 自动化测试覆盖主 Agent 六个感知工具、兼容层低级工具、统一包版本化引用、任务—过程联合读取、事理森林、过期引用、调用去重、长任务日志提交顺序、LangGraph 事件顺序、双通道 SSE 解析、Tavily 两阶段检索、来源去重、弱相关过滤、乱码降级和结构化抽取归一化。

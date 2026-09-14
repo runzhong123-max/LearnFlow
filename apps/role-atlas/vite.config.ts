@@ -1,6 +1,7 @@
 import { sites } from "@openai/sites-vite-plugin";
 import vinext from "vinext";
 import { defineConfig, loadEnv } from "vite";
+import { selectWorkerEnv } from "./lib/worker-env-config";
 import hostingConfig from "./.openai/hosting.json" with { type: "json" };
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
@@ -22,28 +23,7 @@ export default defineConfig(async ({ mode }) => {
   // explicit allow-list to the Worker binding instead of exposing all env.
   try { process.loadEnvFile?.(".env.local"); } catch { /* optional local file */ }
   const localEnv = { ...loadEnv(mode, process.cwd(), ""), ...process.env };
-  const allowedRuntimeKeys = [
-    "MIMO_API_KEY",
-    "DEEPSEEK_API_KEY",
-    "TAVILY_API_KEY",
-    "GLM_API_KEY",
-    "ZHIPU_API_KEY",
-    "ROLE_ATLAS_SEARCH_ENGINE",
-    "EXA_API_KEY",
-    "BOCHA_API_KEY",
-    "ROLE_ATLAS_MODEL_PROVIDER",
-    "ROLE_ATLAS_MODEL",
-    "ROLE_ATLAS_MODEL_BASE_URL",
-    "ROLE_ATLAS_SEARCH_PROVIDER",
-    "LEARNFLOW_BASE_URL",
-    "LEARNFLOW_PUBLIC_URL",
-    "ROLE_PACKAGE_LAUNCH_SECRET",
-    "ROLE_ATLAS_GATEWAY_SECRET",
-    "ROLE_ATLAS_GATEWAY_ONLY",
-    "ROLE_ATLAS_PUBLIC_URL",
-    "GRAPH_HUB_PUBLIC_URL",
-  ] as const;
-  const vars = Object.fromEntries(allowedRuntimeKeys.flatMap((key) => localEnv[key] ? [[key, localEnv[key]]] : []));
+  const vars = selectWorkerEnv(localEnv);
   const localBindingConfig = {
     main: "./worker/index.ts",
     compatibility_flags: ["nodejs_compat", "nodejs_compat_populate_process_env"],
