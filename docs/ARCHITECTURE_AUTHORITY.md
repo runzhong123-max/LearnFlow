@@ -739,3 +739,7 @@ Contract impact：共享核心 0.2.6 / relevance-budget.v4 新增有界语料候
 ### 2026-09-14 画像成就展示
 
 Contract impact：registry 2026-09-14.1 / desktop 对应版本，既有 Tutor 画像读取能力增加只读 growth.achievements 可选字段。按当前本人完成任务、注册和每项目完成记录展示成就，不新增写权限、学习事件或五核语义，无数据库迁移。两端兼容性与规则见 [画像成就](implementation/PROFILE_ACHIEVEMENTS.md)。
+
+### 2026-09-14 图解文档预览
+
+Contract impact：registry 2026-09-14.2 / desktop 对应版本，为既有 visual_content_library 增加按版本和摘要固定的公开维护 HTML 文档读取绑定。桌面独立 iframe 文档避免继承宿主内联脚本禁令，原有 sandbox、账号隔离和五核写入链保持不变；不放宽主窗口 CSP，不增加私人作品匿名读取。见 [空白预览修复](implementation/VISUAL_DOCUMENT_PREVIEW.md)。

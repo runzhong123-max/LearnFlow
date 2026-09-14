@@ -1,6 +1,7 @@
 """Authenticated stateless content computation; no files, remote refs or kernel writes."""
 from fastapi import APIRouter, Depends, HTTPException, Request
 from starlette.concurrency import run_in_threadpool
+from fastapi.responses import HTMLResponse
 from app.services.auth import CurrentLearner, get_current_learner
 from learnflow_core.visuals.engine import compile_visual, inspect_visual, predict_visual, digest, RUNTIME_VERSION
 from learnflow_core.visuals.catalog import search_catalog, read_template
@@ -207,3 +208,28 @@ async def preview(request: Request):
     if not {'id','version'} <= set(data) <= {'id','version','params'}:raise HTTPException(422,'visual_preview_fields_invalid')
     try:return await run_in_threadpool(preview_work,data['id'],data['version'],data.get('params',{}))
     except ValueError as exc:raise HTTPException(422,str(exc))
+
+
+@router.get('/document/{work_id}/{version}', response_class=HTMLResponse)
+async def maintained_document(work_id: str, version: str, digest: str):
+    """Only immutable public library content; never private artifacts or user HTML.
+
+    A navigated document has its own CSP. Unlike srcdoc, it does not inherit
+    the Tauri shell's ban on inline scripts. Both CSP and iframe retain sandboxing.
+    """
+    from learnflow_core.visuals.hub import compile_work
+    def render():
+        entry = read_template(work_id, version)
+        if entry['builder'] != 'interactive_html' or entry['spec'].get('sha256') != digest:
+            raise ValueError('visual_hub_document_reference_invalid')
+        return compile_work(entry['spec'])['html']
+    try:
+        html = await run_in_threadpool(render)
+    except (ValueError, KeyError):
+        raise HTTPException(404, 'visual_hub_document_unavailable')
+    return HTMLResponse(html, headers={
+        'Content-Security-Policy': "sandbox allow-scripts; default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'",
+        'X-Content-Type-Options': 'nosniff',
+        'Referrer-Policy': 'no-referrer',
+        'Cache-Control': 'public, max-age=300, must-revalidate',
+    })

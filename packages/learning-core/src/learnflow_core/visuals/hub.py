@@ -6,6 +6,7 @@ never accepted. This is teaching content, not learner state or mastery evidence.
 from pathlib import Path
 from hashlib import sha256
 import json
+from urllib.parse import quote
 from .engine import digest
 
 ROOT = Path(__file__).with_name('hub')
@@ -109,6 +110,7 @@ def compile_work(source, template_ref=None):
     resize = "<script>new ResizeObserver(()=>parent.postMessage({type:'learnflow-visual-height',height:document.body.scrollHeight},'*')).observe(document.body);</script>"
     html = '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="'+csp+'"><style>'+BASE_STYLE+'</style></head><body>'+canonical_payload.decode('utf-8')+resize+'</body></html>'
     return {'runtime_version': 'maintained-html/1', 'html': html, 'params': {},
+        'document_path': '/api/visuals/document/' + quote(work['id'], safe='') + '/' + quote(work['version'], safe='') + '?digest=' + work['sha256'],
         'verification': {'status':'pass','scope':work['scope'], 'method':'maintained_asset_digest',
                          'meaning':'The reviewed version is intact; this is not a learner assessment.'},
         'source_provenance': {'source':'maintained_library','id':work['id'],'version':work['version'],'spec_digest':digest(source)}}
@@ -158,5 +160,7 @@ def preview_work(work_id, version, params=None):
     from .engine import compile_visual
     if params is not None and not isinstance(params,dict):raise ValueError('visual_preview_params_invalid')
     e=read_template(work_id,version)
-    if e['builder']=='interactive_html':return {'builder':e['builder'],'title':e['title'],'html':compile_work(e['spec'])['html']}
+    if e['builder']=='interactive_html':
+        compiled = compile_work(e['spec'])
+        return {'builder':e['builder'],'title':e['title'],'html':compiled['html'], 'document_path':compiled['document_path']}
     return {'builder':'visual_spec','title':e['title'],'bundle':{**compile_visual(e['spec'],params or {}),'owner_scope':'public:maintained'}}

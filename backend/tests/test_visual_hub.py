@@ -99,3 +99,28 @@ def test_gallery_paging_filter_and_authenticated_preview(monkeypatch):
         result=client.post('/api/visuals/preview',json={'id':'lab2-huffman','version':'1.0.0'});assert result.status_code==200 and result.json()['builder']=='interactive_html'
         assert client.post('/api/visuals/preview',json={'id':'../../secret','version':'1.0.0'}).status_code==422
         result=client.post('/api/visuals/preview',json={'id':'deep_learning.cnn.mechanism','version':'1.0.0'});assert result.status_code==200 and result.json()['bundle']['verification']['status']=='pass'
+
+
+def test_public_maintained_document_is_digest_pinned_and_sandboxed(monkeypatch):
+    monkeypatch.setattr(settings, 'desktop_mode', True)
+    monkeypatch.setattr(settings, 'desktop_token', 'document-test-desktop-token')
+    with TestClient(app) as client:
+        preview = client.post('/api/visuals/preview', json={
+            'id': 'course-security-c1-s1', 'version': '1.0.0',
+        }).json()
+        path = preview['document_path']
+        # Iframe navigations cannot attach desktop/cloud bearer credentials.
+        response = client.get(path, headers={'sec-fetch-dest': 'iframe', 'sec-fetch-site': 'cross-site'})
+        assert response.status_code == 200
+        assert response.headers['content-type'].startswith('text/html')
+        assert response.text == preview['html']
+        assert '信任边界怎样收缩可达攻击面' in response.text
+        policy = response.headers['content-security-policy']
+        assert 'sandbox allow-scripts' in policy and 'allow-same-origin' not in policy
+        assert "connect-src 'none'" in policy and "form-action 'none'" in policy
+        assert response.headers['referrer-policy'] == 'no-referrer'
+        assert response.headers['x-content-type-options'] == 'nosniff'
+        assert client.get(path.rsplit('=', 1)[0] + '=' + '0' * 64).status_code == 404
+        assert client.get('/api/visuals/document/private-artifact/1.0.0?digest=' + '0' * 64).status_code == 404
+        assert client.get('/api/visuals/document/course-security-c1-s1/1.0.0').status_code == 422
+        assert client.post('/api/visuals/workspace', json={}).status_code in (401, 403)
