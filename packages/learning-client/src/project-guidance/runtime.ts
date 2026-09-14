@@ -1,3 +1,4 @@
+import { parseCheckpointPreset } from './checkpoint-presets.ts'
 import { createHash } from 'node:crypto'
 import { PROJECT_GUIDANCE_PLUGIN_ID, PROJECT_GUIDANCE_RENDERER, PROJECT_GUIDANCE_VERSION, PROJECT_MODE_CHOICES } from './contract.ts'
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json }
@@ -46,7 +47,8 @@ export async function prepareProjectGuidance(input: RecordValue, context: Contex
   const objective = text(input.objective)
   const brief = { deliverables: list(input.deliverables), constraints: list(input.constraints), success_criteria: list(input.successCriteria) }
   const missing = [name.length < 2 && '任务名称', objective.length < 2 && '要练习的目标', !brief.deliverables.length && '交付物',
-    !brief.success_criteria.length && '验收标准'].filter(Boolean)
+    !brief.success_criteria.length && '验收标准',
+    mode === 'experiment' && (!Array.isArray(input.checkpoints) || input.checkpoints.length < 2) && '至少两关的实现路线（每关讲义重点、原子文件职责）'].filter(Boolean)
   if (missing.length) return result({ ...common, project_mode: mode, name: name || rawInput, objective,
     project_brief: brief, status: 'needs_input', missing_fields: missing },
   `已选择${mode === 'experiment' ? '实验项目' : '带教实践项目'}。请补充${missing.join('、')}，Tutor 会先整理任务书供你确认。`)
@@ -57,6 +59,9 @@ export async function prepareProjectGuidance(input: RecordValue, context: Contex
     ...(context.scope.sheetId ? { sheet_id: context.scope.sheetId } : {}) }] : []
   const request = { project_mode: mode, name, objective, expected_outcome: text(input.expectedOutcome, 1200),
     project_brief: brief, source_refs: sourceRefs,
+    ...(mode === 'experiment' && Array.isArray(input.checkpoints) ? { checkpoints: input.checkpoints.map(item => ({
+      key: item.key, title: item.title, objective: item.objective, entry_preset: parseCheckpointPreset(item.entry_preset),
+    })) } : {}),
     ...(mode === 'practice' && input.caseId ? { case_id: text(input.caseId, 100), case_version: text(input.caseVersion, 50),
       case_root_hash: text(input.caseRootHash, 64) } : {}) }
   if (mode === 'practice' && !input.caseId) return result({ ...common, ...request, status: 'needs_case_selection' },

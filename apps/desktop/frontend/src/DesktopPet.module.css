@@ -107,3 +107,5 @@
 .pet[data-appearance="dusk"] .attachmentMenu > summary:hover, .pet[data-appearance="dusk"] .attachmentPopover button:hover:not(:disabled) { background: rgba(93, 107, 168, .45); color: #fff; }
 .pet[data-appearance="dusk"] .attachmentPopover { border-color: #596698; background: #242b52; }
 .pet[data-appearance="dusk"] .attachmentPopover button { color: #dde4ff; }
+
+.projectGuidance{display:flex;flex-direction:column;gap:5px;padding:8px 2px;font-size:12px}.projectGuidance strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.projectGuidance small{color:var(--muted,#708378);line-height:1.5}.projectGuidance button{align-self:flex-start;border:1px solid #dfe8df;border-radius:8px;background:transparent;color:inherit;padding:5px 8px}

@@ -9,6 +9,7 @@ import hashlib
 import json
 from typing import Any
 
+from fastapi import HTTPException
 from sqlalchemy import func, select, update
 
 from app.models.learning import LearningTask
@@ -145,6 +146,19 @@ async def generate_task_files(db, *, task, file_kinds, source_text, expected_ver
     if project and (project.learner_id != task.learner_id or project.visibility == "deleted"):
         raise RuntimeError("invalid_scope")
 
+    preset = None
+    if checkpoint and project:
+        from learnflow_core.project_workflows import workflow_view
+        from learnflow_core.checkpoint_presets import generation_focus
+        workflow = await workflow_view(db, project, compact=True, checkpoint_id=checkpoint.id)
+        stage = next((item for item in workflow["milestones"] if item["checkpoint_id"] == checkpoint.id), None)
+        if stage and stage["status"] == "locked" and project.project_mode in {"experiment", "practice"}:
+            raise HTTPException(409, "完成前置关卡后才能生成本关材料")
+        preset = stage.get("entry_preset") if stage else None
+        if stage and workflow.get("case_ref") and not _text(source_text):
+            # Only the current released authored material is available to content generation.
+            source_text = "\n\n".join(item["body"] for item in stage["materials"])[:18000]
+
     lecture = (await db.execute(select(Lecture).where(Lecture.checkpoint_id == checkpoint.id))).scalar_one_or_none() if checkpoint else None
     questions = list((await db.execute(select(ConceptQuestion).where(ConceptQuestion.checkpoint_id == checkpoint.id))).scalars()) if checkpoint else []
     exercises = list((await db.execute(select(Exercise).where(Exercise.checkpoint_id == checkpoint.id))).scalars()) if checkpoint else []
@@ -179,7 +193,8 @@ async def generate_task_files(db, *, task, file_kinds, source_text, expected_ver
             gaps.append("缺少可靠的主题材料；请补充资料后重试。")
         else:
             resolved, _ = await _resolved_task_source_text(db, task, source_text)
-            artifact = await generate_micro_learning_artifact(goal=f"{task.title}：{task.objective}", source_text=resolved,
+            focus = "\n" + generation_focus(preset) if preset else ""
+            artifact = await generate_micro_learning_artifact(goal=f"{task.title}：{task.objective}{focus}", source_text=resolved,
                 education_stage=education_stage, background=background, full_lecture="lecture" in missing,
                 provider_config=provider_config)
             generation = dict(artifact.get("generation") or {})

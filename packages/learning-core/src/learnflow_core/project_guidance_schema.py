@@ -3,6 +3,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_serializer, model_validator
 from learnflow_core.project_workflow_schema import HelpMode, ProjectBrief
 from learnflow_core.project_stage_support import assistance_view
+from learnflow_core.checkpoint_presets import PlannedCheckpoint, validate_mode_preset
 
 
 class ClosedModel(BaseModel):
@@ -24,6 +25,23 @@ class GuidancePrepare(ClosedModel):
     expected_outcome: str = Field(default="", max_length=1200)
     project_brief: ProjectBrief = Field(default_factory=ProjectBrief)
     source_refs: list[ConversationSource] = Field(default_factory=list, max_length=8)
+    checkpoints: list[PlannedCheckpoint] = Field(default_factory=list, max_length=16)
+
+    @model_validator(mode="after")
+    def planned_route(self):
+        if self.project_mode == "practice" and self.checkpoints:
+            raise ValueError("固定实践案例保留维护的工作流程，不能用自定义关卡覆盖")
+        if self.checkpoints and len(self.checkpoints) < 2:
+            raise ValueError("实验项目需要至少两个串行关卡")
+        keys = [item.key for item in self.checkpoints]
+        if len(keys) != len(set(keys)):
+            raise ValueError("关卡 key 不能重复")
+        for index, item in enumerate(self.checkpoints, 1):
+            validate_mode_preset(self.project_mode, item.entry_preset, index)
+        if self.checkpoints and not any(item.entry_preset.kind == "implementation" for item in self.checkpoints):
+            raise ValueError("实验路线必须包含围绕最终交付的实现关卡")
+        return self
+
     case_id: str | None = Field(default=None, max_length=100)
     case_version: str | None = Field(default=None, max_length=50)
     case_root_hash: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")

@@ -20,6 +20,7 @@ from app.services.learning_runtime import record_event
 from app.services.learning_tasks import ensure_all_checkpoint_learning_tasks, learning_task_view
 from app.services.teaching_contract import normalize_teaching_contract
 from app.services.practice_cases import CASE_ID, digest, get_case, case_summary, evaluate_case
+from learnflow_core.checkpoint_presets import checkpoint_entry_preset, PlannedCheckpoint, validate_mode_preset
 from learnflow_core.project_stage_support import SUPPORT_VERSION, assistance_view, help_guidance, stage_support
 from learnflow_core.work_task_designs import SCHEMA_VERSION as DESIGN_SCHEMA, validate_design, evaluate_design_stage
 
@@ -134,7 +135,8 @@ def _stage_for(checkpoint: Checkpoint, state: ProjectWorkflowState | None, proje
         stage = next((stage for stage in case["stages"] if stage["key"] == key), {})
         return {**stage_support(project.project_mode or "practice", key, bundled_case=case["id"] == CASE_ID), **stage}
     stage = next((stage for stage in _default_stages(project.project_mode or "learning", project)
-                  if stage["key"] == key and (checkpoint.brief or {}).get("workflow_template") == SCHEMA_VERSION), None)
+                  if stage["key"] == key and (checkpoint.brief or {}).get("workflow_template") == SCHEMA_VERSION
+                  and not (checkpoint.brief or {}).get("entry_preset")), None)
     stage = stage or {"key": key or f"checkpoint-{checkpoint.id}", "title": checkpoint.title,
                      "objective": checkpoint.description, "materials": [],
                      "fields": [_field("reflection", "交付说明、依据和复盘")],
@@ -157,6 +159,8 @@ async def workflow_view(db: AsyncSession, project: Project, *, compact: bool = F
     accepted = {action.checkpoint_id for action in actions if action.kind == "delivery" and action.feedback.get("accepted")}
     milestones = []
     checkpoints = await _rows(db, project)
+    if (project.project_mode or "learning") == "learning":
+        accepted |= {item.id for item in checkpoints if item.learning_status == "completed"}
     focus_id = checkpoint_id
     if compact and focus_id is None:
         focus_id = next((item.id for item in checkpoints if item.id not in accepted
@@ -169,6 +173,7 @@ async def workflow_view(db: AsyncSession, project: Project, *, compact: bool = F
         milestones.append({"checkpoint_id": checkpoint.id, "key": stage.get("key"),
                            "title": checkpoint.title, "objective": checkpoint.description,
                            "status": "accepted" if checkpoint.id in accepted else "available" if available else "locked",
+                           "entry_preset": checkpoint_entry_preset(project, checkpoint, stage, workflow_titles=[item.title for item in checkpoints]) if visible else None,
                            "materials": stage.get("materials", []) if visible else [],
                            "fields": stage.get("fields", []) if visible else [],
                            "required_artifacts": stage.get("required_artifacts", False),
@@ -205,8 +210,8 @@ async def workflow_view(db: AsyncSession, project: Project, *, compact: bool = F
     return view
 
 
-async def initialize_workflow(db: AsyncSession, project: Project, data: dict, *, compiled_design: dict | None = None) -> dict:
-    payload = {"operation": "initialize", **data}
+async def initialize_workflow(db: AsyncSession, project: Project, data: dict, *, compiled_design: dict | None = None, planned_checkpoints: list[dict] | None = None) -> dict:
+    payload = {"operation": "initialize", **data, **({"planned_checkpoints": planned_checkpoints} if planned_checkpoints else {})}
     if await _replay(db, project, data["client_action_id"], payload):
         return await workflow_view(db, project)
     state = await _state(db, project, create=True)
@@ -230,6 +235,14 @@ async def initialize_workflow(db: AsyncSession, project: Project, data: dict, *,
         raise HTTPException(409, "已有路线不能被案例覆盖，请新建实践项目")
     if not existing:
         stages = case["stages"] if case else _default_stages(project.project_mode or "learning", project)
+        if planned_checkpoints:
+            if case:
+                raise HTTPException(422, "固定案例不能替换为自定义关卡")
+            plans = [PlannedCheckpoint.model_validate(item) for item in planned_checkpoints]
+            for index, item in enumerate(plans, 1):
+                validate_mode_preset(project.project_mode or "learning", item.entry_preset, index)
+            stages = [{**item.model_dump(), "materials": [], "fields": [_field("reflection", "实现说明、验证依据与复盘")],
+                       "validator": "artifact", "required_artifacts": True} for item in plans]
         roadmap = await db.scalar(select(Roadmap).where(Roadmap.project_id == project.id))
         if not roadmap:
             roadmap = Roadmap(project_id=project.id, raw_json={}, conversation_history=[])
@@ -239,10 +252,11 @@ async def initialize_workflow(db: AsyncSession, project: Project, data: dict, *,
         raw = []
         for index, stage in enumerate(stages, 1):
             checkpoint = Checkpoint(
-                roadmap_id=roadmap.id, order=index, title=stage["title"], description=stage["objective"],
+                roadmap_id=roadmap.id, order=index, title=("工作综述 · " + stage["title"])[:255] if project.project_mode == "practice" and index == 1 else stage["title"], description=stage["objective"],
                 prerequisites=[prior] if prior else [], archived=False, learning_status="not_started",
                 brief={"project_theme": project.name, "checkpoint_key": stage["key"],
-                       "objective": stage["objective"], "workflow_template": SCHEMA_VERSION},
+                       "objective": stage["objective"], "workflow_template": SCHEMA_VERSION,
+                       **({"entry_preset": stage["entry_preset"]} if stage.get("entry_preset") else {})},
                 learning_contract=normalize_teaching_contract({
                     "project_theme": project.name, "exit_criteria": [stage["objective"]],
                     "estimated_minutes": 45, "knowledge_target": {"checkpoint_key": stage["key"]},
@@ -453,6 +467,25 @@ async def deliver_checkpoint(db: AsyncSession, project: Project, checkpoint_id: 
         add("review", "正式复习安排", evidence.get("review_items", 0) > 0, "请在正式学习任务中建立复习安排。")
     elif validator == "artifact":
         add("artifact", "交付物引用", bool(data["artifact_refs"]), "请附本项目可检查的交付物引用。")
+    # Only newly confirmed explicit file plans constrain operational delivery.
+    # Report manifests are device claims, never proof that the code is correct.
+    planned_files = (checkpoint.brief or {}).get("entry_preset", {}).get("required_files", [])
+    if planned_files:
+        submitted_paths = set()
+        for ref in data["artifact_refs"]:  # Scope/hash checks have already succeeded above.
+            if ref["kind"] == "workspace_file":
+                submitted_paths.add(ref["ref"])
+            elif ref["kind"] == "device_report":
+                from learnflow_core.project_guidance_models import ProjectDeviceReport
+                report = await db.get(ProjectDeviceReport, int(ref["ref"]))
+                submitted_paths.update(item["path"] for item in report.report.get("manifest", []))
+            elif ref["kind"] == "experiment_run":
+                from app.models.experiment import ExperimentRun
+                run = await db.get(ExperimentRun, int(ref["ref"]))
+                submitted_paths.update(item["path"] for item in run.manifest)
+        for index, file in enumerate(planned_files):
+            add(f"required_file_{index}", file["path"], file["path"] in submitted_paths,
+                "需要附上本关约定文件的版本引用；文件齐备不代表实现正确或独立掌握。")
     passed = all(item["passed"] for item in checks)
     # Help history belongs to this stage, not the current selector position.
     # A learner's earlier assisted delivery cannot become independent on retry.

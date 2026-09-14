@@ -40,7 +40,8 @@ SCHEMA_VERSION = "vnext.project.v1"
 
 
 from app.schemas.project_workflow import ProjectMode, ProjectBrief
-from app.services.project_workflows import workflow_view
+from learnflow_core.checkpoint_presets import CheckpointPreset, checkpoint_entry_preset, validate_mode_preset
+from app.services.project_workflows import workflow_view, initialize_workflow
 
 
 class ProjectCreateRequest(BaseModel):
@@ -53,6 +54,7 @@ class ProjectCreateRequest(BaseModel):
 
 
 class CheckpointProposal(BaseModel):
+    entry_preset: CheckpointPreset | None = None
     id: int | None = Field(default=None, ge=1)
     key: str = Field(min_length=1, max_length=80)
     title: str = Field(min_length=2, max_length=255)
@@ -316,6 +318,7 @@ async def _workspace_view(db: AsyncSession, learner_id: int, project: Project) -
                 "order": checkpoint.order, "prerequisites": list(checkpoint.prerequisites or []),
                 "learning_status": checkpoint.learning_status or "not_started",
                 "learning_contract": contract,
+                "entry_preset": checkpoint_entry_preset(project, checkpoint),
                 "editable": (checkpoint.learning_status or "not_started") == "not_started",
                 "session_id": session.id,
                 "learning_task": await learning_task_view(db, task) if task else None,
@@ -417,7 +420,11 @@ async def apply_vnext_roadmap(
     if len(set(keys)) != len(keys):
         raise HTTPException(422, "关卡 key 不能重复")
     seen_keys: set[str] = set()
-    for item in data.checkpoints:
+    for index, item in enumerate(data.checkpoints, 1):
+        try:
+            validate_mode_preset(project.project_mode or "learning", item.entry_preset, index)
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from error
         if any(key not in keys for key in item.prerequisites):
             raise HTTPException(422, f"关卡 {item.title} 引用了不存在的前置关卡")
         if any(key not in seen_keys for key in item.prerequisites):
@@ -443,7 +450,8 @@ async def apply_vnext_roadmap(
                 "avoid": ["泄露独立验证答案", "把内容生成或阅读表述为掌握"],
             }, objective=item.objective, outcomes=item.success_criteria),
             brief={"project_theme": project.name, "checkpoint_key": item.key,
-                   "objective": item.objective, "source_scope": "project"},
+                   "objective": item.objective, "source_scope": "project",
+                   **({"entry_preset": item.entry_preset.model_dump()} if item.entry_preset else {})},
         )
         db.add(checkpoint)
         await db.flush()
@@ -458,6 +466,7 @@ async def apply_vnext_roadmap(
             "prerequisites": checkpoint.prerequisites,
             "success_criteria": item.success_criteria,
             "estimated_minutes": item.estimated_minutes,
+            **({"entry_preset": item.entry_preset.model_dump()} if item.entry_preset else {}),
         })
     roadmap.raw_json = {
         "schema_version": SCHEMA_VERSION, "project_theme": project.name,
@@ -474,6 +483,8 @@ async def apply_vnext_roadmap(
                     "explicit_click": True, "proposal_origin": "tutor_tool"},
         client_event_id=data.client_action_id,
     )
+    if project.project_mode == "experiment":
+        await initialize_workflow(db, project, {"client_action_id": f"roadmap-workflow:{data.client_action_id}"[:160]})
     view = await _workspace_view(db, current.learner.id, project)
     await db.commit()
     return view
@@ -539,7 +550,11 @@ async def revise_vnext_roadmap(
     if any(item_id not in existing_by_id for item_id in proposed_ids):
         raise HTTPException(422, "路线包含不属于当前项目的关卡")
     seen_keys: set[str] = set()
-    for item in data.checkpoints:
+    for index, item in enumerate(data.checkpoints, 1):
+        try:
+            validate_mode_preset(project.project_mode or "learning", item.entry_preset, index)
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from error
         if any(key not in keys for key in item.prerequisites):
             raise HTTPException(422, f"关卡 {item.title} 引用了不存在的前置关卡")
         if any(key not in seen_keys for key in item.prerequisites):
@@ -565,6 +580,7 @@ async def revise_vnext_roadmap(
             or item.prerequisites != current_prerequisite_keys
             or list(item.success_criteria) != list(contract.get("exit_criteria") or [])
             or item.estimated_minutes != int(contract.get("estimated_minutes") or 45)
+            or (item.entry_preset is not None and item.entry_preset.model_dump() != {key: checkpoint_entry_preset(project, checkpoint)[key] for key in CheckpointPreset.model_fields})
         ):
             raise HTTPException(409, f"已开始的关卡“{checkpoint.title}”及其连线不能修改")
 
@@ -616,6 +632,7 @@ async def revise_vnext_roadmap(
             **dict(checkpoint.brief or {}),
             "project_theme": project.name, "checkpoint_key": item.key,
             "objective": item.objective, "source_scope": "project",
+            **({"entry_preset": item.entry_preset.model_dump()} if item.entry_preset else {}),
         }
         existing_task = (await db.execute(select(LearningTask).where(
             LearningTask.learner_id == current.learner.id,
@@ -637,6 +654,7 @@ async def revise_vnext_roadmap(
             "prerequisites": checkpoint.prerequisites,
             "success_criteria": list(item.success_criteria),
             "estimated_minutes": item.estimated_minutes,
+            **({"entry_preset": item.entry_preset.model_dump()} if item.entry_preset else {}),
             "editable": (checkpoint.learning_status or "not_started") == "not_started",
         })
     next_revision = current_revision + 1
@@ -761,6 +779,10 @@ async def get_project_agent_context(
         query=query or project.name,
     )
     workspace = await _workspace_view(db, current.learner.id, project)
+    if checkpoint_id is not None:
+        for item in workspace["roadmap"]["checkpoints"]:
+            if item["id"] != checkpoint_id:
+                item.pop("entry_preset", None)
     sources = workspace["sources"]
     files = workspace["files"]
     tasks = list((await db.execute(select(LearningTask).where(

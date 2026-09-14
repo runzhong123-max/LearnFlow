@@ -108,7 +108,14 @@ def test_file_generation_uses_account_provider_when_global_key_is_unset(monkeypa
     )]
 
 
-def test_existing_project_checkpoint_and_artifact_identity_survive_generation():
+def test_existing_project_checkpoint_and_artifact_identity_survive_generation(monkeypatch):
+    from app.services import micro_learning
+    original = micro_learning.generate_micro_learning_artifact
+    goals = []
+    async def capture(**kwargs):
+        goals.append(kwargs["goal"])
+        return await original(**kwargs)
+    monkeypatch.setattr(micro_learning, "generate_micro_learning_artifact", capture)
     with TestClient(app) as client:
         learner_id = _register(client)
         async def seed():
@@ -119,7 +126,7 @@ def test_existing_project_checkpoint_and_artifact_identity_survive_generation():
                 roadmap = Roadmap(project_id=project.id)
                 db.add(roadmap)
                 await db.flush()
-                checkpoint = Checkpoint(roadmap_id=roadmap.id, title="朴素贝叶斯", description="比较分类分数", order=1)
+                checkpoint = Checkpoint(roadmap_id=roadmap.id, title="朴素贝叶斯", description="比较分类分数", order=1, brief={"entry_preset": {"kind": "knowledge", "lecture_focus": "重点比较条件独立假设与平滑", "practice_focus": "用新样本计算分类分数", "workflow_step": "", "required_files": []}})
                 db.add(checkpoint)
                 await db.commit()
                 return project.id, checkpoint.id
@@ -128,6 +135,7 @@ def test_existing_project_checkpoint_and_artifact_identity_survive_generation():
         generated, _ = _generate(client, task, ["lecture", "practice"])
         assert generated["project_id"] == project_id
         assert generated["checkpoint_id"] == checkpoint_id
+        assert "重点比较条件独立假设与平滑" in goals[0] and "用新样本计算分类分数" in goals[0]
         assert generated["session_id"] == task["session_id"]
         reused, _ = _generate(client, generated, ["lecture", "practice"])
         assert reused["file_generation"]["generated_kinds"] == []

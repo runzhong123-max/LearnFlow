@@ -1,3 +1,4 @@
+import { parseCheckpointPreset } from './checkpoint-presets.ts'
 /** Shared bounded Tutor projection. Material content never grants execution permission. */
 type Row = Record<string, any>
 export type StageHelpMode = 'direction' | 'steps' | 'pseudocode' | 'implementation'
@@ -28,6 +29,17 @@ function assistanceGuidance(value: unknown, support: StageAssistance | null, sta
   if (support ? metadata.mode !== support.mode || metadata.revision !== support.revision : status !== 'accepted') return null
   return { mode: metadata.mode, revision: metadata.revision, body: text(row.body, 1800) }
 }
+function entryPreset(value: unknown, mode: unknown) {
+  const row = record(value)
+  const unplanned = row.configured === false && row.needs_file_plan === true
+  try {
+    return {
+      ...parseCheckpointPreset({ ...row, lecture_focus: text(row.lecture_focus, 1200) }, unplanned),
+      overview_outline: text(row.overview_outline, 2000), needs_file_plan: unplanned,
+      help_surface: 'code_paper', desktop_guidance: mode === 'experiment' || mode === 'practice',
+    }
+  } catch { return null }
+}
 export function compactProjectWorkflow(value: { checkpoint_id?: number | null; project_workflow?: unknown }) {
   if (!value.project_workflow) return null
   const workflow = record(value.project_workflow)
@@ -49,6 +61,7 @@ export function compactProjectWorkflow(value: { checkpoint_id?: number | null; p
       return {
         checkpoint_id: stage.checkpoint_id, title: text(stage.title, 180), status: stage.status,
         objective: text(stage.objective, 500), support_version: text(stage.support_version, 80),
+        entry_preset: visible ? entryPreset(stage.entry_preset, workflow.project_mode) : null,
         student_tasks: visible ? lines(stage.student_tasks) : [],
         mentor_support: visible ? lines(stage.mentor_support) : [],
         shared_tasks: visible ? lines(stage.shared_tasks) : [],

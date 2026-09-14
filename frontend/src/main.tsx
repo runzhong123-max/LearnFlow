@@ -4450,7 +4450,7 @@ function ToolRunCard({ run, sourceMessageId, conversationId, compactPluginResult
           <span>{run.projectRoadmapProposal.operation === 'revise' ? `项目路线修订 · 第 ${(run.projectRoadmapProposal.expected_revision || 1) + 1} 版待确认` : '项目路线提案 · 尚未创建'}</span>
           <strong>{run.projectRoadmapProposal.project_theme}</strong>
           <p>{run.projectRoadmapProposal.rationale}</p>
-          <ol>{run.projectRoadmapProposal.checkpoints.map(item => <li key={item.key}><b>{item.title}</b><small>{item.objective}</small></li>)}</ol>
+          <ol>{run.projectRoadmapProposal.checkpoints.map(item => <li key={item.key}><b>{item.title}</b><small>{item.objective}</small>{item.entry_preset && <details><summary>本关讲义、习题与文件</summary><small>讲义：{item.entry_preset.lecture_focus}</small>{item.entry_preset.practice_focus && <small>习题：{item.entry_preset.practice_focus}</small>}{item.entry_preset.workflow_step && <small>工作步骤：{item.entry_preset.workflow_step}</small>}{item.entry_preset.required_files.map(file => <small key={file.path}><code>{file.path}</code> · {file.purpose}</small>)}</details>}</li>)}</ol>
           <button type="button" disabled={projectBusyKey === `project-roadmap:${run.projectRoadmapProposal.project_id}`} onClick={() => onAcceptProjectRoadmap(run.projectRoadmapProposal!)}>
             {projectBusyKey === `project-roadmap:${run.projectRoadmapProposal.project_id}`
               ? (run.projectRoadmapProposal.operation === 'revise' ? '正在应用路线修订…' : '正在创建关卡与任务…')

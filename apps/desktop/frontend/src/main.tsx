@@ -1481,7 +1481,7 @@ function App({ auth }: { auth: AuthGateSession }) {
     const intro = role === 'tutor'
       ? `这是“${projectWorkspace.project.name}”的项目 Tutor。规划必须围绕项目目标“${projectWorkspace.project.objective}”与真实产物展开；我会先读取项目来源和五核，再给出需要你确认的关卡路线。`
       : role === 'checkpoint'
-        ? `现在进入关卡“${checkpoint!.title}”。我们沿这段对话推进：阅读讲义、完成练习，并维护本关的代码文件。文件会留在对话中，点击即可打开纸张继续。`
+        ? `现在进入关卡“${checkpoint!.title}”。${checkpoint!.entry_preset?.kind === 'overview' ? '先读工作总纲，用小练习了解整体流程，再逐步接手工作。' : projectWorkspace.project.project_mode === 'learning' ? '先读本关讲义，再完成一份习题，把知识一步步连起来。' : '先读本关讲义，再围绕交付完成当前步骤。代码文件在纸内实现，并可选择导师帮助。'}我们沿对话继续，讲义、习题与文件会留在这里。`
         : `这是“${projectWorkspace.project.name}”的项目自由对话。它共享项目来源与五核 scope，但不会自动推进关卡。`
     const conversation: Conversation = {
       ...base, id: uid('chat'), title, updatedAt: now, mode,
@@ -1526,7 +1526,7 @@ function App({ auth }: { auth: AuthGateSession }) {
   const attachWorkspaceCodeFile = async (projectWorkspace: FormalProjectWorkspace, checkpoint: FormalProjectCheckpoint | undefined, path: string) => {
     // A result card is only created after the scoped file service really reads it.
     const file = await readProjectFile(projectWorkspace.project.id, path)
-    const conversation = prepareProjectTutor(projectWorkspace, checkpoint)
+    const conversation = openProjectConversation(projectWorkspace, checkpoint ? 'checkpoint' : 'tutor', { checkpoint, background: true })
     if (!conversation) return
     const messageId = uid('message')
     setWorkspace(previous => ({ ...previous, conversations: previous.conversations.map(item => {
@@ -3417,13 +3417,14 @@ function App({ auth }: { auth: AuthGateSession }) {
             onOpenCheckpoint={(projectWorkspace, checkpoint) => openProjectConversation(projectWorkspace, 'checkpoint', { checkpoint })}
             onOpenFree={(projectWorkspace, session) => openProjectConversation(projectWorkspace, 'free', { session })}
             onOpenFile={file => openTab(learningFileTab(file))}
-            onGenerateFiles={async task => {
-              const updated = await generateFormalLearningFiles(task)
+            onOpenPet={sessionId => openDesktopPet(sessionId)}
+            onGenerateFiles={async (task, kinds) => {
+              const updated = await generateFormalLearningFiles(task, kinds)
               const projectWorkspace = await loadFormalProject(tab.projectId!)
               syncProjectWorkspace(projectWorkspace)
               const checkpoint = projectWorkspace.roadmap.checkpoints.find(item => item.learning_task?.id === task.id)
-              const conversation = prepareProjectTutor(projectWorkspace, checkpoint)
-              const files = taskLearningFiles(updated)
+              const conversation = openProjectConversation(projectWorkspace, checkpoint ? 'checkpoint' : 'tutor', { checkpoint, background: true })
+              const files = taskLearningFiles(updated).filter(file => !kinds || kinds.includes(file.kind))
               if (!files.length) throw new Error(updated.file_generation?.gaps?.join('；') || '学习文件未生成，请重试。')
               if (conversation) setWorkspace(previous => ({ ...previous, conversations: previous.conversations.map(item => item.id !== conversation.id ? item : { ...item, activeSheetId: 'main', messages: [...item.messages, { id: uid('message'), role: 'assistant', content: '', createdAt: Date.now(), toolRuns: files.map(file => ({ id: uid('tool'), kind: 'file', status: 'completed', title: file.title, detail: file.kind === 'lecture' ? '讲义已准备好' : '练习已准备好', durationMs: 0, learningFile: file })) }] }) }))
             }}
@@ -4684,7 +4685,7 @@ function ToolRunCard({ run, sourceMessageId, conversationId, compactPluginResult
           <span>{run.projectRoadmapProposal.operation === 'revise' ? `项目路线修订 · 第 ${(run.projectRoadmapProposal.expected_revision || 1) + 1} 版待确认` : '项目路线提案 · 尚未创建'}</span>
           <strong>{run.projectRoadmapProposal.project_theme}</strong>
           <p>{run.projectRoadmapProposal.rationale}</p>
-          <ol>{run.projectRoadmapProposal.checkpoints.map(item => <li key={item.key}><b>{item.title}</b><small>{item.objective}</small></li>)}</ol>
+          <ol>{run.projectRoadmapProposal.checkpoints.map(item => <li key={item.key}><b>{item.title}</b><small>{item.objective}</small>{item.entry_preset && <details><summary>本关讲义、习题与文件</summary><small>讲义：{item.entry_preset.lecture_focus}</small>{item.entry_preset.practice_focus && <small>习题：{item.entry_preset.practice_focus}</small>}{item.entry_preset.workflow_step && <small>工作步骤：{item.entry_preset.workflow_step}</small>}{item.entry_preset.required_files.map(file => <small key={file.path}><code>{file.path}</code> · {file.purpose}</small>)}</details>}</li>)}</ol>
           <button type="button" disabled={projectBusyKey === `project-roadmap:${run.projectRoadmapProposal.project_id}`} onClick={() => onAcceptProjectRoadmap(run.projectRoadmapProposal!)}>
             {projectBusyKey === `project-roadmap:${run.projectRoadmapProposal.project_id}`
               ? (run.projectRoadmapProposal.operation === 'revise' ? '正在应用路线修订…' : '正在创建关卡与任务…')

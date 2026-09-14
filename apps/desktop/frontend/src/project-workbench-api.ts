@@ -1,3 +1,4 @@
+import type { CheckpointEntryPreset } from '../../../../packages/learning-client/src/project-guidance/checkpoint-presets'
 import { runtimeFetch } from './runtime-client.ts'
 import type { StageAssistance } from '../../../../packages/learning-client/src/project-guidance/workflow-context'
 export type { StageAssistance, StageHelpMode as AssistanceMode } from '../../../../packages/learning-client/src/project-guidance/workflow-context'
@@ -13,6 +14,7 @@ export type WorkbenchState = {
 }
 export type MilestoneFeedback = { accepted: boolean; checks: Array<{ key: string; label: string; passed: boolean; detail: string }>; review_required: boolean; summary: string; mastery_inference: false }
 export type WorkflowMilestone = {
+  entry_preset?: CheckpointEntryPreset | null
   support_version?: string; student_tasks?: string[]; mentor_support?: string[]; shared_tasks?: string[]
   related_files?: Array<{ path: string; role: string; reason: string }>; assistance?: StageAssistance | null
   assistance_guidance?: { mode: AssistanceMode; body: string; revision: number } | null

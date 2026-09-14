@@ -4,6 +4,7 @@ import { explicitProjectGuidanceMode, projectGuidanceChoicePrompt, projectGuidan
 import { confirmProjectGuidance, prepareProjectGuidance } from './runtime.ts'
 
 const brief = { rawInput: '实现 CSV 数据校验', projectMode: 'experiment', name: 'CSV 校验实验', objective: '独立实现数据校验',
+  checkpoints: ['parse', 'validate'].map(key => ({ key, title: `${key} 数据`, objective: `${key} 当前输入`, entry_preset: { kind: 'implementation', lecture_focus: `${key} 的输入输出`, practice_focus: '', workflow_step: '', required_files: [{ path: `src/${key}.py`, purpose: `${key} 当前输入` }] } })),
   deliverables: ['校验器代码', '测试报告'], constraints: ['使用隔离样例数据'], successCriteria: ['有效数据保留，无效数据说明原因'] }
 const scope = { learnerId: 3, conversationId: 'chat-4', sessionId: 17, sheetId: 'sheet-2' }
 const candidate = { schema_version: 'learnflow.project-guidance.v1', candidate_id: 'pg_example', root_hash: 'a'.repeat(64),

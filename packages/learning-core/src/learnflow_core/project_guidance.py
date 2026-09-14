@@ -28,6 +28,7 @@ def candidate_view(row):
 
 
 async def prepare(db: AsyncSession, learner_id: int, data: dict):
+    data = {key: value for key, value in data.items() if key != "checkpoints" or value}
     await validate_sources(db, learner_id, data["source_refs"])
     request_hash = digest(data)
     previous = await db.scalar(select(ProjectGuidanceCandidate).where(
@@ -94,7 +95,8 @@ async def confirm(db: AsyncSession, learner_id: int, candidate_id: str, data: di
             payload={"project_id": project.id, "name": project.name, "learning_goal": candidate["objective"], "expected_outcome": candidate["expected_outcome"]},
             provenance={"service": "project_guidance", "explicit_click": True}, client_event_id=f"project-guidance:{row.id}:project")
         workflow = await initialize_workflow(db, project, {"client_action_id": f"guidance:{row.id}:initialize",
-            **{key: candidate.get(key) for key in ("case_id", "case_version", "case_root_hash")}})
+            **{key: candidate.get(key) for key in ("case_id", "case_version", "case_root_hash")}},
+            planned_checkpoints=candidate.get("checkpoints") or None)
         brief = candidate["project_brief"]
         text = f"目标：{candidate['objective']}\n\n预期产物：{candidate['expected_outcome']}"
         for key, label in (("deliverables", "核心交付"), ("constraints", "约束"), ("success_criteria", "验收标准")):

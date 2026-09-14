@@ -1,3 +1,4 @@
+import CheckpointEntry from './CheckpointEntry'
 import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import { loadFormalProject, type FormalLearningFileRef, type FormalLearningTask } from './formal-runtime'
 import type { FormalProjectCheckpoint, FormalProjectWorkspace } from './project'
@@ -6,7 +7,7 @@ import ProjectContextPanel from './ProjectContextPanel'
 import ProjectFileWorkbench, { type FileSelection } from './ProjectFileWorkbench'
 import {
   deliverProjectMilestone, initializeProjectWorkflow, listPracticeCases, loadPracticeCase, loadProjectWorkflow,
-  saveProjectReading, saveProjectWorkbench, setStageAssistance, workbenchActionId, validatePracticeCase, requestMilestoneHint,
+  saveProjectReading, saveProjectWorkbench, workbenchActionId, readProjectFile, writeProjectFile, validatePracticeCase, requestMilestoneHint,
   WorkbenchRequestError, type ArtifactReference, type PracticeCaseSummary, type ProjectPaper, type ProjectWorkflow, type WorkbenchState, type WorkflowMilestone,
 } from './project-workbench-api'
 import './project-workbench.css'
@@ -28,7 +29,8 @@ type Props = {
   onOpenCheckpoint: (workspace: FormalProjectWorkspace, checkpoint: FormalProjectCheckpoint) => void
   onOpenFree: (workspace: FormalProjectWorkspace, session: { session_id: number; title: string }) => void
   onOpenFile: (file: FormalLearningFileRef) => void
-  onGenerateFiles: (task: FormalLearningTask) => Promise<void>
+  onGenerateFiles: (task: FormalLearningTask, kinds?: Array<'lecture' | 'practice'>) => Promise<void>
+  onOpenPet?: (sessionId: number) => Promise<void>
   onPrepareTutor?: (workspace: FormalProjectWorkspace, checkpoint?: FormalProjectCheckpoint) => void
   renderTutor?: (workspace: FormalProjectWorkspace, checkpoint?: FormalProjectCheckpoint) => ReactNode
   onAskSelection?: (selection: ProjectWorkbenchSelection) => void
@@ -200,14 +202,26 @@ function LocalProjectWorkspacePage(props: Props) {
     <header className="pw-conversation-heading"><div className="pw-conversation-title"><button onClick={() => { changeWorkbench({ active_checkpoint_id: null }); setPanel('') }}>{workspace.project.name}</button>{currentCheckpoint && <><span>/</span><strong>{currentCheckpoint.title}</strong></>}</div><nav aria-label="项目侧栏"><button aria-expanded={resourcesOpen && resourceTab === 'checkpoints'} onClick={() => { setPanel(''); setResourceTab('checkpoints'); setResourcesOpen(!(resourcesOpen && resourceTab === 'checkpoints')) }}>关卡图</button><button aria-expanded={resourcesOpen && resourceTab === 'sources'} onClick={() => { setPanel(''); setResourceTab('sources'); setResourcesOpen(!(resourcesOpen && resourceTab === 'sources')) }}>资料</button><button aria-expanded={panel === 'files'} onClick={() => togglePanel('files')}>文件</button><button aria-label="关卡与交付" aria-expanded={panel === 'overview'} onClick={() => togglePanel('overview')}>···</button></nav></header>
     {error && <div className="pw-error" role="alert">{error}<button aria-label="关闭提示" onClick={() => setError('')}>×</button></div>}
     <div className={`pw-conversation-shell${panel || resourcesOpen ? ' has-panel' : ''}`}>
-      <main className="pw-conversation" aria-label="项目对话">{renderTutor?.(workspace, currentCheckpoint) || <div className="pw-empty"><p>正在恢复对话…</p><button onClick={() => currentCheckpoint ? onOpenCheckpoint(workspace, currentCheckpoint) : onOpenTutor(workspace)}>继续对话</button></div>}</main>
+      <main className="pw-conversation" aria-label="项目对话">{currentCheckpoint?.entry_preset && <CheckpointEntry
+        key={currentCheckpoint.id} preset={milestone?.entry_preset || currentCheckpoint.entry_preset} locked={milestone?.status === 'locked'} busy={!!busy}
+        files={[...workspace.files.lectures, ...workspace.files.practices].filter(file => file.checkpoint_id === currentCheckpoint.id)}
+        onGenerate={kinds => { if (currentCheckpoint.learning_task) void action('generate', async () => { await onGenerateFiles(currentCheckpoint.learning_task!, kinds); await refreshProject() }) }}
+        onOpenFile={onOpenFile}
+        onPrepareFile={path => void action('prepare-file', async () => {
+          try { await readProjectFile(projectId, path) } catch (failure) {
+            if (!(failure instanceof WorkbenchRequestError) || failure.status !== 404) throw failure
+            await writeProjectFile(projectId, path, '', null)
+          }
+          await onOpenCodeFile?.(workspace, currentCheckpoint, path)
+        })}
+        onPlanFiles={() => ask({ title: '本关的原子文件', text: `请根据关卡“${currentCheckpoint.title}”与最终交付，明确本关要维护的原子文件路径、每份文件的职责、输入输出和检查方法。通过正式路线提案确认未开始关卡的设计；已开始关卡保留原任务约束。` })}
+        onOpenPet={props.onOpenPet ? () => void action('pet', () => props.onOpenPet!(currentCheckpoint.session_id)) : undefined}
+      />}{renderTutor?.(workspace, currentCheckpoint) || <div className="pw-empty"><p>正在恢复对话…</p><button onClick={() => currentCheckpoint ? onOpenCheckpoint(workspace, currentCheckpoint) : onOpenTutor(workspace)}>继续对话</button></div>}</main>
       <aside className="pw-side-content" hidden={!panel} aria-label="项目辅助面板"><header className="pw-side-heading"><strong>{panel === 'files' ? '文件管理' : panel === 'materials' ? '讲义与练习' : panel === 'papers' ? '思考纸张' : '关卡与交付'}</strong><button onClick={() => setPanel('')} aria-label="关闭辅助面板">×</button></header>
         {tab !== 'files' && tab !== 'experiments' && <nav className="pw-main-tabs" aria-label="辅助内容"><button onClick={() => changeWorkbench({ active_tab: 'overview' })}>关卡与交付</button><button onClick={() => changeWorkbench({ active_tab: 'materials' })}>讲义与练习</button><button onClick={() => changeWorkbench({ active_tab: 'papers' })}>笔记</button></nav>}
         <div className="pw-main-content" ref={contentRef}>
-          {mode !== 'learning' && milestone && tab === 'overview' && <StageSupport key={`${projectId}:${milestone.checkpoint_id}`} compact milestone={milestone} busy={!!busy} guidance={milestone.assistance_guidance?.body}
-            onOpenFiles={tab === 'overview' && milestone.status === 'available' ? () => changeWorkbench({ active_tab: 'files' }) : undefined}
-            onChange={(nextMode, current) => void action('assistance', async () => { await mutateWorkflow(async () => { const result = await setStageAssistance(projectId, milestone.checkpoint_id, current, nextMode).catch(async failure => { if (failure instanceof WorkbenchRequestError && failure.status === 409) acceptWorkflow(await loadProjectWorkflow(projectId)); throw failure }); return result.workflow }) })}
-            onDiscuss={() => ask({ title: `${milestone.title} · ${assistanceLabel(milestone.assistance?.mode)}`, text: `当前阶段：${milestone.title}\n我希望获得「${assistanceLabel(milestone.assistance?.mode)}」这一档帮助。\n我来完成：${(milestone.student_tasks || []).join('；')}\n请围绕我当前的卡点给这一档的帮助，并把动手与解释的部分留给我。` })} />}
+          {mode !== 'learning' && milestone && tab === 'overview' && <StageSupport compact milestone={milestone}
+            onOpenFiles={() => changeWorkbench({ active_tab: 'files' })} />}
 
           {tab === 'overview' && <div className="pw-overview">
             {!workflow.initialized && <div className="pw-onboarding"><span>START WITH A CLEAR QUESTION</span><h2>{mode === 'practice' ? '选择一段值得亲手经历的工作' : mode === 'experiment' ? '先定交付，再动手验证' : '把资料变成一条能走下去的路线'}</h2><p>{workspace.project.objective}</p>{mode === 'practice' ? <div className="pw-case-picker">{cases.map(item => <label className={selectedCase === item.id ? 'selected' : ''} key={item.id}><input type="radio" name="practice-case" value={item.id} checked={selectedCase === item.id} onChange={() => setSelectedCase(item.id)} /><div><strong>{item.title}</strong><p>{item.summary}</p><small>v{item.version} · 约 {item.estimated_minutes} 分钟</small><details><summary>来源与版本</summary><pre>{JSON.stringify(item.provenance, null, 2)}</pre><code>{item.root_hash}</code></details></div></label>)}{!cases.length && <p>当前尚未载入可用案例。</p>}</div> : <p className="pw-learning-loop">明确目标 → 先作预测 → 动手尝试 → 观察证据 → 解释与迁移</p>}<button className="pw-primary" disabled={!!busy || (mode === 'practice' && !selectedCase)} onClick={() => void action('initialize', async () => { const selected = cases.find(item => item.id === selectedCase); if (selected) { const checked = await validatePracticeCase(selected); validateLocalWorkCaseCandidate(checked.candidate) } const next = await mutateWorkflow(() => initializeProjectWorkflow(projectId, selected)); await refreshProject(); changeWorkbench({ active_checkpoint_id: next.milestones.find(item => item.status === 'available')?.checkpoint_id || null }) })}>{busy === 'initialize' ? '正在建立正式路线…' : '确认并建立阶段路线'}</button><small>确认后创建正式关卡与任务。已有路线会保留。</small></div>}

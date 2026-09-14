@@ -1,3 +1,4 @@
+import { checkpointPresetSchema, parseCheckpointPreset, CHECKPOINT_PLANNING_GUIDANCE } from '../../../../packages/learning-client/src/project-guidance/checkpoint-presets.ts'
 import { conversionContextReference } from '../../../../packages/learning-client/src/work-task-conversion/context.ts'
 import { compactProjectWorkflow } from '../../../../packages/learning-client/src/project-guidance/workflow-context.ts'
 import type { VisualAuthoringTransport } from './visualize-authoring.ts'
@@ -251,7 +252,7 @@ export const TUTOR_AGENT_TOOL_DEFINITIONS: AgentToolDefinition[] = [
   {
     name: 'propose_project_roadmap',
     title: '提出项目关卡路线',
-    description: '仅供当前项目 Tutor 创建或修订关卡 DAG。已开始关卡必须原样保留，只有未开始关卡可增删改排；只产生待确认提案。',
+    description: '仅供当前项目 Tutor 创建或修订关卡 DAG。已开始关卡必须原样保留，只有未开始关卡可增删改排；只产生待确认提案。' + CHECKPOINT_PLANNING_GUIDANCE,
     toolClass: 'collaboration',
     risk: 'proposal',
     inputSchema: {
@@ -269,6 +270,7 @@ export const TUTOR_AGENT_TOOL_DEFINITIONS: AgentToolDefinition[] = [
               prerequisites: { type: 'array', items: { type: 'string' } },
               success_criteria: { type: 'array', items: { type: 'string' } },
               estimated_minutes: { type: 'integer' },
+              entry_preset: checkpointPresetSchema,
             },
             required: ['key', 'title', 'objective', 'success_criteria'],
             additionalProperties: false,
@@ -731,6 +733,7 @@ function cleanCheckpointProposal(raw: any, index: number): ProjectCheckpointProp
     success_criteria: [...new Set((Array.isArray(raw?.success_criteria) ? raw.success_criteria : [])
       .map((item: unknown) => compactText(item, 240)).filter(Boolean))].slice(0, 8),
     estimated_minutes: Math.max(10, Math.min(600, Number(raw?.estimated_minutes) || 45)),
+    ...(raw?.entry_preset ? { entry_preset: parseCheckpointPreset(raw.entry_preset) } : {}),
   }
 }
 
@@ -1271,6 +1274,7 @@ export async function executeTutorAgentTool(
             .map((item: unknown) => existingKeyById.get(Number(item)) || String(item)),
           success_criteria: Array.isArray(contract.exit_criteria) ? contract.exit_criteria : [],
           estimated_minutes: Number(contract.estimated_minutes || 45),
+          ...(proposed?.entry_preset && (locked as any).entry_preset ? { entry_preset: parseCheckpointPreset((locked as any).entry_preset) } : {}),
         }
         if (!proposed || JSON.stringify(proposed) !== JSON.stringify(expected)) {
           throw new Error(`已开始的关卡“${expected.title}”必须携带正式 ID 并原样保留`)

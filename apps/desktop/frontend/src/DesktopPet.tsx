@@ -1,3 +1,4 @@
+import { loadProjectWorkflow, type WorkflowMilestone } from './project-workbench-api'
 import { lazy, Suspense, type ChangeEvent, type ClipboardEvent, type FormEvent, type PointerEvent, useEffect, useRef, useState } from 'react'
 import { LogicalSize } from '@tauri-apps/api/dpi'
 import { getCurrentWindow } from '@tauri-apps/api/window'
@@ -185,6 +186,16 @@ function subtitleTranscript(raw: string) {
 export default function DesktopPet() {
   const [bootstrap, setBootstrap] = useState<FormalDesktopPetBootstrap>()
   const [session, setSession] = useState<FormalTutorSession>()
+  const [projectStage, setProjectStage] = useState<{ sessionId: number; stage: WorkflowMilestone }>()
+  useEffect(() => {
+    let live = true
+    setProjectStage(undefined)
+    if (session?.project_id && session.checkpoint_id) void loadProjectWorkflow(session.project_id).then(workflow => {
+      const stage = workflow.milestones.find(item => item.checkpoint_id === session.checkpoint_id)
+      if (live && workflow.project_mode !== 'learning' && stage && stage.status !== 'locked') setProjectStage({ sessionId: session.id, stage })
+    }).catch(() => undefined)
+    return () => { live = false }
+  }, [session?.id, session?.project_id, session?.checkpoint_id])
   const [messages, setMessages] = useState<PetMessage[]>([])
   const [draft, setDraft] = useState('')
   const [contexts, setContexts] = useState<FormalDesktopPetContext[]>([])
@@ -883,8 +894,10 @@ export default function DesktopPet() {
         : bootstrap?.tasks.some(task => task.status === 'active') || Boolean(activeSkill)
           ? 'task_active'
           : 'idle'
+  const currentProjectStage = projectStage?.sessionId === session?.id ? projectStage?.stage : undefined
   const compactCue = petVisualState === 'thinking'
     ? '正在思考…'
+    : currentProjectStage ? `正在陪你：${currentProjectStage.title}`
     : petVisualState === 'review_due'
       ? `有 ${bootstrap?.review.due || 0} 项待复习`
       : petVisualState === 'task_active'
@@ -999,6 +1012,7 @@ export default function DesktopPet() {
       </div>}
     </section>}
     <form className={styles.composer} onSubmit={send}>
+      {currentProjectStage && <div className={styles.projectGuidance} aria-label="当前关卡操作指导"><strong>{currentProjectStage.title}</strong><small>选中操作内容后按 {preferences?.shortcut || DEFAULT_PET_SHORTCUT}，带回当前关卡请教。</small><button type="button" disabled={pending} onClick={() => setDraft(previous => [previous, `我正在完成“${currentProjectStage.title}”。请结合我提供的当前操作内容，指出下一步该检查什么、怎样验证；缺少现场信息时先问我。`].filter(Boolean).join('\n'))}>请导师看下一步</button></div>}
       <textarea value={draft} onChange={event => setDraft(event.target.value)} onPaste={pasteScreenshot} disabled={!session || pending} placeholder="输入消息…" rows={3} />
       <input ref={documentInput} className={styles.documentInput} type="file" accept=".pdf,.docx,.pptx,.xlsx,.txt,.md,.markdown,.csv" onChange={event => void importDocumentExcerpt(event)} />
       <input ref={subtitleInput} className={styles.documentInput} type="file" accept=".srt,.vtt,.txt" onChange={event => void importVideoTranscript(event)} />

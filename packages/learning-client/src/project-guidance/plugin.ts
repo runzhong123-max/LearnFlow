@@ -1,3 +1,4 @@
+import { checkpointPresetSchema, CHECKPOINT_PLANNING_GUIDANCE } from './checkpoint-presets.ts'
 import { PROJECT_GUIDANCE_RENDERER, PROJECT_GUIDANCE_VERSION } from './contract.ts'
 import { prepareProjectGuidance, confirmProjectGuidance, listProjectPracticeCases } from './runtime.ts'
 
@@ -14,7 +15,7 @@ export const projectGuidanceContributions = {
         ['objective', 'string'], ['expected_outcome', 'string'], ['execution_surface', 'string'], ['candidate_id', 'string'],
         ['root_hash', 'string'], ['case_id', 'string'], ['case_version', 'string'], ['case_root_hash', 'string'],
         ['mastery_inference', 'boolean'], ['requires_confirmation', 'boolean'], ['created', 'boolean'],
-        ['choices', 'array'], ['case_catalog', 'array'], ['missing_fields', 'array'], ['source_refs', 'array'], ['project_brief', 'object'],
+        ['checkpoints', 'array'], ['choices', 'array'], ['case_catalog', 'array'], ['missing_fields', 'array'], ['source_refs', 'array'], ['project_brief', 'object'],
         ['candidate', 'object'], ['navigation', 'object'], ['workspace', 'object'], ['workflow', 'object'],
         ['project_id', 'integer'], ['session_id', 'integer'],
       ].map(([name, type]) => [name, { type }])) },
@@ -37,6 +38,10 @@ export const projectGuidanceContributions = {
         rawInput: { ...string(2000), minLength: 2 }, projectMode: { type: 'string', enum: ['experiment', 'practice'] },
         name: string(120), objective: string(2000), expectedOutcome: string(2000),
         deliverables: strings, constraints: strings, successCriteria: strings,
+        checkpoints: { type: 'array', minItems: 2, maxItems: 16, description: '实验项目的串行关卡，确认后按此顺序建立；固定实践案例不传。' + CHECKPOINT_PLANNING_GUIDANCE,
+          items: { type: 'object', additionalProperties: false, required: ['key', 'title', 'objective', 'entry_preset'], properties: {
+            key: { type: 'string', pattern: '^[a-zA-Z0-9_-]+$', maxLength: 80 }, title: string(255), objective: string(1200), entry_preset: checkpointPresetSchema,
+          } } },
         caseId: string(100), caseVersion: string(100), caseRootHash: { type: 'string', pattern: '^[a-f0-9]{64}$' },
       } }, availableInModes: modes, outputObjectTypes: ['project_guidance'], renderer: PROJECT_GUIDANCE_RENDERER },
     { id: 'confirm_project_guidance', title: '核对桌面项目确认', toolClass: 'execution', risk: 'artifact',
@@ -57,6 +62,8 @@ export const projectGuidanceContributions = {
       '先明确用户要知识学习、实验项目还是带教实践。没有明确选择时调用 prepare_project_guidance 且不传 projectMode，返回三选卡，本轮停止。不能凭工作内容替用户选择。',
       '知识学习使用原 prepare_learning_task_intake -> 用户确认 -> draft_learning_task 讯飞链；实验与带教绝不调用讯飞或 draft_learning_task。',
       '实验和带教只在桌面执行，网页可以讨论任务书、查看方案和结果；不得声称网页能够操作本地文件或bash。',
+      CHECKPOINT_PLANNING_GUIDANCE,
+      '实验任务书齐备后，checkpoints 必须包含至少两个串行关卡以及一个 implementation 关卡。结合项目实际接口和组件拆分，禁止只用定义、实现、复盘三个笼统阶段代替实现分工；示例：解析输入（src/parser.c、src/parser.h）→ 求解逻辑（src/solver.c）→ 集成验证。未知语言或交付边界先澄清，不能硬套示例文件名。',
       '实验项目围绕可检查成果；带教围绕澄清、判断、阶段交付与交接。每轮先问一个最关键的缺口，确认目标、交付物、约束与验收标准后再 prepare_project_guidance。允许提出任务书候选，不得把生成候选说成用户已确认。',
       '带教先调用 list_project_practice_cases 读取可用案例目录，只有用户选择了确切匹配案例，才原样传 caseId/caseVersion/caseRootHash。不能把任意工作任务自动套到固定案例；没有匹配案例时明确案例设计尚未支持，继续澄清方案。不要向学习者泄露未来阶段材料或答案。',
       '将完整任务书作为插件对象展开到现有纸张，用同一对象引用继续对话，不创建第二套项目或文档权威。',

@@ -1,3 +1,4 @@
+import type { CheckpointPreset, CheckpointEntryPreset } from '../../../../packages/learning-client/src/project-guidance/checkpoint-presets'
 import type { FormalLearningFileRef, FormalLearningTask } from './formal-runtime'
 
 export type ProjectMode = 'learning' | 'experiment' | 'practice'
@@ -5,6 +6,7 @@ export type ProjectMode = 'learning' | 'experiment' | 'practice'
 export type ProjectBrief = { deliverables: string[]; constraints: string[]; success_criteria: string[] }
 
 export type ProjectCheckpointProposal = {
+  entry_preset?: CheckpointPreset
   id?: number
   key: string
   title: string
@@ -38,6 +40,7 @@ export type ProjectLearningFileProposal = {
 }
 
 export type FormalProjectCheckpoint = {
+  entry_preset?: CheckpointEntryPreset
   id: number
   key: string
   title: string

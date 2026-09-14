@@ -44,7 +44,7 @@ from learnflow_core.registry_core import (
 )
 
 
-REGISTRY_VERSION = "2026-09-14.2"
+REGISTRY_VERSION = "2026-09-14.3"
 # Platform discovery is additive; learner evidence semantics are unchanged.
 
 # Data contracts: external sources and explicitly scoped read-only projections.
@@ -132,6 +132,13 @@ DATA_CONTRACTS = {
         "mode": "read_only_navigation", "lifecycle": "implemented", "authority_path": "docs/implementation/DESKTOP_PROJECT_GUIDANCE.md",
         "binding_ids": ["py:workspace.recommendations"], "kernel_reads": [], "kernel_write_path": "none",
         "compatibility": "bounded device-only file navigation under existing inspect_workspace_files; no source upload or edit permission",
+    },
+    "checkpoint_entry_v1": {
+        "schema_version": "learnflow.checkpoint-entry.v1", "owner": "tutor_agent", "origin": "builtin",
+        "mode": "operational_artifact", "lifecycle": "implemented", "authority_path": "docs/implementation/CHECKPOINT_ENTRY_PRESETS.md",
+        "binding_ids": ["py:project_workflow.read", "api:project_guidance.confirm"],
+        "kernel_reads": [], "kernel_write_path": "none",
+        "compatibility": "optional checkpoint content design under confirmed roadmap/workflow; old routes and fixed case hashes retained; no file creation or grading authority",
     },
     "project_stage_support_v1": {
         "schema_version": "learnflow.stage-support.v1", "owner": "tutor_agent", "origin": "builtin",

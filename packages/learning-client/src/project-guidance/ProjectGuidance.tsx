@@ -55,6 +55,7 @@ function ProjectGuidanceCard(props: Props) {
         ['交付物', brief.deliverables], ['约束', brief.constraints], ['验收标准', brief.success_criteria],
       ].map(([label, items]) => <article key={String(label)}><strong>{String(label)}</strong>{Array.isArray(items) && items.length
         ? <ul>{items.map((item, index) => <li key={index}>{String(item)}</li>)}</ul> : <p>待澄清</p>}</article>)}</div>
+      {!!value.candidate?.checkpoints?.length && <details><summary>关卡安排 · {value.candidate.checkpoints.length} 关</summary><ol>{value.candidate.checkpoints.map((stage: any) => <li key={stage.key}><strong>{stage.title}</strong><p>{stage.entry_preset.lecture_focus}</p>{stage.entry_preset.required_files?.map((file: any) => <p key={file.path}><code>{file.path}</code> · {file.purpose}</p>)}</li>)}</ol></details>}
       {value.missing_fields?.length > 0 && <p>下一步补充：{value.missing_fields.join('、')}。可以直接在对话中描述。</p>}
       {value.status === 'needs_case_selection' && <p>需要选择匹配的版本化带教案例。当前没有匹配案例时，请继续与 Tutor 澄清任务书。</p>}
       {ready && !createdProject && <div className="project-guidance-confirm">
