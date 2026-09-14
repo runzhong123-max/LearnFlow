@@ -55,7 +55,7 @@ test('resource introductions distinguish excerpts from recommendation reasons an
   const { resourceIntroduction } = await import('../src/planning-resources.ts')
   const intro = resourceIntroduction({snippet:'介绍缓存与虚拟内存',reason:'对应学习目标',readState:'page_excerpt'} as SearchSource)
   assert.equal(intro.summary,'介绍缓存与虚拟内存')
-  assert.equal(intro.reason,'对应学习目标')
+  assert.equal('reason' in intro, false, 'retrieval metadata is not a learner-facing recommendation')
   assert.match(intro.basis,/不代表已读全文/)
   assert.match(resourceIntroduction({} as SearchSource).summary,/尚无内容简介/)
 })
@@ -67,4 +67,15 @@ test('saved source titles restore from exact persisted recommendations, with fil
   assert.equal(savedResourceTitle({name:'个人笔记.pdf',url:''},known),'个人笔记.pdf')
   assert.equal(savedResourceTitle({name:'另一门课',url:'https://other.example/course'},known),'另一门课')
   assert.equal(resourceUrlKey('https://user:secret@example.com'), '')
+})
+
+
+test('provider boilerplate and empty reasons never become recommendation copy', async () => {
+  const { resourceIntroduction } = await import('../src/planning-resources.ts')
+  for (const reason of ['Tavily 返回的与查询最相关的网页证据片段', '命中 LearnFlow 计算机知识可信来源目录', '']) {
+    const intro = resourceIntroduction({snippet:'课程覆盖虚拟内存与缓存',reason} as SearchSource)
+    assert.equal(intro.summary,'课程覆盖虚拟内存与缓存')
+    assert.equal('reason' in intro,false)
+    assert.doesNotMatch(JSON.stringify(intro),/Tavily|可信来源目录|适配情况待核验/)
+  }
 })
