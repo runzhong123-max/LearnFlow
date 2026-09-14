@@ -1,6 +1,6 @@
 # 比赛成果入口与统一网页登录（2026-09-08）
 
-根域名 `learnflow.club` 登录后显示“岗课评教 比赛成果展示”，仅提供岗位、图谱、学习实践和教学图解入口。未登录时，根站、LearnFlow、Role Atlas、Graph Hub 的页面统一跳转到 `https://learn.learnflow.club/login`；登录完成回到原站点和路径。登录页不展示 LearnFlow、LF 或学习空间品牌元素。
+根域名 `learnflow.club` 登录后显示“岗课训评 比赛成果展示”，仅提供岗位、图谱、学习实践和教学图解入口。未登录时，根站、LearnFlow、Role Atlas、Graph Hub 的页面统一跳转到 `https://learn.learnflow.club/login`；登录完成回到原站点和路径。登录页不展示 LearnFlow、LF 或学习空间品牌元素。
 
 ## 实现边界
 

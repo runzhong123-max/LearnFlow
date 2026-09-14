@@ -65,7 +65,7 @@ export default function AuthGate({ children }: AuthGateProps) {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (window.location.pathname === '/login') document.title = '岗课评教 比赛成果展示 · 登录'
+    if (window.location.pathname === '/login') document.title = '岗课训评 比赛成果展示 · 登录'
   }, [])
 
   const probeSession = async () => {
@@ -262,7 +262,7 @@ export default function AuthGate({ children }: AuthGateProps) {
       <section className={styles.hero}>
         <div className={styles.brand}><img className={styles.brandMark} src="/brand-mark.png" alt="" width={40} height={40} /><strong>LearnFlow</strong></div>
         <p className={styles.eyebrow}>{isIpAccountConsole(window.location) ? 'LEARNFLOW · ACCOUNT' : 'LEARNFLOW · PUBLIC SHOWCASE'}</p>
-        <h1>{isIpAccountConsole(window.location) ? 'LearnFlow 个人设置' : '岗课评教 比赛成果展示'}</h1>
+        <h1>{isIpAccountConsole(window.location) ? 'LearnFlow 个人设置' : '岗课训评 比赛成果展示'}</h1>
         <p className={styles.heroCopy}>{isIpAccountConsole(window.location) ? '请通过域名使用账号密码登录。' : '登录后查看比赛与教学成果，并把桌面端连接到同一个账号。'}</p>
         <ul className={styles.heroPoints}>
           <li><span>01</span><div><strong>统一账号</strong><small>一次登录，访问全部成果页面</small></div></li>
