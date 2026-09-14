@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { conversionClient, conversionIdFromSearch, conversionModes, generationRetryIdentity, learningDestination, lineItems, safeResourceUrl, type ConversionBrief, type ConversionMode, type ConversionView } from './client.ts'
 import './work-task-conversion.css'
+import { prefillBrief } from './brief-prefill.ts'
 import AiContentNotice from '../AiContentNotice.tsx'
 
 const emptyBrief: ConversionBrief = {task_title:'',task_description:'',work_context:'',deliverable:'',acceptance_criteria:[],constraints:[],learner_level:''}
@@ -15,6 +16,7 @@ export default function WorkTaskConversionPage({fetcher,accountName,onSignOut}: 
   const [view,setView] = useState<ConversionView>()
   const [drafts,setDrafts] = useState<ConversionView[]>([])
   const [brief,setBrief] = useState<ConversionBrief>(emptyBrief)
+  const [suggestedFields,setSuggestedFields] = useState<string[]>([])
   const [input,setInput] = useState('')
   const [message,setMessage] = useState('')
   const [mode,setMode] = useState<ConversionMode>('learning')
@@ -38,9 +40,12 @@ export default function WorkTaskConversionPage({fetcher,accountName,onSignOut}: 
     if (!keys.current.has(key)) keys.current.set(key,crypto.randomUUID())
     return keys.current.get(key)!
   }
-  const accept = (next:ConversionView, resetForm=true) => {
+  const accept = (next:ConversionView, resetForm=true, prefill=false) => {
     setView(next)
-    if (resetForm) setBrief({...emptyBrief,...next.brief})
+    if (resetForm) {
+      const result = prefill ? prefillBrief(next) : {brief:next.brief,suggested:[]}
+      setBrief({...emptyBrief,...result.brief});setSuggestedFields(result.suggested)
+    }
     setDrafts(previous=>[next,...previous.filter(item=>item.id!==next.id)].slice(0,50))
     const url=new URL(window.location.href);url.searchParams.set('conversion',next.id);url.hash=''
     window.history.replaceState({},'',url)
@@ -58,10 +63,10 @@ export default function WorkTaskConversionPage({fetcher,accountName,onSignOut}: 
       if(launchToken.current) {
         const body={original_input:'从岗位包选择的典型工作任务',role_launch_token:launchToken.current}
         const next=await request('',{...body,client_action_id:actionId('role',body)})
-        if(mounted.current){launchToken.current='';accept(next)}
+        if(mounted.current){launchToken.current='';accept(next,true,true)}
       } else {
         const id=conversionIdFromSearch(window.location.search)
-        if(id){const next=await request(`/${id}`);if(mounted.current)accept(next)}
+        if(id){const next=await request(`/${id}`);if(mounted.current)accept(next,true,true)}
       }
     })
     void fetcher('/api/vnext-projects').then(response=>response.ok?response.json():{}).then((data:Record<string,any>)=>{if(mounted.current)setProjects(array(data.projects||data.items).map(item=>({id:Number(item.id),name:text(item.name)}))) }).catch(()=>{})
@@ -101,10 +106,10 @@ export default function WorkTaskConversionPage({fetcher,accountName,onSignOut}: 
   const readyRecipes=array(view?.design_recipes).filter(item=>item.readiness==='ready')
 
   const canLeaveDraft=()=>!(changed||message.trim()||(!view&&input.trim()))||window.confirm('这份任务还有未保存的修改或未发送的补充。确定放弃后切换吗？')
-  const newDraft=()=>{if(!canLeaveDraft())return;createIntent.current=crypto.randomUUID();setInput('');setView(undefined);setBrief(emptyBrief);setMessage('');setError('');setDesktopLink('');setProjectId('');window.history.replaceState({},'','/convert')}
-  const openDraft=(id:string)=>{if(id===view?.id)return;if(!canLeaveDraft())return;void run('load',async()=>{const next=await request(`/${id}`);setMessage('');accept(next)})}
+  const newDraft=()=>{if(!canLeaveDraft())return;createIntent.current=crypto.randomUUID();setInput('');setView(undefined);setBrief(emptyBrief);setSuggestedFields([]);setMessage('');setError('');setDesktopLink('');setProjectId('');window.history.replaceState({},'','/convert')}
+  const openDraft=(id:string)=>{if(id===view?.id)return;if(!canLeaveDraft())return;void run('load',async()=>{const next=await request(`/${id}`);setMessage('');accept(next,true,true)})}
   const create=(event:FormEvent)=>{event.preventDefault();if(!input.trim())return;void run('create',async()=>{
-    const body={original_input:input.trim()};accept(await request('',{...body,client_action_id:actionId(`create:${createIntent.current}`,body)}));setInput('')
+    const body={original_input:input.trim()};accept(await request('',{...body,client_action_id:actionId(`create:${createIntent.current}`,body)}),true,true);setInput('')
   })}
   const send=(event:FormEvent)=>{event.preventDefault();if(!view||!message.trim())return;void run('message',async()=>{
     const body={expected_revision:view.revision,message:message.trim()};accept(await request(`/${view.id}/messages`,{...body,client_action_id:actionId(`message:${view.id}`,body)}));setMessage('')
@@ -141,9 +146,9 @@ export default function WorkTaskConversionPage({fetcher,accountName,onSignOut}: 
         {!view?<section className="wtc-panel wtc-intake"><span className="wtc-eyebrow">01 / 明确一件典型工作</span><h2>你想把什么工作转成学习任务？</h2><p>可以从岗位包选取，也可以从一段真实经历开始。我们会一起补齐情境、交付物和验收标准。</p><form onSubmit={create}><label htmlFor="wtc-intake">描述工作任务</label><textarea id="wtc-intake" value={input} onChange={event=>setInput(event.target.value)} maxLength={12000} placeholder="例如：接手客户的库存数据导入，处理重复与异常记录，最后交付能重复执行的导入程序和验收报告。" rows={7}/><div className="wtc-row"><small>先明确工作，再生成方案。</small><button className="wtc-primary" disabled={locked||!input.trim()}>开始梳理 →</button></div></form></section>:<>
           <section className="wtc-panel"><div className="wtc-section-title"><div><span className="wtc-eyebrow">01 / 工作任务</span><h2>{view.brief.task_title||'一起明确这件工作'}</h2></div><span className="wtc-badge">已保存 · 版本 {view.revision}</span></div>
             <div className="wtc-messages" aria-live="polite">{view.messages.map((item,index)=><article key={index} className={item.role==='user'?'user':'assistant'}><small>{item.role==='user'?'你':'任务梳理'}</small><p>{item.content}</p></article>)}</div>
-            {view.question&&<p className="wtc-question">{view.question}</p>}
+            {view.question&&!suggestedFields.length&&<p className="wtc-question">{view.question}</p>}
             <form onSubmit={send} className="wtc-compose"><label className="wtc-sr" htmlFor="wtc-message">补充任务信息</label><textarea id="wtc-message" value={message} onChange={event=>setMessage(event.target.value)} maxLength={5000} rows={2} placeholder="补充情境、限制，或说明哪里理解得不对…" disabled={locked}/><button disabled={locked||!message.trim()||changed}>补充</button></form>
-            <details className="wtc-brief" open={!candidate}><summary>检查并完善任务说明 {view.missing_fields.length?`· 还需 ${view.missing_fields.length} 项`:'· 信息已齐备'}</summary><p>下方内容会作为生成依据。可以直接修订，保存后旧方案会失效。</p><form onSubmit={saveBrief}><div className="wtc-fields">{Object.keys(fieldLabels).map(key=><label key={key}>{fieldLabels[key]}<textarea rows={key==='task_description'?3:2} value={Array.isArray(brief[key as keyof ConversionBrief])?(brief[key as keyof ConversionBrief] as string[]).join('\n'):text(brief[key as keyof ConversionBrief])} onChange={event=>setBrief(previous=>({...previous,[key]:['acceptance_criteria','constraints'].includes(key)?event.target.value.split('\n'):event.target.value}))} disabled={locked} maxLength={4000} placeholder={key==='acceptance_criteria'||key==='constraints'?'每行一条':''}/></label>)}</div><div className="wtc-row"><small>{view.missing_fields.map(key=>fieldLabels[key]||key).join('、')}{changed?' · 有未保存的修改':''}</small><button disabled={locked||!changed}>保存任务说明</button></div></form></details>
+            <details className="wtc-brief" open={!candidate}><summary>检查并完善任务说明 {suggestedFields.length?'· 已自动补填，可修改':view.missing_fields.length?`· 还需 ${view.missing_fields.length} 项`:'· 信息已齐备'}</summary><p>已根据任务描述整理可用信息，缺少的部分提供建议。请检查并修改后保存；已有基础未说明时，不会视为已掌握。保存后旧方案会失效。</p><form onSubmit={saveBrief}><div className="wtc-fields">{Object.keys(fieldLabels).map(key=><label key={key}>{fieldLabels[key]}{suggestedFields.includes(key)&&<small> · 自动补填，请检查</small>}<textarea rows={key==='task_description'?3:2} value={Array.isArray(brief[key as keyof ConversionBrief])?(brief[key as keyof ConversionBrief] as string[]).join('\n'):text(brief[key as keyof ConversionBrief])} onChange={event=>setBrief(previous=>({...previous,[key]:['acceptance_criteria','constraints'].includes(key)?event.target.value.split('\n'):event.target.value}))} disabled={locked} maxLength={4000} placeholder={key==='acceptance_criteria'||key==='constraints'?'每行一条':''}/></label>)}</div><div className="wtc-row"><small>{suggestedFields.length?'已补填任务信息，请检查后保存':view.missing_fields.map(key=>fieldLabels[key]||key).join('、')}{changed?' · 有未保存的修改':''}</small><button disabled={locked||!changed}>{suggestedFields.length?'确认并保存任务说明':'保存任务说明'}</button></div></form></details>
             {!!view.source_refs.length&&<details className="wtc-sources"><summary>任务来源 · {view.source_refs.length} 条</summary>{view.source_refs.map((ref,index)=><article key={index}><strong>{text(ref.label)||text(ref.title)||text((ref.task_ref as Record<string,unknown>)?.label)||text(ref.task_label)||'来源记录'}</strong><p>{text(ref.summary)||text((ref.task_ref as Record<string,unknown>)?.summary)||text(ref.description)}</p>{(ref.task_ref as Record<string,unknown>)?.summaryTruncated===true&&<small>此处展示摘要前 400 字；来源仍绑定完整发布版本。</small>}<dl>{Object.entries({...ref,...((ref.package_ref||{}) as Record<string,unknown>),...((ref.task_ref||{}) as Record<string,unknown>)}).filter(([key])=>['packageId','packageVersion','snapshotId','rootHash','nodeId','package_id','package_version','snapshot_id','root_hash','node_id','source_kind','kind','role_title'].includes(key)).map(([key,value])=><div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl></article>)}</details>}
           </section>
           <section className="wtc-panel"><span className="wtc-eyebrow">02 / 选择转化方式</span><h2>这一次，你想怎样学习？</h2><div className="wtc-modes">{conversionModes.map(item=><button key={item.id} className={mode===item.id?'active':''} disabled={locked} aria-pressed={mode===item.id} onClick={()=>{setMode(item.id);setRecipe('')}}><b>{item.name}</b><span>{item.description}</span><small>{item.destination} ↗</small></button>)}</div>
