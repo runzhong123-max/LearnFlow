@@ -24,3 +24,11 @@
 .planning-resource-candidates .resource-open-link{display:inline-flex;align-items:center;min-height:38px;padding:7px 12px;box-sizing:border-box;border:1px solid #9bbfae;border-radius:8px;color:#155840;font-size:14px;font-weight:700;text-decoration:none;background:#edf6f1}
 .resource-open-link:hover{background:#dceee3}
 .resource-open-link:focus-visible{outline:3px solid #208762;outline-offset:2px}
+
+.resource-selection-summary,.resource-inquiry{padding:14px;margin:14px 0;border:1px solid #b6d1c5;border-radius:10px;background:#edf6f1}
+.resource-selection-summary ul{margin:8px 0 0;padding-left:20px}.resource-selection-summary li{margin:6px 0;overflow-wrap:anywhere}.resource-selection-summary li small{margin-left:10px}
+.resource-selection-notice,.resource-selected-badge{padding:8px 10px;border-radius:8px;background:#dceee3;color:#155840}
+.planning-resource-candidates article.resource-card-selected{border:2px solid #208762;background:#f3faf6}
+.resource-inquiry label{display:block;margin:10px 0;font-size:14px}.resource-inquiry textarea{display:block;box-sizing:border-box;width:100%;min-height:72px;margin-top:6px;padding:10px;border:1px solid #9bbfae;border-radius:8px;font:inherit;resize:vertical}.resource-inquiry>small{display:block;margin-top:8px}
+.resource-inquiry-checkbox{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#155840}.resource-inquiry-checkbox input{width:18px;height:18px;accent-color:#155840}
+.resource-introduction p{margin:6px 0 12px;overflow-wrap:anywhere;white-space:pre-line}.resource-introduction>strong{font-size:13px}.planning-resource-saved strong{overflow-wrap:anywhere}.planning-resource-saved a{color:#155840;text-underline-offset:3px}

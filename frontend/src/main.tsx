@@ -3,7 +3,7 @@ import { runtimeFetch } from './runtime-client.ts'
 import { existingQuoteSheet, type TeachingAffordances } from '../../packages/learning-client/src/teaching/affordances.ts'
 import '../../packages/learning-client/src/teaching/affordances.css'
 import PlanningResourceWorkbench from './PlanningResourceWorkbench'
-import { planningResourcePrompt, planningResourceRuns } from './planning-resources'
+import { planningResourcePrompt, planningResourceRuns, resourceCandidates } from './planning-resources'
 import { UserAvatar, UserIdentity } from '../../packages/learning-client/src/identity/UserIdentity'
 import { conversationTitle, recentConversations } from './conversation-display.ts'
 import { readTabLayout, saveTabLayout, consumeLayoutReset, withoutTabLayout } from './workspace-layout.ts'
@@ -3653,6 +3653,7 @@ function App({ auth }: { auth: AuthGateSession }) {
                         projectId={conversation.projectId}
                         topic={formalProjectWorkspaces[conversation.projectId || 0]?.project.name || planProjection?.plan.objective || conversation.title}
                         runs={runs}
+                        knownResources={messages.flatMap(item => resourceCandidates(item.toolRuns || []))}
                         pending={Boolean(pendingMode)}
                         onProjectChange={syncProjectWorkspace}
                         onRequest={prompt => { void runTutorTurn(conversation.id, prompt) }}

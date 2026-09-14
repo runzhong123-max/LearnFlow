@@ -39,3 +39,32 @@ test('inline resource tools belong to one planning response and retain failed se
   assert.deepEqual(planningResourceRuns([search], 'simple_explanation'), [])
   assert.match(planningResourcePrompt('C++', false, 'sources'), /对话内的推荐工具结果/)
 })
+
+test('resource inquiry preserves selected links without committing a selection', async () => {
+  const { resourceInquiryPrompt } = await import('../src/planning-resources.ts')
+  const source = {title:'系统课程',url:'https://example.com/course#week1',snippet:'内存和缓存',reason:'适合系统学习'} as SearchSource
+  const prompt = resourceInquiryPrompt('计算机系统',[source,{...source,url:'javascript:alert(1)'}],'需要 C 语言基础吗？')
+  assert.match(prompt,/https:\/\/example.com\/course/)
+  assert.match(prompt,/需要 C 语言基础吗/)
+  assert.match(prompt,/尚未确认选用/)
+  assert.match(prompt,/不自动入库/)
+  assert.doesNotMatch(prompt,/javascript:|#week1/)
+})
+
+test('resource introductions distinguish excerpts from recommendation reasons and unknowns', async () => {
+  const { resourceIntroduction } = await import('../src/planning-resources.ts')
+  const intro = resourceIntroduction({snippet:'介绍缓存与虚拟内存',reason:'对应学习目标',readState:'page_excerpt'} as SearchSource)
+  assert.equal(intro.summary,'介绍缓存与虚拟内存')
+  assert.equal(intro.reason,'对应学习目标')
+  assert.match(intro.basis,/不代表已读全文/)
+  assert.match(resourceIntroduction({} as SearchSource).summary,/尚无内容简介/)
+})
+
+test('saved source titles restore from exact persisted recommendations, with file names preserved', async () => {
+  const { savedResourceTitle, resourceUrlKey } = await import('../src/planning-resources.ts')
+  const known = [{title:'计算机系统课程',url:'https://example.com/course'}] as SearchSource[]
+  assert.equal(savedResourceTitle({name:'https://example.com/course',url:'https://example.com/course#intro'},known),'计算机系统课程')
+  assert.equal(savedResourceTitle({name:'个人笔记.pdf',url:''},known),'个人笔记.pdf')
+  assert.equal(savedResourceTitle({name:'另一门课',url:'https://other.example/course'},known),'另一门课')
+  assert.equal(resourceUrlKey('https://user:secret@example.com'), '')
+})
