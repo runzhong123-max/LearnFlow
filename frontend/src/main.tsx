@@ -4088,7 +4088,7 @@ function App({ auth }: { auth: AuthGateSession }) {
             <button type="button" onClick={() => openTab(TASKS_TAB)}><UiIcon name="tasks" />学习任务</button>
             <button type="button" onClick={() => openTab(LEARNING_PATH_TAB)}><UiIcon name="path" />学习路径</button>
             <button type="button" onClick={() => openTab(VISUAL_HUB_TAB)}><UiIcon name="visual" />图解与动画</button>
-            <button type="button" onClick={() => window.location.assign('https://graphs.learnflow.club/hub')}><span>◇</span>岗位图谱</button>
+            <button type="button" onClick={() => window.location.assign('https://graphs.learnflow.club/hub')}><UiIcon name="atlas" />岗位图谱</button>
           </nav>
           <div className="sidebar-scroll-area">
             <section className="sidebar-section sidebar-projects">
