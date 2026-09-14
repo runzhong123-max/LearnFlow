@@ -4,7 +4,7 @@ import vm from 'node:vm'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-test('shared account bar rechecks identity and logs out with CSRF', async () => {
+test('shared session monitor rechecks identity without rendering an account bar', async () => {
   const nodes: any[] = [], calls: any[] = [], navigations: string[] = []
   const events: Record<string, () => Promise<void>> = {}
   let authenticated = true
@@ -16,13 +16,9 @@ test('shared account bar rechecks identity and logs out with CSRF', async () => 
     }}
   vm.runInNewContext(readFileSync(resolve('public/site-session.js'),'utf8'),context)
   await new Promise(resolve=>setImmediate(resolve))
-  assert.equal(nodes[1].textContent,'已登录 · 测试用户')
-  await nodes[2].onclick()
-  assert.equal(calls.at(-1)[0],'/api/auth/logout')
-  assert.equal(calls.at(-1)[1].headers['X-CSRF-Token'],'bound-token')
-  assert.equal(new URL(navigations.at(-1)!).searchParams.get('return_to'),context.location.href)
+  assert.deepEqual(nodes, [])
+  assert.equal(calls.at(-1)[0],'/api/auth/status')
   authenticated=false
   await events.focus()
-  assert.equal(nodes[1].textContent,'未登录')
   assert.equal(new URL(navigations.at(-1)!).searchParams.get('return_to'),context.location.href)
 })
