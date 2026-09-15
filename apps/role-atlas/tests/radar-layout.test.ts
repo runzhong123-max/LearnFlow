@@ -37,6 +37,40 @@ function assertSeparated(nodes: RadarLayoutNode[], points: Map<string, Point>) {
 }
 const node = (id: string, ring: number): RadarLayoutNode => ({ id, ring, size: ring === 0 ? 62 : 22, labelWidth: ring === 0 ? 270 : 160, labelHeight: 22 });
 
+test("15-node core radar fits at 100 percent without long edges or hidden labels", () => {
+  const nodes = [node("root", 0), ...Array.from({ length: 5 }, (_, i) => node(`task-${i}`, 2)),
+    ...Array.from({ length: 4 }, (_, i) => node(`ability-${i}`, 3)),
+    ...Array.from({ length: 5 }, (_, i) => node(`skill-${i}`, 4))];
+  const edges = Array.from({ length: 5 }, (_, i) => [
+    { source: "root", target: `task-${i}` },
+    { source: `task-${i}`, target: `skill-${i}` },
+    ...(i < 4 ? [{ source: `task-${i}`, target: `ability-${i}` }] : []),
+  ]).flat();
+  for (const [width, height] of [[800, 460], [1000, 600]]) {
+    const positions = layoutRadar(nodes, edges, width, height);
+    assertSeparated(nodes, positions);
+    for (const n of nodes) {
+      const p = positions.get(n.id)!;
+      assert.ok(p.x - n.labelWidth / 2 >= 0 && p.x + n.labelWidth / 2 <= width, `${n.id} exceeds width`);
+      assert.ok(p.y - n.size / 2 >= 0 && p.y + n.size / 2 + (n.ring ? n.labelHeight + 8 : 0) <= height, `${n.id} exceeds height`);
+    }
+    const lengths = edges.map(e => {
+      const a = positions.get(e.source)!, b = positions.get(e.target)!;
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    });
+    assert.ok(Math.max(...lengths) < 380, `longest edge: ${Math.max(...lengths)}`);
+    assert.ok(lengths.reduce((a, b) => a + b, 0) / lengths.length < 210);
+  }
+});
+
+test("one oversized label does not stretch unrelated branches", () => {
+  const nodes = [node("root", 0), ...Array.from({ length: 10 }, (_, i) => node(`n-${i}`, i % 3 + 1))];
+  nodes[4].labelWidth = 350;
+  const result = layoutRadar(nodes, [], 800, 500);
+  assertSeparated(nodes, result);
+  for (const p of result.values()) assert.ok(p.x >= 0 && p.x <= 800 && p.y >= 0 && p.y <= 500);
+});
+
 test("radar reduces crossed branches without changing input, and separates long labels", () => {
   const nodes = [node("root", 0), ...[1, 2, 3].flatMap(ring => Array.from({ length: 4 }, (_, i) => node(`${ring}-${i}`, ring)))];
   const edges = Array.from({ length: 4 }, (_, i) => [
