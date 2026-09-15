@@ -74,6 +74,7 @@ import type { StoredProjectSummary } from "@/lib/projects/repository";
 import type { RuntimeConfigStatus } from "@/lib/runtime-config";
 import type { RoleSkillId, WorkspaceSkillId } from "@/lib/skills/workspace";
 import { graphFocusStates } from "@/lib/hub/graph-focus";
+import { layoutRadar } from "@/lib/hub/radar-layout";
 import { readLearnFlowLaunchResponse } from "@/lib/integrations/learnflow/launch-response";
 import { prepareTaskRelease } from "@/lib/integrations/learnflow/prepare-task-release";
 import { workspaceProjectIdentity } from "@/lib/projects/workspace-identity";
@@ -774,27 +775,31 @@ function RoleWorkspaceSession({ projectId: routeProjectId, initialConversationId
       graphRef.current?.destroy?.();
       const width = Math.max(containerRef.current.clientWidth, 520);
       const height = Math.max(containerRef.current.clientHeight, 500);
-      const centerX = width / 2;
-      const centerY = height / 2;
-      const maxRadius = Math.max(220, Math.min(width, height) * 0.43);
-      const byRing = new Map<number, RoleNode[]>();
-      currentData.nodes.forEach((node) => {
-        byRing.set(node.ring, [...(byRing.get(node.ring) ?? []), node]);
-      });
+      const measure = document.createElement("canvas").getContext("2d");
+      const fontFamily = getComputedStyle(containerRef.current).fontFamily;
+      const positions = layoutRadar(currentData.nodes.map(node => {
+        const fontSize = node.ring === 0 ? 15 : node.ring <= 2 ? 12 : 11;
+        const label = node.ring === 0 ? workspaceTitle : shortLabel(node.label, node.ring);
+        if (measure) measure.font = `${node.ring === 0 ? 700 : 600} ${fontSize}px ${fontFamily}`;
+        return {
+          id: node.id,
+          ring: node.ring,
+          size: node.ring === 0 ? 62 : node.ring <= 2 ? 22 : 16,
+          labelWidth: (measure?.measureText(label).width ?? label.length * fontSize) + 6,
+          labelHeight: fontSize * 1.4 + 4,
+        };
+      }), currentData.edges, width, height);
 
       const positionedNodes = currentData.nodes.map((node) => {
-        const peers = byRing.get(node.ring) ?? [node];
-        const index = peers.findIndex((peer) => peer.id === node.id);
-        const radius = node.ring === 0 ? 0 : maxRadius * (0.28 + node.ring * 0.14);
-        const angle = -Math.PI / 2 + (Math.PI * 2 * index) / peers.length + (node.ring % 2 ? 0.08 : 0);
+        const position = positions.get(node.id)!;
         const palette = palettes[node.type] ?? palettes.market_role;
       return {
           id: node.id,
           type: "circle",
           data: { roleNode: node },
           style: {
-            x: centerX + Math.cos(angle) * radius,
-            y: centerY + Math.sin(angle) * radius,
+            x: position.x,
+            y: position.y,
             size: node.ring === 0 ? 62 : node.ring <= 2 ? 22 : 16,
             fill: palette.fill,
             stroke: node.lifecycle === "candidate" ? "#d4a743" : palette.stroke,
