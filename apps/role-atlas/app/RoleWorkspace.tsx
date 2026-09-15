@@ -74,7 +74,6 @@ import type { StoredProjectSummary } from "@/lib/projects/repository";
 import type { RuntimeConfigStatus } from "@/lib/runtime-config";
 import type { RoleSkillId, WorkspaceSkillId } from "@/lib/skills/workspace";
 import { graphFocusStates } from "@/lib/hub/graph-focus";
-import { layoutRadar } from "@/lib/hub/radar-layout";
 import { readLearnFlowLaunchResponse } from "@/lib/integrations/learnflow/launch-response";
 import { prepareTaskRelease } from "@/lib/integrations/learnflow/prepare-task-release";
 import { workspaceProjectIdentity } from "@/lib/projects/workspace-identity";
@@ -769,40 +768,33 @@ function RoleWorkspaceSession({ projectId: routeProjectId, initialConversationId
     let resizeObserver: ResizeObserver | null = null;
 
     async function renderGraph(currentData: NonNullable<typeof filteredData>) {
-      const { Graph, NodeEvent, CanvasEvent, GraphEvent } = await import("@antv/g6");
+      const { Graph, NodeEvent, CanvasEvent } = await import("@antv/g6");
       if (disposed || !containerRef.current) return;
 
       graphRef.current?.destroy?.();
-      let width = Math.max(containerRef.current.clientWidth, 1);
-      let height = Math.max(containerRef.current.clientHeight, 1);
-      const measure = document.createElement("canvas").getContext("2d");
-      const fontFamily = getComputedStyle(containerRef.current).fontFamily;
-      const layoutNodes = currentData.nodes.map(node => {
-        const fontSize = node.ring === 0 ? 15 : node.ring <= 2 ? 12 : 11;
-        const label = node.ring === 0 ? workspaceTitle : shortLabel(node.label, node.ring);
-        if (measure) measure.font = `${node.ring === 0 ? 700 : 600} ${fontSize}px ${fontFamily}`;
-        return {
-          id: node.id,
-          ring: node.ring,
-          size: node.ring === 0 ? 62 : node.ring <= 2 ? 22 : 16,
-          labelWidth: (measure?.measureText(label).width ?? label.length * fontSize) + 6,
-          labelHeight: fontSize * 1.4 + 4,
-        };
+      const width = Math.max(containerRef.current.clientWidth, 520);
+      const height = Math.max(containerRef.current.clientHeight, 500);
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const maxRadius = Math.max(220, Math.min(width, height) * 0.43);
+      const byRing = new Map<number, RoleNode[]>();
+      currentData.nodes.forEach((node) => {
+        byRing.set(node.ring, [...(byRing.get(node.ring) ?? []), node]);
       });
-      // Keep labels above the existing zoom and hint overlays at normal size.
-      const positionForViewport = () => layoutRadar(layoutNodes, currentData.edges, width, Math.max(1, height - 104));
-      const positions = positionForViewport();
 
       const positionedNodes = currentData.nodes.map((node) => {
-        const position = positions.get(node.id)!;
+        const peers = byRing.get(node.ring) ?? [node];
+        const index = peers.findIndex((peer) => peer.id === node.id);
+        const radius = node.ring === 0 ? 0 : maxRadius * (0.28 + node.ring * 0.14);
+        const angle = -Math.PI / 2 + (Math.PI * 2 * index) / peers.length + (node.ring % 2 ? 0.08 : 0);
         const palette = palettes[node.type] ?? palettes.market_role;
       return {
           id: node.id,
           type: "circle",
           data: { roleNode: node },
           style: {
-            x: position.x,
-            y: position.y,
+            x: centerX + Math.cos(angle) * radius,
+            y: centerY + Math.sin(angle) * radius,
             size: node.ring === 0 ? 62 : node.ring <= 2 ? 22 : 16,
             fill: palette.fill,
             stroke: node.lifecycle === "candidate" ? "#d4a743" : palette.stroke,
@@ -830,7 +822,6 @@ function RoleWorkspaceSession({ projectId: routeProjectId, initialConversationId
         container: containerRef.current,
         width,
         height,
-        padding: [16, 16, 104, 16],
         data: {
           nodes: positionedNodes,
           edges: currentData.edges.map((edge) => ({
@@ -860,9 +851,6 @@ function RoleWorkspaceSession({ projectId: routeProjectId, initialConversationId
         animation: false,
       });
 
-      graph.on(GraphEvent.AFTER_TRANSFORM, () => {
-        if (!disposed && graphRef.current === graph) setGraphZoom(graph.getZoom());
-      });
       graph.on(NodeEvent.CLICK, (event: IElementEvent) => {
         const id = String(event.target?.id ?? "");
         const node = nodeMap.get(id);
@@ -893,25 +881,13 @@ function RoleWorkspaceSession({ projectId: routeProjectId, initialConversationId
       });
 
       await graph.render();
-      if (disposed) { graph.destroy(); return; }
       graphRef.current = graph;
-      setGraphZoom(graph.getZoom());
       const roleNode = currentData.nodes.find((node) => node.type === "market_role");
       if (roleNode) await graph.setElementState(roleNode.id, ["selected"], false);
 
-      let resizing = Promise.resolve();
       resizeObserver = new ResizeObserver(() => {
-        resizing = resizing.then(async () => {
-          if (disposed || !containerRef.current) return;
-          const nextWidth = containerRef.current.clientWidth;
-          const nextHeight = containerRef.current.clientHeight;
-          if (!nextWidth || !nextHeight || (nextWidth === width && nextHeight === height)) return;
-          width = nextWidth;
-          height = nextHeight;
-          graph.resize(width, height);
-          graph.updateNodeData([...positionForViewport()].map(([id, point]) => ({ id, style: point })));
-          await graph.draw();
-        }).catch(() => undefined);
+        if (!containerRef.current) return;
+        graph.resize(containerRef.current.clientWidth, containerRef.current.clientHeight);
       });
       resizeObserver.observe(containerRef.current);
     }
@@ -940,16 +916,19 @@ function RoleWorkspaceSession({ projectId: routeProjectId, initialConversationId
 
   // The canvas is the product's centrepiece, so its zoom is a first-class
   // control instead of a wheel-only affordance.
-  const zoomCanvas = useCallback(async (action: "in" | "out" | "fit") => {
+  const zoomCanvas = useCallback((action: "in" | "out" | "fit") => {
     const graph = graphRef.current;
     if (!graph) return;
     if (action === "fit") {
-      await graph.fitView({ when: "always" }, false);
-    } else {
-      const next = Math.min(2.5, Math.max(0.3, graph.getZoom() * (action === "in" ? 1.2 : 1 / 1.2)));
-      await graph.zoomTo(next, { duration: 180 });
+      graph.fitView?.({ when: "overflow" });
+      setGraphZoom(Number(graph.getZoom?.() ?? 1));
+      return;
     }
-    if (graphRef.current === graph) setGraphZoom(graph.getZoom());
+    setGraphZoom((current) => {
+      const next = Math.min(2.5, Math.max(0.3, Number((current * (action === "in" ? 1.2 : 1 / 1.2)).toFixed(2))));
+      graph.zoomTo?.(next, { duration: 180 });
+      return next;
+    });
   }, []);
 
   function selectAndFocus(node: RoleNode) {
